@@ -37,3 +37,21 @@ def test_appliance_json():
         "symbol": "qemu.svg",
         "compute_id": "local"
     }
+
+
+def test_appliance_fix_linked_base():
+    """
+    Version of the gui before 2.1 use linked_base and the server
+    linked_clone
+    """
+    a = Appliance(None, {
+        "node_type": "qemu",
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "category": 0,
+        "symbol": "qemu.svg",
+        "server": "local",
+        "linked_base": True
+    })
+    assert a.data["linked_clone"]
+    assert "linked_base" not in a.data

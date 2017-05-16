@@ -35,6 +35,8 @@ class Appliance:
         else:
             self._id = appliance_id
         self._data = data
+        if "linked_base" in data:
+            self._data["linked_clone"] = data.pop("linked_base")
         self._builtin = builtin
 
     @property
