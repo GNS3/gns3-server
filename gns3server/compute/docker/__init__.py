@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 
 
 DOCKER_MINIMUM_API_VERSION = "1.25"
+DOCKER_MINIMUM_VERSION = "1.9"
 
 
 class Docker(BaseManager):
@@ -60,7 +61,7 @@ class Docker(BaseManager):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
+                raise DockerError("Docker version is {}. GNS3 requires a minimum version of {}".format(version["Version"], DOCKER_MINIMUM_VERSION))
 
     def connector(self):
         if self._connector is None or self._connector.closed:
