@@ -98,7 +98,8 @@ class Node:
                         log.critical("Can't set attribute %s", prop)
                         raise e
                 else:
-                    self.properties[prop] = kwargs[prop]
+                    if prop not in self.CONTROLLER_ONLY_PROPERTIES and kwargs[prop] is not None and kwargs[prop] != "":
+                        self.properties[prop] = kwargs[prop]
 
         if self._symbol is None:
             self.symbol = ":/symbols/computer.svg"

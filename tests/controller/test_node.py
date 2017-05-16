@@ -83,7 +83,7 @@ def test_name(compute, project):
 
 def test_vmname(compute, project):
     """
-    Additionnal properties should add to the properties
+    Additionnal properties should be add to the properties
     field
     """
     node = Node(project, compute, "PC",
@@ -91,6 +91,23 @@ def test_vmname(compute, project):
                 node_type="virtualbox",
                 vmname="test")
     assert node.properties["vmname"] == "test"
+
+
+def test_empty_properties(compute, project):
+    """
+    Empty properties need to be ignored
+    """
+    node = Node(project, compute, "PC",
+                node_id=str(uuid.uuid4()),
+                node_type="virtualbox",
+                aa="",
+                bb=None,
+                category=2,
+                cc="xx")
+    assert "aa" not in node.properties
+    assert "bb" not in node.properties
+    assert "cc" in node.properties
+    assert "category" not in node.properties  # Controller only
 
 
 def test_eq(compute, project, node, controller):
