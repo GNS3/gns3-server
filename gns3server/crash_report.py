@@ -45,7 +45,10 @@ if __version_info__[3] != 0:
     # Display a traceback in case of segfault crash. Usefull when frozen
     # Not enabled by default for security reason
     log.info("Enable catching segfault")
-    faulthandler.enable()
+    try:
+        faulthandler.enable()
+    except Exception:
+        pass  # Could fail when loaded into tests
 
 
 class CrashReport:

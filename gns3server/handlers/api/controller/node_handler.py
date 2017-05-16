@@ -351,8 +351,7 @@ class NodeHandler:
         response.set_status(200)
         response.content_type = "application/octet-stream"
         response.enable_chunked_encoding()
-        response.content_length = None
-        response.start(request)
+        yield from response.prepare(request)
 
         response.write(res.body)
         yield from response.write_eof()

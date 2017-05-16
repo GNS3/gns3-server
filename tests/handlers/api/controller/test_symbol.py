@@ -35,7 +35,6 @@ def test_symbols(http_controller):
 def test_get(http_controller):
     response = http_controller.get('/symbols/' + urllib.parse.quote(':/symbols/firewall.svg') + '/raw')
     assert response.status == 200
-    assert response.headers['CONTENT-LENGTH'] == '9381'
     assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
     assert '</svg>' in response.html
 

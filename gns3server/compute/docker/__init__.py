@@ -56,7 +56,7 @@ class Docker(BaseManager):
                 self._connected = True
                 connector = self.connector()
                 version = yield from self.query("GET", "version")
-            except (aiohttp.errors.ClientOSError, FileNotFoundError):
+            except (aiohttp.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
@@ -68,7 +68,7 @@ class Docker(BaseManager):
                 raise DockerError("Docker is supported only on Linux")
             try:
                 self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2, limit=None)
-            except (aiohttp.errors.ClientOSError, FileNotFoundError):
+            except (aiohttp.ClientOSError, FileNotFoundError):
                 raise DockerError("Can't connect to docker daemon")
         return self._connector
 
@@ -77,7 +77,7 @@ class Docker(BaseManager):
         yield from super().unload()
         if self._connected:
             if self._connector and not self._connector.closed:
-                yield from self._connector.close()
+                self._connector.close()
 
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
@@ -191,7 +191,7 @@ class Docker(BaseManager):
         while True:
             try:
                 chunk = yield from response.content.read(1024)
-            except aiohttp.errors.ServerDisconnectedError:
+            except aiohttp.ServerDisconnectedError:
                 break
             if not chunk:
                 break

@@ -129,19 +129,18 @@ def test_load_project(http_controller, project, config):
         assert response.json["project_id"] == project.id
 
 
-def test_notification(http_controller, project, controller, loop):
+def test_notification(http_controller, project, controller, loop, async_run):
     @asyncio.coroutine
-    def go(future):
-        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)))
+    def go():
+        connector = aiohttp.TCPConnector()
+        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
         response.body = yield from response.content.read(200)
         controller.notification.emit("node.created", {"a": "b"})
-        response.body += yield from response.content.read(50)
+        response.body += yield from response.content.readany()
         response.close()
-        future.set_result(response)
+        return response
 
-    future = asyncio.Future()
-    asyncio.async(go(future))
-    response = loop.run_until_complete(future)
+    response = async_run(asyncio.async(go()))
     assert response.status == 200
     assert b'"action": "ping"' in response.body
     assert b'"cpu_usage_percent"' in response.body

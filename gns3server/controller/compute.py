@@ -421,15 +421,15 @@ class Compute:
         """
         try:
             self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
-        except (aiohttp.errors.WSServerHandshakeError, aiohttp.errors.ClientResponseError):
+        except (aiohttp.WSServerHandshakeError, aiohttp.ClientResponseError):
             self._ws = None
         while self._ws is not None:
             try:
                 response = yield from self._ws.receive()
-            except aiohttp.errors.WSServerHandshakeError:
+            except aiohttp.WSServerHandshakeError:
                 self._ws = None
                 break
-            if response.tp == aiohttp.MsgType.closed or response.tp == aiohttp.MsgType.error or response.data is None:
+            if response.tp == aiohttp.WSMsgType.closed or response.tp == aiohttp.WSMsgType.error or response.data is None:
                 self._connected = False
                 break
             msg = json.loads(response.data)
@@ -474,7 +474,7 @@ class Compute:
             url = self._getUrl(path)
             headers = {}
             headers['content-type'] = 'application/json'
-            chunked = False
+            chunked = None
             if data == {}:
                 data = None
             elif data is not None:
@@ -500,12 +500,12 @@ class Compute:
 
                     data = send_data(data)
                 else:
-                    data = json.dumps(data)
+                    data = json.dumps(data).encode("utf-8")
         try:
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.errors.ClientOSError, aiohttp.errors.ClientRequestError, aiohttp.errors.ServerDisconnectedError, aiohttp.ClientResponseError, ValueError) as e:
+        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError) as e:
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:
@@ -581,7 +581,7 @@ class Compute:
         """
         try:
             res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
-        except aiohttp.errors.DisconnectedError:
+        except aiohttp.ServerDisconnectedError:
             raise aiohttp.web.HTTPGatewayTimeout()
         return res.json
 

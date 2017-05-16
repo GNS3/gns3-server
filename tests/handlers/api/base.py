@@ -85,26 +85,16 @@ class Query:
             - example if True the session is included inside documentation
             - raw do not JSON encode the query
         """
+        return self._loop.run_until_complete(asyncio.async(self._async_fetch(method, path, body=body, **kwargs)))
+
+    @asyncio.coroutine
+    def _async_fetch(self, method, path, body=None, **kwargs):
         if body is not None and not kwargs.get("raw", False):
             body = json.dumps(body)
 
-        @asyncio.coroutine
-        def go_request(future):
-            response = yield from aiohttp.request(method, self.get_url(path), data=body)
-            future.set_result(response)
-        future = asyncio.Future()
-        asyncio.async(go_request(future))
-        self._loop.run_until_complete(future)
-        response = future.result()
-
-        @asyncio.coroutine
-        def go_read(future, response):
-            response = yield from response.read()
-            future.set_result(response)
-        future = asyncio.Future()
-        asyncio.async(go_read(future, response))
-        self._loop.run_until_complete(future)
-        response.body = future.result()
+        connector = aiohttp.TCPConnector()
+        response = yield from aiohttp.request(method, self.get_url(path), data=body, loop=self._loop, connector=connector)
+        response.body = yield from response.read()
         x_route = response.headers.get('X-Route', None)
         if x_route is not None:
             response.route = x_route.replace("/v{}".format(self._api_version), "")

@@ -220,16 +220,11 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
-                except aiohttp.ClientDisconnectedError:
-                    log.warn("Client disconnected")
+                except aiohttp.ClientError:
+                    log.warn("Client error")
                     response = Response(request=request, route=route)
                     response.set_status(408)
-                    response.json({"message": "Client disconnected", "status": 408})
-                except ConnectionResetError:
-                    log.error("Client connection reset")
-                    response = Response(request=request, route=route)
-                    response.set_status(408)
-                    response.json({"message": "Connection reset", "status": 408})
+                    response.json({"message": "Client error", "status": 408})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
