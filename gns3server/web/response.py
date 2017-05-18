@@ -120,7 +120,7 @@ class Response(aiohttp.web.Response):
 
         st = os.stat(path)
         self.last_modified = st.st_mtime
-        self.enable_chunked_encoding()
+        self.headers[aiohttp.hdrs.CONTENT_LENGTH] = str(st.st_size)
 
         with open(path, 'rb') as fobj:
             yield from self.prepare(self._request)
