@@ -40,6 +40,8 @@ class Appliance:
         # and the server linked_clone
         if "linked_base" in data:
             self._data["linked_clone"] = data.pop("linked_base")
+        if data["node_type"] == "iou" and "image" in data:
+            del self._data["image"]
         self._builtin = builtin
 
     @property
