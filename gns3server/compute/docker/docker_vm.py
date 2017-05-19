@@ -213,7 +213,7 @@ class DockerVM(BaseNode):
 
         self._volumes = ["/etc/network"]
 
-        volumes = image_infos.get("ContainerConfig", {}).get("Volumes")
+        volumes = image_infos.get("Config", {}).get("Volumes")
         if volumes is None:
             return binds
         for volume in volumes.keys():
