@@ -289,6 +289,10 @@ def _convert_1_3_later(topo, topo_path):
 
         node["properties"] = {}
 
+        # Some old dynamips node don't have type
+        if "type" not in old_node:
+            old_node["type"] = old_node["properties"]["platform"].upper()
+
         if old_node["type"] == "VPCSDevice":
             node["node_type"] = "vpcs"
         elif old_node["type"] == "QemuVM":
@@ -316,7 +320,7 @@ def _convert_1_3_later(topo, topo_path):
             node["symbol"] = ":/symbols/ethernet_switch.svg"
             node["console_type"] = None
             node["properties"]["ports_mapping"] = []
-            for port in old_node["ports"]:
+            for port in old_node.get("ports", []):
                 node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"] - 1),
                     "port_number": port["port_number"] - 1,
