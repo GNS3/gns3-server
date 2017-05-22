@@ -16,8 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import aiohttp.errors
-
+import aiohttp
 from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.compute.notification_manager import NotificationManager
@@ -30,7 +29,7 @@ def process_websocket(ws):
     """
     try:
         yield from ws.receive()
-    except aiohttp.errors.WSServerHandshakeError:
+    except aiohttp.WSServerHandshakeError:
         pass
 
 

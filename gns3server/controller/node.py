@@ -457,7 +457,7 @@ class Node:
         try:
             yield from self.post("/stop", timeout=240, dont_connect=True)
         # We don't care if a node is down at this step
-        except (ComputeError, aiohttp.errors.ClientHttpProcessingError, aiohttp.web.HTTPError):
+        except (ComputeError, aiohttp.ClientError, aiohttp.web.HTTPError):
             pass
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when stopping {}".format(self._name))

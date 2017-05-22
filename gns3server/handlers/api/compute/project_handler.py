@@ -157,7 +157,6 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
 
         response.start(request)
         queue = project.get_listen_queue()
@@ -240,11 +239,10 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
 
         try:
             with open(path, "rb") as f:
-                response.start(request)
+                yield from response.prepare(request)
                 while True:
                     data = f.read(4096)
                     if not data:
@@ -274,7 +272,7 @@ class ProjectHandler:
         path = request.match_info["path"]
         path = os.path.normpath(path)
 
-        # Raise an error if user try to escape
+        # Raise an error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
         path = os.path.join(project.path, path)
@@ -283,11 +281,10 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
 
         try:
             with open(path, "rb") as f:
-                response.start(request)
+                yield from response.prepare(request)
                 while True:
                     data = f.read(4096)
                     if not data:
@@ -358,8 +355,7 @@ class ProjectHandler:
         response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
-        response.start(request)
+        yield from response.prepare(request)
 
         include_images = bool(int(request.json.get("include_images", "0")))
         for data in project.export(include_images=include_images):

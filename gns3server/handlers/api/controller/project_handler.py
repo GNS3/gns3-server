@@ -17,7 +17,6 @@
 
 import os
 import aiohttp
-import aiohttp.errors
 import asyncio
 import tempfile
 
@@ -47,7 +46,7 @@ def process_websocket(ws):
     """
     try:
         yield from ws.receive()
-    except aiohttp.errors.WSServerHandshakeError:
+    except aiohttp.WSServerHandshakeError:
         pass
 
 
@@ -212,9 +211,8 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
 
-        response.start(request)
+        yield from response.prepare(request)
         with controller.notification.queue(project) as queue:
             while True:
                 try:
@@ -295,8 +293,7 @@ class ProjectHandler:
                 response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
                 response.enable_chunked_encoding()
                 # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-                response.content_length = None
-                response.start(request)
+                yield from response.prepare(request)
 
                 for data in datas:
                     response.write(data)
@@ -408,11 +405,10 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        response.content_length = None
 
         try:
             with open(path, "rb") as f:
-                response.start(request)
+                yield from response.prepare(request)
                 while True:
                     data = f.read(4096)
                     if not data:

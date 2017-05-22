@@ -179,8 +179,7 @@ class LinkHandler:
                 response.set_status(200)
                 response.enable_chunked_encoding()
                 # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-                response.content_length = None
-                response.start(request)
+                yield from response.prepare(request)
 
                 while True:
                     chunk = f.read(4096)

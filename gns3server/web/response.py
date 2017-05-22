@@ -120,10 +120,10 @@ class Response(aiohttp.web.Response):
 
         st = os.stat(path)
         self.last_modified = st.st_mtime
-        self.content_length = st.st_size
+        self.headers[aiohttp.hdrs.CONTENT_LENGTH] = str(st.st_size)
 
         with open(path, 'rb') as fobj:
-            self.start(self._request)
+            yield from self.prepare(self._request)
             chunk_size = 4096
             chunk = fobj.read(chunk_size)
             while chunk:

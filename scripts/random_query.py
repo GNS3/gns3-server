@@ -227,7 +227,7 @@ async def main(loop):
             try:
                 j = await error.response.json()
                 die("%s %s invalid status %d:\n%s", error.method, error.path, error.response.status, json.dumps(j, indent=4))
-            except (ValueError, aiohttp.errors.ServerDisconnectedError):
+            except (ValueError, aiohttp.ServerDisconnectedError):
                 die("%s %s invalid status %d", error.method, error.path, error.response.status)
 
 

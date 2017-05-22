@@ -500,7 +500,7 @@ class DockerVM(BaseNode):
 
         while True:
             msg = yield from ws.receive()
-            if msg.tp == aiohttp.MsgType.text:
+            if msg.tp == aiohttp.WSMsgType.text:
                 out.feed_data(msg.data.encode())
             else:
                 out.feed_eof()
