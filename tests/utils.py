@@ -18,6 +18,7 @@
 import io
 import asyncio
 import unittest.mock
+import collections.abc
 
 
 class _asyncio_patch:
@@ -69,6 +70,7 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
     """
     Magic mock returning coroutine
     """
+    __class__ = collections.abc.Awaitable
 
     def __init__(self, return_value=None, return_values=None, **kwargs):
         """
