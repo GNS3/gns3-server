@@ -400,7 +400,7 @@ def _convert_1_3_later(topo, topo_path):
             raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
 
         for prop in old_node.get("properties", {}):
-            if prop not in ["console", "name", "console_type", "use_ubridge"]:
+            if prop not in ["console", "name", "console_type", "console_host", "use_ubridge"]:
                 node["properties"][prop] = old_node["properties"][prop]
 
         node_id_to_node_uuid[old_node["id"]] = node["node_id"]
