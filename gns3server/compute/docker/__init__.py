@@ -33,8 +33,9 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Err
 log = logging.getLogger(__name__)
 
 
+# Be carefull to keep it consistent
 DOCKER_MINIMUM_API_VERSION = "1.25"
-DOCKER_MINIMUM_VERSION = "1.9"
+DOCKER_MINIMUM_VERSION = "1.13"
 
 
 class Docker(BaseManager):
