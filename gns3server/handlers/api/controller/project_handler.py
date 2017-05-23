@@ -23,7 +23,6 @@ import tempfile
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
-from gns3server.controller.project import Project
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
 from gns3server.config import Config
