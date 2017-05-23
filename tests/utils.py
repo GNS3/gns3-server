@@ -70,7 +70,10 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
     """
     Magic mock returning coroutine
     """
-    __class__ = types.CoroutineType
+    try:
+        __class__ = types.CoroutineType
+    except AttributeError:  # Not supported with Python 3.4
+        __class__ = types.GeneratorType
 
     def __init__(self, return_value=None, return_values=None, **kwargs):
         """
