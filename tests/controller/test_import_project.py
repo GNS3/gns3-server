@@ -35,6 +35,8 @@ def test_import_project(async_run, tmpdir, controller):
     topology = {
         "project_id": str(uuid.uuid4()),
         "name": "test",
+        "auto_open": True,
+        "auto_start": True,
         "topology": {
         },
         "version": "2.0.0"
@@ -67,6 +69,8 @@ def test_import_project(async_run, tmpdir, controller):
     # A new project name is generated when you import twice the same name
     with open(zip_path, "rb") as f:
         project = async_run(import_project(controller, str(uuid.uuid4()), f))
+    assert project.auto_open is False
+    assert project.auto_start is False
     assert project.name != "test"
 
 
