@@ -361,7 +361,7 @@ class DockerVM(BaseNode):
                     try:
                         yield from self._add_ubridge_connection(nio, adapter_number)
                     except UbridgeNamespaceError:
-                        log.error("Container {} failed to start", self.name)
+                        log.error("Container %s failed to start", self.name)
                         yield from self.stop()
 
                         # The container can crash soon after the start, this means we can not move the interface to the container namespace
