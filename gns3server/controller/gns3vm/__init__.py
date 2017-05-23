@@ -250,7 +250,7 @@ class GNS3VM:
                                                             force=True)
                 except aiohttp.web.HTTPConflict:
                     pass
-                log.error("Can't start the GNS3 VM: {}", str(e))
+                log.error("Can't start the GNS3 VM: %s", str(e))
 
     @asyncio.coroutine
     def exit_vm(self):
