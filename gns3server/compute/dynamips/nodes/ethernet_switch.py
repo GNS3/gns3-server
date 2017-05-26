@@ -22,6 +22,8 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 
 import asyncio
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
+
 
 from .device import Device
 from ..nios.nio_udp import NIOUDP
@@ -30,6 +32,36 @@ from ...error import NodeError
 
 import logging
 log = logging.getLogger(__name__)
+
+
+class EthernetSwitchConsole(EmbedShell):
+    """
+    Console for the ethernet switch
+    """
+
+    def __init__(self, node):
+        super().__init__(welcome_message="Welcome to GNS3 builtin ethernet switch.\n\nType help to get help\n")
+        self._node = node
+
+    @asyncio.coroutine
+    def arp(self):
+        """
+        Show arp table
+        """
+        res = 'Mac                VLAN\n'
+        result = (yield from self._node._hypervisor.send('ethsw show_mac_addr_table {}'.format(self._node.name)))
+        for line in result:
+            mac, vlan, _ = line.replace('  ', ' ').split(' ')
+            mac = mac.replace('.', '')
+            mac = "{}:{}:{}:{}:{}:{}".format(
+                mac[0:2],
+                mac[2:4],
+                mac[4:6],
+                mac[6:8],
+                mac[8:10],
+                mac[10:12])
+            res += mac + '  ' + vlan + '\n'
+        return res
 
 
 class EthernetSwitch(Device):
@@ -50,6 +82,9 @@ class EthernetSwitch(Device):
         super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
         self._mappings = {}
+        self._telnet_console = None
+        self._telnet_shell = None
+        self._console = self._manager.port_manager.get_free_tcp_port(self._project)
         if ports is None:
             # create 8 ports by default
             self._ports = []
@@ -61,14 +96,28 @@ class EthernetSwitch(Device):
         else:
             self._ports = ports
 
+    @property
+    def console(self):
+        return self._console
+
     def __json__(self):
 
         ethernet_switch_info = {"name": self.name,
+                                "console": self.console,
+                                "console_type": "telnet",
                                 "node_id": self.id,
                                 "project_id": self.project.id,
                                 "ports_mapping": self._ports,
                                 "status": "started"}
         return ethernet_switch_info
+
+    @property
+    def console(self):
+        return self._console
+
+    @console.setter
+    def console(self, val):
+        self._console = val
 
     @property
     def ports_mapping(self):
@@ -115,6 +164,12 @@ class EthernetSwitch(Device):
 
         yield from self._hypervisor.send('ethsw create "{}"'.format(self._name))
         log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+
+        self._telnet_shell = EthernetSwitchConsole(self)
+        self._telnet_shell.prompt = self._name + '> '
+        telnet = create_telnet_shell(self._telnet_shell)
+        self._telnet_server = (yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console))
+
         self._hypervisor.devices.append(self)
 
     @asyncio.coroutine
@@ -164,7 +219,7 @@ class EthernetSwitch(Device):
         for nio in self._nios.values():
             if nio and isinstance(nio, NIOUDP):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
-
+        self.manager.port_manager.release_tcp_port(self._console, self._project)
         if self._hypervisor:
             try:
                 yield from self._hypervisor.send('ethsw delete "{}"'.format(self._name))
