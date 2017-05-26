@@ -67,7 +67,7 @@ class Docker(BaseManager):
             if not sys.platform.startswith("linux"):
                 raise DockerError("Docker is supported only on Linux")
             try:
-                self._connector = aiohttp.connector.UnixConnector(self._server_url, conn_timeout=2, limit=None)
+                self._connector = aiohttp.connector.UnixConnector(self._server_url, limit=None)
             except (aiohttp.ClientOSError, FileNotFoundError):
                 raise DockerError("Can't connect to docker daemon")
         return self._connector
