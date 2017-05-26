@@ -163,6 +163,10 @@ then
   useradd -d /opt/gns3/ -m gns3
 fi
 
+
+log "Add GNS3 to the ubridge group"
+usermod -aG ubridge gns3
+
 log "Install docker"
 if [ ! -f "/usr/bin/docker" ]
 then
