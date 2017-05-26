@@ -152,7 +152,7 @@ log "Update system packages"
 apt-get update
 
 log "Upgrade packages"
-apt-get upgrade -y
+apt-get upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 log " Install GNS3 packages"
 apt-get install -y gns3-server
