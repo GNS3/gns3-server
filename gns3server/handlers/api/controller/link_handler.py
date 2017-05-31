@@ -178,7 +178,6 @@ class LinkHandler:
                 response.content_type = "application/vnd.tcpdump.pcap"
                 response.set_status(200)
                 response.enable_chunked_encoding()
-                # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
                 yield from response.prepare(request)
 
                 while True:

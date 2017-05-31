@@ -44,6 +44,11 @@ class Response(aiohttp.web.Response):
         headers['Server'] = "Python/{0[0]}.{0[1]} GNS3/{1}".format(sys.version_info, __version__)
         super().__init__(headers=headers, **kwargs)
 
+    def enable_chunked_encoding():
+        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
+        response.content_length = None
+        super().enable_chunked_encoding()
+
     @asyncio.coroutine
     def prepare(self, request):
         if log.getEffectiveLevel() == logging.DEBUG:

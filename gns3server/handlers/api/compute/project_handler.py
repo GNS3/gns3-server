@@ -156,7 +156,6 @@ class ProjectHandler:
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
 
         response.start(request)
         queue = project.get_listen_queue()
@@ -238,7 +237,6 @@ class ProjectHandler:
         response.content_type = "application/octet-stream"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
 
         try:
             with open(path, "rb") as f:
@@ -280,7 +278,6 @@ class ProjectHandler:
         response.content_type = "application/octet-stream"
         response.set_status(200)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
 
         try:
             with open(path, "rb") as f:
@@ -354,7 +351,6 @@ class ProjectHandler:
         response.content_type = 'application/gns3project'
         response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
         response.enable_chunked_encoding()
-        # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
         yield from response.prepare(request)
 
         include_images = bool(int(request.json.get("include_images", "0")))
