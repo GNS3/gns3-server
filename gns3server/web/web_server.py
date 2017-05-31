@@ -44,7 +44,7 @@ import logging
 log = logging.getLogger(__name__)
 
 if not aiohttp.__version__.startswith("1.3"):
-    raise RuntimeError("You need aiohttp 13 for running GNS3")
+    raise RuntimeError("You need aiohttp 1.3 for running GNS3")
 
 
 class WebServer:
