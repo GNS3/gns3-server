@@ -33,7 +33,7 @@ VM_CREATE_SCHEMA = {
         },
         "dynamips_id": {
             "description": "Dynamips ID",
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "name": {
             "description": "Dynamips VM instance name",

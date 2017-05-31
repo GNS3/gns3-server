@@ -250,7 +250,7 @@ class GNS3VM:
                                                             force=True)
                 except aiohttp.web.HTTPConflict:
                     pass
-                log.error("Can't start the GNS3 VM: {}", str(e))
+                log.error("Can't start the GNS3 VM: %s", str(e))
 
     @asyncio.coroutine
     def exit_vm(self):
@@ -287,7 +287,7 @@ class GNS3VM:
                 yield from engine.start()
             except Exception as e:
                 yield from self._controller.delete_compute("vm")
-                log.error("Can't start the GNS3 VM: {}", str(e))
+                log.error("Can't start the GNS3 VM: {}".format(str(e)))
                 yield from compute.update(name="GNS3 VM ({})".format(engine.vmname))
                 raise e
             yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),

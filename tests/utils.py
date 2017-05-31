@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
+import types
 import asyncio
 import unittest.mock
 
@@ -69,6 +70,10 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
     """
     Magic mock returning coroutine
     """
+    try:
+        __class__ = types.CoroutineType
+    except AttributeError:  # Not supported with Python 3.4
+        __class__ = types.GeneratorType
 
     def __init__(self, return_value=None, return_values=None, **kwargs):
         """

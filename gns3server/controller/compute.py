@@ -580,8 +580,10 @@ class Compute:
         Forward a call to the emulator on compute
         """
         try:
-            res = yield from self.http_query(method, "/{}/{}".format(type, path), data=data, timeout=None)
+            action = "/{}/{}".format(type, path)
+            res = yield from self.http_query(method, action, data=data, timeout=None)
         except aiohttp.ServerDisconnectedError:
+            log.error("Connection lost to %s during %s %s", self._id, method, action)
             raise aiohttp.web.HTTPGatewayTimeout()
         return res.json
 

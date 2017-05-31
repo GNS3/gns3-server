@@ -321,6 +321,10 @@ def _convert_1_3_later(topo, topo_path):
 
         node["properties"] = {}
 
+        # Some old dynamips node don't have type
+        if "type" not in old_node:
+            old_node["type"] = old_node["properties"]["platform"].upper()
+
         if old_node["type"] == "VPCSDevice":
             node["node_type"] = "vpcs"
         elif old_node["type"] == "QemuVM":
@@ -348,7 +352,7 @@ def _convert_1_3_later(topo, topo_path):
             node["symbol"] = ":/symbols/ethernet_switch.svg"
             node["console_type"] = None
             node["properties"]["ports_mapping"] = []
-            for port in old_node["ports"]:
+            for port in old_node.get("ports", []):
                 node["properties"]["ports_mapping"].append({
                     "name": "Ethernet{}".format(port["port_number"] - 1),
                     "port_number": port["port_number"] - 1,
@@ -359,12 +363,12 @@ def _convert_1_3_later(topo, topo_path):
             node["node_type"] = "frame_relay_switch"
             node["symbol"] = ":/symbols/frame_relay_switch.svg"
             node["console_type"] = None
-        elif old_node["type"] in ["C1700", "C2600", "C2691", "C3600", "C3620", "C3640", "C3660", "C3725", "C3745", "C7200", "EtherSwitchRouter"]:
+        elif old_node["type"].upper() in ["C1700", "C2600", "C2691", "C3600", "C3620", "C3640", "C3660", "C3725", "C3745", "C7200", "EtherSwitchRouter"]:
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/router.svg"
             node["node_type"] = "dynamips"
             node["properties"]["dynamips_id"] = old_node.get("dynamips_id")
-            if "platform" not in node["properties"] and old_node["type"].startswith("C"):
+            if "platform" not in node["properties"] and old_node["type"].upper().startswith("C"):
                 node["properties"]["platform"] = old_node["type"].lower()
                 if node["properties"]["platform"].startswith("c36"):
                     node["properties"]["platform"] = "c3600"
