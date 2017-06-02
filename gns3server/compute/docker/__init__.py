@@ -167,7 +167,6 @@ class Docker(BaseManager):
 
         url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         connection = yield from self._session.ws_connect(url,
-                                                         connector=self.connector(),
                                                          origin="http://docker",
                                                          autoping=True)
         return connection
