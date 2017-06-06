@@ -6,6 +6,7 @@ python:
 sudo: false
 cache: pip
 install:
+- pip install -U setuptools pip
 - python setup.py install
 - pip install -rdev-requirements.txt
 script:

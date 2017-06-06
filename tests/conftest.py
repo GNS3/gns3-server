@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import gc
 import pytest
 import socket
 import asyncio
@@ -228,6 +228,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
         shutil.rmtree(tmppath)
     except:
         pass
+    gc.collect()
 
 
 @pytest.fixture
