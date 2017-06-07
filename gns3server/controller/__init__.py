@@ -155,7 +155,7 @@ class Controller:
                                                              password=server_config.get("password", ""),
                                                              force=True)
         except aiohttp.web_exceptions.HTTPConflict as e:
-            log.fatal("Can't acces to the local server, make sure anything else is not running on the same port")
+            log.fatal("Can't access to the local server, make sure anything else is not running on the same port")
             sys.exit(1)
         for c in computes:
             try:
@@ -250,7 +250,7 @@ class Controller:
             self.gns3vm.settings = data["gns3vm"]
 
         self.load_appliances()
-        return data["computes"]
+        return data.get("computes", [])
 
     @asyncio.coroutine
     def load_projects(self):
