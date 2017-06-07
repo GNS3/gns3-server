@@ -178,6 +178,26 @@ def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
                 assert not process.called
 
 
+def test_create_image_with_not_supported_characters_by_filesystem(loop, tmpdir, fake_qemu_img_binary):
+    open(str(tmpdir / "hda.qcow2"), "w+").close()
+
+    options = {
+        "format": "raw",
+        "size": 100
+    }
+
+    # patching os.makedirs is necessary as it depends on already mocked os.path.exists
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process, \
+        patch("gns3server.compute.qemu.Qemu.get_images_directory", return_value=str(tmpdir)), \
+        patch("os.path.exists", side_effect=UnicodeEncodeError('error', u"", 1, 2, 'Emulated Unicode Err')),\
+        patch("os.makedirs"):
+
+        with pytest.raises(QemuError):
+            loop.run_until_complete(asyncio.async(Qemu.instance().create_disk(
+                fake_qemu_img_binary, "hda.qcow2", options)))
+            assert not process.called
+
+
 def test_get_kvm_archs_kvm_ok(loop):
 
     with patch("os.path.exists", return_value=True):

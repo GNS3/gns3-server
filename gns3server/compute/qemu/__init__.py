@@ -247,8 +247,13 @@ class Qemu(BaseManager):
                 directory = self.get_images_directory()
                 os.makedirs(directory, exist_ok=True)
                 path = os.path.join(directory, os.path.basename(path))
-            if os.path.exists(path):
-                raise QemuError("Could not create disk image {} already exist".format(path))
+
+            try:
+                if os.path.exists(path):
+                    raise QemuError("Could not create disk image {} already exist".format(path))
+            except UnicodeEncodeError:
+                raise QemuError("Could not create disk image {}, "
+                                "path contains characters not supported by filesystem".format(path))
 
             command = [qemu_img, "create", "-f", img_format]
             for option in sorted(options.keys()):
