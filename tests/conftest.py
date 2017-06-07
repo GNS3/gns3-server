@@ -228,7 +228,6 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
         shutil.rmtree(tmppath)
     except:
         pass
-    gc.collect()
 
 
 @pytest.fixture
