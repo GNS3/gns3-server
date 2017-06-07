@@ -27,13 +27,12 @@ from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, AsyncioBytesIO
 
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute
 from gns3server.controller.export_project import export_project, _filter_files
 
 
 @pytest.fixture
 def project(controller):
-    p = Project(controller=controller, name="Test")
+    p = Project(controller=controller, name="test")
     p.dump = MagicMock()
     return p
 
@@ -179,7 +178,7 @@ def test_export_disallow_running(tmpdir, project, node, async_run):
 
     node._status = "started"
     with pytest.raises(aiohttp.web.HTTPConflict):
-        z = async_run(export_project(project, str(tmpdir)))
+        async_run(export_project(project, str(tmpdir)))
 
 
 def test_export_disallow_some_type(tmpdir, project, async_run):

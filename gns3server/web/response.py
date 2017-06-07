@@ -46,7 +46,8 @@ class Response(aiohttp.web.Response):
 
     def enable_chunked_encoding(self):
         # Very important: do not send a content length otherwise QT closes the connection (curl can consume the feed)
-        self.content_length = None
+        if self.content_length:
+            self.content_length = None
         super().enable_chunked_encoding()
 
     @asyncio.coroutine

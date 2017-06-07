@@ -24,7 +24,6 @@ import asyncio
 import zipfile
 import aiohttp
 
-from ..config import Config
 from .topology import load_topology
 
 
@@ -74,7 +73,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
                 path = location
             else:
                 projects_path = controller.projects_directory()
-                path = os.path.join(projects_path, project_name)
+                path = os.path.join(projects_path, project_id)
             try:
                 os.makedirs(path, exist_ok=True)
             except UnicodeEncodeError as e:

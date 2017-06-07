@@ -33,7 +33,9 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Err
 log = logging.getLogger(__name__)
 
 
+# Be carefull to keep it consistent
 DOCKER_MINIMUM_API_VERSION = "1.25"
+DOCKER_MINIMUM_VERSION = "1.13"
 
 
 class Docker(BaseManager):
@@ -60,7 +62,7 @@ class Docker(BaseManager):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
             if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError("Docker API version is {}. GNS3 requires a minimum API version of {}".format(version["ApiVersion"], DOCKER_MINIMUM_API_VERSION))
+                raise DockerError("Docker version is {}. GNS3 requires a minimum version of {}".format(version["Version"], DOCKER_MINIMUM_VERSION))
 
     def connector(self):
         if self._connector is None or self._connector.closed:
@@ -113,11 +115,13 @@ class Docker(BaseManager):
         :returns: HTTP response
         """
         data = json.dumps(data)
-        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
-
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
+        if path == 'version':
+            url = "http://docker/v1.12/" + path         # API of docker v1.0
+        else:
+            url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         try:
             if path != "version":  # version is use by check connection
                 yield from self._check_connection()
@@ -162,10 +166,9 @@ class Docker(BaseManager):
         """
 
         url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
-        connection = yield from aiohttp.ws_connect(url,
-                                                   connector=self.connector(),
-                                                   origin="http://docker",
-                                                   autoping=True)
+        connection = yield from self._session.ws_connect(url,
+                                                         origin="http://docker",
+                                                         autoping=True)
         return connection
 
     @locked_coroutine

@@ -1,5 +1,18 @@
 # Change Log
 
+## 2.0.2 30/05/2017
+
+* Set correct permission on ubridge when doing a remote installation
+* Remote install script should be totally non interactive
+* Duplicate project on remote server use UUID
+* Fix import of some old topologies from 1.3
+* Fix error in logging of error during starting GNS3 VM
+* Fix an error when logging Docker container fail to start
+* Use docker version in error message of outdated docker installation
+* Support images created by "docker commit". Fixes #1039
+* Do not wait auto start to finish in order to complete project opening
+* Improve logging for remote server connection lost
+
 ## 2.0.1 16/05/2017
 
 * Handle HTTP 504 errors from compute node

@@ -152,7 +152,7 @@ log "Update system packages"
 apt-get update
 
 log "Upgrade packages"
-apt-get upgrade -y
+apt-get upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 log " Install GNS3 packages"
 apt-get install -y gns3-server
@@ -162,6 +162,10 @@ if [ ! -d "/opt/gns3/" ]
 then
   useradd -d /opt/gns3/ -m gns3
 fi
+
+
+log "Add GNS3 to the ubridge group"
+usermod -aG ubridge gns3
 
 log "Install docker"
 if [ ! -f "/usr/bin/docker" ]

@@ -840,7 +840,7 @@ def test_get_image_informations(project, manager, loop):
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_mount_binds(vm, tmpdir):
     image_infos = {
-        "ContainerConfig": {
+        "Config": {
             "Volumes": {
                 "/test/experimental": {}
             }
