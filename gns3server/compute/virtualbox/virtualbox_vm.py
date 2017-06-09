@@ -209,7 +209,12 @@ class VirtualBoxVM(BaseNode):
         Fix the VM uuid in the case of linked clone
         """
         if os.path.exists(self._linked_vbox_file()):
-            tree = ET.parse(self._linked_vbox_file())
+            try:
+                tree = ET.parse(self._linked_vbox_file())
+            except ET.ParseError:
+                raise VirtualBoxError("Cannot modify VirtualBox linked nodes file. "
+                                      "File {} is corrupted.".format(self._linked_vbox_file()))
+
             machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
             if machine is not None and machine.get("uuid") != "{" + self.id + "}":
 
