@@ -488,3 +488,16 @@ def test_load_appliances(controller):
     controller.load_appliances()
     assert "Test" in [appliance.name for appliance in controller.appliances.values()]
     assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
+
+    # UUID should not change when you run again the function
+    for appliance in controller.appliances.values():
+        if appliance.name == "Test":
+            qemu_uuid = appliance.id
+        elif appliance.name == "Cloud":
+            cloud_uuid = appliance.id
+    controller.load_appliances()
+    for appliance in controller.appliances.values():
+        if appliance.name == "Test":
+            assert qemu_uuid == appliance.id
+        elif appliance.name == "Cloud":
+            assert cloud_uuid == appliance.id

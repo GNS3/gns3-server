@@ -67,61 +67,60 @@ class Controller:
     def load_appliances(self):
         self._appliance_templates = {}
         for file in os.listdir(get_resource('appliances')):
-            with open(os.path.join(get_resource('appliances'), file), 'r', encoding='utf-8') as f:
-                appliance = ApplianceTemplate(None, json.load(f))
+            path = os.path.join(get_resource('appliances'), file)
+            appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate the UUID from path to avoid change between reboots
+            with open(path, 'r', encoding='utf-8') as f:
+                appliance = ApplianceTemplate(appliance_id, json.load(f))
             if appliance.status != 'broken':
                 self._appliance_templates[appliance.id] = appliance
 
         self._appliances = {}
+        vms = []
         for vm in self._settings.get("Qemu", {}).get("vms", []):
             vm["node_type"] = "qemu"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("IOU", {}).get("devices", []):
             vm["node_type"] = "iou"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("Docker", {}).get("containers", []):
             vm["node_type"] = "docker"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("Builtin", {}).get("cloud_nodes", []):
             vm["node_type"] = "cloud"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("Builtin", {}).get("ethernet_switches", []):
             vm["node_type"] = "ethernet_switch"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("Builtin", {}).get("ethernet_hubs", []):
             vm["node_type"] = "ethernet_hub"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("Dynamips", {}).get("routers", []):
             vm["node_type"] = "dynamips"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("VMware", {}).get("vms", []):
             vm["node_type"] = "vmware"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("VirtualBox", {}).get("vms", []):
             vm["node_type"] = "virtualbox"
-            appliance = Appliance(None, vm)
-            self._appliances[appliance.id] = appliance
+            vms.append(vm)
         for vm in self._settings.get("VPCS", {}).get("nodes", []):
             vm["node_type"] = "vpcs"
-            appliance = Appliance(None, vm)
+            vms.append(vm)
+
+        for vm in vms:
+            vm.setdefault("appliance_id", str(uuid.uuid4()))
+            appliance = Appliance(vm["appliance_id"], vm)
             self._appliances[appliance.id] = appliance
+
         # Add builtins
         builtins = []
-        builtins.append(Appliance(None, {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "vpcs", "name": "VPCS", "category": 2, "symbol": ":/symbols/vpcs_guest.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "ethernet_switch", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
-        builtins.append(Appliance(None, {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"node_type": "vpcs", "name": "VPCS", "category": 2, "symbol": ":/symbols/vpcs_guest.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"node_type": "ethernet_switch", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
         for b in builtins:
             self._appliances[b.id] = b
 

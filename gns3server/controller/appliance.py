@@ -32,8 +32,12 @@ class Appliance:
     def __init__(self, appliance_id, data, builtin=False):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
+        elif isinstance(appliance_id, uuid.UUID):
+            self._id = str(appliance_id)
         else:
             self._id = appliance_id
+        if "appliance_id" in data:
+            del data["appliance_id"]
         self._data = data
 
         # Version of the gui before 2.1 use linked_base
