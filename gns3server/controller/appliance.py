@@ -36,9 +36,9 @@ class Appliance:
             self._id = str(appliance_id)
         else:
             self._id = appliance_id
-        if "appliance_id" in data:
-            del data["appliance_id"]
-        self._data = data
+        self._data = data.copy()
+        if "appliance_id" in self._data:
+            del self._data["appliance_id"]
 
         # Version of the gui before 2.1 use linked_base
         # and the server linked_clone
