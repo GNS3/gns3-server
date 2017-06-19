@@ -62,6 +62,16 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
+def test_load_controller_settings_with_no_computes_section(controller, controller_config_path, async_run):
+    controller.save()
+    with open(controller_config_path) as f:
+        data = json.load(f)
+    del data['computes']
+    with open(controller_config_path, "w+") as f:
+        json.dump(data, f)
+    assert len(async_run(controller._load_controller_settings())) == 0
+
+
 def test_import_computes_1_x(controller, controller_config_path, async_run):
     """
     At first start the server should import the

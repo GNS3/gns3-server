@@ -738,7 +738,7 @@ class Project:
                         f.write(data)
                 with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
                     project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
-        except OSError as e:
+        except (OSError, UnicodeEncodeError) as e:
             raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":

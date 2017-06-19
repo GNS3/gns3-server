@@ -22,7 +22,7 @@ master
 master is the next stable release, you can test it in your day to day activities.
 Bug fixes or small improvements pull requests go here.
 
-1.x (1.4 for example)
+2.x (2.1 for example)
 ********
 Next major release
 

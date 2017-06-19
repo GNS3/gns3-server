@@ -46,4 +46,3 @@ def test_put_gns3vm(http_controller):
 def test_get_gns3vm(http_controller):
     response = http_controller.get('/gns3vm', example=True)
     assert response.status == 200
-    print(response.json)
