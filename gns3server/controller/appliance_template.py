@@ -23,9 +23,13 @@ class ApplianceTemplate:
     def __init__(self, appliance_id, data):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
+        elif isinstance(appliance_id, uuid.UUID):
+            self._id = str(appliance_id)
         else:
             self._id = appliance_id
-        self._data = data
+        self._data = data.copy()
+        if "appliance_id" in self._data:
+            del self._data["appliance_id"]
 
     @property
     def id(self):
