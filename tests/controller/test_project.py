@@ -20,6 +20,7 @@ import os
 import sys
 import pytest
 import aiohttp
+import zipstream
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
@@ -471,6 +472,15 @@ def test_duplicate(project, async_run, controller):
 
     assert list(new_project.nodes.values())[0].compute.id == "remote"
     assert list(new_project.nodes.values())[1].compute.id == "remote"
+
+
+def test_duplicate_with_zipfile_encoding_issues(project, async_run, controller):
+    zf = zipstream.ZipFile()
+    zf.writestr('test\udcc3', "data")
+
+    with asyncio_patch('gns3server.controller.project.export_project', return_value=zf):
+        with pytest.raises(aiohttp.web.HTTPConflict):
+            async_run(project.duplicate(name="Hello"))
 
 
 def test_snapshots(project):

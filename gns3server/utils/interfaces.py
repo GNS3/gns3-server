@@ -198,12 +198,13 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
-        for interface in sorted(psutil.net_if_addrs().keys()):
+        net_if_addrs = psutil.net_if_addrs()
+        for interface in sorted(net_if_addrs.keys()):
             ip_address = ""
             mac_address = ""
             netmask = ""
             interface_type = "ethernet"
-            for addr in psutil.net_if_addrs()[interface]:
+            for addr in net_if_addrs[interface]:
                 # get the first available IPv4 address only
                 if addr.family == socket.AF_INET:
                     ip_address = addr.address

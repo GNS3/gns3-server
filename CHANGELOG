@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.0.3 13/06/2017
+
+* Fixes #1068 - handle zipfile encoding issues at project duplication
+* Fix: #1066 - Catching parsing errors at linked vbox file
+* Ignoring virtualenv directory at gitignore
+* Escaping VPCS name in regex #1067
+* Fix racecondition when listing interface
+* Fix Qemu disk creation with unicode characters not supported by local filesystem #1058 (#1063)
+* Fix when config file doesn't have computes section (#1062)
+* Check aiohttp version
+
 ## 2.0.2 30/05/2017
 
 * Set correct permission on ubridge when doing a remote installation

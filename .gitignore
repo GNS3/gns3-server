@@ -53,3 +53,6 @@ docs/_build
 vpcs.hist
 startup.vpcs
 .gns3_shell_history
+
+# Virtualenv
+env

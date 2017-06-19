@@ -113,3 +113,15 @@ def test_patch_vm_uuid(vm):
     with open(vm._linked_vbox_file()) as f:
         c = f.read()
         assert "{" + vm.id + "}" in c
+
+
+def test_patch_vm_uuid_with_corrupted_file(vm):
+    xml = """<?xml version="1.0"?>
+    <VirtualBox>
+    """
+    os.makedirs(os.path.join(vm.working_dir, vm._vmname), exist_ok=True)
+    with open(vm._linked_vbox_file(), "w+") as f:
+        f.write(xml)
+    vm._linked_clone = True
+    with pytest.raises(VirtualBoxError):
+        vm._patch_vm_uuid()
