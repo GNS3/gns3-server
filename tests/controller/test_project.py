@@ -20,6 +20,7 @@ import os
 import sys
 import pytest
 import aiohttp
+import zipstream
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
