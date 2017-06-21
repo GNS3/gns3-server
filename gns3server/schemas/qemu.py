@@ -63,7 +63,7 @@ QEMU_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "spice"]
         },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
@@ -244,7 +244,7 @@ QEMU_UPDATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "spice"]
         },
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
@@ -541,7 +541,7 @@ QEMU_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc"]
+            "enum": ["telnet", "vnc", "spice"]
         },
         "initrd": {
             "description": "QEMU initrd path",
