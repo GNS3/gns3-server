@@ -1305,14 +1305,6 @@ class QemuVM(BaseNode):
         else:
             return []
 
-    def _spice_options(self):
-
-        if self._console:
-            return ["-spice",
-                    "addr={},port={},disable-ticketing".format(self._manager.port_manager.console_host, self._console)]
-        else:
-            return []
-
     def _monitor_options(self):
 
         if self._monitor:
@@ -1592,8 +1584,6 @@ class QemuVM(BaseNode):
             command.extend(self._serial_options())
         elif self._console_type == "vnc":
             command.extend(self._vnc_options())
-        elif self._console_type == "spice":
-            command.extend(self._spice_options())
         else:
             raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())

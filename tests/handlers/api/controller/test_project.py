@@ -217,6 +217,15 @@ def test_write_file(http_controller, tmpdir, project):
     assert response.status == 403
 
 
+def test_write_and_get_file_with_leading_slashes_in_filename(http_controller, tmpdir, loop, project):
+    response = http_controller.post("/projects/{project_id}/files//hello".format(project_id=project.id), body="world", raw=True)
+    assert response.status == 200
+
+    response = http_controller.get("/projects/{project_id}/files//hello".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.body == b"world"
+
+
 def test_import(http_controller, tmpdir, controller):
 
     with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:

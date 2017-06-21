@@ -391,7 +391,7 @@ class ProjectHandler:
         controller = Controller.instance()
         project = yield from controller.get_loaded_project(request.match_info["project_id"])
         path = request.match_info["path"]
-        path = os.path.normpath(path)
+        path = os.path.normpath(path).strip('/')
 
         # Raise error if user try to escape
         if path[0] == ".":
