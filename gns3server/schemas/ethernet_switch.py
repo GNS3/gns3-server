@@ -58,6 +58,16 @@ ETHERNET_SWITCH_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "console": {
+            "description": "Console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -148,6 +158,16 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
         "status": {
             "description": "Node status",
             "enum": ["started", "stopped", "suspended"]
+        },
+        "console": {
+            "description": "Console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer"
+        },
+        "console_type": {
+            "description": "Console type",
+            "enum": ["telnet"]
         },
     },
     "additionalProperties": False,
