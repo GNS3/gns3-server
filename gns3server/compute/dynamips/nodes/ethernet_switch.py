@@ -40,7 +40,7 @@ class EthernetSwitchConsole(EmbedShell):
     """
 
     def __init__(self, node):
-        super().__init__(welcome_message="Welcome to GNS3 builtin ethernet switch.\n\nType help to get help\n")
+        super().__init__(welcome_message="Welcome to GNS3 builtin Ethernet switch.\n\nType help for available commands\n")
         self._node = node
 
     @asyncio.coroutine
@@ -48,10 +48,10 @@ class EthernetSwitchConsole(EmbedShell):
         """
         Show arp table
         """
-        res = 'Mac                VLAN\n'
+        res = 'Port       Mac                VLAN\n'
         result = (yield from self._node._hypervisor.send('ethsw show_mac_addr_table {}'.format(self._node.name)))
         for line in result:
-            mac, vlan, _ = line.replace('  ', ' ').split(' ')
+            mac, vlan, nio = line.replace('  ', ' ').split(' ')
             mac = mac.replace('.', '')
             mac = "{}:{}:{}:{}:{}:{}".format(
                 mac[0:2],
@@ -60,7 +60,10 @@ class EthernetSwitchConsole(EmbedShell):
                 mac[6:8],
                 mac[8:10],
                 mac[10:12])
-            res += mac + '  ' + vlan + '\n'
+            for port_number, switch_nio in self._node.nios.items():
+                if switch_nio.name == nio:
+                    res += 'Ethernet' + str(port_number) + '  ' + mac + '  ' + vlan + '\n'
+                    break
         return res
 
 
