@@ -371,6 +371,7 @@ def test_spice_option(vm, tmpdir, loop, fake_qemu_img_binary):
     vm._console = 5905
     options = loop.run_until_complete(asyncio.async(vm._build_command()))
     assert '-spice addr=127.0.0.1,port=5905,disable-ticketing' in ' '.join(options)
+    assert '-vga qxl' in ' '.join(options)
 
 
 def test_disk_options_multiple_disk(vm, tmpdir, loop, fake_qemu_img_binary):

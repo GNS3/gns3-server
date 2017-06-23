@@ -1309,7 +1309,8 @@ class QemuVM(BaseNode):
 
         if self._console:
             return ["-spice",
-                    "addr={},port={},disable-ticketing".format(self._manager.port_manager.console_host, self._console)]
+                    "addr={},port={},disable-ticketing".format(self._manager.port_manager.console_host, self._console),
+                    "-vga", "qxl"]
         else:
             return []
 
