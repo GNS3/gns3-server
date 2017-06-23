@@ -99,10 +99,6 @@ class EthernetSwitch(Device):
         else:
             self._ports = ports
 
-    @property
-    def console(self):
-        return self._console
-
     def __json__(self):
 
         ethernet_switch_info = {"name": self.name,
