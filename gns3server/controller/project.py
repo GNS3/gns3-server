@@ -353,13 +353,6 @@ class Project:
         if node_id in self._nodes:
             return self._nodes[node_id]
 
-        # Due to a limitation all iou need to run on the same
-        # compute server otherwise you have mac address conflict
-        if node_type == "iou":
-            for node in self._nodes.values():
-                if node.node_type == node_type and node.compute != compute:
-                    raise aiohttp.web.HTTPConflict(text="All IOU nodes need to run on the same server.")
-
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
         if compute not in self._project_created_on_compute:
             # For a local server we send the project path
