@@ -7,7 +7,7 @@
     "documentation_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
     "product_name": "vRouter",
     "product_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -25,6 +25,13 @@
         "options": "-smp 4 -cpu host"
     },
     "images": [
+        {
+            "filename": "vyatta-vrouter-17.1.1_B_amd64.iso",
+            "version": "17.1.1",
+            "md5sum": "914c9ca9d51a33fc54f718020f862df2",
+            "filesize": 347078656,
+            "download_url": "http://www1.brocade.com/forms/jsp/vrouter/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-Vrouter&intcmp=lp_en_softevaluations_vrouter_bn_00001"
+        },
         {
             "filename": "vyatta-vrouter-17.1.0_B_amd64.iso",
             "version": "17.1.0",
@@ -77,6 +84,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.1.1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyatta-vrouter-17.1.1_B_amd64.iso"
+            }
+        },
         {
             "name": "17.1.0",
             "images": {

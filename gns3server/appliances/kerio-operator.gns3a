@@ -25,25 +25,34 @@
     },
     "images": [
         {
+            "filename": "kerio-operator-appliance-2.5.4-6916-p1-vmware.vmdk",
+            "version": "2.5.4p1",
+            "md5sum": "6737b36bd36635b8a5ba21816938f0d6",
+            "filesize": 276318720,
+            "download_url": "http://www.kerio.com/support/kerio-operator",
+            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.4-6916/kerio-operator-appliance-2.5.4-6916-p1-vmware.vmdk"        },
+        {
             "filename": "kerio-operator-appliance-2.5.3-6630-vmware.vmdk",
             "version": "2.5.3",
             "md5sum": "ae9f45606900dba05f353a94d4fc14fc",
             "filesize": 276422144,
             "download_url": "http://www.kerio.com/support/kerio-operator",
-            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.3-6630/kerio-operator-appliance-2.5.3-6630-vmware.vmdk",
-            "compression": "zip"
-        },
+            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.3-6630/kerio-operator-appliance-2.5.3-6630-vmware.vmdk"        },
         {
             "filename": "kerio-operator-appliance-2.5.2-6404-vmware.vmdk",
             "version": "2.5.2",
             "md5sum": "0279baebe587b17f32bfc3302df9352c",
             "filesize": 561512448,
             "download_url": "http://www.kerio.com/support/kerio-operator",
-            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.2-6404/kerio-operator-appliance-2.5.2-6404-vmware.vmdk",
-            "compression": "zip"
-        }
+            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.2-6404/kerio-operator-appliance-2.5.2-6404-vmware.vmdk"        }
     ],
     "versions": [
+        {
+            "name": "2.5.4p1",
+            "images": {
+                "hda_disk_image": "kerio-operator-appliance-2.5.4-6916-p1-vmware.vmdk"
+            }
+        },
         {
             "name": "2.5.3",
             "images": {

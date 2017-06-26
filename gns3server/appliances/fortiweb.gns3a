@@ -7,7 +7,7 @@
     "documentation_url": "http://docs.fortinet.com/fortiweb",
     "product_name": "FortiWeb",
     "product_url": "http://www.fortinet.com/products/fortiweb/index.html",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

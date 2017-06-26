@@ -7,7 +7,7 @@
     "documentation_url": "http://wiki.openwrt.org/doc/",
     "product_name": "LEDE",
     "product_url": "https://lede-project.org/",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -22,6 +22,22 @@
     },
     "images": [
         {
+            "filename": "lede-17.01.2-x86-generic-combined-squashfs.img",
+            "version": "17.01.2",
+            "md5sum": "a466e493ef12935dad5e0c622b1a7859",
+            "filesize": 19774794,
+            "download_url": "https://downloads.lede-project.org/releases/17.01.2/targets/x86/generic/",
+            "direct_download_url": "https://downloads.lede-project.org/releases/17.01.2/targets/x86/generic/lede-17.01.2-x86-generic-combined-squashfs.img"
+        },
+        {
+            "filename": "lede-17.01.1-x86-generic-combined-squashfs.img",
+            "version": "17.01.1",
+            "md5sum": "b050e734c605a34a429389c752ae7c30",
+            "filesize": 19771166,
+            "download_url": "https://downloads.lede-project.org/releases/17.01.1/targets/x86/generic/",
+            "direct_download_url": "https://downloads.lede-project.org/releases/17.01.1/targets/x86/generic/lede-17.01.1-x86-generic-combined-squashfs.img"
+        },
+        {
             "filename": "lede-17.01.0-r3205-59508e3-x86-generic-combined-squashfs.img",
             "version": "17.01.0",
             "md5sum": "3c5e068d50a377d4e26b548ab1ca7b1e",
@@ -31,6 +47,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "lede 17.01.2",
+            "images": {
+                "hda_disk_image": "lede-17.01.2-x86-generic-combined-squashfs.img"
+            }
+        },
+        {
+            "name": "lede 17.01.1",
+            "images": {
+                "hda_disk_image": "lede-17.01.1-x86-generic-combined-squashfs.img"
+            }
+        },
         {
             "name": "lede 17.01.0",
             "images": {

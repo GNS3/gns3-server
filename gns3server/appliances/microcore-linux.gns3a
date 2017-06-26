@@ -7,7 +7,7 @@
     "documentation_url": "http://wiki.tinycorelinux.net/",
     "product_name": "Micro Core Linux",
     "product_url": "http://distro.ibiblio.org/tinycorelinux",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

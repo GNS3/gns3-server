@@ -7,7 +7,7 @@
     "documentation_url": "http://www.extremenetworks.com/support/documentation",
     "product_name": "EXOS",
     "product_url": "http://www.extremenetworks.com/product/extremexos-network-operating-system",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

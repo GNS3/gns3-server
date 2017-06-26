@@ -1,0 +1,16 @@
+{
+    "name": "Python, Go, Perl, PHP",
+    "category": "guest",
+    "description": "Container with integrated Python 2 & 3, Perl, PHP, and PHP7.0 interpreters, and a Go compiler.",
+    "vendor_name": "GNS3 Team",
+    "vendor_url": "https://www.gns3.com",
+    "product_name": "Python, Go, Perl, PHP",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/python-go-perl-php:latest"
+    }
+}

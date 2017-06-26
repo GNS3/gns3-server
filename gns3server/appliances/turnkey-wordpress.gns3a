@@ -1,0 +1,19 @@
+{
+    "name": "WordPress",
+    "category": "guest",
+    "description": "WordPress is a state-of-the-art publishing platform with a focus on aesthetics, web standards, and usability. It is one of the worlds most popular blog publishing applications, includes tons of powerful core functionality, extendable via literally thousands of plugins, and supports full theming. This appliance includes all the standard features in TurnKey Core too.",
+    "vendor_name": "Turnkey Linux",
+    "vendor_url": "https://www.turnkeylinux.org/",
+    "product_name": "TurnKey Linux WordPress",
+    "product_url": "https://www.turnkeylinux.org/wordpress",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "For security reasons there are no default passwords. All passwords are set at system initialization time.",
+    "docker": {
+        "adapters": 1,
+        "image": "turnkeylinux/wordpress-14.2:latest",
+        "console_type": "telnet"
+    }
+}

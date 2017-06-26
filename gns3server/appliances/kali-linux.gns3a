@@ -6,7 +6,7 @@
     "vendor_url": "https://www.kali.org/",
     "documentation_url": "https://www.kali.org/kali-linux-documentation/",
     "product_name": "Kali Linux",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -20,6 +20,14 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "kali-linux-2017.1-amd64.iso",
+            "version": "2017.1",
+            "md5sum": "c8e742283929d7a12dbe7c58e398ff08",
+            "filesize": 2794307584,
+            "download_url": "http://cdimage.kali.org/kali-2017.1/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2017.1/kali-linux-2017.1-amd64.iso"
+        },
         {
             "filename": "kali-linux-2016.2-amd64.iso",
             "version": "2016.2",
@@ -46,6 +54,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2017.1",
+            "images": {
+                "cdrom_image": "kali-linux-2017.1-amd64.iso"
+            }
+        },
         {
             "name": "2016.2",
             "images": {

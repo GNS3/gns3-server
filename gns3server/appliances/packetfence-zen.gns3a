@@ -7,7 +7,7 @@
     "documentation_url": "https://packetfence.org/support/index.html#/documentation",
     "product_name": "PacketFence ZEN",
     "product_url": "https://packetfence.org/about.html",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -22,6 +22,24 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "PacketFenceZEN_USB-7.1.0.img",
+            "version": "7.1.0",
+            "md5sum": "3811099f4e1eba164245e94cfa09d26f",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.1.0/PacketFenceZEN_USB-7.1.0.tar.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "PacketFenceZEN_USB-7.0.0.img",
+            "version": "7.0.0",
+            "md5sum": "f5d7f81b279ad286e09f3ddf29dd06c3",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.0.0/PacketFenceZEN_USB-7.0.0.tar.bz2/download",
+            "compression": "bzip2"
+        },
         {
             "filename": "PacketFenceZEN_USB-6.5.1.img",
             "version": "6.5.1",
@@ -69,6 +87,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.1.0",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-7.1.0.img"
+            }
+        },
+        {
+            "name": "7.0.0",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-7.0.0.img"
+            }
+        },
         {
             "name": "6.5.0",
             "images": {

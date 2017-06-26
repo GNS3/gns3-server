@@ -7,7 +7,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/security/virtual-adaptive-security-appliance-firewall/products-installation-guides-list.html",
     "product_name": "ASAv",
     "product_url": "http://www.cisco.com/c/en/us/products/security/virtual-adaptive-security-appliance-firewall/index.html",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

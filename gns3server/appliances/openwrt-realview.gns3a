@@ -7,7 +7,7 @@
     "documentation_url": "http://wiki.openwrt.org/doc/",
     "product_name": "OpenWrt",
     "product_url": "http://openwrt.org",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

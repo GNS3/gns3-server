@@ -7,7 +7,7 @@
     "documentation_url": "http://vyos.net/wiki/User_Guide",
     "product_name": "VyOS",
     "product_url": "http://vyos.net/",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

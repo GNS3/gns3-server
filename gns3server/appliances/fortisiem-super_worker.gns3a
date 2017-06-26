@@ -1,0 +1,62 @@
+{
+    "name": "FortiSIEM",
+    "category": "guest",
+    "description": "Breaches to network security continue to occur across all industry verticals, even to the most respected brands. The time it takes to discover, isolate, and remediate the incident continues to be measured in hundreds of days-having material impacts on security and compliance standards. It is no wonder that many organizations are struggling. As recent surveys have shown, enterprises have an average of 32 different vendors' devices in their network, with no automated ability to cross-correlate the data that each is collecting. It is also easy to see why organizations are strapped for the cyber security personnel they need to manage all the data in these complex environments.\n\nFrom its inception, FortiSIEM was built to reduce complexity in managing network and security operations. FortiSIEM provides organizations of all sizes with a comprehensive, holistic, and scalable solution for managing security, performance, and compliance from IoT to the cloud.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "http://docs.fortinet.com/fortisiem/admin-guides",
+    "product_name": "FortiSIEM",
+    "product_url": "https://www.fortinet.com/products/siem/fortisiem.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 16384,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "hdc_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-smp 4"
+    },
+    "images": [
+        {
+            "filename": "FortiSIEM-VA-KVM-4.9.0.1041.qcow2",
+            "version": "4.9.0",
+            "md5sum": "c2db828b6985297b33833f376c5106b0",
+            "filesize": 8484487168,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-KVM-4.9.0.1041-1.qcow2",
+            "version": "4.9.0",
+            "md5sum": "b3f0cd44995f37648aa429303eeeb455",
+            "filesize": 46858240,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-KVM-4.9.0.1041-2.qcow2",
+            "version": "4.9.0",
+            "md5sum": "70a8abb4253d5bb724ded3b33a8385c4",
+            "filesize": 46858240,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        }
+    ],
+    "versions": [
+        {
+            "name": "4.9.0",
+            "images": {
+                "hda_disk_image": "FortiSIEM-VA-KVM-4.9.0.1041.qcow2",
+                "hdb_disk_image": "FortiSIEM-VA-KVM-4.9.0.1041-1.qcow2",
+                "hdc_disk_image": "FortiSIEM-VA-KVM-4.9.0.1041-2.qcow2"
+            }
+        }
+    ]
+}

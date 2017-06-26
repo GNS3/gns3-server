@@ -6,7 +6,7 @@
     "vendor_url": "http://www.riverbed.com",
     "documentation_url": "https://support.riverbed.com/content/support/software/steelhead/cx-appliance.html",
     "product_name": "SteelHead CX 555V",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

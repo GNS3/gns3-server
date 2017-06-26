@@ -1,0 +1,60 @@
+{
+    "name": "IPFire",
+    "category": "firewall",
+    "description": "IPFire was designed with both modularity and a high-level of flexibility in mind. You can easily deploy many variations of it, such as a firewall, a proxy server or a VPN gateway. The modular design ensures that it runs exactly what you've configured it for and nothing more. Everything is simple to manage and update through the package manager, making maintenance a breeze.",
+    "vendor_name": "IPFire Project",
+    "vendor_url": "http://www.ipfire.org/",
+    "documentation_url": "http://wiki.ipfire.org/en/start",
+    "product_name": "IPFire",
+    "product_url": "http://www.ipfire.org/features",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "A config wizard will be started at first boot.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core111.img",
+            "version": "2.19.111",
+            "md5sum": "741ab771cadd2f6a1fc4a85b3478ae5f",
+            "filesize": 1063256064,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "http://downloads.ipfire.org/releases/ipfire-2.x/2.19-core110/ipfire-2.19.1gb-ext4-scon.x86_64-full-core110.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core110.img",
+            "version": "2.19.110",
+            "md5sum": "d91bdabee5db83d0f93573f88ea542b1",
+            "filesize": 958398464,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "http://downloads.ipfire.org/releases/ipfire-2.x/2.19-core110/ipfire-2.19.1gb-ext4-scon.x86_64-full-core110.img.gz",
+            "compression": "gzip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.19.111",
+            "images": {
+                "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core111.img"
+            }
+        },
+        {
+            "name": "2.19.110",
+            "images": {
+                "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core110.img"
+            }
+        }
+    ]
+}

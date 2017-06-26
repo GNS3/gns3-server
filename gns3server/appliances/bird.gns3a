@@ -6,7 +6,7 @@
     "vendor_url": "http://bird.network.cz/",
     "documentation_url": "http://bird.network.cz/?get_doc&f=bird.html",
     "product_name": "BIRD internet routing daemon",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

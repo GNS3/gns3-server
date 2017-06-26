@@ -7,7 +7,7 @@
     "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
     "product_name": "MikroTik Cloud Hosted Router",
     "product_url": "http://www.mikrotik.com/download",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -26,6 +26,33 @@
         "options": "-nographic"
     },
     "images": [
+        {
+            "filename": "chr-6.39.2.img",
+            "version": "6.39.2",
+            "md5sum": "ecb37373dedfba04267a999d23b8e203",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.39.2/chr-6.39.2.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.39.1.img",
+            "version": "6.39.1",
+            "md5sum": "c53293bc41f76d85a8642005fd1cbd54",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.39.1/chr-6.39.1.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.39.img",
+            "version": "6.39",
+            "md5sum": "7e77c8ac4c9aeaf88f6ff15897f33163",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.39/chr-6.39.img.zip",
+            "compression": "zip"
+        },
         {
             "filename": "chr-6.38.5.img",
             "version": "6.38.5",
@@ -181,6 +208,24 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.39.2",
+            "images": {
+                "hda_disk_image": "chr-6.39.2.img"
+            }
+        },
+        {
+            "name": "6.39.1",
+            "images": {
+                "hda_disk_image": "chr-6.39.1.img"
+            }
+        },
+        {
+            "name": "6.39",
+            "images": {
+                "hda_disk_image": "chr-6.39.img"
+            }
+        },
         {
             "name": "6.38.5",
             "images": {

@@ -7,7 +7,7 @@
     "documentation_url": "https://www.sophos.com/en-us/support/documentation/sophos-xg-firewall.aspx",
     "product_name": "Sophos XG Firewall",
     "product_url": "https://www.sophos.com/en-us/products/next-gen-firewall.aspx",
-    "registry_version": 2,
+    "registry_version": 3,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -23,6 +23,20 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "VI-SFOS_16.05.4_MR-4.KVM-215-PRIMARY.qcow2",
+            "version": "16.05.4 MR4",
+            "md5sum": "20535c9e624f42e1977f1e407fbc565e",
+            "filesize": 287113216,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_16.05.4_MR-4.KVM-215-AUXILARY.qcow2",
+            "version": "16.05.1 MR1",
+            "md5sum": "cafac2d997a3ead087d5823b86ce6cb4",
+            "filesize": 59441152,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
         {
             "filename": "VI-SFOS_16.05.1_MR-1.KVM-139-PRIMARY.qcow2",
             "version": "16.05.1 MR1",
@@ -81,6 +95,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "16.05.4 MR4",
+            "images": {
+                "hda_disk_image": "VI-SFOS_16.05.4_MR-4.KVM-215-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFOS_16.05.4_MR-4.KVM-215-AUXILARY.qcow2"
+            }
+        },
         {
             "name": "16.05.1 MR1",
             "images": {

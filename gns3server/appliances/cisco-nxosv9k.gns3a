@@ -6,23 +6,32 @@
     "vendor_url": "http://www.cisco.com/",
     "documentation_url": "http://www.cisco.com/c/en/us/td/docs/switches/datacenter/nexus9000/sw/7-x/nx-osv/configuration/guide/b_NX-OSv_9000/b_NX-OSv_chapter_01.html",
     "product_name": "NX-OSv 9000",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "availability": "service-contract",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "first_port_name": "mgmt0",
+    "usage": "The old (I5) versions might require 8192 MB of RAM; adjust it if necessary.",
     "port_name_format": "Ethernet1/{port1}",
     "qemu": {
         "cpus": 2,
         "adapter_type": "e1000",
         "adapters": 10,
         "ram": 8096,
+        "hda_disk_interface": "sata",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "nxosv-final.7.0.3.I6.1.qcow2",
+            "version": "7.0.3.I6.1",
+            "md5sum": "18bb991b814a508d1190575f99deed99",
+            "filesize": 780402688,
+            "download_url": "https://software.cisco.com/download/"
+        },
         {
             "filename": "nxosv-final.7.0.3.I5.2.qcow2",
             "version": "7.0.3.I5.2",
@@ -38,27 +47,34 @@
             "download_url": "https://software.cisco.com/download/"
         },
         {
-            "filename": "OVMF-X64-r15214.fd",
-            "version": "7.0.3.I5.1",
-            "md5sum": "443c99c734736d6323f68b3f6c0df06f",
-            "filesize": 1048576,
-            "download_url": "https://sourceforge.net/projects/edk2/files/OVMF/",
-            "direct_download_url": "https://sourceforge.net/projects/edk2/files/OVMF/OVMF-X64-r15214.zip/download",
+            "filename": "OVMF-20160813.fd",
+            "version": "16.08.13",
+            "md5sum": "8ff0ef1ec56345db5b6bda1a8630e3c6",
+            "filesize": 2097152,
+            "download_url": "",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-20160813.fd.zip/download",
             "compression": "zip"
         }
     ],
     "versions": [
         {
+            "name": "7.0.3.I6.1",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.7.0.3.I6.1.qcow2"
+            }
+        },
+        {
             "name": "7.0.3.I5.2",
             "images": {
-                "bios_image": "OVMF-X64-r15214.fd",
+                "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I5.2.qcow2"
             }
         },
         {
             "name": "7.0.3.I5.1",
             "images": {
-                "bios_image": "OVMF-X64-r15214.fd",
+                "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I5.1.qcow2"
             }
         }

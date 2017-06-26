@@ -7,7 +7,7 @@
     "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
     "product_name": "Untangle NG",
     "product_url": "https://www.untangle.com/untangle-ng-firewall/",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -24,6 +24,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "untangle_1300_x64.iso",
+            "version": "13.0.0",
+            "md5sum": "74dcb5c8e0fb400dbd3a9582fc472033",
+            "filesize": 576716800,
+            "download_url": "https://www.untangle.com/get-untangle/"
+        },
         {
             "filename": "untangle_1221_x64.iso",
             "version": "12.2.1",
@@ -76,6 +83,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "13.0.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "untangle_1300_x64.iso"
+            }
+        },
         {
             "name": "12.2.1",
             "images": {

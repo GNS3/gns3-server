@@ -7,7 +7,7 @@
     "documentation_url": "http://docs.fortinet.com/fortimail/admin-guides",
     "product_name": "FortiMail",
     "product_url": "http://www.fortinet.com/products/fortimail/index.html",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -25,6 +25,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "FML_VMKV-64-v53-build0634-FORTINET.out.kvm.qcow2",
+            "version": "5.3.9",
+            "md5sum": "a66b82f0713ba4ea418bd959d0cb5732",
+            "filesize": 86376448,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
         {
             "filename": "FML_VMKV-64-v53-build0627-FORTINET.out.kvm.qcow2",
             "version": "5.3.8",
@@ -84,6 +91,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.3.9",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v53-build0634-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "5.3.8",
             "images": {

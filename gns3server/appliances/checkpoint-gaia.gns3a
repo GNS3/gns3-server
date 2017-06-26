@@ -6,7 +6,7 @@
     "vendor_url": "https://www.checkpoint.com",
     "documentation_url": "http://downloads.checkpoint.com/dc/download.htm?ID=26770",
     "product_name": "Gaia",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

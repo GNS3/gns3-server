@@ -7,7 +7,7 @@
     "documentation_url": "https://www.a10networks.com/support",
     "product_name": "A10 vThunder",
     "product_url": "https://www.a10networks.com/products/thunder-series-appliances/vthunder-virtualized-application_delivery_controller/",
-    "registry_version": 1,
+    "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

@@ -1,26 +1,27 @@
 {
+    "name": "Brocade Virtual ADX",
     "category": "firewall",
     "status": "experimental",
     "maintainer": "GNS3 team",
     "description": "The Brocade Virtual ADX (vADX™) is a full-fledged Application Delivery Controller (ADC) platform with a virtual footprint that leverages Intel advanced technology to deliver remarkable performance. The software is designed to run on standardsbased hypervisors, hosted on Intel x86 COTS hardware. It offers a complete suite of Layer 4 and Layer 7 server load balancing capabilities and application security services with extensible management via rich SOAP/XML APIs.",
-    "usage": "Login is root, type vadx-console to access to the console",
+    "vendor_name": "Brocade",
+    "vendor_url": "https://www.brocade.com",
     "product_name": "Virtual ADX",
     "registry_version": 3,
+    "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
+    "usage": "Login is root, type vadx-console to access to the console",
     "first_port_name": "mgmt1",
     "port_name_format": "Port {port1}",
-    "vendor_name": "Brocade",
     "qemu": {
-        "ram": 2048,
+        "adapter_type": "virtio-net-pci",
         "adapters": 8,
+        "ram": 2048,
+        "arch": "x86_64",
         "console_type": "vnc",
         "kvm": "require",
-        "adapter_type": "virtio-net-pci",
-        "cpus": 2,
-        "arch": "x86_64"
+        "options": "-smp 2"
     },
-    "vendor_url": "https://www.brocade.com",
-    "name": "Brocade Virtual ADX",
     "images": [
         {
             "filename": "SSR03100KVM.qcow2",
