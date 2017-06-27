@@ -207,7 +207,8 @@ class IOUVM(BaseNode):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "use_default_iou_values": self._use_default_iou_values,
-                       "command_line": self.command_line}
+                       "command_line": self.command_line,
+                       "application_id": self.application_id}
 
         # return the relative path if the IOU image is in the images_path directory
         iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)

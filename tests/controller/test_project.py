@@ -361,7 +361,7 @@ def test_delete_drawing(async_run, project, controller):
     assert len(project._drawings) == 0
 
 
-def test_clean_pcictures(async_run, project, controller):
+def test_clean_pictures(async_run, project, controller):
     """
     When a project is close old pictures should be removed
     """
@@ -589,13 +589,13 @@ def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
 
     # tests if get_next_application_id is called
     with patch('gns3server.controller.project.get_next_application_id', return_value=222) as mocked_get_app_id:
-        results = async_run(project.add_node(
+        node = async_run(project.add_node(
             compute, "test", None, node_type="iou", properties={"startup_config": "test.cfg"}))
         assert mocked_get_app_id.called
-        assert results.properties['application_id'] == 222
+        assert node.properties['application_id'] == 222
 
     # tests if we can send property and it will be used
-    results = async_run(project.add_node(
+    node = async_run(project.add_node(
         compute, "test", None, node_type="iou", application_id=333, properties={"startup_config": "test.cfg"}))
     assert mocked_get_app_id.called
-    assert results.properties['application_id'] == 333
+    assert node.properties['application_id'] == 333
