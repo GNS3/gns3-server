@@ -189,7 +189,7 @@ IOU_OBJECT_SCHEMA = {
         },
         "application_id": {
             "description": "Application ID for running IOU image",
-            "type": ["integer", "null"]
+            "type": "integer"
         },
     },
     "additionalProperties": False
