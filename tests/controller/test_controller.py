@@ -483,6 +483,7 @@ def test_load_base_files(controller, config, tmpdir):
 def test_appliance_templates(controller, async_run):
     controller.load_appliances()
     assert len(controller.appliance_templates) > 0
+    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
 
 
 def test_load_appliances(controller):
@@ -498,6 +499,11 @@ def test_load_appliances(controller):
     controller.load_appliances()
     assert "Test" in [appliance.name for appliance in controller.appliances.values()]
     assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
+    assert "VPCS" in [appliance.name for appliance in controller.appliances.values()]
+
+    for appliance in controller.appliances.values():
+        if appliance.name == "VPCS":
+            assert appliance._data["properties"] == {"base_script_file": "vpcs_base_config.txt"}
 
     # UUID should not change when you run again the function
     for appliance in controller.appliances.values():
