@@ -434,3 +434,14 @@ def test_extract_configs(vm):
     startup_config, private_config = vm.extract_configs()
     assert len(startup_config) == 1392
     assert len(private_config) == 0
+
+
+def test_application_id(project, manager):
+    """
+    Checks if uses local manager to get application_id when not set
+    """
+    vm = IOUVM("test", str(uuid.uuid4()), project, manager)
+    assert vm.application_id == 1
+
+    vm.application_id = 3
+    assert vm.application_id == 3

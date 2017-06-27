@@ -217,28 +217,6 @@ def test_add_node_from_appliance(async_run, controller):
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
 
-def test_create_iou_on_multiple_node(async_run, controller):
-    """
-    Due to mac address collision you can't create an IOU node
-    on two different server
-    """
-    compute = MagicMock()
-    compute.id = "remote"
-
-    compute2 = MagicMock()
-    compute2.id = "remote2"
-
-    project = Project(controller=controller, name="Test")
-
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    node1 = async_run(project.add_node(compute, "test", None, node_type="iou"))
-    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
-        async_run(project.add_node(compute2, "test2", None, node_type="iou"))
-
-
 def test_delete_node(async_run, controller):
     """
     For a local server we send the project path
@@ -306,7 +284,7 @@ def test_get_node(async_run, controller):
         project.get_node(vm.id)
 
 
-def test_addLink(async_run, project, controller):
+def test_add_link(async_run, project, controller):
     compute = MagicMock()
 
     response = MagicMock()
@@ -327,7 +305,7 @@ def test_addLink(async_run, project, controller):
     controller.notification.emit.assert_any_call("link.created", link.__json__())
 
 
-def test_getLink(async_run, project):
+def test_get_link(async_run, project):
     compute = MagicMock()
 
     response = MagicMock()
@@ -341,7 +319,7 @@ def test_getLink(async_run, project):
         project.get_link("test")
 
 
-def test_deleteLink(async_run, project, controller):
+def test_delete_link(async_run, project, controller):
     compute = MagicMock()
 
     response = MagicMock()
@@ -357,7 +335,7 @@ def test_deleteLink(async_run, project, controller):
     assert len(project._links) == 0
 
 
-def test_addDrawing(async_run, project, controller):
+def test_add_drawing(async_run, project, controller):
     controller.notification.emit = MagicMock()
 
     drawing = async_run(project.add_drawing(None, svg="<svg></svg>"))
@@ -365,7 +343,7 @@ def test_addDrawing(async_run, project, controller):
     controller.notification.emit.assert_any_call("drawing.created", drawing.__json__())
 
 
-def test_getDrawing(async_run, project):
+def test_get_drawing(async_run, project):
     drawing = async_run(project.add_drawing(None))
     assert project.get_drawing(drawing.id) == drawing
 
@@ -373,7 +351,7 @@ def test_getDrawing(async_run, project):
         project.get_drawing("test")
 
 
-def test_deleteDrawing(async_run, project, controller):
+def test_delete_drawing(async_run, project, controller):
     assert len(project._drawings) == 0
     drawing = async_run(project.add_drawing())
     assert len(project._drawings) == 1
@@ -383,7 +361,7 @@ def test_deleteDrawing(async_run, project, controller):
     assert len(project._drawings) == 0
 
 
-def test_cleanPictures(async_run, project, controller):
+def test_clean_pcictures(async_run, project, controller):
     """
     When a project is close old pictures should be removed
     """
@@ -600,3 +578,24 @@ def test_node_name(project, async_run):
     assert node.name == "helloworld-1"
     node = async_run(project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert node.name == "helloworld-2"
+
+
+def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    # tests if get_next_application_id is called
+    with patch('gns3server.controller.project.get_next_application_id', return_value=222) as mocked_get_app_id:
+        results = async_run(project.add_node(
+            compute, "test", None, node_type="iou", properties={"startup_config": "test.cfg"}))
+        assert mocked_get_app_id.called
+        assert results.properties['application_id'] == 222
+
+    # tests if we can send property and it will be used
+    results = async_run(project.add_node(
+        compute, "test", None, node_type="iou", application_id=333, properties={"startup_config": "test.cfg"}))
+    assert mocked_get_app_id.called
+    assert results.properties['application_id'] == 333

@@ -39,7 +39,7 @@ from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine
 from .export_project import export_project
 from .import_project import import_project
-
+from ..compute.iou.utils.application_id import get_next_application_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -352,6 +352,9 @@ class Project:
         """
         if node_id in self._nodes:
             return self._nodes[node_id]
+
+        if node_type == "iou" and 'application_id' not in kwargs.keys():
+            kwargs['application_id'] = get_next_application_id(self._nodes.values())
 
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
         if compute not in self._project_created_on_compute:
