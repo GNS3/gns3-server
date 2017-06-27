@@ -39,7 +39,7 @@ from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine
 from .export_project import export_project
 from .import_project import import_project
-
+from ..compute.iou.utils.application_id import get_next_application_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -353,12 +353,9 @@ class Project:
         if node_id in self._nodes:
             return self._nodes[node_id]
 
-        # Due to a limitation all iou need to run on the same
-        # compute server otherwise you have mac address conflict
-        if node_type == "iou":
-            for node in self._nodes.values():
-                if node.node_type == node_type and node.compute != compute:
-                    raise aiohttp.web.HTTPConflict(text="All IOU nodes need to run on the same server.")
+        if node_type == "iou" and 'application_id' not in kwargs.keys():
+
+            kwargs['application_id'] = get_next_application_id(self._nodes.values())
 
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
         if compute not in self._project_created_on_compute:

@@ -66,7 +66,7 @@ class Node:
         self.name = name
         self._console = None
         self._console_type = None
-        self._properties = {}
+        self._properties = None
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
@@ -87,6 +87,8 @@ class Node:
 
         # This properties will be recompute
         ignore_properties = ("width", "height")
+
+        self.properties = kwargs.pop('properties', {})
 
         # Update node properties with additional elements
         for prop in kwargs:

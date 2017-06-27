@@ -86,6 +86,7 @@ class IOUVM(BaseNode):
         self._startup_config = ""
         self._private_config = ""
         self._ram = 256  # Megabytes
+        self._application_id = None
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
     def _config(self):
@@ -206,7 +207,8 @@ class IOUVM(BaseNode):
                        "nvram": self._nvram,
                        "l1_keepalives": self._l1_keepalives,
                        "use_default_iou_values": self._use_default_iou_values,
-                       "command_line": self.command_line}
+                       "command_line": self.command_line,
+                       "application_id": self.application_id}
 
         # return the relative path if the IOU image is in the images_path directory
         iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
@@ -305,11 +307,6 @@ class IOUVM(BaseNode):
             self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
-
-    @property
-    def application_id(self):
-
-        return self._manager.get_application_id(self.id)
 
     @property
     def iourc_content(self):
@@ -1064,6 +1061,27 @@ class IOUVM(BaseNode):
             return 'private-config.cfg'
         else:
             return None
+
+    @property
+    def application_id(self):
+        """
+        Returns application_id which unique identifier for IOU running script. Value is between 1 and 512.
+        When it's not set returns value from the local manager.
+
+        :returns: integer between 1 and 512
+        """
+        if self._application_id is None:
+            return self._manager.get_application_id(self.id)
+        return self._application_id
+
+    @application_id.setter
+    def application_id(self, application_id):
+        """
+        Sets application_id for IOU.
+
+        :param: integer between 1 and 512
+        """
+        self._application_id = application_id
 
     def extract_configs(self):
         """

@@ -86,6 +86,10 @@ IOU_CREATE_SCHEMA = {
             "description": "Private-config of IOU",
             "type": ["string", "null"]
         },
+        "application_id": {
+            "description": "Application ID for running IOU image",
+            "type": ["integer", "null"]
+        },
     },
     "additionalProperties": False,
     "required": ["name", "path"]
@@ -182,7 +186,11 @@ IOU_OBJECT_SCHEMA = {
         "command_line": {
             "description": "Last command line used by GNS3 to start QEMU",
             "type": "string"
-        }
+        },
+        "application_id": {
+            "description": "Application ID for running IOU image",
+            "type": "integer"
+        },
     },
     "additionalProperties": False
 }
