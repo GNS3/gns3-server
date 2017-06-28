@@ -325,11 +325,12 @@ class Project:
         Create a node from an appliance
         """
         try:
-            template = copy.copy(self.controller.appliances[appliance_id].data)
+            template = self.controller.appliances[appliance_id].data
         except KeyError:
             msg = "Appliance {} doesn't exist".format(appliance_id)
             log.error(msg)
             raise aiohttp.web.HTTPNotFound(text=msg)
+        print(template)
         template["x"] = x
         template["y"] = y
         node_type = template.pop("node_type")
