@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import uuid
 
 
@@ -54,7 +55,7 @@ class Appliance:
 
     @property
     def data(self):
-        return self._data
+        return copy.deepcopy(self._data)
 
     @property
     def name(self):

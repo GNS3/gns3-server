@@ -193,7 +193,10 @@ def test_add_node_from_appliance(async_run, controller):
         "server": "local",
         "name": "Test",
         "default_name_format": "{name}-{0}",
-        "node_type": "vpcs"
+        "node_type": "vpcs",
+        "properties": {
+            "a": 1
+        }
 
     })
     controller._computes["local"] = compute
@@ -211,10 +214,21 @@ def test_add_node_from_appliance(async_run, controller):
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
-                                       'name': 'Test-1'},
+                                       'name': 'Test-1',
+                                       'a': 1,
+                                       },
                                  timeout=120)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
+
+    # Make sure we can call twice the node creation
+    node = async_run(project.add_node_from_appliance("fakeid", x=13, y=12))
+    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
+                                 data={'node_id': node.id,
+                                       'name': 'Test-2',
+                                       'a': 1
+                                       },
+                                 timeout=120)
 
 
 def test_create_iou_on_multiple_node(async_run, controller):
