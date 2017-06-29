@@ -6,13 +6,13 @@ GET /v2/compute/version HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 50
+Content-Length: 49
 Content-Type: application/json
-Date: Tue, 21 Mar 2017 09:31:51 GMT
-Server: Python/3.6 GNS3/2.0.0dev11
+Date: Thu, 29 Jun 2017 15:07:36 GMT
+Server: Python/3.6 GNS3/2.1.0dev1
 X-Route: /v2/compute/version
 
 {
     "local": true,
-    "version": "2.0.0dev11"
+    "version": "2.1.0dev1"
 }

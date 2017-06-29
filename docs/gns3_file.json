@@ -418,6 +418,7 @@
                                     "vnc",
                                     "telnet",
                                     "http",
+                                    "spice",
                                     null
                                 ]
                             },
@@ -552,7 +553,12 @@
                                 }
                             }
                         },
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "required": [
+                            "name",
+                            "node_type",
+                            "compute_id"
+                        ]
                     }
                 }
             },

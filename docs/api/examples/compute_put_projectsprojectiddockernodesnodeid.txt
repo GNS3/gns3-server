@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/8df7b67d-41b8-48b7-a8b3-f25248b9af21' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/bc7e5ef2-dce1-4a8e-8e00-2269b3b31f8c' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/8df7b67d-41b8-48b7-a8b3-f25248b9af21 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/bc7e5ef2-dce1-4a8e-8e00-2269b3b31f8c HTTP/1.1
 {
     "console": 5006,
     "environment": "GNS3=1\nGNS4=0",
@@ -13,8 +13,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 653
 Content-Type: application/json
-Date: Tue, 21 Mar 2017 09:31:42 GMT
-Server: Python/3.6 GNS3/2.0.0dev11
+Date: Thu, 29 Jun 2017 15:07:05 GMT
+Server: Python/3.6 GNS3/2.1.0dev1
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
 
 {
@@ -29,8 +29,8 @@ X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "environment": "GNS3=1\nGNS4=0",
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-51/test_json5/project-files/docker/8df7b67d-41b8-48b7-a8b3-f25248b9af21",
-    "node_id": "8df7b67d-41b8-48b7-a8b3-f25248b9af21",
+    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-63/test_json4/project-files/docker/bc7e5ef2-dce1-4a8e-8e00-2269b3b31f8c",
+    "node_id": "bc7e5ef2-dce1-4a8e-8e00-2269b3b31f8c",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped"

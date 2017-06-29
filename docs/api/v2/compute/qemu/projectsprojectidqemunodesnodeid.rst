@@ -34,7 +34,7 @@ Output
     <tr><td>cdrom_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start QEMU</td>                     </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>cpus</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Number of vCPUs</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
@@ -107,7 +107,7 @@ Input
     <tr><td>cdrom_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU cdrom image path</td>                     </tr>
     <tr><td>cdrom_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc</td>                     </tr>
+    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>cpus</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Number of vCPUs</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
@@ -155,7 +155,7 @@ Output
     <tr><td>cdrom_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU cdrom image checksum</td>                     </tr>
     <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start QEMU</td>                     </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>cpus</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Number of vCPUs</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>

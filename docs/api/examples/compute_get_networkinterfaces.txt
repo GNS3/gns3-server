@@ -6,10 +6,10 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 5665
+Content-Length: 3969
 Content-Type: application/json
-Date: Tue, 21 Mar 2017 09:31:46 GMT
-Server: Python/3.6 GNS3/2.0.0dev11
+Date: Thu, 29 Jun 2017 15:07:19 GMT
+Server: Python/3.6 GNS3/2.1.0dev1
 X-Route: /v2/compute/network/interfaces
 
 [
@@ -83,78 +83,6 @@ X-Route: /v2/compute/network/interfaces
         "name": "utun0",
         "netmask": "",
         "special": false,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet0",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:00",
-        "name": "vboxnet0",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet1",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:01",
-        "name": "vboxnet1",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet2",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:02",
-        "name": "vboxnet2",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet3",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:03",
-        "name": "vboxnet3",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet4",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:04",
-        "name": "vboxnet4",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet5",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:05",
-        "name": "vboxnet5",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet6",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:06",
-        "name": "vboxnet6",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet7",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:07",
-        "name": "vboxnet7",
-        "netmask": "",
-        "special": true,
         "type": "ethernet"
     },
     {
