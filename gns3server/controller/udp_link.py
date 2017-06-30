@@ -62,12 +62,21 @@ class UDPLink(Link):
         response = yield from node2.compute.post("/projects/{}/ports/udp".format(self._project.id))
         self._node2_port = response.json["udp_port"]
 
+        node1_filters = {}
+        node2_filters = {}
+        filter_node = self._get_filter_node()
+        if filter_node == node1:
+            node1_filters = self._filters
+        elif filter_node == node2:
+            node2_filters = self._filters
+
         # Create the tunnel on both side
         self._link_data.append({
             "lport": self._node1_port,
             "rhost": node2_host,
             "rport": self._node2_port,
-            "type": "nio_udp"
+            "type": "nio_udp",
+            "filters": node1_filters
         })
         yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
 
@@ -75,7 +84,8 @@ class UDPLink(Link):
             "lport": self._node2_port,
             "rhost": node1_host,
             "rport": self._node1_port,
-            "type": "nio_udp"
+            "type": "nio_udp",
+            "filters": node2_filters
         })
         try:
             yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=120)
@@ -84,6 +94,25 @@ class UDPLink(Link):
             yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
             raise e
         self._created = True
+
+    @asyncio.coroutine
+    def update(self):
+        if len(self._link_data) == 0:
+            return
+        node1 = self._nodes[0]["node"]
+        node2 = self._nodes[1]["node"]
+        filter_node = self._get_filter_node()
+
+        if node1 == filter_node:
+            adapter_number1 = self._nodes[0]["adapter_number"]
+            port_number1 = self._nodes[0]["port_number"]
+            self._link_data[0]["filters"] = self._filters
+            yield from node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
+        elif node2 == filter_node:
+            adapter_number2 = self._nodes[1]["adapter_number"]
+            port_number2 = self._nodes[1]["port_number"]
+            self._link_data[1]["filters"] = self._filters
+            yield from node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
 
     @asyncio.coroutine
     def delete(self):

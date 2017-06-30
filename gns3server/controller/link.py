@@ -26,6 +26,68 @@ import logging
 log = logging.getLogger(__name__)
 
 
+FILTERS = [
+    {
+        "type": "frequency_drop",
+        "name": "Frequency drop",
+        "description": "It will drop everything with a -1 frequency, drop every Nth packet with a positive frequency, or drop nothing",
+        "parameters": [
+            {
+                "name": "Frequency",
+                "minimum": -1,
+                "maximum": 32767,
+                "unit": "th packet"
+            }
+        ]
+    },
+    {
+        "type": "packet_loss",
+        "name": "Packet loss",
+        "description": "The percentage represents the chance for a packet to be lost",
+        "parameters": [
+            {
+                "name": "Frequency",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "%"
+            }
+        ]
+    },
+    {
+        "type": "delay",
+        "name": "Delay",
+        "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
+        "parameters": [
+            {
+                "name": "Delay",
+                "minimum": 0,
+                "maximum": 32767,
+                "unit": "ms"
+            },
+            {
+                "name": "Jitter",
+                "minimum": 0,
+                "maximum": 32767,
+                "unit": "ms"
+            }
+        ]
+    },
+    {
+        "type": "corrupt",
+        "name": "Corrupt",
+        "description": "The percentage represents the chance for a packet to be corrupt",
+        "parameters": [
+            {
+                "name": "Frequency",
+                "minimum": 0,
+                "maximum": 100,
+                "unit": "%"
+            }
+        ]
+    }
+]
+
+
 class Link:
     """
     Base class for links.
@@ -44,6 +106,32 @@ class Link:
         self._streaming_pcap = None
         self._created = False
         self._link_type = "ethernet"
+        self._filters = {}
+
+    @property
+    def filters(self):
+        """
+        Get an array of filters
+        """
+        return self._filters
+
+    @asyncio.coroutine
+    def update_filters(self, filters):
+        """
+        Modify the filters list.
+
+        Filter with value 0 will be dropped because not active
+        """
+        new_filters = {}
+        for (filter, values) in filters.items():
+            values = [int(v) for v in values]
+            if len(values) != 0 and values[0] != 0:
+                new_filters[filter] = values
+
+        if new_filters != self.filters:
+            self._filters = new_filters
+            if self._created:
+                yield from self.update()
 
     @property
     def created(self):
@@ -125,6 +213,13 @@ class Link:
         Create the link
         """
 
+        raise NotImplementedError
+
+    @asyncio.coroutine
+    def update(self):
+        """
+        Update a link
+        """
         raise NotImplementedError
 
     @asyncio.coroutine
@@ -230,6 +325,28 @@ class Link:
         else:
             return None
 
+    def available_filters(self):
+        """
+        Return the list of filters compatible with this link
+
+        :returns: Array of filters
+        """
+        filter_node = self._get_filter_node()
+        if filter_node:
+            return FILTERS
+        return []
+
+    def _get_filter_node(self):
+        """
+        Return the node where the filter will run
+
+        :returns: None if no node support filtering else the node
+        """
+        for node in self._nodes:
+            if node["node"].node_type in ('vpcs', ):
+                return node["node"]
+        return None
+
     def __eq__(self, other):
         if not isinstance(other, Link):
             return False
@@ -253,7 +370,8 @@ class Link:
         if topology_dump:
             return {
                 "nodes": res,
-                "link_id": self._id
+                "link_id": self._id,
+                "filters": self._filters
             }
         return {
             "nodes": res,
@@ -262,5 +380,6 @@ class Link:
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,
             "capture_file_path": self.capture_file_path,
-            "link_type": self._link_type
+            "link_type": self._link_type,
+            "filters": self._filters
         }

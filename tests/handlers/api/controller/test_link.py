@@ -33,7 +33,7 @@ from gns3server.handlers.api.controller.project_handler import ProjectHandler
 from gns3server.controller import Controller
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.node import Node
-from gns3server.controller.link import Link
+from gns3server.controller.link import Link, FILTERS
 
 
 @pytest.fixture
@@ -59,6 +59,11 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
+    filters = {
+        "latency": [10],
+        "frequency_drop": [50]
+    }
+
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
             "nodes": [
@@ -77,7 +82,8 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
                     "adapter_number": 2,
                     "port_number": 4
                 }
-            ]
+            ],
+            "filters": filters
         }, example=True)
     assert mock.called
     assert response.status == 201
@@ -85,6 +91,7 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert len(response.json["nodes"]) == 2
     assert response.json["nodes"][0]["label"]["x"] == 42
     assert len(project.links) == 1
+    assert list(project.links.values())[0].filters == filters
 
 
 def test_create_link_failure(http_controller, tmpdir, project, compute, async_run):
@@ -135,6 +142,11 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
+    filters = {
+        "latency": 10,
+        "frequency_drop": 50
+    }
+
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
             "nodes": [
@@ -174,10 +186,12 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
                 "adapter_number": 2,
                 "port_number": 4
             }
-        ]
+        ],
+        "filters": filters
     })
     assert response.status == 201
     assert response.json["nodes"][0]["label"]["x"] == 64
+    assert list(project.links.values())[0].filters == filters
 
 
 def test_list_link(http_controller, tmpdir, project, compute, async_run):
@@ -190,24 +204,31 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
     node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
+    filters = {
+        "latency": 10,
+        "frequency_drop": 50
+    }
+    nodes = [
+        {
+            "node_id": node1.id,
+            "adapter_number": 0,
+            "port_number": 3
+        },
+        {
+            "node_id": node2.id,
+            "adapter_number": 2,
+            "port_number": 4
+        }
+    ]
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
         response = http_controller.post("/projects/{}/links".format(project.id), {
-            "nodes": [
-                {
-                    "node_id": node1.id,
-                    "adapter_number": 0,
-                    "port_number": 3
-                },
-                {
-                    "node_id": node2.id,
-                    "adapter_number": 2,
-                    "port_number": 4
-                }
-            ]
+            "nodes": nodes,
+            "filters": filters
         })
     response = http_controller.get("/projects/{}/links".format(project.id), example=True)
     assert response.status == 200
     assert len(response.json) == 1
+    assert response.json[0]["filters"] == filters
 
 
 def test_start_capture(http_controller, tmpdir, project, compute, async_run):
@@ -258,3 +279,14 @@ def test_delete_link(http_controller, tmpdir, project, compute, async_run):
         response = http_controller.delete("/projects/{}/links/{}".format(project.id, link.id), example=True)
     assert mock.called
     assert response.status == 204
+
+
+def test_list_filters(http_controller, tmpdir, project, async_run):
+
+    link = Link(project)
+    project._links = {link.id: link}
+    with patch("gns3server.controller.link.Link.available_filters", return_value=FILTERS) as mock:
+        response = http_controller.get("/projects/{}/links/{}/available_filters".format(project.id, link.id), example=True)
+    assert mock.called
+    assert response.status == 200
+    assert response.json == FILTERS

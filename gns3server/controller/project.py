@@ -665,6 +665,8 @@ class Project:
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
+                if "filters" in link_data:
+                    yield from link.update_filters(link_data["filters"])
             for drawing_data in topology.get("drawings", []):
                 yield from self.add_drawing(dump=False, **drawing_data)
 

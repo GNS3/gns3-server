@@ -224,6 +224,33 @@ class VPCSHandler:
         response.set_status(201)
         response.json(nio)
 
+    @Route.put(
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Network adapter where the nio is located",
+            "port_number": "Port from where the nio should be updated"
+        },
+        status_codes={
+            201: "NIO updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA,
+        description="Update a NIO from a VPCS instance")
+    def update_nio(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        nio = vm.ethernet_adapter.get_nio(int(request.match_info["port_number"]))
+        if "filters" in request.json and nio:
+            nio.filters = request.json["filters"]
+        yield from vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
+        response.set_status(201)
+        response.json(request.json)
+
     @Route.delete(
         r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={

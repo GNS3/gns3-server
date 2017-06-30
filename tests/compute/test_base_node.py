@@ -19,7 +19,7 @@ import pytest
 import aiohttp
 import asyncio
 import os
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
 from unittest.mock import patch, MagicMock
@@ -28,6 +28,7 @@ from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.vpcs.vpcs_error import VPCSError
 from gns3server.compute.error import NodeError
 from gns3server.compute.vpcs import VPCS
+from gns3server.compute.nios.nio_udp import NIOUDP
 
 
 @pytest.fixture(scope="function")
@@ -121,3 +122,26 @@ def test_change_aux_port(node, port_manager):
     node.aux = port2
     assert node.aux == port2
     port_manager.reserve_tcp_port(port1, node.project)
+
+
+def test_update_ubridge_udp_connection(node, async_run):
+    filters = [{
+        "type": "latency",
+        "value": 10
+    }]
+
+    snio = NIOUDP(1245, "localhost", 1246, [])
+    dnio = NIOUDP(1245, "localhost", 1244, filters)
+    with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
+        async_run(node._update_ubridge_udp_connection('VPCS-10', snio, dnio))
+    mock.assert_called_with("VPCS-10", filters)
+
+
+def test_ubridge_apply_filters(node, async_run):
+    filters = {
+        "latency": [10]
+    }
+    node._ubridge_send = AsyncioMagicMock()
+    async_run(node._ubridge_apply_filters("VPCS-10", filters))
+    node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
+    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 latency 10")

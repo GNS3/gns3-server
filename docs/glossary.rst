@@ -62,3 +62,8 @@ Symbol are the icon used for nodes.
 Scene
 -----
 The drawing area
+
+
+Filter
+------
+Packet filter this allow to add latency or packet drop.

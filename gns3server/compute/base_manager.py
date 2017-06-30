@@ -373,7 +373,8 @@ class BaseManager:
                         sock.connect(sa)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            nio = NIOUDP(lport, rhost, rport)
+            filters = nio_settings.get("filters", [])
+            nio = NIOUDP(lport, rhost, rport, filters)
         elif nio_settings["type"] == "nio_tap":
             tap_device = nio_settings["tap_device"]
             # if not is_interface_up(tap_device):

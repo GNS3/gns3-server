@@ -32,12 +32,24 @@ class NIOUDP(NIO):
     :param rport: remote port number
     """
 
-    def __init__(self, lport, rhost, rport):
+    def __init__(self, lport, rhost, rport, filters):
 
         super().__init__()
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
+        self._filters = filters
+
+    @property
+    def filters(self):
+        """
+        Return the list of filter on this NIO
+        """
+        return self._filters
+
+    @filters.setter
+    def filters(self, val):
+        self._filters = val
 
     @property
     def lport(self):
