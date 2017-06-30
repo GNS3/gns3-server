@@ -63,13 +63,13 @@ def locale_check():
         log.error("Could not determine the current locale: {}".format(e))
     if not language and not encoding:
         try:
-            log.warn("Could not find a default locale, switching to C.UTF-8...")
+            log.warning("Could not find a default locale, switching to C.UTF-8...")
             locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
         except locale.Error as e:
             log.error("Could not switch to the C.UTF-8 locale: {}".format(e))
             raise SystemExit
     elif encoding != "UTF-8":
-        log.warn("Your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
+        log.warning("Your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
         try:
             locale.setlocale(locale.LC_ALL, (language, "UTF-8"))
         except locale.Error as e:
@@ -228,7 +228,7 @@ def run():
     if server_config.getboolean("use_ubridge"):
         log.info("uBridge will be used to handle node connections")
     else:
-        log.warn("uBridge will NOT be used to handle node connections")
+        log.warning("uBridge will NOT be used to handle node connections")
 
     # we only support Python 3 version >= 3.4
     if sys.version_info < (3, 4):
@@ -250,10 +250,6 @@ def run():
     CrashReport.instance()
     host = server_config["host"]
 
-    # https://github.com/GNS3/gns3-server/issues/725
-    if ":" in host:
-        log.critical("Binding server to an IPV6 is not supported")
-        return
     port = int(server_config["port"])
 
     server = WebServer.instance(host, port)
