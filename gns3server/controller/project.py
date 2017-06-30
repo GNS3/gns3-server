@@ -68,7 +68,7 @@ class Project:
 
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
-                 scene_height=1000, scene_width=2000):
+                 scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False):
 
         self._controller = controller
         assert name is not None
@@ -79,6 +79,10 @@ class Project:
         self._status = status
         self._scene_height = scene_height
         self._scene_width = scene_width
+        self._zoom = zoom
+        self._show_layers = show_layers
+        self._snap_to_grid = snap_to_grid
+        self._show_grid = show_grid
         self._loading = False
 
         # Disallow overwrite of existing project
@@ -169,6 +173,66 @@ class Project:
         Width of the drawing area
         """
         self._scene_width = val
+
+    @property
+    def zoom(self):
+        """
+        Zoom level in percentage
+        :return: integer > 0
+        """
+        return self._zoom
+
+    @zoom.setter
+    def zoom(self, zoom):
+        """
+        Setter for zoom level in percentage
+        """
+        self._zoom = zoom
+
+    @property
+    def show_layers(self):
+        """
+        Show layers mode
+        :return: bool
+        """
+        return self._show_layers
+
+    @show_layers.setter
+    def show_layers(self, show_layers):
+        """
+        Setter for show layers mode
+        """
+        self._show_layers = show_layers
+
+    @property
+    def snap_to_grid(self):
+        """
+        Snap to grid mode
+        :return: bool
+        """
+        return self._snap_to_grid
+
+    @snap_to_grid.setter
+    def snap_to_grid(self, snap_to_grid):
+        """
+        Setter for snap to grid mode
+        """
+        self._snap_to_grid = snap_to_grid
+
+    @property
+    def show_grid(self):
+        """
+        Show grid mode
+        :return: bool
+        """
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, show_grid):
+        """
+        Setter for snam to grid mode
+        """
+        self._show_grid = show_grid
 
     @property
     def auto_start(self):
@@ -798,7 +862,6 @@ class Project:
         yield from pool.join()
 
     def __json__(self):
-
         return {
             "name": self._name,
             "project_id": self._id,
@@ -809,7 +872,11 @@ class Project:
             "auto_close": self._auto_close,
             "auto_open": self._auto_open,
             "scene_height": self._scene_height,
-            "scene_width": self._scene_width
+            "scene_width": self._scene_width,
+            "zoom": self._zoom,
+            "show_layers": self._show_layers,
+            "snap_to_grid": self._snap_to_grid,
+            "show_grid": self._show_grid
         }
 
     def __repr__(self):
