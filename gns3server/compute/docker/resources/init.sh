@@ -31,6 +31,9 @@ fi
 #  Restore file permission and mount volumes
 echo "$GNS3_VOLUMES" | tr ":" "\n" | while read i
 do
+    # ensure, that the mount directory exists
+    mkdir -p "$i"
+
     # Copy original files if destination is empty (first start)
     [ "$(ls -A "/gns3volumes$i")" ] || cp -a "$i/." "/gns3volumes$i"
 
