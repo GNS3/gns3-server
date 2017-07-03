@@ -68,7 +68,8 @@ class Project:
 
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
-                 scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False):
+                 scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
+                 show_interface_labels=False):
 
         self._controller = controller
         assert name is not None
@@ -83,6 +84,7 @@ class Project:
         self._show_layers = show_layers
         self._snap_to_grid = snap_to_grid
         self._show_grid = show_grid
+        self._show_interface_labels = show_interface_labels
         self._loading = False
 
         # Disallow overwrite of existing project
@@ -230,9 +232,24 @@ class Project:
     @show_grid.setter
     def show_grid(self, show_grid):
         """
-        Setter for snam to grid mode
+        Setter for showing the grid mode
         """
         self._show_grid = show_grid
+
+    @property
+    def show_interface_labels(self):
+        """
+        Show interface labels mode
+        :return: bool
+        """
+        return self._show_interface_labels
+
+    @show_interface_labels.setter
+    def show_interface_labels(self, show_interface_labels):
+        """
+        Setter for show interface labels
+        """
+        self._show_interface_labels = show_interface_labels
 
     @property
     def auto_start(self):
@@ -876,7 +893,8 @@ class Project:
             "zoom": self._zoom,
             "show_layers": self._show_layers,
             "snap_to_grid": self._snap_to_grid,
-            "show_grid": self._show_grid
+            "show_grid": self._show_grid,
+            "show_interface_labels": self._show_interface_labels
         }
 
     def __repr__(self):

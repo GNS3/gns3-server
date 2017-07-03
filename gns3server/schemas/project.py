@@ -65,6 +65,10 @@ PROJECT_CREATE_SCHEMA = {
         "show_grid": {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,
@@ -120,6 +124,10 @@ PROJECT_UPDATE_SCHEMA = {
         "show_grid": {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,
@@ -191,6 +199,10 @@ PROJECT_OBJECT_SCHEMA = {
         "show_grid": {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,
