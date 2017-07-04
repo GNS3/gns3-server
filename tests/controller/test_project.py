@@ -70,7 +70,12 @@ def test_json(tmpdir):
         "auto_close": True,
         "auto_open": False,
         "scene_width": 2000,
-        "scene_height": 1000
+        "scene_height": 1000,
+        "zoom": 100,
+        "show_grid": False,
+        "show_interface_labels": False,
+        "show_layers": False,
+        "snap_to_grid": False
     }
 
 

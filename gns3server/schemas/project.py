@@ -49,6 +49,26 @@ PROJECT_CREATE_SCHEMA = {
         "scene_width": {
             "type": "integer",
             "description": "Width of the drawing area"
+        },
+        "zoom": {
+            "type": "integer",
+            "description": "Zoom of the drawing area"
+        },
+        "show_layers": {
+            "type": "boolean",
+            "description": "Show layers on the drawing area"
+        },
+        "snap_to_grid": {
+            "type": "boolean",
+            "description": "Snap to grid on the drawing area"
+        },
+        "show_grid": {
+            "type": "boolean",
+            "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,
@@ -88,6 +108,26 @@ PROJECT_UPDATE_SCHEMA = {
         "scene_width": {
             "type": "integer",
             "description": "Width of the drawing area"
+        },
+        "zoom": {
+            "type": "integer",
+            "description": "Zoom of the drawing area"
+        },
+        "show_layers": {
+            "type": "boolean",
+            "description": "Show layers on the drawing area"
+        },
+        "snap_to_grid": {
+            "type": "boolean",
+            "description": "Snap to grid on the drawing area"
+        },
+        "show_grid": {
+            "type": "boolean",
+            "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,
@@ -143,6 +183,26 @@ PROJECT_OBJECT_SCHEMA = {
         "scene_width": {
             "type": "integer",
             "description": "Width of the drawing area"
+        },
+        "zoom": {
+            "type": "integer",
+            "description": "Zoom of the drawing area"
+        },
+        "show_layers": {
+            "type": "boolean",
+            "description": "Show layers on the drawing area"
+        },
+        "snap_to_grid": {
+            "type": "boolean",
+            "description": "Snap to grid on the drawing area"
+        },
+        "show_grid": {
+            "type": "boolean",
+            "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
         }
     },
     "additionalProperties": False,

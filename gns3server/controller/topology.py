@@ -79,6 +79,11 @@ def project_to_topology(project):
         "auto_close": project.auto_close,
         "scene_width": project.scene_width,
         "scene_height": project.scene_height,
+        "zoom": project.zoom,
+        "show_layers": project.show_layers,
+        "snap_to_grid": project.snap_to_grid,
+        "show_grid": project.show_grid,
+        "show_interface_labels": project.show_interface_labels,
         "topology": {
             "nodes": [],
             "links": [],
