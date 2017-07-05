@@ -75,7 +75,7 @@ FILTERS = [
     {
         "type": "corrupt",
         "name": "Corrupt",
-        "description": "The percentage represents the chance for a packet to be corrupt",
+        "description": "The percentage represents the chance for a packet to be corrupted",
         "parameters": [
             {
                 "name": "Frequency",

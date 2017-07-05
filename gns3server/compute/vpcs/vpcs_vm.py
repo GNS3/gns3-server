@@ -381,7 +381,7 @@ class VPCSVM(BaseNode):
         if self.ubridge:
             yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
         elif self.is_running():
-            raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
+            raise VPCSError("Sorry, updating a link to a started VPCS instance is not supported without using uBridge.")
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,

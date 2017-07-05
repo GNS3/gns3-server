@@ -602,11 +602,11 @@ class BaseNode:
         """
         yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
         i = 0
-        for (type, values) in filters.items():
+        for (filter_type, values) in filters.items():
             cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
                 bridge_name=bridge_name,
                 filter_name="filter" + str(i),
-                filter_type=type,
+                filter_type=filter_type,
                 filter_value=" ".join([str(v) for v in values]))
             yield from self._ubridge_send(cmd)
             i += 1
