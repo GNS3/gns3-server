@@ -46,7 +46,7 @@ FILTERS = [
         "description": "The percentage represents the chance for a packet to be lost",
         "parameters": [
             {
-                "name": "Frequency",
+                "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
                 "unit": "%"
@@ -59,13 +59,13 @@ FILTERS = [
         "description": "Delay packets in milliseconds. You can add jitter in milliseconds (+/-) of the delay",
         "parameters": [
             {
-                "name": "Delay",
+                "name": "Latency",
                 "minimum": 0,
                 "maximum": 32767,
                 "unit": "ms"
             },
             {
-                "name": "Jitter",
+                "name": "Jitter (-/+)",
                 "minimum": 0,
                 "maximum": 32767,
                 "unit": "ms"
@@ -78,7 +78,7 @@ FILTERS = [
         "description": "The percentage represents the chance for a packet to be corrupted",
         "parameters": [
             {
-                "name": "Frequency",
+                "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
                 "unit": "%"
