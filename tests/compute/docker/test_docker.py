@@ -17,10 +17,10 @@
 
 import pytest
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
-from gns3server.compute.docker import Docker
+from gns3server.compute.docker import Docker, DOCKER_PREFERRED_API_VERSION, DOCKER_MINIMUM_API_VERSION
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 
 
@@ -162,3 +162,40 @@ def test_pull_image(loop):
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
             images = loop.run_until_complete(asyncio.async(Docker.instance().pull_image("ubuntu")))
             mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
+
+
+def test_docker_check_connection_docker_minimum_version(vm, loop):
+    response = {
+        'ApiVersion': '1.01',
+        'Version': '1.12'
+    }
+
+    with patch("gns3server.compute.docker.Docker.connector"), \
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        vm._connected = False
+        with pytest.raises(DockerError):
+            loop.run_until_complete(asyncio.async(vm._check_connection()))
+
+
+def test_docker_check_connection_docker_preferred_version_against_newer(vm, loop):
+    response = {
+        'ApiVersion': '1.31'
+    }
+
+    with patch("gns3server.compute.docker.Docker.connector"), \
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        vm._connected = False
+        loop.run_until_complete(asyncio.async(vm._check_connection()))
+        assert vm._api_version == DOCKER_PREFERRED_API_VERSION
+
+
+def test_docker_check_connection_docker_preferred_version_against_older(vm, loop):
+    response = {
+        'ApiVersion': '1.27',
+    }
+
+    with patch("gns3server.compute.docker.Docker.connector"), \
+        asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+        vm._connected = False
+        loop.run_until_complete(asyncio.async(vm._check_connection()))
+        assert vm._api_version == DOCKER_MINIMUM_API_VERSION

@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 # Be carefull to keep it consistent
 DOCKER_MINIMUM_API_VERSION = "1.25"
 DOCKER_MINIMUM_VERSION = "1.13"
+DOCKER_PREFERRED_API_VERSION = "1.30"
 
 
 class Docker(BaseManager):
@@ -50,6 +51,7 @@ class Docker(BaseManager):
         self.ubridge_lock = asyncio.Lock()
         self._connector = None
         self._session = None
+        self._api_version = DOCKER_MINIMUM_API_VERSION
 
     @asyncio.coroutine
     def _check_connection(self):
@@ -61,8 +63,17 @@ class Docker(BaseManager):
             except (aiohttp.errors.ClientOSError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
-            if parse_version(version["ApiVersion"]) < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError("Docker version is {}. GNS3 requires a minimum version of {}".format(version["Version"], DOCKER_MINIMUM_VERSION))
+
+            docker_version = parse_version(version['ApiVersion'])
+
+            if docker_version < parse_version(DOCKER_MINIMUM_API_VERSION):
+                raise DockerError(
+                    "Docker version is {}. GNS3 requires a minimum version of {}".format(
+                        version["Version"], DOCKER_MINIMUM_VERSION))
+
+            preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
+            if docker_version >= preferred_api_version:
+                self._api_version = DOCKER_PREFERRED_API_VERSION
 
     def connector(self):
         if self._connector is None or self._connector.closed:
@@ -165,7 +176,7 @@ class Docker(BaseManager):
         :returns: Websocket
         """
 
-        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
+        url = "http://docker/v" + self._api_version + "/" + path
         connection = yield from aiohttp.ws_connect(url,
                                                    connector=self.connector(),
                                                    origin="http://docker",

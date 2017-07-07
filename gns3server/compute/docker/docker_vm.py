@@ -500,8 +500,12 @@ class DockerVM(BaseNode):
 
         while True:
             msg = yield from ws.receive()
-            if msg.tp == aiohttp.MsgType.text:
+            if msg.tp == aiohttp.MsgType.TEXT:
                 out.feed_data(msg.data.encode())
+            if msg.tp == aiohttp.MsgType.BINARY:
+                out.feed_data(msg.data)
+            elif msg.tp == aiohttp.MsgType.ERROR:
+                log.critical("Docker WebSocket Error: {}".format(msg.data))
             else:
                 out.feed_eof()
                 ws.close()
