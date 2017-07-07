@@ -154,3 +154,18 @@ class ComputeHandler:
         controller = Controller.instance()
         yield from controller.delete_compute(request.match_info["compute_id"])
         response.set_status(204)
+
+    @Route.post(
+        r"/computes/{compute_id}/autoidlepc",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "Idle PC computed",
+        },
+        description="Compute IDLE PC value")
+    def autoidlepc(request, response):
+        controller = Controller.instance()
+        res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"])
+        response.set_status(200)
+        response.json(res)

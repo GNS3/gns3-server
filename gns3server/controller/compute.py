@@ -665,3 +665,4 @@ class Compute:
                     return (this_interface["ip_address"], other_interface["ip_address"])
 
         raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))
+
