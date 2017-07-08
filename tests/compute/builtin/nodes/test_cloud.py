@@ -26,7 +26,7 @@ from tests.utils import asyncio_patch
 
 @pytest.fixture
 def nio():
-    return NIOUDP(4242, "127.0.0.1", 4343)
+    return NIOUDP(4242, "127.0.0.1", 4343, [])
 
 
 @pytest.fixture

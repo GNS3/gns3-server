@@ -24,9 +24,9 @@ def test_arp_command(async_run):
     node = AsyncioMagicMock()
     node.name = "Test"
     node.nios = {}
-    node.nios[0] = NIOUDP(55, "127.0.0.1", 56)
+    node.nios[0] = NIOUDP(55, "127.0.0.1", 56, [])
     node.nios[0].name = "Ethernet0"
-    node.nios[1] = NIOUDP(55, "127.0.0.1", 56)
+    node.nios[1] = NIOUDP(55, "127.0.0.1", 56, [])
     node.nios[1].name = "Ethernet1"
     node._hypervisor.send = AsyncioMagicMock(return_value=["0050.7966.6801  1  Ethernet0", "0050.7966.6802  1  Ethernet1"])
     console = EthernetSwitchConsole(node)

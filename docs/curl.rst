@@ -222,6 +222,15 @@ This will display a red square in the middle of your topologies:
 Tips: you can embed png/jpg... by using a base64 encoding in the SVG.
 
 
+Add filter to the link
+######################
+
+Filter allow you to add error on a link.
+
+.. code-block:: shell-session
+    curl -X PUT "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/links/007f2177-6790-4e1b-ac28-41fa226b2a06" -d '{"filters": {"frequency_drop": [5]}}'
+
+
 Creation of nodes
 #################
 

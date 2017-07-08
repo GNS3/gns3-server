@@ -74,6 +74,20 @@ def test_vpcs_nio_create_udp(http_compute, vm):
     assert response.json["type"] == "nio_udp"
 
 
+def test_vpcs_nio_update_udp(http_compute, vm):
+    response = http_compute.put("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
+                                {
+                                    "type": "nio_udp",
+                                    "lport": 4242,
+                                    "rport": 4343,
+                                    "rhost": "127.0.0.1",
+                                    "filters": {}},
+                                example=True)
+    assert response.status == 201
+    assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.json["type"] == "nio_udp"
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_vpcs_nio_create_tap(http_compute, vm, ethernet_device):
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):

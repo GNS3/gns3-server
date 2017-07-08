@@ -62,6 +62,7 @@ class LinkHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = yield from project.add_link()
+        yield from link.update_filters(request.json.get("filters", {}))
         try:
             for node in request.json["nodes"]:
                 yield from link.add_node(project.get_node(node["node_id"]),
@@ -73,6 +74,24 @@ class LinkHandler:
             raise e
         response.set_status(201)
         response.json(link)
+
+    @Route.get(
+        r"/projects/{project_id}/links/{link_id}/available_filters",
+        parameters={
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
+        },
+        status_codes={
+            200: "List of filters",
+            400: "Invalid request"
+        },
+        description="Return the list of filters available for this link")
+    def list_filters(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
+        response.set_status(200)
+        response.json(link.available_filters())
 
     @Route.put(
         r"/projects/{project_id}/links/{link_id}",
@@ -91,7 +110,9 @@ class LinkHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
-        yield from link.update_nodes(request.json["nodes"])
+        yield from link.update_filters(request.json.get("filters", {}))
+        if "nodes" in request.json:
+            yield from link.update_nodes(request.json["nodes"])
         response.set_status(201)
         response.json(link)
 

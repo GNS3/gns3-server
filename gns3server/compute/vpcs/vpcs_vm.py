@@ -73,6 +73,10 @@ class VPCSVM(BaseNode):
             self.startup_script = startup_script
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
+    @property
+    def ethernet_adapter(self):
+        return self._ethernet_adapter
+
     @asyncio.coroutine
     def close(self):
         """
@@ -377,7 +381,7 @@ class VPCSVM(BaseNode):
         if self.ubridge:
             yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
         elif self.is_running():
-            raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
+            raise VPCSError("Sorry, updating a link to a started VPCS instance is not supported without using uBridge.")
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
@@ -386,6 +390,16 @@ class VPCSVM(BaseNode):
                                                                                   port_number=port_number))
 
         return nio
+
+    @asyncio.coroutine
+    def port_update_nio_binding(self, port_number, nio):
+        if not self._ethernet_adapter.port_exists(port_number):
+            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                           port_number=port_number))
+        if self.ubridge:
+            yield from self._update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+        elif self.is_running():
+            raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, port_number):

@@ -138,8 +138,8 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                if parse_version(self._version) < parse_version("0.9.7"):
-                    raise UbridgeError("uBridge executable version must be >= 0.9.7")
+                if parse_version(self._version) < parse_version("0.9.12"):
+                    raise UbridgeError("uBridge executable version must be >= 0.9.12")
             else:
                 raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
         except (OSError, subprocess.SubprocessError) as e:
