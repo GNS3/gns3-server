@@ -143,8 +143,8 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
     filters = {
-        "latency": 10,
-        "frequency_drop": 50
+        "latency": [10],
+        "frequency_drop": [50]
     }
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
@@ -205,8 +205,8 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
 
     filters = {
-        "latency": 10,
-        "frequency_drop": 50
+        "latency": [10],
+        "frequency_drop": [50]
     }
     nodes = [
         {
