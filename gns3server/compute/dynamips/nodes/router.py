@@ -66,8 +66,6 @@ class Router(BaseNode):
 
     def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        allocate_aux = manager.config.get_section_config("Dynamips").getboolean("allocate_aux_console_ports", False)
-
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
