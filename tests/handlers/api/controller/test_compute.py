@@ -216,3 +216,28 @@ def test_compute_create_img(http_controller, controller):
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
         response = http_controller.post("/computes/my_compute/qemu/img", params, example=True)
         mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)
+
+
+def test_compute_autoidlepc(http_controller, controller):
+
+    params = {
+        "compute_id": "my_compute_id",
+        "protocol": "http",
+        "host": "localhost",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params, example=False)
+
+    params = {
+        "platform": "c7200",
+        "image": "test.bin"
+    }
+    with asyncio_patch("gns3server.controller.Controller.autoidlepc", return_value={"idlepc": "0x606de20c"}) as mock:
+        response = http_controller.post("/computes/my_compute_id/autoidlepc", params, example=True)
+    assert mock.called
+    assert response.status == 200
+
+
+

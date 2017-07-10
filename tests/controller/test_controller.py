@@ -517,3 +517,13 @@ def test_load_appliances(controller):
             assert qemu_uuid == appliance.id
         elif appliance.name == "Cloud":
             assert cloud_uuid == appliance.id
+
+
+def test_autoidlepc(controller, async_run):
+    controller._computes["local"] = AsyncioMagicMock()
+    node_mock = AsyncioMagicMock()
+    with asyncio_patch("gns3server.controller.Project.add_node", return_value=node_mock):
+        async_run(controller.autoidlepc("local", "c7200", "test.bin"))
+    assert node_mock.dynamips_auto_idlepc.called
+    assert len(controller.projects) == 0
+
