@@ -510,6 +510,9 @@ class Project:
         :param name: Name of the snapshot
         """
 
+        if name in [snap.name for snap in self.snapshots.values()]:
+            raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
+
         snapshot = Snapshot(self, name=name)
         try:
             if os.path.exists(snapshot.path):
