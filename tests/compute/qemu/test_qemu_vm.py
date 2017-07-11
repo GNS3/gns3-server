@@ -70,6 +70,9 @@ def vm(project, manager, fake_qemu_binary, fake_qemu_img_binary):
     manager.port_manager.console_host = "127.0.0.1"
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
     vm._process_priority = "normal"  # Avoid complexity for Windows tests
+    vm._start_ubridge = AsyncioMagicMock()
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_hypervisor.is_running.return_value = True
     return vm
 
 
@@ -195,21 +198,15 @@ def test_suspend(loop, vm):
 
 
 def test_add_nio_binding_udp(vm, loop):
-    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
+    assert nio.lport == 4242
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     assert nio.lport == 4242
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-def test_add_nio_binding_ethernet(vm, loop, ethernet_device):
-    with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
-        nio = Qemu.instance().create_nio({"type": "nio_ethernet", "ethernet_device": ethernet_device})
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
-        assert nio.ethernet_device == ethernet_device
-
 
 def test_port_remove_nio_binding(vm, loop):
-    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
     assert vm._ethernet_adapters[0].ports[0] is None
@@ -460,6 +457,7 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        nio = vm._local_udp_tunnels[0][0]
         assert cmd == [
             fake_qemu_binary,
             "-name",
@@ -477,7 +475,9 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-net",
             "none",
             "-device",
-            "e1000,mac={}".format(vm._mac_address)
+            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "-netdev",
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
         ]
 
 
@@ -503,6 +503,7 @@ def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_mana
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        nio = vm._local_udp_tunnels[0][0]
         assert cmd == [
             fake_qemu_binary,
             "-name",
@@ -521,7 +522,9 @@ def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_mana
             "-net",
             "none",
             "-device",
-            "e1000,mac={}".format(vm._mac_address)
+            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "-netdev",
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
         ]
 
 
@@ -534,6 +537,7 @@ def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        nio = vm._local_udp_tunnels[0][0]
         assert cmd == [
             fake_qemu_binary,
             "-name",
@@ -554,7 +558,9 @@ def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_
             "-net",
             "none",
             "-device",
-            "e1000,mac={}".format(vm._mac_address)
+            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "-netdev",
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
         ]
 
 
@@ -573,6 +579,8 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
     vm.adapters = 2
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
+        nio1 = vm._local_udp_tunnels[0][0]
+        nio2 = vm._local_udp_tunnels[1][0]
         assert cmd == [
             fake_qemu_binary,
             "-name",
@@ -590,9 +598,13 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
             "-net",
             "none",
             "-device",
-            "e1000,mac={}".format(vm.mac_address),
+            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "-netdev",
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio1.rport, nio1.lport),
             "-device",
-            "e1000,mac={}".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1))
+            "e1000,mac={},netdev=gns3-1".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)),
+            "-netdev",
+            "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport)
         ]
 
 
@@ -608,17 +620,17 @@ def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port
     assert mac_0[:8] == "00:00:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
-        assert "e1000,mac={}".format(mac_0) in cmd
-        assert "e1000,mac={}".format(mac_1) in cmd
+        assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
+        assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
 
     vm.mac_address = "00:42:ab:0e:0f:0a"
     mac_0 = vm._mac_address
-    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address))
+    mac_1 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)
     assert mac_0[:8] == "00:42:ab"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
-        assert "e1000,mac={}".format(mac_0) in cmd
-        assert "e1000,mac={}".format(mac_1) in cmd
+        assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
+        assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
 
 
 def test_build_command_large_number_of_adapters(vm, loop, fake_qemu_binary, port_manager):
@@ -638,19 +650,23 @@ def test_build_command_large_number_of_adapters(vm, loop, fake_qemu_binary, port
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.async(vm._build_command()))
 
-    assert "e1000,mac={}".format(mac_0) in cmd
-    assert "e1000,mac={}".format(mac_1) in cmd
+    # Count if we have 100 e1000 adapters in the command
+    assert len([l for l in cmd if "e1000" in l ]) == 100
+    assert len(vm._ethernet_adapters) == 100
+
+    assert "e1000,mac={},netdev=gns3-0".format(mac_0) in cmd
+    assert "e1000,mac={},netdev=gns3-1".format(mac_1) in cmd
     assert "pci-bridge,id=pci-bridge0,bus=dmi_pci_bridge0,chassis_nr=0x1,addr=0x0,shpc=off" not in cmd
     assert "pci-bridge,id=pci-bridge1,bus=dmi_pci_bridge1,chassis_nr=0x1,addr=0x1,shpc=off" in cmd
     assert "pci-bridge,id=pci-bridge2,bus=dmi_pci_bridge2,chassis_nr=0x1,addr=0x2,shpc=off" in cmd
     assert "i82801b11-bridge,id=dmi_pci_bridge1" in cmd
 
     mac_29 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 29)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x04".format(mac_29) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x04,netdev=gns3-29".format(mac_29) in cmd
     mac_30 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 30)
-    assert "e1000,mac={},bus=pci-bridge1,addr=0x05".format(mac_30) in cmd
+    assert "e1000,mac={},bus=pci-bridge1,addr=0x05,netdev=gns3-30".format(mac_30) in cmd
     mac_74 = int_to_macaddress(macaddress_to_int(vm._mac_address) + 74)
-    assert "e1000,mac={},bus=pci-bridge2,addr=0x11".format(mac_74) in cmd
+    assert "e1000,mac={},bus=pci-bridge2,addr=0x11,netdev=gns3-74".format(mac_74) in cmd
 
     # Qemu < 2.4 doesn't support large number of adapters
     vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.0.0")

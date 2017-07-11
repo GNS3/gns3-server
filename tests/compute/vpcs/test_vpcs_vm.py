@@ -43,6 +43,8 @@ def vm(project, manager, ubridge_path):
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     vm._vpcs_version = parse_version("0.9")
     vm._start_ubridge = AsyncioMagicMock()
+    vm._ubridge_hypervisor = MagicMock()
+    vm._ubridge_hypervisor.is_running.return_value = True
     return vm
 
 
@@ -67,7 +69,7 @@ def test_vm_check_vpcs_version_0_6_1(loop, vm, manager):
 def test_vm_invalid_vpcs_version(loop, manager, vm):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
-            nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+            nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
             vm.port_add_nio_binding(0, nio)
             loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
             assert vm.name == "test"
@@ -94,8 +96,6 @@ def test_start(loop, vm, async_run):
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
                 with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
-                    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-                    async_run(vm.port_add_nio_binding(0, nio))
                     loop.run_until_complete(asyncio.async(vm.start()))
                     assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                       '-p',
@@ -130,7 +130,7 @@ def test_start_0_6_1(loop, vm, async_run):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
                 async_run(vm.port_add_nio_binding(0, nio))
                 async_run(vm.start())
                 assert mock_exec.call_args[0] == (vm._vpcs_path(),
@@ -162,7 +162,7 @@ def test_stop(loop, vm, async_run):
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
                 with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
                     async_run(vm.port_add_nio_binding(0, nio))
 
                     async_run(vm.start())
@@ -197,11 +197,12 @@ def test_reload(loop, vm, async_run):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+                nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
                 async_run(vm.port_add_nio_binding(0, nio))
                 async_run(vm.start())
                 assert vm.is_running()
 
+                vm._ubridge_send = AsyncioMagicMock()
                 with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
                     async_run(vm.reload())
                 assert vm.is_running() is True
@@ -213,7 +214,7 @@ def test_reload(loop, vm, async_run):
 
 
 def test_add_nio_binding_udp(vm, async_run):
-    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
+    nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
     async_run(vm.port_add_nio_binding(0, nio))
     assert nio.lport == 4242
 

@@ -280,14 +280,13 @@ class VirtualBoxVM(BaseNode):
         # add a guest property to let the VM know about the GNS3 project directory
         yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
-        if self.use_ubridge:
-            yield from self._start_ubridge()
-            for adapter_number in range(0, self._adapters):
-                nio = self._ethernet_adapters[adapter_number].get_nio(0)
-                if nio:
-                    yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                                self._local_udp_tunnels[adapter_number][1],
-                                                                nio)
+        yield from self._start_ubridge()
+        for adapter_number in range(0, self._adapters):
+            nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            if nio:
+                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                                                            self._local_udp_tunnels[adapter_number][1],
+                                                            nio)
 
         yield from self._start_console()
 
@@ -837,13 +836,10 @@ class VirtualBoxVM(BaseNode):
                 yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
                 yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
 
-            if self.use_ubridge:
-                # use a local UDP tunnel to connect to uBridge instead
-                if adapter_number not in self._local_udp_tunnels:
-                    self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
-                nio = self._local_udp_tunnels[adapter_number][0]
-            else:
-                nio = self._ethernet_adapters[adapter_number].get_nio(0)
+            # use a local UDP tunnel to connect to uBridge instead
+            if adapter_number not in self._local_udp_tunnels:
+                self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
+            nio = self._local_udp_tunnels[adapter_number][0]
 
             if nio:
                 if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
@@ -881,7 +877,7 @@ class VirtualBoxVM(BaseNode):
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
                     yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
 
-                if self.use_ubridge and not self._ethernet_adapters[adapter_number].get_nio(0):
+                if not self._ethernet_adapters[adapter_number].get_nio(0):
                     yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
 
         for adapter_number in range(self._adapters, self._maximum_adapters):
@@ -972,32 +968,14 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        if self.ubridge:
-            try:
-                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                            self._local_udp_tunnels[adapter_number][1],
-                                                            nio)
-            except KeyError:
-                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                                adapter_number=adapter_number))
-            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
-        else:
-            vm_state = yield from self._get_vm_state()
-            if vm_state == "running":
-                if isinstance(nio, NIOUDP):
-                    # dynamically configure an UDP tunnel on the VirtualBox adapter
-                    yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
-                    yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
-                    yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
-                    yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
-                    yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
-
-                    # check if the UDP tunnel has been correctly set
-                    vm_info = yield from self._get_vm_info()
-                    generic_driver_number = "generic{}".format(adapter_number + 1)
-                    if generic_driver_number not in vm_info and vm_info[generic_driver_number] != "UDPTunnel":
-                        log.warning("UDP tunnel has not been set on nic: {}".format(adapter_number + 1))
-                        self.project.emit("log.warning", {"message": "UDP tunnel has not been set on nic: {}".format(adapter_number + 1)})
+        try:
+            yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                                                        self._local_udp_tunnels[adapter_number][1],
+                                                        nio)
+        except KeyError:
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
+        yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
         log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -1021,17 +999,10 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        if self.ubridge:
-            yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
-            vm_state = yield from self._get_vm_state()
-            if vm_state == "running":
-                yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
-        else:
-            vm_state = yield from self._get_vm_state()
-            if vm_state == "running":
-                # dynamically disable the VirtualBox adapter
-                yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
-                yield from self._control_vm("nic{} null".format(adapter_number + 1))
+        yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
+        vm_state = yield from self._get_vm_state()
+        if vm_state == "running":
+            yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
@@ -1058,11 +1029,6 @@ class VirtualBoxVM(BaseNode):
         except KeyError:
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
-
-        if not self.use_ubridge:
-            vm_state = yield from self._get_vm_state()
-            if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
-                raise VirtualBoxError("Sorry, packet capturing on a started VirtualBox VM is not supported without using uBridge")
 
         nio = adapter.get_nio(0)
 

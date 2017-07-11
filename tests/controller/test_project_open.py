@@ -105,7 +105,6 @@ def demo_topology():
                     "node_id": "64ba8408-afbf-4b66-9cdd-1fd854427478",
                     "node_type": "vpcs",
                     "properties": {
-                        "startup_script": "",
                     },
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,
@@ -129,7 +128,6 @@ def demo_topology():
                     "node_id": "748bcd89-624a-40eb-a8d3-1d2e85c99b51",
                     "node_type": "vpcs",
                     "properties": {
-                        "startup_script": "",
                     },
                     "symbol": ":/symbols/computer.svg",
                     "width": 65,
@@ -151,7 +149,8 @@ def test_open(controller, tmpdir, demo_topology, async_run, http_server):
     controller._computes["local"] = Compute("local", controller=controller, host=http_server[0], port=http_server[1])
     controller._computes["vm"] = controller._computes["local"]
 
-    project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
+    with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.add_ubridge_udp_connection"):
+        project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
     assert project.status == "opened"
     assert len(project.computes) == 1
     assert len(project.nodes) == 2
