@@ -50,6 +50,7 @@ class NIOUDP(NIO):
         self._rport = rport
         self._filters = filters
         self._local_tunnel_lport = None
+        self._local_tunnel_rport = None
         self._node = node
         super().__init__(name, node.hypervisor)
 
@@ -92,6 +93,7 @@ class NIOUDP(NIO):
     def close(self):
         if self._local_tunnel_lport:
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_lport, self ._node.project)
+        if self._local_tunnel_rport:
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_rport, self._node.project)
         self._node.manager.port_manager.release_udp_port(self._lport, self._node.project)
 
