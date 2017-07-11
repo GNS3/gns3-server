@@ -184,7 +184,7 @@ IOU_OBJECT_SCHEMA = {
             "type": ["boolean", "null"]
         },
         "command_line": {
-            "description": "Last command line used by GNS3 to start QEMU",
+            "description": "Last command line used by GNS3 to start IOU",
             "type": "string"
         },
         "application_id": {
