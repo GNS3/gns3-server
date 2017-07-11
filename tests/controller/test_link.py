@@ -369,9 +369,10 @@ def test_update_filters(async_run, project, compute):
     link.update = AsyncioMagicMock()
     assert link._created
     async_run(link.update_filters({
-        "packet_loss": ["10"],
-        "delay": ["50", "10"],
-        "frequency_drop": ["0"]
+        "packet_loss": [10],
+        "delay": [50, 10],
+        "frequency_drop": [0],
+        "bpf": [" \n  "]
     }))
     assert link.filters == {
         "packet_loss": [10],

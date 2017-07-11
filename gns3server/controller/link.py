@@ -36,6 +36,7 @@ FILTERS = [
                 "name": "Frequency",
                 "minimum": -1,
                 "maximum": 32767,
+                "type": "int",
                 "unit": "th packet"
             }
         ]
@@ -49,6 +50,7 @@ FILTERS = [
                 "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
+                "type": "int",
                 "unit": "%"
             }
         ]
@@ -62,13 +64,15 @@ FILTERS = [
                 "name": "Latency",
                 "minimum": 0,
                 "maximum": 32767,
-                "unit": "ms"
+                "unit": "ms",
+                "type": "int"
             },
             {
                 "name": "Jitter (-/+)",
                 "minimum": 0,
                 "maximum": 32767,
-                "unit": "ms"
+                "unit": "ms",
+                "type": "int"
             }
         ]
     },
@@ -81,7 +85,19 @@ FILTERS = [
                 "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
-                "unit": "%"
+                "unit": "%",
+                "type": "int"
+            }
+        ]
+    },
+    {
+        "type": "bpf",
+        "name": "BPF",
+        "description": "Berkeley Packet Filter (BPF) syntax. This filter will drop any packet matching the expression. Put one filter by line",
+        "parameters": [
+            {
+                "name": "BPF filters",
+                "type": "text"
             }
         ]
     }
@@ -124,8 +140,14 @@ class Link:
         """
         new_filters = {}
         for (filter, values) in filters.items():
-            values = [int(v) for v in values]
-            if len(values) != 0 and values[0] != 0:
+            new_values = []
+            for value in values:
+                if isinstance(value, str):
+                    new_values.append(value.strip("\n "))
+                else:
+                    new_values.append(int(value))
+            values = new_values
+            if len(values) != 0 and values[0] != 0 and values[0] != '':
                 new_filters[filter] = values
 
         if new_filters != self.filters:
