@@ -176,10 +176,18 @@ class Docker(BaseManager):
         :returns: Websocket
         """
 
+<<<<<<< HEAD
+        url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
+        connection = yield from self._session.ws_connect(url,
+                                                         origin="http://docker",
+                                                         autoping=True)
+=======
         url = "http://docker/v" + self._api_version + "/" + path
         connection = yield from aiohttp.ws_connect(url,
+                                                   connector=self.connector(),
                                                    origin="http://docker",
                                                    autoping=True)
+>>>>>>> master
         return connection
 
     @locked_coroutine
