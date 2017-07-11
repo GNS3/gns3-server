@@ -264,7 +264,7 @@ class VPCSVM(BaseNode):
                 if self.use_ubridge:
                     yield from self._start_ubridge()
                     if nio:
-                        yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+                        yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
                 yield from self.start_wrap_console()
 
@@ -379,7 +379,7 @@ class VPCSVM(BaseNode):
                                                                                            port_number=port_number))
 
         if self.ubridge:
-            yield from self._add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
         elif self.is_running():
             raise VPCSError("Sorry, updating a link to a started VPCS instance is not supported without using uBridge.")
 

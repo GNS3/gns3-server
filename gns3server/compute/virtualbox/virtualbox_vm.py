@@ -285,7 +285,7 @@ class VirtualBoxVM(BaseNode):
             for adapter_number in range(0, self._adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 if nio:
-                    yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                    yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                                 self._local_udp_tunnels[adapter_number][1],
                                                                 nio)
 
@@ -974,7 +974,7 @@ class VirtualBoxVM(BaseNode):
 
         if self.ubridge:
             try:
-                yield from self._add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                             self._local_udp_tunnels[adapter_number][1],
                                                             nio)
             except KeyError:

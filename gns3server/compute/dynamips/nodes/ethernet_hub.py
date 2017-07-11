@@ -120,8 +120,8 @@ class EthernetHub(Bridge):
         """
 
         for nio in self._nios:
-            if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport, self._project)
+            if nio:
+                yield from nio.close()
 
         try:
             yield from Bridge.delete(self)

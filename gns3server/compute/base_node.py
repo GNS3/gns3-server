@@ -475,7 +475,7 @@ class BaseNode:
         """
         Returns the uBridge hypervisor.
 
-        :returns: path to uBridge
+        :returns: instance of uBridge
         """
 
         if self._ubridge_hypervisor and not self._ubridge_hypervisor.is_running():
@@ -512,6 +512,8 @@ class BaseNode:
         :param command: command to send
         """
 
+        if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
+            yield from self._start_ubridge()
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
         try:
@@ -557,7 +559,7 @@ class BaseNode:
         self._ubridge_hypervisor = None
 
     @asyncio.coroutine
-    def _add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+    def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
         Creates an UDP connection in uBridge.
 

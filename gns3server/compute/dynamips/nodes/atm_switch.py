@@ -122,8 +122,8 @@ class ATMSwitch(Device):
     @asyncio.coroutine
     def close(self):
         for nio in self._nios.values():
-            if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport, self._project)
+            if nio:
+                yield from nio.close()
 
         if self._hypervisor:
             try:

@@ -216,8 +216,8 @@ class EthernetSwitch(Device):
         """
 
         for nio in self._nios.values():
-            if nio and isinstance(nio, NIOUDP):
-                self.manager.port_manager.release_udp_port(nio.lport, self._project)
+            if nio:
+                yield from nio.close()
         self.manager.port_manager.release_tcp_port(self._console, self._project)
         if self._hypervisor:
             try:

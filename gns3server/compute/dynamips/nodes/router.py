@@ -388,8 +388,10 @@ class Router(BaseNode):
         for adapter in self._slots:
             if adapter is not None:
                 for nio in adapter.ports.values():
-                    if nio and isinstance(nio, NIOUDP):
-                        self.manager.port_manager.release_udp_port(nio.lport, self._project)
+                    if nio:
+                        yield from nio.close()
+
+        yield from self._stop_ubridge()
 
         if self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
