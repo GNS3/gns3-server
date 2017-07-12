@@ -591,6 +591,14 @@ class BaseNode:
         yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
     @asyncio.coroutine
+    def ubridge_delete_bridge(self, name):
+        """
+        :params name: Delete the bridge with this name
+        """
+        if self.ubridge:
+            yield from self._ubridge_send("bridge delete {name}".format(name=name))
+
+    @asyncio.coroutine
     def _update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
