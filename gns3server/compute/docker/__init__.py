@@ -177,9 +177,9 @@ class Docker(BaseManager):
         """
 
         url = "http://docker/v" + self._api_version + "/" + path
-        connection = yield from aiohttp.ws_connect(url,
-                                                   origin="http://docker",
-                                                   autoping=True)
+        connection = yield from self._session.ws_connect(url,
+                                                         origin="http://docker",
+                                                         autoping=True)
         return connection
 
     @locked_coroutine
