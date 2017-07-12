@@ -1282,6 +1282,17 @@ class Router(BaseNode):
         adapter.add_nio(port_number, nio)
 
     @asyncio.coroutine
+    def slot_update_nio_binding(self, slot_number, port_number, nio):
+        """
+        Update a slot NIO binding.
+
+        :param slot_number: slot number
+        :param port_number: port number
+        :param nio: NIO instance to add to the slot/port
+        """
+        pass
+
+    @asyncio.coroutine
     def slot_remove_nio_binding(self, slot_number, port_number):
         """
         Removes a slot NIO binding.
@@ -1313,8 +1324,7 @@ class Router(BaseNode):
         nio = adapter.get_nio(port_number)
         if nio is None:
             return
-        if isinstance(nio, NIOUDP):
-            self.manager.port_manager.release_udp_port(nio.lport, self._project)
+        yield from nio.close()
         adapter.remove_nio(port_number)
 
         log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(name=self._name,

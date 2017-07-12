@@ -92,6 +92,8 @@ class NIOUDP(NIO):
     @asyncio.coroutine
     def close(self):
         if self._local_tunnel_lport:
+            name = 'DYNAMIPS-{}-{}'.format(self._local_tunnel_lport, self._local_tunnel_rport)
+            yield from self._node.ubridge_delete_bridge(name)
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_lport, self ._node.project)
         if self._local_tunnel_rport:
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_rport, self._node.project)
