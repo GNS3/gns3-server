@@ -124,6 +124,20 @@ def test_docker_nio_create_udp(http_compute, vm):
     assert response.json["type"] == "nio_udp"
 
 
+def test_docker_update_nio(http_compute, vm):
+    with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_update_nio_binding") as mock:
+        response = http_compute.put("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
+                                    {
+                                        "type": "nio_udp",
+                                        "lport": 4242,
+                                        "rport": 4343,
+                                        "rhost": "127.0.0.1"
+                                    },
+                                    example=True)
+    assert response.status == 201, response.body.decode()
+    assert response.route == "/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+
+
 def test_docker_delete_nio(http_compute, vm):
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_remove_nio_binding") as mock:
         response = http_compute.delete("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
