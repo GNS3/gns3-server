@@ -136,7 +136,7 @@ def test_get_file(http_compute, tmpdir):
     assert response.status == 404
 
     response = http_compute.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
 
 
 def test_write_file(http_compute, tmpdir):
@@ -151,7 +151,7 @@ def test_write_file(http_compute, tmpdir):
         assert f.read() == "world"
 
     response = http_compute.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
 
 
 def test_stream_file(http_compute, tmpdir):
@@ -170,4 +170,4 @@ def test_stream_file(http_compute, tmpdir):
     assert response.status == 404
 
     response = http_compute.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
