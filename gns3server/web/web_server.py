@@ -43,8 +43,8 @@ import gns3server.handlers
 import logging
 log = logging.getLogger(__name__)
 
-if not aiohttp.__version__.startswith("2.0"):
-    raise RuntimeError("You need aiohttp 2.0 for running GNS3")
+if not aiohttp.__version__.startswith("2.2"):
+    raise RuntimeError("aiohttp 2.0 is required to run the GNS3 server")
 
 
 class WebServer:

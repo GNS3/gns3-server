@@ -203,7 +203,7 @@ def test_get_file(http_controller, tmpdir, loop, project):
     assert response.status == 404
 
     response = http_controller.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
 
 
 def test_write_file(http_controller, tmpdir, project):
@@ -214,7 +214,7 @@ def test_write_file(http_controller, tmpdir, project):
         assert f.read() == "world"
 
     response = http_controller.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
 
 
 def test_write_and_get_file_with_leading_slashes_in_filename(http_controller, tmpdir, loop, project):

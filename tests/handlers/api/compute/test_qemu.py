@@ -258,7 +258,7 @@ def test_upload_image_ova(http_compute, tmpdir):
 def test_upload_image_forbiden_location(http_compute, tmpdir):
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir),):
         response = http_compute.post("/qemu/images/../../test2", body="TEST", raw=True)
-        assert response.status == 403
+        assert response.status == 404
 
 
 def test_upload_image_permission_denied(http_compute, tmpdir):
