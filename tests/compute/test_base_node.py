@@ -133,15 +133,27 @@ def test_update_ubridge_udp_connection(node, async_run):
     snio = NIOUDP(1245, "localhost", 1246, [])
     dnio = NIOUDP(1245, "localhost", 1244, filters)
     with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
-        async_run(node._update_ubridge_udp_connection('VPCS-10', snio, dnio))
+        async_run(node.update_ubridge_udp_connection('VPCS-10', snio, dnio))
     mock.assert_called_with("VPCS-10", filters)
 
 
 def test_ubridge_apply_filters(node, async_run):
     filters = {
-        "latency": [10]
+        "latency": [10],
+        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
     }
     node._ubridge_send = AsyncioMagicMock()
     async_run(node._ubridge_apply_filters("VPCS-10", filters))
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
     node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 latency 10")
+
+
+def test_ubridge_apply_bpf_filters(node, async_run):
+    filters = {
+        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
+    }
+    node._ubridge_send = AsyncioMagicMock()
+    async_run(node._ubridge_apply_filters("VPCS-10", filters))
+    node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
+    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 bpf \"icmp[icmptype] == 8\"")
+    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter1 bpf \"tcp src port 53\"")

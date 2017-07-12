@@ -391,7 +391,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
         if self.is_running():
-            yield from self._update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            yield from self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, port_number):

@@ -577,9 +577,16 @@ class BaseNode:
         yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
     @asyncio.coroutine
-    def _update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+    def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         if destination_nio:
             yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+
+    def ubridge_delete_bridge(self, name):
+        """
+        :params name: Delete the bridge with this name
+        """
+        if self.ubridge:
+            yield from self._ubridge_send("bridge delete {name}".format(name=name))
 
     @asyncio.coroutine
     def _ubridge_apply_filters(self, bridge_name, filters):
@@ -592,13 +599,24 @@ class BaseNode:
         yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
         i = 0
         for (filter_type, values) in filters.items():
-            cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
-                bridge_name=bridge_name,
-                filter_name="filter" + str(i),
-                filter_type=filter_type,
-                filter_value=" ".join([str(v) for v in values]))
-            yield from self._ubridge_send(cmd)
-            i += 1
+            if isinstance(values[0], str):
+                for line in values[0].split('\n'):
+                    line = line.strip()
+                    cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
+                        bridge_name=bridge_name,
+                        filter_name="filter" + str(i),
+                        filter_type=filter_type,
+                        filter_value='"{}" {}'.format(line, " ".join([str(v) for v in values[1:]]))).strip()
+                    yield from self._ubridge_send(cmd)
+                    i += 1
+            else:
+                cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
+                    bridge_name=bridge_name,
+                    filter_name="filter" + str(i),
+                    filter_type=filter_type,
+                    filter_value=" ".join([str(v) for v in values]))
+                yield from self._ubridge_send(cmd)
+                i += 1
 
     @asyncio.coroutine
     def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=True):

@@ -234,7 +234,7 @@ def test_get_file(http_controller, tmpdir, project, node, compute):
     compute.http_query.assert_called_with("GET", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(project_id=project.id, node_id=node.id), timeout=None, raw=True)
 
     response = http_controller.get("/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404
 
 
 def test_post_file(http_controller, tmpdir, project, node, compute):
@@ -245,4 +245,4 @@ def test_post_file(http_controller, tmpdir, project, node, compute):
     compute.http_query.assert_called_with("POST", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello".format(project_id=project.id, node_id=node.id), data=b'hello', timeout=None, raw=True)
 
     response = http_controller.get("/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id), raw=True)
-    assert response.status == 403
+    assert response.status == 404

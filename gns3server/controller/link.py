@@ -36,6 +36,7 @@ FILTERS = [
                 "name": "Frequency",
                 "minimum": -1,
                 "maximum": 32767,
+                "type": "int",
                 "unit": "th packet"
             }
         ]
@@ -49,6 +50,7 @@ FILTERS = [
                 "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
+                "type": "int",
                 "unit": "%"
             }
         ]
@@ -62,13 +64,15 @@ FILTERS = [
                 "name": "Latency",
                 "minimum": 0,
                 "maximum": 32767,
-                "unit": "ms"
+                "unit": "ms",
+                "type": "int"
             },
             {
                 "name": "Jitter (-/+)",
                 "minimum": 0,
                 "maximum": 32767,
-                "unit": "ms"
+                "unit": "ms",
+                "type": "int"
             }
         ]
     },
@@ -81,7 +85,19 @@ FILTERS = [
                 "name": "Chance",
                 "minimum": 0,
                 "maximum": 100,
-                "unit": "%"
+                "unit": "%",
+                "type": "int"
+            }
+        ]
+    },
+    {
+        "type": "bpf",
+        "name": "Berkeley Packet Filter (BPF)",
+        "description": "This filter will drop any packet matching a BPF expression. Put one expression per line",
+        "parameters": [
+            {
+                "name": "Filters",
+                "type": "text"
             }
         ]
     }
@@ -124,8 +140,14 @@ class Link:
         """
         new_filters = {}
         for (filter, values) in filters.items():
-            values = [int(v) for v in values]
-            if len(values) != 0 and values[0] != 0:
+            new_values = []
+            for value in values:
+                if isinstance(value, str):
+                    new_values.append(value.strip("\n "))
+                else:
+                    new_values.append(int(value))
+            values = new_values
+            if len(values) != 0 and values[0] != 0 and values[0] != '':
                 new_filters[filter] = values
 
         if new_filters != self.filters:
@@ -343,7 +365,7 @@ class Link:
         :returns: None if no node support filtering else the node
         """
         for node in self._nodes:
-            if node["node"].node_type in ('vpcs', ):
+            if node["node"].node_type in ('vpcs', 'dynamips'):
                 return node["node"]
         return None
 

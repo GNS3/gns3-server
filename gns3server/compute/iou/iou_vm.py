@@ -182,9 +182,9 @@ class IOUVM(BaseNode):
         except OSError as e:
             raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
 
-        # IOU images must start with the ELF magic number, be 32-bit, little endian
+        # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian
         # and have an ELF version of 1 normal IOS image are big endian!
-        if elf_header_start != b'\x7fELF\x01\x01\x01':
+        if elf_header_start != b'\x7fELF\x01\x01\x01' and elf_header_start != b'\x7fELF\x02\x01\x01':
             raise IOUError("'{}' is not a valid IOU image".format(self._path))
 
         if not os.access(self._path, os.X_OK):
