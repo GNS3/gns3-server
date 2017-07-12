@@ -171,11 +171,30 @@ def test_qemu_nio_create_udp(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.add_ubridge_udp_connection"):
         http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
         response = http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                                   "lport": 4242,
-                                                                                                                                                                   "rport": 4343,
-                                                                                                                                                                   "rhost": "127.0.0.1"},
-                                 example=True)
+                                                                                                                                                                       "lport": 4242,
+                                                                                                                                                                       "rport": 4343,
+                                                                                                                                                                       "rhost": "127.0.0.1"},
+                                     example=True)
     assert response.status == 201
+    assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.json["type"] == "nio_udp"
+
+
+def test_qemu_nio_update_udp(http_compute, vm):
+    http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
+    http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                        "lport": 4242,
+                                                                                                                                                        "rport": 4343,
+                                                                                                                                                        "rhost": "127.0.0.1"})
+    response = http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
+                                {
+                                    "type": "nio_udp",
+                                    "lport": 4242,
+                                    "rport": 4343,
+                                    "rhost": "127.0.0.1",
+                                    "filters": {}},
+                                example=True)
+    assert response.status == 201, response.body.decode()
     assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
@@ -184,9 +203,9 @@ def test_qemu_delete_nio(http_compute, vm):
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._ubridge_send"):
         http_compute.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"adapters": 2})
         http_compute.post("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                        "lport": 4242,
-                                                                                                                                                        "rport": 4343,
-                                                                                                                                                        "rhost": "127.0.0.1"})
+                                                                                                                                                            "lport": 4242,
+                                                                                                                                                            "rport": 4343,
+                                                                                                                                                            "rhost": "127.0.0.1"})
         response = http_compute.delete("/projects/{project_id}/qemu/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
     assert response.route == "/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"

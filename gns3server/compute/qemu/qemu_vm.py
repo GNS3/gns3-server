@@ -455,6 +455,13 @@ class QemuVM(BaseNode):
                                                                                                boot_priority=self._boot_priority))
 
     @property
+    def ethernet_adapters(self):
+        """
+        Return the list of ethernet adapters of the node
+        """
+        return self._ethernet_adapters
+
+    @property
     def adapters(self):
         """
         Returns the number of Ethernet adapters for this QEMU VM.
@@ -1144,6 +1151,25 @@ class QemuVM(BaseNode):
                                                                                            id=self._id,
                                                                                            nio=nio,
                                                                                            adapter_number=adapter_number))
+
+    @asyncio.coroutine
+    def adapter_update_nio_binding(self, adapter_number, nio):
+        """
+        Update a port NIO binding.
+
+        :param adapter_number: adapter number
+        :param nio: NIO instance to add to the adapter
+        """
+
+        if self.is_running():
+            try:
+                yield from self.update_ubridge_udp_connection(
+                    "QEMU-{}-{}".format(self._id, adapter_number),
+                    self._local_udp_tunnels[adapter_number][1],
+                    nio)
+            except IndexError:
+                raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
+                                                                                                     adapter_number=adapter_number))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):

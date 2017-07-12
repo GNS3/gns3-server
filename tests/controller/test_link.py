@@ -382,14 +382,14 @@ def test_update_filters(async_run, project, compute):
 
 
 def test_available_filters(async_run, project, compute):
-    node1 = Node(project, compute, "node1", node_type="qemu")
+    node1 = Node(project, compute, "node1", node_type="ethernet_switch")
     node1._ports = [EthernetPort("E0", 0, 0, 4)]
 
     link = Link(project)
     link.create = AsyncioMagicMock()
     assert link.available_filters() == []
 
-    # Qemu is not supported should return 0 filters
+    # Ethernet switch is not supported should return 0 filters
     async_run(link.add_node(node1, 0, 4))
     assert link.available_filters() == []
 
