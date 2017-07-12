@@ -1290,7 +1290,7 @@ class Router(BaseNode):
         :param port_number: port number
         :param nio: NIO instance to add to the slot/port
         """
-        pass
+        yield from nio.update()
 
     @asyncio.coroutine
     def slot_remove_nio_binding(self, slot_number, port_number):

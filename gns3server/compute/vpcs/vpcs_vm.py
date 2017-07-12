@@ -397,7 +397,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
         if self.ubridge:
-            yield from self._update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            yield from self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
         elif self.is_running():
             raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
 
