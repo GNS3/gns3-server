@@ -92,11 +92,11 @@ FILTERS = [
     },
     {
         "type": "bpf",
-        "name": "BPF",
-        "description": "Berkeley Packet Filter (BPF) syntax. This filter will drop any packet matching the expression. Put one filter by line",
+        "name": "Berkeley Packet Filter (BPF)",
+        "description": "This filter will drop any packet matching a BPF expression. Put one expression per line",
         "parameters": [
             {
-                "name": "BPF filters",
+                "name": "Filters",
                 "type": "text"
             }
         ]
