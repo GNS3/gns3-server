@@ -374,10 +374,8 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        if not self._local_udp_tunnel:
-            self._local_udp_tunnel = self._create_local_udp_tunnel()
-
-        yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+        if self.is_running():
+            yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
@@ -392,9 +390,8 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
-        if not self._local_udp_tunnel:
-            self._local_udp_tunnel = self._create_local_udp_tunnel()
-        yield from self._update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+        if self.is_running():
+            yield from self._update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, port_number):
@@ -410,7 +407,8 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        yield from self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
+        if self.is_running():
+            yield from self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
 
         nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
