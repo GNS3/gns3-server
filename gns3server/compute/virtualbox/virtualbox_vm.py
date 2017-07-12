@@ -26,7 +26,6 @@ import json
 import uuid
 import shlex
 import shutil
-import socket
 import asyncio
 import tempfile
 import xml.etree.ElementTree as ET
@@ -285,8 +284,8 @@ class VirtualBoxVM(BaseNode):
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
                 yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                            self._local_udp_tunnels[adapter_number][1],
-                                                            nio)
+                                                           self._local_udp_tunnels[adapter_number][1],
+                                                           nio)
 
         yield from self._start_console()
 
@@ -968,14 +967,15 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        try:
-            yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                        self._local_udp_tunnels[adapter_number][1],
-                                                        nio)
-        except KeyError:
-            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                            adapter_number=adapter_number))
-        yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+        if self.is_running():
+            try:
+                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                                                           self._local_udp_tunnels[adapter_number][1],
+                                                           nio)
+            except KeyError:
+                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                                adapter_number=adapter_number))
+            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
         log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -999,7 +999,8 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
-        yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
+        if self.is_running():
+            yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
         vm_state = yield from self._get_vm_state()
         if vm_state == "running":
             yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
@@ -1014,6 +1015,12 @@ class VirtualBoxVM(BaseNode):
                                                                                                      nio=nio,
                                                                                                      adapter_number=adapter_number))
         return nio
+
+    def is_running(self):
+        """
+        :returns: True if the vm is not stopped
+        """
+        return self.ubridge is not None
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):
