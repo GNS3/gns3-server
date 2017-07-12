@@ -241,9 +241,6 @@ class VPCSVM(BaseNode):
         yield from self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
-            if not self.use_ubridge and not nio:
-                raise VPCSError("This VPCS instance must be connected in order to start")
-
             command = self._build_command()
             try:
                 log.info("Starting VPCS: {}".format(command))
@@ -261,10 +258,9 @@ class VPCSVM(BaseNode):
                                                                               creationflags=flags)
                     monitor_process(self._process, self._termination_callback)
 
-                if self.use_ubridge:
-                    yield from self._start_ubridge()
-                    if nio:
-                        yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+                yield from self._start_ubridge()
+                if nio:
+                    yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
                 yield from self.start_wrap_console()
 
@@ -378,10 +374,8 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        if self.ubridge:
+        if self.is_running():
             yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
-        elif self.is_running():
-            raise VPCSError("Sorry, updating a link to a started VPCS instance is not supported without using uBridge.")
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
@@ -396,10 +390,8 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
-        if self.ubridge:
+        if self.is_running():
             yield from self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
-        elif self.is_running():
-            raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
 
     @asyncio.coroutine
     def port_remove_nio_binding(self, port_number):
@@ -415,10 +407,8 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
-        if self.ubridge:
+        if self.is_running():
             yield from self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
-        elif self.is_running():
-            raise VPCSError("Sorry, adding a link to a started VPCS instance is not supported without using uBridge.")
 
         nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
@@ -443,9 +433,6 @@ class VPCSVM(BaseNode):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
-
-        if not self.use_ubridge:
-            raise VPCSError("uBridge must be enabled in order to start packet capture")
 
         nio = self._ethernet_adapter.get_nio(0)
 
@@ -537,13 +524,10 @@ class VPCSVM(BaseNode):
         else:
             log.warn("The VPCS relay feature could not be disabled because the VPCS version is below 0.8b")
 
-        if self.use_ubridge:
-            # use the local UDP tunnel to uBridge instead
-            if not self._local_udp_tunnel:
-                self._local_udp_tunnel = self._create_local_udp_tunnel()
-            nio = self._local_udp_tunnel[0]
-        else:
-            nio = self._ethernet_adapter.get_nio(0)
+        # use the local UDP tunnel to uBridge instead
+        if not self._local_udp_tunnel:
+            self._local_udp_tunnel = self._create_local_udp_tunnel()
+        nio = self._local_udp_tunnel[0]
         if nio:
 
             if isinstance(nio, NIOUDP):

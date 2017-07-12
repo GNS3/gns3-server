@@ -77,10 +77,6 @@ class BaseNode:
         self._wrap_console = wrap_console
         self._wrapper_telnet_server = None
 
-        # check if the node will use uBridge or not
-        server_config = Config.instance().get_section_config("Server")
-        self._use_ubridge = server_config.getboolean("use_ubridge")
-
         if self._console is not None:
             if console_type == "vnc":
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
@@ -461,16 +457,6 @@ class BaseNode:
                                                                                         console_type=console_type))
 
     @property
-    def use_ubridge(self):
-        """
-        Returns if uBridge is used for this node or not
-
-        :returns: boolean
-        """
-
-        return self._use_ubridge
-
-    @property
     def ubridge(self):
         """
         Returns the uBridge hypervisor.
@@ -591,16 +577,16 @@ class BaseNode:
         yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
     @asyncio.coroutine
+    def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+        if destination_nio:
+            yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+
     def ubridge_delete_bridge(self, name):
         """
         :params name: Delete the bridge with this name
         """
         if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name=name))
-
-    @asyncio.coroutine
-    def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
-        yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
     @asyncio.coroutine
     def _ubridge_apply_filters(self, bridge_name, filters):

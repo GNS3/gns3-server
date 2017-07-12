@@ -212,6 +212,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     config.set("VirtualBox", "vboxmanage_path", tmppath)
     config.set("VPCS", "vpcs_path", tmppath)
     config.set("VMware", "vmrun_path", tmppath)
+    config.set("Dynamips", "dynamips_path", tmppath)
 
     # Force turn off KVM because it's not available on CI
     config.set("Qemu", "enable_kvm", False)
