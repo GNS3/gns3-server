@@ -373,11 +373,14 @@ def test_update(async_run, project):
     }, timeout=120)
 
     assert link.created
-    async_run(link.update_filters({"drop": [5]}))
+    async_run(link.update_filters({"drop": [5], "bpf": ["icmp[icmptype] == 8"]}))
     compute1.put.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"drop": [5]}
+        "filters": {
+            "drop": [5],
+            "bpf": ["icmp[icmptype] == 8"]
+        }
     }, timeout=120)

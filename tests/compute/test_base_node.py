@@ -139,9 +139,21 @@ def test_update_ubridge_udp_connection(node, async_run):
 
 def test_ubridge_apply_filters(node, async_run):
     filters = {
-        "latency": [10]
+        "latency": [10],
+        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
     }
     node._ubridge_send = AsyncioMagicMock()
     async_run(node._ubridge_apply_filters("VPCS-10", filters))
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
     node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 latency 10")
+
+
+def test_ubridge_apply_bpf_filters(node, async_run):
+    filters = {
+        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
+    }
+    node._ubridge_send = AsyncioMagicMock()
+    async_run(node._ubridge_apply_filters("VPCS-10", filters))
+    node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
+    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 bpf \"icmp[icmptype] == 8\"")
+    node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter1 bpf \"tcp src port 53\"")
