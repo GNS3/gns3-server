@@ -44,7 +44,7 @@ import logging
 log = logging.getLogger(__name__)
 
 if not aiohttp.__version__.startswith("2.2"):
-    raise RuntimeError("aiohttp 2.0 is required to run the GNS3 server")
+    raise RuntimeError("aiohttp 2.2 is required to run the GNS3 server")
 
 
 class WebServer:
@@ -123,7 +123,7 @@ class WebServer:
             task.cancel()
             try:
                 yield from asyncio.wait_for(task, 1)
-            except:
+            except BaseException:
                 pass
 
         self._loop.stop()
