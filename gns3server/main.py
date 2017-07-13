@@ -30,6 +30,7 @@ import gns3server.utils.get_resource
 
 import os
 import sys
+import types
 
 # To avoid strange bug later we switch the event loop before any other operation
 if sys.platform.startswith("win"):
@@ -37,6 +38,9 @@ if sys.platform.startswith("win"):
     # use the Proactor event loop on Windows
     loop = asyncio.ProactorEventLoop()
     asyncio.set_event_loop(loop)
+
+if sys.platform.startswith("win"):
+    sys.modules['termios'] = types.ModuleType('termios')
 
 
 def daemonize():
