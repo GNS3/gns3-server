@@ -85,6 +85,8 @@ class DockerVM(BaseNode):
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._volumes = []
+        # Keep a list of created bridge
+        self._bridges = set()
 
         if adapters is None:
             self.adapters = 1
@@ -126,6 +128,10 @@ class DockerVM(BaseNode):
             if not os.path.exists("/tmp/.X11-unix/X{}".format(display)):
                 return display
             display += 1
+
+    @property
+    def ethernet_adapters(self):
+        return self._ethernet_adapters
 
     @property
     def start_command(self):
@@ -657,8 +663,9 @@ class DockerVM(BaseNode):
         if adapter.host_ifc is None:
             raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
                                                                                                                                                                     adapter_number=adapter_number))
-
-        yield from self._ubridge_send('bridge create bridge{}'.format(adapter_number))
+        bridge_name = 'bridge{}'.format(adapter_number)
+        yield from self._ubridge_send('bridge create {}'.format(bridge_name))
+        self._bridges.add(bridge_name)
         yield from self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(adapter_number=adapter_number,
                                                                                                   hostif=adapter.host_ifc))
         log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, self._namespace)
@@ -679,19 +686,22 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def _connect_nio(self, adapter_number, nio):
-        yield from self._ubridge_send('bridge add_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
-                                                                                                          lport=nio.lport,
-                                                                                                          rhost=nio.rhost,
-                                                                                                          rport=nio.rport))
+        bridge_name = 'bridge{}'.format(adapter_number)
+        yield from self._ubridge_send('bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}'.format(bridge_name=bridge_name,
+                                                                                                        lport=nio.lport,
+                                                                                                        rhost=nio.rhost,
+                                                                                                        rport=nio.rport))
 
         if nio.capturing:
-            yield from self._ubridge_send('bridge start_capture bridge{adapter} "{pcap_file}"'.format(adapter=adapter_number,
-                                                                                                      pcap_file=nio.pcap_output_file))
-        yield from self._ubridge_send('bridge start bridge{adapter}'.format(adapter=adapter_number))
+            yield from self._ubridge_send('bridge start_capture {bridge_name} "{pcap_file}"'.format(bridge_name=bridge_name,
+                                                                                                    pcap_file=nio.pcap_output_file))
+        yield from self._ubridge_send('bridge start {bridge_name}'.format(bridge_name=bridge_name))
+        yield from self._ubridge_apply_filters(bridge_name, nio.filters)
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):
         """Adds an adapter NIO binding.
+
 
         :param adapter_number: adapter number
         :param nio: NIO instance to add to the slot/port
@@ -712,6 +722,19 @@ class DockerVM(BaseNode):
                                                                                                     adapter_number=adapter_number))
 
     @asyncio.coroutine
+    def adapter_update_nio_binding(self, adapter_number, nio):
+        """
+        Update a port NIO binding.
+
+        :param adapter_number: adapter number
+        :param nio: NIO instance to add to the adapter
+        """
+
+        bridge_name = 'bridge{}'.format(adapter_number)
+        if bridge_name in self._bridges:
+            yield from self._ubridge_apply_filters(bridge_name, nio.filters)
+
+    @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes an adapter NIO binding.
@@ -728,7 +751,8 @@ class DockerVM(BaseNode):
 
         if self.ubridge:
             nio = adapter.get_nio(0)
-            yield from self._ubridge_send("bridge stop bridge{name}".format(name=adapter_number))
+            bridge_name = 'bridge{}'.format(adapter_number)
+            yield from self._ubridge_send("bridge stop {}".format(bridge_name))
             yield from self._ubridge_send('bridge remove_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
                                                                                                                  lport=nio.lport,
                                                                                                                  rhost=nio.rhost,

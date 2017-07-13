@@ -704,6 +704,7 @@ def test_add_ubridge_connection(loop, vm):
         call.send('bridge start_capture bridge0 "/tmp/capture.pcap"'),
         call.send('bridge start bridge0')
     ]
+    assert 'bridge0' in vm._bridges
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
@@ -722,6 +723,7 @@ def test_add_ubridge_connection_none_nio(loop, vm):
         call.send('docker move_to_ns tap-gns3-e0 42 eth0'),
 
     ]
+    assert 'bridge0' in vm._bridges
     # We need to check any_order ortherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
@@ -761,6 +763,35 @@ def test_adapter_add_nio_binding(vm, loop):
     nio = vm.manager.create_nio(nio)
     loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
     assert vm._ethernet_adapters[0].get_nio(0) == nio
+
+
+def test_adapter_udpate_nio_binding(vm, loop):
+    vm._ubridge_apply_filters = AsyncioMagicMock()
+    vm._bridges = set(('bridge0', ))
+    nio = {"type": "nio_udp",
+           "lport": 4242,
+           "rport": 4343,
+           "rhost": "127.0.0.1"}
+    nio = vm.manager.create_nio(nio)
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
+        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+
+        loop.run_until_complete(asyncio.async(vm.adapter_update_nio_binding(0, nio)))
+    assert vm._ubridge_apply_filters.called
+
+
+def test_adapter_udpate_nio_binding_bridge_not_started(vm, loop):
+    vm._ubridge_apply_filters = AsyncioMagicMock()
+    nio = {"type": "nio_udp",
+           "lport": 4242,
+           "rport": 4343,
+           "rhost": "127.0.0.1"}
+    nio = vm.manager.create_nio(nio)
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
+        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+
+        loop.run_until_complete(asyncio.async(vm.adapter_update_nio_binding(0, nio)))
+    assert vm._ubridge_apply_filters.called is False
 
 
 def test_adapter_add_nio_binding_invalid_adapter(vm, loop):
