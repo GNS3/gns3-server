@@ -125,12 +125,11 @@ def test_change_aux_port(node, port_manager):
 
 
 def test_update_ubridge_udp_connection(node, async_run):
-    filters = [{
-        "type": "latency",
-        "value": 10
-    }]
+    filters = {
+        "latency": [10]
+    }
 
-    snio = NIOUDP(1245, "localhost", 1246, [])
+    snio = NIOUDP(1245, "localhost", 1246, {})
     dnio = NIOUDP(1245, "localhost", 1244, filters)
     with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
         async_run(node.update_ubridge_udp_connection('VPCS-10', snio, dnio))

@@ -64,6 +64,10 @@ class Cloud(BaseNode):
                 port_number += 1
             self._ports_mapping = ports
 
+    @property
+    def nios(self):
+        return self._nios
+
     def _interfaces(self):
         return gns3server.utils.interfaces.interfaces()
 
@@ -202,6 +206,7 @@ class Cloud(BaseNode):
                                                                                                  rhost=nio.rhost,
                                                                                                  rport=nio.rport))
 
+        yield from self._ubridge_apply_filters(bridge_name, nio.filters)
         if port_info["type"] in ("ethernet", "tap"):
 
             if sys.platform.startswith("win"):
@@ -310,6 +315,19 @@ class Cloud(BaseNode):
             yield from self._stop_ubridge()
             self.status = "stopped"
             self._nios[port_number] = nio
+
+    @asyncio.coroutine
+    def update_nio(self, port_number, nio):
+        """
+        Update an nio on this node
+
+        :param nio: NIO instance to add
+        :param port_number: port to allocate for the NIO
+        """
+
+        bridge_name = "{}-{}".format(self._id, port_number)
+        if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
+            yield from self._ubridge_apply_filters(bridge_name, nio.filters)
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, port_number):

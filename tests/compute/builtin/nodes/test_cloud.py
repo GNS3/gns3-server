@@ -26,7 +26,7 @@ from tests.utils import asyncio_patch
 
 @pytest.fixture
 def nio():
-    return NIOUDP(4242, "127.0.0.1", 4343, [])
+    return NIOUDP(4242, "127.0.0.1", 4343, {})
 
 
 @pytest.fixture
@@ -159,6 +159,7 @@ def test_linux_ethernet_raw_add_nio(linux_platform, project, async_run, nio):
     ubridge_mock.assert_has_calls([
         call("bridge create {}-0".format(cloud._id)),
         call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+        call('bridge reset_packet_filters {}-0'.format(cloud._id)),
         call("bridge add_nio_linux_raw {}-0 \"eth0\"".format(cloud._id)),
         call("bridge start {}-0".format(cloud._id)),
     ])
@@ -188,6 +189,7 @@ def test_linux_ethernet_raw_add_nio_bridge(linux_platform, project, async_run, n
     ubridge_mock.assert_has_calls([
         call("bridge create {}-0".format(cloud._id)),
         call("bridge add_nio_udp {}-0 4242 127.0.0.1 4343".format(cloud._id)),
+        call('bridge reset_packet_filters {}-0'.format(cloud._id)),
         call("bridge add_nio_tap \"{}-0\" \"{}\"".format(cloud._id, tap)),
         call("brctl addif \"bridge0\" \"{}\"".format(tap)),
         call("bridge start {}-0".format(cloud._id)),
