@@ -365,7 +365,11 @@ class Link:
         :returns: None if no node support filtering else the node
         """
         for node in self._nodes:
-            if node["node"].node_type in ('vpcs', 'dynamips', 'qemu', 'docker'):
+            if node["node"].node_type in ('vpcs',
+                                          'dynamips',
+                                          'qemu',
+                                          'docker',
+                                          'iou'):
                 return node["node"]
         return None
 

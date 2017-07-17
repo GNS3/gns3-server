@@ -548,6 +548,7 @@ class IOUVM(BaseNode):
                                                                                                                                 output_file=nio.pcap_output_file,
                                                                                                                                 data_link_type=re.sub("^DLT_", "", nio.pcap_data_link_type)))
 
+                    yield from self._ubridge_apply_filters(bay_id, unit_id, nio.filters)
                 unit_id += 1
             bay_id += 1
 
@@ -737,6 +738,10 @@ class IOUVM(BaseNode):
         return output
 
     @property
+    def adapters(self):
+        return self._adapters
+
+    @property
     def ethernet_adapters(self):
         """
         Returns the number of Ethernet adapters for this IOU VM.
@@ -828,6 +833,41 @@ class IOUVM(BaseNode):
                                                                                                                                lport=nio.lport,
                                                                                                                                rhost=nio.rhost,
                                                                                                                                rport=nio.rport))
+            yield from self._ubridge_apply_filters(adapter_number, port_number, nio.filters)
+
+    @asyncio.coroutine
+    def adapter_update_nio_binding(self, adapter_number, port_number, nio):
+        """
+        Update a port NIO binding.
+
+        :param adapter_number: adapter number
+        :param port_number: port number
+        :param nio: NIO instance to add to the adapter
+        """
+
+        if self.ubridge:
+            yield from self._ubridge_apply_filters(adapter_number, port_number, nio.filters)
+
+    @asyncio.coroutine
+    def _ubridge_apply_filters(self, adapter_number, port_number, filters):
+        """
+        Apply filter like rate limiting
+
+        :param adapter_number: adapter number
+        :param port_number: port number
+        :param filters: Array of filter dictionnary
+        """
+        bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+        location = '{bridge_name} {bay} {unit}'.format(
+            bridge_name=bridge_name,
+            bay=adapter_number,
+            unit=port_number)
+        yield from self._ubridge_send('iol_bridge reset_packet_filters ' + location)
+        for filter in self._build_filter_list(filters):
+            cmd = 'iol_bridge add_packet_filter {} {}'.format(
+                location,
+                filter)
+            yield from self._ubridge_send(cmd)
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number, port_number):

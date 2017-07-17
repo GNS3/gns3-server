@@ -225,6 +225,38 @@ class IOUHandler:
         response.set_status(201)
         response.json(nio)
 
+    @Route.put(
+        r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Network adapter where the nio is located",
+            "port_number": "Port where the nio should be added"
+        },
+        status_codes={
+            201: "NIO updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Update a NIO from a IOU instance",
+        input=NIO_SCHEMA,
+        output=NIO_SCHEMA)
+    def update_nio(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.adapters[adapter_number].get_nio(port_number)
+        if "filters" in request.json and nio:
+            nio.filters = request.json["filters"]
+        yield from vm.adapter_update_nio_binding(
+            adapter_number,
+            port_number,
+            nio)
+        response.set_status(201)
+        response.json(nio)
+
     @Route.delete(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
         parameters={
