@@ -1,0 +1,71 @@
+{
+    "name": "PA-VM",
+    "category": "firewall",
+    "description": "The VM-Series combines next-generation firewall security and advanced threat prevention to protect your virtualized environments from advanced cyberthreats. The VM-Series natively analyzes all traffic in a single pass to determine the application identity, the content within, and the user identity.",
+    "vendor_name": "Palo Alto Networks",
+    "vendor_url": "http://www.paloaltonetworks.com/",
+    "documentation_url": "https://www.paloaltonetworks.com/documentation/80/virtualization/virtualization",
+    "product_name": "PAN VM-Series Firewall",
+    "product_url": "https://www.paloaltonetworks.com/products/secure-the-network/virtualized-next-generation-firewall/vm-series",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "Community",
+    "maintainer_email": "",
+    "usage": "Default Username: admin\r\nDefault Password: admin\r\nPAN-VM goes through several iterations of host prompts during boot. This is normal and expected.\r\nLogin is available when prompt is PA-VM login:\r\n\r\nGetting Started:\r\nTo configure a static IP address at the console enter the following commands:\r\n\r\nconfigure\r\nset deviceconfig system ip-address <Static IP> netmask <Netmask> default-gateway <Gateway IP> type static\r\nset deviceconfig system dns-setting servers primary <DNS Server IP> secondary <DNS Server IP>\r\ncommit\r\n",
+    "symbol": "pan-vm-fw.svg",
+    "first_port_name": "management",
+    "port_name_format": "ethernet1/{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 25,
+        "ram": 4096,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "hda_disk_interface": "virtio",
+        "kvm": "require",
+        "options": "-smp 2"
+    },
+    "images": [
+       {
+            "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
+            "version": "6.1.0 (ESX)",
+            "md5sum": "64b1e81cd54008318235832ea6d71424",
+            "filesize": 2959736832,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+       },
+       {
+            "filename": "PA-VM-KVM-7.1.0.qcow2",
+            "version": "7.1.0",
+            "md5sum": "da300253709740068927408239c2e321",
+            "filesize": 1858797568,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
+       {
+            "filename": "PA-VM-ESX-7.1.0-disk1.vmdk",
+            "version": "7.1.0 (ESX)",
+            "md5sum": "e044dc649b7146ee4f619edb0e5f6675",
+            "filesize": 1871149056,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        }
+    ],
+    "versions": [
+         {
+            "name": "6.1.0 (ESX)",
+            "images": {
+                "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+            }
+         },
+         {
+            "name": "7.1.0",
+            "images": {
+                "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
+            }
+         },
+         {
+            "name": "7.1.0 (ESX)",
+            "images": {
+                "hda_disk_image": "PA-VM-ESX-7.1.0-disk1.vmdk"
+            }
+        }
+    ]
+}

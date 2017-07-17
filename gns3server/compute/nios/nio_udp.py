@@ -38,6 +38,7 @@ class NIOUDP(NIO):
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
+        assert isinstance(filters, dict)
         self._filters = filters
 
     @property

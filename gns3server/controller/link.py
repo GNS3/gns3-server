@@ -368,8 +368,10 @@ class Link:
             if node["node"].node_type in ('vpcs',
                                           'dynamips',
                                           'qemu',
-                                          'docker',
                                           'iou'):
+                                          'cloud',
+                                          'nat',
+                                          'docker'):
                 return node["node"]
         return None
 
@@ -381,11 +383,11 @@ class Link:
     def __hash__(self):
         return hash(self._id)
 
-    def __json__(self, topology_dump=False):
+    def __json__(self, topology_dump = False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """
-        res = []
+        res=[]
         for side in self._nodes:
             res.append({
                 "node_id": side["node"].id,
