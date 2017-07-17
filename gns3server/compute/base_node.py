@@ -597,25 +597,29 @@ class BaseNode:
         :param filters: Array of filter dictionnary
         """
         yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
+        for filter in self._build_filter_list(filters):
+            cmd = 'bridge add_packet_filter {} {}'.format(bridge_name, filter)
+            yield from self._ubridge_send(cmd)
+
+    def _build_filter_list(self, filters):
+        """
+        :returns: Iterator building a list of filter
+        """
         i = 0
         for (filter_type, values) in filters.items():
             if isinstance(values[0], str):
                 for line in values[0].split('\n'):
                     line = line.strip()
-                    cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
-                        bridge_name=bridge_name,
+                    yield "{filter_name} {filter_type} {filter_value}".format(
                         filter_name="filter" + str(i),
                         filter_type=filter_type,
                         filter_value='"{}" {}'.format(line, " ".join([str(v) for v in values[1:]]))).strip()
-                    yield from self._ubridge_send(cmd)
                     i += 1
             else:
-                cmd = "bridge add_packet_filter {bridge_name} {filter_name} {filter_type} {filter_value}".format(
-                    bridge_name=bridge_name,
+                yield "{filter_name} {filter_type} {filter_value}".format(
                     filter_name="filter" + str(i),
                     filter_type=filter_type,
                     filter_value=" ".join([str(v) for v in values]))
-                yield from self._ubridge_send(cmd)
                 i += 1
 
     @asyncio.coroutine
