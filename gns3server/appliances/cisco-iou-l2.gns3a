@@ -28,6 +28,12 @@
             "version": "15.1a",
             "md5sum": "9549a20a7391fb849da32caa77a0d254",
             "filesize": 72726092
+        },
+        {
+            "filename": "i86bi-linux-l2-adventerprisek9-15.2d.bin",
+            "version": "15.2d",
+            "md5sum": "f16db44433beb3e8c828db5ddad1de8a",
+            "filesize": 105036380
         }
     ],
     "versions": [
@@ -41,6 +47,12 @@
             "name": "15.1a",
             "images": {
                 "image": "i86bi-linux-l2-adventerprisek9-15.1a.bin"
+            }
+        },
+        {
+            "name": "15.2d",
+            "images": {
+                "image": "i86bi-linux-l2-adventerprisek9-15.2d.bin"
             }
         }
     ]
