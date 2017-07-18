@@ -371,6 +371,7 @@ class Link:
                                           'iou',
                                           'cloud',
                                           'nat',
+                                          'virtualbox',
                                           'docker'):
                 return node["node"]
         return None

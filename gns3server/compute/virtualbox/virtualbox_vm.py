@@ -94,6 +94,10 @@ class VirtualBoxVM(BaseNode):
             json["node_directory"] = None
         return json
 
+    @property
+    def ethernet_adapters(self):
+        return self._ethernet_adapters
+
     @asyncio.coroutine
     def _get_system_properties(self):
 
@@ -973,15 +977,38 @@ class VirtualBoxVM(BaseNode):
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
             except KeyError:
-                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                                adapter_number=adapter_number))
+                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
+                    name=self.name,
+                    adapter_number=adapter_number))
             yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
-        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
-                                                                                                 id=self.id,
-                                                                                                 nio=nio,
-                                                                                                 adapter_number=adapter_number))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
+            name=self.name,
+            id=self.id,
+            nio=nio,
+            adapter_number=adapter_number))
+
+    @asyncio.coroutine
+    def adapter_update_nio_binding(self, adapter_number, nio):
+        """
+        Update a port NIO binding.
+
+        :param adapter_number: adapter number
+        :param nio: NIO instance to add to the adapter
+        """
+
+        if self.is_running():
+            try:
+                yield from self.update_ubridge_udp_connection(
+                    "VBOX-{}-{}".format(self._id, adapter_number),
+                    self._local_udp_tunnels[adapter_number][1],
+                    nio)
+            except IndexError:
+                raise VirtualBoxError('Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(
+                    name=self._name,
+                    adapter_number=adapter_number
+                ))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
