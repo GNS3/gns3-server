@@ -19,7 +19,6 @@ import re
 import os
 import json
 import uuid
-import copy
 import shutil
 import asyncio
 import aiohttp
@@ -746,11 +745,11 @@ class Project:
                 yield from self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
                 link = yield from self.add_link(link_id=link_data["link_id"])
+                if "filters" in link_data:
+                    yield from link.update_filters(link_data["filters"])
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
-                if "filters" in link_data:
-                    yield from link.update_filters(link_data["filters"])
             for drawing_data in topology.get("drawings", []):
                 yield from self.add_drawing(dump=False, **drawing_data)
 

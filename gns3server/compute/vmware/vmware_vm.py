@@ -68,6 +68,10 @@ class VMwareVM(BaseNode):
         if not os.path.exists(vmx_path):
             raise VMwareError('VMware VM "{name}" [{id}]: could not find VMX file "{vmx_path}"'.format(name=name, id=node_id, vmx_path=vmx_path))
 
+    @property
+    def ethernet_adapters(self):
+        return self._ethernet_adapters
+
     def __json__(self):
 
         json = {"name": self.name,
@@ -290,7 +294,7 @@ class VMwareVM(BaseNode):
             if allocate_vmnet:
                 try:
                     vmnet = self.manager.allocate_vmnet()
-                except:
+                except BaseException:
                     # clear everything up in case of error (e.g. no enough vmnets)
                     self._vmnets.clear()
                     raise
@@ -306,6 +310,15 @@ class VMwareVM(BaseNode):
                 log.debug("disabling remaining adapter {}".format(adapter_number))
                 self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "FALSE"
 
+    def _get_vnet(self, adapter_number):
+        """
+        Return the vnet will use in ubridge
+        """
+        vnet = "ethernet{}.vnet".format(adapter_number)
+        if vnet not in self._vmx_pairs:
+            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        return vnet
+
     @asyncio.coroutine
     def _add_ubridge_connection(self, nio, adapter_number):
         """
@@ -316,9 +329,7 @@ class VMwareVM(BaseNode):
         """
 
         block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
-        vnet = "ethernet{}.vnet".format(adapter_number)
-        if vnet not in self._vmx_pairs:
-            raise VMwareError("vnet {} not in VMX file".format(vnet))
+        vnet = self._get_vnet(adapter_number)
         yield from self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
 
@@ -346,6 +357,21 @@ class VMwareVM(BaseNode):
         #         source_mac = interface["mac_address"]
         # if source_mac:
         #     yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
+        yield from self._ubridge_apply_filters(vnet, nio.filters)
+
+    @asyncio.coroutine
+    def _update_ubridge_connection(self, adapter_number, nio):
+        """
+        Update a connection in uBridge.
+
+        :param nio: NIO instance
+        :param adapter_number: adapter number
+        """
+        try:
+            bridge_name = self._get_vnet(adapter_number)
+        except VMwareError:
+            return  # vnet not yet available
+        yield from self._ubridge_apply_filters(bridge_name, nio.filters)
 
     @asyncio.coroutine
     def _delete_ubridge_connection(self, adapter_number):
@@ -734,6 +760,24 @@ class VMwareVM(BaseNode):
                                                                                              id=self.id,
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number))
+
+    @asyncio.coroutine
+    def adapter_update_nio_binding(self, adapter_number, nio):
+        """
+        Update a port NIO binding.
+
+        :param adapter_number: adapter number
+        :param nio: NIO instance to add to the adapter
+        """
+
+        if self._ubridge_hypervisor:
+            try:
+                yield from self._update_ubridge_connection(adapter_number, nio)
+            except IndexError:
+                raise VMwareError('Adapter {adapter_number} does not exist on VMware VM "{name}"'.format(
+                    name=self._name,
+                    adapter_number=adapter_number
+                ))
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
