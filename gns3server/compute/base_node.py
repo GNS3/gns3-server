@@ -632,8 +632,8 @@ class BaseNode:
         :param block_host_traffic: block network traffic originating from the host OS (Windows only)
         """
 
-        if sys.platform.startswith("linux"):
-            # on Linux we use RAW sockets
+        if sys.platform.startswith("linux") and block_host_traffic is False:
+            # on Linux we use RAW sockets by default excepting if host traffic must be blocked
             yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
         elif sys.platform.startswith("win"):
             # on Windows we use Winpcap/Npcap
@@ -657,11 +657,19 @@ class BaseNode:
             if block_host_traffic:
                 if source_mac:
                     yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
+                    log.info('PCAP filter applied on "{interface}" for source MAC {mac}'.format(interface=ethernet_interface, mac=source_mac))
                 else:
-                    log.warn("Could not block host network traffic on {} (no MAC address found)".format(ethernet_interface))
+                    log.warning("Could not block host network traffic on {} (no MAC address found)".format(ethernet_interface))
         else:
             # on other platforms we just rely on the pcap library
             yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
+            source_mac = None
+            for interface in interfaces():
+                if interface["name"] == ethernet_interface:
+                    source_mac = interface["mac_address"]
+            if source_mac:
+                yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
+                log.info('PCAP filter applied on "{interface}" for source MAC {mac}'.format(interface=ethernet_interface, mac=source_mac))
 
     def _create_local_udp_tunnel(self):
         """

@@ -328,7 +328,6 @@ class VMwareVM(BaseNode):
         :param adapter_number: adapter number
         """
 
-        block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
         vnet = self._get_vnet(adapter_number)
         yield from self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
@@ -337,6 +336,7 @@ class VMwareVM(BaseNode):
             # special case on OSX, we cannot bind VMnet interfaces using the libpcap
             yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
+            block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
             yield from self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):
@@ -349,14 +349,6 @@ class VMwareVM(BaseNode):
             yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet, pcap_file=nio.pcap_output_file))
 
         yield from self._ubridge_send('bridge start {name}'.format(name=vnet))
-
-        # TODO: this only work when using PCAP (NIO Ethernet): current default on Linux is NIO RAW LINUX
-        # source_mac = None
-        # for interface in interfaces():
-        #     if interface["name"] == vmnet_interface:
-        #         source_mac = interface["mac_address"]
-        # if source_mac:
-        #     yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=vnet, mac=source_mac))
         yield from self._ubridge_apply_filters(vnet, nio.filters)
 
     @asyncio.coroutine
