@@ -21,7 +21,7 @@ import json
 import pytest
 import socket
 import aiohttp
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 from gns3server.controller.compute import Compute
@@ -460,12 +460,6 @@ def test_get_free_project_name(controller, async_run):
     assert controller.get_free_project_name("Hello") == "Hello"
 
 
-def test_appliance_templates(controller):
-    assert len(controller.appliance_templates) > 0
-    for appliance in controller.appliance_templates.values():
-        assert appliance.__json__()["status"] != "broken"
-
-
 def test_load_base_files(controller, config, tmpdir):
     config.set_section_config("Server", {"configs_path": str(tmpdir)})
 
@@ -480,10 +474,28 @@ def test_load_base_files(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
-def test_appliance_templates(controller, async_run):
-    controller.load_appliances()
+def test_appliance_templates(controller, async_run, tmpdir):
+    my_appliance = {
+        "name": "My Appliance",
+        "status": "stable"
+    }
+    with open(str(tmpdir / "my_appliance.gns3a"), 'w+') as f:
+        json.dump(my_appliance, f)
+
+    with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
+        controller.load_appliances()
     assert len(controller.appliance_templates) > 0
+    for appliance in controller.appliance_templates.values():
+        assert appliance.__json__()["status"] != "broken"
     assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
+    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
+
+    for c in controller.appliance_templates.values():
+        j = c.__json__()
+        if j["name"] == "Alpine Linux":
+            assert j["builtin"]
+        elif j["name"] == "My Appliance":
+            assert not j["builtin"]
 
 
 def test_load_appliances(controller):
@@ -526,4 +538,3 @@ def test_autoidlepc(controller, async_run):
         async_run(controller.autoidlepc("local", "c7200", "test.bin"))
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0
-

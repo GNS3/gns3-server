@@ -21,7 +21,7 @@ import uuid
 
 class ApplianceTemplate:
 
-    def __init__(self, appliance_id, data):
+    def __init__(self, appliance_id, data, builtin=True):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
         elif isinstance(appliance_id, uuid.UUID):
@@ -29,6 +29,7 @@ class ApplianceTemplate:
         else:
             self._id = appliance_id
         self._data = data.copy()
+        self._builtin = builtin
         if "appliance_id" in self._data:
             del self._data["appliance_id"]
 
@@ -44,4 +45,6 @@ class ApplianceTemplate:
         """
         Appliance data (a hash)
         """
-        return copy.deepcopy(self._data)
+        data = copy.deepcopy(self._data)
+        data["builtin"] = self._builtin
+        return data

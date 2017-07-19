@@ -205,6 +205,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
     config.set("Server", "symbols_path", os.path.join(tmppath, 'symbols'))
     config.set("Server", "images_path", os.path.join(tmppath, 'images'))
+    config.set("Server", "appliances_path", os.path.join(tmppath, 'appliances'))
     config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
     config.set("Server", "auth", False)
 
@@ -227,7 +228,7 @@ def run_around_tests(monkeypatch, port_manager, controller, config):
     # An helper should not raise Exception
     try:
         shutil.rmtree(tmppath)
-    except:
+    except BaseException:
         pass
 
 
