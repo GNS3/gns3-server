@@ -19,7 +19,6 @@ import re
 import os
 import json
 import uuid
-import copy
 import shutil
 import asyncio
 import aiohttp

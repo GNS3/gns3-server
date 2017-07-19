@@ -366,6 +366,7 @@ class Link:
         """
         for node in self._nodes:
             if node["node"].node_type in ('vpcs',
+                                          'vmware',
                                           'dynamips',
                                           'qemu',
                                           'iou',

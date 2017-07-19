@@ -120,6 +120,25 @@ def test_vmware_nio_create_udp(http_compute, vm):
     assert response.json["type"] == "nio_udp"
 
 
+def test_vmware_nio_update_udp(http_compute, vm):
+    with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM._ubridge_send'):
+        with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM.ethernet_adapters'):
+            with patch('gns3server.compute.vmware.vmware_vm.VMwareVM._get_vnet') as mock:
+                response = http_compute.put("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/nio".format(
+                    project_id=vm["project_id"],
+                    node_id=vm["node_id"]),
+                    {
+                        "type": "nio_udp",
+                        "lport": 4242,
+                        "rport": 4343,
+                        "rhost": "127.0.0.1",
+                        "filters": {}},
+                    example=True)
+                assert response.status == 201, response.body.decode()
+                assert response.route == "/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+                assert response.json["type"] == "nio_udp"
+
+
 def test_vmware_delete_nio(http_compute, vm):
 
     with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM.adapter_remove_nio_binding') as mock:
