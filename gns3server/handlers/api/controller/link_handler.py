@@ -62,7 +62,10 @@ class LinkHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = yield from project.add_link()
-        yield from link.update_filters(request.json.get("filters", {}))
+        if "filters" in request.json:
+            yield from link.update_filters(request.json["filters"])
+        if "suspend" in request.json:
+            yield from link.update_suspend(request.json["suspend"])
         try:
             for node in request.json["nodes"]:
                 yield from link.add_node(project.get_node(node["node_id"]),
@@ -110,7 +113,10 @@ class LinkHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
-        yield from link.update_filters(request.json.get("filters", {}))
+        if "filters" in request.json:
+            yield from link.update_filters(request.json["filters"])
+        if "suspend" in request.json:
+            yield from link.update_suspend(request.json["suspend"])
         if "nodes" in request.json:
             yield from link.update_nodes(request.json["nodes"])
         response.set_status(201)

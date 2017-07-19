@@ -66,9 +66,9 @@ class UDPLink(Link):
         node2_filters = {}
         filter_node = self._get_filter_node()
         if filter_node == node1:
-            node1_filters = self._filters
+            node1_filters = self.get_active_filters()
         elif filter_node == node2:
-            node2_filters = self._filters
+            node2_filters = self.get_active_filters()
 
         # Create the tunnel on both side
         self._link_data.append({
@@ -106,12 +106,12 @@ class UDPLink(Link):
         if node1 == filter_node:
             adapter_number1 = self._nodes[0]["adapter_number"]
             port_number1 = self._nodes[0]["port_number"]
-            self._link_data[0]["filters"] = self._filters
+            self._link_data[0]["filters"] = self.get_active_filters()
             yield from node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
         elif node2 == filter_node:
             adapter_number2 = self._nodes[1]["adapter_number"]
             port_number2 = self._nodes[1]["port_number"]
-            self._link_data[1]["filters"] = self._filters
+            self._link_data[1]["filters"] = self.get_active_filters()
             yield from node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
 
     @asyncio.coroutine
