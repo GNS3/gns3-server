@@ -294,7 +294,7 @@ class QEMUHandler:
         nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from vm.adapter_update_nio_binding(int(request.match_info["port_number"]), nio)
+        yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 

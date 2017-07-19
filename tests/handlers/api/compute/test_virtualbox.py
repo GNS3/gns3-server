@@ -26,9 +26,10 @@ def vm(http_compute, project, monkeypatch):
     vboxmanage_path = "/fake/VboxManage"
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/virtualbox/nodes".format(project_id=project.id), {"name": "VMTEST",
-                                                                                                             "vmname": "VMTEST",
-                                                                                                             "linked_clone": False})
+        response = http_compute.post("/projects/{project_id}/virtualbox/nodes".format(
+            project_id=project.id), {"name": "VMTEST",
+                                     "vmname": "VMTEST",
+                                     "linked_clone": False})
     assert mock.called
     assert response.status == 201
 
@@ -40,8 +41,8 @@ def test_vbox_create(http_compute, project):
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
         response = http_compute.post("/projects/{project_id}/virtualbox/nodes".format(project_id=project.id), {"name": "VM1",
-                                                                                                             "vmname": "VM1",
-                                                                                                             "linked_clone": False},
+                                                                                                               "vmname": "VM1",
+                                                                                                               "linked_clone": False},
                                      example=True)
         assert response.status == 201
         assert response.json["name"] == "VM1"
@@ -107,6 +108,24 @@ def test_vbox_nio_create_udp(http_compute, vm):
         assert args[0] == 0
 
     assert response.status == 201
+    assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.json["type"] == "nio_udp"
+
+
+def test_virtualbox_nio_update_udp(http_compute, vm):
+    with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.ethernet_adapters'):
+        with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
+            response = http_compute.put("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/nio".format(
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]),
+                {
+                    "type": "nio_udp",
+                    "lport": 4242,
+                    "rport": 4343,
+                    "rhost": "127.0.0.1",
+                    "filters": {}},
+                example=True)
+    assert response.status == 201, response.body.decode()
     assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
