@@ -158,10 +158,10 @@ def pid_lock(path):
         pid = None
         try:
             with open(path) as f:
-                pid = int(f.read())
                 try:
+                    pid = int(f.read())
                     os.kill(pid, 0)  # If the proces is not running kill return an error
-                except (OSError, SystemError):
+                except (OSError, SystemError, ValueError):
                     pid = None
         except OSError as e:
             log.critical("Can't open pid file %s: %s", pid, str(e))
