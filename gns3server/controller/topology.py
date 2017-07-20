@@ -608,7 +608,10 @@ def _create_cloud(node, old_node, icon):
             raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
 
         if port_type == "udp":
-            _, lport, rhost, rport = old_port["name"].split(":")
+            try:
+                _, lport, rhost, rport = old_port["name"].split(":")
+            except ValueError:
+                raise NotImplementedError("UDP tunnel using IPV6 is not supported in cloud")
             port = {
                 "name": "UDP tunnel {}".format(len(ports) + 1),
                 "port_number": len(ports) + 1,
