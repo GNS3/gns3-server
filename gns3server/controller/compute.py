@@ -129,7 +129,10 @@ class Compute:
             self._user = user.strip()
             if password:
                 self._password = password.strip()
-                self._auth = aiohttp.BasicAuth(self._user, self._password, "utf-8")
+                try:
+                    self._auth = aiohttp.BasicAuth(self._user, self._password, "utf-8")
+                except ValueError as e:
+                    log.error(str(e))
             else:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
@@ -665,4 +668,3 @@ class Compute:
                     return (this_interface["ip_address"], other_interface["ip_address"])
 
         raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))
-
