@@ -79,7 +79,7 @@ class Appliance:
             "name": self._data["name"],
             "default_name_format": self._data.get("default_name_format", "{name}-{0}"),
             "category": ID_TO_CATEGORY[self._data["category"]],
-            "symbol": self._data["symbol"],
+            "symbol": self._data.get("symbol", ":/symbols/computer.svg"),
             "compute_id": self.compute_id,
             "builtin": self._builtin
         }
