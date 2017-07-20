@@ -30,8 +30,7 @@ from gns3server.compute.docker import Docker
 from gns3server.utils.get_resource import get_resource
 
 
-from unittest.mock import patch, MagicMock, PropertyMock, call
-from gns3server.config import Config
+from unittest.mock import patch, MagicMock, call
 
 
 @pytest.fixture()
@@ -244,15 +243,19 @@ def test_create_start_cmd(loop, project, manager):
 
 
 def test_create_environment(loop, project, manager):
+    """
+    Allow user to pass an environnement. User can't override our
+    internal variables
+    """
 
     response = {
         "Id": "e90e34656806",
         "Warnings": []
     }
-    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
-            vm.environment = "YES=1\nNO=0"
+            vm.environment = "YES=1\nNO=0\nGNS3_MAX_ETHERNET=eth2"
             loop.run_until_complete(asyncio.async(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,

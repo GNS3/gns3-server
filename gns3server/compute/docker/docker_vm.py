@@ -313,7 +313,10 @@ class DockerVM(BaseNode):
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
         if self._environment:
-            params["Env"] += [e.strip() for e in self._environment.split("\n")]
+            for e in self._environment.split("\n"):
+                e = e.strip()
+                if not e.startswith("GNS3_"):
+                    params["Env"].append(e)
 
         if self._console_type == "vnc":
             yield from self._start_vnc()
