@@ -135,7 +135,7 @@ class Link:
     def get_active_filters(self):
         """
         Return the active filters.
-        If the node is suspend the filters will be override
+        Filters are overridden if the link is suspended.
         """
         if self._suspend:
             return {"frequency_drop": [-1]}

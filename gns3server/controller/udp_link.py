@@ -199,7 +199,7 @@ class UDPLink(Link):
             if node["node"].node_type and node["node"].status == "started":
                 return node
 
-        raise aiohttp.web.HTTPConflict(text="Can not capture because no running device on this link")
+        raise aiohttp.web.HTTPConflict(text="Cannot capture because there is no running device on this link")
 
     @asyncio.coroutine
     def read_pcap_from_source(self):

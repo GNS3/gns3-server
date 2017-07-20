@@ -66,7 +66,7 @@ LINK_OBJECT_SCHEMA = {
         },
         "suspend": {
             "type": "boolean",
-            "description": "Link has been turned off"
+            "description": "Suspend the link"
         },
         "filters": FILTER_OBJECT_SCHEMA,
         "capturing": {
