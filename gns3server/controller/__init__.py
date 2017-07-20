@@ -71,10 +71,15 @@ class Controller:
         ):
             if os.path.isdir(directory):
                 for file in os.listdir(directory):
+                    if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
+                        continue
                     path = os.path.join(directory, file)
                     appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate the UUID from path to avoid change between reboots
-                    with open(path, 'r', encoding='utf-8') as f:
-                        appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
+                    try:
+                        with open(path, 'r', encoding='utf-8') as f:
+                            appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
+                    except (ValueError, OSError) as e:
+                        log.warning("Can't load %s: %s", path, str(e))
                     if appliance.status != 'broken':
                         self._appliance_templates[appliance.id] = appliance
 
