@@ -19,6 +19,7 @@ import re
 import os
 import json
 import uuid
+import copy
 import shutil
 import asyncio
 import aiohttp
@@ -367,6 +368,8 @@ class Project:
         if base_name is None:
             return None
         base_name = re.sub(r"[ ]", "", base_name)
+        base_name = re.sub(r"[0-9]+$", "{0}", base_name)
+
         if '{0}' in base_name or '{id}' in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier
             for number in range(1, 1000000):
@@ -834,7 +837,7 @@ class Project:
         """
         for node in self._nodes.values():
             # Some node type are always running we ignore them
-            if node.status != "stopped" and node.node_type in ("qemu", "docker", "dynamips", "vpcs", "vmware", "virtualbox", "iou"):
+            if node.status != "stopped" and not node.is_always_running():
                 return True
         return False
 
@@ -881,6 +884,54 @@ class Project:
         for node in self.nodes.values():
             pool.append(node.suspend)
         yield from pool.join()
+
+    @asyncio.coroutine
+    def duplicate_node(self, node, x, y, z):
+        """
+        Duplicate a node
+
+        :param node: Node instance
+        :param x: X position
+        :param y: Y position
+        :param z: Z position
+        :returns: New node
+        """
+        if node.status != "stopped" and not node.is_always_running():
+            raise aiohttp.web.HTTPConflict(text="Can't duplicate node data while is running")
+
+        data = copy.deepcopy(node.__json__(topology_dump=True))
+        # Some properties like internal ID should not be duplicate
+        for unique_property in (
+                'node_id',
+                'name',
+                'compute_id',
+                'application_id',
+                'dynamips_id'):
+            data.pop(unique_property, None)
+            if 'properties' in data:
+                data['properties'].pop(unique_property, None)
+        node_type = data.pop('node_type')
+        data['x'] = x
+        data['y'] = y
+        data['z'] = z
+        new_node_uuid = str(uuid.uuid4())
+        new_node = yield from self.add_node(
+            node.compute,
+            node.name,
+            new_node_uuid,
+            node_type=node_type,
+            **data)
+        try:
+            yield from node.post("/duplicate", timeout=None, data={
+                "destination_node_id": new_node_uuid
+            })
+        except aiohttp.web.HTTPNotFound as e:
+            yield from self.delete_node(new_node_uuid)
+            raise aiohttp.web.HTTPConflict(text="You can't duplicate this node type")
+        except aiohttp.web.HTTPConflict as e:
+            yield from self.delete_node(new_node_uuid)
+            raise e
+        return new_node
 
     def __json__(self):
         return {

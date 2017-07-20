@@ -1474,6 +1474,20 @@ class Router(BaseNode):
 
         return self._slots
 
+    @property
+    def startup_config_path(self):
+        """
+        :returns: Path of the startup config
+        """
+        return os.path.join(self._working_directory, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+
+    @property
+    def private_config_path(self):
+        """
+        :returns: Path of the private config
+        """
+        return os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
+
     @asyncio.coroutine
     def set_name(self, new_name):
         """
@@ -1483,28 +1497,26 @@ class Router(BaseNode):
         """
 
         # change the hostname in the startup-config
-        startup_config_path = os.path.join(self._working_directory, "configs", "i{}_startup-config.cfg".format(self._dynamips_id))
-        if os.path.isfile(startup_config_path):
+        if os.path.isfile(self.startup_config_path):
             try:
-                with open(startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
                     old_config = f.read()
                     new_config = re.sub(r"^hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
                     f.seek(0)
                     f.write(new_config)
             except OSError as e:
-                raise DynamipsError("Could not amend the configuration {}: {}".format(startup_config_path, e))
+                raise DynamipsError("Could not amend the configuration {}: {}".format(self.startup_config_path, e))
 
         # change the hostname in the private-config
-        private_config_path = os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
-        if os.path.isfile(private_config_path):
+        if os.path.isfile(self.private_config_path):
             try:
-                with open(private_config_path, "r+", encoding="utf-8", errors="replace") as f:
+                with open(self.private_config_path, "r+", encoding="utf-8", errors="replace") as f:
                     old_config = f.read()
                     new_config = old_config.replace(self.name, new_name)
                     f.seek(0)
                     f.write(new_config)
             except OSError as e:
-                raise DynamipsError("Could not amend the configuration {}: {}".format(private_config_path, e))
+                raise DynamipsError("Could not amend the configuration {}: {}".format(self.private_config_path, e))
 
         yield from self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
         log.info('Router "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name, id=self._id, new_name=new_name))
@@ -1543,7 +1555,7 @@ class Router(BaseNode):
 
         startup_config_base64, private_config_base64 = yield from self.extract_config()
         if startup_config_base64:
-            startup_config = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
+            startup_config = self.startup_config_path
             try:
                 config = base64.b64decode(startup_config_base64).decode("utf-8", errors="replace")
                 config = "!\n" + config.replace("\r", "")
@@ -1555,7 +1567,7 @@ class Router(BaseNode):
                 raise DynamipsError("Could not save the startup configuration {}: {}".format(config_path, e))
 
         if private_config_base64 and base64.b64decode(private_config_base64) != b'\nkerberos password \nend\n':
-            private_config = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
+            private_config = self.private_config_path
             try:
                 config = base64.b64decode(private_config_base64).decode("utf-8", errors="replace")
                 config_path = os.path.join(self._working_directory, private_config)

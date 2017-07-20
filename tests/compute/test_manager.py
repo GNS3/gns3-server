@@ -19,9 +19,11 @@ import uuid
 import os
 import pytest
 from unittest.mock import patch
+from tests.utils import AsyncioMagicMock, asyncio_patch
 
 
 from gns3server.compute.vpcs import VPCS
+from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.error import NodeError, ImageMissingError
 from gns3server.utils import force_unix_path
@@ -273,3 +275,25 @@ def test_delete_node(async_run, vpcs, project):
         async_run(vpcs.delete_node(node_id))
         mock_emit.assert_called_with("node.deleted", node)
     assert node not in project.nodes
+
+
+def test_duplicate_vpcs(async_run, vpcs, project):
+    source_node_id = str(uuid.uuid4())
+    source_node = async_run(vpcs.create_node("PC-1", project.id, source_node_id, console=2222))
+    with open(os.path.join(source_node.working_dir, "startup.vpc"), "w+") as f:
+        f.write("set pcname PC-1\nip dhcp\n")
+    destination_node_id = str(uuid.uuid4())
+    destination_node = async_run(vpcs.create_node("PC-2", project.id, destination_node_id, console=2223))
+    async_run(vpcs.duplicate_node(source_node_id, destination_node_id))
+    with open(os.path.join(destination_node.working_dir, "startup.vpc")) as f:
+        assert f.read() == "set pcname PC-2\nip dhcp\n"
+
+
+def test_duplicate_ethernet_switch(async_run, project):
+    with asyncio_patch('gns3server.compute.dynamips.nodes.ethernet_switch.EthernetSwitch.create'):
+        dynamips_manager = Dynamips.instance()
+        source_node_id = str(uuid.uuid4())
+        source_node = async_run(dynamips_manager.create_node("SW-1", project.id, source_node_id, node_type='ethernet_switch'))
+        destination_node_id = str(uuid.uuid4())
+        destination_node = async_run(dynamips_manager.create_node("SW-2", project.id, destination_node_id, node_type='ethernet_switch'))
+        async_run(dynamips_manager.duplicate_node(source_node_id, destination_node_id))

@@ -597,6 +597,10 @@ def test_node_name(project, async_run):
     assert node.name == "helloworld-1"
     node = async_run(project.add_node(compute, "hello world-{0}", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert node.name == "helloworld-2"
+    node = async_run(project.add_node(compute, "VPCS-1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "VPCS-1"
+    node = async_run(project.add_node(compute, "VPCS-1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "VPCS-2"
 
 
 def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
@@ -618,3 +622,22 @@ def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
         compute, "test", None, node_type="iou", application_id=333, properties={"startup_config": "test.cfg"}))
     assert mocked_get_app_id.called
     assert node.properties['application_id'] == 333
+
+
+def test_duplicate_node(project, async_run):
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    original = async_run(project.add_node(
+        compute,
+        "test",
+        None,
+        node_type="vpcs",
+        properties={
+            "startup_config": "test.cfg"
+        }))
+    new_node = async_run(project.duplicate_node(original, 42, 10, 11))
+    assert new_node.x == 42

@@ -511,16 +511,12 @@ class Dynamips(BaseManager):
         :param settings: VM settings
         """
 
-        module_workdir = vm.project.module_working_directory(self.module_name.lower())
-        default_startup_config_path = os.path.join(module_workdir, vm.id, "configs", "i{}_startup-config.cfg".format(vm.dynamips_id))
-        default_private_config_path = os.path.join(module_workdir, vm.id, "configs", "i{}_private-config.cfg".format(vm.dynamips_id))
-
         startup_config_content = settings.get("startup_config_content")
         if startup_config_content:
-            self._create_config(vm, default_startup_config_path, startup_config_content)
+            self._create_config(vm, vm.startup_config_path, startup_config_content)
         private_config_content = settings.get("private_config_content")
         if private_config_content:
-            self._create_config(vm, default_private_config_path, private_config_content)
+            self._create_config(vm, vm.private_config_path, private_config_content)
 
     def _create_config(self, vm, path, content=None):
         """
@@ -605,3 +601,40 @@ class Dynamips(BaseManager):
             if was_auto_started:
                 yield from vm.stop()
         return validated_idlepc
+
+    @asyncio.coroutine
+    def duplicate_node(self, source_node_id, destination_node_id):
+        """
+        Duplicate a node
+
+        :param node_id: Node identifier
+        :returns: New node instance
+        """
+
+        source_node = self.get_node(source_node_id)
+        destination_node = self.get_node(destination_node_id)
+
+        # Non router gears
+        if not hasattr(source_node, "startup_config_path"):
+            return (yield from super().duplicate_node(source_node_id, destination_node_id))
+
+        try:
+            with open(source_node.startup_config_path) as f:
+                startup_config = f.read()
+        except OSError:
+            startup_config = None
+        try:
+            with open(source_node.private_config_path) as f:
+                private_config = f.read()
+        except OSError:
+            private_config = None
+        yield from self.set_vm_configs(destination_node, {
+            "startup_config_content": startup_config,
+            "private_config_content": private_config
+        })
+
+        # Force refresh of the name in configuration files
+        new_name = destination_node.name
+        yield from destination_node.set_name(source_node.name)
+        yield from destination_node.set_name(new_name)
+        return destination_node

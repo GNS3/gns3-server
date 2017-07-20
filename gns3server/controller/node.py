@@ -106,6 +106,16 @@ class Node:
         if self._symbol is None:
             self.symbol = ":/symbols/computer.svg"
 
+    def is_always_running(self):
+        """
+        :returns: Boolean True if the node is always running
+        like ethernet switch
+        """
+        return self.node_type not in (
+            "qemu", "docker", "dynamips",
+            "vpcs", "vmware", "virtualbox",
+            "iou")
+
     @property
     def id(self):
         return self._id

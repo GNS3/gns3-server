@@ -237,3 +237,26 @@ NODE_OBJECT_SCHEMA = {
 NODE_CREATE_SCHEMA = NODE_OBJECT_SCHEMA
 NODE_UPDATE_SCHEMA = copy.deepcopy(NODE_OBJECT_SCHEMA)
 del NODE_UPDATE_SCHEMA["required"]
+
+
+NODE_DUPLICATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Duplicate a node",
+    "type": "object",
+    "properties": {
+        "x": {
+            "description": "X position of the node",
+            "type": "integer"
+        },
+        "y": {
+            "description": "Y position of the node",
+            "type": "integer"
+        },
+        "z": {
+            "description": "Z position of the node",
+            "type": "integer"
+        }
+    },
+    "additionalProperties": False,
+    "required": ["x", "y"]
+}

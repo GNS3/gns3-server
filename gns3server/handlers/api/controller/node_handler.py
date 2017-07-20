@@ -25,7 +25,8 @@ from gns3server.utils import force_unix_path
 from gns3server.schemas.node import (
     NODE_OBJECT_SCHEMA,
     NODE_UPDATE_SCHEMA,
-    NODE_CREATE_SCHEMA
+    NODE_CREATE_SCHEMA,
+    NODE_DUPLICATE_SCHEMA
 )
 
 
@@ -179,6 +180,32 @@ class NodeHandler:
         yield from project.stop_all()
         yield from project.start_all()
         response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/{node_id}/duplicate",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance duplicated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Duplicate a node instance",
+        input=NODE_DUPLICATE_SCHEMA,
+        output=NODE_OBJECT_SCHEMA)
+    def duplicate(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        new_node = yield from project.duplicate_node(
+            node,
+            request.json["x"],
+            request.json["y"],
+            request.json.get("z", 0))
+        response.json(new_node)
+        response.set_status(201)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/start",
