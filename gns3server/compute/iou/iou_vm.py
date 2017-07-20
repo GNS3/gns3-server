@@ -360,8 +360,10 @@ class IOUVM(BaseNode):
         """
         Checks for a valid IOU key in the iourc file (paranoid mode).
         """
-
-        license_check = self._config().getboolean("license_check", True)
+        try:
+            license_check = self._config().getboolean("license_check", True)
+        except ValueError:
+            raise IOUError("Invalid licence check setting")
         if license_check is False:
             return
 
