@@ -64,6 +64,10 @@ LINK_OBJECT_SCHEMA = {
                 "additionalProperties": False
             }
         },
+        "suspend": {
+            "type": "boolean",
+            "description": "Suspend the link"
+        },
         "filters": FILTER_OBJECT_SCHEMA,
         "capturing": {
             "description": "Read only property. True if a capture running on the link",

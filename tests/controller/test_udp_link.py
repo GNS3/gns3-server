@@ -384,3 +384,68 @@ def test_update(async_run, project):
             "bpf": ["icmp[icmptype] == 8"]
         }
     }, timeout=120)
+
+
+def test_update_suspend(async_run, project):
+    compute1 = MagicMock()
+    compute2 = MagicMock()
+
+    node1 = Node(project, compute1, "node1", node_type="vpcs")
+    node1._ports = [EthernetPort("E0", 0, 0, 4)]
+    node2 = Node(project, compute2, "node2", node_type="vpcs")
+    node2._ports = [EthernetPort("E0", 0, 3, 1)]
+
+    @asyncio.coroutine
+    def subnet_callback(compute2):
+        """
+        Fake subnet callback
+        """
+        return ("192.168.1.1", "192.168.1.2")
+
+    compute1.get_ip_on_same_subnet.side_effect = subnet_callback
+
+    link = UDPLink(project)
+    async_run(link.add_node(node1, 0, 4))
+    async_run(link.update_filters({"latency": [10]}))
+    async_run(link.update_suspend(True))
+
+    @asyncio.coroutine
+    def compute1_callback(path, data={}, **kwargs):
+        """
+        Fake server
+        """
+        if "/ports/udp" in path:
+            response = MagicMock()
+            response.json = {"udp_port": 1024}
+            return response
+
+    @asyncio.coroutine
+    def compute2_callback(path, data={}, **kwargs):
+        """
+        Fake server
+        """
+        if "/ports/udp" in path:
+            response = MagicMock()
+            response.json = {"udp_port": 2048}
+            return response
+
+    compute1.post.side_effect = compute1_callback
+    compute1.host = "example.com"
+    compute2.post.side_effect = compute2_callback
+    compute2.host = "example.org"
+    async_run(link.add_node(node2, 3, 1))
+
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
+        "lport": 1024,
+        "rhost": "192.168.1.2",
+        "rport": 2048,
+        "type": "nio_udp",
+        "filters": {"frequency_drop": [-1]}
+    }, timeout=120)
+    compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
+        "lport": 2048,
+        "rhost": "192.168.1.1",
+        "rport": 1024,
+        "type": "nio_udp",
+        "filters": {}
+    }, timeout=120)

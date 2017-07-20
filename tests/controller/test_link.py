@@ -231,6 +231,7 @@ def test_json(async_run, project, compute, link):
             }
         ],
         "filters": {},
+        "suspend": False,
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
@@ -264,7 +265,8 @@ def test_json(async_run, project, compute, link):
                 }
             }
         ],
-        "filters": {}
+        "filters": {},
+        "suspend": False
     }
 
 

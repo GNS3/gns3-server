@@ -122,6 +122,7 @@ class Link:
         self._streaming_pcap = None
         self._created = False
         self._link_type = "ethernet"
+        self._suspend = False
         self._filters = {}
 
     @property
@@ -129,6 +130,15 @@ class Link:
         """
         Get an array of filters
         """
+        return self._filters
+
+    def get_active_filters(self):
+        """
+        Return the active filters.
+        Filters are overridden if the link is suspended.
+        """
+        if self._suspend:
+            return {"frequency_drop": [-1]}
         return self._filters
 
     @asyncio.coroutine
@@ -154,6 +164,12 @@ class Link:
             self._filters = new_filters
             if self._created:
                 yield from self.update()
+
+    @asyncio.coroutine
+    def update_suspend(self, value):
+        if value != self._suspend:
+            self._suspend = value
+            yield from self.update()
 
     @property
     def created(self):
@@ -401,7 +417,8 @@ class Link:
             return {
                 "nodes": res,
                 "link_id": self._id,
-                "filters": self._filters
+                "filters": self._filters,
+                "suspend": self._suspend
             }
         return {
             "nodes": res,
@@ -411,5 +428,6 @@ class Link:
             "capture_file_name": self._capture_file_name,
             "capture_file_path": self.capture_file_path,
             "link_type": self._link_type,
-            "filters": self._filters
+            "filters": self._filters,
+            "suspend": self._suspend
         }
