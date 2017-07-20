@@ -206,6 +206,8 @@ host = 0.0.0.0
 port = 3080 
 images_path = /opt/gns3/images
 projects_path = /opt/gns3/projects
+appliances_path = /opt/gns3/appliances
+configs_path = /opt/gns3/configs
 report_errors = True
 
 [Qemu]

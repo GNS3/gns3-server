@@ -66,13 +66,17 @@ class Controller:
 
     def load_appliances(self):
         self._appliance_templates = {}
-        for file in os.listdir(get_resource('appliances')):
-            path = os.path.join(get_resource('appliances'), file)
-            appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate the UUID from path to avoid change between reboots
-            with open(path, 'r', encoding='utf-8') as f:
-                appliance = ApplianceTemplate(appliance_id, json.load(f))
-            if appliance.status != 'broken':
-                self._appliance_templates[appliance.id] = appliance
+        for directory, builtin in (
+            (get_resource('appliances'), True,), (self.appliances_path(), False,)
+        ):
+            if os.path.isdir(directory):
+                for file in os.listdir(directory):
+                    path = os.path.join(directory, file)
+                    appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate the UUID from path to avoid change between reboots
+                    with open(path, 'r', encoding='utf-8') as f:
+                        appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
+                    if appliance.status != 'broken':
+                        self._appliance_templates[appliance.id] = appliance
 
         self._appliances = {}
         vms = []
@@ -303,6 +307,15 @@ class Controller:
         images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
+
+    def appliances_path(self):
+        """
+        Get the image storage directory
+        """
+        server_config = Config.instance().get_section_config("Server")
+        appliances_path = os.path.expanduser(server_config.get("appliances_path", "~/GNS3/projects"))
+        os.makedirs(appliances_path, exist_ok=True)
+        return appliances_path
 
     @asyncio.coroutine
     def _import_gns3_gui_conf(self):
