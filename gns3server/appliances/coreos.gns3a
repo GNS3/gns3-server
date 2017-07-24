@@ -22,6 +22,15 @@
     },
     "images": [
         {
+            "filename": "coreos_production_qemu_image.1409.7.0.img",
+            "version": "1409.7.0",
+            "md5sum": "b8db4a07bac71468ed47bd09bedc1bdf",
+            "filesize": 812187648,
+            "download_url": "http://stable.release.core-os.net/amd64-usr/1409.7.0/",
+            "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1409.7.0/coreos_production_qemu_image.img.bz2",
+            "compression": "bzip2"
+        },
+        {
             "filename": "coreos_production_qemu_image.1353.8.0.img",
             "version": "1353.8.0",
             "md5sum": "f84bf924d7b30190539a14e14d94d4f8",

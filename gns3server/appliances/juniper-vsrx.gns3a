@@ -24,6 +24,20 @@
     },
     "images": [
         {
+            "filename": "media-vsrx-vmdisk-15.1X49-D100.6.qcow2",
+            "version": "15.1X49-D100",
+            "md5sum": "aa29686dd6f2d38f668f23cb4bc9f354",
+            "filesize": 3279290368,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "media-vsrx-vmdisk-15.1X49-D90.7.qcow2",
+            "version": "15.1X49-D90",
+            "md5sum": "a64f3910054d461c4bbb32620008cba3",
+            "filesize": 3189440512,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "media-vsrx-vmdisk-15.1X49-D80.4.qcow2",
             "version": "15.1X49-D80",
             "md5sum": "ceb9d06a827c8f8bfb4fd1c9065bdd20",
@@ -81,6 +95,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.1X49-D100",
+            "images": {
+                "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D100.6.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D90",
+            "images": {
+                "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D90.7.qcow2"
+            }
+        },
         {
             "name": "15.1X49-D80",
             "images": {

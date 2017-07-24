@@ -25,12 +25,68 @@
         "kvm": "require"
     },
     "images": [
-       {
+        {
+            "filename": "asav981-5.qcow2",
+            "version": "9.8.1-5",
+            "md5sum": "77b3ca856dd2df476bcda34e218425ca",
+            "filesize": 193069056,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
+        },
+        {
+            "filename": "asav981.qcow2",
+            "version": "9.8.1",
+            "md5sum": "8d3612fe22b1a7dec118010e17e29411",
+            "filesize": 193069056,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.8.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav971-8.qcow2",
+            "version": "9.7.1-8",
+            "md5sum": "b2486c8d0f6fda149ce877208b816818",
+            "filesize": 197066752,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
+        },
+        {
+            "filename": "asav971-4.qcow2",
+            "version": "9.7.1-4",
+            "md5sum": "f9a671d1ceaf983f7241f19df15e787f",
+            "filesize": 197066752,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
+        },
+        {
+            "filename": "asav971-2.qcow2",
+            "version": "9.7.1-2",
+            "md5sum": "ff036b23f5dbb2bcf1e6530476cc1989",
+            "filesize": 199753728,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
+        },
+        {
             "filename": "asav971.qcow2",
             "version": "9.7.1",
             "md5sum": "cb31f53e70a9e409829d2f832ff09191",
             "filesize": 199688192,
             "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.7.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav963-8.qcow2",
+            "version": "9.6.3-8",
+            "md5sum": "8b8a45b94a302dae8076e7ec90c7d4c2",
+            "filesize": 168427520,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
+        },
+        {
+            "filename": "asav963-1.qcow2",
+            "version": "9.6.3-1",
+            "md5sum": "d6a5c8d7bff5e69c5987ca664a52dbd8",
+            "filesize": 172294144,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.6.3&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav962-13.qcow2",
+            "version": "9.6.2-13",
+            "md5sum": "2a6bec030fcaef31b611051180cc142c",
+            "filesize": 177668096,
+            "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242"
         },
         {
             "filename": "asav962.qcow2",
@@ -45,6 +101,13 @@
             "md5sum": "c8726827cb72f4eed8cb52a64bca091c",
             "filesize": 173801472,
             "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+        },
+        {
+            "filename": "asav952-207.qcow2",
+            "version": "9.5.2-207",
+            "md5sum": "75b7d55e01ebd2e79ad5cdac2c811426",
+            "filesize": 169345024,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
         },
         {
             "filename": "asav952-204.qcow2",
@@ -62,10 +125,58 @@
         }
     ],
     "versions": [
-         {
+        {
+            "name": "9.8.1-5",
+            "images": {
+                "hda_disk_image": "asav981-5.qcow2"
+            }
+        },
+        {
+            "name": "9.8.1",
+            "images": {
+                "hda_disk_image": "asav981.qcow2"
+            }
+        },
+        {
+            "name": "9.7.1-8",
+            "images": {
+                "hda_disk_image": "asav971-8.qcow2"
+            }
+        },
+        {
+            "name": "9.7.1-4",
+            "images": {
+                "hda_disk_image": "asav971-4.qcow2"
+            }
+        },
+        {
+            "name": "9.7.1-2",
+            "images": {
+                "hda_disk_image": "asav971-2.qcow2"
+            }
+        },
+        {
             "name": "9.7.1",
             "images": {
                 "hda_disk_image": "asav971.qcow2"
+            }
+        },
+        {
+            "name": "9.6.3-8",
+            "images": {
+                "hda_disk_image": "asav963-8.qcow2"
+            }
+        },
+        {
+            "name": "9.6.3-1",
+            "images": {
+                "hda_disk_image": "asav963-1.qcow2"
+            }
+        },
+        {
+            "name": "9.6.2-13",
+            "images": {
+                "hda_disk_image": "asav962-13.qcow2"
             }
         },
         {
@@ -78,6 +189,12 @@
             "name": "9.6.1",
             "images": {
                 "hda_disk_image": "asav961.qcow2"
+            }
+        },
+        {
+            "name": "9.5.2-207",
+            "images": {
+                "hda_disk_image": "asav952-207.qcow2"
             }
         },
         {
