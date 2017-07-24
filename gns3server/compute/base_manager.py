@@ -282,7 +282,7 @@ class BaseManager:
         # We force a refresh of the name. This force the rewrite
         # of some configuration files
         node_name = destination_node.name
-        destination_node.name = node_name + "tmp"
+        destination_node.name = node_name + str(uuid4())
         destination_node.name = node_name
 
         return destination_node

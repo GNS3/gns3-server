@@ -614,7 +614,7 @@ class Dynamips(BaseManager):
         source_node = self.get_node(source_node_id)
         destination_node = self.get_node(destination_node_id)
 
-        # Non router gears
+        # Not a Dynamips router
         if not hasattr(source_node, "startup_config_path"):
             return (yield from super().duplicate_node(source_node_id, destination_node_id))
 

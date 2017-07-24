@@ -897,7 +897,7 @@ class Project:
         :returns: New node
         """
         if node.status != "stopped" and not node.is_always_running():
-            raise aiohttp.web.HTTPConflict(text="Can't duplicate node data while is running")
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data while the node is running")
 
         data = copy.deepcopy(node.__json__(topology_dump=True))
         # Some properties like internal ID should not be duplicate
@@ -927,7 +927,7 @@ class Project:
             })
         except aiohttp.web.HTTPNotFound as e:
             yield from self.delete_node(new_node_uuid)
-            raise aiohttp.web.HTTPConflict(text="You can't duplicate this node type")
+            raise aiohttp.web.HTTPConflict(text="This node type cannot be duplicated")
         except aiohttp.web.HTTPConflict as e:
             yield from self.delete_node(new_node_uuid)
             raise e
