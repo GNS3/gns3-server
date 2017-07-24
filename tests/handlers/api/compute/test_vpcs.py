@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import uuid
 import sys
 import os
 from tests.utils import asyncio_patch
@@ -66,10 +67,10 @@ def test_vpcs_create_port(http_compute, project, free_console_port):
 def test_vpcs_nio_create_udp(http_compute, vm):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.add_ubridge_udp_connection"):
         response = http_compute.post("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                                   "lport": 4242,
-                                                                                                                                                                   "rport": 4343,
-                                                                                                                                                                   "rhost": "127.0.0.1"},
-                                 example=True)
+                                                                                                                                                                       "lport": 4242,
+                                                                                                                                                                       "rport": 4343,
+                                                                                                                                                                       "rhost": "127.0.0.1"},
+                                     example=True)
     assert response.status == 201
     assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
@@ -92,9 +93,9 @@ def test_vpcs_nio_update_udp(http_compute, vm):
 def test_vpcs_delete_nio(http_compute, vm):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._ubridge_send"):
         http_compute.post("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                        "lport": 4242,
-                                                                                                                                                        "rport": 4343,
-                                                                                                                                                        "rhost": "127.0.0.1"})
+                                                                                                                                                            "lport": 4242,
+                                                                                                                                                            "rport": 4343,
+                                                                                                                                                            "rhost": "127.0.0.1"})
         response = http_compute.delete("/projects/{project_id}/vpcs/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204, response.body.decode()
     assert response.route == "/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
@@ -128,6 +129,20 @@ def test_vpcs_delete(http_compute, vm):
         response = http_compute.delete("/projects/{project_id}/vpcs/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock.called
         assert response.status == 204
+
+
+def test_vpcs_duplicate(http_compute, vm):
+    with asyncio_patch("gns3server.compute.vpcs.VPCS.duplicate_node", return_value=True) as mock:
+        response = http_compute.post(
+            "/projects/{project_id}/vpcs/nodes/{node_id}/duplicate".format(
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]),
+            body={
+                "destination_node_id": str(uuid.uuid4())
+            },
+            example=True)
+        assert mock.called
+        assert response.status == 201
 
 
 def test_vpcs_update(http_compute, vm, tmpdir, free_console_port):

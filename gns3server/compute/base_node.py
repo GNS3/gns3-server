@@ -34,7 +34,6 @@ from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
 from .error import NodeError
-from ..config import Config
 
 
 log = logging.getLogger(__name__)

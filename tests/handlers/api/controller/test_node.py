@@ -195,6 +195,18 @@ def test_reload_node(http_controller, tmpdir, project, compute, node):
     assert response.json == node.__json__()
 
 
+def test_duplicate_node(http_controller, tmpdir, project, compute, node):
+    response = MagicMock()
+    response.json({"console": 2035})
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.post("/projects/{}/nodes/{}/duplicate".format(
+        project.id, node.id),
+        {"x": 10, "y": 5, "z": 0},
+        example=True)
+    assert response.status == 201, response.body.decode()
+
+
 def test_delete_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()
     compute.post = AsyncioMagicMock()

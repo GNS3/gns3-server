@@ -173,7 +173,7 @@ class VPCSVM(BaseNode):
         if self.script_file:
             content = self.startup_script
             content = content.replace(self._name, new_name)
-            escaped_name = re.escape(new_name)
+            escaped_name = new_name.replace('\\', '')
             content = re.sub(r"^set pcname .+$", "set pcname " + escaped_name, content, flags=re.MULTILINE)
             self.startup_script = content
 
