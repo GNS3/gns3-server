@@ -142,6 +142,26 @@ class DockerHandler:
         response.set_status(204)
 
     @Route.post(
+        r"/projects/{project_id}/docker/nodes/{node_id}/duplicate",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance duplicated",
+            404: "Instance doesn't exist"
+        },
+        description="Duplicate a Docker instance")
+    def duplicate(request, response):
+
+        new_node = yield from Docker.instance().duplicate_node(
+            request.match_info["node_id"],
+            request.json["destination_node_id"]
+        )
+        response.set_status(201)
+        response.json(new_node)
+
+    @Route.post(
         r"/projects/{project_id}/docker/nodes/{node_id}/pause",
         parameters={
             "project_id": "Project UUID",
