@@ -144,6 +144,26 @@ class QEMUHandler:
         response.set_status(204)
 
     @Route.post(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/duplicate",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance duplicated",
+            404: "Instance doesn't exist"
+        },
+        description="Duplicate a Qemu instance")
+    def duplicate(request, response):
+
+        new_node = yield from Qemu.instance().duplicate_node(
+            request.match_info["node_id"],
+            request.json["destination_node_id"]
+        )
+        response.set_status(201)
+        response.json(new_node)
+
+    @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/start",
         parameters={
             "project_id": "Project UUID",

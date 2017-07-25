@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import uuid
 import os
 import sys
 import stat
@@ -346,3 +347,17 @@ def test_capabilities(http_compute):
     with asyncio_patch("gns3server.compute.Qemu.get_kvm_archs", return_value=["x86_64"]):
         response = http_compute.get("/qemu/capabilities", example=True)
         assert response.json["kvm"] == ["x86_64"]
+
+
+def test_qemu_duplicate(http_compute, vm):
+    with asyncio_patch("gns3server.compute.qemu.Qemu.duplicate_node", return_value=True) as mock:
+        response = http_compute.post(
+            "/projects/{project_id}/qemu/nodes/{node_id}/duplicate".format(
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]),
+            body={
+                "destination_node_id": str(uuid.uuid4())
+            },
+            example=True)
+        assert mock.called
+        assert response.status == 201
