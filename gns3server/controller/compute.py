@@ -493,15 +493,6 @@ class Compute:
                 elif isinstance(data, io.BufferedIOBase):
                     chunked = True
                     headers['content-type'] = 'application/octet-stream'
-
-                    def send_data(f):
-                        while True:
-                            chunk = f.read(4096)
-                            if not chunk:
-                                break
-                            yield chunk
-
-                    data = send_data(data)
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
