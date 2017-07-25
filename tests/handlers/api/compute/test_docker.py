@@ -132,8 +132,8 @@ def test_docker_update_nio(http_compute, vm):
                                         "lport": 4242,
                                         "rport": 4343,
                                         "rhost": "127.0.0.1"
-                                    },
-                                    example=True)
+        },
+            example=True)
     assert response.status == 201, response.body.decode()
     assert response.route == "/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
@@ -184,3 +184,17 @@ def test_docker_stop_capture(http_compute, vm, tmpdir, project):
             assert response.status == 204
 
             assert stop_capture.called
+
+
+def test_docker_duplicate(http_compute, vm):
+    with asyncio_patch("gns3server.compute.docker.Docker.duplicate_node", return_value=True) as mock:
+        response = http_compute.post(
+            "/projects/{project_id}/docker/nodes/{node_id}/duplicate".format(
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]),
+            body={
+                "destination_node_id": str(uuid.uuid4())
+            },
+            example=True)
+        assert mock.called
+        assert response.status == 201
