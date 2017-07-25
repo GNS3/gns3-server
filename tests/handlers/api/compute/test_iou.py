@@ -308,3 +308,17 @@ def test_image_vm(http_compute, tmpdir):
     with open(str(tmpdir / "test2.md5sum")) as f:
         checksum = f.read()
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
+
+
+def test_iou_duplicate(http_compute, vm):
+    with asyncio_patch("gns3server.compute.iou.IOU.duplicate_node", return_value=True) as mock:
+        response = http_compute.post(
+            "/projects/{project_id}/iou/nodes/{node_id}/duplicate".format(
+                project_id=vm["project_id"],
+                node_id=vm["node_id"]),
+            body={
+                "destination_node_id": str(uuid.uuid4())
+            },
+            example=True)
+        assert mock.called
+        assert response.status == 201
