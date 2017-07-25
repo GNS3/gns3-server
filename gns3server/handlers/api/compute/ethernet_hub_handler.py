@@ -20,7 +20,6 @@ import os
 from gns3server.web.route import Route
 from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
 from gns3server.schemas.nio import NIO_SCHEMA
-from gns3server.compute.builtin import Builtin
 from gns3server.compute.dynamips import Dynamips
 
 from gns3server.schemas.ethernet_hub import (
@@ -54,10 +53,10 @@ class EthernetHubHandler:
         # Use the Dynamips Ethernet hub to simulate this node
         dynamips_manager = Dynamips.instance()
         node = yield from dynamips_manager.create_node(request.json.pop("name"),
-                                                         request.match_info["project_id"],
-                                                         request.json.get("node_id"),
-                                                         node_type="ethernet_hub",
-                                                         ports=request.json.get("ports_mapping"))
+                                                       request.match_info["project_id"],
+                                                       request.json.get("node_id"),
+                                                       node_type="ethernet_hub",
+                                                       ports=request.json.get("ports_mapping"))
 
         response.set_status(201)
         response.json(node)
@@ -81,6 +80,26 @@ class EthernetHubHandler:
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         response.json(node)
+
+    @Route.post(
+        r"/projects/{project_id}/ethernet_hub/nodes/{node_id}/duplicate",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance duplicated",
+            404: "Instance doesn't exist"
+        },
+        description="Duplicate an ethernet hub instance")
+    def duplicate(request, response):
+
+        new_node = yield from Dynamips.instance().duplicate_node(
+            request.match_info["node_id"],
+            request.json["destination_node_id"]
+        )
+        response.set_status(201)
+        response.json(new_node)
 
     @Route.put(
         r"/projects/{project_id}/ethernet_hub/nodes/{node_id}",

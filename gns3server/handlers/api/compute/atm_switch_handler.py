@@ -53,10 +53,10 @@ class ATMSwitchHandler:
         # Use the Dynamips ATM switch to simulate this node
         dynamips_manager = Dynamips.instance()
         node = yield from dynamips_manager.create_node(request.json.pop("name"),
-                                                         request.match_info["project_id"],
-                                                         request.json.get("node_id"),
-                                                         node_type="atm_switch",
-                                                         mappings=request.json.get("mappings"))
+                                                       request.match_info["project_id"],
+                                                       request.json.get("node_id"),
+                                                       node_type="atm_switch",
+                                                       mappings=request.json.get("mappings"))
         response.set_status(201)
         response.json(node)
 
@@ -78,6 +78,26 @@ class ATMSwitchHandler:
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.json(node)
+
+    @Route.post(
+        r"/projects/{project_id}/atm_switch/nodes/{node_id}/duplicate",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance duplicated",
+            404: "Instance doesn't exist"
+        },
+        description="Duplicate an atm switch instance")
+    def duplicate(request, response):
+
+        new_node = yield from Dynamips.instance().duplicate_node(
+            request.match_info["node_id"],
+            request.json["destination_node_id"]
+        )
+        response.set_status(201)
+        response.json(new_node)
 
     @Route.put(
         r"/projects/{project_id}/atm_switch/nodes/{node_id}",
