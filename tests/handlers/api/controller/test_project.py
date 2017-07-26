@@ -28,7 +28,7 @@ import zipfile
 import json
 
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
 from gns3server.handlers.api.controller.project_handler import ProjectHandler
@@ -170,13 +170,34 @@ def test_notification_ws(http_controller, controller, project, async_run):
     assert project.status == "opened"
 
 
-def test_export(http_controller, tmpdir, loop, project):
+def test_export_with_images(http_controller, tmpdir, loop, project):
+    project.dump = MagicMock()
 
     os.makedirs(project.path, exist_ok=True)
     with open(os.path.join(project.path, 'a'), 'w+') as f:
         f.write('hello')
 
-    response = http_controller.get("/projects/{project_id}/export".format(project_id=project.id), raw=True)
+    os.makedirs(str(tmpdir / "IOS"))
+    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
+        f.write("AAA")
+
+    topology = {
+        "topology": {
+            "nodes": [
+                {
+                    "properties": {
+                        "image": "test.image"
+                    },
+                    "node_type": "dynamips"
+                }
+            ]
+        }
+    }
+    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        response = http_controller.get("/projects/{project_id}/export?include_images=1".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
     assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
@@ -188,6 +209,51 @@ def test_export(http_controller, tmpdir, loop, project):
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
+        myzip.getinfo("images/IOS/test.image")
+
+
+def test_export_without_images(http_controller, tmpdir, loop, project):
+    project.dump = MagicMock()
+
+    os.makedirs(project.path, exist_ok=True)
+    with open(os.path.join(project.path, 'a'), 'w+') as f:
+        f.write('hello')
+
+    os.makedirs(str(tmpdir / "IOS"))
+    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
+        f.write("AAA")
+
+    topology = {
+        "topology": {
+            "nodes": [
+                {
+                    "properties": {
+                        "image": "test.image"
+                    },
+                    "node_type": "dynamips"
+                }
+            ]
+        }
+    }
+    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        response = http_controller.get("/projects/{project_id}/export?include_images=0".format(project_id=project.id), raw=True)
+    assert response.status == 200
+    assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
+    assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
+
+    with open(str(tmpdir / 'project.zip'), 'wb+') as f:
+        f.write(response.body)
+
+    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+        with myzip.open("a") as myfile:
+            content = myfile.read()
+            assert content == b"hello"
+        # Image should not exported
+        with pytest.raises(KeyError):
+            myzip.getinfo("images/IOS/test.image")
 
 
 def test_get_file(http_controller, tmpdir, loop, project):

@@ -64,6 +64,10 @@ def test_export(tmpdir, project, async_run):
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
+    os.makedirs(str(tmpdir / "IOS"))
+    with open(str(tmpdir / "IOS" / "test.image"), "w+") as f:
+        f.write("AAA")
+
     # The .gns3 should be renamed project.gns3 in order to simplify import
     with open(os.path.join(path, "test.gns3"), 'w+') as f:
         data = {
@@ -80,7 +84,10 @@ def test_export(tmpdir, project, async_run):
                 "nodes": [
                     {
                         "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
-                        "node_type": "vpcs"
+                        "node_type": "dynamips",
+                        "properties": {
+                            "image": "test.image"
+                        }
                     }
                 ]
             }
@@ -95,7 +102,8 @@ def test_export(tmpdir, project, async_run):
     with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
         f.write("WORLD")
 
-    z = async_run(export_project(project, str(tmpdir)))
+    with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
+        z = async_run(export_project(project, str(tmpdir), include_images=False))
 
     with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
         for data in z:
@@ -110,6 +118,8 @@ def test_export(tmpdir, project, async_run):
         assert 'project.gns3' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
+
+        assert 'images/IOS/test.image' not in myzip.namelist()
 
         with myzip.open("project.gns3") as myfile:
             topo = json.loads(myfile.read().decode())["topology"]
