@@ -88,6 +88,7 @@ class TelnetConnection(object):
          `naws` flag is enable in server configuration."""
         pass
 
+    @asyncio.coroutine
     def feed(self, data):
         """
         Handles incoming data
