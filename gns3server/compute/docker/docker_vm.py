@@ -416,16 +416,30 @@ class DockerVM(BaseNode):
         Because docker run as root we need to fix permission and ownership to allow user to interact
         with it from their filesystem and do operation like file delete
         """
+
+        state = yield from self._get_container_state()
+        if state == "stopped" or state == "exited":
+            # We need to restart it to fix permissions
+            yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
+
         for volume in self._volumes:
             log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
                 name=self._name, image=self._image, path=volume))
-            process = yield from asyncio.subprocess.create_subprocess_exec("docker",
-                                                                           "exec",
-                                                                           self._cid,
-                                                                           "/gns3/bin/busybox",
-                                                                           "sh",
-                                                                           "-c",
-                                                                           "(/gns3/bin/busybox find \"{path}\" -depth -print0 | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\") && /gns3/bin/busybox chmod -R u+rX \"{path}\" && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\"".format(uid=os.getuid(), gid=os.getgid(), path=volume))
+            process = yield from asyncio.subprocess.create_subprocess_exec(
+                "docker",
+                "exec",
+                self._cid,
+                "/gns3/bin/busybox",
+                "sh",
+                "-c",
+                "("
+                "/gns3/bin/busybox find \"{path}\" -depth -print0"
+                " | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\""
+                ")"
+                " && /gns3/bin/busybox chmod -R u+rX \"{path}\""
+                " && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\""
+                .format(uid=os.getuid(), gid=os.getgid(), path=volume),
+            )
             yield from process.wait()
 
     @asyncio.coroutine
@@ -564,13 +578,15 @@ class DockerVM(BaseNode):
             try:
                 state = yield from self._get_container_state()
             except DockerHttp404Error:
-                state = "stopped"
+                self.status = "stopped"
+                return
 
             if state == "paused":
                 yield from self.unpause()
 
-            if state != "stopped":
-                yield from self._fix_permissions()
+            yield from self._fix_permissions()
+            state = yield from self._get_container_state()
+            if state != "stopped" or state != "exited":
                 # t=5 number of seconds to wait before killing the container
                 try:
                     yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
