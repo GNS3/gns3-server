@@ -62,6 +62,10 @@ DOCKER_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "usage": {
+            "description": "How to use the qemu VM",
+            "type": "string",
+        },
         "start_command": {
             "description": "Docker CMD entry",
             "type": ["string", "null"],
@@ -165,6 +169,10 @@ DOCKER_OBJECT_SCHEMA = {
             "type": ["integer", "null"],
             "minimum": 0,
             "maximum": 99,
+        },
+        "usage": {
+            "description": "How to use the qemu VM",
+            "type": "string",
         },
         "start_command": {
             "description": "Docker CMD entry",
