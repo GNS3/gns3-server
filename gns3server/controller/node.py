@@ -541,8 +541,11 @@ class Node:
             image = os.path.join(directory, img)
             if os.path.exists(image):
                 self.project.controller.notification.emit("log.info", {"message": "Uploading missing image {}".format(img)})
-                with open(image, 'rb') as f:
-                    yield from self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
+                try:
+                    with open(image, 'rb') as f:
+                        yield from self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
+                except OSError as e:
+                    raise aiohttp.web.HTTPConflict(text="Can't upload {}: {}".format(image, str(e)))
                 self.project.controller.notification.emit("log.info", {"message": "Upload finished for {}".format(img)})
                 return True
         return False
