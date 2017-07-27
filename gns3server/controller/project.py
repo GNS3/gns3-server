@@ -763,7 +763,7 @@ class Project:
                 try:
                     yield from compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step
-                except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict):
+                except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict, aiohttp.ServerDisconnectedError):
                     pass
             try:
                 if os.path.exists(path + ".backup"):
