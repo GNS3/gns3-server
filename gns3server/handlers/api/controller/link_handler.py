@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import asyncio
 import aiohttp
 
@@ -196,8 +197,11 @@ class LinkHandler:
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
 
-        if link.capture_file_path is None:
+        while link.capture_file_path is None:
             raise aiohttp.web.HTTPNotFound(text="pcap file not found")
+
+        while not os.path.isfile(link.capture_file_path):
+            yield from asyncio.sleep(0.5)
 
         try:
             with open(link.capture_file_path, "rb") as f:
