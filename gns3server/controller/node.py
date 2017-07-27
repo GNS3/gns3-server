@@ -236,8 +236,11 @@ class Node:
             val = ":/symbols/computer.svg"
 
         # No abs path, fix them (bug of 1.X)
-        if not val.startswith(":") and os.path.abspath(val):
-            val = os.path.basename(val)
+        try:
+            if not val.startswith(":") and os.path.abspath(val):
+                val = os.path.basename(val)
+        except OSError:
+            pass
 
         self._symbol = val
         try:
