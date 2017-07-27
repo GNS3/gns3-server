@@ -368,7 +368,8 @@ class Project:
         if base_name is None:
             return None
         base_name = re.sub(r"[ ]", "", base_name)
-        base_name = re.sub(r"[0-9]+$", "{0}", base_name)
+        if base_name in self._allocated_node_names:
+            base_name = re.sub(r"[0-9]+$", "{0}", base_name)
 
         if '{0}' in base_name or '{id}' in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier

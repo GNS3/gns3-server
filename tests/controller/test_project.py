@@ -602,6 +602,9 @@ def test_node_name(project, async_run):
     node = async_run(project.add_node(compute, "VPCS-1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     assert node.name == "VPCS-2"
 
+    node = async_run(project.add_node(compute, "R3", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.name == "R3"
+
 
 def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
     compute = MagicMock()
