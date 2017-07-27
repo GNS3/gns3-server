@@ -169,7 +169,7 @@ class ServerHandler:
                 data = r.body.decode("utf-8")
             except Exception as e:
                 data = str(e)
-            with open(os.path.join(debug_dir, "compute_{}.txt".format(compute.name)), "w+") as f:
+            with open(os.path.join(debug_dir, "compute_{}.txt".format(compute.id)), "w+") as f:
                 f.write("Compute ID: {}\n".format(compute.id))
                 f.write(data)
 
