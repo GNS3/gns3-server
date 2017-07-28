@@ -481,6 +481,12 @@ def test_appliance_templates(controller, async_run, tmpdir):
     }
     with open(str(tmpdir / "my_appliance.gns3a"), 'w+') as f:
         json.dump(my_appliance, f)
+    # A broken appliance
+    my_appliance = {
+        "name": "Broken"
+    }
+    with open(str(tmpdir / "my_appliance2.gns3a"), 'w+') as f:
+        json.dump(my_appliance, f)
 
     with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
         controller.load_appliances()

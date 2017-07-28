@@ -78,10 +78,11 @@ class Controller:
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
                             appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
-                    except (ValueError, OSError) as e:
+                            appliance.__json__()  # Check if loaded without error
+                        if appliance.status != 'broken':
+                            self._appliance_templates[appliance.id] = appliance
+                    except (ValueError, OSError, KeyError) as e:
                         log.warning("Can't load %s: %s", path, str(e))
-                    if appliance.status != 'broken':
-                        self._appliance_templates[appliance.id] = appliance
 
         self._appliances = {}
         vms = []
