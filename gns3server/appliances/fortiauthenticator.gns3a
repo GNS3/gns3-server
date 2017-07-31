@@ -1,0 +1,52 @@
+{
+    "name": "FortiAuthenticator",
+    "category": "guest",
+    "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "http://docs.fortinet.com/fortiauthenticator/admin-guides",
+    "product_name": "FortiAuthenticator",
+    "product_url": "https://www.fortinet.com/products/identity-access-management/fortiauthenticator.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username is admin, no password is set. First book takes longer.",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "FAC_VM_KVM-v500-build0012-FORTINET.out.kvm.qcow2",
+            "version": "5.0.0",
+            "md5sum": "2af90bdad68a37f38fda39ee04cf2fba",
+            "filesize": 62771200,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAC_VM_KVM-v500-DATADRIVE.qcow2",
+            "version": "5.x.x",
+            "md5sum": "09bad6cfe6301930adbc829eb8a67149",
+            "filesize": 258048,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.0.0",
+            "images": {
+                "hda_disk_image": "FAC_VM_KVM-v500-build0012-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+            }
+        }
+    ]
+}
