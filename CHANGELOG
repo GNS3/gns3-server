@@ -1,5 +1,24 @@
 # Change Log
 
+## 2.1.0a2 31/07/2017
+
+* Handle invalid appliances files
+* Sync appliances
+* Fix naming of node with a number in the name
+* Fix race condition in startup of capture
+* Fix bug when exporting debug information with multiple remote servers
+* Fix OSError when uploading images
+* Fix an error when a symbol is not available on filesystem
+* Fix ServerDisconnectedError for stop_all
+* This fix the images always included in portable project
+* Fix support of docker appliance with a usage
+* Duplicate API for ATM, Ethernet Hub and Frame Relay Switch
+* History support for console and telnet application
+* Fix IOU image upload
+* Duplicate IOU
+* Support duplicate for Docker
+* Duplicate support for qemu
+
 ## 2.1.0a1 24/07/2017
 
 * Packet filtering
