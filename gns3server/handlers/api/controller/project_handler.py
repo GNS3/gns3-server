@@ -167,6 +167,7 @@ class ProjectHandler:
         controller = Controller.instance()
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
+            log.error("Can't load the project the server is not started with --local")
             response.set_status(403)
             return
         project = yield from controller.load_project(request.json.get("path"),)
