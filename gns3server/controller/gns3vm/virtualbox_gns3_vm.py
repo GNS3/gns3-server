@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json.decoder
 import aiohttp
 import logging
 import asyncio
@@ -232,10 +231,11 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 pass
 
             if resp:
-                try:
-                    json_data = yield from resp.json()
-                except ValueError:
-                    pass
+                if resp.status < 300:
+                    try:
+                        json_data = yield from resp.json()
+                    except ValueError:
+                        pass
                 resp.close()
 
             session.close()
