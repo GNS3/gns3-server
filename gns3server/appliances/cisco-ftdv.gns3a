@@ -1,0 +1,98 @@
+{
+    "name": "Cisco FTDv",
+    "category": "firewall",
+    "description": "Cisco Firepower Threat Defense Virtual NGFW appliances combine Cisco's proven network firewall with the industry’s most effective next-gen IPS and advanced malware protection. All so you can get more visibility, be more flexible, save more, and protect better.",
+    "vendor_name": "Cisco Systems",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/ftdv-kvm-qsg.html",
+    "product_name": "Cisco FTDv",
+    "product_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/ftdv-kvm-qsg.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "Community",
+    "maintainer_email": "",
+    "usage": "Default username/password: admin/Admin123.",
+    "symbol": ":/symbols/asa.svg",
+    "first_port_name": "Gigabit0/0 (Mgmt)",
+    "port_name_format": "Gigabit0/{port1}",
+    "qemu": {
+        "cpus": 4,
+        "adapter_type": "e1000",
+        "adapters": 10,
+        "ram": 8192,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "hda_disk_interface": "ide",
+        "kvm": "require"
+    },
+    "images": [
+       {
+            "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.qcow2",
+            "version": "6.2.0 (363)",
+            "md5sum": "fafdae94ead07b23d6c8dc5f7a731e74",
+            "filesize": 1022885888,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.2.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+       },
+       {
+            "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.vmdk",
+            "version": "6.2.0 (363) vmdk",
+            "md5sum": "10297ab20526a8b1586c6ce1cd3d9cbd",
+            "filesize": 1042470912,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.2.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+       },
+       {
+            "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.qcow2",
+            "version": "6.1.0 (330)",
+            "md5sum": "386ab2b3d6d1d28fd2cd03a83df5e00f",
+            "filesize": 1004601344,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+       },
+       {
+            "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.vmdk",
+            "version": "6.1.0 (330) vmdk",
+            "md5sum": "c1fa58448841b33d5eed6854dc608816",
+            "filesize": 1024162816,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+       },
+       {
+            "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.0.1-1213.vmdk",
+            "version": "6.0.1 (1213) vmdk",
+            "md5sum": "bc53461e2ec344814e41a6a8d3a5f774",
+            "filesize": 714577408,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.0.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+       }
+
+    ],
+    "versions": [
+         {
+            "name": "6.2.0 (363)",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.qcow2"
+            }
+         },
+         {
+            "name": "6.2.0 (363) vmdk",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.vmdk"
+            }
+         },
+         {
+            "name": "6.1.0 (330)",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.qcow2"
+            }
+         },
+         {
+            "name": "6.1.0 (330) vmdk",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.vmdk"
+            }
+         },
+         {
+            "name": "6.0.1 (1213) vmdk",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.0.1-1213.vmdk"
+            }
+         }
+    ]
+}
