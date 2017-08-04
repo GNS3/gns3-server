@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.1.0b1 04/08/2017
+
+* Sync appliances
+* Interface starting with gns3 are not display by default in the cloud
+* Catch error when something that is not the GNS3 server answer to virtualbox requests
+* Catch KeyError: <aiohttp.connector._TransportPlaceholder
+* Add a warning when you try to load and the server is not started with --local
+* Sync appliances
+* Fix permission on exited container
+
 ## 2.1.0a2 31/07/2017
 
 * Handle invalid appliances files
