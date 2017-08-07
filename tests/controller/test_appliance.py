@@ -39,6 +39,27 @@ def test_appliance_json():
     }
 
 
+def test_appliance_json_with_not_known_category():
+    a = Appliance(None, {
+        "node_type": "qemu",
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "category": 'Not known',
+        "symbol": "qemu.svg",
+        "server": "local"
+    })
+    assert a.__json__() == {
+        "appliance_id": a.id,
+        "node_type": "qemu",
+        "builtin": False,
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "category": "Not known",
+        "symbol": "qemu.svg",
+        "compute_id": "local"
+    }
+
+
 def test_appliance_fix_linked_base():
     """
     Version of the gui before 2.1 use linked_base and the server
