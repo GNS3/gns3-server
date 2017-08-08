@@ -25,7 +25,8 @@ def test_appliance_json():
         "default_name_format": "{name}-{0}",
         "category": 0,
         "symbol": "qemu.svg",
-        "server": "local"
+        "server": "local",
+        "platform": None
     })
     assert a.__json__() == {
         "appliance_id": a.id,
@@ -35,7 +36,8 @@ def test_appliance_json():
         "default_name_format": "{name}-{0}",
         "category": "router",
         "symbol": "qemu.svg",
-        "compute_id": "local"
+        "compute_id": "local",
+        "platform": None
     }
 
 
@@ -46,7 +48,8 @@ def test_appliance_json_with_not_known_category():
         "default_name_format": "{name}-{0}",
         "category": 'Not known',
         "symbol": "qemu.svg",
-        "server": "local"
+        "server": "local",
+        "platform": None
     })
     assert a.__json__() == {
         "appliance_id": a.id,
@@ -56,7 +59,31 @@ def test_appliance_json_with_not_known_category():
         "default_name_format": "{name}-{0}",
         "category": "Not known",
         "symbol": "qemu.svg",
-        "compute_id": "local"
+        "compute_id": "local",
+        "platform": None
+    }
+
+
+def test_appliance_json_with_platform():
+    a = Appliance(None, {
+        "node_type": "dynamips",
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "category": 0,
+        "symbol": "dynamips.svg",
+        "server": "local",
+        "platform": "c3725"
+    })
+    assert a.__json__() == {
+        "appliance_id": a.id,
+        "node_type": "dynamips",
+        "builtin": False,
+        "name": "Test",
+        "default_name_format": "{name}-{0}",
+        "category": "router",
+        "symbol": "dynamips.svg",
+        "compute_id": "local",
+        "platform": "c3725"
     }
 
 
