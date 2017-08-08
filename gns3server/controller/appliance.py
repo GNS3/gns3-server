@@ -77,6 +77,7 @@ class Appliance:
             category = ID_TO_CATEGORY[self._data["category"]]
         except KeyError:
             category = self._data["category"]
+
         return {
             "appliance_id": self._id,
             "node_type": self._data["node_type"],
@@ -85,5 +86,6 @@ class Appliance:
             "category": category,
             "symbol": self._data.get("symbol", ":/symbols/computer.svg"),
             "compute_id": self.compute_id,
-            "builtin": self._builtin
+            "builtin": self._builtin,
+            "platform": self._data.get("platform", None)
         }
