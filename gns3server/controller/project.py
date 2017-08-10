@@ -748,6 +748,9 @@ class Project:
                 node_id = node.pop("node_id", str(uuid.uuid4()))
                 yield from self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
+                if 'link_id' not in link_data.keys():
+                    # skip the link
+                    continue
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
                     yield from link.update_filters(link_data["filters"])
