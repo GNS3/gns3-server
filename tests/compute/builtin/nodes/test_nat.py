@@ -59,3 +59,23 @@ def test_json_darwin(darwin_platform, project):
             }
         ]
     }
+
+
+def test_json_windows_with_full_name_of_interface(windows_platform, project):
+    with patch("gns3server.utils.interfaces.interfaces", return_value=[
+            {"name": "VMware Network Adapter VMnet8", "special": True, "type": "ethernet"}]):
+        nat = Nat("nat1", str(uuid.uuid4()), project, MagicMock())
+    assert nat.__json__() == {
+        "name": "nat1",
+        "node_id": nat.id,
+        "project_id": project.id,
+        "status": "started",
+        "ports_mapping": [
+            {
+                "interface": "vmnet8",
+                "name": "nat0",
+                "port_number": 0,
+                "type": "ethernet"
+            }
+        ]
+    }

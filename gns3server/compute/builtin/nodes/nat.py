@@ -36,7 +36,9 @@ class Nat(Cloud):
                 raise NodeError("virbr0 is missing. You need to install libvirt")
             interface = "virbr0"
         else:
-            if "vmnet8" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+            names = filter(lambda x: 'vmnet8' in x.lower(),
+                           [interface["name"] for interface in gns3server.utils.interfaces.interfaces()])
+            if not len(list(names)):
                 raise NodeError("vmnet8 is missing. You need to install VMware or use the NAT node on GNS3 VM")
             interface = "vmnet8"
 
