@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from aiohttp.web import HTTPConflict
 
 from gns3server.web.route import Route
 from gns3server.schemas.node import NODE_CAPTURE_SCHEMA
@@ -219,7 +220,13 @@ class CloudHandler:
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = node.nios[int(request.match_info["adapter_number"])]
+        adapter_number = int(request.match_info["adapter_number"])
+
+        try:
+            nio = node.nios[adapter_number]
+        except KeyError:
+            raise HTTPConflict(text="NIO `{}` doesn't exist".format(adapter_number))
+
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
         yield from node.update_nio(int(request.match_info["port_number"]), nio)
