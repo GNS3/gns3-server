@@ -23,6 +23,7 @@ import aiohttp
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.compute import Compute
+from gns3server.controller.project import Project
 
 
 @pytest.fixture
@@ -34,6 +35,8 @@ def demo_topology():
         "auto_close": True,
         "auto_open": False,
         "auto_start": False,
+        "scene_height": 500,
+        "scene_width": 700,
         "name": "demo",
         "project_id": "3c1be6f9-b4ba-4737-b209-63c47c23359f",
         "revision": 5,
@@ -142,7 +145,7 @@ def demo_topology():
     }
 
 
-def test_open(controller, tmpdir, demo_topology, async_run, http_server):
+def test_load_project(controller, tmpdir, demo_topology, async_run, http_server):
     with open(str(tmpdir / "demo.gns3"), "w+") as f:
         json.dump(demo_topology, f)
 
@@ -160,6 +163,45 @@ def test_open(controller, tmpdir, demo_topology, async_run, http_server):
     assert len(project.drawings) == 1
 
     assert project.name == "demo"
+    assert project.scene_height == 500
+    assert project.scene_width == 700
+
+
+def test_open(controller, tmpdir, demo_topology, async_run, http_server):
+    simple_topology = {
+        "auto_close": True,
+        "auto_open": False,
+        "auto_start": False,
+        "scene_height": 500,
+        "scene_width": 700,
+        "name": "demo",
+        "project_id": "3c1be6f9-b4ba-4737-b209-63c47c23359f",
+        "revision": 5,
+        "topology": {
+            "computes": [],
+            "drawings": [],
+            "links": [],
+            "nodes": []
+        },
+        "type": "topology",
+        "version": "2.0.0"
+    }
+
+    with open(str(tmpdir / "demo.gns3"), "w+") as f:
+        json.dump(simple_topology, f)
+
+    project = Project(
+        name="demo",
+        project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
+        path=str(tmpdir), controller=controller, filename="demo.gns3", status="closed")
+
+    async_run(project.open())
+
+    assert project.status == "opened"
+
+    assert project.name == "demo"
+    assert project.scene_height == 500
+    assert project.scene_width == 700
 
 
 def test_open_missing_compute(controller, tmpdir, demo_topology, async_run, http_server):

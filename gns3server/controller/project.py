@@ -739,7 +739,28 @@ class Project:
         except OSError:
             pass
         try:
-            topology = load_topology(path)["topology"]
+            project_data = load_topology(path)
+
+            #load meta of project
+            keys_to_load = [
+                "auto_start",
+                "auto_close",
+                "auto_open",
+                "scene_height",
+                "scene_width",
+                "zoom",
+                "show_layers",
+                "snap_to_grid",
+                "show_grid",
+                "show_interface_labels"
+            ]
+
+            for key in keys_to_load:
+                val = project_data.get(key, None)
+                if val is not None:
+                    setattr(self, key, val)
+
+            topology = project_data["topology"]
             for compute in topology.get("computes", []):
                 yield from self.controller.add_compute(**compute)
             for node in topology.get("nodes", []):
