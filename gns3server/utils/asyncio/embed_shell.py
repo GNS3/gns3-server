@@ -190,6 +190,11 @@ class ShellConnection(TelnetConnection):
 
     @asyncio.coroutine
     def connected(self):
+        # prompt_toolkit internally checks if it's on windows during output rendering but
+        # we need to force that we use Vt100_Output not Win32_Output
+        from prompt_toolkit import renderer
+        renderer.is_windows = lambda: False
+
         def get_size():
             return self._size
 
