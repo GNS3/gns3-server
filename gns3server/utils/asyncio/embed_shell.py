@@ -19,6 +19,7 @@
 import sys
 import asyncio
 import inspect
+import io
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import InMemoryHistory
@@ -29,6 +30,7 @@ from prompt_toolkit.interface import CommandLineInterface
 from prompt_toolkit.layout.screen import Size
 from prompt_toolkit.shortcuts import create_prompt_application, create_asyncio_eventloop
 from prompt_toolkit.terminal.vt100_output import Vt100_Output
+from prompt_toolkit.input import StdinInput
 
 from .telnet_server import AsyncioTelnetServer, TelnetConnection
 from .input_stream import InputStream
@@ -151,6 +153,24 @@ class EmbedShell:
         return commands
 
 
+class PatchedStdinInput(StdinInput):
+    """
+    `prompt_toolkit.input.StdinInput` checks whether stdin is tty or not, we don't need do that.
+    Fixes issue when PyCharm runs own terminal without emulation.
+    https://github.com/GNS3/gns3-server/issues/1172
+    """
+    def __init__(self, stdin=None):
+        self.stdin = stdin or sys.stdin
+        try:
+            self.stdin.fileno()
+        except io.UnsupportedOperation:
+            if 'idlelib.run' in sys.modules:
+                raise io.UnsupportedOperation(
+                    'Stdin is not a terminal. Running from Idle is not supported.')
+            else:
+                raise io.UnsupportedOperation('Stdin is not a terminal.')
+
+
 class UnstoppableEventLoop(EventLoop):
     """
     Partially fake event loop which cannot be stopped by CommandLineInterface
@@ -201,6 +221,7 @@ class ShellConnection(TelnetConnection):
         self._cli = CommandLineInterface(
             application=create_prompt_application(self._shell.prompt),
             eventloop=UnstoppableEventLoop(create_asyncio_eventloop(self._loop)),
+            input=PatchedStdinInput(sys.stdin),
             output=Vt100_Output(self, get_size))
 
         self._cb = self._cli.create_eventloop_callbacks()
