@@ -290,7 +290,12 @@ class Link:
         Dump a pcap file on disk
         """
 
-        stream_content = yield from self.read_pcap_from_source()
+        try:
+            stream_content = yield from self.read_pcap_from_source()
+        except aiohttp.web.HTTPException as e:
+            log.error("Could not stream pcap file: error {}: {}".format(e.status, e.text))
+            self._capturing = False
+            self._project.controller.notification.emit("link.updated", self.__json__())
         with stream_content as stream:
             with open(self.capture_file_path, "wb+") as f:
                 while self._capturing:
