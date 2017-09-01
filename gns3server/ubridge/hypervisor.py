@@ -129,12 +129,12 @@ class Hypervisor(UBridgeHypervisor):
         return self._version
 
     @asyncio.coroutine
-    def _check_ubridge_version(self):
+    def _check_ubridge_version(self, env=None):
         """
         Checks if the ubridge executable version
         """
         try:
-            output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir)
+            output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir, env=env)
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
@@ -151,13 +151,13 @@ class Hypervisor(UBridgeHypervisor):
         Starts the uBridge hypervisor process.
         """
 
-        yield from self._check_ubridge_version()
         env = os.environ.copy()
         if sys.platform.startswith("win"):
             # add the Npcap directory to $PATH to force uBridge to use npcap DLL instead of Winpcap (if installed)
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
                 env["PATH"] = system_root + ';' + env["PATH"]
+        yield from self._check_ubridge_version(env)
         try:
             command = self._build_command()
             log.info("starting ubridge: {}".format(command))
