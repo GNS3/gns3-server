@@ -23,6 +23,7 @@ import shutil
 import asyncio
 import zipfile
 import aiohttp
+import itertools
 
 from .topology import load_topology
 
@@ -116,8 +117,10 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
                         if node["node_type"] in ("docker", "qemu", "iou", "nat"):
                             node["compute_id"] = "vm"
                 else:
+                    # Round-robin through available compute resources.
+                    compute_nodes = itertools.cycle(controller.computes)
                     for node in topology["topology"]["nodes"]:
-                        node["compute_id"] = "local"
+                        node["compute_id"] = next(compute_nodes)
 
             compute_created = set()
             for node in topology["topology"]["nodes"]:
