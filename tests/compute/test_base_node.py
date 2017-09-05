@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from collections import OrderedDict
 
 import pytest
 import aiohttp
@@ -137,10 +138,10 @@ def test_update_ubridge_udp_connection(node, async_run):
 
 
 def test_ubridge_apply_filters(node, async_run):
-    filters = {
-        "latency": [10],
-        "bpf": ["icmp[icmptype] == 8\ntcp src port 53"]
-    }
+    filters = OrderedDict((
+        ('latency', [10]),
+        ('bpf', ["icmp[icmptype] == 8\ntcp src port 53"])
+    ))
     node._ubridge_send = AsyncioMagicMock()
     async_run(node._ubridge_apply_filters("VPCS-10", filters))
     node._ubridge_send.assert_any_call("bridge reset_packet_filters VPCS-10")
