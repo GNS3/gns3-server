@@ -1,5 +1,18 @@
 # Change Log
 
+## 2.1.0b2 05/09/2017
+
+* Round-robin nodes across all available compute resources. Fixes #1165.
+* Try to improve error reporting when streaming a PCAP file. Ref #2235.
+* Use Npcap DLL on Windows when checking for uBridge version.
+* Fixes running switch console inside PyCharm terminal (Ref. #1172)
+* Load meta of the project on loading time (Fixes #2225)
+* Added checking if NIO exists (Fixes #1160)
+* Fixes NAT node not working on Windows (#1163)
+* Fixes loading project when link_id is not set (#1159)
+* Return platform value on appliances list (Fixes #2211)
+* Fixes not known category in Appliances (Fixes #1156)
+
 ## 2.1.0b1 04/08/2017
 
 * Sync appliances
