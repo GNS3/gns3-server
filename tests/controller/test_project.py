@@ -303,6 +303,23 @@ def test_get_node(async_run, controller):
         project.get_node(vm.id)
 
 
+def test_list_nodes(async_run, controller):
+    compute = MagicMock()
+    project = Project(controller=controller, name="Test")
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    vm = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert len(project.nodes) == 1
+    assert isinstance(project.nodes, dict)
+
+    async_run(project.close())
+    assert len(project.nodes) == 1
+    assert isinstance(project.nodes, dict)
+
+
 def test_add_link(async_run, project, controller):
     compute = MagicMock()
 
@@ -338,6 +355,20 @@ def test_get_link(async_run, project):
         project.get_link("test")
 
 
+def test_list_links(async_run, project):
+    compute = MagicMock()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    link = async_run(project.add_link())
+    assert len(project.links) == 1
+
+    async_run(project.close())
+    assert len(project.links) == 1
+
+
 def test_delete_link(async_run, project, controller):
     compute = MagicMock()
 
@@ -368,6 +399,14 @@ def test_get_drawing(async_run, project):
 
     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
         project.get_drawing("test")
+
+
+def test_list_drawing(async_run, project):
+    drawing = async_run(project.add_drawing(None))
+    assert len(project.drawings) == 1
+
+    async_run(project.close())
+    assert len(project.drawings) == 1
 
 
 def test_delete_drawing(async_run, project, controller):
@@ -412,8 +451,9 @@ def test_dump():
 
 
 def test_open_close(async_run, controller):
-    project = Project(controller=controller, status="closed", name="Test")
-    assert project.status == "closed"
+    project = Project(controller=controller, name="Test")
+    assert project.status == "opened"
+    async_run(project.close())
     project.start_all = AsyncioMagicMock()
     async_run(project.open())
     assert not project.start_all.called
@@ -425,7 +465,9 @@ def test_open_close(async_run, controller):
 
 
 def test_open_auto_start(async_run, controller):
-    project = Project(controller=controller, status="closed", name="Test")
+    project = Project(controller=controller, name="Test")
+    assert project.status == "opened"
+    async_run(project.close())
     project.auto_start = True
     project.start_all = AsyncioMagicMock()
     async_run(project.open())
