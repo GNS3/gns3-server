@@ -176,6 +176,8 @@ def test_import_iou_linux_no_vm(linux_platform, async_run, tmpdir, controller):
     """
     project_id = str(uuid.uuid4())
 
+    controller._computes["local"] = AsyncioMagicMock()
+
     topology = {
         "project_id": str(uuid.uuid4()),
         "name": "test",
@@ -360,6 +362,8 @@ def test_import_node_id(linux_platform, async_run, tmpdir, controller):
     When importing a node, node_id should change
     """
     project_id = str(uuid.uuid4())
+
+    controller._computes["local"] = AsyncioMagicMock()
 
     topology = {
         "project_id": str(uuid.uuid4()),

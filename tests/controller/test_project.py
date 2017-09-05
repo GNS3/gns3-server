@@ -425,8 +425,7 @@ def test_open_close(async_run, controller):
 
 
 def test_open_auto_start(async_run, controller):
-    project = Project(controller=controller, status="closed", name="Test")
-    project.auto_start = True
+    project = Project(controller=controller, status="closed", name="Test", auto_start=True)
     project.start_all = AsyncioMagicMock()
     async_run(project.open())
     assert project.start_all.called
