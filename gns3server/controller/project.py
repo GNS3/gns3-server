@@ -680,8 +680,13 @@ class Project:
 
     @asyncio.coroutine
     def delete(self):
+
         if self._status != "opened":
-            yield from self.open()
+            try:
+                yield from self.open()
+            except aiohttp.web.HTTPConflict as e:
+                # ignore missing images or other conflicts when deleting a project
+                log.warning("Conflict while deleting project: {}".format(e.text))
         yield from self.delete_on_computes()
         yield from self.close()
         try:

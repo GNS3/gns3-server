@@ -211,12 +211,12 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409, "exception": e.__class__.__name__})
-                except (ImageMissingError) as e:
+                except ImageMissingError as e:
                     log.error("Image missing error detected: {}".format(e.image))
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409, "image": e.image, "exception": e.__class__.__name__})
-                except asyncio.futures.CancelledError as e:
+                except asyncio.futures.CancelledError:
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
