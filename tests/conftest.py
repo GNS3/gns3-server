@@ -290,7 +290,7 @@ def darwin_platform():
 @pytest.yield_fixture
 def windows_platform():
     """
-    Change sys.plaform to Windows
+    Change sys.platform to Windows
     """
     old_platform = sys.platform
     sys.platform = "win10"
@@ -301,7 +301,7 @@ def windows_platform():
 @pytest.yield_fixture
 def linux_platform():
     """
-    Change sys.plaform to Linux
+    Change sys.platform to Linux
     """
     old_platform = sys.platform
     sys.platform = "linuxdebian"

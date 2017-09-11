@@ -72,7 +72,7 @@ def test_json_windows_with_full_name_of_interface(windows_platform, project):
         "status": "started",
         "ports_mapping": [
             {
-                "interface": "vmnet8",
+                "interface": "VMware Network Adapter VMnet8",
                 "name": "nat0",
                 "port_number": 0,
                 "type": "ethernet"
