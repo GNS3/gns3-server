@@ -132,6 +132,13 @@ class Link:
         """
         return self._filters
 
+    @property
+    def nodes(self):
+        """
+        Get the current nodes attached to this link
+        """
+        return self._nodes
+
     def get_active_filters(self):
         """
         Return the active filters.

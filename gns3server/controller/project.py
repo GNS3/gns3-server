@@ -782,7 +782,14 @@ class Project:
                     yield from link.update_filters(link_data["filters"])
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
+                    port = node.get_port(node_link["adapter_number"], node_link["port_number"])
+                    if port.link is not None:
+                        # the node port is already attached to another link
+                        continue
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
+                if len(link.nodes) != 2:
+                    # a link should have 2 attached nodes, this can happen with corrupted projects
+                    yield from self.delete_link(link.id)
             for drawing_data in topology.get("drawings", []):
                 yield from self.add_drawing(dump=False, **drawing_data)
 
