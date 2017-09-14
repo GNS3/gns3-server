@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.1.0rc1 13/09/2017
+
+* Fix NAT node not working on Windows. Fixes #1163.
+* Do not prevent a project to be deleted. Fixes #2237.
+
 ## 2.1.0b2 05/09/2017
 
 * Round-robin nodes across all available compute resources. Fixes #1165.
