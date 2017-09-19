@@ -622,7 +622,7 @@ class BaseNode:
                 i += 1
 
     @asyncio.coroutine
-    def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=True):
+    def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=False):
         """
         Creates a connection with an Ethernet interface in uBridge.
 

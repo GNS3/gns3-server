@@ -210,7 +210,7 @@ class Cloud(BaseNode):
         if port_info["type"] in ("ethernet", "tap"):
 
             if sys.platform.startswith("win"):
-                yield from self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"], block_host_traffic=False)
+                yield from self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"])
 
             else:
 
