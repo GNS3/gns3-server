@@ -42,8 +42,8 @@ do
     then
         while IFS=: read PERMS OWNER GROUP FILE
         do
-            chmod "$PERMS" "$FILE"
-            chown "${OWNER}:${GROUP}" "$FILE"
+            [ -L "$FILE" ] || chmod "$PERMS" "$FILE"
+            chown -h "${OWNER}:${GROUP}" "$FILE"
         done < "$i/.gns3_perms"
     fi
 done
