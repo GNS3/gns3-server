@@ -1386,15 +1386,17 @@ class QemuVM(BaseNode):
                 if not os.path.exists(disk):
                     # create the disk
                     try:
-                        process = yield from asyncio.create_subprocess_exec(qemu_img_path, "create", "-o",
-                                                                            "backing_file={}".format(disk_image),
-                                                                            "-f", "qcow2", disk)
+                        command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+                        command_string = " ".join(shlex.quote(s) for s in command)
+                        log.info("Executing qemu-img with: {}".format(command_string))
+                        process = yield from asyncio.create_subprocess_exec(*command)
                         retcode = yield from process.wait()
                         if retcode is not None and retcode != 0:
-                            raise QemuError("Could not create {} disk image".format(disk_name))
+                            raise QemuError("Could not create {} disk image: qemu-img returned with {}".format(disk_name,
+                                                                                                               retcode))
                         log.info("{} returned with {}".format(qemu_img_path, retcode))
                     except (OSError, subprocess.SubprocessError) as e:
-                        raise QemuError("Could not create {} disk image {}".format(disk_name, e))
+                        raise QemuError("Could not create {} disk image: {}".format(disk_name, e))
                 else:
                     # The disk exists we check if the clone work
                     try:
