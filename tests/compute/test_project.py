@@ -106,6 +106,16 @@ def test_node_working_directory(tmpdir, node):
         assert os.path.exists(p.node_working_directory(node))
 
 
+def test_node_working_path(tmpdir, node):
+    directory = Config.instance().get_section_config("Server").get("projects_path")
+
+    with patch("gns3server.compute.project.Project.is_local", return_value=True):
+        p = Project(project_id=str(uuid4()))
+        assert p.node_working_path(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+        # after this execution directory structure should not be created
+        assert not os.path.exists(p.node_working_path(node))
+
+
 def test_project_delete(loop):
     project = Project(project_id=str(uuid4()))
     directory = project.path

@@ -86,7 +86,7 @@ class Cloud(BaseNode):
                 "ports_mapping": self._ports_mapping,
                 "interfaces": host_interfaces,
                 "status": self.status,
-                "node_directory": self.working_dir
+                "node_directory": self.working_path
                 }
 
     @property

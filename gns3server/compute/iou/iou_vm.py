@@ -194,7 +194,7 @@ class IOUVM(BaseNode):
 
         iou_vm_info = {"name": self.name,
                        "node_id": self.id,
-                       "node_directory": self.working_dir,
+                       "node_directory": self.working_path,
                        "console": self._console,
                        "console_type": "telnet",
                        "status": self.status,

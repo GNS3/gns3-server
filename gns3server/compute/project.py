@@ -207,13 +207,22 @@ class Project:
         :returns: Node working directory
         """
 
-        workdir = os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
+        workdir = self.node_working_path(node)
         if not self._deleted:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
         return workdir
+
+    def node_working_path(self, node):
+        """
+        Returns a node working path for node. It doesn't create structure if not present on system.
+        :param node: Node instance
+        :return: Node working path
+        """
+        return os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
+
 
     def tmp_working_directory(self):
         """

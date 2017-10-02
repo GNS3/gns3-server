@@ -89,7 +89,7 @@ class VirtualBoxVM(BaseNode):
                 "use_any_adapter": self.use_any_adapter,
                 "linked_clone": self.linked_clone}
         if self.linked_clone:
-            json["node_directory"] = self.working_dir
+            json["node_directory"] = self.working_path
         else:
             json["node_directory"] = None
         return json
