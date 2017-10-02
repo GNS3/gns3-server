@@ -114,7 +114,7 @@ class DockerVM(BaseNode):
             "start_command": self.start_command,
             "status": self.status,
             "environment": self.environment,
-            "node_directory": self.working_dir
+            "node_directory": self.working_path
         }
 
     def _get_free_display_port(self):

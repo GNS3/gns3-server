@@ -234,6 +234,14 @@ class BaseNode:
         return self._project.node_working_directory(self)
 
     @property
+    def working_path(self):
+        """
+        Return the node working path. Doesn't create structure of directories when not present.
+        """
+
+        return self._project.node_working_path(self)
+
+    @property
     def temporary_directory(self):
         if self._temporary_directory is None:
             try:

@@ -86,7 +86,7 @@ class VMwareVM(BaseNode):
                 "adapter_type": self.adapter_type,
                 "use_any_adapter": self.use_any_adapter,
                 "status": self.status,
-                "node_directory": self.working_dir,
+                "node_directory": self.working_path,
                 "linked_clone": self.linked_clone}
         return json
 

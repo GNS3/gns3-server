@@ -1626,7 +1626,7 @@ class QemuVM(BaseNode):
         answer = {
             "project_id": self.project.id,
             "node_id": self.id,
-            "node_directory": self.working_dir
+            "node_directory": self.working_path
         }
         # Qemu has a long list of options. The JSON schema is the single source of information
         for field in QEMU_OBJECT_SCHEMA["required"]:
