@@ -11,7 +11,7 @@ install:
 - pip install -rdev-requirements.txt
 script:
 - mkdir ‡
-#- py.test -v -s tests --basetemp=‡
+- py.test -v -s tests --basetemp=‡
 deploy:
   provider: pypi
   user: noplay
