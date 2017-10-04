@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.1.0rc2 04/10/2017
+
+* Don't create directory structure during json dump. Fixes #2270
+* Add more information when qemu-img fails.
+* Fix issue with multidict when upgrading GNS3 VM to use dev channel.
+* Restore file permissions fails for volumes with soft links. Fixes #1180.
+* Use RAW sockets by default on Linux.
+* Add missing https console keyword in JSON schema. Fixes #1179.
+* Allow projects to be opened even when a node port is already used.
+
 ## 2.1.0rc1 13/09/2017
 
 * Fix NAT node not working on Windows. Fixes #1163.
