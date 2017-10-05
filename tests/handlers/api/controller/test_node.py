@@ -258,3 +258,20 @@ def test_post_file(http_controller, tmpdir, project, node, compute):
 
     response = http_controller.get("/projects/{project_id}/nodes/{node_id}/files/../hello".format(project_id=project.id, node_id=node.id), raw=True)
     assert response.status == 404
+
+
+def test_get_and_post_with_nested_paths_normalization(http_controller, tmpdir, project, node, compute):
+    response = MagicMock()
+    response.body = b"world"
+    compute.http_query = AsyncioMagicMock(return_value=response)
+    response = http_controller.get("/projects/{project_id}/nodes/{node_id}/files/hello\\nested".format(project_id=project.id, node_id=node.id), raw=True)
+    assert response.status == 200
+    assert response.body == b'world'
+
+    compute.http_query.assert_called_with("GET", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello/nested".format(project_id=project.id, node_id=node.id), timeout=None, raw=True)
+
+    compute.http_query = AsyncioMagicMock()
+    response = http_controller.post("/projects/{project_id}/nodes/{node_id}/files/hello\\nested".format(project_id=project.id, node_id=node.id), body=b"hello", raw=True)
+    assert response.status == 201
+
+    compute.http_query.assert_called_with("POST", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello/nested".format(project_id=project.id, node_id=node.id), data=b'hello', timeout=None, raw=True)

@@ -367,6 +367,7 @@ class NodeHandler:
         path = request.match_info["path"]
         path = force_unix_path(path)
 
+
         # Raise error if user try to escape
         if path[0] == ".":
             raise aiohttp.web.HTTPForbidden
@@ -401,7 +402,7 @@ class NodeHandler:
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         path = request.match_info["path"]
-        path = os.path.normpath(path)
+        path = force_unix_path(path)
 
         # Raise error if user try to escape
         if path[0] == ".":
