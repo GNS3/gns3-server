@@ -1,17 +1,15 @@
-language: python
-python:
-    - '3.4'
-    - '3.5'
-    - '3.6'
-sudo: false
-cache: pip
+sudo: required
+
+services:
+  - docker
+
 install:
-- pip install -U setuptools pip
-- python setup.py install
-- pip install -rdev-requirements.txt
+  - sed -e 's/${PYTHON_VERSION}/'${PYTHON_VERSION}/g DockerfileTests.tpl  > /tmp/DockerfileTests
+  - docker-compose build
+
 script:
-- mkdir ‡
-- py.test -v -s tests --basetemp=‡
+  - docker-compose run tests
+
 deploy:
   provider: pypi
   user: noplay
@@ -20,3 +18,9 @@ deploy:
   on:
     tags: true
     repo: GNS3/gns3-server
+
+env:
+  matrix:
+    - PYTHON_VERSION=3.4
+    - PYTHON_VERSION=3.5
+    - PYTHON_VERSION=3.6

@@ -1,0 +1,4 @@
+tests:
+  build: .
+  dockerfile: /tmp/DockerfileTests
+  command: py.test -v -s tests

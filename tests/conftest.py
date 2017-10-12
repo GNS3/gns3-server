@@ -83,7 +83,7 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
 
-    host = "localhost"
+    host = "127.0.0.1"
 
     # We try multiple time. Because on Travis test can fail when because the port is taken by someone else
     for i in range(0, 5):
