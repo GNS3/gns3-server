@@ -41,25 +41,29 @@ def wait_run_in_executor(func, *args, **kwargs):
 
 
 @asyncio.coroutine
-def subprocess_check_output(*args, cwd=None, env=None):
+def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
     """
     Run a command and capture output
 
     :param *args: List of command arguments
     :param cwd: Current working directory
     :param env: Command environment
+    :param stderr: Read on stderr
     :returns: Command output
     """
 
-    proc = yield from asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=cwd, env=env)
-    output = yield from proc.stdout.read()
+    if stderr:
+        proc = yield from asyncio.create_subprocess_exec(*args, stderr=asyncio.subprocess.PIPE, cwd=cwd, env=env)
+        output = yield from proc.stderr.read()
+    else:
+        proc = yield from asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=cwd, env=env)
+        output = yield from proc.stdout.read()
     if output is None:
         return ""
     # If we received garbage we ignore invalid characters
     # it should happens only when user try to use another binary
     # and the code of VPCS, dynamips... Will detect it's not the correct binary
     return output.decode("utf-8", errors="ignore")
-
 
 @asyncio.coroutine
 def wait_for_process_termination(process, timeout=10):

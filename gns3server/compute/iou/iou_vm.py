@@ -945,13 +945,13 @@ class IOUVM(BaseNode):
         if "IOURC" not in os.environ:
             env["IOURC"] = self.iourc_path
         try:
-            output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env)
+            output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env, stderr=True)
             if re.search("-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
         except (OSError, subprocess.SubprocessError) as e:
-            log.warn("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
+            log.warning("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
 
     @property
     def startup_config_content(self):
