@@ -14,6 +14,7 @@
     "usage": "Default username is admin, no password is set. Silent boot, it might take a while.",
     "symbol": "loadbalancer.svg",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 10,

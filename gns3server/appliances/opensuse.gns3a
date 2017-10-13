@@ -1,0 +1,44 @@
+{
+    "name": "openSUSE",
+    "category": "guest",
+    "description": "openSUSE is a free and Linux-based operating system for PC, Laptop or Server. The openSUSE project is a community program sponsored by Novell. It is a general purpose operating system built on top of the Linux kernel, developed by the community-supported openSUSE Project and sponsored by SUSE and a number of other companies.",
+    "vendor_name": "SUSE LLC.",
+    "vendor_url": "https://www.opensuse.org/",
+    "documentation_url": "https://en.opensuse.org/Main_Page",
+    "product_name": "openSUSE",
+    "product_url": "https://www.opensuse.org/#Leap",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: osboxes\nPassword: osboxes.org\n\nroot password: osboxes.org",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-vga virtio"
+    },
+    "images": [
+        {
+            "filename": "openSUSE_42.3-Leap-VM-64bit.vmdk",
+            "version": "Leap 42.3",
+            "md5sum": "ab777cf90557460ff35aedfbf2befc5d",
+            "filesize": 5891293184,
+            "download_url": "http://www.osboxes.org/opensuse/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "Leap 42.3",
+            "images": {
+                "hda_disk_image": "openSUSE_42.3-Leap-VM-64bit.vmdk"
+            }
+        }
+    ]
+}

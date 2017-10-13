@@ -1,0 +1,70 @@
+{
+    "name": "Ubuntu",
+    "category": "guest",
+    "description": "Ubuntu is a full-featured Linux operating system which is based on Debian distribution and freely available with both community and professional support, it comes with Unity as its default desktop environment. There are other flavors of Ubuntu available with other desktops as default like Ubuntu Gnome, Lubuntu, Xubuntu, and so on. A tightly-integrated selection of excellent applications is included, and an incredible variety of add-on software is just a few clicks away. A default installation of Ubuntu contains a wide range of software that includes LibreOffice, Firefox, Empathy, Transmission, etc.",
+    "vendor_name": "Canonical Inc.",
+    "vendor_url": "https://www.ubuntu.com",
+    "documentation_url": "https://help.ubuntu.com",
+    "product_name": "Ubuntu",
+    "product_url": "https://www.ubuntu.com/desktop",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: osboxes\nPassword: osboxes.org",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-vga virtio"
+    },
+    "images": [
+        {
+            "filename": "Ubuntu_17.04-VM-64bit.vmdk",
+            "version": "17.04",
+            "md5sum": "5c82d69c49ba08179e9a94901f67da1f",
+            "filesize": 4792123392,
+            "download_url": "http://www.osboxes.org/ubuntu/"
+        },
+        {
+            "filename": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk",
+            "version": "16.10",
+            "md5sum": "c835f24dbb86f5f61c78d992ed38b6b1",
+            "filesize": 9133293568,
+            "download_url": "http://www.osboxes.org/ubuntu/"
+        },
+        {
+            "filename": "Ubuntu_16.04.3-VM-64bit.vmdk",
+            "version": "16.04",
+            "md5sum": "45bccf63f2777e492f022dbf025f67d0",
+            "filesize": 4302110720,
+            "download_url": "http://www.osboxes.org/ubuntu/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.04",
+            "images": {
+                "hda_disk_image": "Ubuntu_17.04-VM-64bit.vmdk"
+            }
+        },
+        {
+            "name": "16.10",
+            "images": {
+                "hda_disk_image": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk"
+            }
+        },
+        {
+            "name": "16.04",
+            "images": {
+                "hda_disk_image": "Ubuntu_16.04.3-VM-64bit.vmdk"
+            }
+        }
+    ]
+}

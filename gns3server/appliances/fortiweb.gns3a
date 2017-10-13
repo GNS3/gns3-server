@@ -13,6 +13,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username is admin, no password is set. Console keeps sending 'access uuid file failed, error number 2' messages; ignore it.",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,

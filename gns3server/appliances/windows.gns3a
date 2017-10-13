@@ -1,0 +1,109 @@
+{
+    "name": "Windows",
+    "category": "guest",
+    "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
+    "vendor_name": "Microsoft",
+    "vendor_url": "http://www.microsoft.com/",
+    "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
+    "product_name": "Windows",
+    "product_url": "https://www.microsoft.com/en-us/windows",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "These virtual machines expire after 90 days; i.e. you have to re-create them in your project after this time but you don't have to re-import the appliance.\n\nDefault credentials: IEUser / Passw0rd!",
+    "symbol": "microsoft.svg",
+    "port_name_format": "NIC{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "MSEdge_-_Win10_preview.vmdk",
+            "version": "10 w/ Edge",
+            "md5sum": "e06d97b871581d91b7363bf72a81553d",
+            "filesize": 10907287552,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
+        {
+            "filename": "IE11_-_Win8.1-disk1.vmdk",
+            "version": "8.1 w/ IE11",
+            "md5sum": "6c8691c7d58bf2c33f6ca242ace6b9bd",
+            "filesize": 5704344064,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
+        {
+            "filename": "IE11_-_Win7-disk1.vmdk",
+            "version": "7 w/ IE11",
+            "md5sum": "5733cc93a6ed756c2358f0a383b411a8",
+            "filesize": 4101495296,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
+        {
+            "filename": "IE10_-_Win7-disk1.vmdk",
+            "version": "7 w/ IE10",
+            "md5sum": "ed18b5903fb7d778b847c8d1cef807c4",
+            "filesize": 4062174208,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
+        {
+            "filename": "IE9_-_Win7-disk1.vmdk",
+            "version": "7 w/ IE9",
+            "md5sum": "82370cfa215002a49651b773a3a569f2",
+            "filesize": 4040829440,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
+        {
+            "filename": "IE8_-_Win7-disk1.vmdk",
+            "version": "7 w/ IE8",
+            "md5sum": "63456b42eb8e184b3e7c675645a3c32c",
+            "filesize": 4228026368,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "10 w/ Edge",
+            "images": {
+                "hda_disk_image": "MSEdge_-_Win10_preview.vmdk"
+            }
+        },
+        {
+            "name": "8.1 w/ IE11",
+            "images": {
+                "hda_disk_image": "IE11_-_Win8.1-disk1.vmdk"
+            }
+        },
+        {
+            "name": "7 w/ IE11",
+            "images": {
+                "hda_disk_image": "IE11_-_Win7-disk1.vmdk"
+            }
+        },
+        {
+            "name": "7 w/ IE10",
+            "images": {
+                "hda_disk_image": "IE10_-_Win7-disk1.vmdk"
+            }
+        },
+        {
+            "name": "7 w/ IE9",
+            "images": {
+                "hda_disk_image": "IE9_-_Win7-disk1.vmdk"
+            }
+        },
+        {
+            "name": "7 w/ IE8",
+            "images": {
+                "hda_disk_image": "IE8_-_Win7-disk1.vmdk"
+            }
+        }
+    ]
+}

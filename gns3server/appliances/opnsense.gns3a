@@ -1,0 +1,43 @@
+{
+    "name": "OPNsense",
+    "category": "firewall",
+    "description": "OPNsense is an open source, easy-to-use and easy-to-build FreeBSD based firewall and routing platform. OPNsense includes most of the features available in expensive commercial firewalls, and more in many cases. It brings the rich feature set of commercial offerings with the benefits of open and verifiable sources.\n\nOPNsense started as a fork of pfSense® and m0n0wall in 2014, with its first official release in January 2015. The project has evolved very quickly while still retaining  familiar aspects of both m0n0wall and pfSense. A strong focus on security and code quality drives the development of the project.",
+    "vendor_name": "Deciso B.V.",
+    "vendor_url": "https://opnsense.org/",
+    "documentation_url": "https://wiki.opnsense.org/",
+    "product_name": "OPNsense",
+    "product_url": "https://opnsense.org/about/about-opnsense/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default credentials: root / opnsense\nDefault IP address: 192.168.1.1",
+    "port_name_format": "em{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "OPNsense-17.7-OpenSSL-nano-amd64.img",
+            "version": "17.7",
+            "md5sum": "14cde5c7a15b2298a242238ad3c3b65a",
+            "filesize": 3221233664,
+            "download_url": "https://opnsense.org/download/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.7",
+            "images": {
+                "hda_disk_image": "OPNsense-17.7-OpenSSL-nano-amd64.img"
+            }
+        }
+    ]
+}

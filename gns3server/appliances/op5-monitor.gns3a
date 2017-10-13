@@ -1,0 +1,44 @@
+{
+    "name": "OP5 Monitor",
+    "category": "guest",
+    "description": "Over 200,000 IT staff across medium to large enterprises worldwide are currently using OP5 Monitor as their preferred network monitoring software.\nOP5 Monitor allows you to take control of your IT, enabling your network to be more responsive, more reliable and even faster than ever before. With unparalleled scalability, OP5 Monitor grows as your company grows, so you’ll understand why we say this is the last network monitor you’ll ever need to purchase.",
+    "vendor_name": "OP5",
+    "vendor_url": "https://www.op5.com/",
+    "documentation_url": "https://kb.op5.com/display/MAN/Documentation+Home#sthash.pohb5bis.dpbs",
+    "product_name": "OP5 Monitor",
+    "product_url": "https://www.op5.com/op5-monitor/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Interface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
+    "port_name_format": "eth{0}",
+    "symbol": "mgmt_station.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 2,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk",
+            "version": "7.3.15",
+            "md5sum": "634acc6266237d99bf1bfbcf9284beca",
+            "filesize": 779687424,
+            "download_url": "https://www.op5.com/download/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7.3.15",
+            "images": {
+                "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk"
+            }
+        }
+    ]
+}

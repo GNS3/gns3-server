@@ -23,17 +23,17 @@
     },
     "images": [
         {
+            "filename": "csr1000v-universalk9.16.5.1b-serial.qcow2",
+            "version": "16.5.1b",
+            "md5sum": "ac11d33041b8ff6dc3553e324d02cccb",
+            "filesize": 1209543680,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
             "filename": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2",
             "version": "3.17",
             "md5sum": "06cbfcd11f3557391db64fe2a6015a6e",
             "filesize": 1346305024,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
-        },
-        {
-            "filename": "csr1000v-universalk9.16.2.2-ext.qcow2",
-            "version": "16.2.2",
-            "md5sum": "6c7e61b2f091ce1e9562dc3f2da43ebe",
-            "filesize": 1586637824,
             "download_url": "https://virl.mediuscorp.com/my-account/"
         },
         {
@@ -53,29 +53,29 @@
         {
             "filename": "csr1000v-universalk9.16.03.02.qcow2",
             "version": "16.3.2",
-            "md5sum": "01868950c960b1eeaa0fe9e035b25e48",
-            "filesize": 1327693824,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Denali-16.3.2"
+            "md5sum": "2e5803d23cd52cba5d55fa8306be5f13",
+            "filesize": 1167720448,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
         },
         {
-            "filename": "csr1000v-universalk9.16.04.01-serial.qcow2",
+            "filename": "csr1000v-universalk9.16.4.1.qcow2",
             "version": "16.4.1",
-            "md5sum": "8f190db9fd06a34d66f0c82812e56fd2",
-            "filesize": 1457651712,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Everest-16.4.1"
+            "md5sum": "3428e0dcf5132a1b11ab7696d8c61b2e",
+            "filesize": 1261961216,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
         }
     ],
     "versions": [
         {
-            "name": "3.17",
+            "name": "16.5.1b",
             "images": {
-                "hda_disk_image": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2"
+                "hda_disk_image": "csr1000v-universalk9.16.5.1b-serial.qcow2"
             }
         },
         {
-            "name": "16.2.2",
+            "name": "3.17",
             "images": {
-                "hda_disk_image": "csr1000v-universalk9.16.2.2-ext.qcow2"
+                "hda_disk_image": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2"
             }
         },
         {
@@ -99,7 +99,7 @@
         {
             "name": "16.4.1",
             "images": {
-                "hda_disk_image": "csr1000v-universalk9.16.04.01-serial.qcow2"
+                "hda_disk_image": "csr1000v-universalk9.16.4.1.qcow2"
             }
         }
     ]

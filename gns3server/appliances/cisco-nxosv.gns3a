@@ -12,7 +12,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "The default username/password is admin/admin. A default configuration is present.",
     "first_port_name": "mgmt0",
-    "port_name_format": "Ethernet2/{0}",
+    "port_name_format": "Ethernet2/{port1}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 16,

@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk",
+            "version": "2.6.0",
+            "md5sum": "3eddbb73d685ac4666841f5df2c6bec9",
+            "filesize": 291227136,
+            "download_url": "http://www.kerio.com/support/kerio-operator",
+            "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.6.0-8413/kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk"
+        },
+        {
             "filename": "kerio-operator-appliance-2.5.5-8309-p2-vmware-disk1.vmdk",
             "version": "2.5.5p2",
             "md5sum": "dc0b4d0b264eb39c8c73289b6c8de749",
@@ -58,6 +66,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.6.0",
+            "images": {
+                "hda_disk_image": "kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk"
+            }
+        },
         {
             "name": "2.5.5p2",
             "images": {

@@ -24,12 +24,21 @@
     },
     "images": [
         {
+            "filename": "kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk",
+            "version": "9.2.3",
+            "md5sum": "767d5b25bdca2b45c2ba269189ea9bd0",
+            "filesize": 191716352,
+            "download_url": "http://www.kerio.com/support/kerio-control",
+            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.3-2219/kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk"
+        },
+        {
             "filename": "kerio-control-appliance-9.2.2-2172-vmware-disk1.vmdk",
             "version": "9.2.2",
             "md5sum": "4efeacbc39db1b3e53ef96af1338cf52",
             "filesize": 190841856,
             "download_url": "http://www.kerio.com/support/kerio-control",
-            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.2-2172/kerio-control-appliance-9.2.2-2172-vmware-disk1.vmdk"        },
+            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.2-2172/kerio-control-appliance-9.2.2-2172-vmware-disk1.vmdk"
+        },
         {
             "filename": "kerio-control-appliance-9.2.1-2019-vmware-disk1.vmdk",
             "version": "9.2.1",
@@ -46,6 +55,12 @@
             "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.1.4-1535/kerio-control-appliance-9.1.4-1535-vmware.vmdk"        }
     ],
     "versions": [
+        {
+            "name": "9.2.3",
+            "images": {
+                "hda_disk_image": "kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk"
+            }
+        },
         {
             "name": "9.2.2",
             "images": {

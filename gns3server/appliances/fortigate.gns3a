@@ -13,6 +13,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username is admin, no password is set.",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 10,
@@ -25,6 +26,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
+            "version": "5.6.2",
+            "md5sum": "afb9f237de2545db8663f4a2c5805355",
+            "filesize": 39231488,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
         {
             "filename": "FGT_VM64_KVM-v5-build1484-FORTINET.out.kvm.qcow2",
             "version": "5.6.1",
@@ -133,6 +141,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.6.2",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "5.6.1",
             "images": {

@@ -13,6 +13,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "First boot takes a few minutes. Admin URL is https://x.x.x.x/admin, default username is admin, no password is set.",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
@@ -30,6 +31,13 @@
             "version": "5.4.0",
             "md5sum": "c9e0885cab65e52ab01d8143ed466b01",
             "filesize": 101253120,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FML_VMKV-64-v53-build0643-FORTINET.out.kvm.qcow2",
+            "version": "5.3.10",
+            "md5sum": "08f3258533ac2b4f15e86ca3973be17e",
+            "filesize": 88801280,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -102,6 +110,13 @@
             "name": "5.4.0",
             "images": {
                 "hda_disk_image": "FML_VMKV-64-v54-build0692-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.3.10",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v53-build0643-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

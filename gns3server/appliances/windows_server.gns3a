@@ -1,0 +1,66 @@
+{
+    "name": "Windows Server",
+    "category": "guest",
+    "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
+    "vendor_name": "Microsoft",
+    "vendor_url": "http://www.microsoft.com/",
+    "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
+    "product_name": "Windows Server",
+    "product_url": "https://www.microsoft.com/en-us/windows",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "microsoft.svg",
+    "port_name_format": "NIC{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "Win2k16_14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO",
+            "version": "2016",
+            "md5sum": "70721288bbcdfe3239d8f8c0fae55f1f",
+            "filesize": 6972221440,
+            "download_url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2016"
+        },
+        {
+            "filename": "Win2k12_9600.16415.amd64fre.winblue_refresh.130928-2229_server_serverdatacentereval_en-us.vhd",
+            "version": "2012 R2",
+            "md5sum": "b0a988a2e1f401c99c7c18a00391c4cc",
+            "filesize": 8024756224,
+            "download_url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2012-r2"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+
+    ],
+    "versions": [
+        {
+            "name": "2016",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "Win2k16_14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO"
+            }
+        },
+        {
+            "name": "2012 R2",
+            "images": {
+                "hda_disk_image": "Win2k12_9600.16415.amd64fre.winblue_refresh.130928-2229_server_serverdatacentereval_en-us.vhd"
+            }
+        }
+    ]
+}

@@ -13,6 +13,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 2,
@@ -27,6 +28,27 @@
         "options": "-smp 4"
     },
     "images": [
+        {
+            "filename": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
+            "version": "4.10.0",
+            "md5sum": "636d94c78ea02e5a39eadb9d44210dfb",
+            "filesize": 8622505984,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-KVM-4.10.0.1102-1.qcow2",
+            "version": "4.10.0",
+            "md5sum": "52fee02e94fd220275b613a4ec5b46eb",
+            "filesize": 46858240,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-KVM-4.10.0.1102-2.qcow2",
+            "version": "4.10.0",
+            "md5sum": "088a34864e30abdb95385b089574baba",
+            "filesize": 46858240,
+            "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html"
+        },
         {
             "filename": "FortiSIEM-VA-KVM-4.9.0.1041.qcow2",
             "version": "4.9.0",
@@ -50,6 +72,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.10.0",
+            "images": {
+                "hda_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
+                "hdb_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102-1.qcow2",
+                "hdc_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102-2.qcow2"
+            }
+        },
         {
             "name": "4.9.0",
             "images": {

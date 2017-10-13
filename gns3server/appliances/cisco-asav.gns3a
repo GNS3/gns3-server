@@ -63,9 +63,9 @@
         {
             "filename": "asav971.qcow2",
             "version": "9.7.1",
-            "md5sum": "cb31f53e70a9e409829d2f832ff09191",
-            "filesize": 199688192,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.7.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
+            "md5sum": "07eef9b8ca489a8ad37448fadf45a673",
+            "filesize": 198443008,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
         },
         {
             "filename": "asav963-8.qcow2",
@@ -91,36 +91,8 @@
         {
             "filename": "asav962.qcow2",
             "version": "9.6.2",
-            "md5sum": "a4c892afe610776dde8a176f1049ae96",
+            "md5sum": "dfb8110ce38da4588e994865d5a9656a",
             "filesize": 177274880,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.2&relind=AVAILABLE&rellifecycle=&reltype=latest"
-        },
-        {
-            "filename": "asav961.qcow2",
-            "version": "9.6.1",
-            "md5sum": "c8726827cb72f4eed8cb52a64bca091c",
-            "filesize": 173801472,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.1&relind=AVAILABLE&rellifecycle=&reltype=latest"
-        },
-        {
-            "filename": "asav952-207.qcow2",
-            "version": "9.5.2-207",
-            "md5sum": "75b7d55e01ebd2e79ad5cdac2c811426",
-            "filesize": 169345024,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
-        },
-        {
-            "filename": "asav952-204.qcow2",
-            "version": "9.5.2-204",
-            "md5sum": "73a1126283de6b70c4cc12edfc46d547",
-            "filesize": 169345024,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
-        },
-        {
-            "filename": "asav951-201.qcow2",
-            "version": "9.5.1-200",
-            "md5sum": "ca071370278ecbd5dfdb1c5a4161571a",
-            "filesize": 160038912,
             "download_url": "https://virl.mediuscorp.com/my-account/"
         }
     ],
@@ -183,30 +155,6 @@
             "name": "9.6.2",
             "images": {
                 "hda_disk_image": "asav962.qcow2"
-            }
-        },
-        {
-            "name": "9.6.1",
-            "images": {
-                "hda_disk_image": "asav961.qcow2"
-            }
-        },
-        {
-            "name": "9.5.2-207",
-            "images": {
-                "hda_disk_image": "asav952-207.qcow2"
-            }
-        },
-        {
-            "name": "9.5.2-204",
-            "images": {
-                "hda_disk_image": "asav952-204.qcow2"
-            }
-        },
-        {
-            "name": "9.5.1-201",
-            "images": {
-                "hda_disk_image": "asav951-201.qcow2"
             }
         }
     ]

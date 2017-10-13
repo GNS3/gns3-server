@@ -13,6 +13,7 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "First boot will take some time without console output. Default username is admin, no password is set.",
     "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 3,
