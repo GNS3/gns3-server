@@ -109,3 +109,17 @@ COMPUTE_OBJECT_SCHEMA = {
     "additionalProperties": False,
     "required": ["compute_id", "protocol", "host", "port", "name"]
 }
+
+COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Output schema for obtaining endpoint on compute",
+    "type": "object",
+    "properties": {
+        "endpoint": {
+            "description": "URL to endpoint on specific compute and to particular action",
+            "type": "string"
+        },
+    },
+    "additionalProperties": False,
+}
+

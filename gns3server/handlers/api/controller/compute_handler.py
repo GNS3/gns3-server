@@ -21,7 +21,8 @@ from gns3server.controller import Controller
 from gns3server.schemas.compute import (
     COMPUTE_CREATE_SCHEMA,
     COMPUTE_OBJECT_SCHEMA,
-    COMPUTE_UPDATE_SCHEMA
+    COMPUTE_UPDATE_SCHEMA,
+    COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA
 )
 
 import logging
@@ -92,6 +93,33 @@ class ComputeHandler:
         compute = controller.get_compute(request.match_info["compute_id"])
         res = yield from compute.images(request.match_info["emulator"])
         response.json(res)
+
+    @Route.get(
+        r"/computes/endpoint/{compute_id}/{emulator}/{action:.+}",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        raw=True,
+        output=COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA,
+        description="Returns the endpoint for particular `compute` to specific action.")
+    def endpoint(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+
+        path = '/{emulator}/{action}'.format(
+            emulator=request.match_info['emulator'],
+            action=request.match_info['action'])
+
+        endpoint = compute.get_url(path)
+
+        response.set_status(200)
+        response.json(dict(
+            endpoint=endpoint
+        ))
 
     @Route.get(
         r"/computes/{compute_id}/{emulator}/{action:.+}",
