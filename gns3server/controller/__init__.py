@@ -118,6 +118,10 @@ class Controller:
             vms.append(vm)
 
         for vm in vms:
+            # remove deprecated properties
+            for property in vm.copy():
+                if property in ["enable_remote_console", "use_ubridge"]:
+                    del vm[property]
             vm.setdefault("appliance_id", str(uuid.uuid4()))
             appliance = Appliance(vm["appliance_id"], vm)
             self._appliances[appliance.id] = appliance
