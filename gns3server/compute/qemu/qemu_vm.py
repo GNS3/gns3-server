@@ -537,7 +537,7 @@ class QemuVM(BaseNode):
 
         log.info('QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(name=self._name,
                                                                                      id=self._id,
-                                                                                     mac_addr=mac_address))
+                                                                                     mac_addr=self._mac_address))
 
     @property
     def legacy_networking(self):
