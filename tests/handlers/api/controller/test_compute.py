@@ -240,4 +240,19 @@ def test_compute_autoidlepc(http_controller, controller):
     assert response.status == 200
 
 
+def test_compute_endpoint(http_controller, controller):
+    params = {
+        "compute_id": "my_compute",
+        "protocol": "http",
+        "host": "localhost",
+        "port": 84,
+        "user": "julien",
+        "password": "secure"
+    }
+    response = http_controller.post("/computes", params)
+    assert response.status == 201
+
+    response = http_controller.get("/computes/endpoint/my_compute/virtualbox/images")
+    assert response.status == 200
+    assert response.json['endpoint'] == 'http://localhost:84/v2/compute/virtualbox/images'
 

@@ -55,6 +55,13 @@ def test_getUrl(controller):
     assert compute._getUrl("/test") == "https://[::1]:84/v2/compute/test"
 
 
+def test_get_url(controller):
+    compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
+    with patch('gns3server.controller.compute.Compute._getUrl', return_value="returned") as getURL:
+        assert compute.get_url("/test") == 'returned'
+        getURL.assert_called_once_with('/test')
+
+
 def test_host_ip(controller):
     compute = Compute("my_compute_id", protocol="https", host="localhost", port=84, controller=controller)
     assert compute.host_ip == "127.0.0.1"

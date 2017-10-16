@@ -477,6 +477,10 @@ class Compute:
                 host = "127.0.0.1"
         return "{}://{}:{}/v2/compute{}".format(self._protocol, host, self._port, path)
 
+    def get_url(self, path):
+        """ Returns URL for specific path at Compute"""
+        return self._getUrl(path)
+
     @asyncio.coroutine
     def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with Timeout(timeout):
