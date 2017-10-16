@@ -286,7 +286,8 @@ def test_duplicate_vpcs(async_run, vpcs, project):
     destination_node = async_run(vpcs.create_node("PC-2", project.id, destination_node_id, console=2223))
     async_run(vpcs.duplicate_node(source_node_id, destination_node_id))
     with open(os.path.join(destination_node.working_dir, "startup.vpc")) as f:
-        assert f.read() == "set pcname PC-2\nip dhcp\n"
+        startup = f.read().strip()
+        assert startup == "set pcname PC-2\nip dhcp\n".strip()
 
 
 def test_duplicate_ethernet_switch(async_run, project):
