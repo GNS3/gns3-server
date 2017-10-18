@@ -89,7 +89,7 @@ class VMwareGNS3VM(BaseGNS3VM):
     def _set_extra_options(self):
         try:
             """
-            Due to bug/chang in VMWare 14 we're not able to pass Hardware Virtualization in GNS3VM.
+            Due to bug/change in VMWare 14 we're not able to pass Hardware Virtualization in GNS3VM.
             We only enable this when it's not present in current configuration and user hasn't deactivated that.
             """
             extra_config = (
