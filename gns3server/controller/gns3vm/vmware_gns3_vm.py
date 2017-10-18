@@ -86,6 +86,30 @@ class VMwareGNS3VM(BaseGNS3VM):
             raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
     @asyncio.coroutine
+    def _set_extra_options(self):
+        try:
+            """
+            Due to bug/chang in VMWare 14 we're not able to pass Hardware Virtualization in GNS3VM.
+            We only enable this when it's not present in current configuration and user hasn't deactivated that.
+            """
+            extra_config = (
+                ("vhv.enable", "TRUE"),
+            )
+            pairs = VMware.parse_vmware_file(self._vmx_path)
+            updated = False
+            for key, value in extra_config:
+                if key not in pairs.keys():
+                    pairs[key] = value
+                    updated = True
+                    log.info("GNS3 VM VMX `{}` set to `{}`".format(key, value))
+
+            if updated:
+                VMware.write_vmx_file(self._vmx_path, pairs)
+                log.info("GNS3 VM VMX has been updated.")
+        except OSError as e:
+            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+
+    @asyncio.coroutine
     def list(self):
         """
         List all VMware VMs
@@ -126,6 +150,7 @@ class VMwareGNS3VM(BaseGNS3VM):
             log.info("Update GNS3 VM settings")
             # set the number of vCPUs and amount of RAM
             yield from self._set_vcpus_ram(self.vcpus, self.ram)
+            yield from self._set_extra_options()
 
             # start the VM
             args = [self._vmx_path]
