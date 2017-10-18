@@ -680,13 +680,14 @@ class VMware(BaseManager):
 
         # check for the right VMware version
         yield from self.check_vmware_version()
-
+        vmware_vms = []
         inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path) and self.host_type != "player":
             # inventory may exist for VMware player if VMware workstation has been previously installed
-            return self._get_vms_from_inventory(inventory_path)
-        else:
-            # VMware player has no inventory file, let's search the default location for VMs
+            vmware_vms = self._get_vms_from_inventory(inventory_path)
+        if not vmware_vms:
+            # Backup method or for VMware player which has no inventory file
+            # Let's search the default location for VMs
             vmware_preferences_path = self.get_vmware_preferences_path()
             default_vm_path = self.get_vmware_default_vm_path()
             pairs = {}
@@ -714,7 +715,7 @@ class VMware(BaseManager):
                                 found = True
                         if found is False:
                             vmware_vms.append({"vmname": pairs[display_name], "vmx_path": value})
-            return vmware_vms
+        return vmware_vms
 
     @staticmethod
     def _get_linux_vmware_binary():
