@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.1.0rc3 19/10/2017
+
+* Set vhv.enable before run for VMWare 14. Fixes #1184
+* Tweak how VMware VMs are found with fallback to search in the default location for VMs.
+* QEMU: fix logging of base mac address when creating a new node
+* Sync appliance files.
+* Fix creation of an VMware VM failed with invalid JSON. Fixes #2282.
+* Endpoint for obtaining direct action on compute
+* Fix IOU detection of layer 1 keepalive support. Fixes #1183.
+* Fixes path normalization during file upload on nodes (Fixes: #2276)
+
 ## 2.1.0rc2 04/10/2017
 
 * Don't create directory structure during json dump. Fixes #2270
