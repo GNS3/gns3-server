@@ -249,7 +249,10 @@ class WebServer:
             # Default web server for web gui dev
             "http://127.0.0.1:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
             "http://localhost:8080": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
-            "http://gns3.github.io": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
+            "http://127.0.0.1:4200": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
+            "http://localhost:4200": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
+            "http://gns3.github.io": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*"),
+            "https://gns3.github.io": aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*")
         })
 
         PortManager.instance().console_host = self._host
