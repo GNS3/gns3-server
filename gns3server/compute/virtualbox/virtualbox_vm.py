@@ -665,9 +665,27 @@ class VirtualBoxVM(BaseNode):
         """
 
         # check for the maximum adapters supported by the VM
-        self._maximum_adapters = yield from self._get_maximum_supported_adapters()
+        vm_info = yield from self._get_vm_info()
+        chipset = "piix3"  # default chipset for VirtualBox VMs
+        self._maximum_adapters = 8  # default maximum network adapter count for PIIX3 chipset
+        if "chipset" in vm_info:
+            chipset = vm_info["chipset"]
+            max_adapter_string = "Maximum {} Network Adapter count".format(chipset.upper())
+            if max_adapter_string in self._system_properties:
+                try:
+                    self._maximum_adapters = int(self._system_properties[max_adapter_string])
+                except ValueError:
+                    log.error("Could not convert system property to integer: {} = {}".format(max_adapter_string, self._system_properties[max_adapter_string]))
+            else:
+                log.warning("Could not find system property '{}' for chipset {}".format(max_adapter_string, chipset))
+
+        log.info("VirtualBox VM '{name}' [{id}] can have a maximum of {max} network adapters for chipset {chipset}".format(name=self.name,
+                                                                                                                           id=self.id,
+                                                                                                                           max=self._maximum_adapters,
+                                                                                                                           chipset=chipset.upper()))
         if adapters > self._maximum_adapters:
-            raise VirtualBoxError("Number of adapters above the maximum supported of {}".format(self._maximum_adapters))
+            raise VirtualBoxError("The configured {} chipset limits the VM to {} network adapters. The chipset can be changed outside GNS3 in the VirtualBox VM settings.".format(chipset.upper(),
+                                                                                                                                                                                  self._maximum_adapters))
 
         self._ethernet_adapters.clear()
         for adapter_number in range(0, adapters):
@@ -742,23 +760,6 @@ class VirtualBoxVM(BaseNode):
                 continue
             vm_info[name.strip('"')] = value.strip('"')
         return vm_info
-
-    @asyncio.coroutine
-    def _get_maximum_supported_adapters(self):
-        """
-        Returns the maximum adapters supported by this VM.
-
-        :returns: maximum number of supported adapters (int)
-        """
-
-        # check the maximum number of adapters supported by the VM
-        vm_info = yield from self._get_vm_info()
-        maximum_adapters = 8
-        if "chipset" in vm_info:
-            chipset = vm_info["chipset"]
-            if chipset == "ich9":
-                maximum_adapters = int(self._system_properties["Maximum ICH9 Network Adapter count"])
-        return maximum_adapters
 
     def _get_pipe_name(self):
         """
