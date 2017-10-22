@@ -564,13 +564,14 @@ class IOUVM(BaseNode):
         """
 
         self._terminate_process_iou()
-
         if returncode != 0:
             if returncode == -11:
-                message = "{} process has stopped, return code: {}. This could be an issue with the image using a different image can fix the issue.\n{}".format(process_name, returncode, self.read_iou_stdout())
+                message = 'IOU VM "{}" process has stopped with return code: {} (segfault). This could be an issue with the IOU image, using a different image may fix this.\n{}'.format(self.name,
+                                                                                                                                                                                         returncode,
+                                                                                                                                                                                         self.read_iou_stdout())
             else:
-                message = "{} process has stopped, return code: {}\n{}".format(process_name, returncode, self.read_iou_stdout())
-            log.warn(message)
+                message = 'IOU VM "{}" process has stopped with return code: {}\n{}'.format(self.name, returncode, self.read_iou_stdout())
+            log.warning(message)
             self.project.emit("log.error", {"message": message})
         if self._telnet_server:
             self._telnet_server.close()
@@ -610,7 +611,7 @@ class IOUVM(BaseNode):
                     yield from gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._iou_process.returncode is None:
-                        log.warn("IOU process {} is still running... killing it".format(self._iou_process.pid))
+                        log.warning("IOU process {} is still running... killing it".format(self._iou_process.pid))
                         try:
                             self._iou_process.kill()
                         except ProcessLookupError:
