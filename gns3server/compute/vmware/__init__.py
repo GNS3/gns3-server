@@ -571,8 +571,8 @@ class VMware(BaseManager):
 
         vm_entries = {}
         vmware_vms = []
+        log.info('Searching for VMware VMs in inventory file "{}"'.format(inventory_path))
         try:
-            log.debug('Reading VMware inventory file "{}"'.format(inventory_path))
             pairs = self.parse_vmware_file(inventory_path)
             for key, value in pairs.items():
                 if key.startswith("vmlist"):
@@ -603,6 +603,7 @@ class VMware(BaseManager):
         """
 
         vmware_vms = []
+        log.info('Searching for VMware VMs in directory "{}"'.format(directory))
         for path, _, filenames in os.walk(directory):
             for filename in filenames:
                 if os.path.splitext(filename)[1] == ".vmx":
@@ -649,9 +650,9 @@ class VMware(BaseManager):
             return os.path.expanduser("~/.vmware/preferences")
 
     @staticmethod
-    def get_vmware_default_vm_path():
+    def get_vmware_default_vm_paths():
         """
-        Returns VMware default VM directory path.
+        Returns VMware default VM directory paths.
 
         :returns: path to the default VM directory
         """
@@ -662,15 +663,11 @@ class VMware(BaseManager):
             path = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
             ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, path)
             documents_folder = path.value
-            windows_type = sys.getwindowsversion().product_type
-            if windows_type == 2 or windows_type == 3:
-                return '{}\My Virtual Machines'.format(documents_folder)
-            else:
-                return '{}\Virtual Machines'.format(documents_folder)
+            return ['{}\My Virtual Machines'.format(documents_folder), '{}\Virtual Machines'.format(documents_folder)]
         elif sys.platform.startswith("darwin"):
-            return os.path.expanduser("~/Documents/Virtual Machines.localized")
+            return [os.path.expanduser("~/Documents/Virtual Machines.localized")]
         else:
-            return os.path.expanduser("~/vmware")
+            return [os.path.expanduser("~/vmware")]
 
     @asyncio.coroutine
     def list_vms(self):
@@ -686,10 +683,8 @@ class VMware(BaseManager):
             # inventory may exist for VMware player if VMware workstation has been previously installed
             vmware_vms = self._get_vms_from_inventory(inventory_path)
         if not vmware_vms:
-            # Backup method or for VMware player which has no inventory file
-            # Let's search the default location for VMs
+            # backup methods when no VMware inventory file exists or for VMware player which has no inventory file
             vmware_preferences_path = self.get_vmware_preferences_path()
-            default_vm_path = self.get_vmware_default_vm_path()
             pairs = {}
             if os.path.exists(vmware_preferences_path):
                 # the default vm path may be present in VMware preferences file.
@@ -699,11 +694,22 @@ class VMware(BaseManager):
                     log.warning('Could not read VMware preferences file "{}": {}'.format(vmware_preferences_path, e))
                 if "prefvmx.defaultvmpath" in pairs:
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
-            if not os.path.isdir(default_vm_path):
-                raise VMwareError('Could not find the default VM directory: "{}". Due to limitation of the free version of VMware Workstation you need to import the GNS3 VM in the default location.'.format(default_vm_path))
-            vmware_vms = self._get_vms_from_directory(default_vm_path)
+                    if not os.path.isdir(default_vm_path):
+                        raise VMwareError('Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'.format(default_vm_path=default_vm_path,
+                                                                                                                                                                                                                  vmware_preferences_path=vmware_preferences_path))
+                    vmware_vms = self._get_vms_from_directory(default_vm_path)
 
-            # looks for VMX paths in the preferences file in case not all VMs are in the default directory
+            if not vmware_vms:
+                # the default vm path is not in the VMware preferences file or that directory is empty
+                # let's search the default locations for VMs
+                for default_vm_path in self.get_vmware_default_vm_paths():
+                    if os.path.isdir(default_vm_path):
+                        vmware_vms.extend(self._get_vms_from_directory(default_vm_path))
+
+            if not vmware_vms:
+                log.warning("Could not find any VMware VM in default locations")
+
+            # look for VMX paths in the preferences file in case not all VMs are in a default directory
             for key, value in pairs.items():
                 m = re.match(r'pref.mruVM(\d+)\.filename', key)
                 if m:
