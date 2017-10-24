@@ -380,6 +380,8 @@ class IOUVM(BaseNode):
         if "license" not in config:
             raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
         hostname = socket.gethostname()
+        if len(hostname) > 15:
+            log.warning("Older IOU images may not boot because hostname '{}' length is above 15 characters".format(hostname))
         if hostname not in config["license"]:
             raise IOUError("Hostname \"{}\" not found in iourc file {}".format(hostname, self.iourc_path))
         user_ioukey = config["license"][hostname]
