@@ -35,7 +35,7 @@ from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
-
+from ..version import __version__
 
 # do not delete this import
 import gns3server.handlers
@@ -234,8 +234,11 @@ class WebServer:
             ssl_context = self._create_ssl_context(server_config)
 
         self._loop = asyncio.get_event_loop()
-        # Asyncio will raise error if coroutine is not called
-        self._loop.set_debug(True)
+
+        if "dev" in __version__ or log.getEffectiveLevel() == logging.DEBUG:
+            # On dev/debug version we enable info that
+            # coroutine is not called in a way await/yield from
+            self._loop.set_debug(True)
 
         for key, val in os.environ.items():
             log.debug("ENV %s=%s", key, val)
