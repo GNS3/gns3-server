@@ -506,10 +506,16 @@ class Compute:
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
+            log.debug("Attempting request to compute: {method} {url} {headers}".format(
+                method=method,
+                url=url,
+                headers=headers
+            ))
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError) as e:
+        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
+            #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:
