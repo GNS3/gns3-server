@@ -35,7 +35,6 @@ from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
-from ..version import __version__
 
 # do not delete this import
 import gns3server.handlers
@@ -235,8 +234,8 @@ class WebServer:
 
         self._loop = asyncio.get_event_loop()
 
-        if "dev" in __version__ or log.getEffectiveLevel() == logging.DEBUG:
-            # On dev/debug version we enable info that
+        if log.getEffectiveLevel() == logging.DEBUG:
+            # On debug version we enable info that
             # coroutine is not called in a way await/yield from
             self._loop.set_debug(True)
 
