@@ -105,7 +105,8 @@ class ComputeHandler:
         },
         raw=True,
         output=COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA,
-        description="Returns the endpoint for particular `compute` to specific action.")
+        description="Returns the endpoint for particular `compute` to specific action. "
+                    "WARNING: This is experimental feature and may change anytime. Please don't rely on this endpoint.")
     def endpoint(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
