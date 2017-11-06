@@ -272,11 +272,10 @@ class GNS3VM:
         if not engine.running:
             if self._settings["vmname"] is None:
                 return
-
             log.info("Start the GNS3 VM")
             engine.vmname = self._settings["vmname"]
             engine.ram = self._settings["ram"]
-            engine.vpcus = self._settings["vcpus"]
+            engine.vcpus = self._settings["vcpus"]
             engine.headless = self._settings["headless"]
             compute = yield from self._controller.add_compute(compute_id="vm",
                                                               name="GNS3 VM is starting ({})".format(engine.vmname),
