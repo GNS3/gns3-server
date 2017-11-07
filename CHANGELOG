@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.1.0rc4 07/11/2017
+
+* Fix GNS3VM vCPUs control on VMware, fixes: #2324
+* Fix typo in sample gns3_server.conf. Fixes #1210.
+* Warning for getting endpoint of compute
+* Enable debug mode on async loop only in dev/debug mode
+* Add warning when using IOU with a hostname length above 15 characters.
+* Improve VMware VMs discovery process. Ref #1201.
+* Improve error message when IOU VM process is unexpectedly stopped.
+* Improved error message when the number of network adapters is above the maximum for VirtualBox VMs. Better support for potential future chipsets in addition of PIIX3 and ICH9.
+* Added localhost and gns3.github.io CORS
+
 ## 2.1.0rc3 19/10/2017
 
 * Set vhv.enable before run for VMWare 14. Fixes #1184
