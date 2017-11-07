@@ -42,7 +42,7 @@ GNS3VM_SETTINGS_SCHEMA = {
             "enum": ["vmware", "virtualbox", None]
         },
         "vcpus": {
-            "description": "Number of VPCUS affected to the VM",
+            "description": "Number of vCPUS affected to the VM",
             "type": "integer"
         },
         "ram": {

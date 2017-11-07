@@ -175,7 +175,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
 
         if vm_state == "poweroff":
-            yield from self.set_vcpus(self.vpcus)
+            yield from self.set_vcpus(self.vcpus)
             yield from self.set_ram(self.ram)
 
         if vm_state in ("poweroff", "saved"):
