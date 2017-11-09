@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.0 09/11/2017
+
+* Fix typo in vcpus on VirtualBoxVM, fixes: #1213
+
 ## 2.1.0rc4 07/11/2017
 
 * Fix GNS3VM vCPUs control on VMware, fixes: #2324
