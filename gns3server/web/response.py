@@ -113,7 +113,7 @@ class Response(aiohttp.web.Response):
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
 
     @asyncio.coroutine
-    def file(self, path):
+    def file(self, path, status=200, set_content_length=True):
         """
         Return a file as a response
         """
@@ -124,27 +124,34 @@ class Response(aiohttp.web.Response):
             self.headers[aiohttp.hdrs.CONTENT_ENCODING] = encoding
         self.content_type = ct
 
-        st = os.stat(path)
-        self.last_modified = st.st_mtime
-        self.headers[aiohttp.hdrs.CONTENT_LENGTH] = str(st.st_size)
+        if set_content_length:
+            st = os.stat(path)
+            self.last_modified = st.st_mtime
+            self.headers[aiohttp.hdrs.CONTENT_LENGTH] = str(st.st_size)
+        else:
+            self.enable_chunked_encoding()
 
-        with open(path, 'rb') as fobj:
-            yield from self.prepare(self._request)
-            chunk_size = 4096
-            chunk = fobj.read(chunk_size)
-            while chunk:
-                self.write(chunk)
-                yield from self.drain()
-                chunk = fobj.read(chunk_size)
+        self.set_status(status)
 
-            if chunk:
-                self.write(chunk[:count])
-                yield from self.drain()
+        try:
+            with open(path, 'rb') as fobj:
+                yield from self.prepare(self._request)
+
+                while True:
+                    data = fobj.read(4096)
+                    if not data:
+                        break
+                    yield from self.write(data)
+                    yield from self.drain()
+
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
 
     def redirect(self, url):
         """
         Redirect to url
-
         :params url: Redirection URL
         """
         raise aiohttp.web.HTTPFound(url)
