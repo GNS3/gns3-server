@@ -846,10 +846,8 @@ class VirtualBoxVM(BaseNode):
             nio = self._local_udp_tunnels[adapter_number][0]
 
             if nio:
-                if not self._use_any_adapter and attachment not in ("none", "null", "generic"):
-                    raise VirtualBoxError("Attachment ({}) already configured on adapter {}. "
-                                          "Please set it to 'Not attached' to allow GNS3 to use it.".format(attachment,
-                                                                                                            adapter_number + 1))
+                if not self._use_any_adapter and attachment in ("nat", "bridged", "intnet", "hostonly", "natnetwork"):
+                    continue
 
                 yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
                 vbox_adapter_type = "82540EM"
@@ -972,23 +970,40 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
+        # check if trying to connect to a nat, bridged, host-only or any other special adapter
+        nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
+        attachment = nic_attachments[adapter_number]
+        if attachment in ("nat", "bridged", "intnet", "hostonly", "natnetwork"):
+            if not self._use_any_adapter:
+                raise VirtualBoxError("Attachment '{attachment}' is already configured on adapter {adapter_number}. "
+                                      "Please remove it or allow VirtualBox VM '{name}' to use any adapter.".format(attachment=attachment,
+                                                                                                                    adapter_number=adapter_number,
+                                                                                                                    name=self.name))
+            elif self.is_running():
+                # dynamically configure an UDP tunnel attachment if the VM is already running
+                local_nio = self._local_udp_tunnels[adapter_number][0]
+                if local_nio and isinstance(local_nio, NIOUDP):
+                    yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
+                    yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, local_nio.lport))
+                    yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, local_nio.rhost))
+                    yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, local_nio.rport))
+                    yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+
         if self.is_running():
             try:
                 yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
             except KeyError:
-                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(
-                    name=self.name,
-                    adapter_number=adapter_number))
+                raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                                adapter_number=adapter_number))
             yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
-        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
-            name=self.name,
-            id=self.id,
-            nio=nio,
-            adapter_number=adapter_number))
+        log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
+                                                                                                 id=self.id,
+                                                                                                 nio=nio,
+                                                                                                 adapter_number=adapter_number))
 
     @asyncio.coroutine
     def adapter_update_nio_binding(self, adapter_number, nio):

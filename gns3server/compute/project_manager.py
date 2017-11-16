@@ -16,8 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
+import psutil
+import platform
 from .project import Project
 from uuid import UUID
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class ProjectManager:
@@ -70,6 +75,26 @@ class ProjectManager:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
         return self._projects[project_id]
 
+    def _check_available_disk_space(self, project):
+        """
+        Sends a warning notification if disk space is getting low.
+
+        :param project: project instance
+        """
+
+        try:
+            used_disk_space = psutil.disk_usage(project.path).percent
+        except FileNotFoundError:
+            log.warning('Could not find "{}" when checking for used disk space'.format(project.path))
+            return
+        # send a warning if used disk space is >= 90%
+        if used_disk_space >= 90:
+            message = 'Only {}% or less of disk space detected in "{}" on "{}"'.format(used_disk_space,
+                                                                                       project.path,
+                                                                                       platform.node())
+            log.warning(message)
+            project.emit("log.warning", {"message": message})
+
     def create_project(self, name=None, project_id=None, path=None):
         """
         Create a project and keep a references to it in project manager.
@@ -80,6 +105,7 @@ class ProjectManager:
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
         project = Project(name=name, project_id=project_id, path=path)
+        self._check_available_disk_space(project)
         self._projects[project.id] = project
         return project
 
