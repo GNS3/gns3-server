@@ -79,7 +79,7 @@ def test_iou_create_with_params(http_compute, project, base_params):
     params["ethernet_adapters"] = 0
     params["l1_keepalives"] = True
     params["startup_config_content"] = "hostname test"
-    params["use_default_iou_values"] = True
+    params["use_default_iou_values"] = False
 
     response = http_compute.post("/projects/{project_id}/iou/nodes".format(project_id=project.id), params, example=True)
     assert response.status == 201
@@ -91,7 +91,7 @@ def test_iou_create_with_params(http_compute, project, base_params):
     assert response.json["ram"] == 1024
     assert response.json["nvram"] == 512
     assert response.json["l1_keepalives"] is True
-    assert response.json["use_default_iou_values"] is True
+    assert response.json["use_default_iou_values"] is False
 
     with open(startup_config_file(project, response.json)) as f:
         assert f.read() == "hostname test"
