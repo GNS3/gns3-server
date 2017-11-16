@@ -32,6 +32,7 @@ import gns3server
 import subprocess
 
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import subprocess_check_output
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
@@ -1361,6 +1362,15 @@ class QemuVM(BaseNode):
         return qemu_img_path
 
     @asyncio.coroutine
+    def _qemu_img_exec(self, command):
+        command_string = " ".join(shlex.quote(s) for s in command)
+        log.info("Executing qemu-img with: {}".format(command_string))
+        process = yield from asyncio.create_subprocess_exec(*command)
+        retcode = yield from process.wait()
+        log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
+        return retcode
+
+    @asyncio.coroutine
     def _disk_options(self):
         options = []
         qemu_img_path = self._get_qemu_img()
@@ -1381,29 +1391,42 @@ class QemuVM(BaseNode):
                     raise QemuError("{} disk image '{}' linked to '{}' is not accessible".format(disk_name, disk_image, os.path.realpath(disk_image)))
                 else:
                     raise QemuError("{} disk image '{}' is not accessible".format(disk_name, disk_image))
+            else:
+                try:
+                    # check for corrupt disk image
+                    retcode = yield from self._qemu_img_exec([qemu_img_path, "check", disk_image])
+                    if retcode == 3:
+                        # image has leaked clusters, but is not corrupted, let's try to fix it
+                        log.warning("Qemu image {} has leaked clusters".format(disk_image))
+                        if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)])) == 3:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' has leaked clusters and could not be fixed".format(disk_image)})
+                    elif retcode == 2:
+                        # image is corrupted, let's try to fix it
+                        log.warning("Qemu image {} is corrupted".format(disk_image))
+                        if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
+                except (OSError, subprocess.SubprocessError) as e:
+                    raise QemuError("Could not check '{}' disk image: {}".format(disk_name, e))
+
             if self.linked_clone:
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
                 if not os.path.exists(disk):
                     # create the disk
                     try:
                         command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
-                        command_string = " ".join(shlex.quote(s) for s in command)
-                        log.info("Executing qemu-img with: {}".format(command_string))
-                        process = yield from asyncio.create_subprocess_exec(*command)
-                        retcode = yield from process.wait()
-                        if retcode is not None and retcode != 0:
-                            raise QemuError("Could not create {} disk image: qemu-img returned with {}".format(disk_name,
+                        retcode = yield from self._qemu_img_exec(command)
+                        if retcode:
+                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}".format(disk_name,
                                                                                                                retcode))
-                        log.info("{} returned with {}".format(qemu_img_path, retcode))
                     except (OSError, subprocess.SubprocessError) as e:
-                        raise QemuError("Could not create {} disk image: {}".format(disk_name, e))
+                        raise QemuError("Could not create '{}' disk image: {}".format(disk_name, e))
                 else:
-                    # The disk exists we check if the clone work
+                    # The disk exists we check if the clone works
                     try:
                         qcow2 = Qcow2(disk)
                         yield from qcow2.rebase(qemu_img_path, disk_image)
                     except (Qcow2Error, OSError) as e:
-                        raise QemuError("Could not use qcow2 disk image {} for {} {}".format(disk_image, disk_name, e))
+                        raise QemuError("Could not use qcow2 disk image '{}' for {} {}".format(disk_image, disk_name, e))
 
             else:
                 disk = disk_image
