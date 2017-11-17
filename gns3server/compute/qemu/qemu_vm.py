@@ -75,6 +75,7 @@ class QemuVM(BaseNode):
         self._cpulimit_process = None
         self._monitor = None
         self._stdout_file = ""
+        self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
 
@@ -1283,7 +1284,21 @@ class QemuVM(BaseNode):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("Could not read {}: {}".format(self._stdout_file, e))
+                log.warning("Could not read {}: {}".format(self._stdout_file, e))
+        return output
+
+    def read_qemu_img_stdout(self):
+        """
+        Reads the standard output of the QEMU-IMG process.
+        """
+
+        output = ""
+        if self._qemu_img_stdout_file:
+            try:
+                with open(self._qemu_img_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
+            except OSError as e:
+                log.warning("Could not read {}: {}".format(self._qemu_img_stdout_file, e))
         return output
 
     def is_running(self):
@@ -1363,9 +1378,13 @@ class QemuVM(BaseNode):
 
     @asyncio.coroutine
     def _qemu_img_exec(self, command):
+
+        self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
+        log.info("logging to {}".format(self._qemu_img_stdout_file))
         command_string = " ".join(shlex.quote(s) for s in command)
         log.info("Executing qemu-img with: {}".format(command_string))
-        process = yield from asyncio.create_subprocess_exec(*command)
+        with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
+            process = yield from asyncio.create_subprocess_exec(*command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir)
         retcode = yield from process.wait()
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
@@ -1406,7 +1425,8 @@ class QemuVM(BaseNode):
                         if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
                 except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not check '{}' disk image: {}".format(disk_name, e))
+                    stdout = self.read_qemu_img_stdout()
+                    raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
 
             if self.linked_clone:
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
@@ -1416,10 +1436,13 @@ class QemuVM(BaseNode):
                         command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
                         retcode = yield from self._qemu_img_exec(command)
                         if retcode:
-                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}".format(disk_name,
-                                                                                                               retcode))
+                            stdout = self.read_qemu_img_stdout()
+                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
+                                                                                                                     retcode,
+                                                                                                                     stdout))
                     except (OSError, subprocess.SubprocessError) as e:
-                        raise QemuError("Could not create '{}' disk image: {}".format(disk_name, e))
+                        stdout = self.read_qemu_img_stdout()
+                        raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
                 else:
                     # The disk exists we check if the clone works
                     try:

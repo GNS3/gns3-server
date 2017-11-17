@@ -537,8 +537,8 @@ class BaseManager:
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
         if os.path.commonprefix([directory, path]) != directory:
-            raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbiden".format(filename, path))
-        log.info("Writting image file %s", path)
+            raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbidden".format(filename, path))
+        log.info("Writing image file %s", path)
         try:
             remove_checksum(path)
             # We store the file under his final name only when the upload is finished
