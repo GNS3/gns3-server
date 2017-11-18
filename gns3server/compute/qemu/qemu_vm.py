@@ -1603,7 +1603,9 @@ class QemuVM(BaseNode):
             return []
         if len(os.environ.get("DISPLAY", "")) > 0:
             return []
-        return ["-nographic"]
+        if "-nographic" not in self._options:
+            return ["-nographic"]
+        return []
 
     def _run_with_kvm(self, qemu_path, options):
         """
