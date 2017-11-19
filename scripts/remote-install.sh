@@ -212,6 +212,7 @@ report_errors = True
 
 [Qemu]
 enable_kvm = True
+require_kvm = True
 EOFC
 
 chown -R gns3:gns3 /etc/gns3
@@ -298,6 +299,7 @@ report_errors = True
 
 [Qemu]
 enable_kvm = True
+require_kvm = True
 EOFSERVER
 
 log "Install packages for Open VPN"
