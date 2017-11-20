@@ -166,8 +166,8 @@ class EthernetSwitch(Device):
 
         self._telnet_shell = EthernetSwitchConsole(self)
         self._telnet_shell.prompt = self._name + '> '
-        telnet = create_telnet_shell(self._telnet_shell)
-        self._telnet_server = (yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console))
+        self._telnet = create_telnet_shell(self._telnet_shell)
+        self._telnet_server = (yield from asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
 
         self._hypervisor.devices.append(self)
 
@@ -214,6 +214,7 @@ class EthernetSwitch(Device):
         """
         Deletes this Ethernet switch.
         """
+        yield from self._telnet.close()
 
         for nio in self._nios.values():
             if nio:
