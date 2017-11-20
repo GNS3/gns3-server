@@ -215,7 +215,8 @@ class EthernetSwitch(Device):
         Deletes this Ethernet switch.
         """
         yield from self._telnet.close()
-
+        self._telnet_server.close()
+        
         for nio in self._nios.values():
             if nio:
                 yield from nio.close()
