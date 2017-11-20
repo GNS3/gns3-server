@@ -60,6 +60,7 @@ class IOUHandler:
         vm = yield from iou.create_node(request.json.pop("name"),
                                         request.match_info["project_id"],
                                         request.json.get("node_id"),
+                                        path=request.json.get("path"),
                                         console=request.json.get("console"))
 
         for name, value in request.json.items():
@@ -67,6 +68,8 @@ class IOUHandler:
                 if name == "startup_config_content" and (vm.startup_config_content and len(vm.startup_config_content) > 0):
                     continue
                 if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
+                    continue
+                if request.json.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                     continue
                 setattr(vm, name, value)
         response.set_status(201)
@@ -114,6 +117,11 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
+
+        if vm.use_default_iou_values:
+            # update the default IOU values in case the image or use_default_iou_values have changed
+            # this is important to have the correct NVRAM amount in order to correctly push the configs to the NVRAM
+            yield from vm.update_default_iou_values()
         vm.updated()
         response.json(vm)
 

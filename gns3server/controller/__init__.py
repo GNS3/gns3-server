@@ -587,7 +587,7 @@ class Controller:
     @property
     def projects(self):
         """
-        :returns: The dictionary of computes managed by GNS3
+        :returns: The dictionary of projects managed by GNS3
         """
         return self._projects
 

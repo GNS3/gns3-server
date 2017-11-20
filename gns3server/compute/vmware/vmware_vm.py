@@ -736,13 +736,20 @@ class VMwareVM(BaseNode):
 
         self._read_vmx_file()
         # check if trying to connect to a nat, bridged or host-only adapter
-        if not self._use_any_adapter and self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
+        if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
             # check for the connection type
             connection_type = "ethernet{}.connectiontype".format(adapter_number)
             if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                raise VMwareError("Attachment ({}) already configured on network adapter {}. "
-                                  "Please remove it or allow GNS3 to use any adapter.".format(self._vmx_pairs[connection_type],
-                                                                                              adapter_number))
+                if not self._use_any_adapter:
+                    raise VMwareError("Attachment '{attachment}' is already configured on network adapter {adapter_number}. "
+                                      "Please remove it or allow VMware VM '{name}' to use any adapter.".format(attachment=self._vmx_pairs[connection_type],
+                                                                                                                adapter_number=adapter_number,
+                                                                                                                name=self.name))
+                elif self.is_running():
+                    raise VMwareError("Attachment '{attachment}' is configured on network adapter {adapter_number}. "
+                                      "Please stop VMware VM '{name}' to link to this adapter and allow GNS3 to change the attachment type.".format(attachment=self._vmx_pairs[connection_type],
+                                                                                                                                                    adapter_number=adapter_number,
+                                                                                                                                                    name=self.name))
 
         adapter.add_nio(0, nio)
         if self._started and self._ubridge_hypervisor:

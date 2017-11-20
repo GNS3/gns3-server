@@ -32,6 +32,7 @@ import gns3server
 import subprocess
 
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import subprocess_check_output
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
@@ -74,6 +75,7 @@ class QemuVM(BaseNode):
         self._cpulimit_process = None
         self._monitor = None
         self._stdout_file = ""
+        self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
 
@@ -1282,7 +1284,21 @@ class QemuVM(BaseNode):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("Could not read {}: {}".format(self._stdout_file, e))
+                log.warning("Could not read {}: {}".format(self._stdout_file, e))
+        return output
+
+    def read_qemu_img_stdout(self):
+        """
+        Reads the standard output of the QEMU-IMG process.
+        """
+
+        output = ""
+        if self._qemu_img_stdout_file:
+            try:
+                with open(self._qemu_img_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
+            except OSError as e:
+                log.warning("Could not read {}: {}".format(self._qemu_img_stdout_file, e))
         return output
 
     def is_running(self):
@@ -1361,6 +1377,19 @@ class QemuVM(BaseNode):
         return qemu_img_path
 
     @asyncio.coroutine
+    def _qemu_img_exec(self, command):
+
+        self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
+        log.info("logging to {}".format(self._qemu_img_stdout_file))
+        command_string = " ".join(shlex.quote(s) for s in command)
+        log.info("Executing qemu-img with: {}".format(command_string))
+        with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
+            process = yield from asyncio.create_subprocess_exec(*command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir)
+        retcode = yield from process.wait()
+        log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
+        return retcode
+
+    @asyncio.coroutine
     def _disk_options(self):
         options = []
         qemu_img_path = self._get_qemu_img()
@@ -1381,29 +1410,46 @@ class QemuVM(BaseNode):
                     raise QemuError("{} disk image '{}' linked to '{}' is not accessible".format(disk_name, disk_image, os.path.realpath(disk_image)))
                 else:
                     raise QemuError("{} disk image '{}' is not accessible".format(disk_name, disk_image))
+            else:
+                try:
+                    # check for corrupt disk image
+                    retcode = yield from self._qemu_img_exec([qemu_img_path, "check", disk_image])
+                    if retcode == 3:
+                        # image has leaked clusters, but is not corrupted, let's try to fix it
+                        log.warning("Qemu image {} has leaked clusters".format(disk_image))
+                        if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)])) == 3:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' has leaked clusters and could not be fixed".format(disk_image)})
+                    elif retcode == 2:
+                        # image is corrupted, let's try to fix it
+                        log.warning("Qemu image {} is corrupted".format(disk_image))
+                        if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
+                except (OSError, subprocess.SubprocessError) as e:
+                    stdout = self.read_qemu_img_stdout()
+                    raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
+
             if self.linked_clone:
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
                 if not os.path.exists(disk):
                     # create the disk
                     try:
                         command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
-                        command_string = " ".join(shlex.quote(s) for s in command)
-                        log.info("Executing qemu-img with: {}".format(command_string))
-                        process = yield from asyncio.create_subprocess_exec(*command)
-                        retcode = yield from process.wait()
-                        if retcode is not None and retcode != 0:
-                            raise QemuError("Could not create {} disk image: qemu-img returned with {}".format(disk_name,
-                                                                                                               retcode))
-                        log.info("{} returned with {}".format(qemu_img_path, retcode))
+                        retcode = yield from self._qemu_img_exec(command)
+                        if retcode:
+                            stdout = self.read_qemu_img_stdout()
+                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
+                                                                                                                     retcode,
+                                                                                                                     stdout))
                     except (OSError, subprocess.SubprocessError) as e:
-                        raise QemuError("Could not create {} disk image: {}".format(disk_name, e))
+                        stdout = self.read_qemu_img_stdout()
+                        raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
                 else:
-                    # The disk exists we check if the clone work
+                    # The disk exists we check if the clone works
                     try:
                         qcow2 = Qcow2(disk)
                         yield from qcow2.rebase(qemu_img_path, disk_image)
                     except (Qcow2Error, OSError) as e:
-                        raise QemuError("Could not use qcow2 disk image {} for {} {}".format(disk_image, disk_name, e))
+                        raise QemuError("Could not use qcow2 disk image '{}' for {} {}".format(disk_image, disk_name, e))
 
             else:
                 disk = disk_image
@@ -1557,7 +1603,9 @@ class QemuVM(BaseNode):
             return []
         if len(os.environ.get("DISPLAY", "")) > 0:
             return []
-        return ["-nographic"]
+        if "-nographic" not in self._options:
+            return ["-nographic"]
+        return []
 
     def _run_with_kvm(self, qemu_path, options):
         """
@@ -1576,7 +1624,10 @@ class QemuVM(BaseNode):
                 return False
 
             if not os.path.exists("/dev/kvm"):
-                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                if self.manager.config.get_section_config("Qemu").getboolean("require_kvm", True):
+                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                else:
+                    return False
             return True
         return False
 
@@ -1588,6 +1639,10 @@ class QemuVM(BaseNode):
         """
 
         additional_options = self._options.strip()
+        additional_options = additional_options.replace("%vm-name%", self._name)
+        additional_options = additional_options.replace("%vm-id%", self._id)
+        additional_options = additional_options.replace("%project-id%", self.project.id)
+        additional_options = additional_options.replace("%project-path%", self.project.path)
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
