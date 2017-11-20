@@ -321,6 +321,22 @@ class Compute:
         return response
 
     @asyncio.coroutine
+    def download_image(self, image_type, image):
+        """
+        Read file of a project and download it
+
+        :param image_type: Image type
+        :param image: The path of the image
+        :returns: A file stream
+        """
+
+        url = self._getUrl("/{}/images/{}".format(image_type, image))
+        response = yield from self._session().request("GET", url, auth=self._auth)
+        if response.status == 404:
+            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
+        return response
+
+    @asyncio.coroutine
     def stream_file(self, project, path):
         """
         Read file of a project and stream it

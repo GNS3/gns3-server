@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from aiohttp.web import HTTPConflict
+
+import aiohttp.web
 
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
@@ -247,7 +248,7 @@ class IOUHandler:
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap", "nio_ethernet", "nio_generic_ethernet"):
-            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = iou_manager.create_nio(request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
         response.set_status(201)
@@ -386,3 +387,26 @@ class IOUHandler:
         iou_manager = IOU.instance()
         yield from iou_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
+
+
+    @Route.get(
+        r"/iou/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
+        status_codes={
+            200: "Image returned",
+        },
+        raw=True,
+        description="Download an IOU image")
+    def download_image(request, response):
+        filename = request.match_info["filename"]
+
+        iou_manager = IOU.instance()
+        image_path = iou_manager.get_abs_image_path(filename)
+
+        # Raise error if user try to escape
+        if filename[0] == ".":
+            raise aiohttp.web.HTTPForbidden
+
+        yield from response.file(image_path)
