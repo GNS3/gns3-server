@@ -7,4 +7,4 @@ raven>=5.23.0
 psutil>=3.0.0
 zipstream>=1.1.4
 typing>=3.5.3.0 # Otherwise yarl fail with python 3.4
-prompt-toolkit==1.0.15
+prompt-toolkit>=1.0.15
