@@ -498,6 +498,6 @@ class QEMUHandler:
 
         # Raise error if user try to escape
         if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
 
         yield from response.file(image_path)
