@@ -769,6 +769,8 @@ def test_adapter_add_nio_binding(vm, loop):
 
 
 def test_adapter_udpate_nio_binding(vm, loop):
+    vm.ubridge = MagicMock()
+    vm.ubridge.is_running.return_value = True
     vm._ubridge_apply_filters = AsyncioMagicMock()
     vm._bridges = set(('bridge0', ))
     nio = {"type": "nio_udp",
