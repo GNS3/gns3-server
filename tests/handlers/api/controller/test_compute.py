@@ -232,10 +232,11 @@ def test_compute_autoidlepc(http_controller, controller):
 
     params = {
         "platform": "c7200",
-        "image": "test.bin"
+        "image": "test.bin",
+        "ram": 512
     }
     with asyncio_patch("gns3server.controller.Controller.autoidlepc", return_value={"idlepc": "0x606de20c"}) as mock:
-        response = http_controller.post("/computes/my_compute_id/autoidlepc", params, example=True)
+        response = http_controller.post("/computes/my_compute_id/auto_idlepc", params, example=True)
     assert mock.called
     assert response.status == 200
 
