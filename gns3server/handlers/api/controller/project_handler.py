@@ -398,7 +398,7 @@ class ProjectHandler:
 
         # Raise error if user try to escape
         if path[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
 
         response.content_type = "application/octet-stream"
@@ -440,7 +440,7 @@ class ProjectHandler:
 
         # Raise error if user try to escape
         if path[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
 
         response.set_status(200)

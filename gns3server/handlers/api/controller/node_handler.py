@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import aiohttp
 
 from gns3server.web.route import Route
@@ -370,7 +369,7 @@ class NodeHandler:
 
         # Raise error if user try to escape
         if path[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
@@ -406,7 +405,7 @@ class NodeHandler:
 
         # Raise error if user try to escape
         if path[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
