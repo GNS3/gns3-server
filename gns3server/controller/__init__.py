@@ -622,13 +622,14 @@ class Controller:
         return Controller._instance
 
     @asyncio.coroutine
-    def autoidlepc(self, compute_id, platform, image):
+    def autoidlepc(self, compute_id, platform, image, ram):
         """
         Compute and IDLE PC value for an image
 
         :param compute_id: ID of the compute where the idlepc operation need to run
         :param platform: Platform type
         :param image: Image to use
+        :param ram: amount of RAM to use
         """
         compute = self.get_compute(compute_id)
         for project in list(self._projects.values()):
@@ -636,7 +637,7 @@ class Controller:
                 yield from project.delete()
                 self.remove_project(project)
         project = yield from self.add_project(name="AUTOIDLEPC")
-        node = yield from project.add_node(compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=512)
+        node = yield from project.add_node(compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=ram)
         res = yield from node.dynamips_auto_idlepc()
         yield from project.delete()
         self.remove_project(project)

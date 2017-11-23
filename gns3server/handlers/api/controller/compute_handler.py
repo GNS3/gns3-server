@@ -185,7 +185,7 @@ class ComputeHandler:
         response.set_status(204)
 
     @Route.post(
-        r"/computes/{compute_id}/autoidlepc",
+        r"/computes/{compute_id}/auto_idlepc",
         parameters={
             "compute_id": "Compute UUID"
         },
@@ -195,6 +195,6 @@ class ComputeHandler:
         description="Compute IDLE PC value")
     def autoidlepc(request, response):
         controller = Controller.instance()
-        res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"])
-        response.set_status(200)
+        res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
         response.json(res)
+        response.set_status(200)
