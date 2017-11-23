@@ -541,6 +541,6 @@ def test_autoidlepc(controller, async_run):
     controller._computes["local"] = AsyncioMagicMock()
     node_mock = AsyncioMagicMock()
     with asyncio_patch("gns3server.controller.Project.add_node", return_value=node_mock):
-        async_run(controller.autoidlepc("local", "c7200", "test.bin"))
+        async_run(controller.autoidlepc("local", "c7200", "test.bin", 512))
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0
