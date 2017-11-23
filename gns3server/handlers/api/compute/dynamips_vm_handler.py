@@ -17,6 +17,7 @@
 
 import os
 import sys
+import aiohttp
 
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
@@ -466,7 +467,7 @@ class DynamipsVMHandler:
 
         # Raise error if user try to escape
         if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden
+            raise aiohttp.web.HTTPForbidden()
 
         yield from response.file(image_path)
 
