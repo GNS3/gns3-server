@@ -749,9 +749,10 @@ class DockerVM(BaseNode):
         :param nio: NIO instance to add to the adapter
         """
 
-        bridge_name = 'bridge{}'.format(adapter_number)
-        if bridge_name in self._bridges:
-            yield from self._ubridge_apply_filters(bridge_name, nio.filters)
+        if self.ubridge:
+            bridge_name = 'bridge{}'.format(adapter_number)
+            if bridge_name in self._bridges:
+                yield from self._ubridge_apply_filters(bridge_name, nio.filters)
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):
