@@ -474,7 +474,7 @@ class Project:
         """
         for link in list(self._links.values()):
             if node in link.nodes:
-                yield from self.delete_link(link.id)
+                yield from self.delete_link(link.id, force_delete=True)
 
     @open_required
     @asyncio.coroutine
@@ -565,10 +565,14 @@ class Project:
 
     @open_required
     @asyncio.coroutine
-    def delete_link(self, link_id):
+    def delete_link(self, link_id, force_delete=False):
         link = self.get_link(link_id)
         del self._links[link.id]
-        yield from link.delete()
+        try:
+            yield from link.delete()
+        except Exception:
+            if force_delete is False:
+                raise
         self.dump()
         self.controller.notification.emit("link.deleted", link.__json__())
 
@@ -789,7 +793,7 @@ class Project:
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:
                     # a link should have 2 attached nodes, this can happen with corrupted projects
-                    yield from self.delete_link(link.id)
+                    yield from self.delete_link(link.id, force_delete=True)
             for drawing_data in topology.get("drawings", []):
                 yield from self.add_drawing(dump=False, **drawing_data)
 

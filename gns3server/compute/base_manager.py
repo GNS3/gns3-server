@@ -335,8 +335,10 @@ class BaseManager:
         :returns: Node instance
         """
 
-        node = yield from self.close_node(node_id)
-        node.project.emit("node.deleted", node)
+        try:
+            node = yield from self.close_node(node_id)
+        finally:
+            node.project.emit("node.deleted", node)
         yield from node.project.remove_node(node)
         if node.id in self._nodes:
             del self._nodes[node.id]
