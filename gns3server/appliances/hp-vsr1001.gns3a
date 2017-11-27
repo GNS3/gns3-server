@@ -24,6 +24,13 @@
     },
     "images": [
         {
+            "filename": "VSR1000_HPE-CMW710-R0327L01-X64.qco",
+            "version": "7.10.R0327L01",
+            "md5sum": "907de5140a4a029afe1c517cfc27ecde",
+            "filesize": 138739712,
+            "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=22702&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SaidNumber="
+        },
+        {
             "filename": "VSR1000_HPE-CMW710-R0326-X64.qco",
             "version": "7.10.R0326",
             "md5sum": "4153d638bfa72ca72a957ea8682ad0e2",
@@ -74,6 +81,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.10.R0327L01",
+            "images": {
+                "hda_disk_image": "VSR1000_HPE-CMW710-R0327L01-X64.qco"
+            }
+        },
         {
             "name": "7.10.R0326",
             "images": {

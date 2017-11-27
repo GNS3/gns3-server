@@ -20,6 +20,15 @@
     },
     "images": [
         {
+            "filename": "BSDRP-1.80-full-amd64-serial.img",
+            "version": "1.80",
+            "md5sum": "a4285be15ac85f67b3c7f044872a54b6",
+            "filesize": 1000000000,
+            "download_url": "https://bsdrp.net/downloads",
+            "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.80/amd64/BSDRP-1.80-full-amd64-serial.img.xz/download",
+            "compression": "xz"
+        },
+        {
             "filename": "BSDRP-1.70-full-amd64-serial.img",
             "version": "1.70",
             "md5sum": "9c11f61ddf03ee9a9ae4149676175821",
@@ -30,6 +39,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.80",
+            "images": {
+                "hda_disk_image": "BSDRP-1.80-full-amd64-serial.img"
+            }
+        },
         {
             "name": "1.70",
             "images": {

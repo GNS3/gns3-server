@@ -34,6 +34,13 @@
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
+            "filename": "FMG_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
+            "version": "5.4.4",
+            "md5sum": "53bc6e320fe7bde5d2b636bde95a910c",
+            "filesize": 89911296,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FMG_VM64_KVM-v5-build1187-FORTINET.out.kvm.qcow2",
             "version": "5.4.3",
             "md5sum": "53602c776d215d98e32163a10804fc49",
@@ -103,6 +110,13 @@
             "name": "5.6.0",
             "images": {
                 "hda_disk_image": "FMG_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.4.4",
+            "images": {
+                "hda_disk_image": "FMG_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

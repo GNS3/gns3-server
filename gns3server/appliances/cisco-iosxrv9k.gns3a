@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "xrv9k-fullk9-x-6.2.25.qcow2",
+            "version": "6.2.25",
+            "md5sum": "3f54e62b6f7cedfb2607233e5e465766",
+            "filesize": 1190723584,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
             "filename": "xrv9k-fullk9-x.qcow2-6.0.1",
             "version": "6.0.1",
             "md5sum": "e20d046807075046c35b6ce7d6766a7f",
@@ -40,6 +47,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.2.25",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-6.2.25.qcow2"
+            }
+        },
+        {
+            "name": "6.0.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.1"
+            }
+        },
         {
             "name": "6.0.0",
             "images": {

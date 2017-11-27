@@ -27,10 +27,31 @@
     },
     "images": [
         {
+            "filename": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
+            "version": "5.4.2",
+            "md5sum": "b51260cc3e408bf1352a204b8370254b",
+            "filesize": 92864512,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FML_VMKV-64-v54-build0704-FORTINET.out.kvm.qcow2",
+            "version": "5.4.1",
+            "md5sum": "1f6553e182512cc87e20f47cc2b65abf",
+            "filesize": 94568448,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FML_VMKV-64-v54-build0692-FORTINET.out.kvm.qcow2",
             "version": "5.4.0",
             "md5sum": "c9e0885cab65e52ab01d8143ed466b01",
             "filesize": 101253120,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FML_VMKV-64-v53-build0648-FORTINET.out.kvm.qcow2",
+            "version": "5.3.11",
+            "md5sum": "bd34a81c1bb6772c7e4919620027a5d4",
+            "filesize": 88670208,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -107,9 +128,30 @@
     ],
     "versions": [
         {
+            "name": "5.4.2",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.4.1",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v54-build0704-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "5.4.0",
             "images": {
                 "hda_disk_image": "FML_VMKV-64-v54-build0692-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.3.11",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v53-build0648-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "zentyal-5.0.1-development-amd64.iso",
+            "version": "5.0.1",
+            "md5sum": "1ac74be6563f0b21b337c274e62cdd32",
+            "filesize": 953155584,
+            "download_url": "http://download.zentyal.com/",
+            "direct_download_url": "http://download.zentyal.com/zentyal-5.0.1-development-amd64.iso"
+        },
+        {
             "filename": "zentyal-5.0-development-amd64.iso",
             "version": "5.0",
             "md5sum": "ddaa3b2bf2cd6cae8bcfbcb88ca636a8",
@@ -66,6 +74,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.0.1",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "zentyal-5.0.1-development-amd64.iso"
+            }
+        },
         {
             "name": "5.0",
             "images": {

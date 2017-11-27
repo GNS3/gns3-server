@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
+            "version": "4.2.5",
+            "md5sum": "78db88447f29f363b4ba8e4833474637",
+            "filesize": 27508736,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FCHKVM-v400-build0204-FORTINET.out.kvm.qcow2",
             "version": "4.2.4",
             "md5sum": "8f0aad31131add43ac6bf709dd708970",
@@ -85,6 +92,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.2.5",
+            "images": {
+                "hda_disk_image": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "4.2.4",
             "images": {

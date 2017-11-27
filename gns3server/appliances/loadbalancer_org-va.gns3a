@@ -24,6 +24,13 @@
     },
     "images": [
         {
+            "filename": "Loadbalancer.org_Enterprise_VA-8.3-disk1.qcow2",
+            "version": "8.3",
+            "md5sum": "f0e41f39a5cab47990edc0509c579bac",
+            "filesize": 368332288,
+            "download_url": "https://loadbalancer.org/resources/free-trial"
+        },
+        {
             "filename": "Loadbalancer.org_Enterprise_VA-8.2-disk1.qcow2",
             "version": "8.2",
             "md5sum": "8b74b330a6f629a081f3b36a5d64605b",
@@ -32,6 +39,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "8.3",
+            "images": {
+                "hda_disk_image": "Loadbalancer.org_Enterprise_VA-8.3-disk1.qcow2"
+            }
+        },
         {
             "name": "8.2",
             "images": {
