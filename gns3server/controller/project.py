@@ -112,8 +112,9 @@ class Project:
 
         self.reset()
 
-        # At project creation we write an empty .gns3
+        # At project creation we write an empty .gns3 with the meta
         if not os.path.exists(self._topology_file()):
+            assert self._status != "closed"
             self.dump()
 
     @asyncio.coroutine
@@ -497,11 +498,37 @@ class Project:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
+    def _get_closed_data(self, section, id_key):
+        """
+        Get the data for a project from the .gns3 when
+        the project is close
+
+        :param section: The section name in the .gns3
+        :param id_key: The key for the element unique id
+        """
+
+        try:
+            path = self._topology_file()
+            with open(path, "r") as f:
+                topology = json.load(f)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not load topology: {}".format(e))
+
+        try:
+            data = {}
+            for elem in topology["topology"][section]:
+                data[elem[id_key]] = elem
+            return data
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Section {} not found in the topology".format(section))
+
     @property
     def nodes(self):
         """
         :returns: Dictionary of the nodes
         """
+        if self._status == "closed":
+            return self._get_closed_data("nodes", "node_id")
         return self._nodes
 
     @property
@@ -509,6 +536,8 @@ class Project:
         """
         :returns: Dictionary of the drawings
         """
+        if self._status == "closed":
+            return self._get_closed_data("drawings", "drawing_id")
         return self._drawings
 
     @open_required
@@ -591,6 +620,8 @@ class Project:
         """
         :returns: Dictionary of the Links
         """
+        if self._status == "closed":
+            return self._get_closed_data("links", "link_id")
         return self._links
 
     @property
@@ -649,6 +680,8 @@ class Project:
 
     @asyncio.coroutine
     def close(self, ignore_notification=False):
+        if self._status == "closed":
+            return
         yield from self.stop_all()
         for compute in list(self._project_created_on_compute):
             try:
@@ -660,6 +693,7 @@ class Project:
         self._status = "closed"
         if not ignore_notification:
             self.controller.notification.emit("project.closed", self.__json__())
+        self.reset()
 
     def _cleanPictures(self):
         """
@@ -856,6 +890,7 @@ class Project:
             yield from self.open()
 
         self.dump()
+        assert self._status != "closed"
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
