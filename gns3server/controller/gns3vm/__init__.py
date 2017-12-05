@@ -19,6 +19,7 @@ import sys
 import copy
 import asyncio
 import aiohttp
+import ipaddress
 
 from ...utils.asyncio import locked_coroutine
 from .vmware_gns3_vm import VMwareGNS3VM
@@ -295,6 +296,37 @@ class GNS3VM:
                                       port=self.port,
                                       user=self.user,
                                       password=self.password)
+
+            yield from self._check_network(compute)
+
+    @asyncio.coroutine
+    def _check_network(self, compute):
+        """
+        Check that the VM is in the same subnet as the local server
+        """
+
+        vm_interfaces = yield from compute.interfaces()
+        vm_interface_netmask = None
+        for interface in vm_interfaces:
+            if interface["ip_address"] == self.ip_address:
+                vm_interface_netmask = interface["netmask"]
+                break
+        if vm_interface_netmask:
+            vm_network = ipaddress.ip_interface("{}/{}".format(compute.host_ip, vm_interface_netmask)).network
+            for compute_id in self._controller.computes:
+                if compute_id == "local":
+                    compute = self._controller.get_compute(compute_id)
+                    interfaces = yield from compute.interfaces()
+                    netmask = None
+                    for interface in interfaces:
+                        if interface["ip_address"] == compute.host_ip:
+                            netmask = interface["netmask"]
+                            break
+                    if netmask:
+                        compute_network = ipaddress.ip_interface("{}/{}".format(compute.host_ip, netmask)).network
+                        if vm_network.compare_networks(compute_network) != 0:
+                            msg = "The GNS3 VM ({}) is not on the same network as the {} server ({}), please make sure the local server binding is in the same network as the GNS3 VM".format(vm_network, compute_id, compute_network)
+                            self._controller.notification.emit("log.warning", {"message": msg})
 
     @locked_coroutine
     def _suspend(self):
