@@ -388,7 +388,7 @@ def test_start_vm(controller, async_run):
         "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
-        with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM._check_network") as mock_check_network:
+        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
             with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock_connect:
                 async_run(controller.start())
                 assert mock.called
