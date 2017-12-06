@@ -70,7 +70,8 @@ def test_update_settings(controller, async_run):
         "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start"):
-        async_run(vm.auto_start_vm())
+        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
+            async_run(vm.auto_start_vm())
     assert "vm" in controller.computes
     async_run(vm.update_settings({"enable": False}))
     assert "vm" not in controller.computes
@@ -80,7 +81,9 @@ def test_auto_start(async_run, controller, dummy_gns3vm, dummy_engine):
     """
     When start the compute should be add to the controller
     """
-    async_run(dummy_gns3vm.auto_start_vm())
+
+    with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
+        async_run(dummy_gns3vm.auto_start_vm())
     assert dummy_engine.start.called
     assert controller.computes["vm"].name == "GNS3 VM (Test VM)"
     assert controller.computes["vm"].host == "vm.local"
