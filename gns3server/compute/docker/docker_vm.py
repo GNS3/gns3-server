@@ -236,6 +236,7 @@ class DockerVM(BaseNode):
         """
         path = os.path.join(self.working_dir, "etc", "network")
         os.makedirs(path, exist_ok=True)
+        open(os.path.join(path, ".gns3_perms"), 'a').close()
         os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
