@@ -1,5 +1,35 @@
 # Change Log
 
+## 2.1.1 22/12/2017
+
+* Protect variable replacement for Qemu options. Escape double quotes.
+* Add proper exception when cannot find tunnel on QEMU, Fixes: #1241
+* Increase timeout for creation of image, Ref. #2239
+* Protect variable replacement for Qemu options.
+* Do not overwrites persistent Docker volumes. Fixes #2358.
+* Allow users to see an error when the server cannot stream a PCAP file.
+* Fix issue with Qemu + SPICE when IPv4 is not enabled.
+* Warn users if the GNS3 VM and local server are not in the same subnet. Fixes #1231.
+* Add missing appliance files.
+* Update appliance files.
+* Fix auto idle-pc from preferences.
+* Keep consistance of aiohttp.web.HTTPForbidden() execution
+* Make sure connected links are removed when a node is deleted.
+* Validate idle-pc values for auto idle-pc feature.
+* Fix error when updating packet filter on stopped Docker link. Fixes #1229.
+* Remotely close telnet console. Ref #2330
+* EthernetSwitch closing connections, Ref: gui/#2330
+* Export files from remote server, Fixes: gui/#2271
+* New option: require KVM. If false, Qemu VMs will not be prevented to run without KVM.
+* Implement variable replacement for Qemu VM options.
+* Avoid duplicate "-nographic" option.
+* Show qemu-img stdout in case of an error.
+* Use the correct NVRAM amount when pushing private config to IOU.
+* Check and fix corrupt Qemu disk images. Fixes #2301.
+* Update warning messages when connecting to non custom adapter for VMware VMs.
+* Fix "Can't use VirtualBox VM when an interface is managed by VirtualBox". Fixes #2335.
+* Add low disk space warning when creating a new project.
+
 ## 2.1.0 09/11/2017
 
 * Fix typo in vcpus on VirtualBoxVM, fixes: #1213
