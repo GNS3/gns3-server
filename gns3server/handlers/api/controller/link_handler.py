@@ -97,6 +97,26 @@ class LinkHandler:
         response.set_status(200)
         response.json(link.available_filters())
 
+    @Route.get(
+        r"/projects/{project_id}/links/{link_id}",
+        parameters={
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
+        },
+        status_codes={
+            200: "Link found",
+            400: "Invalid request",
+            404: "Link doesn't exist"
+        },
+        description="Get a link instance",
+        output=LINK_OBJECT_SCHEMA)
+    def get_link(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
+        response.set_status(200)
+        response.json(link)
+
     @Route.put(
         r"/projects/{project_id}/links/{link_id}",
         parameters={
