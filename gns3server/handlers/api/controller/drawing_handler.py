@@ -61,6 +61,26 @@ class DrawingHandler:
         response.set_status(201)
         response.json(drawing)
 
+    @Route.get(
+        r"/projects/{project_id}/drawings/{drawing_id}",
+        parameters={
+            "project_id": "Project UUID",
+            "drawing_id": "Drawing UUID"
+        },
+        status_codes={
+            200: "Drawing found",
+            400: "Invalid request",
+            404: "Drawing doesn't exist"
+        },
+        description="Get a drawing instance",
+        output=DRAWING_OBJECT_SCHEMA)
+    def get_drawing(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        drawing = project.get_drawing(request.match_info["drawing_id"])
+        response.set_status(200)
+        response.json(drawing)
+
     @Route.put(
         r"/projects/{project_id}/drawings/{drawing_id}",
         parameters={
@@ -71,7 +91,7 @@ class DrawingHandler:
             201: "Drawing updated",
             400: "Invalid request"
         },
-        description="Create a new drawing instance",
+        description="Update a drawing instance",
         input=DRAWING_OBJECT_SCHEMA,
         output=DRAWING_OBJECT_SCHEMA)
     def update(request, response):
