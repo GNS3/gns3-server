@@ -1,0 +1,17 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/5004383e-1288-434b-bb06-86d2831b3197/duplicate' -d '{"destination_node_id": "10e25f8a-476d-46d0-a152-ffce1c0a1e6d"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/5004383e-1288-434b-bb06-86d2831b3197/duplicate HTTP/1.1
+{
+    "destination_node_id": "10e25f8a-476d-46d0-a152-ffce1c0a1e6d"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 4
+Content-Type: application/json
+Date: Mon, 08 Jan 2018 08:15:49 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
+X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/duplicate
+
+true

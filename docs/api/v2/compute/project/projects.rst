@@ -11,6 +11,12 @@ Response status codes
 **********************
 - **200**: Project list
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_projects.txt
+
 
 POST /v2/compute/projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,4 +69,10 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projects.txt
 

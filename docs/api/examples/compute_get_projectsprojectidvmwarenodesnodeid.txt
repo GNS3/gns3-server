@@ -1,0 +1,30 @@
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/1cb7bfee-78f2-442d-8c62-da5fba43c91a'
+
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/1cb7bfee-78f2-442d-8c62-da5fba43c91a HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 688
+Content-Type: application/json
+Date: Mon, 08 Jan 2018 08:15:59 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
+X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
+
+{
+    "acpi_shutdown": false,
+    "adapter_type": "e1000",
+    "adapters": 0,
+    "console": 5004,
+    "console_type": "telnet",
+    "headless": false,
+    "linked_clone": false,
+    "name": "VMTEST",
+    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpk__by17a/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/1cb7bfee-78f2-442d-8c62-da5fba43c91a",
+    "node_id": "1cb7bfee-78f2-442d-8c62-da5fba43c91a",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped",
+    "use_any_adapter": false,
+    "vmx_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_vmware_get0/test.vmx"
+}

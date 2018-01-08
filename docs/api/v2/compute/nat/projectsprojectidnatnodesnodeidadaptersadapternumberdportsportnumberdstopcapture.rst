@@ -9,14 +9,14 @@ Stop a packet capture on a nat instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
-- **port_number**: Port on the nat
+- **node_id**: Node UUID
 - **adapter_number**: Adapter on the nat (always 0)
+- **port_number**: Port on the nat
 
 Response status codes
 **********************
+- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Capture stopped
 

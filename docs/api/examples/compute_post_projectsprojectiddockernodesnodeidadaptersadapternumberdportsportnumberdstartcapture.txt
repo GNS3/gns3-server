@@ -1,0 +1,20 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/283cc38e-c13f-41e9-951e-42c9723fb3bc/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/283cc38e-c13f-41e9-951e-42c9723fb3bc/adapters/0/ports/0/start_capture HTTP/1.1
+{
+    "capture_file_name": "test.pcap",
+    "data_link_type": "DLT_EN10MB"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 145
+Content-Type: application/json
+Date: Mon, 08 Jan 2018 08:15:46 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
+X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
+
+{
+    "pcap_file_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/tmp/captures/test.pcap"
+}

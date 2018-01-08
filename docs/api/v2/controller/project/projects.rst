@@ -54,6 +54,12 @@ Output
     <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projects.txt
+
 
 GET /v2/projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,4 +68,10 @@ List projects
 Response status codes
 **********************
 - **200**: List of projects
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projects.txt
 

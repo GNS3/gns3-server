@@ -9,8 +9,8 @@ Start a Qemu VM instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -68,4 +68,10 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodesnodeidstart.txt
 
