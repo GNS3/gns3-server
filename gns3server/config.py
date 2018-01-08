@@ -144,7 +144,8 @@ class Config:
 
     def _watch_config_file(self):
         for file in self._files:
-            self._watched_files[file] = FileWatcher(file, self._config_file_change)
+            if os.path.exists(file):
+                self._watched_files[file] = FileWatcher(file, self._config_file_change)
 
     def _config_file_change(self, path):
         self.read_config()
