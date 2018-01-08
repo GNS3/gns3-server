@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.1.2 08/01/2018
+
+* Do not show log message if configuration file doesn't exist. Fixes #1206.
+* Update API documentation
+* Update API documentation. Fixes #1253.
+* GNS3-API: implement GET for specific drawing and link Fixes #1249
+
 ## 2.1.1 22/12/2017
 
 * Protect variable replacement for Qemu options. Escape double quotes.
