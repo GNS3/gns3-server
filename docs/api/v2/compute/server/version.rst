@@ -21,3 +21,9 @@ Output
     <tr><td>version</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Version number</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_get_version.txt
+

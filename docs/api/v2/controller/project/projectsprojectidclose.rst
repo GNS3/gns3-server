@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **404**: The project doesn't exist
 - **204**: The project has been closed
+- **404**: The project doesn't exist
 
 Output
 *******
@@ -38,4 +38,10 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidclose.txt
 

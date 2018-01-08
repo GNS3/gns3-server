@@ -15,6 +15,12 @@ Response status codes
 **********************
 - **200**: List of drawings returned
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projectsprojectiddrawings.txt
+
 
 POST /v2/projects/**{project_id}**/drawings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,8 +32,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Drawing created
+- **400**: Invalid request
 
 Input
 *******
@@ -58,4 +64,10 @@ Output
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y property</td>                     </tr>
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectiddrawings.txt
 

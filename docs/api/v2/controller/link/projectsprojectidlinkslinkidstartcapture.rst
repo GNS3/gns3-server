@@ -9,13 +9,13 @@ Start capture on a link instance. By default we consider it as an Ethernet link
 
 Parameters
 **********
-- **link_id**: Link UUID
 - **project_id**: Project UUID
+- **link_id**: Link UUID
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Capture started
+- **400**: Invalid request
 
 Input
 *******
@@ -43,4 +43,10 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>suspend</td>                    <td> </td>                     <td>boolean</td>                     <td>Suspend the link</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinkslinkidstartcapture.txt
 

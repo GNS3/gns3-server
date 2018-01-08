@@ -9,12 +9,18 @@ Compute the IDLE PC for a Dynamips node
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance reloaded
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance reloaded
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projectsprojectidnodesnodeiddynamipsautoidlepc.txt
 

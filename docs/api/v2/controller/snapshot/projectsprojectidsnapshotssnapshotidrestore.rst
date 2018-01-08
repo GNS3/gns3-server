@@ -9,8 +9,8 @@ Restore a snapshot from disk
 
 Parameters
 **********
-- **snapshot_id**: Snasphot UUID
 - **project_id**: Project UUID
+- **snapshot_id**: Snasphot UUID
 
 Response status codes
 **********************
@@ -39,4 +39,10 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
     <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidsnapshotssnapshotidrestore.txt
 

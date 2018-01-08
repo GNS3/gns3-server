@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 - **409**: Conflict
 
 Input
@@ -57,4 +57,10 @@ Output
     <tr><td>use_any_adapter</td>                    <td> </td>                     <td>boolean</td>                     <td>Allow GNS3 to use any VMware adapter</td>                     </tr>
     <tr><td>vmx_path</td>                    <td> </td>                     <td>string</td>                     <td>Path to the vmx file</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidvmwarenodes.txt
 
