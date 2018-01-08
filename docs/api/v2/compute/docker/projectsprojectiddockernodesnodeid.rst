@@ -9,14 +9,14 @@ Delete a Docker container
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Instance deleted
 
 
 PUT /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**
@@ -25,8 +25,8 @@ Update a Docker instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -57,6 +57,7 @@ Input
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID Read only</td>                     </tr>
     <tr><td>start_command</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     </table>
 
 Output
@@ -81,11 +82,6 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID Read only</td>                     </tr>
     <tr><td>start_command</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_put_projectsprojectiddockernodesnodeid.txt
 

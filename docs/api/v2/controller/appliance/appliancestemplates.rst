@@ -11,9 +11,3 @@ Response status codes
 **********************
 - **200**: Appliance template list returned
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_appliancestemplates.txt
-

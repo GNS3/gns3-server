@@ -9,8 +9,8 @@ Get an ATM switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -38,8 +38,8 @@ Update an ATM switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -81,12 +81,12 @@ Delete an ATM switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Instance deleted
 

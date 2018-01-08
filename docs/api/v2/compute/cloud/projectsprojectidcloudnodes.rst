@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Instance created
 - **400**: Invalid request
+- **201**: Instance created
 - **409**: Conflict
 
 Input
@@ -60,10 +60,4 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidcloudnodes.txt
 

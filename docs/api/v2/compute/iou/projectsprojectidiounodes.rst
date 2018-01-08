@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Instance created
 - **400**: Invalid request
+- **201**: Instance created
 - **409**: Conflict
 
 Input
@@ -23,6 +23,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>application_id</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Application ID for running IOU image</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, null</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
@@ -45,7 +46,8 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>command_line</td>                    <td> </td>                     <td>string</td>                     <td>Last command line used by GNS3 to start QEMU</td>                     </tr>
+    <tr><td>application_id</td>                    <td> </td>                     <td>integer</td>                     <td>Application ID for running IOU image</td>                     </tr>
+    <tr><td>command_line</td>                    <td> </td>                     <td>string</td>                     <td>Last command line used by GNS3 to start IOU</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>
@@ -62,10 +64,4 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>use_default_iou_values</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Use default IOU values</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidiounodes.txt
 

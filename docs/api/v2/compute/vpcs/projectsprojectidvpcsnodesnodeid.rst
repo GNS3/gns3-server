@@ -9,8 +9,8 @@ Get a VPCS instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -24,7 +24,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start QEMU</td>                     </tr>
+    <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start VPCS</td>                     </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM name</td>                     </tr>
@@ -34,12 +34,6 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_get_projectsprojectidvpcsnodesnodeid.txt
-
 
 PUT /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,8 +41,8 @@ Update a VPCS instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -74,7 +68,7 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start QEMU</td>                     </tr>
+    <tr><td>command_line</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Last command line used by GNS3 to start VPCS</td>                     </tr>
     <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>VPCS VM name</td>                     </tr>
@@ -84,12 +78,6 @@ Output
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_put_projectsprojectidvpcsnodesnodeid.txt
-
 
 DELETE /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,18 +85,12 @@ Delete a VPCS instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_delete_projectsprojectidvpcsnodesnodeid.txt
+- **204**: Instance deleted
 

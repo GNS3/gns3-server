@@ -22,9 +22,3 @@ Input
     <tr><td>archs</td>                    <td> </td>                     <td>array</td>                     <td>Architectures to filter binaries with</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_get_qemubinaries.txt
-

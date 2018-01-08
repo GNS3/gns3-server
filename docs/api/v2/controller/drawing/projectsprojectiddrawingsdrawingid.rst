@@ -9,13 +9,13 @@ Create a new drawing instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **drawing_id**: Drawing UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **201**: Drawing updated
 - **400**: Invalid request
+- **201**: Drawing updated
 
 Input
 *******
@@ -47,12 +47,6 @@ Output
     <tr><td>z</td>                    <td> </td>                     <td>integer</td>                     <td>Z property</td>                     </tr>
     </table>
 
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_put_projectsprojectiddrawingsdrawingid.txt
-
 
 DELETE /v2/projects/**{project_id}**/drawings/**{drawing_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,17 +54,11 @@ Delete a drawing instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **drawing_id**: Drawing UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Drawing deleted
 - **400**: Invalid request
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_delete_projectsprojectiddrawingsdrawingid.txt
+- **204**: Drawing deleted
 

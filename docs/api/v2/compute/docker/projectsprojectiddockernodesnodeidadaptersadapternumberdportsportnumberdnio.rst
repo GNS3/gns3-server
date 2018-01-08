@@ -9,22 +9,34 @@ Add a NIO to a Docker container
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter where the nio should be added
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter
+- **adapter_number**: Adapter where the nio should be added
 
 Response status codes
 **********************
-- **201**: NIO created
 - **400**: Invalid request
+- **201**: NIO created
 - **404**: Instance doesn't exist
 
-Sample session
-***************
 
+PUT /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update a NIO from a Docker instance
 
-.. literalinclude:: ../../../examples/compute_post_projectsprojectiddockernodesnodeidadaptersadapternumberdportsportnumberdnio.txt
+Parameters
+**********
+- **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port from where the nio should be updated
+- **adapter_number**: Network adapter where the nio is located
+
+Response status codes
+**********************
+- **400**: Invalid request
+- **201**: NIO updated
+- **404**: Instance doesn't exist
 
 
 DELETE /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
@@ -33,20 +45,14 @@ Remove a NIO from a Docker container
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter where the nio should be added
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter
+- **adapter_number**: Adapter where the nio should be added
 
 Response status codes
 **********************
-- **204**: NIO deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_delete_projectsprojectiddockernodesnodeidadaptersadapternumberdportsportnumberdnio.txt
+- **204**: NIO deleted
 

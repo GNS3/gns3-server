@@ -9,22 +9,34 @@ Add a NIO to a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter where the nio should be added
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter (always 0)
+- **adapter_number**: Adapter where the nio should be added
 
 Response status codes
 **********************
-- **201**: NIO created
 - **400**: Invalid request
+- **201**: NIO created
 - **404**: Instance doesn't exist
 
-Sample session
-***************
 
+PUT /v2/compute/projects/**{project_id}**/virtualbox/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update a NIO from a Virtualbox instance
 
-.. literalinclude:: ../../../examples/compute_post_projectsprojectidvirtualboxnodesnodeidadaptersadapternumberdportsportnumberdnio.txt
+Parameters
+**********
+- **node_id**: Node UUID
+- **project_id**: Project UUID
+- **port_number**: Port from where the nio should be updated
+- **adapter_number**: Network adapter where the nio is located
+
+Response status codes
+**********************
+- **400**: Invalid request
+- **201**: NIO updated
+- **404**: Instance doesn't exist
 
 
 DELETE /v2/compute/projects/**{project_id}**/virtualbox/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
@@ -33,20 +45,14 @@ Remove a NIO from a VirtualBox VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter from where the nio should be removed
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter (always 0)
+- **adapter_number**: Adapter from where the nio should be removed
 
 Response status codes
 **********************
-- **204**: NIO deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/compute_delete_projectsprojectidvirtualboxnodesnodeidadaptersadapternumberdportsportnumberdnio.txt
+- **204**: NIO deleted
 

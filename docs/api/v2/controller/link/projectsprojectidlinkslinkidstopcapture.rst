@@ -9,17 +9,11 @@ Stop capture on a link instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **link_id**: Link UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **201**: Capture stopped
 - **400**: Invalid request
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinkslinkidstopcapture.txt
+- **201**: Capture stopped
 

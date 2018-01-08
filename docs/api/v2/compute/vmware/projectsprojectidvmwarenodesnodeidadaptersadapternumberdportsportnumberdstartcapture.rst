@@ -9,10 +9,10 @@ Start a packet capture on a VMware VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter to start a packet capture
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter (always 0)
+- **adapter_number**: Adapter to start a packet capture
 
 Response status codes
 **********************

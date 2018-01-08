@@ -24,6 +24,11 @@ Input
     <tr><td>project_id</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>scene_height</td>                    <td> </td>                     <td>integer</td>                     <td>Height of the drawing area</td>                     </tr>
     <tr><td>scene_width</td>                    <td> </td>                     <td>integer</td>                     <td>Width of the drawing area</td>                     </tr>
+    <tr><td>show_grid</td>                    <td> </td>                     <td>boolean</td>                     <td>Show the grid on the drawing area</td>                     </tr>
+    <tr><td>show_interface_labels</td>                    <td> </td>                     <td>boolean</td>                     <td>Show interface labels on the drawing area</td>                     </tr>
+    <tr><td>show_layers</td>                    <td> </td>                     <td>boolean</td>                     <td>Show layers on the drawing area</td>                     </tr>
+    <tr><td>snap_to_grid</td>                    <td> </td>                     <td>boolean</td>                     <td>Snap to grid on the drawing area</td>                     </tr>
+    <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
 
 Output
@@ -41,14 +46,13 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>scene_height</td>                    <td> </td>                     <td>integer</td>                     <td>Height of the drawing area</td>                     </tr>
     <tr><td>scene_width</td>                    <td> </td>                     <td>integer</td>                     <td>Width of the drawing area</td>                     </tr>
+    <tr><td>show_grid</td>                    <td> </td>                     <td>boolean</td>                     <td>Show the grid on the drawing area</td>                     </tr>
+    <tr><td>show_interface_labels</td>                    <td> </td>                     <td>boolean</td>                     <td>Show interface labels on the drawing area</td>                     </tr>
+    <tr><td>show_layers</td>                    <td> </td>                     <td>boolean</td>                     <td>Show layers on the drawing area</td>                     </tr>
+    <tr><td>snap_to_grid</td>                    <td> </td>                     <td>boolean</td>                     <td>Snap to grid on the drawing area</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: opened, closed</td>                     </tr>
+    <tr><td>zoom</td>                    <td> </td>                     <td>integer</td>                     <td>Zoom of the drawing area</td>                     </tr>
     </table>
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_projects.txt
 
 
 GET /v2/projects
@@ -58,10 +62,4 @@ List projects
 Response status codes
 **********************
 - **200**: List of projects
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_get_projects.txt
 

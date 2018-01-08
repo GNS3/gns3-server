@@ -9,15 +9,15 @@ Add a NIO to an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 - **port_number**: Port on the switch
+- **adapter_number**: Adapter on the switch (always 0)
 
 Response status codes
 **********************
-- **201**: NIO created
 - **400**: Invalid request
+- **201**: NIO created
 - **404**: Instance doesn't exist
 
 
@@ -27,14 +27,14 @@ Remove a NIO from an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
-- **adapter_number**: Adapter on the switch (always 0)
+- **project_id**: Project UUID
 - **port_number**: Port on the switch
+- **adapter_number**: Adapter on the switch (always 0)
 
 Response status codes
 **********************
-- **204**: NIO deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: NIO deleted
 
