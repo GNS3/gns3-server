@@ -9,14 +9,14 @@ Start a VPCS instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance started
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance started
 
 Output
 *******
@@ -33,4 +33,10 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidvpcsnodesnodeidstart.txt
 

@@ -1,0 +1,17 @@
+curl -i -X GET 'http://localhost:3080/v2/projects/4d318c14-2a43-4578-98ef-8f5cf2de34fb/nodes/2cfc89cf-7cbf-45a2-8085-446f9adc3513/dynamips/auto_idlepc'
+
+GET /v2/projects/4d318c14-2a43-4578-98ef-8f5cf2de34fb/nodes/2cfc89cf-7cbf-45a2-8085-446f9adc3513/dynamips/auto_idlepc HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 30
+Content-Type: application/json
+Date: Mon, 08 Jan 2018 08:16:38 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
+X-Route: /v2/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc
+
+{
+    "idlepc": "0x60606f54"
+}

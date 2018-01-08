@@ -9,12 +9,18 @@ Reload an IOU instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance reloaded
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance reloaded
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidiounodesnodeidreload.txt
 

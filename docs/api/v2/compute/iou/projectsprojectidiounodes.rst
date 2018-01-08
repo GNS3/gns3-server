@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance created
+- **400**: Invalid request
 - **409**: Conflict
 
 Input
@@ -64,4 +64,10 @@ Output
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>use_default_iou_values</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Use default IOU values</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidiounodes.txt
 

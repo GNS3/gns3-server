@@ -15,6 +15,12 @@ Response status codes
 **********************
 - **200**: List of links returned
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_get_projectsprojectidlinks.txt
+
 
 POST /v2/projects/**{project_id}**/links
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,8 +32,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Link created
+- **400**: Invalid request
 
 Input
 *******
@@ -62,4 +68,10 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>suspend</td>                    <td> </td>                     <td>boolean</td>                     <td>Suspend the link</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/controller_post_projectsprojectidlinks.txt
 

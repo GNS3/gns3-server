@@ -9,12 +9,12 @@ Stop an Ethernet hub
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
+- **204**: Instance stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance stopped
 
