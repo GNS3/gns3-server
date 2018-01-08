@@ -50,6 +50,19 @@ def test_create_drawing(http_controller, tmpdir, project, async_run):
     assert response.json["drawing_id"] is not None
 
 
+def test_get_drawing(http_controller, tmpdir, project, async_run):
+
+    response = http_controller.post("/projects/{}/drawings".format(project.id), {
+        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
+        "x": 10,
+        "y": 20,
+        "z": 0
+    },)
+    response = http_controller.get("/projects/{}/drawings/{}".format(project.id, response.json["drawing_id"]), example=True)
+    assert response.status == 200
+    assert response.json["x"] == 10
+
+
 def test_update_drawing(http_controller, tmpdir, project, async_run):
 
     response = http_controller.post("/projects/{}/drawings".format(project.id), {
