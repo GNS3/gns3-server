@@ -405,6 +405,7 @@ class Controller:
         :param connect: True connect to the compute immediately
         :param kwargs: See the documentation of Compute
         """
+
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the local and VM server
