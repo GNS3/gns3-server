@@ -78,7 +78,7 @@ class VirtualBox(BaseManager):
             if not vboxmanage_path:
                 vboxmanage_path = shutil.which("vboxmanage")
 
-        if not os.path.exists(vboxmanage_path):
+        if vboxmanage_path and not os.path.exists(vboxmanage_path):
             log.error("VBoxManage path '{}' doesn't exist".format(vboxmanage_path))
 
         if not vboxmanage_path:
