@@ -434,11 +434,11 @@ class Project:
         :param dump: Dump topology to disk
         :param kwargs: See the documentation of node
         """
+
         if node_id in self._nodes:
             return self._nodes[node_id]
 
         if node_type == "iou" and 'application_id' not in kwargs.keys():
-
             kwargs['application_id'] = get_next_application_id(self._nodes.values())
 
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
