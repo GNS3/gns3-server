@@ -111,7 +111,7 @@ class Node:
                 else:
                     self.symbol = default_symbol
             else:
-                self.symbol = ":/symbols/router.svg"
+                self.symbol = ":/symbols/computer.svg"
 
     def is_always_running(self):
         """
