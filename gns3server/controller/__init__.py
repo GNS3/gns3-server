@@ -123,8 +123,13 @@ class Controller:
                 if prop in ["enable_remote_console", "use_ubridge"]:
                     del vm[prop]
             vm.setdefault("appliance_id", str(uuid.uuid4()))
-            appliance = Appliance(vm["appliance_id"], vm)
-            self._appliances[appliance.id] = appliance
+            try:
+                appliance = Appliance(vm["appliance_id"], vm)
+                self._appliances[appliance.id] = appliance
+            except KeyError as e:
+                # appliance data is not complete (missing name or type)
+                log.warning("Could not load appliance template {} ('{}'): {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                continue
 
         # Add builtins
         builtins = []
