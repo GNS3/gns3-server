@@ -86,6 +86,7 @@ class Project:
         self._show_grid = show_grid
         self._show_interface_labels = show_interface_labels
         self._loading = False
+        self._add_node_lock = asyncio.Lock()
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -438,30 +439,34 @@ class Project:
         if node_id in self._nodes:
             return self._nodes[node_id]
 
-        if node_type == "iou" and 'application_id' not in kwargs.keys():
-            kwargs['application_id'] = get_next_application_id(self._nodes.values())
+        with (yield from self._add_node_lock):
+            # wait for a node to be completely created before adding a new one
+            # this is important otherwise we allocate the same application ID
+            # when creating multiple IOU node at the same time
+            if node_type == "iou" and 'application_id' not in kwargs.keys():
+                kwargs['application_id'] = get_next_application_id(self._nodes.values())
 
-        node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
-        if compute not in self._project_created_on_compute:
-            # For a local server we send the project path
-            if compute.id == "local":
-                yield from compute.post("/projects", data={
-                    "name": self._name,
-                    "project_id": self._id,
-                    "path": self._path
-                })
-            else:
-                yield from compute.post("/projects", data={
-                    "name": self._name,
-                    "project_id": self._id,
-                })
+            node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
+            if compute not in self._project_created_on_compute:
+                # For a local server we send the project path
+                if compute.id == "local":
+                    yield from compute.post("/projects", data={
+                        "name": self._name,
+                        "project_id": self._id,
+                        "path": self._path
+                    })
+                else:
+                    yield from compute.post("/projects", data={
+                        "name": self._name,
+                        "project_id": self._id,
+                    })
 
-            self._project_created_on_compute.add(compute)
-        yield from node.create()
-        self._nodes[node.id] = node
-        self.controller.notification.emit("node.created", node.__json__())
-        if dump:
-            self.dump()
+                self._project_created_on_compute.add(compute)
+            yield from node.create()
+            self._nodes[node.id] = node
+            self.controller.notification.emit("node.created", node.__json__())
+            if dump:
+                self.dump()
         return node
 
     @locked_coroutine
