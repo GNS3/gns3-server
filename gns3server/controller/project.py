@@ -951,6 +951,7 @@ class Project:
                 'node_id',
                 'name',
                 'mac_addr',
+                'mac_address',
                 'compute_id',
                 'application_id',
                 'dynamips_id'):
