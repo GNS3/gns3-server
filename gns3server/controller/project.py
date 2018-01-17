@@ -946,10 +946,11 @@ class Project:
             raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data while the node is running")
 
         data = copy.deepcopy(node.__json__(topology_dump=True))
-        # Some properties like internal ID should not be duplicate
+        # Some properties like internal ID should not be duplicated
         for unique_property in (
                 'node_id',
                 'name',
+                'mac_addr',
                 'compute_id',
                 'application_id',
                 'dynamips_id'):
