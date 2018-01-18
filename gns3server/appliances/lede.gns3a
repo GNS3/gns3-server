@@ -22,6 +22,22 @@
     },
     "images": [
         {
+            "filename": "lede-17.01.4-x86-generic-combined-squashfs.img",
+            "version": "17.01.4",
+            "md5sum": "ae5d8d3fcab109565fe337d28e51c4b4",
+            "filesize": 19779546,
+            "download_url": "https://downloads.lede-project.org/releases/17.01.4/targets/x86/generic/",
+            "direct_download_url": "https://downloads.lede-project.org/releases/17.01.4/targets/x86/generic/lede-17.01.4-x86-generic-combined-squashfs.img"
+        },
+        {
+            "filename": "lede-17.01.3-x86-generic-combined-squashfs.img",
+            "version": "17.01.3",
+            "md5sum": "d315fc638160a9aec0966d58828bfccf",
+            "filesize": 19775618,
+            "download_url": "https://downloads.lede-project.org/releases/17.01.3/targets/x86/generic/",
+            "direct_download_url": "https://downloads.lede-project.org/releases/17.01.3/targets/x86/generic/lede-17.01.3-x86-generic-combined-squashfs.img"
+        },
+        {
             "filename": "lede-17.01.2-x86-generic-combined-squashfs.img",
             "version": "17.01.2",
             "md5sum": "a466e493ef12935dad5e0c622b1a7859",
@@ -47,6 +63,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "lede 17.01.4",
+            "images": {
+                "hda_disk_image": "lede-17.01.4-x86-generic-combined-squashfs.img"
+            }
+        },
+        {
+            "name": "lede 17.01.3",
+            "images": {
+                "hda_disk_image": "lede-17.01.3-x86-generic-combined-squashfs.img"
+            }
+        },
         {
             "name": "lede 17.01.2",
             "images": {

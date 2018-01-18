@@ -27,6 +27,14 @@
     },
     "images": [
         {
+            "filename": "exosvm-22.4.1.4.iso",
+            "version": "22.4.1.4",
+            "md5sum": "2134a511084519a5f8ad00a6f7cd71a9",
+            "filesize": 49993728,
+            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.4.1.4.iso"
+        },
+        {
             "filename": "exosvm-22.2.1.5.iso",
             "version": "22.2.1.5",
             "md5sum": "bf51fd5b3c5e9dab10a616055265bcf2",
@@ -92,6 +100,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "22.4.1.4",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "exosvm-22.4.1.4.iso"
+            }
+        },
         {
             "name": "22.2.1.5",
             "images": {

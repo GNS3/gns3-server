@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "VirtualTrafficManager-174.qcow2",
+            "version": "17.4",
+            "md5sum": "3c44f385e5faf310ca8e3d46bf4e0564",
+            "filesize": 2036465664,
+            "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001"
+        },
+        {
             "filename": "VirtualTrafficManager-173.qcow2",
             "version": "17.3",
             "md5sum": "c3425d8ec3f8c7789c0a88b8ed6bdf3b",
@@ -76,6 +83,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.4",
+            "images": {
+                "hda_disk_image": "VirtualTrafficManager-174.qcow2"
+            }
+        },
         {
             "name": "17.3",
             "images": {

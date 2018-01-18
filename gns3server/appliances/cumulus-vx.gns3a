@@ -24,6 +24,14 @@
     },
     "images": [
         {
+            "filename": "cumulus-linux-3.5.0-vx-amd64.qcow2",
+            "version": "3.5.0",
+            "md5sum": "9ad1f352d0603becf4bcc749b77c99dd",
+            "filesize": 1044250624,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.0-vx-amd64.qcow2"
+        },
+        {
             "filename": "cumulus-linux-3.4.3-vx-amd64.qcow2",
             "version": "3.4.3",
             "md5sum": "fd9144cdab7cac66cf421a13c6f50ac8",
@@ -125,6 +133,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.5.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.5.0-vx-amd64.qcow2"
+            }
+        },
         {
             "name": "3.4.3",
             "images": {
