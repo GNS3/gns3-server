@@ -106,6 +106,24 @@ class DockerHandler:
         response.set_status(204)
 
     @Route.post(
+        r"/projects/{project_id}/docker/nodes/{node_id}/suspend",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Suspend a Docker container")
+    def suspend(request, response):
+        docker_manager = Docker.instance()
+        container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        yield from container.pause()
+        response.set_status(204)
+
+    @Route.post(
         r"/projects/{project_id}/docker/nodes/{node_id}/reload",
         parameters={
             "project_id": "Project UUID",
