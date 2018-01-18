@@ -42,8 +42,8 @@ import gns3server.handlers
 import logging
 log = logging.getLogger(__name__)
 
-if not aiohttp.__version__.startswith("2.2"):
-    raise RuntimeError("aiohttp 2.2 is required to run the GNS3 server")
+if not (aiohttp.__version__.startswith("2.2") or aiohttp.__version__.startswith("2.3")):
+    raise RuntimeError("aiohttp 2.2.x or 2.3.x is required to run the GNS3 server")
 
 
 class WebServer:
@@ -101,7 +101,12 @@ class WebServer:
         if self._app:
             yield from self._app.shutdown()
         if self._handler:
-            yield from self._handler.finish_connections(2)  # Parameter is timeout
+            try:
+                # aiohttp < 2.3
+                yield from self._handler.finish_connections(2)  # Parameter is timeout
+            except AttributeError:
+                # aiohttp >= 2.3
+                yield from self._handler.shutdown(2)  # Parameter is timeout
         if self._app:
             yield from self._app.cleanup()
 

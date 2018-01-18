@@ -1,0 +1,45 @@
+{
+    "name": "Centos",
+    "category": "guest",
+    "description": "The CentOS Linux distribution is a stable, predictable, manageable and reproducible platform derived from the sources of Red Hat Enterprise Linux (RHEL). We are now looking to expand on that by creating the resources needed by other communities to come together and be able to build on the CentOS Linux platform. And today we start the process by delivering a clear governance model, increased transparency and access. In the coming weeks we aim to publish our own roadmap that includes variants of the core CentOS Linux.",
+    "vendor_name": "CentOS Linux",
+    "vendor_url": "https://www.centos.org/",
+    "documentation_url": "https://wiki.centos.org/",
+    "product_name": "Centos",
+    "product_url": "https://www.centos.org/download/",
+    "registry_version": 5,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: osboxes.org\nPassword: osboxes.org",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "spice",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-vga qxl"
+    },
+    "images": [
+
+        {
+            "filename": "CentOS 7-1611 (64bit).vmdk",
+            "version": "7-1611",
+            "md5sum": "1da15f6144eab25c8546f81dd1c34092",
+            "filesize": 4365877248,
+            "download_url": "http://www.osboxes.org/centos/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7-1611",
+            "images": {
+                "hda_disk_image": "CentOS 7-1611 (64bit).vmdk"
+            }
+        }
+    ]
+}

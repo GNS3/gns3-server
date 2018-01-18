@@ -41,6 +41,15 @@
             "compression": "xz"
         },
         {
+            "filename": "FreeBSD-10.4-RELEASE-amd64.qcow2",
+            "version": "10.4",
+            "md5sum": "ad498873733c57d1f6d890d587a11e3c",
+            "filesize": 1013448704,
+            "download_url": "https://www.freebsd.org/where.html",
+            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/10.4-RELEASE/amd64/Latest/FreeBSD-10.4-RELEASE-amd64.qcow2.xz",
+            "compression": "xz"
+        },
+        {
             "filename": "FreeBSD-10.3-RELEASE-amd64.qcow2",
             "version": "10.3",
             "md5sum": "1a00cebef520dfac8d2bda10ea16a951",
@@ -61,6 +70,12 @@
             "name": "11.0",
             "images": {
                 "hda_disk_image": "FreeBSD-11.0-RELEASE-amd64.qcow2"
+            }
+        },
+        {
+            "name": "10.4",
+            "images": {
+                "hda_disk_image": "FreeBSD-10.4-RELEASE-amd64.qcow2"
             }
         },
         {

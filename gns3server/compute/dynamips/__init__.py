@@ -29,16 +29,15 @@ import asyncio
 import tempfile
 import logging
 import glob
+import re
 
 log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
-from gns3server.utils.images import md5sum
 from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils import parse_version
-from uuid import UUID, uuid4
+from uuid import uuid4
 from ..base_manager import BaseManager
-from ..project_manager import ProjectManager
 from ..port_manager import PortManager
 from .dynamips_error import DynamipsError
 from .hypervisor import Hypervisor
@@ -574,6 +573,9 @@ class Dynamips(BaseManager):
                 raise DynamipsError("No Idle-PC values found")
 
             for idlepc in idlepcs:
+                match = re.search(r"^0x[0-9a-f]{8}$", idlepc.split()[0])
+                if not match:
+                   continue
                 yield from vm.set_idlepc(idlepc.split()[0])
                 log.debug("Auto Idle-PC: trying idle-PC value {}".format(vm.idlepc))
                 start_time = time.time()

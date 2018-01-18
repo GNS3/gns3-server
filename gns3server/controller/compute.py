@@ -321,6 +321,22 @@ class Compute:
         return response
 
     @asyncio.coroutine
+    def download_image(self, image_type, image):
+        """
+        Read file of a project and download it
+
+        :param image_type: Image type
+        :param image: The path of the image
+        :returns: A file stream
+        """
+
+        url = self._getUrl("/{}/images/{}".format(image_type, image))
+        response = yield from self._session().request("GET", url, auth=self._auth)
+        if response.status == 404:
+            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
+        return response
+
+    @asyncio.coroutine
     def stream_file(self, project, path):
         """
         Read file of a project and stream it
@@ -506,10 +522,16 @@ class Compute:
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
+            log.debug("Attempting request to compute: {method} {url} {headers}".format(
+                method=method,
+                url=url,
+                headers=headers
+            ))
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError) as e:
+        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
+            #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:

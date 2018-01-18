@@ -23,6 +23,27 @@
     },
     "images": [
         {
+            "filename": "csr1000v-universalk9.16.07.01-serial.qcow2",
+            "version": "16.7.1",
+            "md5sum": "13adbfc2586d06c9802b9805168c0c44",
+            "filesize": 882769920,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1&relind=AVAILABLE&rellifecycle=ED&reltype=latest"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.06.01-serial.qcow2",
+            "version": "16.6.1",
+            "md5sum": "909e74446d3ff0b82c14327c0058fdc2",
+            "filesize": 1566179328,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.05.02-serial.qcow2",
+            "version": "16.5.2",
+            "md5sum": "59a84da28d59ee75176aa05ecde7f72a",
+            "filesize": 1322385408,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest"
+        },
+        {
             "filename": "csr1000v-universalk9.16.5.1b-serial.qcow2",
             "version": "16.5.1b",
             "md5sum": "ac11d33041b8ff6dc3553e324d02cccb",
@@ -67,6 +88,24 @@
     ],
     "versions": [
         {
+            "name": "16.7.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.07.01-serial.qcow2"
+            }
+        },
+        {
+            "name": "16.6.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.06.01-serial.qcow2"
+            }
+        },
+        {
+            "name": "16.5.2",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.05.02-serial.qcow2"
+            }
+        },
+        {
             "name": "16.5.1b",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.5.1b-serial.qcow2"
@@ -89,13 +128,13 @@
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.3.1-build2.qcow2"
             }
-        }, 
+        },
        {
             "name": "16.3.2",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.03.02.qcow2"
             }
-        },           
+        },
         {
             "name": "16.4.1",
             "images": {

@@ -300,9 +300,12 @@ class Link:
         try:
             stream_content = yield from self.read_pcap_from_source()
         except aiohttp.web.HTTPException as e:
-            log.error("Could not stream pcap file: error {}: {}".format(e.status, e.text))
+            error_msg = "Could not stream PCAP file: error {}: {}".format(e.status, e.text)
+            log.error(error_msg)
             self._capturing = False
+            self._project.notification.emit("log.error", {"message": error_msg})
             self._project.controller.notification.emit("link.updated", self.__json__())
+
         with stream_content as stream:
             with open(self.capture_file_path, "wb+") as f:
                 while self._capturing:

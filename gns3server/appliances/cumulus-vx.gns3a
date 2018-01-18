@@ -24,11 +24,20 @@
     },
     "images": [
         {
+            "filename": "cumulus-linux-3.4.3-vx-amd64.qcow2",
+            "version": "3.4.3",
+            "md5sum": "fd9144cdab7cac66cf421a13c6f50ac8",
+            "filesize": 988872704,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.4.3-vx-amd64.qcow2"
+        },
+        {
             "filename": "cumulus-linux-3.4.2-vx-amd64.qcow2",
             "version": "3.4.2",
             "md5sum": "ca844684784ceeee893d0cd76dc44e3b",
             "filesize": 1060700160,
-            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/"
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.4.2-vx-amd64.qcow2"
         },
         {
             "filename": "cumulus-linux-3.4.1-vx-amd64.qcow2",
@@ -116,6 +125,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.4.3",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.4.3-vx-amd64.qcow2"
+            }
+        },
         {
             "name": "3.4.2",
             "images": {

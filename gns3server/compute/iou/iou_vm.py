@@ -65,7 +65,7 @@ class IOUVM(BaseNode):
     :param console: TCP console port
     """
 
-    def __init__(self, name, node_id, project, manager, console=None):
+    def __init__(self, name, node_id, project, manager, path=None, console=None):
 
         super().__init__(name, node_id, project, manager, console=console)
 
@@ -73,8 +73,8 @@ class IOUVM(BaseNode):
         self._telnet_server = None
         self._iou_stdout_file = ""
         self._started = False
-        self._path = None
         self._nvram_watcher = None
+        self._path = self.manager.get_abs_image_path(path)
 
         # IOU settings
         self._ethernet_adapters = []
@@ -137,6 +137,7 @@ class IOUVM(BaseNode):
         """
 
         self._path = self.manager.get_abs_image_path(path)
+        log.info('IOU "{name}" [{id}]: IOU image updated to "{path}"'.format(name=self._name, id=self._id, path=self._path))
 
     @property
     def use_default_iou_values(self):
@@ -161,6 +162,28 @@ class IOUVM(BaseNode):
             log.info('IOU "{name}" [{id}]: uses the default IOU image values'.format(name=self._name, id=self._id))
         else:
             log.info('IOU "{name}" [{id}]: does not use the default IOU image values'.format(name=self._name, id=self._id))
+
+    @asyncio.coroutine
+    def update_default_iou_values(self):
+        """
+        Finds the default RAM and NVRAM values for the IOU image.
+        """
+
+        try:
+            output = yield from gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, stderr=True)
+            match = re.search("-n <n>\s+Size of nvram in Kb \(default ([0-9]+)KB\)", output)
+            if match:
+                self.nvram = int(match.group(1))
+            match = re.search("-m <n>\s+Megabytes of router memory \(default ([0-9]+)MB\)", output)
+            if match:
+                self.ram = int(match.group(1))
+        except (ValueError, OSError, subprocess.SubprocessError) as e:
+            log.warning("could not find default RAM and NVRAM values for {}: {}".format(os.path.basename(self._path), e))
+
+    @asyncio.coroutine
+    def create(self):
+
+        yield from self.update_default_iou_values()
 
     def _check_requirements(self):
         """
@@ -479,6 +502,9 @@ class IOUVM(BaseNode):
             yield from self._start_ubridge()
 
             self._create_netmap_config()
+            if self.use_default_iou_values:
+                # make sure we have the default nvram amount to correctly push the configs
+                yield from self.update_default_iou_values()
             self._push_configs_to_nvram()
 
             # check if there is enough RAM to run

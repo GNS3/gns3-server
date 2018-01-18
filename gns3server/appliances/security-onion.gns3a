@@ -1,0 +1,68 @@
+{
+    "name": "Security Onion",
+    "category": "guest",
+    "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It’s based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",
+    "vendor_name": "Security Onion Solutions, LLC",
+    "vendor_url": "https://securityonion.net/",
+    "documentation_url": "https://github.com/Security-Onion-Solutions/security-onion/wiki",
+    "product_name": "Security Onion",
+    "product_url": "https://securityonion.net/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Brent Stewart",
+    "maintainer_email": "brent@stewart.tc",
+    "usage": "Your default account will have sudo priviledges.  Squil and Squert username and password are configured in the Setup wizard.  MySQL root is set to null.  For more info see https://github.com/Security-Onion-Solutions/security-onion/wiki/Passwords.",
+    "symbol": "securityonion-logo.png",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 3072,
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "securityonion-14.04.5.4.iso",
+            "version": "14.04.5.4",
+            "md5sum": "9c7cab756b675beb10de4274a3ad3bc6",
+            "filesize": 1874853888,
+            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso",
+            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso"
+        },
+        {
+            "filename": "securityonion-14.04.5.3.iso",
+            "version": "14.04.5.3",
+            "md5sum": "fb80ccb2d3c0f3f511823fa5858f87d1",
+            "filesize": 1889533952,
+            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.3.iso",
+            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.3.iso"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    
+    ],
+    "versions": [
+        {
+            "name": "14.04.5.4",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "securityonion-14.04.5.4.iso"
+            }
+        },
+        {
+            "name": "14.04.5.3",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "securityonion-14.04.5.3.iso"
+            }
+        }
+        
+]
+}

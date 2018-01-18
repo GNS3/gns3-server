@@ -210,6 +210,12 @@ class AsyncioTelnetServer:
             del self._connections[network_writer]
 
     @asyncio.coroutine
+    def close(self):
+        for writer, connection in self._connections.items():
+            writer.write_eof()
+            yield from writer.drain()
+        
+    @asyncio.coroutine
     def client_connected_hook(self):
         pass
 

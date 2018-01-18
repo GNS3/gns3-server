@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from aiohttp.web import HTTPConflict
+
+import aiohttp.web
 
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
@@ -59,6 +60,7 @@ class IOUHandler:
         vm = yield from iou.create_node(request.json.pop("name"),
                                         request.match_info["project_id"],
                                         request.json.get("node_id"),
+                                        path=request.json.get("path"),
                                         console=request.json.get("console"))
 
         for name, value in request.json.items():
@@ -66,6 +68,8 @@ class IOUHandler:
                 if name == "startup_config_content" and (vm.startup_config_content and len(vm.startup_config_content) > 0):
                     continue
                 if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
+                    continue
+                if request.json.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                     continue
                 setattr(vm, name, value)
         response.set_status(201)
@@ -113,6 +117,11 @@ class IOUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
+
+        if vm.use_default_iou_values:
+            # update the default IOU values in case the image or use_default_iou_values have changed
+            # this is important to have the correct NVRAM amount in order to correctly push the configs to the NVRAM
+            yield from vm.update_default_iou_values()
         vm.updated()
         response.json(vm)
 
@@ -239,7 +248,7 @@ class IOUHandler:
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap", "nio_ethernet", "nio_generic_ethernet"):
-            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = iou_manager.create_nio(request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
         response.set_status(201)
@@ -378,3 +387,26 @@ class IOUHandler:
         iou_manager = IOU.instance()
         yield from iou_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
+
+
+    @Route.get(
+        r"/iou/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
+        status_codes={
+            200: "Image returned",
+        },
+        raw=True,
+        description="Download an IOU image")
+    def download_image(request, response):
+        filename = request.match_info["filename"]
+
+        iou_manager = IOU.instance()
+        image_path = iou_manager.get_abs_image_path(filename)
+
+        # Raise error if user try to escape
+        if filename[0] == ".":
+            raise aiohttp.web.HTTPForbidden()
+
+        yield from response.file(image_path)

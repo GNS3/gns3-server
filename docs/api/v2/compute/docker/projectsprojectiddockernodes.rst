@@ -36,6 +36,7 @@ Input
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>start_command</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     </table>
 
 Output
@@ -60,5 +61,6 @@ Output
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID Read only</td>                     </tr>
     <tr><td>start_command</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker CMD entry</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
     </table>
 

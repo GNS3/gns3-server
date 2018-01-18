@@ -351,3 +351,69 @@ def test_export_keep_compute_id(tmpdir, project, async_run):
             topo = json.loads(myfile.read().decode())["topology"]
             assert topo["nodes"][0]["compute_id"] == "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0"
             assert len(topo["computes"]) == 1
+
+def test_export_images_from_vm(tmpdir, project, async_run, controller):
+    """
+    If data is on a remote server export it locally before
+    sending it in the archive.
+    """
+
+    compute = MagicMock()
+    compute.id = "vm"
+    compute.list_files = AsyncioMagicMock(return_value=[
+        {"path": "vm-1/dynamips/test"}
+    ])
+
+    # Fake file that will be download from the vm
+    mock_response = AsyncioMagicMock()
+    mock_response.content = AsyncioBytesIO()
+    async_run(mock_response.content.write(b"HELLO"))
+    mock_response.content.seek(0)
+    mock_response.status = 200
+    compute.download_file = AsyncioMagicMock(return_value=mock_response)
+
+    mock_response = AsyncioMagicMock()
+    mock_response.content = AsyncioBytesIO()
+    async_run(mock_response.content.write(b"IMAGE"))
+    mock_response.content.seek(0)
+    mock_response.status = 200
+    compute.download_image = AsyncioMagicMock(return_value=mock_response)
+
+    project._project_created_on_compute.add(compute)
+
+    path = project.path
+    os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+
+    topology = {
+        "topology": {
+            "nodes": [
+                    {
+                        "compute_id": "vm",
+                        "properties": {
+                            "image": "test.image"
+                        },
+                        "node_type": "dynamips"
+                    }
+            ]
+        }
+    }
+
+    # The .gns3 should be renamed project.gns3 in order to simplify import
+    with open(os.path.join(path, "test.gns3"), 'w+') as f:
+        f.write(json.dumps(topology))
+
+    z = async_run(export_project(project, str(tmpdir), include_images=True))
+    assert compute.list_files.called
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        with myzip.open("vm-1/dynamips/test") as myfile:
+            content = myfile.read()
+            assert content == b"HELLO"
+
+        with myzip.open("images/dynamips/test.image") as myfile:
+            content = myfile.read()
+            assert content == b"IMAGE"

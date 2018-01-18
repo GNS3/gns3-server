@@ -6,14 +6,15 @@ GET /v2/appliances/templates HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 376412
+Content-Length: 470863
 Content-Type: application/json
-Date: Thu, 29 Jun 2017 15:07:44 GMT
-Server: Python/3.6 GNS3/2.1.0dev1
+Date: Mon, 08 Jan 2018 08:16:12 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
 X-Route: /v2/appliances/templates
 
 [
     {
+        "builtin": true,
         "category": "router",
         "description": "vThunder, part of A10 Networks' award-winning A10 Thunder and AX Series Application Delivery Controller (ADC) family, is designed to meet the growing needs of organizations that require a flexible and easy-to-deploy application delivery and server load balancer solution running within a virtualized infrastructure.",
         "documentation_url": "https://www.a10networks.com/support",
@@ -21,10 +22,17 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://www.a10networks.com/vthunder-embed",
+                "filename": "vThunder_410_P9.qcow2",
+                "filesize": 6311706624,
+                "md5sum": "6ef0f69ba7a099a7f43b5815c2abc691",
+                "version": "4.1.0.P9"
+            },
+            {
+                "download_url": "https://www.a10networks.com/vthunder-embed",
                 "filename": "vThunder_410_P3.qcow2",
                 "filesize": 6098780160,
                 "md5sum": "daacefa4e0eb1cad9b253926624be4b9",
-                "version": "4.1.0"
+                "version": "4.1.0.P3"
             },
             {
                 "download_url": "https://www.a10networks.com/vthunder-embed",
@@ -59,9 +67,15 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "vThunder_410_P9.qcow2"
+                },
+                "name": "4.1.0.P9"
+            },
+            {
+                "images": {
                     "hda_disk_image": "vThunder_410_P3.qcow2"
                 },
-                "name": "4.1.0"
+                "name": "4.1.0.P3"
             },
             {
                 "images": {
@@ -72,6 +86,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The Alcatel-Lucent 7750 Service Router (SR) portfolio is a suite of multiservice edge routing platforms that deliver high performance, service richness, and creates exceptional value for networking in the cloud era. It is designed for the concurrent delivery of advanced residential, business and wireless broadband IP services, and provides cloud, data center and branch office connectivity for enterprise networking on a common IP edge routing platform.",
         "documentation_url": "https://www.alcatel-lucent.com/support",
@@ -144,6 +159,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.",
         "docker": {
@@ -163,11 +179,26 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://alpinelinux.org"
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Arista EOS\u00ae is the core of Arista cloud networking solutions for next-generation data centers and cloud networks. Cloud architectures built with Arista EOS scale to tens of thousands of compute and storage nodes with management and provisioning capabilities that work at scale. Through its programmability, EOS enables a set of software applications that deliver workflow automation, high availability, unprecedented network visibility and analytics and rapid integration with a wide range of third-party applications for virtualization, management, automation and orchestration services.\n\nArista Extensible Operating System (EOS) is a fully programmable and highly modular, Linux-based network operation system, using familiar industry standard CLI and runs a single binary software image across the Arista switching family. Architected for resiliency and programmability, EOS has a unique multi-process state sharing architecture that separates state information and packet forwarding from protocol processing and application logic.",
         "documentation_url": "https://www.arista.com/assets/data/docs/Manuals/EOS-4.17.2F-Manual.pdf",
         "first_port_name": "Management1",
         "images": [
+            {
+                "download_url": "https://www.arista.com/en/support/software-download",
+                "filename": "vEOS-lab-4.20.1F.vmdk",
+                "filesize": 662044672,
+                "md5sum": "aadb6f3dbff28317f68cb4c4502d0db8",
+                "version": "4.20.1F"
+            },
+            {
+                "download_url": "https://www.arista.com/en/support/software-download",
+                "filename": "vEOS-lab-4.18.5M.vmdk",
+                "filesize": 623116288,
+                "md5sum": "b1ee6268dbaf2b2276fd7a5286c7ce2b",
+                "version": "4.18.5M"
+            },
             {
                 "download_url": "https://www.arista.com/en/support/software-download",
                 "filename": "vEOS-lab-4.18.1F.vmdk",
@@ -249,6 +280,20 @@ X-Route: /v2/appliances/templates
             {
                 "images": {
                     "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hdb_disk_image": "vEOS-lab-4.20.1F.vmdk"
+                },
+                "name": "4.20.1F"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hdb_disk_image": "vEOS-lab-4.18.5M.vmdk"
+                },
+                "name": "4.18.5M"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
                     "hdb_disk_image": "vEOS-lab-4.18.1F.vmdk"
                 },
                 "name": "4.18.1F"
@@ -298,6 +343,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "AsteriskNOW makes it easy to create custom telephony solutions by automatically installing the 'plumbing'. It's a complete Linux distribution with Asterisk, the DAHDI driver framework, and, the FreePBX administrative GUI. Much of the complexity of Asterisk and Linux is handled by the installer, the yum package management utility and the administrative GUI. With AsteriskNOW, application developers and integrators can concentrate on building solutions, not maintaining the plumbing.",
         "documentation_url": "https://wiki.asterisk.org/wiki/display/AST/Installing+AsteriskNOW",
@@ -381,6 +427,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Big Cloud Fabric\u2122 is the industry\u2019s first data center fabric built using whitebox or britebox switches and SDN controller technology. Embracing hyperscale data center design principles, Big Cloud Fabric solution enables rapid innovation, ease of provisioning and management, while reducing overall costs, making it ideal for current and next generation data centers. Big Cloud Fabric is designed from the ground up to satisfy the requirements of physical, virtual, containerized, or a combination of such workloads. Some of the typical OpenStack or VMware data center workloads include NFV, High Performance Computing, Big Data and Software Defined Storage deployments.",
         "documentation_url": "http://www.bigswitch.com/support",
@@ -421,6 +468,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The BIRD project aims to develop a fully functional dynamic IP routing daemon primarily targeted on (but not limited to) Linux, FreeBSD and other UNIX-like systems and distributed under the GNU General Public License.",
         "documentation_url": "http://bird.network.cz/?get_doc&f=bird.html",
@@ -461,6 +509,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "The Brocade Virtual ADX (vADX\u2122) is a full-fledged Application Delivery Controller (ADC) platform with a virtual footprint that leverages Intel advanced technology to deliver remarkable performance. The software is designed to run on standardsbased hypervisors, hosted on Intel x86 COTS hardware. It offers a complete suite of Layer 4 and Layer 7 server load balancing capabilities and application security services with extensible management via rich SOAP/XML APIs.",
         "first_port_name": "mgmt1",
@@ -502,6 +551,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "With proven ultra-high performance and scalability, the Brocade vRouter is the networking industry leader in software innovation. The Brocade vRouter has set a the benchmark for all software-based routers, while offering easy scalability, a broad set of capabilities, and the peace of mind that comes with rock solid reliability.",
         "documentation_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
@@ -639,10 +689,18 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Take control of your online applications with Brocade virtual Traffic Manager (Developer Edition). Enhance customer experience, inspect traffic in real-time, control service levels to differentiate users and services, and reduce your costs with an extensible delivery platform that can grow with your business using ADC-as-a-Service. A fully functional Developer Edition which needs no license key, is limited to 1 Mbps/100 SSL tps throughput, and has access to the Brocade Community support web pages.",
         "documentation_url": "http://www.brocade.com/en/products-services/software-networking/application-delivery-controllers/virtual-traffic-manager.html",
         "images": [
+            {
+                "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001",
+                "filename": "VirtualTrafficManager-173.qcow2",
+                "filesize": 2022178816,
+                "md5sum": "c3425d8ec3f8c7789c0a88b8ed6bdf3b",
+                "version": "17.3"
+            },
             {
                 "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001",
                 "filename": "VirtualTrafficManager-172.qcow2",
@@ -711,6 +769,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "VirtualTrafficManager-173.qcow2"
+                },
+                "name": "17.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "VirtualTrafficManager-172.qcow2"
                 },
                 "name": "17.2"
@@ -748,9 +812,19 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "BSD Router Project (BSDRP) is an embedded free and open source router distribution based on FreeBSD with Quagga and Bird.",
         "images": [
+            {
+                "compression": "xz",
+                "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.80/amd64/BSDRP-1.80-full-amd64-serial.img.xz/download",
+                "download_url": "https://bsdrp.net/downloads",
+                "filename": "BSDRP-1.80-full-amd64-serial.img",
+                "filesize": 1000000000,
+                "md5sum": "a4285be15ac85f67b3c7f044872a54b6",
+                "version": "1.80"
+            },
             {
                 "compression": "xz",
                 "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.70/amd64/BSDRP-1.70-full-amd64-serial.img.xz/download",
@@ -781,6 +855,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "BSDRP-1.80-full-amd64-serial.img"
+                },
+                "name": "1.80"
+            },
+            {
+                "images": {
                     "hda_disk_image": "BSDRP-1.70-full-amd64-serial.img"
                 },
                 "name": "1.70"
@@ -788,16 +868,76 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "The CentOS Linux distribution is a stable, predictable, manageable and reproducible platform derived from the sources of Red Hat Enterprise Linux (RHEL). We are now looking to expand on that by creating the resources needed by other communities to come together and be able to build on the CentOS Linux platform. And today we start the process by delivering a clear governance model, increased transparency and access. In the coming weeks we aim to publish our own roadmap that includes variants of the core CentOS Linux.",
+        "documentation_url": "https://wiki.centos.org/",
+        "images": [
+            {
+                "download_url": "http://www.osboxes.org/centos/",
+                "filename": "CentOS 7-1611 (64bit).vmdk",
+                "filesize": 4365877248,
+                "md5sum": "1da15f6144eab25c8546f81dd1c34092",
+                "version": "7-1611"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Centos",
+        "port_name_format": "eth{0}",
+        "product_name": "Centos",
+        "product_url": "https://www.centos.org/download/",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "spice",
+            "hda_disk_interface": "ide",
+            "kvm": "require",
+            "options": "-vga qxl",
+            "ram": 2048
+        },
+        "registry_version": 5,
+        "status": "stable",
+        "usage": "Username: osboxes.org\nPassword: osboxes.org",
+        "vendor_name": "CentOS Linux",
+        "vendor_url": "https://www.centos.org/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "CentOS 7-1611 (64bit).vmdk"
+                },
+                "name": "7-1611"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "firewall",
         "description": "Check Point Gaia is the next generation Secure Operating System for all Check Point Appliances, Open Servers and Virtualized Gateways.\n\nGaia combines the best features from IPSO and SecurePlatform (SPLAT) into a single unified OS providing greater efficiency and robust performance. By upgrading to Gaia, customers will benefit from improved appliance connection capacity and reduced operating costs. With Gaia, IP Appliance customers will gain the ability to leverage the full breadth and power of all Check Point Software Blades.\n\nGaia secures IPv6 networks utilizing the Check Point Acceleration & Clustering technology and it protects the most dynamic network and virtualized environments by supporting 5 different dynamic routing protocols. As a 64-Bit OS, Gaia increases the connection capacity of existing appliances supporting up-to 10M concurrent connections for select 2012 Models.\n\nGaia simplifies management with segregation of duties by enabling role-based administrative access. Furthermore, Gaia greatly increases operation efficiency by offering Automatic Software Update.\n\nThe feature-rich Web interface allows for search of any command or property in a second.\n\nGaia provides backward compatibility with IPSO and SPLAT CLI-style commands making it an easy transition for existing Check Point customers.",
         "documentation_url": "http://downloads.checkpoint.com/dc/download.htm?ID=26770",
         "images": [
             {
                 "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859",
+                "filename": "Check_Point_R80.10_T421_Gaia.iso",
+                "filesize": 3420127232,
+                "md5sum": "12d9723fadb89bb722e20ca3f89012ce",
+                "version": "80.10"
+            },
+            {
+                "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859",
                 "filename": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso",
                 "filesize": 2799271936,
                 "md5sum": "6fa7586bbb6832fa965d3173276c5b87",
                 "version": "77.30"
+            },
+            {
+                "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859",
+                "filename": "Check_Point_R77.20_T124_Install.Gaia.iso",
+                "filesize": 2632974336,
+                "md5sum": "7552fa2ad3e1f0ac31615b60b736969c",
+                "version": "77.20"
             },
             {
                 "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download",
@@ -830,14 +970,29 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "Check_Point_R80.10_T421_Gaia.iso",
+                    "hda_disk_image": "empty8G.qcow2"
+                },
+                "name": "80.10"
+            },
+            {
+                "images": {
                     "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso",
                     "hda_disk_image": "empty8G.qcow2"
                 },
                 "name": "77.30"
+            },
+            {
+                "images": {
+                    "cdrom_image": "Check_Point_R77.20_T124_Install.Gaia.iso",
+                    "hda_disk_image": "empty8G.qcow2"
+                },
+                "name": "77.20"
             }
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "The chromium browser",
         "docker": {
@@ -855,6 +1010,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.chromium.org/"
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 1700 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -893,6 +1049,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 2600 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -930,6 +1087,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 2691 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -967,6 +1125,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3620 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -1004,6 +1163,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3640 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -1041,6 +1201,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3660 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -1078,6 +1239,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3725 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -1115,6 +1277,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3745 Multiservice Access Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/routers/3745-multiservice-access-router/model.html",
@@ -1160,6 +1323,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 7200 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/products/routers/7200-series-routers/index.html",
@@ -1199,45 +1363,81 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "The Adaptive Security Virtual Appliance is a virtualized network security solution based on the market-leading Cisco ASA 5500-X Series firewalls. It supports both traditional and next-generation software-defined network (SDN) and Cisco Application Centric Infrastructure (ACI) environments to provide policy enforcement and threat inspection across heterogeneous multisite environments.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/security/virtual-adaptive-security-appliance-firewall/products-installation-guides-list.html",
         "first_port_name": "Management0/0",
         "images": [
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.7.1&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav981-5.qcow2",
+                "filesize": 193069056,
+                "md5sum": "77b3ca856dd2df476bcda34e218425ca",
+                "version": "9.8.1-5"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.8.1&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "asav981.qcow2",
+                "filesize": 193069056,
+                "md5sum": "8d3612fe22b1a7dec118010e17e29411",
+                "version": "9.8.1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav971-8.qcow2",
+                "filesize": 197066752,
+                "md5sum": "b2486c8d0f6fda149ce877208b816818",
+                "version": "9.7.1-8"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav971-4.qcow2",
+                "filesize": 197066752,
+                "md5sum": "f9a671d1ceaf983f7241f19df15e787f",
+                "version": "9.7.1-4"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav971-2.qcow2",
+                "filesize": 199753728,
+                "md5sum": "ff036b23f5dbb2bcf1e6530476cc1989",
+                "version": "9.7.1-2"
+            },
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "asav971.qcow2",
-                "filesize": 199688192,
-                "md5sum": "cb31f53e70a9e409829d2f832ff09191",
+                "filesize": 198443008,
+                "md5sum": "07eef9b8ca489a8ad37448fadf45a673",
                 "version": "9.7.1"
             },
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.2&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav963-8.qcow2",
+                "filesize": 168427520,
+                "md5sum": "8b8a45b94a302dae8076e7ec90c7d4c2",
+                "version": "9.6.3-8"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.6.3&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "asav963-1.qcow2",
+                "filesize": 172294144,
+                "md5sum": "d6a5c8d7bff5e69c5987ca664a52dbd8",
+                "version": "9.6.3-1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "filename": "asav962-13.qcow2",
+                "filesize": 177668096,
+                "md5sum": "2a6bec030fcaef31b611051180cc142c",
+                "version": "9.6.2-13"
+            },
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "asav962.qcow2",
                 "filesize": 177274880,
-                "md5sum": "a4c892afe610776dde8a176f1049ae96",
+                "md5sum": "dfb8110ce38da4588e994865d5a9656a",
                 "version": "9.6.2"
-            },
-            {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=&softwareid=280775065&release=9.6.1&relind=AVAILABLE&rellifecycle=&reltype=latest",
-                "filename": "asav961.qcow2",
-                "filesize": 173801472,
-                "md5sum": "c8726827cb72f4eed8cb52a64bca091c",
-                "version": "9.6.1"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
-                "filename": "asav952-204.qcow2",
-                "filesize": 169345024,
-                "md5sum": "73a1126283de6b70c4cc12edfc46d547",
-                "version": "9.5.2-204"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
-                "filename": "asav951-201.qcow2",
-                "filesize": 160038912,
-                "md5sum": "ca071370278ecbd5dfdb1c5a4161571a",
-                "version": "9.5.1-200"
             }
         ],
         "maintainer": "GNS3 Team",
@@ -1264,54 +1464,106 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "asav981-5.qcow2"
+                },
+                "name": "9.8.1-5"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav981.qcow2"
+                },
+                "name": "9.8.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav971-8.qcow2"
+                },
+                "name": "9.7.1-8"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav971-4.qcow2"
+                },
+                "name": "9.7.1-4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav971-2.qcow2"
+                },
+                "name": "9.7.1-2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "asav971.qcow2"
                 },
                 "name": "9.7.1"
             },
             {
                 "images": {
+                    "hda_disk_image": "asav963-8.qcow2"
+                },
+                "name": "9.6.3-8"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav963-1.qcow2"
+                },
+                "name": "9.6.3-1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "asav962-13.qcow2"
+                },
+                "name": "9.6.2-13"
+            },
+            {
+                "images": {
                     "hda_disk_image": "asav962.qcow2"
                 },
                 "name": "9.6.2"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav961.qcow2"
-                },
-                "name": "9.6.1"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav952-204.qcow2"
-                },
-                "name": "9.5.2-204"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav951-201.qcow2"
-                },
-                "name": "9.5.1-201"
             }
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The Cisco Cloud Services Router 1000V (CSR 1000V) is a router and network services platform in virtual form factor that is intended for deployment in cloud and virtual data centers. It is optimized to serve as a single-tenant or multitenant WAN gateway. Using proven, industry-leading Cisco IOS\u00ae XE Software networking and security features, the CSR 1000V enables enterprises to transparently extend their WANs into external provider-hosted clouds and cloud providers to offer their tenants enterprise-class networking services.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
         "images": [
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "filename": "csr1000v-universalk9.16.07.01-serial.qcow2",
+                "filesize": 882769920,
+                "md5sum": "13adbfc2586d06c9802b9805168c0c44",
+                "version": "16.7.1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "filename": "csr1000v-universalk9.16.06.01-serial.qcow2",
+                "filesize": 1566179328,
+                "md5sum": "909e74446d3ff0b82c14327c0058fdc2",
+                "version": "16.6.1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "filename": "csr1000v-universalk9.16.05.02-serial.qcow2",
+                "filesize": 1322385408,
+                "md5sum": "59a84da28d59ee75176aa05ecde7f72a",
+                "version": "16.5.2"
+            },
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
+                "filename": "csr1000v-universalk9.16.5.1b-serial.qcow2",
+                "filesize": 1209543680,
+                "md5sum": "ac11d33041b8ff6dc3553e324d02cccb",
+                "version": "16.5.1b"
+            },
             {
                 "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2",
                 "filesize": 1346305024,
                 "md5sum": "06cbfcd11f3557391db64fe2a6015a6e",
                 "version": "3.17"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
-                "filename": "csr1000v-universalk9.16.2.2-ext.qcow2",
-                "filesize": 1586637824,
-                "md5sum": "6c7e61b2f091ce1e9562dc3f2da43ebe",
-                "version": "16.2.2"
             },
             {
                 "download_url": "https://virl.mediuscorp.com/my-account/",
@@ -1328,17 +1580,17 @@ X-Route: /v2/appliances/templates
                 "version": "16.3.1"
             },
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Denali-16.3.2",
+                "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "csr1000v-universalk9.16.03.02.qcow2",
-                "filesize": 1327693824,
-                "md5sum": "01868950c960b1eeaa0fe9e035b25e48",
+                "filesize": 1167720448,
+                "md5sum": "2e5803d23cd52cba5d55fa8306be5f13",
                 "version": "16.3.2"
             },
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&softwareid=282046477&release=Everest-16.4.1",
-                "filename": "csr1000v-universalk9.16.04.01-serial.qcow2",
-                "filesize": 1457651712,
-                "md5sum": "8f190db9fd06a34d66f0c82812e56fd2",
+                "download_url": "https://virl.mediuscorp.com/my-account/",
+                "filename": "csr1000v-universalk9.16.4.1.qcow2",
+                "filesize": 1261961216,
+                "md5sum": "3428e0dcf5132a1b11ab7696d8c61b2e",
                 "version": "16.4.1"
             }
         ],
@@ -1364,15 +1616,33 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2"
+                    "hda_disk_image": "csr1000v-universalk9.16.07.01-serial.qcow2"
                 },
-                "name": "3.17"
+                "name": "16.7.1"
             },
             {
                 "images": {
-                    "hda_disk_image": "csr1000v-universalk9.16.2.2-ext.qcow2"
+                    "hda_disk_image": "csr1000v-universalk9.16.06.01-serial.qcow2"
                 },
-                "name": "16.2.2"
+                "name": "16.6.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "csr1000v-universalk9.16.05.02-serial.qcow2"
+                },
+                "name": "16.5.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "csr1000v-universalk9.16.5.1b-serial.qcow2"
+                },
+                "name": "16.5.1b"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2"
+                },
+                "name": "3.17"
             },
             {
                 "images": {
@@ -1394,13 +1664,14 @@ X-Route: /v2/appliances/templates
             },
             {
                 "images": {
-                    "hda_disk_image": "csr1000v-universalk9.16.04.01-serial.qcow2"
+                    "hda_disk_image": "csr1000v-universalk9.16.4.1.qcow2"
                 },
                 "name": "16.4.1"
             }
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Cisco Data Center Network Manager (DCNM) 10 unifies and automates Cisco Nexus and Cisco MDS 9000 Family multitenant infrastructure for data center management across Cisco Nexus 5000, 6000, 7000, and 9000 Series Switches in NX\u2011OS mode using Cisco NX-OS Software as well as across Cisco MDS 9100 and 9300 Series Multilayer Fabric Switches, 9200 Series Multiservice Switches, and 9500 and 9700 Series Multilayer Directors. Data Center Network Manager 10 lets you manage very large numbers of devices while providing ready-to-use management and automation capabilities plus Virtual Extensible LAN (VXLAN) overlay visibility into Cisco Nexus LAN fabrics.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/cloud-systems-management/data-center-network-manager-10/model.html",
@@ -1454,6 +1725,230 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "firewall",
+        "description": "This is your administrative nerve center for managing critical Cisco network security solutions. It provides complete and unified management over firewalls, application control, intrusion prevention, URL filtering, and advanced malware protection. Easily go from managing a firewall to controlling applications to investigating and remediating malware outbreaks.",
+        "documentation_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/fmcv-kvm-qsg.html",
+        "first_port_name": "eth0",
+        "images": [
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual-6.0.0-1005-disk1.vmdk",
+                "filesize": 1681540608,
+                "md5sum": "3fed60f1e7d6910c22d13e966acebd7f",
+                "version": "6.0.0 (1005) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual-6.1.0-330.qcow2",
+                "filesize": 1909391360,
+                "md5sum": "e3c64179ec46671caeb7ac3e4e58064f",
+                "version": "6.1.0 (330)"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual_VMware-6.1.0-330-disk1.vmdk",
+                "filesize": 1938142720,
+                "md5sum": "8bc77b317cf0007dcbb0f187c1a0c01f",
+                "version": "6.1.0 (330) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual-6.2.0-362.qcow2",
+                "filesize": 1949302784,
+                "md5sum": "26e66882bf5f68adc0eca2f6bef7b613",
+                "version": "6.2.0 (362)"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual_VMware-6.2.0-362-disk1.vmdk",
+                "filesize": 1983376384,
+                "md5sum": "772165cbda3c183bb0e77a1923dd4d09",
+                "version": "6.2.0 (362) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual-6.2.1-342.qcow2",
+                "filesize": 2113732608,
+                "md5sum": "29ebbbe71a6b766f6dea81e5ca32c275",
+                "version": "6.2.1 (342)"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "Cisco_Firepower_Management_Center_Virtual_VMware-6.2.1-342-disk1.vmdk",
+                "filesize": 2150017536,
+                "md5sum": "4cf5b7fd68075b6f7ee0dd41a4029ca0",
+                "version": "6.2.1 (342) vmdk"
+            }
+        ],
+        "maintainer": "Community",
+        "maintainer_email": "",
+        "name": "Cisco FMCv",
+        "port_name_format": "eth{port1}",
+        "product_name": "Cisco Firepower Management Center Virtual",
+        "product_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/fmcv-kvm-qsg.html",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "cpus": 4,
+            "hda_disk_interface": "scsi",
+            "kvm": "require",
+            "options": "",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": "cisco-fmcv.svg",
+        "usage": "BE PATIENT\nOn first boot FMCv generates about 6GB of data. This can take 30 minutes or more. Plan on a long wait after the following line in the boot up:\n\n    usbcore: registered new interface driver usb-storage\n\nInitial IP address: 192.168.45.45.\n\nDefault username/password: admin/Admin123.",
+        "vendor_name": "Cisco Systems",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual-6.0.0-1005-disk1.vmdk"
+                },
+                "name": "6.0.0 (1005) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual-6.1.0-330.qcow2"
+                },
+                "name": "6.1.0 (330)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual_VMware-6.1.0-330-disk1.vmdk"
+                },
+                "name": "6.1.0 (330) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual-6.2.0-362.qcow2"
+                },
+                "name": "6.2.0 (362)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual_VMware-6.2.0-362-disk1.vmdk"
+                },
+                "name": "6.2.0 (362) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual-6.2.1-342.qcow2"
+                },
+                "name": "6.2.1 (342)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual_VMware-6.2.1-342-disk1.vmdk"
+                },
+                "name": "6.2.1 (342) vmdk"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "firewall",
+        "description": "Cisco Firepower Threat Defense Virtual NGFW appliances combine Cisco's proven network firewall with the industry\u2019s most effective next-gen IPS and advanced malware protection. All so you can get more visibility, be more flexible, save more, and protect better.",
+        "documentation_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/ftdv-kvm-qsg.html",
+        "first_port_name": "Gigabit0/0 (Mgmt)",
+        "images": [
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.2.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.qcow2",
+                "filesize": 1022885888,
+                "md5sum": "fafdae94ead07b23d6c8dc5f7a731e74",
+                "version": "6.2.0 (363)"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.2.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.vmdk",
+                "filesize": 1042470912,
+                "md5sum": "10297ab20526a8b1586c6ce1cd3d9cbd",
+                "version": "6.2.0 (363) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.qcow2",
+                "filesize": 1004601344,
+                "md5sum": "386ab2b3d6d1d28fd2cd03a83df5e00f",
+                "version": "6.1.0 (330)"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.vmdk",
+                "filesize": 1024162816,
+                "md5sum": "c1fa58448841b33d5eed6854dc608816",
+                "version": "6.1.0 (330) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286306503&catid=268438162&softwareid=286306337&release=6.0.1&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_Threat_Defense_Virtual-6.0.1-1213.vmdk",
+                "filesize": 714577408,
+                "md5sum": "bc53461e2ec344814e41a6a8d3a5f774",
+                "version": "6.0.1 (1213) vmdk"
+            }
+        ],
+        "maintainer": "Community",
+        "maintainer_email": "",
+        "name": "Cisco FTDv",
+        "port_name_format": "Gigabit0/{port1}",
+        "product_name": "Cisco FTDv",
+        "product_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/ftdv-kvm-qsg.html",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 10,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "cpus": 4,
+            "hda_disk_interface": "ide",
+            "kvm": "require",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": ":/symbols/asa.svg",
+        "usage": "Default username/password: admin/Admin123.",
+        "vendor_name": "Cisco Systems",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.qcow2"
+                },
+                "name": "6.2.0 (363)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.2.0-363.vmdk"
+                },
+                "name": "6.2.0 (363) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.qcow2"
+                },
+                "name": "6.1.0 (330)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.1.0-330.vmdk"
+                },
+                "name": "6.1.0 (330) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_Threat_Defense_Virtual-6.0.1-1213.vmdk"
+                },
+                "name": "6.0.1 (1213) vmdk"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "router",
         "description": "Cisco Virtual IOS allows user to run IOS on a standard computer.",
         "images": [
@@ -1533,9 +2028,17 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Cisco Virtual IOS L2 allows user to run a IOS switching image on a standard computer.",
         "images": [
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
+                "filename": "vios_l2-adventerprisek9-m.03.2017.qcow2",
+                "filesize": 41157632,
+                "md5sum": "8f14b50083a14688dec2fc791706bb3e",
+                "version": "15.2(20170321:233949)"
+            },
             {
                 "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "vios_l2-adventerprisek9-m.vmdk.SSA.152-4.0.55.E",
@@ -1568,6 +2071,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "vios_l2-adventerprisek9-m.03.2017.qcow2"
+                },
+                "name": "15.2(20170321:233949)"
+            },
+            {
+                "images": {
                     "hda_disk_image": "vios_l2-adventerprisek9-m.vmdk.SSA.152-4.0.55.E"
                 },
                 "name": "15.2.4055"
@@ -1575,6 +2084,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "IOS XRv supports the control plane features introduced in Cisco IOS XR.",
         "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
@@ -1582,17 +2092,17 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://virl.mediuscorp.com/my-account/",
+                "filename": "iosxrv-k9-demo-6.1.3.qcow2",
+                "filesize": 428588544,
+                "md5sum": "1693b5d22a398587dd0fed2877d8dfac",
+                "version": "6.1.3"
+            },
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "iosxrv-k9-demo-6.0.1.qcow2",
                 "filesize": 908132352,
                 "md5sum": "0831ecf43628eccb752ebb275de9a62a",
                 "version": "6.0.1"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
-                "filename": "iosxrv-k9-demo-6.0.0.qcow2",
-                "filesize": 860815360,
-                "md5sum": "f0dccd86d64e370e22f144e681d202b6",
-                "version": "6.0.0"
             }
         ],
         "maintainer": "GNS3 Team",
@@ -1617,24 +2127,32 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "iosxrv-k9-demo-6.0.1.qcow2"
+                    "hda_disk_image": "iosxrv-k9-demo-6.1.3.qcow2"
                 },
-                "name": "6.0.1"
+                "name": "6.1.3"
             },
             {
                 "images": {
-                    "hda_disk_image": "iosxrv-k9-demo-6.0.0.qcow2"
+                    "hda_disk_image": "iosxrv-k9-demo-6.0.1.qcow2"
                 },
-                "name": "6.0.0"
+                "name": "6.0.1"
             }
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "IOS XRv 9000 (aka Sunstone) is the 1st VM released running the 64-bit IOS XR operating system as used on the NCS-6xxx platform. This appliance requires 4 vCPUs and 16GB of memory to run!",
         "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
         "first_port_name": "MgmtEth0/0/CPU0/0",
         "images": [
+            {
+                "download_url": "https://virl.mediuscorp.com/my-account/",
+                "filename": "xrv9k-fullk9-x-6.2.25.qcow2",
+                "filesize": 1190723584,
+                "md5sum": "3f54e62b6f7cedfb2607233e5e465766",
+                "version": "6.2.25"
+            },
             {
                 "download_url": "https://virl.mediuscorp.com/my-account/",
                 "filename": "xrv9k-fullk9-x.qcow2-6.0.1",
@@ -1673,6 +2191,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "xrv9k-fullk9-x-6.2.25.qcow2"
+                },
+                "name": "6.2.25"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.1"
+                },
+                "name": "6.0.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "xrv9k-fullk9-x.qcow2-6.0.0"
                 },
                 "name": "6.0.0"
@@ -1680,6 +2210,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Cisco IOS on UNIX Layer 2 image.",
         "images": [
@@ -1694,6 +2225,12 @@ X-Route: /v2/appliances/templates
                 "filesize": 72726092,
                 "md5sum": "9549a20a7391fb849da32caa77a0d254",
                 "version": "15.1a"
+            },
+            {
+                "filename": "i86bi-linux-l2-adventerprisek9-15.2d.bin",
+                "filesize": 105036380,
+                "md5sum": "f16db44433beb3e8c828db5ddad1de8a",
+                "version": "15.2d"
             }
         ],
         "iou": {
@@ -1723,10 +2260,17 @@ X-Route: /v2/appliances/templates
                     "image": "i86bi-linux-l2-adventerprisek9-15.1a.bin"
                 },
                 "name": "15.1a"
+            },
+            {
+                "images": {
+                    "image": "i86bi-linux-l2-adventerprisek9-15.2d.bin"
+                },
+                "name": "15.2d"
             }
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cisco IOS on UNIX Layer 3 image.",
         "images": [
@@ -1774,6 +2318,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "The Cisco ISE platform is a comprehensive, next-generation, contextually-based access control solution. Cisco ISE offers authenticated network access, profiling, posture, guest management, and security group access services along with monitoring, reporting, and troubleshooting capabilities on a single physical or virtual appliance.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/security/identity-services-engine/tsd-products-support-series-home.html",
@@ -1856,6 +2401,79 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "firewall",
+        "description": "Cisco Firepower Next-Generation IPS (NGIPS) threat appliances combine superior visibility, embedded security intelligence, automated analysis, and industry-leading threat effectiveness.",
+        "documentation_url": "http://www.cisco.com/c/en/us/support/security/ngips-virtual-appliance/tsd-products-support-series-home.html",
+        "first_port_name": "eth0 (Mgmt)",
+        "images": [
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286259690&softwareid=286271056&release=6.0.0.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_NGIPSv_VMware-6.0.0-1005-disk1.vmdk",
+                "filesize": 804301312,
+                "md5sum": "72ed34d39c58a9d5ad1c6197d1ff9a62",
+                "version": "6.0.0 (1005) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286259690&softwareid=286271056&release=6.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_NGIPSv_VMware-6.1.0-330-disk1.vmdk",
+                "filesize": 860411392,
+                "md5sum": "7a771cc8c37a0371285f24c25f9886f0",
+                "version": "6.1.0 (330) vmdk"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=286259690&softwareid=286271056&release=6.2.0&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "filename": "Cisco_Firepower_NGIPSv_VMware-6.2.0-362-disk1.vmdk",
+                "filesize": 877626368,
+                "md5sum": "46f629149e11ac5c224bae0486c7e406",
+                "version": "6.2.0 (362) vmdk"
+            }
+        ],
+        "maintainer": "Community",
+        "maintainer_email": "",
+        "name": "Cisco NGIPSv",
+        "port_name_format": "eth{port1}",
+        "product_name": "Cisco Firepower NGIPS Virtual",
+        "product_url": "http://www.cisco.com/c/en/us/support/security/ngips-virtual-appliance/tsd-products-support-series-home.html",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 10,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "cpus": 4,
+            "hda_disk_interface": "scsi",
+            "kvm": "require",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": ":/symbols/ids.svg",
+        "usage": "Default username/password: admin/Admin123.",
+        "vendor_name": "Cisco Systems",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_NGIPSv_VMware-6.2.0-362-disk1.vmdk"
+                },
+                "name": "6.2.0 (362) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_NGIPSv_VMware-6.1.0-330-disk1.vmdk"
+                },
+                "name": "6.1.0 (330) vmdk"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Cisco_Firepower_NGIPSv_VMware-6.0.0-1005-disk1.vmdk"
+                },
+                "name": "6.0.0 (1005) vmdk"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "NXOSv is a reference platform for an implementation of the Cisco Nexus operating system, based on the Nexus 7000-series platforms, running as a full virtual machine on a hypervisor. This includes NXAPI and MPLS LDP support.",
         "first_port_name": "mgmt0",
@@ -1878,7 +2496,7 @@ X-Route: /v2/appliances/templates
         "maintainer": "GNS3 Team",
         "maintainer_email": "developers@gns3.net",
         "name": "Cisco NX-OSv",
-        "port_name_format": "Ethernet2/{0}",
+        "port_name_format": "Ethernet2/{port1}",
         "product_name": "NX-OSv",
         "product_url": "http://virl.cisco.com/",
         "qemu": {
@@ -1911,11 +2529,19 @@ X-Route: /v2/appliances/templates
     },
     {
         "availability": "service-contract",
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "The NX-OSv 9000 is a virtual platform that is designed to simulate the control plane aspects of a network element running Cisco Nexus 9000 software. The NX-OSv 9000 shares the same software image running on Cisco Nexus 9000 hardware platform although no specific hardware emulation is implemented. When the software runs as a virtual machine, line card (LC) ASIC provisioning or any interaction from the control plane to hardware ASIC is handled by the NX-OSv 9000 software data plane.\nThe NX-OSv 9000 for the Cisco Nexus 9000 Series provides a useful tool to enable the devops model and rapidly test changes to the infrastructure or to infrastructure automation tools. This enables network simulations in large scale for customers to validate configuration changes on a simulated network prior to applying them on a production network. Some users have also expressed interest in using the simulation system for feature test ,verification, and automation tooling development and test simualtion prior to deployment. NX-OSv 9000 can be used as a programmability vehicle to validate software defined networks (SDNs) and Network Function Virtualization (NFV) based solutions.",
         "documentation_url": "http://www.cisco.com/c/en/us/td/docs/switches/datacenter/nexus9000/sw/7-x/nx-osv/configuration/guide/b_NX-OSv_9000/b_NX-OSv_chapter_01.html",
         "first_port_name": "mgmt0",
         "images": [
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "nxosv-final.7.0.3.I7.1.qcow2",
+                "filesize": 903151616,
+                "md5sum": "3c122f27d0c3684c63657207eadf4d06",
+                "version": "7.0.3.I7.1"
+            },
             {
                 "download_url": "https://software.cisco.com/download/",
                 "filename": "nxosv-final.7.0.3.I6.1.qcow2",
@@ -1971,6 +2597,13 @@ X-Route: /v2/appliances/templates
             {
                 "images": {
                     "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.7.0.3.I7.1.qcow2"
+                },
+                "name": "7.0.3.I7.1"
+            },
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
                     "hda_disk_image": "nxosv-final.7.0.3.I6.1.qcow2"
                 },
                 "name": "7.0.3.I6.1"
@@ -1992,6 +2625,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "The Virtual Wireless Controller can cost-effectively manage, secure, and optimize the performance of local and branch wireless networks. Ideal for small and medium-sized businesses, the Virtual Wireless Controller facilitates server consolidation and improves business continuity in the face of outages.",
         "documentation_url": "http://www.cisco.com/c/en/us/products/wireless/wireless-lan-controller/index.html",
@@ -2089,6 +2723,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "The Cisco WSA was one of the first secure web gateways to combine leading protections to help organizations address the growing challenges of securing and controlling web traffic. It enables simpler, faster deployment with fewer maintenance requirements, reduced latency, and lower operating costs. \u201cSet and forget\u201d technology frees staff after initial automated policy settings go live, and automatic security updates are pushed to network devices every 3 to 5 minutes. Flexible deployment options and integration with your existing security infrastructure help you meet quickly evolving security requirements.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/security/web-security-appliance/tsd-products-support-series-home.html",
@@ -2132,6 +2767,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Today\u2019s enterprises face more demands than ever, from cloud computing to 24/7 availability to increasing security threats. NetScaler ADC, an advanced software-defined application delivery controller, is your networking power player. It provides outstanding delivery of business applications\u2014to any device and any location\u2014with unmatched security, superior L4-7 load balancing, reliable GSLB, and 100 percent uptime. In fact, NetScaler ADC offers up to five times the performance of our closest competitor. Plus our TriScale technology saves you money by allowing your network to scale up or down without additional hardware costs.",
         "documentation_url": "https://www.citrix.com/products/netscaler-adc/support.html",
@@ -2190,6 +2826,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "ClearOS is an operating system for your Server, Network, and Gateway systems. It is designed for homes, small to medium businesses, and distributed environments. ClearOS is commonly known as the Next Generation Small Business Server, while including indispensable Gateway and Networking functionality. It delivers a powerful IT solution with an elegant user interface that is completely web-based. Simply put.. ClearOS is the new way of delivering IT.",
         "documentation_url": "https://www.clearos.com/resources/documentation/clearos-7-documentation-overview",
@@ -2254,6 +2891,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The CloudRouter Project is a collaborative open source project focused on developing a powerful, easy to use router designed for the cloud.\nCompute resources are rapidly migrating from physical infrastructure to a combination of physical, virtual and cloud environments. A similar transition is emerging in the networking space, with network control logic shifting from proprietary hardware-based platforms to open source software-based platforms. CloudRouter is a software-based router distribution designed to run on physical, virtual and cloud environments, supporting software-defined networking infrastructure. It includes the features of traditional hardware routers, as well as support for emerging technologies such as containers and software-defined interconnection. CloudRouter aims to facilitate migration to the cloud without giving up control over network routing and governance.",
         "documentation_url": "https://cloudrouter.atlassian.net/wiki/display/CPD/CloudRouter+Project+Information",
@@ -2324,10 +2962,38 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "CoreOS is designed for security, consistency, and reliability. Instead of installing packages via yum or apt, CoreOS uses Linux containers to manage your services at a higher level of abstraction. A single service's code and all dependencies are packaged within a container that can be run on one or many CoreOS machines.",
         "documentation_url": "https://coreos.com/docs/",
         "images": [
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1520.8.0/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1520.8.0/",
+                "filename": "coreos_production_qemu_image.1520.8.0.img",
+                "filesize": 842661888,
+                "md5sum": "a69fb2cd3ae475f9afbc268f7d391e83",
+                "version": "1520.8.0"
+            },
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1465.7.0/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1465.7.0/",
+                "filename": "coreos_production_qemu_image.1465.7.0.img",
+                "filesize": 796590080,
+                "md5sum": "1db77d47e76d3d9082846584e0f4b4bc",
+                "version": "1465.7.0"
+            },
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1409.7.0/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1409.7.0/",
+                "filename": "coreos_production_qemu_image.1409.7.0.img",
+                "filesize": 812187648,
+                "md5sum": "b8db4a07bac71468ed47bd09bedc1bdf",
+                "version": "1409.7.0"
+            },
             {
                 "compression": "bzip2",
                 "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1353.8.0/coreos_production_qemu_image.img.bz2",
@@ -2440,6 +3106,24 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1520.8.0.img"
+                },
+                "name": "1520.8.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1465.7.0.img"
+                },
+                "name": "1465.7.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1409.7.0.img"
+                },
+                "name": "1409.7.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "coreos_production_qemu_image.1353.8.0.img"
                 },
                 "name": "1353.8.0"
@@ -2501,11 +3185,49 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Cumulus VX is a community-supported virtual appliance that enables cloud admins and network engineers to preview and test Cumulus Networks technology at zero cost. You can build sandbox environments to learn Open Networking concepts, prototype network operations and script & develop applications risk-free. With Cumulus VX, you can get started with Open Networking at your pace, on your time, and in your environment!",
         "documentation_url": "http://docs.cumulusnetworks.com/",
         "first_port_name": "eth0",
         "images": [
+            {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.4.3-vx-amd64.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.4.3-vx-amd64.qcow2",
+                "filesize": 988872704,
+                "md5sum": "fd9144cdab7cac66cf421a13c6f50ac8",
+                "version": "3.4.3"
+            },
+            {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.4.2-vx-amd64.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.4.2-vx-amd64.qcow2",
+                "filesize": 1060700160,
+                "md5sum": "ca844684784ceeee893d0cd76dc44e3b",
+                "version": "3.4.2"
+            },
+            {
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.4.1-vx-amd64.qcow2",
+                "filesize": 975503360,
+                "md5sum": "38319aa04533d91b1121a02f6ed99993",
+                "version": "3.4.1"
+            },
+            {
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.4.0-vx-amd64.qcow2",
+                "filesize": 918355968,
+                "md5sum": "d93a15072bc7f8d15268f5e43f735a5e",
+                "version": "3.4.0"
+            },
+            {
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.3.2-vx-amd64.qcow2",
+                "filesize": 980090880,
+                "md5sum": "8364f93cabaa442c13c8c6752a248a5d",
+                "version": "3.3.2"
+            },
             {
                 "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
                 "filename": "cumulus-linux-3.2.1-vx-amd64-1486153138.ac46c24zd00d13e.qcow2",
@@ -2573,7 +3295,7 @@ X-Route: /v2/appliances/templates
         "maintainer": "GNS3 Team",
         "maintainer_email": "developers@gns3.net",
         "name": "Cumulus VX",
-        "port_name_format": "swp{0}",
+        "port_name_format": "swp{port1}",
         "product_name": "Cumulus VX",
         "product_url": "https://cumulusnetworks.com/cumulus-vx/",
         "qemu": {
@@ -2582,7 +3304,7 @@ X-Route: /v2/appliances/templates
             "arch": "x86_64",
             "console_type": "telnet",
             "kvm": "require",
-            "ram": 256
+            "ram": 512
         },
         "registry_version": 3,
         "status": "stable",
@@ -2590,6 +3312,36 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Cumulus Network",
         "vendor_url": "https://www.cumulusnetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.4.3-vx-amd64.qcow2"
+                },
+                "name": "3.4.3"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.4.2-vx-amd64.qcow2"
+                },
+                "name": "3.4.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.4.1-vx-amd64.qcow2"
+                },
+                "name": "3.4.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.4.0-vx-amd64.qcow2"
+                },
+                "name": "3.4.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.3.2-vx-amd64.qcow2"
+                },
+                "name": "3.3.2"
+            },
             {
                 "images": {
                     "hda_disk_image": "cumulus-linux-3.2.1-vx-amd64-1486153138.ac46c24zd00d13e.qcow2"
@@ -2647,6 +3399,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "DEFT (acronym for Digital Evidence & Forensics Toolkit) is a distribution made for Computer Forensics, with the purpose of running live on systems without tampering or corrupting devices (hard disks, pendrives, etc\u2026) connected to the PC where the boot process takes place.\nThe DEFT system is based on GNU Linux, it can run live (via DVDROM or USB pendrive), installed or run as a Virtual Appliance on VMware or Virtualbox. DEFT employs LXDE as desktop environment and WINE for executing Windows tools under Linux. It features a comfortable mount manager for device management.\nDEFT is paired with DART (acronym for Digital Advanced Response Toolkit), a Forensics System which can be run on Windows and contains the best tools for Forensics and Incident Response. DART features a GUI with logging and integrity check for the instruments here contained.\nBesides all this, the DEFT staff is devoted to implementing and developing applications which are released to Law Enforcement Officers, such as Autopsy 3 for Linux.",
         "documentation_url": "http://www.deftlinux.net/deft-manual/",
@@ -2742,6 +3495,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Dell Networking OS10 combines the best of Linux, open computing and networking to advance open networking disaggregation. Dell Networking OS10 is a transformational software platform that provides networking hardware abstraction through a common set of APIs. Enable consistency across compute and network resources for your system operators (SysOps) groups that require server-like manageability. Easily leverage your existing network configuration. Dell Networking OS10 incorporates traditional networking integration. Enhance the integration and control you allow your development and operations (DevOps) teams, down to identifying an object as an individual, manageable entity within the platform.",
         "first_port_name": "Management0/0",
@@ -2795,6 +3549,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "ExtremeXOS was designed from the ground up to meet the needs of large cloud and private data centers, service providers, intelligent, converged enterprise edge networks, and everything in between. It provides the high performance and rich features required by these diverse environments.",
         "documentation_url": "http://www.extremenetworks.com/support/documentation",
@@ -2940,16 +3695,31 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The BIG-IP family of products offers the application intelligence that network managers need to ensure applications are fast, secure, and available. All BIG-IP products share a common underlying architecture, F5's Traffic Management Operating System (TMOS), which provides unified intelligence, flexibility, and programmability. Together, BIG-IP's powerful platforms, advanced modules, and centralized management system make up the most comprehensive set of application delivery tools in the industry. BIG-IP Virtual Edition (VE) is a version of the BIG-IP system that runs as a virtual machine in specifically-supported hypervisors. BIG-IP VE emulates a hardware-based BIG-IP system running a VE-compatible version of BIG-IP software.",
         "documentation_url": "https://support.f5.com/kb/en-us/products/big-ip_ltm/manuals/product/bigip-ve-kvm-setup-11-3-0.html",
         "images": [
+            {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.0.0/english/virtual-edition_base-plus-hf2/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.0.0&container=Virtual-Edition_Base-Plus-HF2&file=BIGIP-13.0.0.2.0.1671.LTM.qcow2.zip",
+                "filename": "BIGIP-13.0.0.2.0.1671.qcow2",
+                "filesize": 4435476480,
+                "md5sum": "62d27f37c66118710c69c07a2ee78d67",
+                "version": "13.0.0 HF2"
+            },
             {
                 "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.0.0/english/virtual-edition/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.0.0&container=Virtual-Edition&file=BIGIP-13.0.0.0.0.1645.ALL.qcow2.zip",
                 "filename": "BIGIP-13.0.0.0.0.1645.qcow2",
                 "filesize": 3833135104,
                 "md5sum": "4ec417477c44cdf84edc825a631990e3",
                 "version": "13.0.0"
+            },
+            {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v12.x/12.1.2/english/virtual-edition_base-plus-hf1/&sw=BIG-IP&pro=big-ip_v12.x&ver=12.1.2&container=Virtual-Edition_Base-Plus-HF1&file=BIGIP-12.1.2.1.0.271.LTM.qcow2.zip",
+                "filename": "BIGIP-12.1.2.1.0.271.LTM.qcow2",
+                "filesize": 3764846592,
+                "md5sum": "b34301c3945b7ddb88f41195efef1104",
+                "version": "12.1.2 HF1"
             },
             {
                 "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v12.x/12.1.2/english/virtual-edition/&sw=BIG-IP&pro=big-ip_v12.x&ver=12.1.2&container=Virtual-Edition&file=BIGIP-12.1.2.0.0.249.LTM.qcow2.zip",
@@ -3036,10 +3806,24 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "BIGIP-13.0.0.2.0.1671.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "13.0.0 HF2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "BIGIP-13.0.0.0.0.1645.qcow2",
                     "hdb_disk_image": "empty100G.qcow2"
                 },
                 "name": "13.0.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "BIGIP-12.1.2.1.0.271.LTM.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "12.1.2 HF1"
             },
             {
                 "images": {
@@ -3093,11 +3877,19 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "When you go from managing a few boxes to managing a few dozen, your processes, logistics, and needs all change. BIG-IQ Centralized Management brings all of your devices together, so you can discover, track, upgrade, and deploy more efficiently. You can also monitor key metrics from one location, saving yourself both time and effort.\n\nCentrally manage up to 200 physical, virtual, or virtual clustered multiprocessing (vCMP) based BIG-IP devices. BIG-IQ Centralized Management also handles licensing for up to 5,000 unmanaged devices, so you can spin BIG-IP virtual editions (VEs) up or down as needed.",
         "documentation_url": "https://support.f5.com/csp/#/knowledge-center/software/BIG-IQ?module=BIG-IQ%20Centralized%20Management",
         "first_port_name": "mgmt",
         "images": [
+            {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.3.0/english/v5.3.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.3.0&container=v5.3.0&file=BIG-IQ-5.3.0.0.0.1119.qcow2.zip",
+                "filename": "BIG-IQ-5.3.0.0.0.1119.qcow2",
+                "filesize": 3269263360,
+                "md5sum": "75f06ba59f858c3828d47dcf8caf3775",
+                "version": "5.3.0"
+            },
             {
                 "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.2.0/english/v5.2.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.2.0&container=v5.2.0&file=BIG-IQ-5.2.0.0.0.5741.qcow2.zip",
                 "filename": "BIG-IQ-5.2.0.0.0.5741.qcow2",
@@ -3163,6 +3955,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "BIG-IQ-5.3.0.0.0.1119.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "5.3.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "BIG-IQ-5.2.0.0.0.5741.qcow2",
                     "hdb_disk_image": "empty100G.qcow2"
                 },
@@ -3187,6 +3986,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "A light Linux based on TinyCore Linux with Firefox preinstalled",
         "documentation_url": "https://support.mozilla.org",
@@ -3243,6 +4043,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Fortinet ADC appliances optimize the availability, user experience, and scalability of enterprise application delivery. They deliver fast, secure, and intelligent acceleration and distribution of even the most demanding enterprise applications.",
         "documentation_url": "http://docs.fortinet.com/fortiadc-d-series/admin-guides",
@@ -3253,6 +4054,34 @@ X-Route: /v2/appliances/templates
                 "filesize": 30998528,
                 "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
                 "version": "4.x.x"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0977-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 72876032,
+                "md5sum": "285ca7a601a0d06bb893ef91ad7748fd",
+                "version": "4.8.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0970-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 72351744,
+                "md5sum": "8f604b2a89ac3d9cc3d2d79d85b2d7ff",
+                "version": "4.8.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0937-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 72089600,
+                "md5sum": "448f5906c42dd7e535c3acb2adab253c",
+                "version": "4.8.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0858-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 63700992,
+                "md5sum": "6d81b1b3df55174e4db8526d6cfd8b0e",
+                "version": "4.7.4"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -3351,11 +4180,39 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": "loadbalancer.svg",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set. Silent boot, it might take a while.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0977-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.8.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0970-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.8.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0937-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.8.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0858-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.7.4"
+            },
             {
                 "images": {
                     "hda_disk_image": "FAD_KVM-V400-build0849-FORTINET.out.kvm-boot.qcow2",
@@ -3436,10 +4293,32 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "FortiAnalyzer Network Security Logging, Analysis, and Reporting Appliances securely aggregate log data from Fortinet Security Appliances. A comprehensive suite of easily customable reports allows you to quickly analyze and visualize network threats, inefficiencies and usage.",
         "documentation_url": "http://docs.fortinet.com/fortianalyzer/",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
+                "filesize": 106905600,
+                "md5sum": "6aa0a185723efcab464aa298b364d12b",
+                "version": "5.6.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
+                "filesize": 88715264,
+                "md5sum": "69cddb5c3e49bab3dc287353d8600b45",
+                "version": "5.4.4"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v5-build1187-FORTINET.out.kvm.qcow2",
+                "filesize": 86036480,
+                "md5sum": "4f9fa1e7dbfa9187a4cb479458144596",
+                "version": "5.4.3"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAZ_VM64_KVM-v5-build1151-FORTINET.out.kvm.qcow2",
@@ -3517,10 +4396,32 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v5-build1187-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "FAZ_VM64_KVM-v5-build1151-FORTINET.out.kvm.qcow2",
@@ -3573,10 +4474,121 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",
+        "documentation_url": "http://docs.fortinet.com/fortiauthenticator/admin-guides",
+        "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v500-build0091-FORTINET.out.kvm.qcow2",
+                "filesize": 71135232,
+                "md5sum": "7bdafd32db552954c4c7fe60296fc600",
+                "version": "5.1.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v500-build0086-FORTINET.out.kvm.qcow2",
+                "filesize": 71819264,
+                "md5sum": "960017582fe16e7ce7ab9602600e65fe",
+                "version": "5.1.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v500-build0083-FORTINET.out.kvm.qcow2",
+                "filesize": 72495104,
+                "md5sum": "eec53c2dbe5d00c8ce2a7ca50226325a",
+                "version": "5.1.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v500-build0012-FORTINET.out.kvm.qcow2",
+                "filesize": 62771200,
+                "md5sum": "2af90bdad68a37f38fda39ee04cf2fba",
+                "version": "5.0.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v500-DATADRIVE.qcow2",
+                "filesize": 258048,
+                "md5sum": "09bad6cfe6301930adbc829eb8a67149",
+                "version": "5.x.x"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "FortiAuthenticator",
+        "port_name_format": "Port{port1}",
+        "product_name": "FortiAuthenticator",
+        "product_url": "https://www.fortinet.com/products/identity-access-management/fortiauthenticator.html",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 4,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "hdb_disk_interface": "virtio",
+            "kvm": "allow",
+            "ram": 1024
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "fortinet.svg",
+        "usage": "Default username is admin, no password is set. First book takes longer.",
+        "vendor_name": "Fortinet",
+        "vendor_url": "http://www.fortinet.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v500-build0091-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.1.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v500-build0086-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.1.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v500-build0083-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.1.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v500-build0012-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.0.0"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "FortiCache VM high performance Web Caching virtual appliances address bandwidth saturation, high latency, and poor performance caused by caching popular internet content locally for carriers, service providers, enterprises and educational networks. FortiCache VM appliances reduce the cost and impact of cached content on the network, while increasing performance and end- user satisfaction by improving the speed of delivery of popular repeated content.",
         "documentation_url": "http://docs.fortinet.com/forticache/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
+                "filesize": 27508736,
+                "md5sum": "78db88447f29f363b4ba8e4833474637",
+                "version": "4.2.5"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FCHKVM-v400-build0204-FORTINET.out.kvm.qcow2",
+                "filesize": 27623424,
+                "md5sum": "8f0aad31131add43ac6bf709dd708970",
+                "version": "4.2.4"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FCHKVM-v400-build0200-FORTINET.out.kvm.qcow2",
@@ -3647,10 +4659,25 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "4.2.5"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FCHKVM-v400-build0204-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "4.2.4"
+            },
             {
                 "images": {
                     "hda_disk_image": "FCHKVM-v400-build0200-FORTINET.out.kvm.qcow2",
@@ -3696,16 +4723,38 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "FortiGate Virtual Appliance offers the same level of advanced threat prevention features like the physical appliances in private, hybrid and public cloud deployment.",
         "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
+                "filesize": 39231488,
+                "md5sum": "afb9f237de2545db8663f4a2c5805355",
+                "version": "5.6.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1484-FORTINET.out.kvm.qcow2",
+                "filesize": 39227392,
+                "md5sum": "6f76d1207b9f6cb724f8034f57711705",
+                "version": "5.6.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FGT_VM64_KVM-v5-build1449-FORTINET.out.kvm.qcow2",
                 "filesize": 38760448,
                 "md5sum": "17ee2cc8c76c4928a68a2d016aa83ace",
                 "version": "5.6.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1165-FORTINET.out.kvm.qcow2",
+                "filesize": 38457344,
+                "md5sum": "4429f1f0f2cce4a8781354a9eb745c61",
+                "version": "5.4.6"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -3819,16 +4868,38 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1484-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FGT_VM64_KVM-v5-build1449-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "5.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1165-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.6"
             },
             {
                 "images": {
@@ -3917,10 +4988,46 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "FortiMail is a complete Secure Email Gateway offering suitable for any size organization. It provides a single solution to protect against inbound attacks - including advanced malware -, as well as outbound threats and data loss with a wide range of top-rated security capabilities.",
         "documentation_url": "http://docs.fortinet.com/fortimail/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
+                "filesize": 92864512,
+                "md5sum": "b51260cc3e408bf1352a204b8370254b",
+                "version": "5.4.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v54-build0704-FORTINET.out.kvm.qcow2",
+                "filesize": 94568448,
+                "md5sum": "1f6553e182512cc87e20f47cc2b65abf",
+                "version": "5.4.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v54-build0692-FORTINET.out.kvm.qcow2",
+                "filesize": 101253120,
+                "md5sum": "c9e0885cab65e52ab01d8143ed466b01",
+                "version": "5.4.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v53-build0648-FORTINET.out.kvm.qcow2",
+                "filesize": 88670208,
+                "md5sum": "bd34a81c1bb6772c7e4919620027a5d4",
+                "version": "5.3.11"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v53-build0643-FORTINET.out.kvm.qcow2",
+                "filesize": 88801280,
+                "md5sum": "08f3258533ac2b4f15e86ca3973be17e",
+                "version": "5.3.10"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FML_VMKV-64-v53-build0634-FORTINET.out.kvm.qcow2",
@@ -4005,10 +5112,46 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "First boot takes a few minutes. Admin URL is https://x.x.x.x/admin, default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v54-build0704-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v54-build0692-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v53-build0648-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.3.11"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v53-build0643-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.3.10"
+            },
             {
                 "images": {
                     "hda_disk_image": "FML_VMKV-64-v53-build0634-FORTINET.out.kvm.qcow2",
@@ -4068,10 +5211,25 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "FortiManager Security Management appliances allow you to centrally manage any number of Fortinet Network Security devices, from several to thousands, including FortiGate, FortiWiFi, and FortiCarrier.",
         "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
+                "filesize": 108363776,
+                "md5sum": "f8bd600796f894f4ca1ea2d6b4066d3d",
+                "version": "5.6.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
+                "filesize": 89911296,
+                "md5sum": "53bc6e320fe7bde5d2b636bde95a910c",
+                "version": "5.4.4"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FMG_VM64_KVM-v5-build1187-FORTINET.out.kvm.qcow2",
@@ -4156,11 +5314,25 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": "mgmt_station.svg",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v5-build1225-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.4"
+            },
             {
                 "images": {
                     "hda_disk_image": "FMG_VM64_KVM-v5-build1187-FORTINET.out.kvm.qcow2",
@@ -4220,10 +5392,18 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Today's threats are increasingly sophisticated and often bypass traditional malware security by masking their malicious activity. A sandbox augments your security architecture by validating threats in a separate, secure environment. FortiSandbox offers a powerful combination of advanced detection, automated mitigation, actionable insight, and flexible deployment to stop targeted attacks and subsequent data loss. It's also a key component of our Advanced Threat Protection solution.",
         "documentation_url": "http://docs.fortinet.com/fortisandbox/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FSA_KVM-v200-build0261-FORTINET.out.kvm.qcow2",
+                "filesize": 98763264,
+                "md5sum": "6551ccca8ffe6333742dad54770a01cd",
+                "version": "2.4.1"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FSA_KVM-v200-build0252-FORTINET.out.kvm.qcow2",
@@ -4280,10 +5460,18 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "First boot will take some time without console output. Default username is admin, no password is set.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FSA_KVM-v200-build0261-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FSA_v200-datadrive.qcow2"
+                },
+                "name": "2.4.1"
+            },
             {
                 "images": {
                     "hda_disk_image": "FSA_KVM-v200-build0252-FORTINET.out.kvm.qcow2",
@@ -4315,10 +5503,32 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Breaches to network security continue to occur across all industry verticals, even to the most respected brands. The time it takes to discover, isolate, and remediate the incident continues to be measured in hundreds of days-having material impacts on security and compliance standards. It is no wonder that many organizations are struggling. As recent surveys have shown, enterprises have an average of 32 different vendors' devices in their network, with no automated ability to cross-correlate the data that each is collecting. It is also easy to see why organizations are strapped for the cyber security personnel they need to manage all the data in these complex environments.\n\nFrom its inception, FortiSIEM was built to reduce complexity in managing network and security operations. FortiSIEM provides organizations of all sizes with a comprehensive, holistic, and scalable solution for managing security, performance, and compliance from IoT to the cloud.",
         "documentation_url": "http://docs.fortinet.com/fortisiem/admin-guides",
         "images": [
+            {
+                "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html",
+                "filename": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
+                "filesize": 8622505984,
+                "md5sum": "636d94c78ea02e5a39eadb9d44210dfb",
+                "version": "4.10.0"
+            },
+            {
+                "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html",
+                "filename": "FortiSIEM-VA-KVM-4.10.0.1102-1.qcow2",
+                "filesize": 46858240,
+                "md5sum": "52fee02e94fd220275b613a4ec5b46eb",
+                "version": "4.10.0"
+            },
+            {
+                "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html",
+                "filename": "FortiSIEM-VA-KVM-4.10.0.1102-2.qcow2",
+                "filesize": 46858240,
+                "md5sum": "088a34864e30abdb95385b089574baba",
+                "version": "4.10.0"
+            },
             {
                 "download_url": "https://www.fortinet.com/offers/fortisiem-free-trial.html",
                 "filename": "FortiSIEM-VA-KVM-4.9.0.1041.qcow2",
@@ -4362,10 +5572,19 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
+                    "hdb_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102-1.qcow2",
+                    "hdc_disk_image": "FortiSIEM-VA-KVM-4.10.0.1102-2.qcow2"
+                },
+                "name": "4.10.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "FortiSIEM-VA-KVM-4.9.0.1041.qcow2",
@@ -4377,6 +5596,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "FortiWeb Web Application Firewalls provide specialized, layered web application threat protection for medium/large enterprises, application service providers, and SaaS providers.",
         "documentation_url": "http://docs.fortinet.com/fortiweb",
@@ -4436,6 +5656,7 @@ X-Route: /v2/appliances/templates
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": "fortinet.svg",
         "usage": "Default username is admin, no password is set. Console keeps sending 'access uuid file failed, error number 2' messages; ignore it.",
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
@@ -4464,13 +5685,23 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "FreeBSD is an advanced computer operating system used to power modern servers, desktops, and embedded platforms. A large community has continually developed it for more than thirty years. Its advanced networking, security, and storage features have made FreeBSD the platform of choice for many of the busiest web sites and most pervasive embedded networking and storage devices.",
         "documentation_url": "https://www.freebsd.org/docs.html",
         "images": [
             {
                 "compression": "xz",
-                "direct_download_url": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/VM-IMAGES/11.0-RELEASE/amd64/Latest/FreeBSD-11.0-RELEASE-amd64.qcow2.xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.1-RELEASE/amd64/Latest/FreeBSD-11.1-RELEASE-amd64.qcow2.xz",
+                "download_url": "https://www.freebsd.org/where.html",
+                "filename": "FreeBSD-11.1-RELEASE-amd64.qcow2",
+                "filesize": 1533345792,
+                "md5sum": "d78b2a7d05ec62f799e14ded4817ea69",
+                "version": "11.1"
+            },
+            {
+                "compression": "xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.0-RELEASE/amd64/Latest/FreeBSD-11.0-RELEASE-amd64.qcow2.xz",
                 "download_url": "https://www.freebsd.org/where.html",
                 "filename": "FreeBSD-11.0-RELEASE-amd64.qcow2",
                 "filesize": 1384382464,
@@ -4479,7 +5710,16 @@ X-Route: /v2/appliances/templates
             },
             {
                 "compression": "xz",
-                "direct_download_url": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/VM-IMAGES/10.3-RELEASE/amd64/Latest/FreeBSD-10.3-RELEASE-amd64.qcow2.xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/10.4-RELEASE/amd64/Latest/FreeBSD-10.4-RELEASE-amd64.qcow2.xz",
+                "download_url": "https://www.freebsd.org/where.html",
+                "filename": "FreeBSD-10.4-RELEASE-amd64.qcow2",
+                "filesize": 1013448704,
+                "md5sum": "ad498873733c57d1f6d890d587a11e3c",
+                "version": "10.4"
+            },
+            {
+                "compression": "xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/10.3-RELEASE/amd64/Latest/FreeBSD-10.3-RELEASE-amd64.qcow2.xz",
                 "download_url": "https://www.freebsd.org/where.html",
                 "filename": "FreeBSD-10.3-RELEASE-amd64.qcow2",
                 "filesize": 974651392,
@@ -4509,9 +5749,21 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FreeBSD-11.1-RELEASE-amd64.qcow2"
+                },
+                "name": "11.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FreeBSD-11.0-RELEASE-amd64.qcow2"
                 },
                 "name": "11.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FreeBSD-10.4-RELEASE-amd64.qcow2"
+                },
+                "name": "10.4"
             },
             {
                 "images": {
@@ -4522,10 +5774,19 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "FreeNAS is a Free and Open Source Network Attached Storage (NAS) software appliance. This means that you can use FreeNAS to share data over file-based sharing protocols, including CIFS for Windows users, NFS for Unix-like operating systems, and AFP for Mac OS X users. FreeNAS uses the ZFS file system to store, manage, and protect data. ZFS provides advanced features like snapshots to keep old versions of files, incremental remote backups to keep your data safe on another device without huge file transfers, and intelligent compression, which reduces the size of files so quickly and efficiently that it actually helps transfers happen faster.",
         "documentation_url": "https://doc.freenas.org/9.10/freenas.html",
         "images": [
+            {
+                "direct_download_url": "http://download.freenas.org/11/11.0-U4/x64/FreeNAS-11.0-U4.iso",
+                "download_url": "http://www.freenas.org/download/",
+                "filename": "FreeNAS-11.0-U4.iso",
+                "filesize": 567312384,
+                "md5sum": "4c210f1a6510d1fa95257d81ef569ff8",
+                "version": "11.0-U4"
+            },
             {
                 "direct_download_url": "https://download.freenas.org/9.10/STABLE/latest/x64/FreeNAS-9.10.1-U4.iso",
                 "download_url": "http://www.freenas.org/download/",
@@ -4567,6 +5828,14 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "FreeNAS-11.0-U4.iso",
+                    "hda_disk_image": "empty30G.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "11.0"
+            },
+            {
+                "images": {
                     "cdrom_image": "FreeNAS-9.10.1-U4.iso",
                     "hda_disk_image": "empty30G.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
@@ -4576,10 +5845,18 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The HP VSR1000 Virtual Services Router Series is a software application, running on a server, which provides functionality similar to that of a physical router: robust routing between networked devices using a number of popular routing protocols. It also delivers the critical network services associated with today's enterprise routers such as VPN gateway, firewall and other security and traffic management functions.\n\nThe virtual services router (VSR) application runs on a hypervqcor on the server, and supports VMware vSphere and Linux KVM hypervqcors. From one to eight virtual CPUs are supported, depending on license.\n\nBecause the VSR1000 Series application runs the same HP Comware version 7 operating system as HP switches and routers, it enables significant operational savings. And being virtual, additional agility and ease of deployment is realized, as resources on the VSR can be dynamically allocated and upgraded upon demand as performance requirements grow.\n\nA variety of deployment models are supported including enterprise branch CPE routing, and cloud offload for small to medium workloads.",
         "documentation_url": "http://h20195.www2.hpe.com/v2/default.aspx?cc=us&lc=en&oid=5443878",
         "images": [
+            {
+                "download_url": "https://h10145.www1.hp.com/Downloads/DownloadSoftware.aspx?SoftwareReleaseUId=22702&ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SaidNumber=",
+                "filename": "VSR1000_HPE-CMW710-R0327L01-X64.qco",
+                "filesize": 138739712,
+                "md5sum": "907de5140a4a029afe1c517cfc27ecde",
+                "version": "7.10.R0327L01"
+            },
             {
                 "download_url": "https://h10145.www1.hp.com/Downloads/SoftwareReleases.aspx?ProductNumber=JG811AAE&lang=en&cc=us&prodSeriesId=5443163&SoftwareReleaseUId=11832&SerialNumber=&PurchaseDate=",
                 "filename": "VSR1000_HPE-CMW710-R0326-X64.qco",
@@ -4653,6 +5930,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "VSR1000_HPE-CMW710-R0327L01-X64.qco"
+                },
+                "name": "7.10.R0327L01"
+            },
+            {
+                "images": {
                     "hda_disk_image": "VSR1000_HPE-CMW710-R0326-X64.qco"
                 },
                 "name": "7.10.R0326"
@@ -4696,6 +5979,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "This appliance simulate a domestic modem. It provide an IP via DHCP and will nat all connection to the internet without the need of using a cloud interface in your topologies. IP will be in the subnet 172.16.0.0/16. Multiple internet will have different IP range from 172.16.1.0/24 to 172.16.253.0/24 .\n\nWARNING USE IT ONLY WITH THE GNS3 VM.",
         "documentation_url": "http://www.gns3.com",
@@ -4738,10 +6022,20 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "IPFire was designed with both modularity and a high-level of flexibility in mind. You can easily deploy many variations of it, such as a firewall, a proxy server or a VPN gateway. The modular design ensures that it runs exactly what you've configured it for and nothing more. Everything is simple to manage and update through the package manager, making maintenance a breeze.",
         "documentation_url": "http://wiki.ipfire.org/en/start",
         "images": [
+            {
+                "compression": "gzip",
+                "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.19-core116/ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img.gz",
+                "download_url": "http://www.ipfire.org/download",
+                "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img",
+                "filesize": 1063256064,
+                "md5sum": "2a8df99d117a0dbfb67870494c0c67cd",
+                "version": "2.19.116"
+            },
             {
                 "compression": "gzip",
                 "direct_download_url": "http://downloads.ipfire.org/releases/ipfire-2.x/2.19-core110/ipfire-2.19.1gb-ext4-scon.x86_64-full-core110.img.gz",
@@ -4785,6 +6079,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img"
+                },
+                "name": "2.19.116"
+            },
+            {
+                "images": {
                     "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core111.img"
                 },
                 "name": "2.19.111"
@@ -4798,6 +6098,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "ipterm is a debian based networking toolbox.\nIt contains the following utilities: net-tools, iproute2, ping, traceroute, curl, host, iperf3, mtr, socat, ssh client, tcpdump and the multicast testing tools msend/mreceive.",
         "docker": {
@@ -4816,6 +6117,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.debian.org"
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Control Plane (vCP) VM and is meant to be paired with the Virtual Forwarding Plane (vFP) VM.",
         "documentation_url": "http://www.juniper.net/techpubs/",
@@ -5188,6 +6490,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Forwarding Plane (vFP) VM and is meant to be paired with the Virtual Control Plane (vCP) VM.",
         "documentation_url": "http://www.juniper.net/techpubs/",
@@ -5388,6 +6691,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "The vQFX10000 makes it easy for you to try out our physical QFX10000 high-performance data center switch without the wait for physical delivery. Although the virtual version has limited performance relative to the physical switch, it lets you quickly emulate the same features for the control plane of the physical switch, or both its control and data planes.",
         "documentation_url": "http://www.juniper.net/techpubs/",
@@ -5431,6 +6735,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "The vQFX10000 makes it easy for you to try out our physical QFX10000 high-performance data center switch without the wait for physical delivery. Although the virtual version has limited performance relative to the physical switch, it lets you quickly emulate the same features for the control plane of the physical switch, or both its control and data planes.",
         "documentation_url": "http://www.juniper.net/techpubs/",
@@ -5474,10 +6779,39 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "The vSRX delivers core firewall, networking, advanced security, and automated lifecycle management capabilities for enterprises and service providers. The industry\u2019s fastest virtual security platform, the vSRX offers firewall speeds up to 17 Gbps using only two virtual CPUs, providing scalable, secure protection across private, public, and hybrid clouds.\n\nJuniper version 12 can support only 1GB of ram.",
         "documentation_url": "http://www.juniper.net/techpubs/",
         "images": [
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-17.3R1.10.qcow2",
+                "filesize": 3782541312,
+                "md5sum": "49b276e9ccdd8588f9e2ff38cccc884a",
+                "version": "17.3R1"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-15.1X49-D110.4.qcow2",
+                "filesize": 3280011264,
+                "md5sum": "8d74641594eb036b2e2c6b462d541156",
+                "version": "15.1X49-D110"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-15.1X49-D100.6.qcow2",
+                "filesize": 3279290368,
+                "md5sum": "aa29686dd6f2d38f668f23cb4bc9f354",
+                "version": "15.1X49-D100"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-15.1X49-D90.7.qcow2",
+                "filesize": 3189440512,
+                "md5sum": "a64f3910054d461c4bbb32620008cba3",
+                "version": "15.1X49-D90"
+            },
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
                 "filename": "media-vsrx-vmdisk-15.1X49-D80.4.qcow2",
@@ -5558,6 +6892,30 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-17.3R1.10.qcow2"
+                },
+                "name": "17.3R1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D110.4.qcow2"
+                },
+                "name": "15.1X49-D110"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D100.6.qcow2"
+                },
+                "name": "15.1X49-D100"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D90.7.qcow2"
+                },
+                "name": "15.1X49-D90"
+            },
+            {
+                "images": {
                     "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D80.4.qcow2"
                 },
                 "name": "15.1X49-D80"
@@ -5607,6 +6965,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "The Jupyter Notebook is an open-source web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. Uses include: data cleaning and transformation, numerical simulation, statistical modeling, machine learning and much more.",
         "docker": {
@@ -5626,6 +6985,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://jupyter.org/"
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "The Jupyter Notebook is an open-source web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. Uses include: data cleaning and transformation, numerical simulation, statistical modeling, machine learning and much more. This appliance provide python 2.7.",
         "docker": {
@@ -5645,6 +7005,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://jupyter.org/"
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "From the creators of BackTrack comes Kali Linux, the most advanced and versatile penetration testing platform  ever created. We have a set of amazing features lined up in our security distribution geared at streamlining the penetration testing experience. This version has no GUI.Include packages:\n* nmap\n* metasploit\n* sqlmap\n* hydra\n* telnet client\n* dnsutils (dig)",
         "docker": {
@@ -5662,10 +7023,19 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.kali.org/"
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "From the creators of BackTrack comes Kali Linux, the most advanced and versatile penetration testing platform  ever created. We have a set of amazing features lined up in our security distribution geared at streamlining the penetration testing experience.",
         "documentation_url": "https://www.kali.org/kali-linux-documentation/",
         "images": [
+            {
+                "direct_download_url": "http://cdimage.kali.org/kali-2017.2/kali-linux-2017.2-amd64.iso",
+                "download_url": "http://cdimage.kali.org/kali-2017.2/",
+                "filename": "kali-linux-2017.2-amd64.iso",
+                "filesize": 3020619776,
+                "md5sum": "541654f8f818450dc0db866a0a0f6eec",
+                "version": "2017.2"
+            },
             {
                 "direct_download_url": "http://cdimage.kali.org/kali-2017.1/kali-linux-2017.1-amd64.iso",
                 "download_url": "http://cdimage.kali.org/kali-2017.1/",
@@ -5719,6 +7089,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "kali-linux-2017.2-amd64.iso"
+                },
+                "name": "2017.2"
+            },
+            {
+                "images": {
                     "cdrom_image": "kali-linux-2017.1-amd64.iso"
                 },
                 "name": "2017.1"
@@ -5744,10 +7120,18 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "KEMP Technologies free LoadMaster Application Load Balancer is a fully featured member of our award winning and industry leading Load Balancer family. It can be used without charge in production environments with throughput requirements that don\u2019t exceed 20 Mbps, and for services that do not directly generate revenue. It is an ideal choice for low traffic web sites and applications, DevOps testing environments, technical training environments, and for any other deployments that suit your non-commercial needs.",
         "documentation_url": "https://support.kemptechnologies.com/hc/en-us/articles/204427785",
         "images": [
+            {
+                "download_url": "http://freeloadbalancer.com/download/",
+                "filename": "LoadMaster-VLM-7.2.40.0.15707.RELEASE-Linux-KVM-XEN-FREE.disk",
+                "filesize": 17179869185,
+                "md5sum": "4284a80141f7974d082a2eed91ec6216",
+                "version": "7.2.40.0"
+            },
             {
                 "download_url": "http://freeloadbalancer.com/download/",
                 "filename": "LoadMaster-VLM-7.2.38.0.14750.RELEASE-Linux-KVM-XEN.disk",
@@ -5803,6 +7187,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "LoadMaster-VLM-7.2.40.0.15707.RELEASE-Linux-KVM-XEN-FREE.disk"
+                },
+                "name": "7.2.40.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "LoadMaster-VLM-7.2.38.0.14750.RELEASE-Linux-KVM-XEN.disk"
                 },
                 "name": "7.2.38.0"
@@ -5828,10 +7218,27 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Kerio Connect makes email, calendars, contacts and task management easy and affordable. With Kerio Connect, you have immediate, secure access to your communications anytime, anywhere, on any device \u2014 without complexity or expensive overhead.",
         "documentation_url": "http://kb.kerio.com/product/kerio-connect/",
         "images": [
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/connect/connect-9.2.5-3336/kerio-connect-appliance-9.2.5-3336-p3-vmware-amd64-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-connect",
+                "filename": "kerio-connect-appliance-9.2.5-3336-p3-vmware-amd64-disk1.vmdk",
+                "filesize": 824496128,
+                "md5sum": "f2a202f29e71dc6e8bebce4c05a9e44d",
+                "version": "9.2.5p3"
+            },
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/connect/connect-9.2.4-3252/kerio-connect-appliance-9.2.4-3252-vmware-amd64-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-connect",
+                "filename": "kerio-connect-appliance-9.2.4-3252-vmware-amd64-disk1.vmdk",
+                "filesize": 720217088,
+                "md5sum": "c585587a8de878d3940e42cf389b0f06",
+                "version": "9.2.4"
+            },
             {
                 "direct_download_url": "http://cdn.kerio.com/dwn/connect/connect-9.2.3-2929/kerio-connect-appliance-9.2.3-2929-vmware-amd64-disk1.vmdk",
                 "download_url": "http://www.kerio.com/support/kerio-connect",
@@ -5882,6 +7289,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "kerio-connect-appliance-9.2.5-3336-p3-vmware-amd64-disk1.vmdk"
+                },
+                "name": "9.2.5"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "kerio-connect-appliance-9.2.4-3252-vmware-amd64-disk1.vmdk"
+                },
+                "name": "9.2.4"
+            },
+            {
+                "images": {
                     "hda_disk_image": "kerio-connect-appliance-9.2.3-2929-vmware-amd64-disk1.vmdk"
                 },
                 "name": "9.2.3"
@@ -5901,10 +7320,27 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Protect your network from viruses, malware and malicious activity with Kerio Control, the easy-to-administer yet powerful all-in-one security solution.\nKerio Control brings together next-generation firewall capabilities - including a network firewall and router, intrusion detection and prevention (IPS), gateway anti-virus, VPN, and web content and application filtering. These comprehensive capabilities and unmatched deployment flexibility make Kerio Control the ideal choice for small and mid-sized businesses.",
         "documentation_url": "http://kb.kerio.com/product/kerio-control/",
         "images": [
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.4-2223/kerio-control-appliance-9.2.4-2223-vmware-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-control",
+                "filename": "kerio-control-appliance-9.2.4-2223-vmware-disk1.vmdk",
+                "filesize": 191687168,
+                "md5sum": "20970f3638c7ca5603c2afbe56e89421",
+                "version": "9.2.4"
+            },
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.3-2219/kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-control",
+                "filename": "kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk",
+                "filesize": 191716352,
+                "md5sum": "767d5b25bdca2b45c2ba269189ea9bd0",
+                "version": "9.2.3"
+            },
             {
                 "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.2-2172/kerio-control-appliance-9.2.2-2172-vmware-disk1.vmdk",
                 "download_url": "http://www.kerio.com/support/kerio-control",
@@ -5953,6 +7389,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "kerio-control-appliance-9.2.4-2223-vmware-disk1.vmdk"
+                },
+                "name": "9.2.4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "kerio-control-appliance-9.2.3-2219-vmware-disk1.vmdk"
+                },
+                "name": "9.2.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "kerio-control-appliance-9.2.2-2172-vmware-disk1.vmdk"
                 },
                 "name": "9.2.2"
@@ -5972,10 +7420,27 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Stay connected to your customers and colleagues without being chained to your desk.\nKerio Operator is a VoIP based phone system that provides powerful yet affordable enterprise-class voice and video communication capabilities for small and mid-sized businesses globally.",
         "documentation_url": "http://kb.kerio.com/product/kerio-operator/",
         "images": [
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.6.0-8413/kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-operator",
+                "filename": "kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk",
+                "filesize": 291227136,
+                "md5sum": "3eddbb73d685ac4666841f5df2c6bec9",
+                "version": "2.6.0"
+            },
+            {
+                "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.5-8309/kerio-operator-appliance-2.5.5-8309-p2-vmware-disk1.vmdk",
+                "download_url": "http://www.kerio.com/support/kerio-operator",
+                "filename": "kerio-operator-appliance-2.5.5-8309-p2-vmware-disk1.vmdk",
+                "filesize": 291217408,
+                "md5sum": "dc0b4d0b264eb39c8c73289b6c8de749",
+                "version": "2.5.5p2"
+            },
             {
                 "direct_download_url": "http://cdn.kerio.com/dwn/operator/operator-2.5.4-6916/kerio-operator-appliance-2.5.4-6916-p1-vmware.vmdk",
                 "download_url": "http://www.kerio.com/support/kerio-operator",
@@ -6025,6 +7490,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "kerio-operator-appliance-2.6.0-8413-vmware-disk1.vmdk"
+                },
+                "name": "2.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "kerio-operator-appliance-2.5.5-8309-p2-vmware-disk1.vmdk"
+                },
+                "name": "2.5.5p2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "kerio-operator-appliance-2.5.4-6916-p1-vmware.vmdk"
                 },
                 "name": "2.5.4p1"
@@ -6044,6 +7521,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "LEDE is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.",
         "documentation_url": "http://wiki.openwrt.org/doc/",
@@ -6113,10 +7591,18 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Don't you hate it when companies artificially cripple performance? We just give you two simple choices - Now isn't that a refreshing change?",
         "documentation_url": "https://loadbalancer.org/support/support-resources",
         "images": [
+            {
+                "download_url": "https://loadbalancer.org/resources/free-trial",
+                "filename": "Loadbalancer.org_Enterprise_VA-8.3-disk1.qcow2",
+                "filesize": 368332288,
+                "md5sum": "f0e41f39a5cab47990edc0509c579bac",
+                "version": "8.3"
+            },
             {
                 "download_url": "https://loadbalancer.org/resources/free-trial",
                 "filename": "Loadbalancer.org_Enterprise_VA-8.2-disk1.qcow2",
@@ -6148,6 +7634,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "Loadbalancer.org_Enterprise_VA-8.3-disk1.qcow2"
+                },
+                "name": "8.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "Loadbalancer.org_Enterprise_VA-8.2-disk1.qcow2"
                 },
                 "name": "8.2"
@@ -6155,6 +7647,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Micro Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nThis is complete Linux system needing few resources to run.",
         "documentation_url": "http://wiki.tinycorelinux.net/",
@@ -6225,10 +7718,29 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Cloud Hosted Router (CHR) is a RouterOS version meant for running as a virtual machine. It supports x86 64-bit architecture and can be used on most of popular hypervisors such as VMWare, Hyper-V, VirtualBox, KVM and others. CHR has full RouterOS features enabled by default but has a different licensing model than other RouterOS versions.",
         "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
         "images": [
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.40.5/chr-6.40.5.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.40.5.img",
+                "filesize": 134217728,
+                "md5sum": "5d3bef219a859d417fea704ae7109eb7",
+                "version": "6.40.5"
+            },
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.40.3/chr-6.40.3.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.40.3.img",
+                "filesize": 134217728,
+                "md5sum": "1861df67e9bbf17433f11f33f7dedd1e",
+                "version": "6.40.3"
+            },
             {
                 "compression": "zip",
                 "direct_download_url": "https://download2.mikrotik.com/routeros/6.39.2/chr-6.39.2.img.zip",
@@ -6255,6 +7767,15 @@ X-Route: /v2/appliances/templates
                 "filesize": 134217728,
                 "md5sum": "7e77c8ac4c9aeaf88f6ff15897f33163",
                 "version": "6.39"
+            },
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.38.7/chr-6.38.7.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.38.7.img",
+                "filesize": 134217728,
+                "md5sum": "69a51c96b1247bbaf1253d2873617122",
+                "version": "6.38.7"
             },
             {
                 "compression": "zip",
@@ -6436,6 +7957,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "chr-6.40.5.img"
+                },
+                "name": "6.40.5"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "chr-6.40.3.img"
+                },
+                "name": "6.40.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "chr-6.39.2.img"
                 },
                 "name": "6.39.2"
@@ -6451,6 +7984,12 @@ X-Route: /v2/appliances/templates
                     "hda_disk_image": "chr-6.39.img"
                 },
                 "name": "6.39"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "chr-6.38.7.img"
+                },
+                "name": "6.38.7"
             },
             {
                 "images": {
@@ -6563,6 +8102,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "NETem emulates a network link, typically a WAN link. It supports bandwidth limitation, delay, jitter and packet loss. All this functionality is already build in the linux kernel, NETem is just a menu system to make the configuration user-friendly.",
         "documentation_url": "http://www.cs.unm.edu/~crandall/netsfall13/TCtutorial.pdf",
@@ -6605,6 +8145,26 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "This container provides the popular tools used for network automation: Netmiko, NAPALM, Pyntc, and Ansible.",
+        "docker": {
+            "adapters": 1,
+            "console_type": "telnet",
+            "image": "gns3/network_automation:latest"
+        },
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Network Automation",
+        "product_name": "Network Automation",
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "linux_guest.svg",
+        "vendor_name": "GNS3",
+        "vendor_url": "http://www.gns3.com"
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "ntopng is the next generation version of the original ntop, a network traffic probe that shows the network usage, similar to what the popular top Unix command does. ntopng is based on libpcap and it has been written in a portable way in order to virtually run on every Unix platform, MacOSX and on Windows as well. ntopng users can use a a web browser to navigate through ntop (that acts as a web server) traffic information and get a dump of the network status. In the latter case, ntopng can be seen as a simple RMON-like agent with an embedded web interface.",
         "docker": {
@@ -6625,6 +8185,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://www.ntop.org/"
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "The Open Network Operating System (ONOS) is a software defined networking (SDN) OS for service providers that has scalability, high availability, high performance and abstractions to make it easy to create apps and services. The platform is based on a solid architecture and has quickly matured to be feature rich and production ready. The community has grown to include over 50 partners and collaborators that contribute to all aspects of the project including interesting use cases such as CORD",
         "docker": {
@@ -6643,6 +8204,52 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://onosproject.org/"
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "Over 200,000 IT staff across medium to large enterprises worldwide are currently using OP5 Monitor as their preferred network monitoring software.\nOP5 Monitor allows you to take control of your IT, enabling your network to be more responsive, more reliable and even faster than ever before. With unparalleled scalability, OP5 Monitor grows as your company grows, so you\u2019ll understand why we say this is the last network monitor you\u2019ll ever need to purchase.",
+        "documentation_url": "https://kb.op5.com/display/MAN/Documentation+Home#sthash.pohb5bis.dpbs",
+        "images": [
+            {
+                "download_url": "https://www.op5.com/download/",
+                "filename": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk",
+                "filesize": 779687424,
+                "md5sum": "634acc6266237d99bf1bfbcf9284beca",
+                "version": "7.3.15"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "OP5 Monitor",
+        "port_name_format": "eth{0}",
+        "product_name": "OP5 Monitor",
+        "product_url": "https://www.op5.com/op5-monitor/",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 2,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "ram": 1024
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "mgmt_station.svg",
+        "usage": "Interface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
+        "vendor_name": "OP5",
+        "vendor_url": "https://www.op5.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk"
+                },
+                "name": "7.3.15"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "The OpenBSD project produces a FREE, multi-platform 4.4BSD-based UNIX-like operating system. Our efforts emphasize portability, standardization, correctness, proactive security and integrated cryptography. As an example of the effect OpenBSD has, the popular OpenSSH software comes from OpenBSD.",
         "documentation_url": "http://www.openbsd.org/faq/index.html",
@@ -6685,6 +8292,52 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "openSUSE is a free and Linux-based operating system for PC, Laptop or Server. The openSUSE project is a community program sponsored by Novell. It is a general purpose operating system built on top of the Linux kernel, developed by the community-supported openSUSE Project and sponsored by SUSE and a number of other companies.",
+        "documentation_url": "https://en.opensuse.org/Main_Page",
+        "images": [
+            {
+                "download_url": "http://www.osboxes.org/opensuse/",
+                "filename": "openSUSE_42.3-Leap-VM-64bit.vmdk",
+                "filesize": 5891293184,
+                "md5sum": "ab777cf90557460ff35aedfbf2befc5d",
+                "version": "Leap 42.3"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "openSUSE",
+        "port_name_format": "eth{0}",
+        "product_name": "openSUSE",
+        "product_url": "https://www.opensuse.org/#Leap",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "sata",
+            "kvm": "require",
+            "options": "-vga virtio",
+            "ram": 1024
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "usage": "Username: osboxes\nPassword: osboxes.org\n\nroot password: osboxes.org",
+        "vendor_name": "SUSE LLC.",
+        "vendor_url": "https://www.opensuse.org/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "openSUSE_42.3-Leap-VM-64bit.vmdk"
+                },
+                "name": "Leap 42.3"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Open vSwitch is a production quality, multilayer virtual switch licensed under the open source Apache 2.0 license.  It is designed to enable massive network automation through programmatic extension, while still supporting standard management interfaces and protocols (e.g. NetFlow, sFlow, IPFIX, RSPAN, CLI, LACP, 802.1ag).  In addition, it is designed to support distribution across multiple physical servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V. This is a version of the appliance with a management interface on eth0.",
         "docker": {
@@ -6705,6 +8358,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://openvswitch.org/"
     },
     {
+        "builtin": true,
         "category": "multilayer_switch",
         "description": "Open vSwitch is a production quality, multilayer virtual switch licensed under the open source Apache 2.0 license.  It is designed to enable massive network automation through programmatic extension, while still supporting standard management interfaces and protocols (e.g. NetFlow, sFlow, IPFIX, RSPAN, CLI, LACP, 802.1ag).  In addition, it is designed to support distribution across multiple physical servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.",
         "docker": {
@@ -6724,6 +8378,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://openvswitch.org/"
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "OpenWrt is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.\n\nThe realview platform is meant for use with QEMU for emulating an ARM system.",
         "documentation_url": "http://wiki.openwrt.org/doc/",
@@ -6779,6 +8434,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "OpenWrt is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.",
         "documentation_url": "http://wiki.openwrt.org/doc/",
@@ -6821,6 +8477,51 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "firewall",
+        "description": "OPNsense is an open source, easy-to-use and easy-to-build FreeBSD based firewall and routing platform. OPNsense includes most of the features available in expensive commercial firewalls, and more in many cases. It brings the rich feature set of commercial offerings with the benefits of open and verifiable sources.\n\nOPNsense started as a fork of pfSense\u00ae and m0n0wall in 2014, with its first official release in January 2015. The project has evolved very quickly while still retaining  familiar aspects of both m0n0wall and pfSense. A strong focus on security and code quality drives the development of the project.",
+        "documentation_url": "https://wiki.opnsense.org/",
+        "images": [
+            {
+                "download_url": "https://opnsense.org/download/",
+                "filename": "OPNsense-17.7-OpenSSL-nano-amd64.img",
+                "filesize": 3221233664,
+                "md5sum": "14cde5c7a15b2298a242238ad3c3b65a",
+                "version": "17.7"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "OPNsense",
+        "port_name_format": "em{0}",
+        "product_name": "OPNsense",
+        "product_url": "https://opnsense.org/about/about-opnsense/",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 4,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "ram": 1024
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "usage": "Default credentials: root / opnsense\nDefault IP address: 192.168.1.1",
+        "vendor_name": "Deciso B.V.",
+        "vendor_url": "https://opnsense.org/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "OPNsense-17.7-OpenSSL-nano-amd64.img"
+                },
+                "name": "17.7"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "Ostinato is an open-source, cross-platform network packet crafter/traffic generator and analyzer with a friendly GUI. Craft and send packets of several streams with different protocols at different rates.",
         "documentation_url": "http://ostinato.org/docs.html",
@@ -6879,10 +8580,20 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "PacketFence is a fully supported, trusted, Free and Open Source network access control (NAC) solution. Boasting an impressive feature set including a captive-portal for registration and remediation, centralized wired and wireless management, 802.1X support, layer-2 isolation of problematic devices, integration with the Snort IDS and the Nessus vulnerability scanner; PacketFence can be used to effectively secure networks - from small to very large heterogeneous networks.",
         "documentation_url": "https://packetfence.org/support/index.html#/documentation",
         "images": [
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.3.0/PacketFenceZEN_USB-7.3.0.tar.bz2/download",
+                "download_url": "https://packetfence.org/download.html#/zen",
+                "filename": "PacketFenceZEN_USB-7.3.0.img",
+                "filesize": 3221225472,
+                "md5sum": "dfeb8a97bba2e475ce418b02327c0ea1",
+                "version": "7.3.0"
+            },
             {
                 "compression": "bzip2",
                 "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.1.0/PacketFenceZEN_USB-7.1.0.tar.bz2/download",
@@ -6969,6 +8680,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "PacketFenceZEN_USB-7.3.0.img"
+                },
+                "name": "7.3.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "PacketFenceZEN_USB-7.1.0.img"
                 },
                 "name": "7.1.0"
@@ -7012,10 +8729,103 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "firewall",
+        "description": "The VM-Series combines next-generation firewall security and advanced threat prevention to protect your virtualized environments from advanced cyberthreats. The VM-Series natively analyzes all traffic in a single pass to determine the application identity, the content within, and the user identity.",
+        "documentation_url": "https://www.paloaltonetworks.com/documentation/80/virtualization/virtualization",
+        "first_port_name": "management",
+        "images": [
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
+                "filesize": 2959736832,
+                "md5sum": "64b1e81cd54008318235832ea6d71424",
+                "version": "6.1.0 (ESX)"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-KVM-7.1.0.qcow2",
+                "filesize": 1858797568,
+                "md5sum": "da300253709740068927408239c2e321",
+                "version": "7.1.0"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-ESX-7.1.0-disk1.vmdk",
+                "filesize": 1871149056,
+                "md5sum": "e044dc649b7146ee4f619edb0e5f6675",
+                "version": "7.1.0 (ESX)"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-KVM-8.0.0.qcow2",
+                "filesize": 1987444736,
+                "md5sum": "b6a1ddc8552aff87f05f9c0d4cb54dc3",
+                "version": "8.0.0"
+            }
+        ],
+        "maintainer": "Community",
+        "maintainer_email": "",
+        "name": "PA-VM",
+        "port_name_format": "ethernet1/{port1}",
+        "product_name": "PAN VM-Series Firewall",
+        "product_url": "https://www.paloaltonetworks.com/products/secure-the-network/virtualized-next-generation-firewall/vm-series",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 25,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "options": "-smp 2",
+            "ram": 4096
+        },
+        "registry_version": 3,
+        "status": "experimental",
+        "symbol": "pan-vm-fw.svg",
+        "usage": "Default Username: admin\r\nDefault Password: admin\r\nPAN-VM goes through several iterations of host prompts during boot. This is normal and expected.\r\nLogin is available when prompt is PA-VM login:\r\n\r\nGetting Started:\r\nTo configure a static IP address at the console enter the following commands:\r\n\r\nconfigure\r\nset deviceconfig system ip-address <Static IP> netmask <Netmask> default-gateway <Gateway IP> type static\r\nset deviceconfig system dns-setting servers primary <DNS Server IP> secondary <DNS Server IP>\r\ncommit\r\n",
+        "vendor_name": "Palo Alto Networks",
+        "vendor_url": "http://www.paloaltonetworks.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+                },
+                "name": "6.1.0 (ESX)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
+                },
+                "name": "7.1.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-ESX-7.1.0-disk1.vmdk"
+                },
+                "name": "7.1.0 (ESX)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-KVM-8.0.0.qcow2"
+                },
+                "name": "8.0.0"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "firewall",
         "description": "The pfSense project is a free network firewall distribution, based on the FreeBSD operating system with a custom kernel and including third party free software packages for additional functionality. pfSense software, with the help of the package system, is able to provide the same functionality or more of common commercial firewalls, without any of the artificial limitations. It has successfully replaced every big name commercial firewall you can imagine in numerous installations around the world, including Check Point, Cisco PIX, Cisco ASA, Juniper, Sonicwall, Netgear, Watchguard, Astaro, and more.",
         "documentation_url": "https://doc.pfsense.org/index.php/Main_Page",
         "images": [
+            {
+                "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
+                "filename": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img",
+                "filesize": 1989969408,
+                "md5sum": "b6cb76adba3e1113892f84ea01894228",
+                "version": "2.3.5"
+            },
             {
                 "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
                 "filename": "pfSense-CE-2.3.4-RELEASE-2g-amd64-nanobsd.img",
@@ -7081,6 +8891,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img"
+                },
+                "name": "2.3.5"
+            },
+            {
+                "images": {
                     "hda_disk_image": "pfSense-CE-2.3.4-RELEASE-2g-amd64-nanobsd.img"
                 },
                 "name": "2.3.4"
@@ -7118,6 +8934,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "To ensure efficient email communication and business continuity, IT professionals depend on reliable spam and virus blocking software. With Proxmox Mail Gateway you get the job done.\n\nProxmox Mail Gateway helps you protect your business against all email threats like spam, viruses, phishing and trojans at the moment they emerge. The flexible architecture combined with the userfriendly, web-based management make it simple for you to control all incoming and outgoing emails. You maintain a professional email workflow and gain high business reputation as well as customer satisfaction.",
         "documentation_url": "http://www.proxmox.com/en/downloads/category/documentation-pmg",
@@ -7171,6 +8988,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Container with integrated Python 2 & 3, Perl, PHP, and PHP7.0 interpreters, and a Go compiler.",
         "docker": {
@@ -7187,6 +9005,7 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.gns3.com"
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Riverbed SteelHead delivers not only best-in-class optimization \u2013 but essential visibility and control as companies transition to the Hybrid WAN. SteelHead CX for Virtual is available as a virtual solution on most major hypervisors including VMware vSphere, Microsoft Hyper-V and KVM. It accelerates the performance of all applications including on-premises, cloud, and SaaS across the hybrid enterprise for organizations that want to deliver the best end user experience \u2013 while leveraging the scalability and cost benefits of virtualization.\n\nSteelHead CX for Virtual uniquely delivers the best application performance along with application, network and end user visibility, and simplified control management of users, applications and networks based on business requirements and decisions.",
         "documentation_url": "https://support.riverbed.com/content/support/software/steelhead/cx-appliance.html",
@@ -7237,6 +9056,74 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It\u2019s based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",
+        "documentation_url": "https://github.com/Security-Onion-Solutions/security-onion/wiki",
+        "images": [
+            {
+                "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso",
+                "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso",
+                "filename": "securityonion-14.04.5.4.iso",
+                "filesize": 1874853888,
+                "md5sum": "9c7cab756b675beb10de4274a3ad3bc6",
+                "version": "14.04.5.4"
+            },
+            {
+                "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.3.iso",
+                "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.3.iso",
+                "filename": "securityonion-14.04.5.3.iso",
+                "filesize": 1889533952,
+                "md5sum": "fb80ccb2d3c0f3f511823fa5858f87d1",
+                "version": "14.04.5.3"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
+                "filename": "empty30G.qcow2",
+                "filesize": 197120,
+                "md5sum": "3411a599e822f2ac6be560a26405821a",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "Brent Stewart",
+        "maintainer_email": "brent@stewart.tc",
+        "name": "Security Onion",
+        "product_name": "Security Onion",
+        "product_url": "https://securityonion.net/",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 2,
+            "arch": "i386",
+            "console_type": "telnet",
+            "kvm": "allow",
+            "ram": 3072
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "securityonion-logo.png",
+        "usage": "Your default account will have sudo priviledges.  Squil and Squert username and password are configured in the Setup wizard.  MySQL root is set to null.  For more info see https://github.com/Security-Onion-Solutions/security-onion/wiki/Passwords.",
+        "vendor_name": "Security Onion Solutions, LLC",
+        "vendor_url": "https://securityonion.net/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "securityonion-14.04.5.4.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "14.04.5.4"
+            },
+            {
+                "images": {
+                    "cdrom_image": "securityonion-14.04.5.3.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "14.04.5.3"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "firewall",
         "description": "A Free firewall that includes its own security-hardened GNU/Linux operating system and an easy-to-use web interface.",
         "documentation_url": "https://sourceforge.net/projects/smoothwall/files/SmoothWall%20Manuals/",
@@ -7290,6 +9177,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Monitoring a distributed network across multiple locations can be a challenge. That\u2019s where Sophos iView can help. It provides you with an intelligent, uninterrupted view of your network from a single pane of glass. If you have multiple appliances, need consolidated reporting, or could just use help with log management or compliance, Sophos iView is the ideal solution.",
         "documentation_url": "https://www.sophos.com/en-us/support/documentation/sophos-iview.aspx",
@@ -7341,6 +9229,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Sophos Free Home Use Firewall is a fully equipped software version of the Sophos UTM firewall, available at no cost for home users \u2013 no strings attached. It features full Network, Web, Mail and Web Application Security with VPN functionality and protects up to 50 IP addresses. The Sophos UTM Free Home Use firewall contains its own operating system and will overwrite all data on the computer during the installation process. Therefore, a separate, dedicated computer or VM is needed, which will change into a fully functional security appliance.",
         "documentation_url": "https://community.sophos.com/products/unified-threat-management/",
@@ -7561,6 +9450,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Sophos XG Firewall delivers the ultimate enterprise firewall performance, security, and control.\n\nFastpath packet optimization technology with up to 140Gbps throughput\nRevolutionary Security Heartbeat\u2122 for improved Advanced Threat Protection (ATP) and response\nPatented Layer-8 user identity control and visibility\nUnified App, Web, QoS, and IPS Policy simplifies management\nApp risk factor and user threat quotient monitors risk levels",
         "documentation_url": "https://www.sophos.com/en-us/support/documentation/sophos-xg-firewall.aspx",
@@ -7695,6 +9585,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt's provide a complete Linux system in few MB.",
         "documentation_url": "http://wiki.tinycorelinux.net/",
@@ -7752,6 +9643,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Trend Micro InterScan Messaging Security stops email threats in the cloud with global threat intelligence, protects your data with data loss prevention and encryption, and identifies targeted email attacks,ransomware, and APTs as part of the Trend Micro Network Defense Solution. The hybrid SaaS deployment combines the privacy and control of an on-premises virtual appliance with the proactive protection of a cloud-based pre-filter service. It\u2019s the enterprise-level protection you need with the highest spam and phishing detection rates\u2014consistently #1 in quarterly Opus One competitive tests since 2011.",
         "documentation_url": "https://success.trendmicro.com/product-support/interscan-messaging-security",
@@ -7805,6 +9697,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Trend Micro InterScan Web Security Virtual Appliance is a secure web gateway that combines application control with zero-day exploit detection, advanced anti-malware and ransomware scanning, real-time web reputation, and flexible URL filtering to provide superior Internet threat protection.",
         "documentation_url": "https://success.trendmicro.com/product-support/interscan-web-security-virtual-appliance",
@@ -7857,6 +9750,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "WordPress is a state-of-the-art publishing platform with a focus on aesthetics, web standards, and usability. It is one of the worlds most popular blog publishing applications, includes tons of powerful core functionality, extendable via literally thousands of plugins, and supports full theming. This appliance includes all the standard features in TurnKey Core too.",
         "docker": {
@@ -7876,6 +9770,78 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.turnkeylinux.org/"
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "Ubuntu is a full-featured Linux operating system which is based on Debian distribution and freely available with both community and professional support, it comes with Unity as its default desktop environment. There are other flavors of Ubuntu available with other desktops as default like Ubuntu Gnome, Lubuntu, Xubuntu, and so on. A tightly-integrated selection of excellent applications is included, and an incredible variety of add-on software is just a few clicks away. A default installation of Ubuntu contains a wide range of software that includes LibreOffice, Firefox, Empathy, Transmission, etc.",
+        "documentation_url": "https://help.ubuntu.com",
+        "images": [
+            {
+                "download_url": "http://www.osboxes.org/ubuntu/",
+                "filename": "Ubuntu_17.04-VM-64bit.vmdk",
+                "filesize": 4792123392,
+                "md5sum": "5c82d69c49ba08179e9a94901f67da1f",
+                "version": "17.04"
+            },
+            {
+                "download_url": "http://www.osboxes.org/ubuntu/",
+                "filename": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk",
+                "filesize": 9133293568,
+                "md5sum": "c835f24dbb86f5f61c78d992ed38b6b1",
+                "version": "16.10"
+            },
+            {
+                "download_url": "http://www.osboxes.org/ubuntu/",
+                "filename": "Ubuntu_16.04.3-VM-64bit.vmdk",
+                "filesize": 4302110720,
+                "md5sum": "45bccf63f2777e492f022dbf025f67d0",
+                "version": "16.04"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Ubuntu",
+        "port_name_format": "eth{0}",
+        "product_name": "Ubuntu",
+        "product_url": "https://www.ubuntu.com/desktop",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "options": "-vga virtio",
+            "ram": 1024
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "usage": "Username: osboxes\nPassword: osboxes.org",
+        "vendor_name": "Canonical Inc.",
+        "vendor_url": "https://www.ubuntu.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Ubuntu_17.04-VM-64bit.vmdk"
+                },
+                "name": "17.04"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk"
+                },
+                "name": "16.10"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Ubuntu_16.04.3-VM-64bit.vmdk"
+                },
+                "name": "16.04"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "Ubuntu is a Debian-based Linux operating system, with Unity as its default desktop environment. It is based on free software and named after the Southern African philosophy of ubuntu (literally, \"human-ness\"), which often is translated as \"humanity towards others\" or \"the belief in a universal bond of sharing that connects all humanity\".",
         "docker": {
@@ -7894,10 +9860,18 @@ X-Route: /v2/appliances/templates
         "vendor_url": "http://www.ubuntu.com"
     },
     {
+        "builtin": true,
         "category": "firewall",
         "description": "Untangle\u2019s NG Firewall enables you to quickly and easily create the network policies that deliver the perfect balance between security and productivity. Untangle combines Unified Threat Management (UTM)\u2014to address all of the key network threats\u2014with policy management tools that enable you to define access and control by individuals, groups or company-wide. And with industry-leading reports, you\u2019ll have complete visibility into and control over everything that\u2019s happening on your network.",
         "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
         "images": [
+            {
+                "download_url": "https://www.untangle.com/get-untangle/",
+                "filename": "untangle_1310_x64.iso",
+                "filesize": 588251136,
+                "md5sum": "dc35aa96e954992e53a8cb244a932ae6",
+                "version": "13.1.0"
+            },
             {
                 "download_url": "https://www.untangle.com/get-untangle/",
                 "filename": "untangle_1300_x64.iso",
@@ -7980,6 +9954,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "untangle_1310_x64.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "13.1.0"
+            },
+            {
+                "images": {
                     "cdrom_image": "untangle_1300_x64.iso",
                     "hda_disk_image": "empty30G.qcow2"
                 },
@@ -8030,6 +10011,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
         "description": "vRIN is a VM appliance capable to inject high number of routes into a network. It was tested on GNS3 topologies using VirtualBox and Qemu with up to 1M BGP routes. Runs Quagga. Supported protocols: BGP (IPv4/6), OSPF, OSPFv3, RIP v2, RIPng",
         "images": [
@@ -8146,6 +10128,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality.",
         "documentation_url": "http://vyos.net/wiki/User_Guide",
@@ -8243,8 +10226,9 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "guest",
-        "description": "webterm is a debian based networking toolbox.\nIt contains the firefox web browser plus the following utilities: net-tools, iproute2, ping, traceroute, curl, host, iperf3, mtr, socat, ssh client, tcpdump and the multicast testing tools msend/mreceive.",
+        "description": "webterm is a debian based networking toolbox.\nIt contains the firefox web browser plus the following utilities: net-tools, iproute2, ping, traceroute, curl, host, iperf3, mtr, socat, ssh client, tcpdump, ab(apache benchmark) and the multicast testing tools msend/mreceive.",
         "docker": {
             "adapters": 1,
             "console_type": "vnc",
@@ -8262,10 +10246,195 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.debian.org"
     },
     {
+        "builtin": true,
+        "category": "guest",
+        "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
+        "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
+        "images": [
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "MSEdge_-_Win10_preview.vmdk",
+                "filesize": 10907287552,
+                "md5sum": "e06d97b871581d91b7363bf72a81553d",
+                "version": "10 w/ Edge"
+            },
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "IE11_-_Win8.1-disk1.vmdk",
+                "filesize": 5704344064,
+                "md5sum": "6c8691c7d58bf2c33f6ca242ace6b9bd",
+                "version": "8.1 w/ IE11"
+            },
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "IE11_-_Win7-disk1.vmdk",
+                "filesize": 4101495296,
+                "md5sum": "5733cc93a6ed756c2358f0a383b411a8",
+                "version": "7 w/ IE11"
+            },
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "IE10_-_Win7-disk1.vmdk",
+                "filesize": 4062174208,
+                "md5sum": "ed18b5903fb7d778b847c8d1cef807c4",
+                "version": "7 w/ IE10"
+            },
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "IE9_-_Win7-disk1.vmdk",
+                "filesize": 4040829440,
+                "md5sum": "82370cfa215002a49651b773a3a569f2",
+                "version": "7 w/ IE9"
+            },
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "IE8_-_Win7-disk1.vmdk",
+                "filesize": 4228026368,
+                "md5sum": "63456b42eb8e184b3e7c675645a3c32c",
+                "version": "7 w/ IE8"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Windows",
+        "port_name_format": "NIC{port1}",
+        "product_name": "Windows",
+        "product_url": "https://www.microsoft.com/en-us/windows",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "sata",
+            "kvm": "require",
+            "ram": 1024
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "symbol": "microsoft.svg",
+        "usage": "These virtual machines expire after 90 days; i.e. you have to re-create them in your project after this time but you don't have to re-import the appliance.\n\nDefault credentials: IEUser / Passw0rd!",
+        "vendor_name": "Microsoft",
+        "vendor_url": "http://www.microsoft.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "MSEdge_-_Win10_preview.vmdk"
+                },
+                "name": "10 w/ Edge"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "IE11_-_Win8.1-disk1.vmdk"
+                },
+                "name": "8.1 w/ IE11"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "IE11_-_Win7-disk1.vmdk"
+                },
+                "name": "7 w/ IE11"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "IE10_-_Win7-disk1.vmdk"
+                },
+                "name": "7 w/ IE10"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "IE9_-_Win7-disk1.vmdk"
+                },
+                "name": "7 w/ IE9"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "IE8_-_Win7-disk1.vmdk"
+                },
+                "name": "7 w/ IE8"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "guest",
+        "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
+        "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
+        "images": [
+            {
+                "download_url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2016",
+                "filename": "Win2k16_14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO",
+                "filesize": 6972221440,
+                "md5sum": "70721288bbcdfe3239d8f8c0fae55f1f",
+                "version": "2016"
+            },
+            {
+                "download_url": "https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2012-r2",
+                "filename": "Win2k12_9600.16415.amd64fre.winblue_refresh.130928-2229_server_serverdatacentereval_en-us.vhd",
+                "filesize": 8024756224,
+                "md5sum": "b0a988a2e1f401c99c7c18a00391c4cc",
+                "version": "2012 R2"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty100G.qcow2",
+                "filesize": 198656,
+                "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Windows Server",
+        "port_name_format": "NIC{port1}",
+        "product_name": "Windows Server",
+        "product_url": "https://www.microsoft.com/en-us/windows",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "sata",
+            "kvm": "require",
+            "ram": 2048
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "symbol": "microsoft.svg",
+        "vendor_name": "Microsoft",
+        "vendor_url": "http://www.microsoft.com/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "Win2k16_14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "2016"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Win2k12_9600.16415.amd64fre.winblue_refresh.130928-2229_server_serverdatacentereval_en-us.vhd"
+                },
+                "name": "2012 R2"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "guest",
         "description": "The on-premise Mail and Directory server. Native compatibility with Microsoft Active Directory. You can control your IT infrastructure from a single point of user management, regardless of the different offices and locations your business has. True Microsoft Outlook compatibility. Your users can continue using their favorite email clients, without any service interruptions and without having to install any plug-in or connector.",
         "documentation_url": "https://wiki.zentyal.org/wiki/Zentyal_Wiki",
         "images": [
+            {
+                "direct_download_url": "http://download.zentyal.com/zentyal-5.0.1-development-amd64.iso",
+                "download_url": "http://download.zentyal.com/",
+                "filename": "zentyal-5.0.1-development-amd64.iso",
+                "filesize": 953155584,
+                "md5sum": "1ac74be6563f0b21b337c274e62cdd32",
+                "version": "5.0.1"
+            },
             {
                 "direct_download_url": "http://download.zentyal.com/zentyal-5.0-development-amd64.iso",
                 "download_url": "http://download.zentyal.com/",
@@ -8331,6 +10500,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "zentyal-5.0.1-development-amd64.iso",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "5.0.1"
+            },
+            {
+                "images": {
                     "cdrom_image": "zentyal-5.0-development-amd64.iso",
                     "hda_disk_image": "empty100G.qcow2"
                 },
@@ -8360,11 +10536,23 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "builtin": true,
         "category": "router",
         "description": "Zeroshell is a Linux distribution for servers and embedded devices aimed at providing the main network services a LAN requires. It is available in the form of Live CD or Compact Flash image and you can configure and administer it using your web browser.",
         "documentation_url": "http://www.zeroshell.org/documentation/",
         "images": [
             {
+                "compression": "gzip",
+                "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.0-X86-USB.img.gz",
+                "download_url": "http://www.zeroshell.org/download/",
+                "filename": "ZeroShell-3.8.0-X86-USB.img",
+                "filesize": 1992294400,
+                "md5sum": "a16d584c831f3e88ea442a2343d71cfa",
+                "version": "3.8.0"
+            },
+            {
+                "compression": "gzip",
+                "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.7.1-USB.img.gz",
                 "download_url": "http://www.zeroshell.org/download/",
                 "filename": "ZeroShell-3.7.1-USB.img",
                 "filesize": 1992294400,
@@ -8390,6 +10578,12 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Fulvio Ricciardi",
         "vendor_url": "http://www.zeroshell.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "ZeroShell-3.8.0-X86-USB.img"
+                },
+                "name": "3.8.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "ZeroShell-3.7.1-USB.img"

@@ -236,6 +236,7 @@ class DockerVM(BaseNode):
         """
         path = os.path.join(self.working_dir, "etc", "network")
         os.makedirs(path, exist_ok=True)
+        open(os.path.join(path, ".gns3_perms"), 'a').close()
         os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
@@ -749,9 +750,10 @@ class DockerVM(BaseNode):
         :param nio: NIO instance to add to the adapter
         """
 
-        bridge_name = 'bridge{}'.format(adapter_number)
-        if bridge_name in self._bridges:
-            yield from self._ubridge_apply_filters(bridge_name, nio.filters)
+        if self.ubridge:
+            bridge_name = 'bridge{}'.format(adapter_number)
+            if bridge_name in self._bridges:
+                yield from self._ubridge_apply_filters(bridge_name, nio.filters)
 
     @asyncio.coroutine
     def adapter_remove_nio_binding(self, adapter_number):

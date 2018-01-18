@@ -18,7 +18,7 @@
 import sys
 import os.path
 
-from aiohttp.web import HTTPConflict
+import aiohttp.web
 
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
@@ -183,7 +183,7 @@ class QEMUHandler:
         if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) and "-no-kvm" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
-                raise HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
+                raise aiohttp.web.HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.json(vm)
 
@@ -285,7 +285,7 @@ class QEMUHandler:
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap", "nio_nat"):
-            raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = qemu_manager.create_nio(request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
@@ -479,3 +479,25 @@ class QEMUHandler:
         qemu_manager = Qemu.instance()
         yield from qemu_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
+
+    @Route.get(
+        r"/qemu/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
+        status_codes={
+            200: "Image returned",
+        },
+        raw=True,
+        description="Download Qemu image")
+    def download_image(request, response):
+        filename = request.match_info["filename"]
+
+        iou_manager = Qemu.instance()
+        image_path = iou_manager.get_abs_image_path(filename)
+
+        # Raise error if user try to escape
+        if filename[0] == ".":
+            raise aiohttp.web.HTTPForbidden()
+
+        yield from response.file(image_path)

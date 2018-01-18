@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/eb58fbf6-61da-4b9f-9d3d-114fc01b2819/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_ethernet"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/bde9180a-13f9-484b-93b7-7cd79dd12e59/adapters/1/ports/0/nio' -d '{"ethernet_device": "bridge0", "type": "nio_ethernet"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/eb58fbf6-61da-4b9f-9d3d-114fc01b2819/adapters/1/ports/0/nio HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/bde9180a-13f9-484b-93b7-7cd79dd12e59/adapters/1/ports/0/nio HTTP/1.1
 {
     "ethernet_device": "bridge0",
     "type": "nio_ethernet"
@@ -11,8 +11,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 64
 Content-Type: application/json
-Date: Thu, 29 Jun 2017 15:07:11 GMT
-Server: Python/3.6 GNS3/2.1.0dev1
+Date: Mon, 08 Jan 2018 08:15:48 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 
 {

@@ -388,9 +388,10 @@ def test_start_vm(controller, async_run):
         "vmname": "GNS3 VM"
     }
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
-        with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock_connect:
-            async_run(controller.start())
-            assert mock.called
+        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
+            with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock_connect:
+                async_run(controller.start())
+                assert mock.called
     assert "local" in controller.computes
     assert "vm" in controller.computes
     assert len(controller.computes) == 2  # Local compute and vm are created
@@ -541,6 +542,6 @@ def test_autoidlepc(controller, async_run):
     controller._computes["local"] = AsyncioMagicMock()
     node_mock = AsyncioMagicMock()
     with asyncio_patch("gns3server.controller.Project.add_node", return_value=node_mock):
-        async_run(controller.autoidlepc("local", "c7200", "test.bin"))
+        async_run(controller.autoidlepc("local", "c7200", "test.bin", 512))
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0

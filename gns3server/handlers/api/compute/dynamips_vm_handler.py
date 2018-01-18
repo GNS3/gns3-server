@@ -17,6 +17,7 @@
 
 import os
 import sys
+import aiohttp
 
 from gns3server.web.route import Route
 from gns3server.schemas.nio import NIO_SCHEMA
@@ -448,6 +449,28 @@ class DynamipsVMHandler:
         yield from dynamips_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
 
+    @Route.get(
+        r"/dynamips/images/{filename:.+}",
+        parameters={
+            "filename": "Image filename"
+        },
+        status_codes={
+            200: "Image returned",
+        },
+        raw=True,
+        description="Download a Dynamips IOS image")
+    def download_image(request, response):
+        filename = request.match_info["filename"]
+
+        dynamips_manager = Dynamips.instance()
+        image_path = dynamips_manager.get_abs_image_path(filename)
+
+        # Raise error if user try to escape
+        if filename[0] == ".":
+            raise aiohttp.web.HTTPForbidden()
+
+        yield from response.file(image_path)
+
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/duplicate",
         parameters={
@@ -467,3 +490,4 @@ class DynamipsVMHandler:
         )
         response.set_status(201)
         response.json(new_node)
+

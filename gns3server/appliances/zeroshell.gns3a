@@ -21,14 +21,31 @@
     },
     "images": [
         {
+            "filename": "ZeroShell-3.8.0-X86-USB.img",
+            "version": "3.8.0",
+            "md5sum": "a16d584c831f3e88ea442a2343d71cfa",
+            "filesize": 1992294400,
+            "download_url": "http://www.zeroshell.org/download/",
+            "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.0-X86-USB.img.gz",
+            "compression": "gzip"
+        },
+        {
             "filename": "ZeroShell-3.7.1-USB.img",
             "version": "3.7.1",
             "md5sum": "22e739a24dc1c233d3eca5d8fedc97c8",
             "filesize": 1992294400,
-            "download_url": "http://www.zeroshell.org/download/"
+            "download_url": "http://www.zeroshell.org/download/",
+            "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.7.1-USB.img.gz",
+            "compression": "gzip"
         }
     ],
     "versions": [
+        {
+            "name": "3.8.0",
+            "images": {
+                "hda_disk_image": "ZeroShell-3.8.0-X86-USB.img"
+            }
+        },
         {
             "name": "3.7.1",
             "images": {

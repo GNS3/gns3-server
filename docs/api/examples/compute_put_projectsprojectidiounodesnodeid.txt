@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e01d02c6-735e-4523-bb83-5ea11ecc97f7' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2e54bfd5-33e4-4958-9eb5-9344095bcf3c' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e01d02c6-735e-4523-bb83-5ea11ecc97f7 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2e54bfd5-33e4-4958-9eb5-9344095bcf3c HTTP/1.1
 {
     "console": 5005,
     "ethernet_adapters": 4,
@@ -15,13 +15,14 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/e01d02c6
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 635
+Content-Length: 660
 Content-Type: application/json
-Date: Thu, 29 Jun 2017 15:07:10 GMT
-Server: Python/3.6 GNS3/2.1.0dev1
+Date: Mon, 08 Jan 2018 08:15:48 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
+    "application_id": 1,
     "command_line": "",
     "console": 5005,
     "console_type": "telnet",
@@ -29,8 +30,8 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-63/test_json4/project-files/iou/e01d02c6-735e-4523-bb83-5ea11ecc97f7",
-    "node_id": "e01d02c6-735e-4523-bb83-5ea11ecc97f7",
+    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/iou/2e54bfd5-33e4-4958-9eb5-9344095bcf3c",
+    "node_id": "2e54bfd5-33e4-4958-9eb5-9344095bcf3c",
     "nvram": 2048,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",

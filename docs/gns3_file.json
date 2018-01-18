@@ -48,6 +48,26 @@
             "type": "integer",
             "description": "Width of the drawing area"
         },
+        "zoom": {
+            "type": "integer",
+            "description": "Zoom of the drawing area"
+        },
+        "show_layers": {
+            "type": "boolean",
+            "description": "Show layers on the drawing area"
+        },
+        "snap_to_grid": {
+            "type": "boolean",
+            "description": "Snap to grid on the drawing area"
+        },
+        "show_grid": {
+            "type": "boolean",
+            "description": "Show the grid on the drawing area"
+        },
+        "show_interface_labels": {
+            "type": "boolean",
+            "description": "Show interface labels on the drawing area"
+        },
         "topology": {
             "description": "The topology content",
             "type": "object",
@@ -303,6 +323,15 @@
                                     "additionalProperties": false
                                 }
                             },
+                            "suspend": {
+                                "type": "boolean",
+                                "description": "Suspend the link"
+                            },
+                            "filters": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                "description": "Packet filter. This allow to simulate latency and errors",
+                                "type": "object"
+                            },
                             "capturing": {
                                 "description": "Read only property. True if a capture running on the link",
                                 "type": "boolean"
@@ -329,9 +358,6 @@
                                 ]
                             }
                         },
-                        "required": [
-                            "nodes"
-                        ],
                         "additionalProperties": false
                     }
                 },
@@ -418,6 +444,7 @@
                                     "vnc",
                                     "telnet",
                                     "http",
+                                    "https",
                                     "spice",
                                     null
                                 ]

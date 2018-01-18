@@ -75,6 +75,7 @@ class QemuVM(BaseNode):
         self._cpulimit_process = None
         self._monitor = None
         self._stdout_file = ""
+        self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
 
@@ -1143,7 +1144,7 @@ class QemuVM(BaseNode):
                 yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
-            except IndexError:
+            except (IndexError, KeyError):
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
 
@@ -1283,7 +1284,21 @@ class QemuVM(BaseNode):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("Could not read {}: {}".format(self._stdout_file, e))
+                log.warning("Could not read {}: {}".format(self._stdout_file, e))
+        return output
+
+    def read_qemu_img_stdout(self):
+        """
+        Reads the standard output of the QEMU-IMG process.
+        """
+
+        output = ""
+        if self._qemu_img_stdout_file:
+            try:
+                with open(self._qemu_img_stdout_file, "rb") as file:
+                    output = file.read().decode("utf-8", errors="replace")
+            except OSError as e:
+                log.warning("Could not read {}: {}".format(self._qemu_img_stdout_file, e))
         return output
 
     def is_running(self):
@@ -1327,8 +1342,14 @@ class QemuVM(BaseNode):
     def _spice_options(self):
 
         if self._console:
+            console_host = self._manager.port_manager.console_host
+            if console_host == "0.0.0.0" and socket.has_ipv6:
+                # to fix an issue with Qemu when IPv4 is not enabled
+                # see https://github.com/GNS3/gns3-gui/issues/2352
+                # FIXME: consider making this more global (not just for Qemu + SPICE)
+                console_host = "::"
             return ["-spice",
-                    "addr={},port={},disable-ticketing".format(self._manager.port_manager.console_host, self._console),
+                    "addr={},port={},disable-ticketing".format(console_host, self._console),
                     "-vga", "qxl"]
         else:
             return []
@@ -1363,9 +1384,13 @@ class QemuVM(BaseNode):
 
     @asyncio.coroutine
     def _qemu_img_exec(self, command):
+
+        self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
+        log.info("logging to {}".format(self._qemu_img_stdout_file))
         command_string = " ".join(shlex.quote(s) for s in command)
         log.info("Executing qemu-img with: {}".format(command_string))
-        process = yield from asyncio.create_subprocess_exec(*command)
+        with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
+            process = yield from asyncio.create_subprocess_exec(*command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir)
         retcode = yield from process.wait()
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
@@ -1406,7 +1431,8 @@ class QemuVM(BaseNode):
                         if (yield from self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
                 except (OSError, subprocess.SubprocessError) as e:
-                    raise QemuError("Could not check '{}' disk image: {}".format(disk_name, e))
+                    stdout = self.read_qemu_img_stdout()
+                    raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
 
             if self.linked_clone:
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
@@ -1416,10 +1442,13 @@ class QemuVM(BaseNode):
                         command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
                         retcode = yield from self._qemu_img_exec(command)
                         if retcode:
-                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}".format(disk_name,
-                                                                                                               retcode))
+                            stdout = self.read_qemu_img_stdout()
+                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
+                                                                                                                     retcode,
+                                                                                                                     stdout))
                     except (OSError, subprocess.SubprocessError) as e:
-                        raise QemuError("Could not create '{}' disk image: {}".format(disk_name, e))
+                        stdout = self.read_qemu_img_stdout()
+                        raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
                 else:
                     # The disk exists we check if the clone works
                     try:
@@ -1580,7 +1609,9 @@ class QemuVM(BaseNode):
             return []
         if len(os.environ.get("DISPLAY", "")) > 0:
             return []
-        return ["-nographic"]
+        if "-nographic" not in self._options:
+            return ["-nographic"]
+        return []
 
     def _run_with_kvm(self, qemu_path, options):
         """
@@ -1599,7 +1630,10 @@ class QemuVM(BaseNode):
                 return False
 
             if not os.path.exists("/dev/kvm"):
-                raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                if self.manager.config.get_section_config("Qemu").getboolean("require_kvm", True):
+                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                else:
+                    return False
             return True
         return False
 
@@ -1611,6 +1645,10 @@ class QemuVM(BaseNode):
         """
 
         additional_options = self._options.strip()
+        additional_options = additional_options.replace("%vm-name%", '"' + self._name.replace('"', '\\"') + '"')
+        additional_options = additional_options.replace("%vm-id%", self._id)
+        additional_options = additional_options.replace("%project-id%", self.project.id)
+        additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])

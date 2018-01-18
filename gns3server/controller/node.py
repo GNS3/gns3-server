@@ -325,7 +325,7 @@ class Node:
         if self._node_type == "docker":
             timeout = None
         else:
-            timeout = 120
+            timeout = 1200
         trial = 0
         while trial != 6:
             try:
