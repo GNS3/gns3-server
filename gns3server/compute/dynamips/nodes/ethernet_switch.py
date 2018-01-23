@@ -44,9 +44,9 @@ class EthernetSwitchConsole(EmbedShell):
         self._node = node
 
     @asyncio.coroutine
-    def arp(self):
+    def mac(self):
         """
-        Show arp table
+        Show MAC address table
         """
         res = 'Port       Mac                VLAN\n'
         result = (yield from self._node._hypervisor.send('ethsw show_mac_addr_table {}'.format(self._node.name)))

@@ -86,8 +86,7 @@ class Node:
         self._first_port_name = None
 
         # This properties will be recompute
-        ignore_properties = ("width", "height")
-
+        ignore_properties = ("width", "height", "hover_symbol")
         self.properties = kwargs.pop('properties', {})
 
         # Update node properties with additional elements
@@ -104,7 +103,15 @@ class Node:
                         self.properties[prop] = kwargs[prop]
 
         if self._symbol is None:
-            self.symbol = ":/symbols/computer.svg"
+            # compatibility with old node templates
+            if "default_symbol" in self.properties:
+                default_symbol = self.properties.pop("default_symbol")
+                if default_symbol.endswith("normal.svg"):
+                    self.symbol = default_symbol[:-11] + ".svg"
+                else:
+                    self.symbol = default_symbol
+            else:
+                self.symbol = ":/symbols/computer.svg"
 
     def is_always_running(self):
         """
@@ -325,7 +332,7 @@ class Node:
         if self._node_type == "docker":
             timeout = None
         else:
-            timeout = 120
+            timeout = 1200
         trial = 0
         while trial != 6:
             try:

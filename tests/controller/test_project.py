@@ -153,7 +153,7 @@ def test_add_node_local(async_run, controller):
                                  data={'node_id': node.id,
                                        'startup_script': 'test.cfg',
                                        'name': 'test'},
-                                 timeout=120)
+                                 timeout=1200)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
@@ -181,7 +181,7 @@ def test_add_node_non_local(async_run, controller):
                                  data={'node_id': node.id,
                                        'startup_script': 'test.cfg',
                                        'name': 'test'},
-                                 timeout=120)
+                                 timeout=1200)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
@@ -222,7 +222,7 @@ def test_add_node_from_appliance(async_run, controller):
                                        'name': 'Test-1',
                                        'a': 1,
                                        },
-                                 timeout=120)
+                                 timeout=1200)
     assert compute in project._project_created_on_compute
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
@@ -233,7 +233,7 @@ def test_add_node_from_appliance(async_run, controller):
                                        'name': 'Test-2',
                                        'a': 1
                                        },
-                                 timeout=120)
+                                 timeout=1200)
 
 
 def test_delete_node(async_run, controller):

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import asyncio
+
 from .cloud import Cloud
 from ...error import NodeError
 

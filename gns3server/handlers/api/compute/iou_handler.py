@@ -208,6 +208,24 @@ class IOUHandler:
         response.set_status(204)
 
     @Route.post(
+        r"/projects/{project_id}/iou/nodes/{node_id}/suspend",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Suspend an IOU instance (does nothing)")
+    def suspend(request, response):
+
+        iou_manager = IOU.instance()
+        iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        response.set_status(204)
+
+    @Route.post(
         r"/projects/{project_id}/iou/nodes/{node_id}/reload",
         parameters={
             "project_id": "Project UUID",

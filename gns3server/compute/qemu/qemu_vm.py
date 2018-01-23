@@ -1144,7 +1144,7 @@ class QemuVM(BaseNode):
                 yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
-            except IndexError:
+            except (IndexError, KeyError):
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
 
@@ -1342,8 +1342,14 @@ class QemuVM(BaseNode):
     def _spice_options(self):
 
         if self._console:
+            console_host = self._manager.port_manager.console_host
+            if console_host == "0.0.0.0" and socket.has_ipv6:
+                # to fix an issue with Qemu when IPv4 is not enabled
+                # see https://github.com/GNS3/gns3-gui/issues/2352
+                # FIXME: consider making this more global (not just for Qemu + SPICE)
+                console_host = "::"
             return ["-spice",
-                    "addr={},port={},disable-ticketing".format(self._manager.port_manager.console_host, self._console),
+                    "addr={},port={},disable-ticketing".format(console_host, self._console),
                     "-vga", "qxl"]
         else:
             return []
@@ -1639,10 +1645,10 @@ class QemuVM(BaseNode):
         """
 
         additional_options = self._options.strip()
-        additional_options = additional_options.replace("%vm-name%", self._name)
+        additional_options = additional_options.replace("%vm-name%", '"' + self._name.replace('"', '\\"') + '"')
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
-        additional_options = additional_options.replace("%project-path%", self.project.path)
+        additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])

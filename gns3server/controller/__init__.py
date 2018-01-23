@@ -123,14 +123,19 @@ class Controller:
                 if prop in ["enable_remote_console", "use_ubridge"]:
                     del vm[prop]
             vm.setdefault("appliance_id", str(uuid.uuid4()))
-            appliance = Appliance(vm["appliance_id"], vm)
-            self._appliances[appliance.id] = appliance
+            try:
+                appliance = Appliance(vm["appliance_id"], vm)
+                self._appliances[appliance.id] = appliance
+            except KeyError as e:
+                # appliance data is not complete (missing name or type)
+                log.warning("Could not load appliance template {} ('{}'): {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                continue
 
         # Add builtins
         builtins = []
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"node_type": "vpcs", "name": "VPCS", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"node_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"node_type": "ethernet_switch", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
@@ -405,6 +410,7 @@ class Controller:
         :param connect: True connect to the compute immediately
         :param kwargs: See the documentation of Compute
         """
+
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the local and VM server

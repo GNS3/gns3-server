@@ -15,7 +15,7 @@
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 1,
-        "ram": 8096,
+        "ram": 8192,
         "hda_disk_interface": "ide",
         "hdb_disk_interface": "ide",
         "arch": "x86_64",
@@ -24,6 +24,14 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "FreeNAS-11.1-RELEASE.iso",
+            "version": "11.1",
+            "md5sum": "67bea5816bc889169e5e3054362b2053",
+            "filesize": 626761728,
+            "download_url": "http://www.freenas.org/download/",
+            "direct_download_url": "http://download.freenas.org/11/11.1-RELEASE/x64/FreeNAS-11.1-RELEASE.iso"
+        },
         {
             "filename": "FreeNAS-11.0-U4.iso",
             "version": "11.0-U4",
@@ -50,6 +58,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "11.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FreeNAS-11.1-RELEASE.iso"
+            }
+        },
         {
             "name": "11.0",
             "images": {

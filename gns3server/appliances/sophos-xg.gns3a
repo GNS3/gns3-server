@@ -24,6 +24,20 @@
     },
     "images": [
         {
+            "filename": "VI-SFOS_17.0.2_MR-2.KVM-116-PRIMARY.qcow2",
+            "version": "17.0.2 MR2",
+            "md5sum": "2555fa6dcdcecad02c9f02dcb1c0c5e5",
+            "filesize": 324599808,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-SFOS_17.0.2_MR-2.KVM-116-AUXILARY.qcow2",
+            "version": "16.05.1 MR1",
+            "md5sum": "c3ef795423dbfc01771348b0daa75125",
+            "filesize": 59441152,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
             "filename": "VI-SFOS_16.05.4_MR-4.KVM-215-PRIMARY.qcow2",
             "version": "16.05.4 MR4",
             "md5sum": "20535c9e624f42e1977f1e407fbc565e",
@@ -95,6 +109,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.0.2 MR2",
+            "images": {
+                "hda_disk_image": "VI-SFOS_17.0.2_MR-2.KVM-116-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SFOS_17.0.2_MR-2.KVM-116-AUXILARY.qcow2"
+            }
+        },
         {
             "name": "16.05.4 MR4",
             "images": {

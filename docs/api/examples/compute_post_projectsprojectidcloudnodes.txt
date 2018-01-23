@@ -8,10 +8,10 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes HTTP/
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 2951
+Content-Length: 1584
 Content-Type: application/json
-Date: Thu, 29 Jun 2017 15:06:59 GMT
-Server: Python/3.6 GNS3/2.1.0dev1
+Date: Mon, 08 Jan 2018 08:15:42 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes
 
 {
@@ -50,66 +50,11 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
             "name": "p2p0",
             "special": true,
             "type": "ethernet"
-        },
-        {
-            "name": "utun0",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet1",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet10",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet2",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet3",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet4",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet5",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet6",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet7",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet8",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet9",
-            "special": true,
-            "type": "ethernet"
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/private/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/pytest-of-noplay/pytest-63/test_json4/project-files/builtin/d3c99fe4-9f9c-4667-add5-2e37a75dbbb1",
-    "node_id": "d3c99fe4-9f9c-4667-add5-2e37a75dbbb1",
+    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/builtin/f5c51574-0032-419f-af7e-87edd8cab649",
+    "node_id": "f5c51574-0032-419f-af7e-87edd8cab649",
     "ports_mapping": [
         {
             "interface": "en0",
@@ -127,12 +72,6 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
             "interface": "en2",
             "name": "en2",
             "port_number": 2,
-            "type": "ethernet"
-        },
-        {
-            "interface": "utun0",
-            "name": "utun0",
-            "port_number": 3,
             "type": "ethernet"
         }
     ],

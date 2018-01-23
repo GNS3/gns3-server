@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import psutil
 import json
 import psutil
 
@@ -33,10 +32,10 @@ class NotificationQueue(asyncio.Queue):
     @asyncio.coroutine
     def get(self, timeout):
         """
-        When timeout is expire we send a ping notification with server informations
+        When timeout is expire we send a ping notification with server information
         """
 
-        # At first get we return a ping so the client receive immediately data
+        # At first get we return a ping so the client immediately receives data
         if self._first:
             self._first = False
             return ("ping", self._getPing(), {})

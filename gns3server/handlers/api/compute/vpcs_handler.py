@@ -184,16 +184,15 @@ class VPCSHandler:
             "node_id": "Node UUID"
         },
         status_codes={
-            204: "Instance stopped",
+            204: "Instance suspended",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend a VPCS instance (stop it)")
-    def stop(request, response):
+        description="Suspend a VPCS instance (does nothing)")
+    def suspend(request, response):
 
         vpcs_manager = VPCS.instance()
-        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(

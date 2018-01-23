@@ -48,7 +48,7 @@ class NotificationHandler:
         with notifications.queue() as queue:
             while True:
                 try:
-                    notification = yield from queue.get_json(5)
+                    notification = yield from queue.get_json(1)
                 except asyncio.futures.CancelledError:
                     break
                 if ws.closed:

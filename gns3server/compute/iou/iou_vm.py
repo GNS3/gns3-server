@@ -1142,6 +1142,7 @@ class IOUVM(BaseNode):
         :returns: integer between 1 and 512
         """
         if self._application_id is None:
+            #FIXME: is this necessary? application ID is allocated by controller and should not be None
             return self._manager.get_application_id(self.id)
         return self._application_id
 

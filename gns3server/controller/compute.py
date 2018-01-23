@@ -377,13 +377,13 @@ class Compute:
         """
         :param dont_connect: If true do not reconnect if not connected
         """
+
         if not self._connected and not dont_connect:
             if self._id == "vm" and not self._controller.gns3vm.running:
                 yield from self._controller.gns3vm.start()
-
             yield from self.connect()
         if not self._connected and not dont_connect:
-            raise ComputeError("Can't connect to {}".format(self._name))
+            raise ComputeError("Cannot connect to compute '{}' with request {} {}".format(self._name, method, path))
         response = yield from self._run_http_query(method, path, data=data, **kwargs)
         return response
 
@@ -402,20 +402,20 @@ class Compute:
         """
         Check if remote server is accessible
         """
+
         if not self._connected and not self._closed:
             try:
+                log.info("Connecting to compute '{}'".format(self._id))
                 response = yield from self._run_http_query("GET", "/capabilities")
-            except ComputeError:
+            except ComputeError as e:
                 # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 5:
-                        log.warning("Can't connect to compute %s", self._id)
+                        log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
                         yield from self._controller.close_compute_projects(self)
-
                     asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
-
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
@@ -522,10 +522,16 @@ class Compute:
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
+            log.debug("Attempting request to compute: {method} {url} {headers}".format(
+                method=method,
+                url=url,
+                headers=headers
+            ))
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError as e:
             raise ComputeError("Timeout error when connecting to {}".format(url))
-        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError) as e:
+        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
+            #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
         body = yield from response.read()
         if body and not raw:

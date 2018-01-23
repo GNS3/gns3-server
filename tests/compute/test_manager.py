@@ -229,7 +229,7 @@ def test_list_images(loop, qemu, tmpdir):
             f.write("1")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        assert loop.run_until_complete(qemu.list_images()) == [
+        assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
@@ -249,7 +249,7 @@ def test_list_images_recursives(loop, qemu, tmpdir):
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
 
-        assert loop.run_until_complete(qemu.list_images()) == [
+        assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "c.qcow2", "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}

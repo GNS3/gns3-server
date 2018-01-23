@@ -15,3 +15,16 @@ Response status codes
 **********************
 - **204**: Image uploaded
 
+
+GET /v2/compute/qemu/images/**{filename:.+}**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Download Qemu image
+
+Parameters
+**********
+- **filename**: Image filename
+
+Response status codes
+**********************
+- **200**: Image returned
+

@@ -25,12 +25,12 @@
     },
     "images": [
         {
-            "filename": "ostinato-0.8-97c7d79.qcow2",
-            "version": "0.8-97c7d79",
-            "md5sum": "5aad15c1eb7baac588a4c8c3faafa380",
-            "filesize": 98631680,
+            "filename": "ostinato-0.9-1.qcow2",
+            "version": "0.9",
+            "md5sum": "00b4856ec9fffbcbcab7a8f757355d69",
+            "filesize": 101646336,
             "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
-            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-97c7d79.qcow2"
+            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.9-1.qcow2"
         },
         {
             "filename": "ostinato-0.8-1.qcow2",
@@ -43,9 +43,9 @@
     ],
     "versions": [
         {
-            "name": "0.8-97c7d79",
+            "name": "0.9",
             "images": {
-                "hda_disk_image": "ostinato-0.8-97c7d79.qcow2"
+                "hda_disk_image": "ostinato-0.9-1.qcow2"
             }
         },
         {

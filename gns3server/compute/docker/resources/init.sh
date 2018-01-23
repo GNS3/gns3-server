@@ -35,17 +35,17 @@ do
     mkdir -p "$i"
 
     # Copy original files if destination is empty (first start)
-    [ "$(ls -A "/gns3volumes$i")" ] || cp -a "$i/." "/gns3volumes$i"
+    if [ ! -f "/gns3volumes$i/.gns3_perms" ]; then
+        cp -a "$i/." "/gns3volumes$i"
+        touch "/gns3volumes$i/.gns3_perms"
+    fi
 
     mount --bind "/gns3volumes$i" "$i"
-    if [ -f "$i/.gns3_perms" ]
-    then
-        while IFS=: read PERMS OWNER GROUP FILE
-        do
-            [ -L "$FILE" ] || chmod "$PERMS" "$FILE"
-            chown -h "${OWNER}:${GROUP}" "$FILE"
-        done < "$i/.gns3_perms"
-    fi
+    while IFS=: read PERMS OWNER GROUP FILE
+    do
+        [ -L "$FILE" ] || chmod "$PERMS" "$FILE"
+        chown -h "${OWNER}:${GROUP}" "$FILE"
+    done < "$i/.gns3_perms"
 done
 
 

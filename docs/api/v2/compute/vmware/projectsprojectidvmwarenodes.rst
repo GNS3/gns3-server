@@ -58,3 +58,9 @@ Output
     <tr><td>vmx_path</td>                    <td> </td>                     <td>string</td>                     <td>Path to the vmx file</td>                     </tr>
     </table>
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidvmwarenodes.txt
+

@@ -1,0 +1,17 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/991224a4-0c6a-46f5-a9cf-7a7b03dd2f7f/duplicate' -d '{"destination_node_id": "ddc56104-6d5b-44b8-8883-560df43c12d4"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/991224a4-0c6a-46f5-a9cf-7a7b03dd2f7f/duplicate HTTP/1.1
+{
+    "destination_node_id": "ddc56104-6d5b-44b8-8883-560df43c12d4"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 4
+Content-Type: application/json
+Date: Mon, 08 Jan 2018 08:15:57 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
+X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/duplicate
+
+true

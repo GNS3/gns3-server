@@ -6,10 +6,10 @@ GET /v2/appliances HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2486
+Content-Length: 2694
 Content-Type: application/json
-Date: Thu, 29 Jun 2017 15:07:43 GMT
-Server: Python/3.6 GNS3/2.1.0dev1
+Date: Mon, 08 Jan 2018 08:16:12 GMT
+Server: Python/3.6 GNS3/2.1.2dev1
 X-Route: /v2/appliances
 
 [
@@ -21,6 +21,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "Cloud",
         "node_type": "cloud",
+        "platform": null,
         "symbol": ":/symbols/cloud.svg"
     },
     {
@@ -31,6 +32,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "NAT",
         "node_type": "nat",
+        "platform": null,
         "symbol": ":/symbols/cloud.svg"
     },
     {
@@ -41,6 +43,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "VPCS",
         "node_type": "vpcs",
+        "platform": null,
         "symbol": ":/symbols/vpcs_guest.svg"
     },
     {
@@ -51,6 +54,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "Ethernet switch",
         "node_type": "ethernet_switch",
+        "platform": null,
         "symbol": ":/symbols/ethernet_switch.svg"
     },
     {
@@ -61,6 +65,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "Ethernet hub",
         "node_type": "ethernet_hub",
+        "platform": null,
         "symbol": ":/symbols/hub.svg"
     },
     {
@@ -71,6 +76,7 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "Frame Relay switch",
         "node_type": "frame_relay_switch",
+        "platform": null,
         "symbol": ":/symbols/frame_relay_switch.svg"
     },
     {
@@ -81,16 +87,18 @@ X-Route: /v2/appliances
         "default_name_format": "{name}-{0}",
         "name": "ATM switch",
         "node_type": "atm_switch",
+        "platform": null,
         "symbol": ":/symbols/atm_switch.svg"
     },
     {
-        "appliance_id": "ae14fd22-8a2a-4bd0-a88d-86bd35744533",
+        "appliance_id": "dd7ae518-30e9-48fd-b6de-bc9a69720c00",
         "builtin": false,
         "category": "router",
         "compute_id": "local",
         "default_name_format": "{name}-{0}",
         "name": "test",
         "node_type": "qemu",
+        "platform": null,
         "symbol": "guest.svg"
     }
 ]

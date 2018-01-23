@@ -19,6 +19,7 @@ import sys
 import copy
 import asyncio
 import aiohttp
+import ipaddress
 
 from ...utils.asyncio import locked_coroutine
 from .vmware_gns3_vm import VMwareGNS3VM
@@ -26,6 +27,7 @@ from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
 from .gns3_vm_error import GNS3VMError
 from ...version import __version__
+from ..compute import ComputeError
 
 import logging
 log = logging.getLogger(__name__)
@@ -280,7 +282,8 @@ class GNS3VM:
             compute = yield from self._controller.add_compute(compute_id="vm",
                                                               name="GNS3 VM is starting ({})".format(engine.vmname),
                                                               host=None,
-                                                              force=True)
+                                                              force=True,
+                                                              connect=False)
 
             try:
                 yield from engine.start()
@@ -289,12 +292,50 @@ class GNS3VM:
                 log.error("Can't start the GNS3 VM: {}".format(str(e)))
                 yield from compute.update(name="GNS3 VM ({})".format(engine.vmname))
                 raise e
+            yield from compute.connect()  # we can connect now that the VM has started
             yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),
                                       protocol=self.protocol,
                                       host=self.ip_address,
                                       port=self.port,
                                       user=self.user,
                                       password=self.password)
+
+            # check if the VM is in the same subnet as the local server, start 10 seconds later to give
+            # some time for the compute in the VM to be ready for requests
+            asyncio.get_event_loop().call_later(10, lambda: asyncio.async(self._check_network(compute)))
+
+    @asyncio.coroutine
+    def _check_network(self, compute):
+        """
+        Check that the VM is in the same subnet as the local server
+        """
+
+        try:
+            vm_interfaces = yield from compute.interfaces()
+            vm_interface_netmask = None
+            for interface in vm_interfaces:
+                if interface["ip_address"] == self.ip_address:
+                    vm_interface_netmask = interface["netmask"]
+                    break
+            if vm_interface_netmask:
+                vm_network = ipaddress.ip_interface("{}/{}".format(compute.host_ip, vm_interface_netmask)).network
+                for compute_id in self._controller.computes:
+                    if compute_id == "local":
+                        compute = self._controller.get_compute(compute_id)
+                        interfaces = yield from compute.interfaces()
+                        netmask = None
+                        for interface in interfaces:
+                            if interface["ip_address"] == compute.host_ip:
+                                netmask = interface["netmask"]
+                                break
+                        if netmask:
+                            compute_network = ipaddress.ip_interface("{}/{}".format(compute.host_ip, netmask)).network
+                            if vm_network.compare_networks(compute_network) != 0:
+                                msg = "The GNS3 VM ({}) is not on the same network as the {} server ({}), please make sure the local server binding is in the same network as the GNS3 VM".format(
+                                    vm_network, compute_id, compute_network)
+                                self._controller.notification.emit("log.warning", {"message": msg})
+        except ComputeError as e:
+            log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
 
     @locked_coroutine
     def _suspend(self):

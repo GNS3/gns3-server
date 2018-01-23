@@ -4,9 +4,14 @@
     "auto_start": false,
     "filename": "test.gns3",
     "name": "test",
-    "path": "/var/folders/3s/r2wbv07n7wg4vrsn874lmxxh0000gn/T/tmpgw7miucs/projects/87aa91b7-b34e-43bd-a7c4-185dcf135498",
-    "project_id": "87aa91b7-b34e-43bd-a7c4-185dcf135498",
+    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpsh708y29/projects/2f24e0e9-9f39-41d3-a413-e7c14c5db6f7",
+    "project_id": "2f24e0e9-9f39-41d3-a413-e7c14c5db6f7",
     "scene_height": 1000,
     "scene_width": 2000,
-    "status": "closed"
+    "show_grid": false,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": false,
+    "status": "closed",
+    "zoom": 100
 }

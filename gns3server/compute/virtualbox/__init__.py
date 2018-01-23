@@ -57,24 +57,34 @@ class VirtualBox(BaseManager):
 
         # look for VBoxManage
         vboxmanage_path = self.config.get_section_config("VirtualBox").get("vboxmanage_path")
-        if not vboxmanage_path:
+        if vboxmanage_path:
+            if not os.path.isabs(vboxmanage_path):
+                vboxmanage_path = shutil.which(vboxmanage_path)
+        else:
+            log.info("A path to VBoxManage has not been configured, trying to find it...")
             if sys.platform.startswith("win"):
                 if "VBOX_INSTALL_PATH" in os.environ:
-                    vboxmanage_path = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                    vboxmanage_path_windows = os.path.join(os.environ["VBOX_INSTALL_PATH"], "VBoxManage.exe")
+                    if os.path.exists(vboxmanage_path_windows):
+                        vboxmanage_path = vboxmanage_path_windows
                 elif "VBOX_MSI_INSTALL_PATH" in os.environ:
-                    vboxmanage_path = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+                    vboxmanage_path_windows = os.path.join(os.environ["VBOX_MSI_INSTALL_PATH"], "VBoxManage.exe")
+                    if os.path.exists(vboxmanage_path_windows):
+                        vboxmanage_path = vboxmanage_path_windows
             elif sys.platform.startswith("darwin"):
-                vboxmanage_path = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
-            else:
-                vboxmanage_path = "vboxmanage"
+                vboxmanage_path_osx = "/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
+                if os.path.exists(vboxmanage_path_osx):
+                    vboxmanage_path = vboxmanage_path_osx
+            if not vboxmanage_path:
+                vboxmanage_path = shutil.which("vboxmanage")
 
-        if vboxmanage_path and not os.path.isabs(vboxmanage_path):
-            vboxmanage_path = shutil.which(vboxmanage_path)
+        if vboxmanage_path and not os.path.exists(vboxmanage_path):
+            log.error("VBoxManage path '{}' doesn't exist".format(vboxmanage_path))
 
         if not vboxmanage_path:
-            raise VirtualBoxError("Could not find VBoxManage if you just install VirtualBox you need to reboot")
+            raise VirtualBoxError("Could not find VBoxManage, please reboot if VirtualBox has just been installed")
         if not os.path.isfile(vboxmanage_path):
-            raise VirtualBoxError("VBoxManage {} is not accessible".format(vboxmanage_path))
+            raise VirtualBoxError("VBoxManage '{}' is not accessible".format(vboxmanage_path))
         if not os.access(vboxmanage_path, os.X_OK):
             raise VirtualBoxError("VBoxManage is not executable")
         if os.path.basename(vboxmanage_path) not in ["VBoxManage", "VBoxManage.exe", "vboxmanage"]:
