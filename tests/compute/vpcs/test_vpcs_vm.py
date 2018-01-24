@@ -56,13 +56,13 @@ def test_vm(project, manager):
 
 def test_vm_check_vpcs_version(loop, vm, manager):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.9"):
-        loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_vpcs_version()))
         assert vm._vpcs_version == parse_version("0.9")
 
 
 def test_vm_check_vpcs_version_0_6_1(loop, vm, manager):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.6.1"):
-        loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_vpcs_version()))
         assert vm._vpcs_version == parse_version("0.6.1")
 
 
@@ -71,7 +71,7 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
             vm.port_add_nio_binding(0, nio)
-            loop.run_until_complete(asyncio.async(vm._check_vpcs_version()))
+            loop.run_until_complete(asyncio.ensure_future(vm._check_vpcs_version()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
@@ -81,7 +81,7 @@ def test_vm_invalid_vpcs_path(vm, manager, loop):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
             vm.port_add_nio_binding(0, nio)
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
 
@@ -96,7 +96,7 @@ def test_start(loop, vm, async_run):
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
                 with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
-                    loop.run_until_complete(asyncio.async(vm.start()))
+                    loop.run_until_complete(asyncio.ensure_future(vm.start()))
                     assert mock_exec.call_args[0] == (vm._vpcs_path(),
                                                       '-p',
                                                       str(vm._internal_console_port),
@@ -169,7 +169,7 @@ def test_stop(loop, vm, async_run):
                     assert vm.is_running()
 
                     with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                        loop.run_until_complete(asyncio.async(vm.stop()))
+                        loop.run_until_complete(asyncio.ensure_future(vm.stop()))
                     assert vm.is_running() is False
 
                     if sys.platform.startswith("win"):
@@ -300,5 +300,5 @@ def test_close(vm, port_manager, loop):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
-            loop.run_until_complete(asyncio.async(vm.close()))
+            loop.run_until_complete(asyncio.ensure_future(vm.close()))
             assert vm.is_running() is False

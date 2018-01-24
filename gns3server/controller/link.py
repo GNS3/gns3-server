@@ -288,7 +288,7 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._streaming_pcap = asyncio.async(self._start_streaming_pcap())
+        self._streaming_pcap = asyncio.ensure_future(self._start_streaming_pcap())
         self._project.controller.notification.emit("link.updated", self.__json__())
 
     @asyncio.coroutine

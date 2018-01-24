@@ -108,7 +108,7 @@ def _check_process(process, termination_callback):
 def monitor_process(process, termination_callback):
     """Call termination_callback when a process dies"""
 
-    asyncio.async(_check_process(process, termination_callback))
+    asyncio.ensure_future(_check_process(process, termination_callback))
 
 
 @asyncio.coroutine

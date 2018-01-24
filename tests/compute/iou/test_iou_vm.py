@@ -102,7 +102,7 @@ def test_start(loop, vm):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
         mock_process.returncode = None
-        loop.run_until_complete(asyncio.async(vm.start()))
+        loop.run_until_complete(asyncio.ensure_future(vm.start()))
         assert vm.is_running()
         assert vm.command_line == ' '.join(mock_exec.call_args[0])
 
@@ -130,7 +130,7 @@ def test_start_with_iourc(loop, vm, tmpdir):
     with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file}):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
             mock_process.returncode = None
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.is_running()
             arsgs, kwargs = exec_mock.call_args
             assert kwargs["env"]["IOURC"] == fake_file
@@ -168,10 +168,10 @@ def test_stop(loop, vm):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
         with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.ensure_future(vm.start()))
             process.returncode = None
             assert vm.is_running()
-            loop.run_until_complete(asyncio.async(vm.stop()))
+            loop.run_until_complete(asyncio.ensure_future(vm.stop()))
             assert vm.is_running() is False
             process.terminate.assert_called_with()
 
@@ -193,9 +193,9 @@ def test_reload(loop, vm, fake_iou_bin):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
         with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.is_running()
-            loop.run_until_complete(asyncio.async(vm.reload()))
+            loop.run_until_complete(asyncio.ensure_future(vm.reload()))
             assert vm.is_running() is True
             process.terminate.assert_called_with()
 
@@ -205,7 +205,7 @@ def test_close(vm, port_manager, loop):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             vm.start()
             port = vm.console
-            loop.run_until_complete(asyncio.async(vm.close()))
+            loop.run_until_complete(asyncio.ensure_future(vm.close()))
             # Raise an exception if the port is not free
             port_manager.reserve_tcp_port(port, vm.project)
             assert vm.is_running() is False
@@ -250,7 +250,7 @@ def test_create_netmap_config(vm):
 
 def test_build_command(vm, loop):
 
-    assert loop.run_until_complete(asyncio.async(vm._build_command())) == [vm.path, str(vm.application_id)]
+    assert loop.run_until_complete(asyncio.ensure_future(vm._build_command())) == [vm.path, str(vm.application_id)]
 
 
 def test_get_startup_config(vm):
@@ -312,11 +312,11 @@ def test_library_check(loop, vm):
 
     with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="") as mock:
 
-        loop.run_until_complete(asyncio.async(vm._library_check()))
+        loop.run_until_complete(asyncio.ensure_future(vm._library_check()))
 
     with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="libssl => not found") as mock:
         with pytest.raises(IOUError):
-            loop.run_until_complete(asyncio.async(vm._library_check()))
+            loop.run_until_complete(asyncio.ensure_future(vm._library_check()))
 
 
 def test_enable_l1_keepalives(loop, vm):
@@ -324,14 +324,14 @@ def test_enable_l1_keepalives(loop, vm):
     with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-l		Enable Layer 1 keepalive messages\n-u <n>		UDP port base for distributed networks\n") as mock:
 
         command = ["test"]
-        loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
+        loop.run_until_complete(asyncio.ensure_future(vm._enable_l1_keepalives(command)))
         assert command == ["test", "-l"]
 
     with asyncio_patch("gns3server.utils.asyncio.subprocess_check_output", return_value="***************************************************************\n\n-u <n>		UDP port base for distributed networks\n") as mock:
 
         command = ["test"]
         with pytest.raises(IOUError):
-            loop.run_until_complete(asyncio.async(vm._enable_l1_keepalives(command)))
+            loop.run_until_complete(asyncio.ensure_future(vm._enable_l1_keepalives(command)))
             assert command == ["test"]
 
 
@@ -339,8 +339,8 @@ def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
-    loop.run_until_complete(asyncio.async(vm.start_capture(0, 0, output_file)))
+    loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(0, 0, nio)))
+    loop.run_until_complete(asyncio.ensure_future(vm.start_capture(0, 0, output_file)))
     assert vm._adapters[0].get_nio(0).capturing
 
 
@@ -348,10 +348,10 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, 0, nio)))
+    loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(0, 0, nio)))
     loop.run_until_complete(vm.start_capture(0, 0, output_file))
     assert vm._adapters[0].get_nio(0).capturing
-    loop.run_until_complete(asyncio.async(vm.stop_capture(0, 0)))
+    loop.run_until_complete(asyncio.ensure_future(vm.stop_capture(0, 0)))
     assert vm._adapters[0].get_nio(0).capturing is False
 
 
@@ -364,42 +364,42 @@ def test_invalid_iou_file(loop, vm, iourc_file):
 
     hostname = socket.gethostname()
 
-    loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+    loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Missing ;
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\n{} = aaaaaaaaaaaaaaaa".format(hostname))
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Key too short
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\n{} = aaaaaaaaaaaaaa;".format(hostname))
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Invalid hostname
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[license]\nbla = aaaaaaaaaaaaaa;")
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Missing licence section
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[licensetest]\n{} = aaaaaaaaaaaaaaaa;")
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Broken config file
     with pytest.raises(IOUError):
         with open(iourc_file, "w+") as f:
             f.write("[")
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
     # Missing file
     with pytest.raises(IOUError):
         os.remove(iourc_file)
-        loop.run_until_complete(asyncio.async(vm._check_iou_licence()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_iou_licence()))
 
 
 def test_iourc_content(vm):
