@@ -511,7 +511,7 @@ class DockerVM(BaseNode):
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
 
-        asyncio.async(self._read_console_output(self._console_websocket, output_stream))
+        asyncio.ensure_future(self._read_console_output(self._console_websocket, output_stream))
 
     @asyncio.coroutine
     def _read_console_output(self, ws, out):

@@ -75,20 +75,20 @@ def test_rename_vmname(project, manager, async_run):
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
         vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
-        loop.run_until_complete(asyncio.async(vm.create()))
+        loop.run_until_complete(asyncio.ensure_future(vm.create()))
 
 
 def test_vm_invalid_virtualbox_api_version(loop, project, manager):
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_2"]):
         with pytest.raises(VirtualBoxError):
             vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
 
 
 def test_vm_adapter_add_nio_binding_adapter_not_exist(loop, vm, manager, free_console_port):
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     with pytest.raises(VirtualBoxError):
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(15, nio)))
+        loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(15, nio)))
 
 
 def test_json(vm, tmpdir, project):

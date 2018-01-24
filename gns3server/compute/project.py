@@ -325,7 +325,7 @@ class Project:
 
         tasks = []
         for node in self._nodes:
-            tasks.append(asyncio.async(node.manager.close_node(node.id)))
+            tasks.append(asyncio.ensure_future(node.manager.close_node(node.id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

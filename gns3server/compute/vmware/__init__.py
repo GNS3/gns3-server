@@ -738,4 +738,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     vmware = VMware.instance()
     print("=> Check version")
-    loop.run_until_complete(asyncio.async(vmware.check_vmware_version()))
+    loop.run_until_complete(asyncio.ensure_future(vmware.check_vmware_version()))

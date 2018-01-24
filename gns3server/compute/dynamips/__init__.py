@@ -172,7 +172,7 @@ class Dynamips(BaseManager):
 
         tasks = []
         for device in self._devices.values():
-            tasks.append(asyncio.async(device.hypervisor.stop()))
+            tasks.append(asyncio.ensure_future(device.hypervisor.stop()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -196,7 +196,7 @@ class Dynamips(BaseManager):
         tasks = []
         for device in self._devices.values():
             if device.project.id == project.id:
-                tasks.append(asyncio.async(device.delete()))
+                tasks.append(asyncio.ensure_future(device.delete()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

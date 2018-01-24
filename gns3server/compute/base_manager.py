@@ -127,7 +127,7 @@ class BaseManager:
 
         tasks = []
         for node_id in self._nodes.keys():
-            tasks.append(asyncio.async(self.close_node(node_id)))
+            tasks.append(asyncio.ensure_future(self.close_node(node_id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

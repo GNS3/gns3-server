@@ -43,7 +43,7 @@ class NotificationHandler:
         ws = WebSocketResponse()
         yield from ws.prepare(request)
 
-        asyncio.async(process_websocket(ws))
+        asyncio.ensure_future(process_websocket(ws))
 
         with notifications.queue() as queue:
             while True:

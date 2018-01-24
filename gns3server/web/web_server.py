@@ -136,7 +136,7 @@ class WebServer:
 
         def signal_handler(signame, *args):
             log.warning("Server has got signal {}, exiting...".format(signame))
-            asyncio.async(self.shutdown_server())
+            asyncio.ensure_future(self.shutdown_server())
 
         signals = ["SIGTERM", "SIGINT"]
         if sys.platform.startswith("win"):
@@ -203,7 +203,7 @@ class WebServer:
         # Because with a large image collection
         # without md5sum already computed we start the
         # computing with server start
-        asyncio.async(Qemu.instance().list_images())
+        asyncio.ensure_future(Qemu.instance().list_images())
 
     def run(self):
         """
@@ -283,7 +283,7 @@ class WebServer:
         self._exit_handling()
 
         if server_config.getboolean("shell"):
-            asyncio.async(self.start_shell())
+            asyncio.ensure_future(self.start_shell())
 
         try:
             self._loop.run_forever()
