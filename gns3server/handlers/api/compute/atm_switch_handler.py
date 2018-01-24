@@ -188,7 +188,7 @@ class ATMSwitchHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend an ATM Relay switch")
+        description="Suspend an ATM Relay switch (does nothing)")
     def suspend(request, response):
 
         Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

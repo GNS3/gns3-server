@@ -17,7 +17,6 @@
 
 import asyncio
 
-from ...error import NodeError
 from ...base_node import BaseNode
 
 import logging

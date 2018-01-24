@@ -168,7 +168,7 @@ class CloudHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend a cloud")
+        description="Suspend a cloud (does nothing)")
     def suspend(request, response):
 
         Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

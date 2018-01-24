@@ -204,7 +204,7 @@ class EthernetSwitchHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend an Ethernet switch")
+        description="Suspend an Ethernet switch (does nothing)")
     def suspend(request, response):
 
         Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

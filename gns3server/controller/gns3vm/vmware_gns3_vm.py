@@ -171,7 +171,7 @@ class VMwareGNS3VM(BaseGNS3VM):
             trial -= 1
             # If ip not found fallback on old method
             if trial == 0:
-                log.warn("No IP found for the VM via readVariable fallback to getGuestIPAddress")
+                log.warning("No IP found for the VM via readVariable fallback to getGuestIPAddress")
                 guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
                 break
             yield from asyncio.sleep(1)

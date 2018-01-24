@@ -20,7 +20,7 @@ from gns3server.compute.dynamips.nodes.ethernet_switch import EthernetSwitchCons
 from gns3server.compute.nios.nio_udp import NIOUDP
 
 
-def test_arp_command(async_run):
+def test_mac_command(async_run):
     node = AsyncioMagicMock()
     node.name = "Test"
     node.nios = {}
@@ -30,7 +30,7 @@ def test_arp_command(async_run):
     node.nios[1].name = "Ethernet1"
     node._hypervisor.send = AsyncioMagicMock(return_value=["0050.7966.6801  1  Ethernet0", "0050.7966.6802  1  Ethernet1"])
     console = EthernetSwitchConsole(node)
-    assert async_run(console.arp()) == \
+    assert async_run(console.mac()) == \
         "Port       Mac                VLAN\n" \
         "Ethernet0  00:50:79:66:68:01  1\n" \
         "Ethernet1  00:50:79:66:68:02  1\n"

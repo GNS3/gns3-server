@@ -45,7 +45,8 @@ def test_version_invalid_input(http_controller):
     query = {'version': "0.4.2"}
     response = http_controller.post('/version', query)
     assert response.status == 409
-    assert response.json == {'message': 'Client version 0.4.2 differs with server version {}'.format(__version__),
+
+    assert response.json == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__),
                              'status': 409}
 
 
