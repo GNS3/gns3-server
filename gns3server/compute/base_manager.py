@@ -557,7 +557,7 @@ class BaseManager:
                     f.write(packet)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             shutil.move(tmp_path, path)
-            md5sum(path)
+            yield from wait_run_in_executor(md5sum, path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))
 

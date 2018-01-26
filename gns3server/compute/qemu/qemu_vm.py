@@ -32,7 +32,7 @@ import gns3server
 import subprocess
 
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import subprocess_check_output
+from gns3server.utils.asyncio import subprocess_check_output, wait_run_in_executor
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
