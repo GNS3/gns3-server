@@ -20,12 +20,17 @@ import os
 import struct
 import stat
 import asyncio
+from asyncio.futures import CancelledError
+
 import aiohttp
 import socket
 import shutil
 import re
 
 import logging
+
+from gns3server.utils.asyncio import cancellable_wait_run_in_executor
+
 log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
@@ -558,7 +563,7 @@ class BaseManager:
                     f.write(packet)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             shutil.move(tmp_path, path)
-            md5sum(path)
+            yield from cancellable_wait_run_in_executor(md5sum, path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))
 

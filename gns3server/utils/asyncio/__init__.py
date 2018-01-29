@@ -20,6 +20,9 @@ import functools
 import asyncio
 import sys
 import os
+import threading
+
+from asyncio.futures import CancelledError
 
 
 @asyncio.coroutine
@@ -38,6 +41,25 @@ def wait_run_in_executor(func, *args, **kwargs):
     future = loop.run_in_executor(None, functools.partial(func, *args, **kwargs))
     yield from asyncio.wait([future])
     return future.result()
+
+
+@asyncio.coroutine
+def cancellable_wait_run_in_executor(func, *args, **kwargs):
+    """
+    Run blocking code in a different thread and wait
+    for the result. Support cancellation.
+
+    :param func: Run this function in a different thread
+    :param args: Parameters of the function
+    :param kwargs: Keyword parameters of the function
+    :returns: Return the result of the function
+    """
+    stopped_event = threading.Event()
+    kwargs['stopped_event'] = stopped_event
+    try:
+        yield from wait_run_in_executor(func, *args, **kwargs)
+    except CancelledError:
+        stopped_event.set()
 
 
 @asyncio.coroutine

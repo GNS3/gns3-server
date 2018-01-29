@@ -32,7 +32,7 @@ import gns3server
 import subprocess
 
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import subprocess_check_output
+from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
@@ -872,6 +872,22 @@ class QemuVM(BaseNode):
             raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Could not throttle CPU: {}".format(e))
+
+    @asyncio.coroutine
+    def create(self):
+        """
+        Creates QEMU VM and sets proper MD5 hashes
+        """
+
+        # In case user upload image manually we don't have md5 sums.
+        # We need generate hashes at this point, otherwise they will be generated
+        # at __json__ but not on separate thread.
+        yield from cancellable_wait_run_in_executor(md5sum, self._hda_disk_image)
+        yield from cancellable_wait_run_in_executor(md5sum, self._hdb_disk_image)
+        yield from cancellable_wait_run_in_executor(md5sum, self._hdc_disk_image)
+        yield from cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image)
+
+        super(QemuVM, self).create()
 
     @asyncio.coroutine
     def start(self):

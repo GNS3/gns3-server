@@ -89,6 +89,21 @@ def test_vm(project, manager, fake_qemu_binary):
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+def test_vm_create(loop, tmpdir, project, manager, fake_qemu_binary):
+    fake_img = str(tmpdir / 'hello')
+
+    with open(fake_img, 'w+') as f:
+        f.write('hello')
+
+    vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
+    vm._hda_disk_image =  fake_img
+
+    loop.run_until_complete(asyncio.ensure_future(vm.create()))
+
+    # tests if `create` created md5sums
+    assert os.path.exists(str(tmpdir / 'hello.md5sum'))
+
+
 def test_vm_invalid_qemu_with_platform(project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path="/usr/fake/bin/qemu-system-64", platform="x86_64")
