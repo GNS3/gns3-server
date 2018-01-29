@@ -40,7 +40,7 @@ from ..nios.nio_udp import NIOUDP
 
 
 from gns3server.utils.file_watcher import FileWatcher
-from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
+from gns3server.utils.asyncio import wait_run_in_executor, monitor_process, asyncio_ensure_future
 from gns3server.utils.images import md5sum
 
 
@@ -194,7 +194,7 @@ class Router(BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        asyncio.ensure_future(self.save_configs())
+        asyncio_ensure_future(self.save_configs())
 
     @property
     def dynamips_id(self):

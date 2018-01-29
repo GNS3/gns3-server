@@ -20,6 +20,8 @@ import asyncio
 import asyncio.subprocess
 import struct
 
+from gns3server.utils.asyncio import asyncio_ensure_future
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -229,13 +231,13 @@ class AsyncioTelnetServer:
                 self._reader_process = network_reader
             if self._reader:
                 if self._reader_process == network_reader:
-                    self._current_read = asyncio.ensure_future(self._reader.read(READ_SIZE))
+                    self._current_read = asyncio_ensure_future(self._reader.read(READ_SIZE))
                     return self._current_read
         return None
 
     @asyncio.coroutine
     def _process(self, network_reader, network_writer, connection):
-        network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
+        network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
         reader_read = yield from self._get_reader(network_reader)
 
         while True:
@@ -261,7 +263,7 @@ class AsyncioTelnetServer:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
 
-                    network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
+                    network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
 
                     if IAC in data:
                         data = yield from self._IAC_parser(data, network_reader, network_writer, connection)
@@ -418,7 +420,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
 
-    process = loop.run_until_complete(asyncio.ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
+    process = loop.run_until_complete(asyncio_ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
                                                                                               stdout=asyncio.subprocess.PIPE,
                                                                                               stderr=asyncio.subprocess.STDOUT,
                                                                                               stdin=asyncio.subprocess.PIPE)))

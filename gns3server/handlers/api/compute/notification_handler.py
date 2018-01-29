@@ -20,6 +20,7 @@ import aiohttp
 from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.compute.notification_manager import NotificationManager
+from gns3server.utils.asyncio import asyncio_ensure_future
 
 
 @asyncio.coroutine
@@ -43,7 +44,7 @@ class NotificationHandler:
         ws = WebSocketResponse()
         yield from ws.prepare(request)
 
-        asyncio.ensure_future(process_websocket(ws))
+        asyncio_ensure_future(process_websocket(ws))
 
         with notifications.queue() as queue:
             while True:

@@ -20,6 +20,7 @@ from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.schemas.version import VERSION_SCHEMA
 from gns3server.version import __version__
+from gns3server.utils.asyncio import asyncio_ensure_future
 
 from aiohttp.web import HTTPConflict, HTTPForbidden
 
@@ -57,7 +58,7 @@ class ServerHandler:
 
         tasks = []
         for project in projects:
-            tasks.append(asyncio.ensure_future(project.close()))
+            tasks.append(asyncio_ensure_future(project.close()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -71,7 +72,7 @@ class ServerHandler:
         # then shutdown the server itself
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
-        asyncio.ensure_future(server.shutdown_server())
+        asyncio_ensure_future(server.shutdown_server())
         response.set_status(201)
 
     @Route.get(
