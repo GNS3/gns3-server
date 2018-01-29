@@ -35,6 +35,7 @@ log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
 from gns3server.utils.interfaces import is_interface_up
+from gns3server.utils.asyncio import asyncio_ensure_future
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils import force_unix_path
@@ -132,7 +133,7 @@ class BaseManager:
 
         tasks = []
         for node_id in self._nodes.keys():
-            tasks.append(asyncio.ensure_future(self.close_node(node_id)))
+            tasks.append(asyncio_ensure_future(self.close_node(node_id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

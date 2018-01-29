@@ -28,7 +28,7 @@ from uuid import UUID, uuid4
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
-from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import wait_run_in_executor, asyncio_ensure_future
 from ..utils.path import check_path_allowed, get_default_project_directory
 
 
@@ -325,7 +325,7 @@ class Project:
 
         tasks = []
         for node in self._nodes:
-            tasks.append(asyncio.ensure_future(node.manager.close_node(node.id)))
+            tasks.append(asyncio_ensure_future(node.manager.close_node(node.id)))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
