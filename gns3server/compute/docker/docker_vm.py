@@ -28,7 +28,7 @@ import os
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
-from gns3server.utils.asyncio import wait_for_file_creation
+from gns3server.utils.asyncio import wait_for_file_creation, asyncio_ensure_future
 from gns3server.utils.get_resource import get_resource
 
 from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
@@ -511,7 +511,7 @@ class DockerVM(BaseNode):
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
 
-        asyncio.ensure_future(self._read_console_output(self._console_websocket, output_stream))
+        asyncio_ensure_future(self._read_console_output(self._console_websocket, output_stream))
 
     @asyncio.coroutine
     def _read_console_output(self, ws, out):

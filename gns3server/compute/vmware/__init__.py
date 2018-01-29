@@ -39,6 +39,7 @@ log = logging.getLogger(__name__)
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware.vmware_error import VMwareError
+from gns3server.utils.asyncio import asyncio_ensure_future
 
 
 class VMware(BaseManager):
@@ -738,4 +739,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     vmware = VMware.instance()
     print("=> Check version")
-    loop.run_until_complete(asyncio.ensure_future(vmware.check_vmware_version()))
+    loop.run_until_complete(asyncio_ensure_future(vmware.check_vmware_version()))

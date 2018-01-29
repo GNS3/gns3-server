@@ -20,6 +20,8 @@ import copy
 import asyncio
 import asyncio.subprocess
 
+from gns3server.utils.asyncio import asyncio_ensure_future
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -69,8 +71,8 @@ class AsyncioRawCommandServer:
             else:
                 replaces.append((replace[0], replace[1], ))
 
-        network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
-        reader_read = asyncio.ensure_future(process_reader.read(READ_SIZE))
+        network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
+        reader_read = asyncio_ensure_future(process_reader.read(READ_SIZE))
         timeout = 30
 
         while True:
@@ -89,7 +91,7 @@ class AsyncioRawCommandServer:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
 
-                    network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
+                    network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
 
                     process_writer.write(data)
                     yield from process_writer.drain()
@@ -97,7 +99,7 @@ class AsyncioRawCommandServer:
                     if process_reader.at_eof():
                         raise ConnectionResetError()
 
-                    reader_read = asyncio.ensure_future(process_reader.read(READ_SIZE))
+                    reader_read = asyncio_ensure_future(process_reader.read(READ_SIZE))
 
                     for replace in replaces:
                         data = data.replace(replace[0], replace[1])
