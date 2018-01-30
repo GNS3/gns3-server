@@ -171,12 +171,16 @@ class Link:
             self._filters = new_filters
             if self._created:
                 yield from self.update()
+                self._project.controller.notification.emit("link.updated", self.__json__())
+                self._project.dump()
 
     @asyncio.coroutine
     def update_suspend(self, value):
         if value != self._suspend:
             self._suspend = value
             yield from self.update()
+            self._project.controller.notification.emit("link.updated", self.__json__())
+            self._project.dump()
 
     @property
     def created(self):
