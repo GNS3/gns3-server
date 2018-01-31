@@ -4,44 +4,41 @@ Glossary
 Topology
 --------
 
-The place where you have all things (node, drawing, link...)
-
+Contains everything to represent a virtual network (nodes, visual elements, links...)
 
 Node
------
+----
 
-A Virtual Machine (Dynamips, IOU, Qemu, VPCS...), a cloud, a builtin device (switch, hub...)
+A Virtual Machine (Dynamips, IOU, Qemu, VPCS...) or builtin node (cloud, switch, hub...) that run on a compute.
 
 Appliance
 ---------
 
-A model for a node. When you drag an appliance to the topology a node is created.
-
+A model for a node used to create a node. When you drag an appliance to the topology a node is created.
 
 Appliance template
 ------------------
 
-A file (.gns3a) use for creating new node model.
+A file (.gns3a) used to create a new node.
 
 
 Drawing
---------
+-------
 
-Drawing are visual element not used by the network emulation. Like
-text, images, rectangle... They are pure SVG elements.
+A Drawing is a visual element like annotations, images, rectangles etc. There are pure SVG elements.
 
 Adapter
 -------
 
-The physical network interface. The adapter can contain multiple ports.
+A physical network interface, like a PCI card. The adapter can contain multiple ports.
 
 Port
 ----
 
-A port is an opening on network adapter that cable plug into.
+A port is an opening on a network adapter where can be plugged into.
 
-For example a VM can have a serial and an ethernet adapter plugged in.
-The ethernet adapter can have 4 ports.
+For example a VM can have a serial and an Ethernet adapter.
+The Ethernet adapter itself can have 4 ports.
 
 Controller
 ----------
@@ -50,20 +47,23 @@ The central server managing everything in GNS3. A GNS3 controller
 will manage multiple GNS3 compute node.
 
 Compute
-----------
+-------
 
 The process running on each server with GNS3. The GNS3 compute node
 is controlled by the GNS3 controller.
 
 Symbol
 ------
-Symbol are the icon used for nodes.
+
+A symbol is an icon used to represent a node on a scene.
 
 Scene
 -----
-The drawing area
+
+A scene is the drawing area or canvas.
 
 
 Filter
 ------
-Packet filter this allow to add latency or packet drop.
+
+Packet filter, for instance to add latency on a link or drop packets
