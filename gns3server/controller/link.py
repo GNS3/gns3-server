@@ -198,6 +198,8 @@ class Link:
         """
 
         port = node.get_port(adapter_number, port_number)
+        if port is None:
+            raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(adapter_number, port_number, node.name))
         if port.link is not None:
             raise aiohttp.web.HTTPConflict(text="Port is already used")
 
@@ -213,6 +215,8 @@ class Link:
 
             # Check if user is not connecting serial => ethernet
             other_port = other_node["node"].get_port(other_node["adapter_number"], other_node["port_number"])
+            if other_port is None:
+                raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(other_node["adapter_number"], other_node["port_number"], other_node["node"].name))
             if port.link_type != other_port.link_type:
                 raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_port.link_type, port.link_type))
 

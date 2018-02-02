@@ -783,8 +783,11 @@ class Project:
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
+                    if port is None:
+                        log.warning("Port {}/{} for {} not found".format(node_link["adapter_number"], node_link["port_number"], node.name))
+                        continue
                     if port.link is not None:
-                        # the node port is already attached to another link
+                        log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
                         continue
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:

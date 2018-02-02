@@ -574,12 +574,12 @@ class Node:
     def get_port(self, adapter_number, port_number):
         """
         Return the port for this adapter_number and port_number
-        or raise an HTTPNotFound
+        or returns None if the port is not found
         """
         for port in self.ports:
             if port.adapter_number == adapter_number and port.port_number == port_number:
                 return port
-        raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(adapter_number, port_number, self.name))
+        return None
 
     def _list_ports(self):
         """
