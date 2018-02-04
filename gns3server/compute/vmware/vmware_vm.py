@@ -745,7 +745,7 @@ class VMwareVM(BaseNode):
                                       "Please remove it or allow VMware VM '{name}' to use any adapter.".format(attachment=self._vmx_pairs[connection_type],
                                                                                                                 adapter_number=adapter_number,
                                                                                                                 name=self.name))
-                elif self.is_running():
+                elif (yield from self.is_running()):
                     raise VMwareError("Attachment '{attachment}' is configured on network adapter {adapter_number}. "
                                       "Please stop VMware VM '{name}' to link to this adapter and allow GNS3 to change the attachment type.".format(attachment=self._vmx_pairs[connection_type],
                                                                                                                                                     adapter_number=adapter_number,
