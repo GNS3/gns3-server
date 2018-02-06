@@ -510,7 +510,8 @@ def test_load_appliances(controller):
         "Qemu": {
             "vms": [
                 {
-                    "name": "Test"
+                    "name": "Test",
+                    "node_type": "qemu",
                 }
             ]
         }
