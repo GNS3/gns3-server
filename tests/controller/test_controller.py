@@ -512,6 +512,7 @@ def test_load_appliances(controller):
                 {
                     "name": "Test",
                     "node_type": "qemu",
+                    "category": "router"
                 }
             ]
         }
