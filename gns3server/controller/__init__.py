@@ -82,7 +82,8 @@ class Controller:
                         if appliance.status != 'broken':
                             self._appliance_templates[appliance.id] = appliance
                     except (ValueError, OSError, KeyError) as e:
-                        log.warning("Can't load %s: %s", path, str(e))
+                        log.warning("Cannot load appliance template file '%s': %s", path, str(e))
+                        continue
 
         self._appliances = {}
         vms = []
@@ -125,10 +126,11 @@ class Controller:
             vm.setdefault("appliance_id", str(uuid.uuid4()))
             try:
                 appliance = Appliance(vm["appliance_id"], vm)
+                appliance.__json__()  # Check if loaded without error
                 self._appliances[appliance.id] = appliance
             except KeyError as e:
                 # appliance data is not complete (missing name or type)
-                log.warning("Could not load appliance template {} ('{}'): {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
                 continue
 
         # Add builtins
