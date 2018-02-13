@@ -19,12 +19,12 @@ import aiohttp
 import asyncio
 import json
 import os
-import psutil
 import tempfile
 
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute import MODULES
+from gns3server.utils.ping_stats import PingStats
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
@@ -186,11 +186,7 @@ class ProjectHandler:
 
         :returns: hash
         """
-        stats = {}
-        # Non blocking call in order to get cpu usage. First call will return 0
-        stats["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
-        stats["memory_usage_percent"] = psutil.virtual_memory().percent
-        return {"action": "ping", "event": stats}
+        return {"action": "ping", "event": PingStats.get()}
 
     @Route.get(
         r"/projects/{project_id}/files",
