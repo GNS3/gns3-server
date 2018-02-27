@@ -314,7 +314,7 @@ class DockerVM(BaseNode):
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
         if self._environment:
-            for e in self._environment.split("\n"):
+            for e in self._environment.strip().split("\n"):
                 e = e.strip()
                 if not e.startswith("GNS3_"):
                     params["Env"].append(e)
