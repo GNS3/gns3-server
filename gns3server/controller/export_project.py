@@ -29,7 +29,8 @@ log = logging.getLogger(__name__)
 
 
 @asyncio.coroutine
-def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
+def export_project(project, temporary_dir, include_images=False, keep_compute_id=False,
+                   allow_all_nodes=False, ignore_prefixes=None):
     """
     Export the project as zip. It's a ZipStream object.
     The file will be read chunk by chunk when you iterate on
@@ -109,6 +110,10 @@ def _filter_files(path):
     s = os.path.normpath(path).split(os.path.sep)
 
     if path.endswith("snapshots"):
+        return True
+
+    # filter directory of snapshots
+    if "{sep}snapshots{sep}".format(sep=os.path.sep) in path:
         return True
 
     try:
