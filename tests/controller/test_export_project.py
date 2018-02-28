@@ -22,6 +22,7 @@ import pytest
 import aiohttp
 import zipfile
 
+from pathlib import Path
 from unittest.mock import patch
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, AsyncioBytesIO
@@ -417,3 +418,42 @@ def test_export_images_from_vm(tmpdir, project, async_run, controller):
         with myzip.open("images/dynamips/test.image") as myfile:
             content = myfile.read()
             assert content == b"IMAGE"
+
+
+def test_export_with_ignoring_snapshots(tmpdir, project, async_run):
+    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+        data = {
+            "topology": {
+                "computes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "host": "127.0.0.1",
+                        "name": "Remote 1",
+                        "port": 8001,
+                        "protocol": "http"
+                    }
+                ],
+                "nodes": [
+                    {
+                        "compute_id": "6b7149c8-7d6e-4ca0-ab6b-daa8ab567be0",
+                        "node_type": "vpcs"
+                    }
+                ]
+            }
+        }
+        json.dump(data, f)
+
+    # create snapshot directory
+    snapshots_dir = os.path.join(project.path, 'snapshots')
+    os.makedirs(snapshots_dir)
+    Path(os.path.join(snapshots_dir, 'snap.gns3project')).touch()
+
+    z = async_run(export_project(project, str(tmpdir), keep_compute_id=True))
+
+    with open(str(tmpdir / 'zipfile.zip'), 'wb') as f:
+        for data in z:
+            f.write(data)
+
+    with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
+        assert not os.path.join('snapshots', 'snap.gns3project') in [f.filename for f in myzip.filelist]
+
