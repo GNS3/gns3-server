@@ -540,6 +540,52 @@ def test_load_appliances(controller):
             assert cloud_uuid == appliance.id
 
 
+def test_load_appliances_deprecated_features_default_symbol(controller):
+    controller._settings = {
+        "Qemu": {
+            "vms": [
+                {
+                    "name": "Test",
+                    "node_type": "qemu",
+                    "category": "router",
+                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
+                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
+                }
+            ]
+        }
+    }
+    controller.load_appliances()
+    appliances = dict([(a.name, a) for a in controller.appliances.values()])
+
+    assert appliances["Test"].__json__()["symbol"] == ":/symbols/computer.svg"
+    assert "default_symbol" not in appliances["Test"].data.keys()
+    assert "hover_symbol" not in appliances["Test"].data.keys()
+
+
+def test_load_appliances_deprecated_features_default_symbol_with_symbol(controller):
+    controller._settings = {
+        "Qemu": {
+            "vms": [
+                {
+                    "name": "Test",
+                    "node_type": "qemu",
+                    "category": "router",
+                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
+                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
+                    "symbol": ":/symbols/my-symbol.svg"
+
+                }
+            ]
+        }
+    }
+    controller.load_appliances()
+    appliances = dict([(a.name, a) for a in controller.appliances.values()])
+
+    assert appliances["Test"].__json__()["symbol"] == ":/symbols/my-symbol.svg"
+    assert "default_symbol" not in appliances["Test"].data.keys()
+    assert "hover_symbol" not in appliances["Test"].data.keys()
+
+
 def test_autoidlepc(controller, async_run):
     controller._computes["local"] = AsyncioMagicMock()
     node_mock = AsyncioMagicMock()

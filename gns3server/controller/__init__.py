@@ -121,8 +121,21 @@ class Controller:
         for vm in vms:
             # remove deprecated properties
             for prop in vm.copy():
-                if prop in ["enable_remote_console", "use_ubridge"]:
+                if prop in ["enable_remote_console", "use_ubridge", "default_symbol", "hover_symbol"]:
                     del vm[prop]
+
+            # remove deprecated default_symbol and hover_symbol
+            # and set symbol if not present
+            deprecated = ["default_symbol", "hover_symbol"]
+            if len([prop for prop in vm.keys() if prop in deprecated]) > 0:
+                if "default_symbol" in vm.keys():
+                    del vm["default_symbol"]
+                if "hover_symbol" in vm.keys():
+                    del vm["hover_symbol"]
+
+                if "symbol" not in vm.keys():
+                    vm["symbol"] = ":/symbols/computer.svg"
+
             vm.setdefault("appliance_id", str(uuid.uuid4()))
             try:
                 appliance = Appliance(vm["appliance_id"], vm)
