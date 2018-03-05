@@ -121,7 +121,7 @@ class Controller:
         for vm in vms:
             # remove deprecated properties
             for prop in vm.copy():
-                if prop in ["enable_remote_console", "use_ubridge", "default_symbol", "hover_symbol"]:
+                if prop in ["enable_remote_console", "use_ubridge"]:
                     del vm[prop]
 
             # remove deprecated default_symbol and hover_symbol
