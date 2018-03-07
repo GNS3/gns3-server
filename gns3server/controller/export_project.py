@@ -263,6 +263,6 @@ def _export_remote_images(project, compute_id, image_type, image, project_zipfil
         f.write(data)
     response.close()
     f.close()
-    arcname = os.path.join("images", image_type.upper(), image)
+    arcname = os.path.join("images", image_type, image)
     log.info("Saved {}".format(arcname))
     project_zipfile.write(temp_path, arcname=arcname, compress_type=zipfile.ZIP_DEFLATED)
