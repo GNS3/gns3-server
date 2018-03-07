@@ -283,12 +283,15 @@ class Router(BaseNode):
             if not self._ghost_flag:
                 self.check_available_ram(self.ram)
 
+            # config paths are relative to the working directory configured on Dynamips hypervisor
             startup_config_path = os.path.join("configs", "i{}_startup-config.cfg".format(self._dynamips_id))
             private_config_path = os.path.join("configs", "i{}_private-config.cfg".format(self._dynamips_id))
 
-            if not os.path.exists(private_config_path) or not os.path.getsize(private_config_path):
+            if not os.path.exists(os.path.join(self._working_directory, private_config_path)) or \
+               not os.path.getsize(os.path.join(self._working_directory, private_config_path)):
                 # an empty private-config can prevent a router to boot.
                 private_config_path = ''
+
             yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(
                 name=self._name,
                 startup=startup_config_path,
