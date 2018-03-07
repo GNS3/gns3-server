@@ -25,6 +25,7 @@ import asyncio
 import tempfile
 import psutil
 import platform
+import re
 
 from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
@@ -598,15 +599,24 @@ class BaseNode:
     @asyncio.coroutine
     def _ubridge_apply_filters(self, bridge_name, filters):
         """
-        Apply filter like rate limiting
+        Apply packet filters
 
         :param bridge_name: bridge name in uBridge
-        :param filters: Array of filter dictionnary
+        :param filters: Array of filter dictionary
         """
         yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
-        for filter in self._build_filter_list(filters):
-            cmd = 'bridge add_packet_filter {} {}'.format(bridge_name, filter)
-            yield from self._ubridge_send(cmd)
+        for packet_filter in self._build_filter_list(filters):
+            cmd = 'bridge add_packet_filter {} {}'.format(bridge_name, packet_filter)
+            try:
+                yield from self._ubridge_send(cmd)
+            except UbridgeError as e:
+                match = re.search("Cannot compile filter '(.*)': syntax error", str(e))
+                if match:
+                    message = "Warning: ignoring BPF packet filter '{}' due to syntax error".format(self.name, match.group(1))
+                    log.warning(message)
+                    self.project.emit("log.warning", {"message": message})
+                else:
+                    raise
 
     def _build_filter_list(self, filters):
         """
