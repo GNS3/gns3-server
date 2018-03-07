@@ -276,6 +276,9 @@ class DynamipsHypervisor:
                         log.warning("Connection reset received while reading Dynamips response: {}".format(e))
                         continue
                     if not chunk:
+                        if self.is_running():
+                            log.warning("No data returned from {host}:{port}".format(host=self._host, port=self._port))
+                            continue
                         raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
                                             .format(host=self._host, port=self._port, run=self.is_running()))
                     buf += chunk.decode("utf-8", errors="ignore")

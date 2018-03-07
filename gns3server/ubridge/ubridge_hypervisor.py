@@ -222,7 +222,16 @@ class UBridgeHypervisor:
                     # task has been canceled but continue to read
                     # any remaining data sent by the hypervisor
                     continue
+                except ConnectionResetError as e:
+                    # Sometimes WinError 64 (ERROR_NETNAME_DELETED) is returned here on Windows.
+                    # These happen if connection reset is received before IOCP could complete
+                    # a previous operation. Ignore and try again....
+                    log.warning("Connection reset received while reading uBridge response: {}".format(e))
+                    continue
                 if not chunk:
+                    if self.is_running():
+                        log.warning("No data returned from {host}:{port}".format(host=self._host, port=self._port))
+                        continue
                     raise UbridgeError("No data returned from {host}:{port}, uBridge process running: {run}"
                                        .format(host=self._host, port=self._port, run=self.is_running()))
                 buf += chunk.decode("utf-8")
