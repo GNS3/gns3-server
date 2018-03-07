@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import aiohttp
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
@@ -62,12 +63,15 @@ class SymbolHandler:
     def upload(request, response):
         controller = Controller.instance()
         path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
-        with open(path, 'wb+') as f:
-            while True:
-                packet = yield from request.content.read(512)
-                if not packet:
-                    break
-                f.write(packet)
+        try:
+            with open(path, 'wb') as f:
+                while True:
+                    packet = yield from request.content.read(512)
+                    if not packet:
+                        break
+                    f.write(packet)
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Could not write symbol file '{}': {}".format(path, e))
         # Reset the symbol list
         controller.symbols.list()
         response.set_status(204)

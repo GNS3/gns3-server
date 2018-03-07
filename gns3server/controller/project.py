@@ -627,9 +627,12 @@ class Project:
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(snapshot.path, "wb+") as f:
-                    for data in zipstream:
-                        f.write(data)
+                try:
+                    with open(snapshot.path, "wb") as f:
+                        for data in zipstream:
+                            f.write(data)
+                except OSError as e:
+                    raise aiohttp.web.HTTPConflict(text="Could not write snapshot file '{}': {}".format(snapshot.path, e))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
@@ -858,7 +861,7 @@ class Project:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
+                with open(os.path.join(tmpdir, "project.gns3p"), "wb") as f:
                     for data in zipstream:
                         f.write(data)
                 with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:

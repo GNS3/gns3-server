@@ -348,14 +348,14 @@ class IOUVM(BaseNode):
             # reload
             path = os.path.join(os.path.expanduser("~/"), ".iourc")
             try:
-                with open(path, "wb+") as f:
+                with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
                 raise IOUError("Could not write the iourc file {}: {}".format(path, e))
 
             path = os.path.join(self.temporary_directory, "iourc")
             try:
-                with open(path, "wb+") as f:
+                with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
                 raise IOUError("Could not write the iourc file {}: {}".format(path, e))

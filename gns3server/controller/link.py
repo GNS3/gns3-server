@@ -315,16 +315,19 @@ class Link:
             self._project.controller.notification.emit("link.updated", self.__json__())
 
         with stream_content as stream:
-            with open(self.capture_file_path, "wb+") as f:
-                while self._capturing:
-                    # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
-                    data = yield from stream.read(1)
-                    if data:
-                        f.write(data)
-                        # Flush to disk otherwise the live is not really live
-                        f.flush()
-                    else:
-                        break
+            try:
+                with open(self.capture_file_path, "wb") as f:
+                    while self._capturing:
+                        # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
+                        data = yield from stream.read(1)
+                        if data:
+                            f.write(data)
+                            # Flush to disk otherwise the live is not really live
+                            f.flush()
+                        else:
+                            break
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Could not write capture file '{}': {}".format(self.capture_file_path, e))
 
     @asyncio.coroutine
     def stop_capture(self):
