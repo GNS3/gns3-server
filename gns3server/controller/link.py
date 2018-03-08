@@ -305,6 +305,12 @@ class Link:
         Dump a pcap file on disk
         """
 
+        if os.path.exists(self.capture_file_path):
+            try:
+                os.remove(self.capture_file_path)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Could not delete old capture file '{}': {}".format(self.capture_file_path, e))
+
         try:
             stream_content = yield from self.read_pcap_from_source()
         except aiohttp.web.HTTPException as e:
