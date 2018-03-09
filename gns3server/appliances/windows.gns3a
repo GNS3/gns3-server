@@ -9,6 +9,7 @@
     "product_url": "https://www.microsoft.com/en-us/windows",
     "registry_version": 4,
     "status": "stable",
+    "availability": "free-to-try",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "These virtual machines expire after 90 days; i.e. you have to re-create them in your project after this time but you don't have to re-import the appliance.\n\nDefault credentials: IEUser / Passw0rd!",
@@ -25,6 +26,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "MSEdge-Win10-VMWare-disk1.vmdk",
+            "version": "10 w/ Edge",
+            "md5sum": "fef74c69e1949480d4e2095324a169af",
+            "filesize": 5636608512,
+            "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"
+        },
         {
             "filename": "MSEdge_-_Win10_preview.vmdk",
             "version": "10 w/ Edge",
@@ -71,6 +79,12 @@
     "versions": [
         {
             "name": "10 w/ Edge",
+            "images": {
+                "hda_disk_image": "MSEdge-Win10-VMWare-disk1.vmdk"
+            }
+        },
+        {
+            "name": "10 w/ Edge (Preview)",
             "images": {
                 "hda_disk_image": "MSEdge_-_Win10_preview.vmdk"
             }

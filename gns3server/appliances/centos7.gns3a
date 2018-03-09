@@ -9,6 +9,7 @@
     "product_url": "https://www.centos.org/download/",
     "registry_version": 5,
     "status": "stable",
+    "availability": "free",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Username: osboxes.org\nPassword: osboxes.org",

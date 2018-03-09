@@ -14,7 +14,8 @@
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 8,
-        "ram": 2048,
+        "cpus": 2,
+        "ram": 4096,
         "arch": "x86_64",
         "console_type": "telnet",
         "boot_priority": "dc",
@@ -56,21 +57,21 @@
         {
             "name": "80.10",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R80.10_T421_Gaia.iso"
             }
         },
         {
             "name": "77.30",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso"
             }
         },
         {
             "name": "77.20",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R77.20_T124_Install.Gaia.iso"
             }
         }
