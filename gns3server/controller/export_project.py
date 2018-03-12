@@ -64,7 +64,6 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
 
     for root, dirs, files in os.walk(project._path, topdown=True):
         files = [f for f in files if not _filter_files(os.path.join(root, f))]
-
         for file in files:
             path = os.path.join(root, file)
             # Try open the file
@@ -162,9 +161,12 @@ def _export_project_file(project, path, z, include_images, keep_compute_id, allo
 
                 if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
-                        if not prop.endswith("image"):
-                            continue
 
+                        if node["node_type"] == "iou":
+                            if not prop == "path":
+                                continue
+                        elif not prop.endswith("image"):
+                            continue
                         if value is None or value.strip() == '':
                             continue
 
@@ -214,7 +216,6 @@ def _export_local_images(project, image, z):
             continue
 
         directory = os.path.split(img_directory)[-1:][0]
-
         if os.path.exists(image):
             path = image
         else:
@@ -265,4 +266,3 @@ def _export_remote_images(project, compute_id, image_type, image, project_zipfil
     arcname = os.path.join("images", image_type, image)
     log.info("Saved {}".format(arcname))
     project_zipfile.write(temp_path, arcname=arcname, compress_type=zipfile.ZIP_DEFLATED)
-

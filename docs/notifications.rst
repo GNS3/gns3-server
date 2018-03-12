@@ -1,17 +1,17 @@
 Notifications
 =============
 
-You can receive notification from the controller allowing you to update your local data.
+Notifications can be received from the controller, they can be used to update your local data.
 
-Notifications endpoints
-***********************
+Notification endpoints
+**********************
 
-You can listen the HTTP stream /notifications or the websocket.
+Listen to the HTTP stream endpoint or to the Websocket endpoint.
 
    * :doc:`api/v2/controller/project/projectsprojectidnotifications`
    * :doc:`api/v2/controller/project/projectsprojectidnotificationsws`
 
-We recommend using the websocket.
+It is recommended to use the Websocket endpoint.
 
 Available notifications
 ***********************
@@ -21,7 +21,7 @@ Available notifications
 
 ping
 ----
-Keep the connection between client and controller.
+Keep-alive between client and controller. Also used to receive the current CPU and memory usage.
 
 .. literalinclude:: api/notifications/ping.json
 
@@ -29,7 +29,7 @@ Keep the connection between client and controller.
 compute.created
 ----------------
 
-Compute has been created.
+A compute has been created.
 
 .. literalinclude:: api/notifications/compute.created.json
 
@@ -37,9 +37,7 @@ Compute has been created.
 compute.updated
 ----------------
 
-Compute has been updated. You will receive a lot of this
-event because it's include change of CPU and memory usage
-on the compute node.
+A compute has been updated.
 
 .. literalinclude:: api/notifications/compute.updated.json
 
@@ -47,7 +45,7 @@ on the compute node.
 compute.deleted
 ---------------
 
-Compute has been deleted.
+A compute has been deleted.
 
 .. literalinclude:: api/notifications/compute.deleted.json
 
@@ -55,7 +53,7 @@ Compute has been deleted.
 node.created
 ------------
 
-Node has been created.
+A node has been created.
 
 .. literalinclude:: api/notifications/node.created.json
 
@@ -63,7 +61,7 @@ Node has been created.
 node.updated
 ------------
 
-Node has been updated.
+A node has been updated.
 
 .. literalinclude:: api/notifications/node.updated.json
 
@@ -71,7 +69,7 @@ Node has been updated.
 node.deleted
 ------------
 
-Node has been deleted.
+A node has been deleted.
 
 .. literalinclude:: api/notifications/node.deleted.json
 
@@ -79,8 +77,8 @@ Node has been deleted.
 link.created
 ------------
 
-Link has been created. Note that a link when created
-is not yet connected to both part.
+A link has been created. Note that a link is not connected
+to any node when it is created.
 
 .. literalinclude:: api/notifications/link.created.json
 
@@ -88,7 +86,7 @@ is not yet connected to both part.
 link.updated
 ------------
 
-Link has been updated.
+A link has been updated.
 
 .. literalinclude:: api/notifications/link.updated.json
 
@@ -96,7 +94,7 @@ Link has been updated.
 link.deleted
 ------------
 
-Link has been deleted.
+A link has been deleted.
 
 .. literalinclude:: api/notifications/link.deleted.json
 
@@ -104,7 +102,7 @@ Link has been deleted.
 drawing.created
 ---------------
 
-Drawing has been created.
+A drawing has been created.
 
 .. literalinclude:: api/notifications/drawing.created.json
 
@@ -112,8 +110,8 @@ Drawing has been created.
 drawing.updated
 ---------------
 
-Drawing has been updated. To reduce data transfert if the
-svg field has not change the field is not included.
+A drawing has been updated. The svg field is only included if it
+has changed in order to reduce data transfer.
 
 .. literalinclude:: api/notifications/drawing.updated.json
 
@@ -121,7 +119,7 @@ svg field has not change the field is not included.
 drawing.deleted
 ---------------
 
-Drawing has been deleted.
+A drawing has been deleted.
 
 .. literalinclude:: api/notifications/drawing.deleted.json
 
@@ -129,7 +127,7 @@ Drawing has been deleted.
 project.updated
 ---------------
 
-Project has been updated.
+A project has been updated.
 
 .. literalinclude:: api/notifications/project.updated.json
 
@@ -137,7 +135,7 @@ Project has been updated.
 project.closed
 ---------------
 
-Project has been closed.
+A project has been closed.
 
 .. literalinclude:: api/notifications/project.closed.json
 
@@ -145,14 +143,14 @@ Project has been closed.
 snapshot.restored
 --------------------------
 
-Snapshot has been restored
+A snapshot has been restored
 
 .. literalinclude:: api/notifications/project.snapshot_restored.json
 
 log.error
 ---------
 
-Send an error to the user
+Sends an error
 
 .. literalinclude:: api/notifications/log.error.json
 
@@ -160,7 +158,7 @@ Send an error to the user
 log.warning
 ------------
 
-Send a warning to the user
+Sends a warning
 
 .. literalinclude:: api/notifications/log.warning.json
 
@@ -168,7 +166,7 @@ Send a warning to the user
 log.info
 ---------
 
-Send an information to the user
+Sends an information
 
 .. literalinclude:: api/notifications/log.info.json
 
@@ -176,8 +174,6 @@ Send an information to the user
 settings.updated
 -----------------
 
-GUI settings updated. Will be removed in a later release.
+GUI settings have been updated. Will be removed in a later release.
 
 .. literalinclude:: api/notifications/settings.updated.json
-
-

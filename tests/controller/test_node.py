@@ -517,8 +517,8 @@ def test_get_port(node):
     assert port.port_number == 0
     port = node.get_port(1, 0)
     assert port.adapter_number == 1
-    with pytest.raises(aiohttp.web.HTTPNotFound):
-        port = node.get_port(42, 0)
+    port = node.get_port(42, 0)
+    assert port is None
 
 
 def test_parse_node_response(node, async_run):

@@ -82,7 +82,8 @@ class Controller:
                         if appliance.status != 'broken':
                             self._appliance_templates[appliance.id] = appliance
                     except (ValueError, OSError, KeyError) as e:
-                        log.warning("Can't load %s: %s", path, str(e))
+                        log.warning("Cannot load appliance template file '%s': %s", path, str(e))
+                        continue
 
         self._appliances = {}
         vms = []
@@ -122,13 +123,27 @@ class Controller:
             for prop in vm.copy():
                 if prop in ["enable_remote_console", "use_ubridge"]:
                     del vm[prop]
+
+            # remove deprecated default_symbol and hover_symbol
+            # and set symbol if not present
+            deprecated = ["default_symbol", "hover_symbol"]
+            if len([prop for prop in vm.keys() if prop in deprecated]) > 0:
+                if "default_symbol" in vm.keys():
+                    del vm["default_symbol"]
+                if "hover_symbol" in vm.keys():
+                    del vm["hover_symbol"]
+
+                if "symbol" not in vm.keys():
+                    vm["symbol"] = ":/symbols/computer.svg"
+
             vm.setdefault("appliance_id", str(uuid.uuid4()))
             try:
                 appliance = Appliance(vm["appliance_id"], vm)
+                appliance.__json__()  # Check if loaded without error
                 self._appliances[appliance.id] = appliance
             except KeyError as e:
                 # appliance data is not complete (missing name or type)
-                log.warning("Could not load appliance template {} ('{}'): {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
                 continue
 
         # Add builtins

@@ -2,17 +2,13 @@ Welcome to API documentation!
 ======================================
 
 .. WARNING::
-   This documentation are for developers for user documentation go
-   to https://gns3.com/
-
-   The API is not stable, feel free to post comments on our website
-   https://gns3.com/
+   This documentation is intended for developers. The user documentation is
+   available on https://gns3.com/
 
 
-This documentation cover the GNS3 API and ressources for GNS3 developers.
+This documentation describe the GNS3 API and provide information for GNS3 developers.
 
-
-If you want a quick demo on how to use the API read: :doc:`curl`
+For a quick demo on how to use the API read: :doc:`curl`
 
 API
 ----
@@ -26,8 +22,8 @@ API
     position
     endpoints
 
-GNS3 developements
-------------------
+GNS3 development
+----------------
 .. toctree::
     development
     file_format

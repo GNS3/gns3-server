@@ -48,7 +48,7 @@ def manager(port_manager):
 
 @pytest.fixture(scope="function")
 def vm(project, manager, tmpdir, fake_iou_bin, iourc_file):
-    vm = IOUVM("test", str(uuid.uuid4()), project, manager)
+    vm = IOUVM("test", str(uuid.uuid4()), project, manager, application_id=1)
     config = manager.config.get_section_config("IOU")
     config["iourc_path"] = iourc_file
     manager.config.set_section_config("IOU", config)
@@ -84,7 +84,7 @@ def test_vm(project, manager):
 
 
 def test_vm_startup_config_content(project, manager):
-    vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager)
+    vm = IOUVM("test", "00010203-0405-0607-0808-0a0b0c0d0e0f", project, manager, application_id=1)
     vm.startup_config_content = "hostname %h"
     assert vm.name == "test"
     assert vm.startup_config_content == "hostname test"
@@ -94,7 +94,6 @@ def test_vm_startup_config_content(project, manager):
 def test_start(loop, vm):
 
     mock_process = MagicMock()
-
     vm._check_requirements = AsyncioMagicMock(return_value=True)
     vm._check_iou_licence = AsyncioMagicMock(return_value=True)
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
@@ -440,7 +439,7 @@ def test_application_id(project, manager):
     """
     Checks if uses local manager to get application_id when not set
     """
-    vm = IOUVM("test", str(uuid.uuid4()), project, manager)
+    vm = IOUVM("test", str(uuid.uuid4()), project, manager, application_id=1)
     assert vm.application_id == 1
 
     vm.application_id = 3

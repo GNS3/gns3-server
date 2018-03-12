@@ -1,7 +1,7 @@
 Positions
 =========
 
-In a the project object you have properties scene_height and scene_width this define the
-size of the drawing area as px.
+A project object contains the scene_height and scene_width properties. This defines the
+size of the drawing area in px.
 
-The position of the node are relative to this with 0,0 as center of the area.
+The position of the nodes are relative with 0,0 as center of the area.

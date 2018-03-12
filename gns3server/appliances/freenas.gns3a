@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "FreeNAS-11.1-U1.iso",
+            "version": "11.1 U1",
+            "md5sum": "ccbd9990a5878d35c6bc0cc6eea34b16",
+            "filesize": 626601984,
+            "download_url": "http://www.freenas.org/download/",
+            "direct_download_url": "http://download.freenas.org/11/11.1-RELEASE/x64/FreeNAS-11.1-RELEASE.iso"
+        },
+        {
             "filename": "FreeNAS-11.1-RELEASE.iso",
             "version": "11.1",
             "md5sum": "67bea5816bc889169e5e3054362b2053",
@@ -34,7 +42,7 @@
         },
         {
             "filename": "FreeNAS-11.0-U4.iso",
-            "version": "11.0-U4",
+            "version": "11.0 U4",
             "md5sum": "4c210f1a6510d1fa95257d81ef569ff8",
             "filesize": 567312384,
             "download_url": "http://www.freenas.org/download/",
@@ -42,7 +50,7 @@
         },
         {
             "filename": "FreeNAS-9.10.1-U4.iso",
-            "version": "9.10",
+            "version": "9.10 U4",
             "md5sum": "b4fb14513dcbb4eb4c5596c5911ca9cc",
             "filesize": 533098496,
             "download_url": "http://www.freenas.org/download/",
@@ -59,6 +67,14 @@
     ],
     "versions": [
         {
+            "name": "11.1 U1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FreeNAS-11.1-U1.iso"
+            }
+        },
+        {
             "name": "11.1",
             "images": {
                 "hda_disk_image": "empty30G.qcow2",
@@ -67,7 +83,7 @@
             }
         },
         {
-            "name": "11.0",
+            "name": "11.0 U4",
             "images": {
                 "hda_disk_image": "empty30G.qcow2",
                 "hdb_disk_image": "empty30G.qcow2",
@@ -75,7 +91,7 @@
             }
         },
         {
-            "name": "9.10",
+            "name": "9.10 U4",
             "images": {
                 "hda_disk_image": "empty30G.qcow2",
                 "hdb_disk_image": "empty30G.qcow2",

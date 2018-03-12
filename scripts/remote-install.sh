@@ -310,7 +310,7 @@ apt-get install -y     \
   dnsutils             \
   nginx-light
 
-MY_IP_ADDR=$(dig @ns1.google.com -t txt o-o.myaddr.l.google.com +short | sed 's/"//g')
+MY_IP_ADDR=$(dig @ns1.google.com -t txt o-o.myaddr.l.google.com +short -4 | sed 's/"//g')
 
 log "IP detected: $MY_IP_ADDR"
 

@@ -118,7 +118,7 @@ class Drawing:
 
                 file_path = os.path.join(self._project.pictures_directory, filename)
                 if not os.path.exists(file_path):
-                    with open(file_path, "wb+") as f:
+                    with open(file_path, "wb") as f:
                         f.write(data)
                 value = filename
 

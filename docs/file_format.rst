@@ -1,11 +1,11 @@
-GNS3 file formats
-=================
+The GNS3 files
+===============
 
-The .gns3
-##########
+.gns3 files
+############
 
-It's the topology file of GNS3 this file is a JSON with all
-the informations about what is inside the topology.
+GNS3 project files in JSON file format with all
+the information necessary to save a project.
 
 A minimal version:
 
@@ -30,34 +30,34 @@ The revision is the version of file format:
 * 4: GNS3 1.5
 * 3: GNS3 1.4
 * 2: GNS3 1.3
-* 1: GNS3 1.0, 1.1, 1.2 (Not mentionned in the topology file)
+* 1: GNS3 1.0, 1.1, 1.2 (Not mentioned in the file)
 
-And the full JSON schema:
+The full JSON schema can be found there:
 
 .. literalinclude:: gns3_file.json
 
 
-The .net
-#########
-It's topologies made for GNS3 0.8
+.net files
+###########
+
+Topology files made for GNS3 <= version 1.0. Not supported.
 
 
-The .gns3p or .gns3project
-###########################
-
-It's a zipped version of the .gns3 and all files require for
-a topology. The images could be included inside but are optionnals.
-
-The zip could be a ZIP64 if the project is too big for standard
-zip file.
-
-The .gns3a or .gns3appliance
+.gns3p or .gns3project files
 #############################
 
-This file contains details on how to import an appliance in GNS3.
+This this a zipped version of a.gns3 file and includes all the required files to easily share a project.
+The binary images can optionally be included.
 
-A JSON schema is available here:
+The zip can be a ZIP64 if the project is too big for standard zip file.
+
+.gns3a or .gns3appliance files
+##############################
+
+These files contain everything needed to create a new appliance template in GNS3.
+
+A JSON schema is available there:
 https://github.com/GNS3/gns3-registry/blob/master/schemas/appliance.json
 
-And samples here:
+And samples there:
 https://github.com/GNS3/gns3-registry/tree/master/appliances

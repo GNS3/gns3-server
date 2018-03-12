@@ -39,7 +39,6 @@ from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine, asyncio_ensure_future
 from .export_project import export_project
 from .import_project import import_project
-from ..compute.iou.utils.application_id import get_next_application_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -86,7 +85,6 @@ class Project:
         self._show_grid = show_grid
         self._show_interface_labels = show_interface_labels
         self._loading = False
-        self._add_node_lock = asyncio.Lock()
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -440,34 +438,27 @@ class Project:
         if node_id in self._nodes:
             return self._nodes[node_id]
 
-        with (yield from self._add_node_lock):
-            # wait for a node to be completely created before adding a new one
-            # this is important otherwise we allocate the same application ID
-            # when creating multiple IOU node at the same time
-            if node_type == "iou" and 'application_id' not in kwargs.keys():
-                kwargs['application_id'] = get_next_application_id(self._nodes.values())
+        node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
+        if compute not in self._project_created_on_compute:
+            # For a local server we send the project path
+            if compute.id == "local":
+                yield from compute.post("/projects", data={
+                    "name": self._name,
+                    "project_id": self._id,
+                    "path": self._path
+                })
+            else:
+                yield from compute.post("/projects", data={
+                    "name": self._name,
+                    "project_id": self._id,
+                })
 
-            node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
-            if compute not in self._project_created_on_compute:
-                # For a local server we send the project path
-                if compute.id == "local":
-                    yield from compute.post("/projects", data={
-                        "name": self._name,
-                        "project_id": self._id,
-                        "path": self._path
-                    })
-                else:
-                    yield from compute.post("/projects", data={
-                        "name": self._name,
-                        "project_id": self._id,
-                    })
-
-                self._project_created_on_compute.add(compute)
-            yield from node.create()
-            self._nodes[node.id] = node
-            self.controller.notification.emit("node.created", node.__json__())
-            if dump:
-                self.dump()
+            self._project_created_on_compute.add(compute)
+        yield from node.create()
+        self._nodes[node.id] = node
+        self.controller.notification.emit("node.created", node.__json__())
+        if dump:
+            self.dump()
         return node
 
     @locked_coroutine
@@ -667,9 +658,12 @@ class Project:
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(snapshot.path, "wb+") as f:
-                    for data in zipstream:
-                        f.write(data)
+                try:
+                    with open(snapshot.path, "wb") as f:
+                        for data in zipstream:
+                            f.write(data)
+                except OSError as e:
+                    raise aiohttp.web.HTTPConflict(text="Could not write snapshot file '{}': {}".format(snapshot.path, e))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
@@ -826,8 +820,11 @@ class Project:
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
+                    if port is None:
+                        log.warning("Port {}/{} for {} not found".format(node_link["adapter_number"], node_link["port_number"], node.name))
+                        continue
                     if port.link is not None:
-                        # the node port is already attached to another link
+                        log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
                         continue
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:
@@ -899,7 +896,7 @@ class Project:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
+                with open(os.path.join(tmpdir, "project.gns3p"), "wb") as f:
                     for data in zipstream:
                         f.write(data)
                 with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:

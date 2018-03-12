@@ -547,7 +547,7 @@ class Dynamips(BaseManager):
                     content = content.replace('%h', vm.name)
                     f.write(content.encode("utf-8"))
         except OSError as e:
-            raise DynamipsError("Could not create config file {}: {}".format(path, e))
+            raise DynamipsError("Could not create config file '{}': {}".format(path, e))
 
         return os.path.join("configs", os.path.basename(path))
 

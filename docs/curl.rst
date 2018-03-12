@@ -1,30 +1,34 @@
-Sample session using curl
-=========================
+Sample sessions using curl
+==========================
 
-You need to read the :doc:`glossary`, and :doc:`general` before.
+Read the :doc:`glossary`, and :doc:`general` pages first.
 
-Full endpoints list is available: :doc:`endpoints`
+A list of all endpoints is available in :doc:`endpoints`
 
 .. warning::
 
-    Beware the output of this sample is truncated in order
-    to simplify the understanding. Please read the
-    documentation for the exact output.
+    Note that the output of the samples can be truncated in
+    order to simplify their understanding. Please read the
+    documentation for the exact output meaning.
 
-You can check the server version with a simple curl command:
+Server version
+###############
+
+Check the server version with a simple curl command:
 
 .. code-block:: shell-session
 
     # curl "http://localhost:3080/v2/version"
     {
-        "version": "2.0.0dev1"
+        "local": false,
+        "version": "2.1.4"
     }
 
 
 List computes
 ##############
 
-We will list the computes node where we can run our nodes:
+List all the compute servers:
 
 .. code-block:: shell-session
 
@@ -34,20 +38,20 @@ We will list the computes node where we can run our nodes:
             "compute_id": "local",
             "connected": true,
             "host": "127.0.0.1",
-            "name": "Local",
+            "name": "local",
             "port": 3080,
             "protocol": "http",
             "user": "admin"
         }
     ]
 
-In this sample we have only one compute where we can run our nodes. This compute as a special id: local. This
-mean it's the local server embed in the GNS3 controller.
+There is only one compute server where nodes can be run in this example.
+This compute as a special id: local, this is the local server which is embedded in the GNS3 controller.
 
-Create project
-###############
+Create a project
+#################
 
-The next step is to create a project.
+The next step is to create a project:
 
 .. code-block:: shell-session
 
@@ -60,7 +64,7 @@ The next step is to create a project.
 Create nodes
 #############
 
-With this project id we can now create two VPCS Node.
+Using the project id, it is now possible to create two VPCS nodes:
 
 .. code-block:: shell-session
 
@@ -87,15 +91,14 @@ With this project id we can now create two VPCS Node.
         "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74",
         "node_type": "vpcs",
         "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f",
+        "properties": {},
         "status": "stopped"
     }
-
-The properties dictionnary contains all setting specific to a node type (dynamips, docker, vpcs...)
 
 Link nodes
 ###########
 
-Now we need to link the two VPCS by connecting their port 0 together.
+The two VPCS nodes can be linked together using their port number 0 (VPCS has only one network adapter with one port):
 
 .. code-block:: shell-session
 
@@ -123,7 +126,7 @@ Now we need to link the two VPCS by connecting their port 0 together.
 Start nodes
 ###########
 
-Now we can start the two nodes.
+Start the two nodes:
 
 .. code-block:: shell-session
 
@@ -133,8 +136,8 @@ Now we can start the two nodes.
 Connect to nodes
 #################
 
-Everything should be started now. You can connect via telnet to the different Node.
-The port is the field console in the create Node request.
+Use a Telnet client to connect to the nodes once they have been started.
+The port number can be found in the output when the nodes have been created above.
 
 .. code-block:: shell-session
 
@@ -200,7 +203,7 @@ The port is the field console in the create Node request.
 Stop nodes
 ##########
 
-And we stop the two nodes.
+Stop the two nodes:
 
 .. code-block:: shell-session
 
@@ -208,40 +211,41 @@ And we stop the two nodes.
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/nodes/83892a4d-aea0-4350-8b3e-d0af3713da74/stop" -d "{}"
 
 
-Add a visual element
-######################
+Add visual elements
+####################
 
-When you want add visual elements to the topology like rectangle, circle, images you can just send a raw SVG.
-This will display a red square in the middle of your topologies:
+Visual elements like rectangle, ellipses or images in the form of raw SVG can be added to a project.
 
+This will display a red square in the middle of your canvas:
 
 .. code-block:: shell-session
 
     # curl -X POST "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/drawings" -d '{"x":0, "y": 12, "svg": "<svg width=\"50\" height=\"50\"><rect width=\"50\" height=\"50\" style=\"fill: #ff0000\"></rect></svg>"}'
 
-Tips: you can embed png/jpg... by using a base64 encoding in the SVG.
+Tip: embed PNG, JPEG etc. images using base64 encoding in the SVG.
 
 
-Add filter to the link
-######################
+Add a packet filter
+####################
 
-Filter allow you to add error on a link.
+Packet filters allow to filter packet on a given link. Here to drop a packet every 5 packets:
 
 .. code-block:: shell-session
     curl -X PUT "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/links/007f2177-6790-4e1b-ac28-41fa226b2a06" -d '{"filters": {"frequency_drop": [5]}}'
 
 
-Creation of nodes
-#################
+Node creation
+##############
 
-Their is two way of adding nodes. Manual by passing all the information require for a Node.
+There are two ways to add nodes.
 
-Or by using an appliance. The appliance is a node model saved in your server.
+1. Manually by passing all the information required to create a new node.
+2. Using an appliance template stored on your server.
 
-Using an appliance
-------------------
+Using an appliance template
+---------------------------
 
-First you need to list the available appliances
+List all the available appliance templates:
 
 .. code-block:: shell-session
 
@@ -268,15 +272,15 @@ First you need to list the available appliances
         }
     ]
 
-Now you can use the appliance and put it at a specific position
+Use the appliance template and add coordinates to select where the node will be put on the canvas:
 
 .. code-block:: shell-session
 
- # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f -d '{"x": 12, "y": 42}'
+ # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/appliances/9cd59d5a-c70f-4454-8313-6a9e81a8278f -d '{"x": 12, "y": 42}'
 
 
 Manual creation of a Qemu node
--------------------------------
+------------------------------
 
 .. code-block:: shell-session
 
@@ -360,7 +364,7 @@ Manual creation of a Qemu node
     }
 
 
-Manual creation of a dynamips node
+Manual creation of a Dynamips node
 -----------------------------------
 
 .. code-block:: shell-session
@@ -486,7 +490,7 @@ Manual creation of a dynamips node
 Notifications
 #############
 
-You can see notification about the changes via the notification feed:
+Notifications can be seen by connection to the notification feed:
 
 .. code-block:: shell-session
 
@@ -494,14 +498,14 @@ You can see notification about the changes via the notification feed:
     {"action": "ping", "event": {"compute_id": "local", "cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}
     {"action": "node.updated", "event": {"command_line": "/usr/local/bin/vpcs -p 5001 -m 1 -i 1 -F -R -s 10001 -c 10000 -t 127.0.0.1", "compute_id": "local", "console": 5001, "console_host": "127.0.0.1", "console_type": "telnet", "name": "VPCS 2", "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "node_type": "vpcs", "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f", "properties": {"startup_script": null, "startup_script_path": null}, "status": "started"}}
 
-A websocket version is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
+A Websocket notification stream is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
 
-Read :doc:`notifications` for more informations
+Read :doc:`notifications` for more information.
 
 
-How to found the endpoints?
+Where to find the endpoints?
 ###########################
 
-Full endpoints list is available: :doc:`endpoints`
+A list of all endpoints is available: :doc:`endpoints`
 
-If you start the server with **--debug** you can see all the requests made by the client and by the controller to the computes nodes.
+Tip: requests made by a client and by a controller to the computes nodes can been seen  if the server is started with the **--debug** parameter.

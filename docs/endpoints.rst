@@ -1,21 +1,22 @@
 Endpoints
 ------------
 
-GNS3 expose two type of endpoints:
+GNS3 exposes two type of endpoints:
 
-  * Controller
-  * Compute
+  * Controller endpoints
+  * Compute endpoints
 
-Controller API Endpoints
-~~~~~~~~~~~~~~~~~~~~~~~~
+Controller endpoints
+~~~~~~~~~~~~~~~~~~~~~
 
-The controller manage all the running topologies. The controller
-has knowledge of everything on in GNS3. If you want to create and
-manage a topology it's here. The controller will call the compute API
-when needed.
+The controller manages everything, it is the central decision point
+and has a complete view of your network topologies, what nodes run on
+which compute server, the links between them etc.
 
-In a standard GNS3 installation you have one controller and one or many
-computes.
+This is the high level API which can be used by users to manually control
+the GNS3 backend. The controller will call the compute endpoints when needed.
+
+A standard GNS3 setup is to have one controller and one or many computes.
 
 .. toctree::
    :glob:
@@ -24,14 +25,15 @@ computes.
    api/v2/controller/*
 
 
-Compute API Endpoints
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compute Endpoints
+~~~~~~~~~~~~~~~~~~
 
-The compute is the GNS3 process running on a server and controlling
-the VM process.
+A compute is the GNS3 process running on a host. It controls emulators in order to run nodes
+(e.g. VMware VMs with VMware Workstation, IOS routers with Dynamips etc.)
 
 .. WARNING::
-    Consider this endpoints as a private API used by the controller.
+    These endpoints should be considered low level and private.
+    They should only be used by the controller or for debugging purposes.
 
 .. toctree::
    :glob:

@@ -9,6 +9,7 @@
     "product_url": "https://www.opensuse.org/#Leap",
     "registry_version": 4,
     "status": "stable",
+    "availability": "free",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Username: osboxes\nPassword: osboxes.org\n\nroot password: osboxes.org",

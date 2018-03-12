@@ -9,6 +9,7 @@
     "product_url": "https://www.microsoft.com/en-us/windows",
     "registry_version": 4,
     "status": "stable",
+    "availability": "free-to-try",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "symbol": "microsoft.svg",
@@ -21,7 +22,8 @@
         "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "c",
-        "kvm": "require"
+        "kvm": "require",
+        "options": "-usbdevice tablet"
     },
     "images": [
         {

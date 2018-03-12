@@ -314,7 +314,7 @@ class DockerVM(BaseNode):
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
         if self._environment:
-            for e in self._environment.split("\n"):
+            for e in self._environment.strip().split("\n"):
                 e = e.strip()
                 if not e.startswith("GNS3_"):
                     params["Env"].append(e)
@@ -352,7 +352,11 @@ class DockerVM(BaseNode):
     def start(self):
         """Starts this Docker container."""
 
-        state = yield from self._get_container_state()
+        try:
+            state = yield from self._get_container_state()
+        except DockerHttp404Error:
+            raise DockerError("Docker container '{name}' with ID {cid} does not exist or is not ready yet. Please try again in a few seconds.".format(name=self.name,
+                                                                                                                                                      cid=self._cid))
         if state == "paused":
             yield from self.unpause()
         elif state == "running":

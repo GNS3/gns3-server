@@ -555,7 +555,7 @@ class BaseManager:
             # We store the file under his final name only when the upload is finished
             tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(tmp_path, 'wb+') as f:
+            with open(tmp_path, 'wb') as f:
                 while True:
                     packet = yield from stream.read(4096)
                     if not packet:

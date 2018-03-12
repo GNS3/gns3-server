@@ -1,0 +1,43 @@
+{
+    "name": "Junos Space",
+    "category": "guest",
+    "description": "Junos Space Network Management Platform works with Juniper's management applications to simplify and automate management of Juniper's switching, routing, and security devices. As part of a complete solution, the platform provides broad fault, configuration, accounting, performance, and security management (FCAPS) capability, same day support for new devices and Junos OS releases, a task-specific user interface, and northbound APIs for integration with existing network management systems (NMS) or operations/business support systems (OSS/BSS).\n\nThe platform helps network operators at enterprises and service providers scale operations, reduce complexity, and enable new applications and services to be brought to market quickly, through multilayered network abstractions, operator-centric automation schemes, and a simple point-and-click UI.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "http://www.juniper.net/techpubs/",
+    "product_name": "Junos Space",
+    "product_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "juniper-vqfx.svg",
+    "usage": "16 GB RAM is the bare minimum; you should use 32/64 GB in production deplyments.\nDefault credentials:\n- CLI: admin / abc123\n- WebUI: super / juniper123",
+    "port_name_format": "em{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 16384,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-smp 4 -nographic"
+    },
+    "images": [
+        {
+            "filename": "space-17.2R1.4.qcow2",
+            "version": "17.2R1.4",
+            "md5sum": "4124fa756c3a78be0619e876b8ee687e",
+            "filesize": 5150474240,
+            "download_url": "https://www.juniper.net/support/downloads/?p=space#sw"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.2R1.4",
+            "images": {
+                "hda_disk_image": "space-17.2R1.4.qcow2"
+            }
+        }
+    ]
+}

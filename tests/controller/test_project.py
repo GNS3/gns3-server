@@ -646,27 +646,6 @@ def test_node_name(project, async_run):
     assert node.name == "R3"
 
 
-def test_add_iou_node_and_check_if_gets_application_id(project, async_run):
-    compute = MagicMock()
-    compute.id = "local"
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    # tests if get_next_application_id is called
-    with patch('gns3server.controller.project.get_next_application_id', return_value=222) as mocked_get_app_id:
-        node = async_run(project.add_node(
-            compute, "test", None, node_type="iou", properties={"startup_config": "test.cfg"}))
-        assert mocked_get_app_id.called
-        assert node.properties['application_id'] == 222
-
-    # tests if we can send property and it will be used
-    node = async_run(project.add_node(
-        compute, "test", None, node_type="iou", application_id=333, properties={"startup_config": "test.cfg"}))
-    assert mocked_get_app_id.called
-    assert node.properties['application_id'] == 333
-
-
 def test_duplicate_node(project, async_run):
     compute = MagicMock()
     compute.id = "local"

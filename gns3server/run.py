@@ -160,7 +160,7 @@ def pid_lock(path):
             with open(path) as f:
                 try:
                     pid = int(f.read())
-                    os.kill(pid, 0)  # If the proces is not running kill return an error
+                    os.kill(pid, 0)  # kill returns an error if the process is not running
                 except (OSError, SystemError, ValueError):
                     pid = None
         except OSError as e:
