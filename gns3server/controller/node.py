@@ -121,7 +121,7 @@ class Node:
         return self.node_type not in (
             "qemu", "docker", "dynamips",
             "vpcs", "vmware", "virtualbox",
-            "iou")
+            "iou", "traceng")
 
     @property
     def id(self):
@@ -622,7 +622,7 @@ class Node:
             for port in self._properties["ports_mapping"]:
                 self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name="e{}".format(port_number)))
                 port_number += 1
-        elif self._node_type in ("vpcs"):
+        elif self._node_type in ("vpcs", "traceng"):
             self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
         elif self._node_type in ("cloud", "nat"):
             port_number = 0
