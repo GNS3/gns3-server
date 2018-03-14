@@ -1,5 +1,37 @@
 # Change Log
 
+## 2.1.4 12/03/2018
+
+* Add Juniper JunOS space appliance.
+* Sync checkpoint gaia appliance template.
+* Sync appliance templates.
+* Make sure we use an IPv4 address in the remote install script.
+* Delete old pcap file when starting a new packet capture.
+* Fix bug preventing to export portable projects with IOU images.
+* Ignore invalid BPF filters. Ref #1290.
+* Different approach to handle no data returned by uBridge hypervisors. Fixes #1289.
+* Do not raise exception if Dynamips or uBridge hypervisor don't return data and are still running. Fixes #1289
+* Fix Dynamips private config not loaded into nvram when starting a router. Fixes #1313.
+* Make sure we don't try to read when opening a file in binary more. Fixes #1301.
+* Compatybility with controller, default_symbol and hover_symbol, Fixes: #2444
+* Filter snapshots directory during the snapshot, Fixes: #1297
+* Handle docker env with last empty line, Fixes: #2420
+* Require uBridge version 0.9.14 on Linux
+* Pywin32 instead of pypiwin32, Ref. #1276
+* Fix missing 'locales' package in base image
+* Implement a minimum interval between psutil calls. Fixes #2262
+* Fix error when appliance template is broken (missing fields). Fixes #1287.
+* Fix "Change of linked base VM doesn't work with templates migrated from 2.0"
+* Fix "Unable to override non-custom VMware adapter".
+* Let a project be opened when a port cannot be found (can happens if a project is corrupted).
+* Add an error message when Docker container is not ready to be started. Ref #1281.
+* Update documentation.
+* Sync appliance files.
+* Fix issue when running multiple project containing IOU nodes on the same server. Ref #1239.
+* Set first byte to 52 when generating a random MAC address for a Qemu VM. Ref #1267.
+* Update link state and save project when a link is suspended or filters are added/removed (without node properties set).
+* More generic dependency for pypiwin32, Ref. #1276
+
 ## 2.1.3 19/01/2018
 
 * Update appliance files.
