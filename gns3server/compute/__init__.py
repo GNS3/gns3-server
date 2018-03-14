@@ -28,16 +28,14 @@ from .vmware import VMware
 MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-
-    from .docker import Docker
-    MODULES.append(Docker)
-
-    # IOU only runs on Linux but test suite works on UNIX platform
+    # IOU & Docker only runs on Linux but test suite works on UNIX platform
     if not sys.platform.startswith("win"):
+        from .docker import Docker
+        MODULES.append(Docker)
         from .iou import IOU
         MODULES.append(IOU)
 
-    # TODO: TraceNG only runs on Windows but test suite works on UNIX platform
-    #if sys.platform.startswith("win"):
-    from .traceng import TraceNG
-    MODULES.append(TraceNG)
+#if sys.platform.startswith("win") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+# FIXME: TraceNG only runs on Windows but test suite works on UNIX platform
+from .traceng import TraceNG
+MODULES.append(TraceNG)

@@ -392,7 +392,11 @@ class TraceNGVM(BaseNode):
 
         command = [self._traceng_path()]
 
-        #command.extend(["-p", str(self._internal_console_port)])  # listen to console port
+        # TODO: remove when testing with  executable
+        command.extend(["-p", str(self._internal_console_port)])  # listen to console port
+        command.extend(["-m", "1"])   # the unique ID is used to set the MAC address offset
+        command.extend(["-i", "1"])  # option to start only one VPC instance
+        command.extend(["-F"])  # option to avoid the daemonization of VPCS
 
         # use the local UDP tunnel to uBridge instead
         if not self._local_udp_tunnel:
