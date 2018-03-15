@@ -92,6 +92,21 @@ class ProjectHandler:
         project = controller.get_project(request.match_info["project_id"])
         response.json(project)
 
+    @Route.get(
+        r"/projects/{project_id}/stats",
+        description="Get a project statistics",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            200: "Project statistics returned",
+            404: "The project doesn't exist"
+        })
+    def get(request, response):
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        response.json(project.stats())
+
     @Route.put(
         r"/projects/{project_id}",
         status_codes={

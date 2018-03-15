@@ -1013,6 +1013,15 @@ class Project:
             raise e
         return new_node
 
+    def stats(self):
+
+        return {
+            "nodes": len(self._nodes),
+            "links": len(self._links),
+            "drawings": len(self._drawings),
+            "snapshots": len(self._snapshots)
+        }
+
     def __json__(self):
         return {
             "name": self._name,
