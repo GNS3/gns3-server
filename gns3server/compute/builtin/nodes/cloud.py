@@ -110,7 +110,7 @@ class Cloud(BaseNode):
 
         if ports != self._ports_mapping:
             if len(self._nios) > 0:
-                raise NodeError("Can't modify a cloud that is already connected.")
+                raise NodeError("Cannot modify a cloud that is already connected.")
 
             port_number = 0
             for port in ports:

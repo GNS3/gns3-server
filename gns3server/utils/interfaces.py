@@ -23,6 +23,8 @@ import socket
 import struct
 import psutil
 
+from gns3server.config import Config
+
 if psutil.version_info < (3, 0, 0):
     raise Exception("psutil version should >= 3.0.0. If you are under Ubuntu/Debian install gns3 via apt instead of pip")
 
@@ -198,8 +200,14 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
+        allowed_interfaces = Config.instance().get_section_config("Server").get("allowed_interfaces", None)
+        if allowed_interfaces:
+            allowed_interfaces = allowed_interfaces.split(',')
         net_if_addrs = psutil.net_if_addrs()
         for interface in sorted(net_if_addrs.keys()):
+            if allowed_interfaces and interface not in allowed_interfaces:
+                log.warning("Interface '{}' is not allowed to be used on this server".format(interface))
+                continue
             ip_address = ""
             mac_address = ""
             netmask = ""
