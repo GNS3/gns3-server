@@ -103,6 +103,7 @@ class StandardPortFactory:
         {port0} => {port9}
         {segment0} => {segment9}
         """
+
         replacements = {}
         for i in range(0, 9):
             replacements["port" + str(i)] = interface_number + i
@@ -114,6 +115,7 @@ class DynamipsPortFactory:
     """
     Create port for dynamips devices
     """
+
     ADAPTER_MATRIX = {
         "C1700-MB-1FE": {"nb_ports": 1,
                          "port": FastEthernetPort},
@@ -178,6 +180,7 @@ class DynamipsPortFactory:
                   }
 
     def __new__(cls, properties):
+
         ports = []
 
         adapter_number = 0

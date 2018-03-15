@@ -20,7 +20,6 @@ import os
 import struct
 import stat
 import asyncio
-from asyncio.futures import CancelledError
 
 import aiohttp
 import socket
@@ -70,6 +69,7 @@ class BaseManager:
         """
         :returns: Array of supported node type on this computer
         """
+
         # By default we transform DockerVM => docker but you can override this (see builtins)
         return [cls._NODE_CLASS.__name__.rstrip('VM').lower()]
 
@@ -78,6 +78,7 @@ class BaseManager:
         """
         List of nodes manage by the module
         """
+
         return self._nodes.values()
 
     @classmethod
@@ -109,6 +110,7 @@ class BaseManager:
 
         :returns: Port manager
         """
+
         if self._port_manager is None:
             self._port_manager = PortManager.instance()
         return self._port_manager
@@ -271,6 +273,7 @@ class BaseManager:
         :param destination_node_id: Destination node identifier
         :returns: New node instance
         """
+
         source_node = self.get_node(source_node_id)
         destination_node = self.get_node(destination_node_id)
 
@@ -283,9 +286,9 @@ class BaseManager:
             shutil.rmtree(destination_dir)
             shutil.copytree(source_node.working_dir, destination_dir)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can't duplicate node data: {}".format(e))
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data: {}".format(e))
 
-        # We force a refresh of the name. This force the rewrite
+        # We force a refresh of the name. This forces the rewrite
         # of some configuration files
         node_name = destination_node.name
         destination_node.name = node_name + str(uuid4())
@@ -539,12 +542,14 @@ class BaseManager:
         """
         Get the image directory on disk
         """
+
         if hasattr(self, "_NODE_TYPE"):
             return default_images_directory(self._NODE_TYPE)
         raise NotImplementedError
 
     @asyncio.coroutine
     def write_image(self, filename, stream):
+
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
         if os.path.commonprefix([directory, path]) != directory:

@@ -206,7 +206,7 @@ class Hypervisor(UBridgeHypervisor):
                 yield from wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process and self._process.returncode is None:
-                    log.warn("uBridge process {} is still running... killing it".format(self._process.pid))
+                    log.warning("uBridge process {} is still running... killing it".format(self._process.pid))
                     try:
                         self._process.kill()
                     except ProcessLookupError:
@@ -232,7 +232,7 @@ class Hypervisor(UBridgeHypervisor):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warning("could not read {}: {}".format(self._stdout_file, e))
         return output
 
     def is_running(self):

@@ -59,7 +59,7 @@ class GNS3VM:
         """
 
         download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VMware.Workstation.{version}.zip".format(version=__version__)
-        vmware_informations = {
+        vmware_info = {
             "engine_id": "vmware",
             "description": 'VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href="{}">downloaded here</a>.'.format(download_url),
             "support_when_exit": True,
@@ -67,12 +67,12 @@ class GNS3VM:
             "support_ram": True
         }
         if sys.platform.startswith("darwin"):
-            vmware_informations["name"] = "VMware Fusion"
+            vmware_info["name"] = "VMware Fusion"
         else:
-            vmware_informations["name"] = "VMware Workstation / Player"
+            vmware_info["name"] = "VMware Workstation / Player"
 
         download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VirtualBox.{version}.zip".format(version=__version__)
-        virtualbox_informations = {
+        virtualbox_info = {
             "engine_id": "virtualbox",
             "name": "VirtualBox",
             "description": 'VirtualBox doesn\'t support nested virtualization, this means running Qemu based VM could be very slow.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
@@ -81,7 +81,7 @@ class GNS3VM:
             "support_ram": True
         }
 
-        remote_informations = {
+        remote_info = {
             "engine_id": "remote",
             "name": "Remote",
             "description": "Use a remote GNS3 server as the GNS3 VM.",
@@ -91,16 +91,18 @@ class GNS3VM:
         }
 
         return [
-            vmware_informations,
-            virtualbox_informations,
-            remote_informations
+            vmware_info,
+            virtualbox_info,
+            remote_info
         ]
 
     def current_engine(self):
+
         return self._get_engine(self._settings["engine"])
 
     @property
     def engine(self):
+
         return self._settings["engine"]
 
     @property
@@ -110,6 +112,7 @@ class GNS3VM:
 
         :returns: VM IP address
         """
+
         return self.current_engine().ip_address
 
     @property
@@ -119,6 +122,7 @@ class GNS3VM:
 
         :returns: Boolean
         """
+
         return self.current_engine().running
 
     @property
@@ -128,6 +132,7 @@ class GNS3VM:
 
         :returns: VM user
         """
+
         return self.current_engine().user
 
     @property
@@ -137,6 +142,7 @@ class GNS3VM:
 
         :returns: VM password
         """
+
         return self.current_engine().password
 
     @property
@@ -146,6 +152,7 @@ class GNS3VM:
 
         :returns: VM port
         """
+
         return self.current_engine().port
 
     @property
@@ -155,6 +162,7 @@ class GNS3VM:
 
         :returns: VM protocol
         """
+
         return self.current_engine().protocol
 
     @property
@@ -162,6 +170,7 @@ class GNS3VM:
         """
         The GNSVM is activated
         """
+
         return self._settings.get("enable", False)
 
     @property
@@ -169,14 +178,17 @@ class GNS3VM:
         """
         What should be done when exit
         """
+
         return self._settings["when_exit"]
 
     @property
     def settings(self):
+
         return self._settings
 
     @settings.setter
     def settings(self, val):
+
         self._settings.update(val)
 
     @asyncio.coroutine
@@ -184,6 +196,7 @@ class GNS3VM:
         """
         Update settings and will restart the VM if require
         """
+
         new_settings = copy.copy(self._settings)
         new_settings.update(settings)
         if self.settings != new_settings:
@@ -201,6 +214,7 @@ class GNS3VM:
         """
         Load an engine
         """
+
         if engine in self._engines:
             return self._engines[engine]
 
@@ -223,6 +237,7 @@ class GNS3VM:
         """
         List VMS for an engine
         """
+
         engine = self._get_engine(engine)
         vms = []
         try:
@@ -240,6 +255,7 @@ class GNS3VM:
         """
         Auto start the GNS3 VM if require
         """
+
         if self.enable:
             try:
                 yield from self.start()
@@ -256,6 +272,7 @@ class GNS3VM:
 
     @asyncio.coroutine
     def exit_vm(self):
+
         if self.enable:
             try:
                 if self._settings["when_exit"] == "stop":
@@ -263,13 +280,14 @@ class GNS3VM:
                 elif self._settings["when_exit"] == "suspend":
                     yield from self._suspend()
             except GNS3VMError as e:
-                log.warn(str(e))
+                log.warning(str(e))
 
     @locked_coroutine
     def start(self):
         """
         Start the GNS3 VM
         """
+
         engine = self.current_engine()
         if not engine.running:
             if self._settings["vmname"] is None:

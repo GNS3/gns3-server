@@ -334,7 +334,7 @@ class VirtualBoxVM(BaseNode):
                 # deactivate the first serial port
                 yield from self._modify_vm("--uart1 off")
             except VirtualBoxError as e:
-                log.warn("Could not deactivate the first serial port: {}".format(e))
+                log.warning("Could not deactivate the first serial port: {}".format(e))
 
             for adapter_number in range(0, self._adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
@@ -356,7 +356,7 @@ class VirtualBoxVM(BaseNode):
             self.status = "suspended"
             log.info("VirtualBox VM '{name}' [{id}] suspended".format(name=self.name, id=self.id))
         else:
-            log.warn("VirtualBox VM '{name}' [{id}] cannot be suspended, current state: {state}".format(name=self.name,
+            log.warning("VirtualBox VM '{name}' [{id}] cannot be suspended, current state: {state}".format(name=self.name,
                                                                                                         id=self.id,
                                                                                                         state=vm_state))
 
@@ -425,7 +425,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                                               hdd_file))
 
                 except VirtualBoxError as e:
-                    log.warn("VirtualBox VM '{name}' [{id}] error reattaching HDD {controller} {port} {device} {medium}: {error}".format(name=self.name,
+                    log.warning("VirtualBox VM '{name}' [{id}] error reattaching HDD {controller} {port} {device} {medium}: {error}".format(name=self.name,
                                                                                                                                          id=self.id,
                                                                                                                                          controller=hdd_info["controller"],
                                                                                                                                          port=hdd_info["port"],
@@ -525,7 +525,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                                               hdd["port"],
                                                                                                                               hdd["device"]))
                 except VirtualBoxError as e:
-                    log.warn("VirtualBox VM '{name}' [{id}] error detaching HDD {controller} {port} {device}: {error}".format(name=self.name,
+                    log.warning("VirtualBox VM '{name}' [{id}] error detaching HDD {controller} {port} {device}: {error}".format(name=self.name,
                                                                                                                               id=self.id,
                                                                                                                               controller=hdd["controller"],
                                                                                                                               port=hdd["port"],
@@ -928,7 +928,7 @@ class VirtualBoxVM(BaseNode):
         # It seem sometimes this failed due to internal race condition of Vbox
         # we have no real explanation of this.
         except VirtualBoxError:
-            log.warn("Snapshot 'reset' not created")
+            log.warning("Snapshot 'reset' not created")
 
         os.makedirs(os.path.join(self.working_dir, self._vmname), exist_ok=True)
 

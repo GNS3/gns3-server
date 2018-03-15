@@ -264,6 +264,7 @@ class VPCSVM(BaseNode):
 
         :param returncode: Process returncode
         """
+
         if self._started:
             log.info("VPCS process has stopped, return code: %d", returncode)
             self._started = False
@@ -291,7 +292,7 @@ class VPCSVM(BaseNode):
                         except OSError as e:
                             log.error("Cannot stop the VPCS process: {}".format(e))
                         if self._process.returncode is None:
-                            log.warn('VPCS VM "{}" with PID={} is still running'.format(self._name, self._process.pid))
+                            log.warning('VPCS VM "{}" with PID={} is still running'.format(self._name, self._process.pid))
 
         self._process = None
         self._started = False
@@ -333,7 +334,7 @@ class VPCSVM(BaseNode):
                 with open(self._vpcs_stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("Could not read {}: {}".format(self._vpcs_stdout_file, e))
+                log.warning("Could not read {}: {}".format(self._vpcs_stdout_file, e))
         return output
 
     def is_running(self):
@@ -508,28 +509,20 @@ class VPCSVM(BaseNode):
         if self._vpcs_version >= parse_version("0.8b"):
             command.extend(["-R"])  # disable the relay feature of VPCS (starting with VPCS 0.8)
         else:
-            log.warn("The VPCS relay feature could not be disabled because the VPCS version is below 0.8b")
+            log.warning("The VPCS relay feature could not be disabled because the VPCS version is below 0.8b")
 
         # use the local UDP tunnel to uBridge instead
         if not self._local_udp_tunnel:
             self._local_udp_tunnel = self._create_local_udp_tunnel()
         nio = self._local_udp_tunnel[0]
-        if nio:
-
-            if isinstance(nio, NIOUDP):
-                # UDP tunnel
-                command.extend(["-s", str(nio.lport)])  # source UDP port
-                command.extend(["-c", str(nio.rport)])  # destination UDP port
-                try:
-                    command.extend(["-t", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because VPCS doesn't support it
-                except socket.gaierror as e:
-                    raise VPCSError("Can't resolve hostname {}".format(nio.rhost))
-
-            elif isinstance(nio, NIOTAP):
-                # FIXME: remove old code
-                # TAP interface
-                command.extend(["-e"])
-                command.extend(["-d", nio.tap_device])
+        if nio and isinstance(nio, NIOUDP):
+            # UDP tunnel
+            command.extend(["-s", str(nio.lport)])  # source UDP port
+            command.extend(["-c", str(nio.rport)])  # destination UDP port
+            try:
+                command.extend(["-t", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because VPCS doesn't support it
+            except socket.gaierror as e:
+                raise VPCSError("Can't resolve hostname {}".format(nio.rhost))
 
         if self.script_file:
             command.extend([os.path.basename(self.script_file)])

@@ -63,7 +63,7 @@ class Port:
 
     @property
     def short_name(self):
-        # If port name format has change we use the port name as the short name (1.X behavior)
+        # If port name format has changed we use the port name as the short name (1.X behavior)
         if self._short_name:
             return self._short_name
         elif not self._name.startswith("{}{}".format(self.long_name_type(), self._interface_number)):

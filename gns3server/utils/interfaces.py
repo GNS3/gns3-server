@@ -113,7 +113,7 @@ def get_windows_interfaces():
                                    "netmask": netmask,
                                    "type": "ethernet"})
     except (AttributeError, pywintypes.com_error):
-        log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
+        log.warning("Could not use the COM service to retrieve interface info, trying using the registry...")
         return _get_windows_interfaces_from_registry()
 
     return interfaces

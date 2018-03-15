@@ -42,21 +42,19 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    """The controller is responsible to manage one or more compute servers"""
+    """
+    The controller is responsible to manage one or more compute servers.
+    """
 
     def __init__(self):
         self._computes = {}
         self._projects = {}
 
-        # Store settings shared by the different GUI will be replaced
-        # by dedicated API later
-        self._settings = {}
-
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
 
-        # Store settings shared by the different GUI will be replace by dedicated API later
+        # FIXME: store settings shared by the different GUI will be replace by dedicated API later
         self._settings = None
         self._appliances = {}
         self._appliance_templates = {}
@@ -65,6 +63,7 @@ class Controller:
         log.info("Load controller configuration file {}".format(self._config_file))
 
     def load_appliances(self):
+
         self._appliance_templates = {}
         for directory, builtin in (
             (get_resource('appliances'), True,), (self.appliances_path(), False,)
@@ -74,7 +73,7 @@ class Controller:
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
                         continue
                     path = os.path.join(directory, file)
-                    appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate the UUID from path to avoid change between reboots
+                    appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate UUID from path to avoid change between reboots
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
                             appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
@@ -160,14 +159,16 @@ class Controller:
 
     @asyncio.coroutine
     def start(self):
-        log.info("Start controller")
+
+        log.info("Controller is starting")
         self.load_base_files()
         server_config = Config.instance().get_section_config("Server")
         Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.get("host", "localhost")
+        port = server_config.getint("port", 3080)
 
-        # If console_host is 0.0.0.0 client will use the ip they use
-        # to connect to the controller
+        # clients will use the IP they use to connect to
+        # the controller if console_host is 0.0.0.0
         console_host = host
         if host == "0.0.0.0":
             host = "127.0.0.1"
@@ -183,12 +184,12 @@ class Controller:
                                                              protocol=server_config.get("protocol", "http"),
                                                              host=host,
                                                              console_host=console_host,
-                                                             port=server_config.getint("port", 3080),
+                                                             port=port,
                                                              user=server_config.get("user", ""),
                                                              password=server_config.get("password", ""),
                                                              force=True)
         except aiohttp.web_exceptions.HTTPConflict as e:
-            log.fatal("Can't access to the local server, make sure anything else is not running on the same port")
+            log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
             try:
@@ -199,14 +200,14 @@ class Controller:
         try:
             yield from self.gns3vm.auto_start_vm()
         except GNS3VMError as e:
-            log.warn(str(e))
+            log.warning(str(e))
         yield from self._project_auto_open()
 
     def _update_config(self):
         """
-        Call this when the server configuration file
-        change
+        Call this when the server configuration file changes.
         """
+
         if self._local_server:
             server_config = Config.instance().get_section_config("Server")
             self._local_server.user = server_config.get("user")
@@ -214,7 +215,8 @@ class Controller:
 
     @asyncio.coroutine
     def stop(self):
-        log.info("Stop controller")
+
+        log.info("Controller is Stopping")
         for project in self._projects.values():
             yield from project.close()
         for compute in self._computes.values():
@@ -231,6 +233,7 @@ class Controller:
         """
         Save the controller configuration on disk
         """
+
         # We don't save during the loading otherwise we could lost stuff
         if self._settings is None:
             return
@@ -257,13 +260,14 @@ class Controller:
             with open(self._config_file, 'w+') as f:
                 json.dump(data, f, indent=4)
         except OSError as e:
-            log.error("Can't write the configuration {}: {}".format(self._config_file, str(e)))
+            log.error("Cannnot write configuration file '{}': {}".format(self._config_file, e))
 
     @asyncio.coroutine
     def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """
+
         try:
             if not os.path.exists(self._config_file):
                 yield from self._import_gns3_gui_conf()
@@ -271,7 +275,7 @@ class Controller:
             with open(self._config_file) as f:
                 data = json.load(f)
         except (OSError, ValueError) as e:
-            log.critical("Cannot load %s: %s", self._config_file, str(e))
+            log.critical("Cannot load configuration file '{}': {}".format(self._config_file, e))
             self._settings = {}
             return []
 
@@ -290,6 +294,7 @@ class Controller:
         """
         Preload the list of projects from disk
         """
+
         server_config = Config.instance().get_section_config("Server")
         projects_path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
         os.makedirs(projects_path, exist_ok=True)
@@ -311,6 +316,7 @@ class Controller:
         At startup we copy base file to the user location to allow
         them to customize it
         """
+
         dst_path = self.configs_path()
         src_path = get_resource('configs')
         try:
@@ -324,6 +330,7 @@ class Controller:
         """
         Get the image storage directory
         """
+
         server_config = Config.instance().get_section_config("Server")
         images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
@@ -333,6 +340,7 @@ class Controller:
         """
         Get the configs storage directory
         """
+
         server_config = Config.instance().get_section_config("Server")
         images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
@@ -342,6 +350,7 @@ class Controller:
         """
         Get the image storage directory
         """
+
         server_config = Config.instance().get_section_config("Server")
         appliances_path = os.path.expanduser(server_config.get("appliances_path", "~/GNS3/projects"))
         os.makedirs(appliances_path, exist_ok=True)
@@ -352,6 +361,7 @@ class Controller:
         """
         Import old config from GNS3 GUI
         """
+
         config_file = os.path.join(os.path.dirname(self._config_file), "gns3_gui.conf")
         if os.path.exists(config_file):
             with open(config_file) as f:
@@ -404,12 +414,14 @@ class Controller:
         """
         Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
         """
+
         return self._settings
 
     @settings.setter
     def settings(self, val):
+
         self._settings = val
-        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings it's help the gui to detect changes
+        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings to help the gui to detect changes
         self.save()
         self.load_appliances()
         self.notification.emit("settings.updated", val)
@@ -459,6 +471,7 @@ class Controller:
         """
         Close projects running on a compute
         """
+
         for project in self._projects.values():
             if compute in project.computes:
                 yield from project.close()
@@ -470,6 +483,7 @@ class Controller:
 
         :param compute_id: Compute server identifier
         """
+
         try:
             compute = self.get_compute(compute_id)
         except aiohttp.web.HTTPNotFound:
@@ -485,6 +499,7 @@ class Controller:
         """
         The notification system
         """
+
         return self._notification
 
     @property
@@ -492,23 +507,26 @@ class Controller:
         """
         :returns: The dictionary of compute server managed by this controller
         """
+
         return self._computes
 
     def get_compute(self, compute_id):
         """
         Returns a compute server or raise a 404 error.
         """
+
         try:
             return self._computes[compute_id]
         except KeyError:
             if compute_id == "vm":
-                raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 VM is not configured")
+                raise aiohttp.web.HTTPNotFound(text="Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     def has_compute(self, compute_id):
         """
         Return True if the compute exist in the controller
         """
+
         return compute_id in self._computes
 
     @asyncio.coroutine
@@ -520,8 +538,8 @@ class Controller:
         :param name: Project name
         :param kwargs: See the documentation of Project
         """
-        if project_id not in self._projects:
 
+        if project_id not in self._projects:
             for project in self._projects.values():
                 if name and project.name == name:
                     raise aiohttp.web.HTTPConflict(text='Project name "{}" already exists'.format(name))
@@ -534,6 +552,7 @@ class Controller:
         """
         Returns a project or raise a 404 error.
         """
+
         try:
             return self._projects[project_id]
         except KeyError:
@@ -546,11 +565,13 @@ class Controller:
 
         If project is not finished to load wait for it
         """
+
         project = self.get_project(project_id)
         yield from project.wait_loaded()
         return project
 
     def remove_project(self, project):
+
         if project.id in self._projects:
             del self._projects[project.id]
 
@@ -562,6 +583,7 @@ class Controller:
         :param path: Path of the .gns3
         :param load: Load the topology
         """
+
         topo_data = load_topology(path)
         topo_data.pop("topology")
         topo_data.pop("version")
@@ -581,6 +603,7 @@ class Controller:
         """
         Auto open the project with auto open enable
         """
+
         for project in self._projects.values():
             if project.auto_open:
                 yield from project.open()
@@ -589,6 +612,7 @@ class Controller:
         """
         Generate a free project name base on the base name
         """
+
         names = [p.name for p in self._projects.values()]
         if base_name not in names:
             return base_name
@@ -610,6 +634,7 @@ class Controller:
         """
         :returns: The dictionary of projects managed by GNS3
         """
+
         return self._projects
 
     @property
@@ -617,6 +642,7 @@ class Controller:
         """
         :returns: The dictionary of appliances templates managed by GNS3
         """
+
         return self._appliance_templates
 
     @property
@@ -624,9 +650,11 @@ class Controller:
         """
         :returns: The dictionary of appliances managed by GNS3
         """
+
         return self._appliances
 
     def projects_directory(self):
+
         server_config = Config.instance().get_section_config("Server")
         return os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
 
@@ -652,6 +680,7 @@ class Controller:
         :param image: Image to use
         :param ram: amount of RAM to use
         """
+
         compute = self.get_compute(compute_id)
         for project in list(self._projects.values()):
             if project.name == "AUTOIDLEPC":

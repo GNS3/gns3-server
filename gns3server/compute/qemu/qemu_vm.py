@@ -67,7 +67,7 @@ class QemuVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, wrap_console=True)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, wrap_console=True)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -178,6 +178,7 @@ class QemuVM(BaseNode):
                                                                                        qemu_path=qemu_path))
 
     def _check_qemu_path(self, qemu_path):
+
         if qemu_path is None:
             raise QemuError("QEMU binary path is not set")
         if not os.path.exists(qemu_path):
@@ -194,6 +195,7 @@ class QemuVM(BaseNode):
 
     @platform.setter
     def platform(self, platform):
+
         self._platform = platform
         if sys.platform.startswith("win"):
             self.qemu_path = "qemu-system-{}w.exe".format(platform)
@@ -207,6 +209,7 @@ class QemuVM(BaseNode):
         :param variable: Variable name in the class
         :param value: New disk value
         """
+
         value = self.manager.get_abs_image_path(value)
         if not self.linked_clone:
             for node in self.manager.nodes:
@@ -235,6 +238,7 @@ class QemuVM(BaseNode):
 
         :param hda_disk_image: QEMU hda disk image path
         """
+
         self._disk_setter("hda_disk_image", hda_disk_image)
 
     @property
@@ -737,7 +741,7 @@ class QemuVM(BaseNode):
                                                                                            id=self._id,
                                                                                            initrd=initrd))
         if "asa" in initrd:
-            self.project.emit("log.warning", {"message": "Warning ASA 8 is not supported by GNS3 and Cisco, you need to use ASAv. Depending of your hardware and OS this could not work or you could be limited to one instance. If ASA 8 is not booting their is no GNS3 solution, you need to upgrade to ASAv."})
+            self.project.emit("log.warning", {"message": "Warning ASA 8 is not supported by GNS3 and Cisco, please use ASAv instead. Depending of your hardware and OS this could not work or you could be limited to one instance. If ASA 8 is not booting their is no GNS3 solution, you must to upgrade to ASAv."})
         self._initrd = initrd
 
     @property
@@ -1002,7 +1006,7 @@ class QemuVM(BaseNode):
                         except ProcessLookupError:
                             pass
                         if self._process.returncode is None:
-                            log.warn('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
+                            log.warning('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
             yield from super().stop()
@@ -1025,12 +1029,12 @@ class QemuVM(BaseNode):
                 log.info("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
                 reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
             except OSError as e:
-                log.warn("Could not connect to QEMU monitor: {}".format(e))
+                log.warning("Could not connect to QEMU monitor: {}".format(e))
                 return result
             try:
                 writer.write(command.encode('ascii') + b"\n")
             except OSError as e:
-                log.warn("Could not write to QEMU monitor: {}".format(e))
+                log.warning("Could not write to QEMU monitor: {}".format(e))
                 writer.close()
                 return result
             if expected:
@@ -1044,7 +1048,7 @@ class QemuVM(BaseNode):
                                 result = line.decode("utf-8").strip()
                                 break
                 except EOFError as e:
-                    log.warn("Could not read from QEMU monitor: {}".format(e))
+                    log.warning("Could not read from QEMU monitor: {}".format(e))
             writer.close()
         return result
 

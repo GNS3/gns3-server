@@ -60,6 +60,7 @@ class NotificationManager:
     def instance():
         """
         Singleton to return only on instance of NotificationManager.
+
         :returns: instance of NotificationManager
         """
 

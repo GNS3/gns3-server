@@ -156,13 +156,13 @@ class Hypervisor(DynamipsHypervisor):
                 yield from wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
-                    log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    log.warning("Dynamips process {} is still running... killing it".format(self._process.pid))
                     try:
                         self._process.kill()
                     except OSError as e:
                         log.error("Cannot stop the Dynamips process: {}".format(e))
                     if self._process.returncode is None:
-                        log.warn('Dynamips hypervisor with PID={} is still running'.format(self._process.pid))
+                        log.warning('Dynamips hypervisor with PID={} is still running'.format(self._process.pid))
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
@@ -183,7 +183,7 @@ class Hypervisor(DynamipsHypervisor):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warning("could not read {}: {}".format(self._stdout_file, e))
         return output
 
     def is_running(self):

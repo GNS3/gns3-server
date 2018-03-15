@@ -38,7 +38,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     """
     Import a project contain in a zip file
 
-    You need to handle OSerror exceptions
+    You must handle OSError exceptions
 
     :param controller: GNS3 Controller
     :param project_id: ID of the project to import
@@ -68,7 +68,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
                     else:
                         project_name = controller.get_free_project_name(topology["name"])
             except KeyError:
-                raise aiohttp.web.HTTPConflict(text="Can't import topology the .gns3 is corrupted or missing")
+                raise aiohttp.web.HTTPConflict(text="Cannot import topology the .gns3 is corrupted or missing")
 
             if location:
                 path = location

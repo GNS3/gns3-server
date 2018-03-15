@@ -20,9 +20,6 @@ import aiohttp
 import shutil
 import asyncio
 import hashlib
-import zipstream
-import zipfile
-import json
 
 from uuid import UUID, uuid4
 from .port_manager import PortManager
@@ -110,7 +107,7 @@ class Project:
 
         if hasattr(self, "_path"):
             if path != self._path and self.is_local() is False:
-                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory path")
+                raise aiohttp.web.HTTPForbidden(text="Changing the project directory path is not allowed")
 
         self._path = path
 
@@ -123,7 +120,7 @@ class Project:
     def name(self, name):
 
         if "/" in name or "\\" in name:
-            raise aiohttp.web.HTTPForbidden(text="Name can not contain path separator")
+            raise aiohttp.web.HTTPForbidden(text="Project names cannot contain path separators")
         self._name = name
 
     @property
@@ -290,7 +287,7 @@ class Project:
     @asyncio.coroutine
     def close(self):
         """
-        Closes the project, but keep information on disk
+        Closes the project, but keep project data on disk
         """
 
         project_nodes_id = set([n.id for n in self.nodes])

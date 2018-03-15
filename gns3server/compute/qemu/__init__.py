@@ -48,6 +48,7 @@ class Qemu(BaseManager):
 
         :returns: List of architectures for which KVM is available on this server.
         """
+
         kvm = []
 
         if not os.path.exists("/dev/kvm"):
@@ -182,7 +183,7 @@ class Qemu(BaseManager):
                         if match:
                             return version
                 except (UnicodeDecodeError, OSError) as e:
-                    log.warn("could not read {}: {}".format(version_file, e))
+                    log.warning("could not read {}: {}".format(version_file, e))
             return ""
         else:
             try:

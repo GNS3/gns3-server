@@ -648,7 +648,7 @@ class Compute:
     @asyncio.coroutine
     def get_ip_on_same_subnet(self, other_compute):
         """
-        Try to found the best ip for communication from one compute
+        Try to find the best ip for communication from one compute
         to another
 
         :returns: Tuple (ip_for_this_compute, ip_for_other_compute)

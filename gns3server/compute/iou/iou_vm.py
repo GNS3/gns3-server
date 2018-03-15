@@ -369,7 +369,7 @@ class IOUVM(BaseNode):
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output("ldd", self._path)
         except (FileNotFoundError, subprocess.SubprocessError) as e:
-            log.warn("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
+            log.warning("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
         p = re.compile("([\.\w]+)\s=>\s+not found")
@@ -765,7 +765,7 @@ class IOUVM(BaseNode):
                 with open(self._iou_stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._iou_stdout_file, e))
+                log.warning("could not read {}: {}".format(self._iou_stdout_file, e))
         return output
 
     @property

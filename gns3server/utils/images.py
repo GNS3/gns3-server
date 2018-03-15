@@ -83,7 +83,7 @@ def list_images(type):
                                 "md5sum": md5sum(os.path.join(root, filename)),
                                 "filesize": os.stat(os.path.join(root, filename)).st_size})
                         except OSError as e:
-                            log.warn("Can't add image {}: {}".format(path, str(e)))
+                            log.warning("Can't add image {}: {}".format(path, str(e)))
     return images
 
 

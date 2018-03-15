@@ -24,7 +24,6 @@ import os
 import asyncio
 import tempfile
 
-from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.serial import asyncio_open_serial
 from gns3server.utils.asyncio import locked_coroutine

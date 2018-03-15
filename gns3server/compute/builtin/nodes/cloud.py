@@ -42,11 +42,12 @@ class Cloud(BaseNode):
     :param manager: Parent VM Manager
     """
 
-    def __init__(self, name, node_id, project, manager, ports=[]):
+    def __init__(self, name, node_id, project, manager, ports=None):
 
         super().__init__(name, node_id, project, manager)
         self._nios = {}
-        # If the cloud is not configured we fill it with host interfaces
+
+        # Populate the cloud with host interfaces if it is not configured
         if not ports or len(ports) == 0:
             self._ports_mapping = []
             for interface in self._interfaces():
@@ -109,7 +110,7 @@ class Cloud(BaseNode):
 
         if ports != self._ports_mapping:
             if len(self._nios) > 0:
-                raise NodeError("Can't modify a cloud already connected.")
+                raise NodeError("Can't modify a cloud that is already connected.")
 
             port_number = 0
             for port in ports:
@@ -129,6 +130,10 @@ class Cloud(BaseNode):
 
     @asyncio.coroutine
     def start(self):
+        """
+        Starts this cloud.
+        """
+
         if self.status != "started":
             if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
                 yield from self._stop_ubridge()
@@ -160,11 +165,14 @@ class Cloud(BaseNode):
 
     @asyncio.coroutine
     def _is_wifi_adapter_osx(self, adapter_name):
+        """
+        Detects a Wifi adapter on Mac.
+        """
 
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output("networksetup", "-listallhardwareports")
         except (FileNotFoundError, subprocess.SubprocessError) as e:
-            log.warn("Could not execute networksetup: {}".format(e))
+            log.warning("Could not execute networksetup: {}".format(e))
             return False
 
         is_wifi = False
@@ -244,10 +252,11 @@ class Cloud(BaseNode):
     @asyncio.coroutine
     def _add_linux_ethernet(self, port_info, bridge_name):
         """
-        Use raw sockets on Linux.
+        Connects an Ethernet interface on Linux using raw sockets.
 
-        If interface is a bridge we connect a tap to it
+        A TAP is used if the interface is a bridge
         """
+
         interface = port_info["interface"]
         if gns3server.utils.interfaces.is_interface_bridge(interface):
 
@@ -266,6 +275,10 @@ class Cloud(BaseNode):
 
     @asyncio.coroutine
     def _add_osx_ethernet(self, port_info, bridge_name):
+        """
+        Connects an Ethernet interface on OSX using libpcap.
+        """
+
         # Wireless adapters are not well supported by the libpcap on OSX
         if (yield from self._is_wifi_adapter_osx(port_info["interface"])):
             raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
@@ -280,6 +293,10 @@ class Cloud(BaseNode):
 
     @asyncio.coroutine
     def _add_windows_ethernet(self, port_info, bridge_name):
+        """
+        Connects an Ethernet interface on Windows.
+        """
+
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
             raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
         yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))

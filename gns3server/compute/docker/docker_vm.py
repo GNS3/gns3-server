@@ -180,11 +180,13 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def _get_container_state(self):
-        """Returns the container state (e.g. running, paused etc.)
+        """
+        Returns the container state (e.g. running, paused etc.)
 
         :returns: state
         :rtype: str
         """
+
         try:
             result = yield from self.manager.query("GET", "containers/{}/json".format(self._cid))
         except DockerError:
@@ -201,17 +203,19 @@ class DockerVM(BaseNode):
         """
         :returns: Dictionary information about the container image
         """
+
         result = yield from self.manager.query("GET", "images/{}/json".format(self._image))
         return result
 
-    def _mount_binds(self, image_infos):
+    def _mount_binds(self, image_info):
         """
         :returns: Return the path that we need to map to local folders
         """
-        ressources = get_resource("compute/docker/resources")
-        if not os.path.exists(ressources):
-            raise DockerError("{} is missing can't start Docker containers".format(ressources))
-        binds = ["{}:/gns3:ro".format(ressources)]
+
+        resources = get_resource("compute/docker/resources")
+        if not os.path.exists(resources):
+            raise DockerError("{} is missing can't start Docker containers".format(resources))
+        binds = ["{}:/gns3:ro".format(resources)]
 
         # We mount our own etc/network
         network_config = self._create_network_config()
@@ -219,7 +223,7 @@ class DockerVM(BaseNode):
 
         self._volumes = ["/etc/network"]
 
-        volumes = image_infos.get("Config", {}).get("Volumes")
+        volumes = image_info.get("Config", {}).get("Volumes")
         if volumes is None:
             return binds
         for volume in volumes.keys():
@@ -266,7 +270,9 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def create(self):
-        """Creates the Docker container."""
+        """
+        Creates the Docker container.
+        """
 
         try:
             image_infos = yield from self._get_image_information()
@@ -336,6 +342,7 @@ class DockerVM(BaseNode):
         """
         Destroy an recreate the container with the new settings
         """
+
         # We need to save the console and state and restore it
         console = self.console
         aux = self.aux
@@ -350,7 +357,9 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def start(self):
-        """Starts this Docker container."""
+        """
+        Starts this Docker container.
+        """
 
         try:
             state = yield from self._get_container_state()
@@ -401,7 +410,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_aux(self):
         """
-        Start an auxilary console
+        Starts an auxiliary console
         """
 
         # We can not use the API because docker doesn't expose a websocket api for exec
@@ -450,7 +459,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_vnc(self):
         """
-        Start a VNC server for this container
+        Starts a VNC server for this container
         """
 
         self._display = self._get_free_display_port()
@@ -466,9 +475,10 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_http(self):
         """
-        Start an HTTP tunnel to container localhost. It's not perfect
+        Starts an HTTP tunnel to container localhost. It's not perfect
         but the only way we have to inject network packet is using nc.
         """
+
         log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
         command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
         # We replace host and port in the server answer otherwise some link could be broken
@@ -487,7 +497,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_console(self):
         """
-        Start streaming the console via telnet
+        Starts streaming the console via telnet
         """
 
         class InputStream:
@@ -520,7 +530,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _read_console_output(self, ws, out):
         """
-        Read Websocket and forward it to the telnet
+        Reads Websocket and forward it to the telnet
 
         :param ws: Websocket connection
         :param out: Output stream
@@ -542,11 +552,13 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def is_running(self):
-        """Checks if the container is running.
+        """
+        Checks if the container is running.
 
         :returns: True or False
         :rtype: bool
         """
+
         state = yield from self._get_container_state()
         if state == "running":
             return True
@@ -556,7 +568,10 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def restart(self):
-        """Restart this Docker container."""
+        """
+        Restart this Docker container.
+        """
+
         yield from self.manager.query("POST", "containers/{}/restart".format(self._cid))
         log.info("Docker container '{name}' [{image}] restarted".format(
             name=self._name, image=self._image))
@@ -566,6 +581,7 @@ class DockerVM(BaseNode):
         """
         Clean the list of running console servers
         """
+
         if len(self._telnet_servers) > 0:
             for telnet_server in self._telnet_servers:
                 telnet_server.close()
@@ -574,7 +590,9 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def stop(self):
-        """Stops this Docker container."""
+        """
+        Stops this Docker container.
+        """
 
         try:
             yield from self._clean_servers()
@@ -608,21 +626,29 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def pause(self):
-        """Pauses this Docker container."""
+        """
+        Pauses this Docker container.
+        """
+
         yield from self.manager.query("POST", "containers/{}/pause".format(self._cid))
         self.status = "suspended"
         log.info("Docker container '{name}' [{image}] paused".format(name=self._name, image=self._image))
 
     @asyncio.coroutine
     def unpause(self):
-        """Unpauses this Docker container."""
+        """
+        Unpauses this Docker container.
+        """
+
         yield from self.manager.query("POST", "containers/{}/unpause".format(self._cid))
         self.status = "started"
         log.info("Docker container '{name}' [{image}] unpaused".format(name=self._name, image=self._image))
 
     @asyncio.coroutine
     def close(self):
-        """Closes this Docker container."""
+        """
+        Closes this Docker container.
+        """
 
         if not (yield from super().close()):
             return False
@@ -630,6 +656,7 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def reset(self):
+
         try:
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
@@ -705,11 +732,13 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def _get_namespace(self):
+
         result = yield from self.manager.query("GET", "containers/{}/json".format(self._cid))
         return int(result['State']['Pid'])
 
     @asyncio.coroutine
     def _connect_nio(self, adapter_number, nio):
+
         bridge_name = 'bridge{}'.format(adapter_number)
         yield from self._ubridge_send('bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}'.format(bridge_name=bridge_name,
                                                                                                         lport=nio.lport,
@@ -724,12 +753,13 @@ class DockerVM(BaseNode):
 
     @asyncio.coroutine
     def adapter_add_nio_binding(self, adapter_number, nio):
-        """Adds an adapter NIO binding.
-
+        """
+        Adds an adapter NIO binding.
 
         :param adapter_number: adapter number
         :param nio: NIO instance to add to the slot/port
         """
+
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
@@ -768,6 +798,7 @@ class DockerVM(BaseNode):
 
         :returns: NIO instance
         """
+
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
@@ -792,16 +823,19 @@ class DockerVM(BaseNode):
 
     @property
     def adapters(self):
-        """Returns the number of Ethernet adapters for this Docker VM.
+        """
+        Returns the number of Ethernet adapters for this Docker VM.
 
         :returns: number of adapters
         :rtype: int
         """
+
         return len(self._ethernet_adapters)
 
     @adapters.setter
     def adapters(self, adapters):
-        """Sets the number of Ethernet adapters for this Docker container.
+        """
+        Sets the number of Ethernet adapters for this Docker container.
 
         :param adapters: number of adapters
         """
@@ -820,8 +854,9 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def pull_image(self, image):
         """
-        Pull image from docker repository
+        Pulls an image from Docker repository
         """
+
         def callback(msg):
             self.project.emit("log.info", {"message": msg})
         yield from self.manager.pull_image(image, progress_callback=callback)
@@ -829,7 +864,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_ubridge_capture(self, adapter_number, output_file):
         """
-        Start a packet capture in uBridge.
+        Starts a packet capture in uBridge.
 
         :param adapter_number: adapter number
         :param output_file: PCAP destination file for the capture
@@ -843,7 +878,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _stop_ubridge_capture(self, adapter_number):
         """
-        Stop a packet capture in uBridge.
+        Stops a packet capture in uBridge.
 
         :param adapter_number: adapter number
         """
@@ -915,7 +950,7 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _get_log(self):
         """
-        Return the log from the container
+        Returns the log from the container
 
         :returns: string
         """
@@ -926,7 +961,8 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def delete(self):
         """
-        Delete the VM (including all its files).
+        Deletes the VM (including all its files).
         """
+
         yield from self.close()
         yield from super().delete()

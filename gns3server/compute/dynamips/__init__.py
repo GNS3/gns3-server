@@ -231,7 +231,7 @@ class Dynamips(BaseManager):
                     self._ghost_files.remove(file)
                 yield from wait_run_in_executor(os.remove, file)
             except OSError as e:
-                log.warn("Could not delete file {}: {}".format(file, e))
+                log.warning("Could not delete file {}: {}".format(file, e))
                 continue
 
         # Release the dynamips ids if we want to reload the same project
@@ -432,7 +432,7 @@ class Dynamips(BaseManager):
                 finally:
                     yield from ghost.clean_delete()
             except DynamipsError as e:
-                log.warn("Could not create ghost instance: {}".format(e))
+                log.warning("Could not create ghost instance: {}".format(e))
 
         if vm.ghost_file != ghost_file and os.path.isfile(ghost_file_path):
             # set the ghost file to the router

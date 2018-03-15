@@ -190,7 +190,7 @@ class Route(object):
                                 f.write("curl -X {} 'http://{}{}' -d '{}'".format(request.method, request.host, request.path_qs, json.dumps(request.json)))
                                 f.write("\n")
                         except OSError as e:
-                            log.warn("Could not write to the record file {}: {}".format(record_file, e))
+                            log.warning("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(request=request, route=route, output_schema=output_schema)
                     yield from func(request, response)
                 except aiohttp.web.HTTPBadRequest as e:
@@ -221,7 +221,7 @@ class Route(object):
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
                 except aiohttp.ClientError:
-                    log.warn("Client error")
+                    log.warning("Client error")
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Client error", "status": 408})

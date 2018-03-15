@@ -31,6 +31,7 @@ ID_TO_CATEGORY = {
 class Appliance:
 
     def __init__(self, appliance_id, data, builtin=False):
+
         if appliance_id is None:
             self._id = str(uuid.uuid4())
         elif isinstance(appliance_id, uuid.UUID):

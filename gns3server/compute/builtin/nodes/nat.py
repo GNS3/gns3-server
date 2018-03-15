@@ -25,15 +25,15 @@ import gns3server.utils.interfaces
 
 class Nat(Cloud):
     """
-    A portable and preconfigured node allowing topology to get a
-    nat access to the outside
+    A portable and pre-configured node allowing topologies to get a
+    NAT access.
     """
 
     def __init__(self, *args, **kwargs):
 
         if sys.platform.startswith("linux"):
             if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-                raise NodeError("virbr0 is missing. You need to install libvirt")
+                raise NodeError("virbr0 is missing, please install libvirt")
             interface = "virbr0"
         else:
             interfaces = list(filter(lambda x: 'vmnet8' in x.lower(),

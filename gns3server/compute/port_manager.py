@@ -69,14 +69,16 @@ class PortManager:
 
     @property
     def console_host(self):
+
         assert self._console_host is not None
         return self._console_host
 
     @console_host.setter
     def console_host(self, new_host):
         """
-        If allow remote connection we need to bind console host to 0.0.0.0
+        Bind console host to 0.0.0.0 if remote connections are allowed.
         """
+
         server_config = Config.instance().get_section_config("Server")
         remote_console_connections = server_config.getboolean("allow_remote_console")
         if remote_console_connections:
@@ -228,14 +230,12 @@ class PortManager:
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
         if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
         try:
             PortManager._check_port(self._console_host, port, "TCP")
@@ -244,7 +244,6 @@ class PortManager:
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
 
         self._used_tcp_ports.add(port)

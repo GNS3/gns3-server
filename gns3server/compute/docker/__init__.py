@@ -33,7 +33,7 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Err
 log = logging.getLogger(__name__)
 
 
-# Be carefull to keep it consistent
+# Be careful to keep it consistent
 DOCKER_MINIMUM_API_VERSION = "1.25"
 DOCKER_MINIMUM_VERSION = "1.13"
 DOCKER_PREFERRED_API_VERSION = "1.30"
@@ -44,6 +44,7 @@ class Docker(BaseManager):
     _NODE_CLASS = DockerVM
 
     def __init__(self):
+
         super().__init__()
         self._server_url = '/var/run/docker.sock'
         self._connected = False
@@ -55,6 +56,7 @@ class Docker(BaseManager):
 
     @asyncio.coroutine
     def _check_connection(self):
+
         if not self._connected:
             try:
                 self._connected = True
@@ -76,6 +78,7 @@ class Docker(BaseManager):
                 self._api_version = DOCKER_PREFERRED_API_VERSION
 
     def connector(self):
+
         if self._connector is None or self._connector.closed:
             if not sys.platform.startswith("linux"):
                 raise DockerError("Docker is supported only on Linux")
@@ -87,6 +90,7 @@ class Docker(BaseManager):
 
     @asyncio.coroutine
     def unload(self):
+
         yield from super().unload()
         if self._connected:
             if self._connector and not self._connector.closed:
@@ -95,7 +99,7 @@ class Docker(BaseManager):
     @asyncio.coroutine
     def query(self, method, path, data={}, params={}):
         """
-        Make a query to the docker daemon and decode the request
+        Makes a query to the Docker daemon and decode the request
 
         :param method: HTTP method
         :param path: Endpoint in API
@@ -116,7 +120,7 @@ class Docker(BaseManager):
     @asyncio.coroutine
     def http_query(self, method, path, data={}, params={}, timeout=300):
         """
-        Make a query to the docker daemon
+        Makes a query to the docker daemon
 
         :param method: HTTP method
         :param path: Endpoint in API
@@ -125,6 +129,7 @@ class Docker(BaseManager):
         :param timeout: Timeout
         :returns: HTTP response
         """
+
         data = json.dumps(data)
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
@@ -169,7 +174,7 @@ class Docker(BaseManager):
     @asyncio.coroutine
     def websocket_query(self, path, params={}):
         """
-        Open a websocket connection
+        Opens a websocket connection
 
         :param path: Endpoint in API
         :param params: Parameters added as a query arg
@@ -185,7 +190,7 @@ class Docker(BaseManager):
     @locked_coroutine
     def pull_image(self, image, progress_callback=None):
         """
-        Pull image from docker repository
+        Pulls an image from the Docker repository
 
         :params image: Image name
         :params progress_callback: A function that receive a log message about image download progress
@@ -226,11 +231,13 @@ class Docker(BaseManager):
 
     @asyncio.coroutine
     def list_images(self):
-        """Gets Docker image list.
+        """
+        Gets Docker image list.
 
         :returns: list of dicts
         :rtype: list
         """
+
         images = []
         for image in (yield from self.query("GET", "images/json", params={"all": 0})):
             if image['RepoTags']:

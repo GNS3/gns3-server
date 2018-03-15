@@ -328,7 +328,7 @@ class Router(BaseNode):
             try:
                 yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
             except DynamipsError as e:
-                log.warn("Could not stop {}: {}".format(self._name, e))
+                log.warning("Could not stop {}: {}".format(self._name, e))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
         if self._memory_watcher:
@@ -403,7 +403,7 @@ class Router(BaseNode):
                 yield from self.stop()
                 yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
             except DynamipsError as e:
-                log.warn("Could not stop and delete {}: {}".format(self._name, e))
+                log.warning("Could not stop and delete {}: {}".format(self._name, e))
             yield from self.hypervisor.stop()
 
         if self._auto_delete_disks:
@@ -420,7 +420,7 @@ class Router(BaseNode):
                     log.debug("Deleting file {}".format(file))
                     yield from wait_run_in_executor(os.remove, file)
                 except OSError as e:
-                    log.warn("Could not delete file {}: {}".format(file, e))
+                    log.warning("Could not delete file {}: {}".format(file, e))
                     continue
         self.manager.release_dynamips_id(self.project.id, self.dynamips_id)
 
@@ -1582,12 +1582,13 @@ class Router(BaseNode):
 
     def delete(self):
         """
-        Delete this VM (including all its files).
+        Deletes this VM (including all its files).
         """
+
         try:
             yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
         except OSError as e:
-            log.warn("Could not delete file {}".format(e))
+            log.warning("Could not delete file {}".format(e))
 
         self.manager.release_dynamips_id(self._project.id, self._dynamips_id)
 
@@ -1602,10 +1603,11 @@ class Router(BaseNode):
         try:
             yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
         except OSError as e:
-            log.warn("Could not delete file {}".format(e))
+            log.warning("Could not delete file {}".format(e))
         log.info('Router "{name}" [{id}] has been deleted (including associated files)'.format(name=self._name, id=self._id))
 
     def _memory_files(self):
+
         return [
             os.path.join(self._working_directory, "{}_i{}_rom".format(self.platform, self.dynamips_id)),
             os.path.join(self._working_directory, "{}_i{}_nvram".format(self.platform, self.dynamips_id))

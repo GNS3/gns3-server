@@ -265,6 +265,7 @@ class BaseNode:
         """
         Delete the node (including all its files).
         """
+
         def set_rw(operation, name, exc):
             os.chmod(name, stat.S_IWRITE)
 
@@ -287,6 +288,7 @@ class BaseNode:
         """
         Stop the node process.
         """
+
         if self._wrapper_telnet_server:
             self._wrapper_telnet_server.close()
             yield from self._wrapper_telnet_server.wait_closed()
@@ -332,6 +334,7 @@ class BaseNode:
         Start a telnet proxy for the console allowing multiple client
         connected at the same time
         """
+
         if not self._wrap_console or self._console_type != "telnet":
             return
         remaining_trial = 60
@@ -353,6 +356,7 @@ class BaseNode:
         """
         :returns: Boolean allocate or not an aux console
         """
+
         return self._allocate_aux
 
     @allocate_aux.setter
@@ -360,6 +364,7 @@ class BaseNode:
         """
         :returns: Boolean allocate or not an aux console
         """
+
         self._allocate_aux = allocate_aux
 
     @property
@@ -593,6 +598,7 @@ class BaseNode:
         """
         :params name: Delete the bridge with this name
         """
+
         if self.ubridge:
             yield from self._ubridge_send("bridge delete {name}".format(name=name))
 
@@ -604,6 +610,7 @@ class BaseNode:
         :param bridge_name: bridge name in uBridge
         :param filters: Array of filter dictionary
         """
+
         yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
         for packet_filter in self._build_filter_list(filters):
             cmd = 'bridge add_packet_filter {} {}'.format(bridge_name, packet_filter)
@@ -622,6 +629,7 @@ class BaseNode:
         """
         :returns: Iterator building a list of filter
         """
+
         i = 0
         for (filter_type, values) in filters.items():
             if isinstance(values[0], str):

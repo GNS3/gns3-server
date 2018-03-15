@@ -29,6 +29,7 @@ def get_next_application_id(nodes):
     :raises IOUError when exceeds number
     :return: integer first free id
     """
+
     used = set([n.application_id for n in nodes])
     pool = set(range(1, 512))
     try:
