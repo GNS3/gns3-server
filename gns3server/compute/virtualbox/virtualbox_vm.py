@@ -873,7 +873,10 @@ class VirtualBoxVM(BaseNode):
                     yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
                     yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
                     yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
-                    yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
+                    if nio.suspend:
+                        yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                    else:
+                        yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
 
                 if nio.capturing:
                     yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
@@ -1016,10 +1019,13 @@ class VirtualBoxVM(BaseNode):
 
         if self.is_running():
             try:
-                yield from self.update_ubridge_udp_connection(
-                    "VBOX-{}-{}".format(self._id, adapter_number),
-                    self._local_udp_tunnels[adapter_number][1],
-                    nio)
+                yield from self.update_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                                                              self._local_udp_tunnels[adapter_number][1],
+                                                              nio)
+                if nio.suspend:
+                    yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
+                else:
+                    yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
             except IndexError:
                 raise VirtualBoxError('Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(
                     name=self._name,

@@ -36,8 +36,6 @@ log = logging.getLogger(__name__)
 
 from ...base_node import BaseNode
 from ..dynamips_error import DynamipsError
-from ..nios.nio_udp import NIOUDP
-
 
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio import wait_run_in_executor, monitor_process, asyncio_ensure_future

@@ -39,6 +39,8 @@ class NIO:
 
         self._hypervisor = hypervisor
         self._name = name
+        self._filters = {}
+        self._suspended = False
         self._bandwidth = None  # no bandwidth constraint by default
         self._input_filter = None  # no input filter applied by default
         self._output_filter = None  # no output filter applied by default
@@ -235,6 +237,47 @@ class NIO:
 
         yield from self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name, bandwidth=bandwidth))
         self._bandwidth = bandwidth
+
+    @property
+    def suspend(self):
+        """
+        Returns if this link is suspended or not.
+
+        :returns: boolean
+        """
+
+        return self._suspended
+
+    @suspend.setter
+    def suspend(self, suspended):
+        """
+        Suspend this link.
+
+        :param suspended: boolean
+        """
+
+        self._suspended = suspended
+
+    @property
+    def filters(self):
+        """
+        Returns the list of packet filters for this NIO.
+
+        :returns: packet filters (dictionary)
+        """
+
+        return self._filters
+
+    @filters.setter
+    def filters(self, new_filters):
+        """
+        Set a list of packet filters for this NIO.
+
+        :param new_filters: packet filters (dictionary)
+        """
+
+        assert isinstance(new_filters, dict)
+        self._filters = new_filters
 
     def __str__(self):
         """

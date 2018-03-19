@@ -29,6 +29,8 @@ class NIO(object):
     def __init__(self):
 
         self._capturing = False
+        self._suspended = False
+        self._filters = {}
         self._pcap_output_file = ""
         self._pcap_data_link_type = ""
 
@@ -61,6 +63,7 @@ class NIO(object):
     def pcap_output_file(self):
         """
         Returns the path to the PCAP output file.
+
         :returns: path to the PCAP output file
         """
 
@@ -70,7 +73,49 @@ class NIO(object):
     def pcap_data_link_type(self):
         """
         Returns the PCAP data link type
+
         :returns: PCAP data link type (DLT_* value)
         """
 
         return self._pcap_data_link_type
+
+    @property
+    def suspend(self):
+        """
+        Returns if this link is suspended or not.
+
+        :returns: boolean
+        """
+
+        return self._suspended
+
+    @suspend.setter
+    def suspend(self, suspended):
+        """
+        Suspend this link.
+
+        :param suspended: boolean
+        """
+
+        self._suspended = suspended
+
+    @property
+    def filters(self):
+        """
+        Returns the list of packet filters for this NIO.
+
+        :returns: packet filters (dictionary)
+        """
+
+        return self._filters
+
+    @filters.setter
+    def filters(self, new_filters):
+        """
+        Set a list of packet filters for this NIO.
+
+        :param new_filters: packet filters (dictionary)
+        """
+
+        assert isinstance(new_filters, dict)
+        self._filters = new_filters

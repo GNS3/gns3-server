@@ -41,26 +41,17 @@ class NIOUDP(NIO):
     :param rport: remote port number
     """
 
-    def __init__(self, node, lport, rhost, rport, filters):
+    def __init__(self, node, lport, rhost, rport):
 
         # create an unique name
         name = 'udp-{}'.format(uuid.uuid4())
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
-        self._filters = filters
         self._local_tunnel_lport = None
         self._local_tunnel_rport = None
         self._node = node
         super().__init__(name, node.hypervisor)
-
-    @property
-    def filters(self):
-        return self._filters
-
-    @filters.setter
-    def filters(self, val):
-        self._filters = val
 
     @asyncio.coroutine
     def create(self):

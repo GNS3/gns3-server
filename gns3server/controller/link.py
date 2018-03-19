@@ -124,7 +124,7 @@ class Link:
         self._streaming_pcap = None
         self._created = False
         self._link_type = "ethernet"
-        self._suspend = False
+        self._suspended = False
         self._filters = {}
 
     @property
@@ -146,7 +146,8 @@ class Link:
         Return the active filters.
         Filters are overridden if the link is suspended.
         """
-        if self._suspend:
+        if self._suspended:
+            # this is to allow all node types to support suspend link
             return {"frequency_drop": [-1]}
         return self._filters
 
@@ -178,8 +179,8 @@ class Link:
 
     @asyncio.coroutine
     def update_suspend(self, value):
-        if value != self._suspend:
-            self._suspend = value
+        if value != self._suspended:
+            self._suspended = value
             yield from self.update()
             self._project.controller.notification.emit("link.updated", self.__json__())
             self._project.dump()
@@ -452,7 +453,7 @@ class Link:
                 "nodes": res,
                 "link_id": self._id,
                 "filters": self._filters,
-                "suspend": self._suspend
+                "suspend": self._suspended
             }
         return {
             "nodes": res,
@@ -463,5 +464,5 @@ class Link:
             "capture_file_path": self.capture_file_path,
             "link_type": self._link_type,
             "filters": self._filters,
-            "suspend": self._suspend
+            "suspend": self._suspended
         }

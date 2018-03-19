@@ -957,6 +957,8 @@ class QemuVM(BaseNode):
                     yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                                self._local_udp_tunnels[adapter_number][1],
                                                                nio)
+                    if nio.suspend:
+                        yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
                 else:
                     yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
 
@@ -1191,6 +1193,10 @@ class QemuVM(BaseNode):
                 yield from self.update_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                               self._local_udp_tunnels[adapter_number][1],
                                                               nio)
+                if nio.suspend:
+                    yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
+                else:
+                    yield from self._control_vm("set_link gns3-{} on".format(adapter_number))
             except IndexError:
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
@@ -1595,6 +1601,8 @@ class QemuVM(BaseNode):
                                                                                                                            nio.rport,
                                                                                                                            "127.0.0.1",
                                                                                                                            nio.lport)])
+                    elif isinstance(nio, NIOTAP):
+                        network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
                 else:
                     network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
 
@@ -1614,6 +1622,8 @@ class QemuVM(BaseNode):
                                                                                                                 nio.rport,
                                                                                                                 "127.0.0.1",
                                                                                                                 nio.lport)])
+                    elif isinstance(nio, NIOTAP):
+                        network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
                 else:
                     network_options.extend(["-device", device_string])
 

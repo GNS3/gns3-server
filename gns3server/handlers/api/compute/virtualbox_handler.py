@@ -313,6 +313,8 @@ class VirtualBoxHandler:
         nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
+        if "suspend" in request.json and nio:
+            nio.suspend = request.json["suspend"]
         yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(request.json)

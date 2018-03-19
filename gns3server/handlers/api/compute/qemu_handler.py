@@ -284,7 +284,7 @@ class QEMUHandler:
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
-        if nio_type not in ("nio_udp", "nio_tap", "nio_nat"):
+        if nio_type not in ("nio_udp"):
             raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = qemu_manager.create_nio(request.json)
         yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
@@ -314,6 +314,8 @@ class QEMUHandler:
         nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
+        if "suspend" in request.json and nio:
+            nio.suspend = request.json["suspend"]
         yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(request.json)
