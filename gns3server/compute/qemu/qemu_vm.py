@@ -935,15 +935,6 @@ class QemuVM(BaseNode):
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir)
-
-                yield from self._start_ubridge()
-                for adapter_number, adapter in enumerate(self._ethernet_adapters):
-                    nio = adapter.get_nio(0)
-                    if nio:
-                        yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
-                                                                   self._local_udp_tunnels[adapter_number][1],
-                                                                   nio)
-
                 log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
@@ -958,6 +949,17 @@ class QemuVM(BaseNode):
 
             if "-enable-kvm" in command_string:
                 self._hw_virtualization = True
+
+            yield from self._start_ubridge()
+            for adapter_number, adapter in enumerate(self._ethernet_adapters):
+                nio = adapter.get_nio(0)
+                if nio:
+                    yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                               self._local_udp_tunnels[adapter_number][1],
+                                                               nio)
+                else:
+                    yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
+
         try:
             yield from self.start_wrap_console()
         except OSError as e:
@@ -1026,10 +1028,10 @@ class QemuVM(BaseNode):
         if self.is_running() and self._monitor:
             log.debug("Execute QEMU monitor command: {}".format(command))
             try:
-                log.info("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
+                log.debug("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
                 reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
             except OSError as e:
-                log.warning("Could not connect to QEMU monitor: {}".format(e))
+                log.warning("Could not connect to QEMU monitor on {}: {}".format(self._monitor_host, self._monitor, e))
                 return result
             try:
                 writer.write(command.encode('ascii') + b"\n")
@@ -1164,6 +1166,7 @@ class QemuVM(BaseNode):
                 yield from self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
+                yield from self._control_vm("set_link gns3-{} on".format(adapter_number))
             except (IndexError, KeyError):
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
@@ -1185,10 +1188,9 @@ class QemuVM(BaseNode):
 
         if self.is_running():
             try:
-                yield from self.update_ubridge_udp_connection(
-                    "QEMU-{}-{}".format(self._id, adapter_number),
-                    self._local_udp_tunnels[adapter_number][1],
-                    nio)
+                yield from self.update_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
+                                                              self._local_udp_tunnels[adapter_number][1],
+                                                              nio)
             except IndexError:
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
@@ -1210,6 +1212,7 @@ class QemuVM(BaseNode):
                                                                                                  adapter_number=adapter_number))
 
         if self.is_running():
+            yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
             yield from self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
 
         nio = adapter.get_nio(0)
@@ -1592,8 +1595,6 @@ class QemuVM(BaseNode):
                                                                                                                            nio.rport,
                                                                                                                            "127.0.0.1",
                                                                                                                            nio.lport)])
-                    elif isinstance(nio, NIOTAP):
-                        network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
                 else:
                     network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
 
@@ -1613,8 +1614,6 @@ class QemuVM(BaseNode):
                                                                                                                 nio.rport,
                                                                                                                 "127.0.0.1",
                                                                                                                 nio.lport)])
-                    elif isinstance(nio, NIOTAP):
-                        network_options.extend(["-netdev", "tap,id=gns3-{},ifname={},script=no,downscript=no".format(adapter_number, nio.tap_device)])
                 else:
                     network_options.extend(["-device", device_string])
 
