@@ -1031,7 +1031,7 @@ class QemuVM(BaseNode):
                 log.debug("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
                 reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
             except OSError as e:
-                log.warning("Could not connect to QEMU monitor on {}: {}".format(self._monitor_host, self._monitor, e))
+                log.warning("Could not connect to QEMU monitor on {}:{}: {}".format(self._monitor_host, self._monitor, e))
                 return result
             try:
                 writer.write(command.encode('ascii') + b"\n")
