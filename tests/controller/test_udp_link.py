@@ -85,14 +85,16 @@ def test_create(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"latency": [10]}
+        "filters": {"latency": [10]},
+        "suspend": False,
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
 
 
@@ -151,14 +153,16 @@ def test_create_one_side_failure(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
     # The link creation has failed we rollback the nio
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
@@ -362,6 +366,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {"latency": [10]}
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
@@ -369,6 +374,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {}
     }, timeout=120)
 
@@ -379,6 +385,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {
             "drop": [5],
             "bpf": ["icmp[icmptype] == 8"]
@@ -440,12 +447,14 @@ def test_update_suspend(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"frequency_drop": [-1]}
+        "filters": {"frequency_drop": [-1]},
+        "suspend": True
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": True
     }, timeout=120)

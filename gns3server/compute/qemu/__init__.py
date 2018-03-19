@@ -233,7 +233,7 @@ class Qemu(BaseManager):
     @asyncio.coroutine
     def create_disk(self, qemu_img, path, options):
         """
-        Create a qemu disk with qemu-img
+        Create a Qemu disk with qemu-img
 
         :param qemu_img: qemu-img binary path
         :param path: Image path
@@ -251,9 +251,9 @@ class Qemu(BaseManager):
 
             try:
                 if os.path.exists(path):
-                    raise QemuError("Could not create disk image {} already exist".format(path))
+                    raise QemuError("Could not create disk image '{}', file already exists".format(path))
             except UnicodeEncodeError:
-                raise QemuError("Could not create disk image {}, "
+                raise QemuError("Could not create disk image '{}', "
                                 "path contains characters not supported by filesystem".format(path))
 
             command = [qemu_img, "create", "-f", img_format]
@@ -262,6 +262,25 @@ class Qemu(BaseManager):
             command.append(path)
             command.append("{}M".format(img_size))
 
+            process = yield from asyncio.create_subprocess_exec(*command)
+            yield from process.wait()
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Could not create disk image {}:{}".format(path, e))
+
+    @asyncio.coroutine
+    def resize_disk(self, qemu_img, path, size):
+        """
+        Resize a Qemu disk with qemu-img
+
+        :param qemu_img: qemu-img binary path
+        :param path: Image path
+        :param size: size
+        """
+
+        try:
+            if not os.path.exists(path):
+                raise QemuError("Qemu image '{}' does not exist".format(path))
+            command = [qemu_img, "resize", path, "{}M".format(size)]
             process = yield from asyncio.create_subprocess_exec(*command)
             yield from process.wait()
         except (OSError, subprocess.SubprocessError) as e:

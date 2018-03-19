@@ -130,8 +130,9 @@ def test_update_ubridge_udp_connection(node, async_run):
         "latency": [10]
     }
 
-    snio = NIOUDP(1245, "localhost", 1246, {})
-    dnio = NIOUDP(1245, "localhost", 1244, filters)
+    snio = NIOUDP(1245, "localhost", 1246)
+    dnio = NIOUDP(1245, "localhost", 1244)
+    dnio.filters = filters
     with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
         async_run(node.update_ubridge_udp_connection('VPCS-10', snio, dnio))
     mock.assert_called_with("VPCS-10", filters)
