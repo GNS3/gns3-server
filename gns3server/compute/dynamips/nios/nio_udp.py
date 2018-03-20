@@ -79,12 +79,11 @@ class NIOUDP(NIO):
 
         self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport,
                                           '127.0.0.1',
-                                          self._local_tunnel_lport,
-                                          {})
+                                          self._local_tunnel_lport)
         self._destination_nio = nio_udp.NIOUDP(self._lport,
                                                self._rhost,
-                                               self._rport,
-                                               self._filters)
+                                               self._rport)
+        self._destination_nio.filters = self._filters
         yield from self._node.add_ubridge_udp_connection(
             self._bridge_name,
             self._source_nio,

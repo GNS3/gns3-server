@@ -350,7 +350,9 @@ class Dynamips(BaseManager):
                         sock.connect(sa)
             except OSError as e:
                 raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
-            nio = NIOUDP(node, lport, rhost, rport, nio_settings.get("filters", {}))
+            nio = NIOUDP(node, lport, rhost, rport)
+            nio.filters = nio_settings.get("filters", {})
+            nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
             if sys.platform.startswith("win"):
