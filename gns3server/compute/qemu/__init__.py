@@ -218,6 +218,34 @@ class Qemu(BaseManager):
             raise QemuError("Error while looking for the Qemu-img version: {}".format(e))
 
     @staticmethod
+    def get_haxm_windows_version():
+        """
+        Gets the HAXM version number (Windows).
+
+        :returns: HAXM version number. Returns None if HAXM is not installed.
+        """
+
+        assert(sys.platform.startswith("win"))
+        import winreg
+
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products")
+        version = None
+        for index in range(winreg.QueryInfoKey(hkey)[0]):
+            product_id = winreg.EnumKey(hkey, index)
+            try:
+                product_key = winreg.OpenKey(hkey, r"{}\InstallProperties".format(product_id))
+                try:
+                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith("Hardware Accelerated Execution Manager"):
+                        version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
+                        break
+                finally:
+                    winreg.CloseKey(product_key)
+            except OSError:
+                continue
+        winreg.CloseKey(hkey)
+        return version
+
+    @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):
         """
         Returns the name of the legacy working directory name for a node.

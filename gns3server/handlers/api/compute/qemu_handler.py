@@ -180,10 +180,16 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        if sys.platform.startswith("linux") and qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) and "-no-kvm" not in vm.options:
+        hardware_accel = qemu_manager.config.get_section_config("Qemu").getboolean("enable_hardware_acceleration", True)
+        if sys.platform.startswith("linux"):
+            # the enable_kvm option was used before version 2.0 and has priority
+            enable_kvm = qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm")
+            if enable_kvm is not None:
+                hardware_accel = enable_kvm
+        if hardware_accel and "-no-kvm" not in vm.options and "-no-hax" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
-                raise aiohttp.web.HTTPConflict(text="Cannot start VM with KVM enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
+                raise aiohttp.web.HTTPConflict(text="Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
         yield from vm.start()
         response.json(vm)
 

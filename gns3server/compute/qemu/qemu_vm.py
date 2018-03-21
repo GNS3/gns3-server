@@ -711,10 +711,15 @@ class QemuVM(BaseNode):
                 options = options.replace("-no-kvm", "")
             if "-enable-kvm" in options:
                 options = options.replace("-enable-kvm", "")
-        elif "-icount" in options and ("-no-kvm" not in options):
-            # automatically add the -no-kvm option if -icount is detected
-            # to help with the migration of ASA VMs created before version 1.4
-            options = "-no-kvm " + options
+        else:
+            if "-no-hax" in options:
+                options = options.replace("-no-hax", "")
+            if "-enable-hax" in options:
+                options = options.replace("-enable-hax", "")
+            if "-icount" in options and ("-no-kvm" not in options):
+                # automatically add the -no-kvm option if -icount is detected
+                # to help with the migration of ASA VMs created before version 1.4
+                options = "-no-kvm " + options
         self._options = options.strip()
 
     @property
@@ -947,7 +952,7 @@ class QemuVM(BaseNode):
             if self._cpu_throttling:
                 self._set_cpu_throttling()
 
-            if "-enable-kvm" in command_string:
+            if "-enable-kvm" in command_string or "-enable-hax" in command_string:
                 self._hw_virtualization = True
 
             yield from self._start_ubridge()
@@ -1642,27 +1647,57 @@ class QemuVM(BaseNode):
             return ["-nographic"]
         return []
 
-    def _run_with_kvm(self, qemu_path, options):
+    def _run_with_hardware_acceleration(self, qemu_path, options):
         """
-        Check if we could run qemu with KVM
+        Check if we can run Qemu with hardware acceleration
 
         :param qemu_path: Path to qemu
         :param options: String of qemu user options
-        :returns: Boolean True if we need to enable KVM
+        :returns: Boolean True if we need to enable hardware acceleration
         """
 
-        if sys.platform.startswith("linux") and self.manager.config.get_section_config("Qemu").getboolean("enable_kvm", True) \
-                and "-no-kvm" not in options:
+        enable_hardware_accel = self.manager.config.get_section_config("Qemu").getboolean("enable_hardware_acceleration", True)
+        require_hardware_accel = self.manager.config.get_section_config("Qemu").getboolean("require_hardware_acceleration", True)
+        if sys.platform.startswith("linux"):
+            # compatibility: these options were used before version 2.0 and have priority
+            enable_kvm = self.manager.config.get_section_config("Qemu").getboolean("enable_kvm")
+            if enable_kvm is not None:
+                enable_hardware_accel = enable_kvm
+            require_kvm = self.manager.config.get_section_config("Qemu").getboolean("require_kvm")
+            if require_kvm is not None:
+                require_hardware_accel = require_kvm
 
-            # Turn OFF kvm for non x86 architectures
-            if os.path.basename(qemu_path) not in ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]:
-                return False
-
-            if not os.path.exists("/dev/kvm"):
-                if self.manager.config.get_section_config("Qemu").getboolean("require_kvm", True):
-                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). You can turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+        if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
+            # Turn OFF hardware acceleration for non x86 architectures
+            supported_archs = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
+            if os.path.basename(qemu_path) not in supported_archs:
+                if require_hardware_accel:
+                    raise QemuError("Hardware acceleration can only be used with the following Qemu executables: {}".format(", ".join(supported_archs)))
                 else:
                     return False
+
+            if sys.platform.startswith("linux") and not os.path.exists("/dev/kvm"):
+                if require_hardware_accel:
+                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                else:
+                    return False
+            elif sys.platform.startswith("win"):
+                if require_hardware_accel:
+                    # HAXM is only available starting with Qemu version 2.9.0
+                    version = yield from self.manager.get_qemu_version(self.qemu_path)
+                    if version and parse_version(version) < parse_version("2.9.0"):
+                        raise QemuError("HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {})".format(version))
+
+                    # check if HAXM is installed
+                    version = self.manager.get_haxm_windows_version()
+                    if not version:
+                        raise QemuError("HAXM acceleration support is not installed on this host")
+                    log.info("HAXM support version {} detected".format(version))
+                else:
+                    return False
+            elif sys.platform.startswith("darwin"):
+                # TODO: support for macOS
+                raise QemuError("HAXM acceleration is not yet supported on macOS")
             return True
         return False
 
@@ -1682,13 +1717,16 @@ class QemuVM(BaseNode):
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
         command.extend(["-smp", "cpus={}".format(self._cpus)])
-        if self._run_with_kvm(self.qemu_path, self._options):
-            command.extend(["-enable-kvm"])
-            version = yield from self.manager.get_qemu_version(self.qemu_path)
-            # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
-            # https://github.com/GNS3/gns3-server/issues/685
-            if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
-                command.extend(["-machine", "smm=off"])
+        if self._run_with_hardware_acceleration(self.qemu_path, self._options):
+            if sys.platform.startswith("linux"):
+                command.extend(["-enable-kvm"])
+                version = yield from self.manager.get_qemu_version(self.qemu_path)
+                # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
+                # https://github.com/GNS3/gns3-server/issues/685
+                if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
+                    command.extend(["-machine", "smm=off"])
+            elif sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+                command.extend(["-enable-hax"])
         command.extend(["-boot", "order={}".format(self._boot_priority)])
         command.extend(self._bios_option())
         command.extend(self._cdrom_option())
