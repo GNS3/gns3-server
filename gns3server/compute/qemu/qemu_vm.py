@@ -1647,6 +1647,7 @@ class QemuVM(BaseNode):
             return ["-nographic"]
         return []
 
+    @asyncio.coroutine
     def _run_with_hardware_acceleration(self, qemu_path, options):
         """
         Check if we can run Qemu with hardware acceleration
@@ -1717,7 +1718,7 @@ class QemuVM(BaseNode):
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
         command.extend(["-smp", "cpus={}".format(self._cpus)])
-        if self._run_with_hardware_acceleration(self.qemu_path, self._options):
+        if (yield from self._run_with_hardware_acceleration(self.qemu_path, self._options)):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
                 version = yield from self.manager.get_qemu_version(self.qemu_path)
