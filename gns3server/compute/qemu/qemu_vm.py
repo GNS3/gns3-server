@@ -1670,10 +1670,13 @@ class QemuVM(BaseNode):
 
         if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
-            supported_archs = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
-            if os.path.basename(qemu_path) not in supported_archs:
+            if sys.platform.startswith("win"):
+                supported_binaries = ["qemu-system-x86_64.exe", "qemu-system-x86_64w.exe", "qemu-system-i386.exe", "qemu-system-i386w.exe"]
+            else:
+                supported_binaries = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
+            if os.path.basename(qemu_path) not in supported_binaries:
                 if require_hardware_accel:
-                    raise QemuError("Hardware acceleration can only be used with the following Qemu executables: {}".format(", ".join(supported_archs)))
+                    raise QemuError("Hardware acceleration can only be used with the following Qemu executables: {}".format(", ".join(supported_binaries)))
                 else:
                     return False
 
@@ -1691,7 +1694,7 @@ class QemuVM(BaseNode):
 
                     # check if HAXM is installed
                     version = self.manager.get_haxm_windows_version()
-                    if not version:
+                    if version is None:
                         raise QemuError("HAXM acceleration support is not installed on this host")
                     log.info("HAXM support version {} detected".format(version))
                 else:
