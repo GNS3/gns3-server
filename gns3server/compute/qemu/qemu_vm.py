@@ -1700,8 +1700,13 @@ class QemuVM(BaseNode):
                 else:
                     return False
             elif sys.platform.startswith("darwin"):
-                # TODO: support for macOS
-                raise QemuError("HAXM acceleration is not yet supported on macOS")
+                process = yield from asyncio.create_subprocess_shell("kextstat | grep com.intel.kext.intelhaxm")
+                yield from process.wait()
+                if process.returncode != 0:
+                    if require_hardware_accel:
+                        raise QemuError("HAXM acceleration support is not installed on this host (com.intel.kext.intelhaxm extension not loaded)")
+                    else:
+                        return False
             return True
         return False
 
