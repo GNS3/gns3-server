@@ -90,7 +90,7 @@ class DynamipsHypervisor:
         if not connection_success:
             raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
         else:
-            log.info("Connected to Dynamips hypervisor after {:.4f} seconds".format(time.time() - begin))
+            log.info("Connected to Dynamips hypervisor on {}:{} after {:.4f} seconds".format(host, self._port, time.time() - begin))
 
         try:
             version = yield from self.send("hypervisor version")

@@ -30,6 +30,7 @@ import asyncio
 import socket
 import gns3server
 import subprocess
+import time
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
@@ -956,6 +957,7 @@ class QemuVM(BaseNode):
                 self._hw_virtualization = True
 
             yield from self._start_ubridge()
+            set_link_commands = []
             for adapter_number, adapter in enumerate(self._ethernet_adapters):
                 nio = adapter.get_nio(0)
                 if nio:
@@ -963,9 +965,10 @@ class QemuVM(BaseNode):
                                                                self._local_udp_tunnels[adapter_number][1],
                                                                nio)
                     if nio.suspend:
-                        yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
+                        set_link_commands.append("set_link gns3-{} off".format(adapter_number))
                 else:
-                    yield from self._control_vm("set_link gns3-{} off".format(adapter_number))
+                    set_link_commands.append("set_link gns3-{} off".format(adapter_number))
+            yield from self._control_vm_commands(set_link_commands)
 
         try:
             yield from self.start_wrap_console()
@@ -1021,6 +1024,37 @@ class QemuVM(BaseNode):
             yield from super().stop()
 
     @asyncio.coroutine
+    def _open_qemu_monitor_connection_vm(self, timeout=10):
+        """
+        Opens a connection to the QEMU monitor.
+
+        :param timeout: timeout to connect to the monitor TCP server
+        :returns: The reader returned is a StreamReader instance; the writer is a StreamWriter instance
+        """
+
+        begin = time.time()
+        connection_success = False
+        last_exception = None
+        reader = writer = None
+        while time.time() - begin < timeout:
+            yield from asyncio.sleep(0.01)
+            try:
+                log.debug("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
+                reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
+            except (asyncio.TimeoutError, OSError) as e:
+                last_exception = e
+                continue
+            connection_success = True
+            break
+
+        if not connection_success:
+            log.warning("Could not connect to QEMU monitor on {}:{}: {}".format(self._monitor_host, self._monitor,
+                                                                                last_exception))
+        else:
+            log.info("Connected to QEMU monitor on {}:{} after {:.4f} seconds".format(self._monitor_host, self._monitor, time.time() - begin))
+        return reader, writer
+
+    @asyncio.coroutine
     def _control_vm(self, command, expected=None):
         """
         Executes a command with QEMU monitor when this VM is running.
@@ -1033,13 +1067,11 @@ class QemuVM(BaseNode):
 
         result = None
         if self.is_running() and self._monitor:
-            log.debug("Execute QEMU monitor command: {}".format(command))
-            try:
-                log.debug("Connecting to Qemu monitor on {}:{}".format(self._monitor_host, self._monitor))
-                reader, writer = yield from asyncio.open_connection(self._monitor_host, self._monitor)
-            except OSError as e:
-                log.warning("Could not connect to QEMU monitor on {}:{}: {}".format(self._monitor_host, self._monitor, e))
+            log.info("Execute QEMU monitor command: {}".format(command))
+            reader, writer = yield from self._open_qemu_monitor_connection_vm()
+            if reader is None and writer is None:
                 return result
+
             try:
                 writer.write(command.encode('ascii') + b"\n")
             except OSError as e:
@@ -1060,6 +1092,28 @@ class QemuVM(BaseNode):
                     log.warning("Could not read from QEMU monitor: {}".format(e))
             writer.close()
         return result
+
+    @asyncio.coroutine
+    def _control_vm_commands(self, commands):
+        """
+        Executes commands with QEMU monitor when this VM is running.
+
+        :param commands: a list of QEMU monitor commands (e.g. info status, stop etc.)
+        """
+
+        if self.is_running() and self._monitor:
+
+            reader, writer = yield from self._open_qemu_monitor_connection_vm()
+            if reader is None and writer is None:
+                return
+
+            for command in commands:
+                log.info("Execute QEMU monitor command: {}".format(command))
+                try:
+                    writer.write(command.encode('ascii') + b"\n")
+                except OSError as e:
+                    log.warning("Could not write to QEMU monitor: {}".format(e))
+            writer.close()
 
     @asyncio.coroutine
     def close(self):
