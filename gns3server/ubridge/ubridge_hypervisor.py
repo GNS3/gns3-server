@@ -81,7 +81,7 @@ class UBridgeHypervisor:
         if not connection_success:
             raise UbridgeError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
         else:
-            log.info("Connected to uBridge hypervisor after {:.4f} seconds".format(time.time() - begin))
+            log.info("Connected to uBridge hypervisor on {}:{} after {:.4f} seconds".format(host, self._port, time.time() - begin))
 
         try:
             version = yield from self.send("hypervisor version")

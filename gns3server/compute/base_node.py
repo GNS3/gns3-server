@@ -76,9 +76,11 @@ class BaseNode:
         self._allocate_aux = allocate_aux
         self._wrap_console = wrap_console
         self._wrapper_telnet_server = None
+        self._internal_console_port = None
 
         if self._console is not None:
             if console_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
@@ -86,13 +88,6 @@ class BaseNode:
         # We need to allocate aux before giving a random console port
         if self._aux is not None:
             self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
-
-        if self._console is None:
-            if console_type == "vnc":
-                # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project, port_range_start=5900, port_range_end=6000)
-            else:
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._wrap_console:
             self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
@@ -457,7 +452,10 @@ class BaseNode:
         if console_type != self._console_type:
             # get a new port if the console type change
             self._manager.port_manager.release_tcp_port(self._console, self._project)
-            if console_type == "vnc":
+            if console_type == "none":
+                # no need to allocate a port when the console type is none
+                self._console = None
+            elif console_type == "vnc":
                 # VNC is a special case and the range must be 5900-6000
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
             else:

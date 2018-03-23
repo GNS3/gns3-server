@@ -41,7 +41,7 @@ DOCKER_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc", "http", "https"]
+            "enum": ["telnet", "vnc", "http", "https", "none"]
         },
         "console_resolution": {
             "description": "Console resolution for VNC",
@@ -126,7 +126,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_resolution": {
             "description": "Console resolution for VNC",
@@ -135,7 +135,7 @@ DOCKER_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc", "http", "https"]
+            "enum": ["telnet", "vnc", "http", "https", "none"]
         },
         "console_http_port": {
             "description": "Internal port in the container for the HTTP server",

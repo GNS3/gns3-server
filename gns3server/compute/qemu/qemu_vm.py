@@ -973,7 +973,7 @@ class QemuVM(BaseNode):
         try:
             yield from self.start_wrap_console()
         except OSError as e:
-            raise QemuError("Could not start QEMU console {}\n".format(e))
+            raise QemuError("Could not start Telnet QEMU console {}\n".format(e))
 
     @asyncio.coroutine
     def _termination_callback(self, returncode):
@@ -1803,7 +1803,7 @@ class QemuVM(BaseNode):
             command.extend(self._vnc_options())
         elif self._console_type == "spice":
             command.extend(self._spice_options())
-        else:
+        elif self._console_type != "none":
             raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())
         command.extend((yield from self._network_options()))
