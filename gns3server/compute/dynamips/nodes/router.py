@@ -62,9 +62,9 @@ class Router(BaseNode):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, console_type="telnet", aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, allocate_aux=aux)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
         try:
@@ -162,7 +162,7 @@ class Router(BaseNode):
                        "auto_delete_disks": self._auto_delete_disks,
                        "status": self.status,
                        "console": self.console,
-                       "console_type": "telnet",
+                       "console_type": self.console_type,
                        "aux": self.aux,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
@@ -185,6 +185,7 @@ class Router(BaseNode):
                     router_info["wic" + str(wic_slot_number)] = str(self._slots[0].wics[wic_slot_number])
                 else:
                     router_info["wic" + str(wic_slot_number)] = None
+
 
         return router_info
 
@@ -223,7 +224,8 @@ class Router(BaseNode):
                                                                                  platform=self._platform,
                                                                                  id=self._id))
 
-            yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
+            if self._console:
+                yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
 
             if self.aux is not None:
                 yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self.aux))
@@ -964,6 +966,26 @@ class Router(BaseNode):
 
         self.console = console
         yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self.console))
+
+    @asyncio.coroutine
+    def set_console_type(self, console_type):
+        """
+        Sets the console type.
+
+        :param console_type: console type
+        """
+
+        if self.console_type != console_type:
+            status = yield from self.get_status()
+            if status == "running":
+                raise DynamipsError('"{name}" must be stopped to change the console type to {console_type}'.format(name=self._name,
+                                                                                                                   console_type=console_type))
+
+
+        self.console_type = console_type
+
+        if self._console and console_type == "telnet":
+            yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
 
     @asyncio.coroutine
     def set_aux(self, aux):

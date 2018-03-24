@@ -44,7 +44,7 @@ IOU_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", None]
+            "enum": ["telnet", "none", None]
         },
         "path": {
             "description": "Path of iou binary",
@@ -138,11 +138,11 @@ IOU_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "project_id": {
             "description": "Project UUID",

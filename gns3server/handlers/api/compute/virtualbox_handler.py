@@ -59,6 +59,7 @@ class VirtualBoxHandler:
                                                  request.json.pop("vmname"),
                                                  linked_clone=request.json.pop("linked_clone", False),
                                                  console=request.json.get("console", None),
+                                                 console_type=request.json.get("console_type", "telnet"),
                                                  adapters=request.json.get("adapters", 0))
 
         if "ram" in request.json:

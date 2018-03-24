@@ -61,9 +61,9 @@ class QemuVM(BaseNode):
     :param project: Project instance
     :param manager: Manager instance
     :param console: TCP console port
+    :param console_type: Console type
     :param qemu_path: path to the QEMU binary
     :param platform: Platform to emulate
-    :param console: TCP console port
     """
 
     def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
@@ -1411,6 +1411,19 @@ class QemuVM(BaseNode):
         """
 
         return " ".join(self._build_command())
+
+    @BaseNode.console_type.setter
+    def console_type(self, new_console_type):
+        """
+        Sets the console type for this QEMU VM.
+
+        :param new_console_type: console type (string)
+        """
+
+        if self.is_running() and self.console_type != new_console_type:
+            raise QemuError('"{name}" must be stopped to change the console type to {new_console_type}'.format(name=self._name, new_console_type=new_console_type))
+
+        super(QemuVM, QemuVM).console_type.__set__(self, new_console_type)
 
     def _serial_options(self):
 

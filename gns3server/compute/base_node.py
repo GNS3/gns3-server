@@ -82,6 +82,8 @@ class BaseNode:
             if console_type == "vnc":
                 # VNC is a special case and the range must be 5900-6000
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
+            elif console_type == "none":
+                self._console = None
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
 
@@ -291,9 +293,7 @@ class BaseNode:
         Stop the node process.
         """
 
-        if self._wrapper_telnet_server:
-            self._wrapper_telnet_server.close()
-            yield from self._wrapper_telnet_server.wait_closed()
+        yield from self.stop_wrap_console()
         self.status = "stopped"
 
     def suspend(self):
@@ -352,6 +352,16 @@ class BaseNode:
         yield from AsyncioTelnetServer.write_client_intro(writer, echo=True)
         server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
         self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+
+    @asyncio.coroutine
+    def stop_wrap_console(self):
+        """
+        Stops the telnet proxy.
+        """
+
+        if self._wrapper_telnet_server:
+            self._wrapper_telnet_server.close()
+            yield from self._wrapper_telnet_server.wait_closed()
 
     @property
     def allocate_aux(self):
@@ -418,7 +428,7 @@ class BaseNode:
         :params console: Console port (integer) or None to free the port
         """
 
-        if console == self._console:
+        if console == self._console or self._console_type == "none":
             return
 
         if self._console_type == "vnc" and console is not None and console < 5900:
@@ -470,10 +480,11 @@ class BaseNode:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
         self._console_type = console_type
-        log.info("{module}: '{name}' [{id}]: console type set to {console_type}".format(module=self.manager.module_name,
-                                                                                        name=self.name,
-                                                                                        id=self.id,
-                                                                                        console_type=console_type))
+        log.info("{module}: '{name}' [{id}]: console type set to {console_type} (console port is {console})".format(module=self.manager.module_name,
+                                                                                                                    name=self.name,
+                                                                                                                    id=self.id,
+                                                                                                                    console_type=console_type,
+                                                                                                                    console=self.console))
 
     @property
     def ubridge(self):

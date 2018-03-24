@@ -376,8 +376,8 @@ class Node:
 
         self._list_ports()
         # We send notif only if object has changed
-        if old_json != self.__json__():
-            self.project.controller.notification.emit("node.updated", self.__json__())
+        #if old_json != self.__json__():
+        #    self.project.controller.notification.emit("node.updated", self.__json__())
         if update_compute:
             data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
@@ -389,6 +389,7 @@ class Node:
         """
         Update the object with the remote node object
         """
+
         for key, value in response.items():
             if key == "console":
                 self._console = value

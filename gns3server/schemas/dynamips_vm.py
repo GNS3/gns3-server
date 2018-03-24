@@ -121,13 +121,13 @@ VM_CREATE_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",
@@ -339,13 +339,13 @@ VM_UPDATE_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",
@@ -579,13 +579,13 @@ VM_OBJECT_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",

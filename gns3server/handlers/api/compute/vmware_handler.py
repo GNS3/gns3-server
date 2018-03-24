@@ -57,7 +57,8 @@ class VMwareHandler:
                                                    request.json.get("node_id"),
                                                    request.json.pop("vmx_path"),
                                                    linked_clone=request.json.pop("linked_clone"),
-                                                   console=request.json.get("console", None))
+                                                   console=request.json.get("console", None),
+                                                   console_type=request.json.get("console_type", "telnet"))
 
         for name, value in request.json.items():
             if name != "node_id":

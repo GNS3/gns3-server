@@ -80,14 +80,21 @@ class EthernetSwitch(Device):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, ports=None, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", ports=None, hypervisor=None):
 
         super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
         self._mappings = {}
         self._telnet_console = None
         self._telnet_shell = None
-        self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+        self._console = console
+        self._console_type = console_type
+
+        if self._console is not None:
+            self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
+        else:
+            self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+
         if ports is None:
             # create 8 ports by default
             self._ports = []
@@ -103,7 +110,7 @@ class EthernetSwitch(Device):
 
         ethernet_switch_info = {"name": self.name,
                                 "console": self.console,
-                                "console_type": "telnet",
+                                "console_type": self.console_type,
                                 "node_id": self.id,
                                 "project_id": self.project.id,
                                 "ports_mapping": self._ports,
@@ -115,8 +122,16 @@ class EthernetSwitch(Device):
         return self._console
 
     @console.setter
-    def console(self, val):
-        self._console = val
+    def console(self, console):
+        self._console = console
+
+    @property
+    def console_type(self):
+        return self._console_type
+
+    @console_type.setter
+    def console_type(self, console_type):
+        self._console_type = console_type
 
     @property
     def ports_mapping(self):
@@ -214,6 +229,7 @@ class EthernetSwitch(Device):
         """
         Deletes this Ethernet switch.
         """
+
         yield from self._telnet.close()
         self._telnet_server.close()
         

@@ -46,9 +46,9 @@ class C1700(Router):
     1710 is not supported.
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis="1720"):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis="1720"):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c1700")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c1700")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 64

@@ -43,9 +43,9 @@ class C3745(Router):
     :param aux: auxiliary console port
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis=None):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c3745")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c3745")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

@@ -59,9 +59,9 @@ class VPCSVM(BaseNode):
     :param startup_script: content of the startup script file
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, startup_script=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", startup_script=None):
 
-        super().__init__(name, node_id, project, manager, console=console, wrap_console=True)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, wrap_console=True)
         self._process = None
         self._vpcs_stdout_file = ""
         self._vpcs_version = None
@@ -130,7 +130,7 @@ class VPCSVM(BaseNode):
                 "node_directory": self.working_path,
                 "status": self.status,
                 "console": self._console,
-                "console_type": "telnet",
+                "console_type": self._console_type,
                 "project_id": self.project.id,
                 "command_line": self.command_line}
 
@@ -347,6 +347,19 @@ class VPCSVM(BaseNode):
         if self._process and self._process.returncode is None:
             return True
         return False
+
+    @BaseNode.console_type.setter
+    def console_type(self, new_console_type):
+        """
+        Sets the console type for this VPCS VM.
+
+        :param new_console_type: console type (string)
+        """
+
+        if self.is_running() and self.console_type != new_console_type:
+            raise VPCSError('"{name}" must be stopped to change the console type to {new_console_type}'.format(name=self._name, new_console_type=new_console_type))
+
+        super(VPCSVM, VPCSVM).console_type.__set__(self, new_console_type)
 
     @asyncio.coroutine
     def port_add_nio_binding(self, port_number, nio):

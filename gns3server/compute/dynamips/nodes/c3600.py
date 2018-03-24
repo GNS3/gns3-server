@@ -44,9 +44,9 @@ class C3600(Router):
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis="3640"):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis="3640"):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c3600")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c3600")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128

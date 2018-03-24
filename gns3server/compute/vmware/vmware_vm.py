@@ -44,9 +44,9 @@ class VMwareVM(BaseNode):
     VMware VM implementation.
     """
 
-    def __init__(self, name, node_id, project, manager, vmx_path, linked_clone=False, console=None):
+    def __init__(self, name, node_id, project, manager, vmx_path, linked_clone=False, console=None, console_type="telnet"):
 
-        super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone)
 
         self._vmx_pairs = OrderedDict()
         self._telnet_server = None
@@ -842,12 +842,11 @@ class VMwareVM(BaseNode):
         """
         Starts remote console support for this VM.
         """
-        self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
-        server = AsyncioTelnetServer(reader=self._remote_pipe,
-                                     writer=self._remote_pipe,
-                                     binary=True,
-                                     echo=True)
-        self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+
+        if self.console and self.console_type == "telnet":
+            self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+            server = AsyncioTelnetServer(reader=self._remote_pipe, writer=self._remote_pipe, binary=True, echo=True)
+            self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
     @asyncio.coroutine
     def _stop_remote_console(self):
@@ -859,6 +858,19 @@ class VMwareVM(BaseNode):
             yield from self._telnet_server.wait_closed()
             self._remote_pipe.close()
             self._telnet_server = None
+
+    @BaseNode.console_type.setter
+    def console_type(self, new_console_type):
+        """
+        Sets the console type for this VMware VM.
+
+        :param new_console_type: console type (string)
+        """
+
+        if self._started and self.console_type != new_console_type:
+            raise VMwareError('"{name}" must be stopped to change the console type to {new_console_type}'.format(name=self._name, new_console_type=new_console_type))
+
+        super(VMwareVM, VMwareVM).console_type.__set__(self, new_console_type)
 
     @asyncio.coroutine
     def start_capture(self, adapter_number, output_file):

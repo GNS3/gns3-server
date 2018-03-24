@@ -61,7 +61,8 @@ class IOUHandler:
                                         request.match_info["project_id"],
                                         request.json.get("node_id"),
                                         path=request.json.get("path"),
-                                        console=request.json.get("console"))
+                                        console=request.json.get("console"),
+                                        console_type=request.json.get("console_type", "telnet"))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:

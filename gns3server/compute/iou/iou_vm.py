@@ -63,11 +63,12 @@ class IOUVM(BaseNode):
     :param project: Project instance
     :param manager: Manager instance
     :param console: TCP console port
+    :param console_type: console type
     """
 
-    def __init__(self, name, node_id, project, manager, application_id=None, path=None, console=None):
+    def __init__(self, name, node_id, project, manager, application_id=None, path=None, console=None, console_type="telnet"):
 
-        super().__init__(name, node_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
 
         self._iou_process = None
         self._telnet_server = None
@@ -219,7 +220,7 @@ class IOUVM(BaseNode):
                        "node_id": self.id,
                        "node_directory": self.working_path,
                        "console": self._console,
-                       "console_type": "telnet",
+                       "console_type": self._console_type,
                        "status": self.status,
                        "project_id": self.project.id,
                        "path": self.path,
@@ -540,8 +541,9 @@ class IOUVM(BaseNode):
                 log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
                 raise IOUError("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
-            server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True)
-            self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+            if self.console and self.console_type == "telnet":
+                server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True)
+                self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
             # configure networking support
             yield from self._networking()
@@ -683,6 +685,19 @@ class IOUVM(BaseNode):
         if self._iou_process and self._iou_process.returncode is None:
             return True
         return False
+
+    @BaseNode.console_type.setter
+    def console_type(self, new_console_type):
+        """
+        Sets the console type for this IOU VM.
+
+        :param new_console_type: console type (string)
+        """
+
+        if self.is_running() and self.console_type != new_console_type:
+            raise IOUError('"{name}" must be stopped to change the console type to {new_console_type}'.format(name=self._name, new_console_type=new_console_type))
+
+        super(IOUVM, IOUVM).console_type.__set__(self, new_console_type)
 
     def _create_netmap_config(self):
         """

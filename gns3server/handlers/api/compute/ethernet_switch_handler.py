@@ -55,6 +55,8 @@ class EthernetSwitchHandler:
         node = yield from dynamips_manager.create_node(request.json.pop("name"),
                                                        request.match_info["project_id"],
                                                        request.json.get("node_id"),
+                                                       console=request.json.get("console"),
+                                                       console_type=request.json.get("console_type"),
                                                        node_type="ethernet_switch",
                                                        ports=request.json.get("ports_mapping"))
 
@@ -134,6 +136,8 @@ class EthernetSwitchHandler:
         if "ports_mapping" in request.json:
             node.ports_mapping = request.json["ports_mapping"]
             yield from node.update_port_settings()
+        if "console_type" in request.json:
+            node.console_type = request.json["console_type"]
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

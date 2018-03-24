@@ -75,6 +75,7 @@ class DynamipsVMHandler:
                                                      dynamips_id=request.json.get("dynamips_id"),
                                                      platform=platform,
                                                      console=request.json.get("console"),
+                                                     console_type=request.json.get("console_type", "telnet"),
                                                      aux=request.json.get("aux"),
                                                      chassis=request.json.pop("chassis", default_chassis),
                                                      node_type="dynamips")

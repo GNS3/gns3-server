@@ -54,6 +54,7 @@ class VPCSHandler:
                                          request.match_info["project_id"],
                                          request.json.get("node_id"),
                                          console=request.json.get("console"),
+                                         console_type=request.json.get("console_type", "telnet"),
                                          startup_script=request.json.get("startup_script"))
         response.set_status(201)
         response.json(vm)
@@ -98,6 +99,7 @@ class VPCSHandler:
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.name = request.json.get("name", vm.name)
         vm.console = request.json.get("console", vm.console)
+        vm.console_type = request.json.get("console_type", vm.console_type)
         vm.updated()
         response.json(vm)
 

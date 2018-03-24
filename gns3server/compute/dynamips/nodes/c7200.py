@@ -46,9 +46,9 @@ class C7200(Router):
     :param npe: Default NPE
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, npe="npe-400", chassis=None):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, npe="npe-400", chassis=None):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c7200")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c7200")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 256
