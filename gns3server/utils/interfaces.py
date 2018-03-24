@@ -23,6 +23,7 @@ import socket
 import struct
 import psutil
 
+from .windows_service import check_windows_service_is_running
 from gns3server.config import Config
 
 if psutil.version_info < (3, 0, 0):
@@ -174,23 +175,6 @@ def is_interface_bridge(interface):
     return os.path.exists(os.path.join("/sys/class/net/", interface, "bridge"))
 
 
-def _check_windows_service(service_name):
-
-    import pywintypes
-    import win32service
-    import win32serviceutil
-
-    try:
-        if win32serviceutil.QueryServiceStatus(service_name, None)[1] != win32service.SERVICE_RUNNING:
-            return False
-    except pywintypes.error as e:
-        if e.winerror == 1060:
-            return False
-        else:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not check if the {} service is running: {}".format(service_name, e.strerror))
-    return True
-
-
 def interfaces():
     """
     Gets the network interfaces on this server.
@@ -231,7 +215,7 @@ def interfaces():
     else:
         try:
             service_installed = True
-            if not _check_windows_service("npf") and not _check_windows_service("npcap"):
+            if not check_windows_service_is_running("npf") and not check_windows_service_is_running("npcap"):
                 service_installed = False
             else:
                 results = get_windows_interfaces()

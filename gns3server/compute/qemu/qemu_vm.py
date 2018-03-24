@@ -1764,6 +1764,12 @@ class QemuVM(BaseNode):
                     if version is None:
                         raise QemuError("HAXM acceleration support is not installed on this host")
                     log.info("HAXM support version {} detected".format(version))
+
+                    # check if the HAXM service is running
+                    from gns3server.utils.windows_service import check_windows_service_is_running
+                    if not check_windows_service_is_running("intelhaxm"):
+                        raise QemuError("Intel HAXM service is not running on this host")
+
                 else:
                     return False
             elif sys.platform.startswith("darwin"):
