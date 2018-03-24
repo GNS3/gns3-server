@@ -375,13 +375,13 @@ class Node:
                     setattr(self, prop, kwargs[prop])
 
         self._list_ports()
-        # We send notif only if object has changed
-        #if old_json != self.__json__():
-        #    self.project.controller.notification.emit("node.updated", self.__json__())
         if update_compute:
             data = self._node_data(properties=compute_properties)
             response = yield from self.put(None, data=data)
             yield from self.parse_node_response(response.json)
+        elif old_json != self.__json__():
+            # We send notif only if object has changed
+            self.project.controller.notification.emit("node.updated", self.__json__())
         self.project.dump()
 
     @asyncio.coroutine
