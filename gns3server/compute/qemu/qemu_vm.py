@@ -1455,6 +1455,21 @@ class QemuVM(BaseNode):
         else:
             return []
 
+    def _spice_with_agent_options(self):
+
+        spice_options = self._spice_options()
+        if self._console:
+            # agent options (mouse/screen)
+            agent_options = ["-device", "virtio-serial",
+                             "-chardev", "spicevmc,id=vdagent,debug=0,name=vdagent",
+                             "-device", "virtserialport,chardev=vdagent,name=com.redhat.spice.0"]
+            spice_options.extend(agent_options)
+            # folder sharing options
+            folder_sharing_options = ["-chardev", "spiceport,name=org.spice-space.webdav.0,id=charchannel0",
+                                      "-device", "virtserialport,chardev=charchannel0,id=channel0,name=org.spice-space.webdav.0"]
+            spice_options.extend(folder_sharing_options)
+        return spice_options
+
     def _monitor_options(self):
 
         if self._monitor:
@@ -1822,6 +1837,8 @@ class QemuVM(BaseNode):
             command.extend(self._vnc_options())
         elif self._console_type == "spice":
             command.extend(self._spice_options())
+        elif self._console_type == "spice+agent":
+            command.extend(self._spice_with_agent_options())
         elif self._console_type != "none":
             raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())
