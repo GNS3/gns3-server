@@ -296,7 +296,7 @@ class Qemu(BaseManager):
             raise QemuError("Could not create disk image {}:{}".format(path, e))
 
     @asyncio.coroutine
-    def resize_disk(self, qemu_img, path, size):
+    def resize_disk(self, qemu_img, path, extend):
         """
         Resize a Qemu disk with qemu-img
 
@@ -305,11 +305,17 @@ class Qemu(BaseManager):
         :param size: size
         """
 
+        if not os.path.isabs(path):
+            directory = self.get_images_directory()
+            os.makedirs(directory, exist_ok=True)
+            path = os.path.join(directory, os.path.basename(path))
+
         try:
             if not os.path.exists(path):
-                raise QemuError("Qemu image '{}' does not exist".format(path))
-            command = [qemu_img, "resize", path, "{}M".format(size)]
+                raise QemuError("Qemu disk '{}' does not exist".format(path))
+            command = [qemu_img, "resize", path, "+{}M".format(extend)]
             process = yield from asyncio.create_subprocess_exec(*command)
             yield from process.wait()
+            log.info("Qemu disk '{}' extended by {} MB".format(path, extend))
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Could not create disk image {}:{}".format(path, e))
+            raise QemuError("Could not update disk image {}:{}".format(path, e))

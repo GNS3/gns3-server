@@ -286,7 +286,7 @@ class NodeHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.reload()
+        #yield from node.reload()
         response.json(node)
         response.set_status(201)
 
@@ -346,6 +346,25 @@ class NodeHandler:
         idle = yield from node.dynamips_idlepc_proposals()
         response.json(idle)
         response.set_status(200)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/{node_id}/resize_disk",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Disk image resized",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Reload a node instance")
+    def resize_disk(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        yield from node.post("/resize_disk", request.json)
+        response.set_status(201)
 
     @Route.get(
         r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",

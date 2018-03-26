@@ -35,10 +35,12 @@ from gns3server.schemas.qemu import (
     QEMU_CREATE_SCHEMA,
     QEMU_UPDATE_SCHEMA,
     QEMU_OBJECT_SCHEMA,
+    QEMU_RESIZE_SCHEMA,
     QEMU_BINARY_LIST_SCHEMA,
     QEMU_BINARY_FILTER_SCHEMA,
     QEMU_CAPABILITY_LIST_SCHEMA,
-    QEMU_IMAGE_CREATE_SCHEMA
+    QEMU_IMAGE_CREATE_SCHEMA,
+    QEMU_IMAGE_UPDATE_SCHEMA
 )
 
 
@@ -162,6 +164,25 @@ class QEMUHandler:
         )
         response.set_status(201)
         response.json(new_node)
+
+    @Route.post(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/resize_disk",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            201: "Instance updated",
+            404: "Instance doesn't exist"
+        },
+        description="Resize a Qemu VM disk image",
+        input=QEMU_RESIZE_SCHEMA)
+    def resize_disk(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        yield from vm.resize_disk(request.json["drive_name"], request.json["extend"])
+        response.set_status(201)
 
     @Route.post(
         r"/projects/{project_id}/qemu/nodes/{node_id}/start",
@@ -456,6 +477,28 @@ class QEMUHandler:
                 return
 
         yield from Qemu.instance().create_disk(qemu_img, path, request.json)
+        response.set_status(201)
+
+    @Route.put(
+        r"/qemu/img",
+        status_codes={
+            201: "Image Updated",
+        },
+        description="Update a Qemu image",
+        input=QEMU_IMAGE_UPDATE_SCHEMA
+    )
+    def update_img(request, response):
+
+        qemu_img = request.json.pop("qemu_img")
+        path = request.json.pop("path")
+        if os.path.isabs(path):
+            config = Config.instance()
+            if config.get_section_config("Server").getboolean("local", False) is False:
+                response.set_status(403)
+                return
+
+        if "extend" in request.json:
+            yield from Qemu.instance().resize_disk(qemu_img, path, request.json.pop("extend"))
         response.set_status(201)
 
     @Route.get(

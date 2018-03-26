@@ -155,6 +155,23 @@ class ComputeHandler:
         res = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
         response.json(res)
 
+    @Route.put(
+        r"/computes/{compute_id}/{emulator}/{action:.+}",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        raw=True,
+        description="Forward call specific to compute node. Read the full compute API for available actions")
+    def put_forward(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        res = yield from compute.forward("PUT", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        response.json(res)
+
     @Route.get(
         r"/computes/{compute_id}",
         description="Get a compute server information",

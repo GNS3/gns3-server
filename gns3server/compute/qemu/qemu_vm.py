@@ -1586,6 +1586,22 @@ class QemuVM(BaseNode):
 
         return options
 
+    @asyncio.coroutine
+    def resize_disk(self, drive_name, extend):
+
+        if self.is_running():
+            raise QemuError("Cannot resize {} while the VM is running".format(drive_name))
+
+        if self.linked_clone:
+            disk_image_path = os.path.join(self.working_dir, "{}_disk.qcow2".format(drive_name))
+        else:
+            disk_image_path = getattr(self, "{}_disk_image".format(drive_name))
+
+        if not os.path.exists(disk_image_path):
+            raise QemuError("Disk path '{}' does not exist".format(disk_image_path))
+        qemu_img_path = self._get_qemu_img()
+        yield from self.manager.resize_disk(qemu_img_path, disk_image_path, extend)
+
     def _cdrom_option(self):
 
         options = []

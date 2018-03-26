@@ -641,6 +641,25 @@ QEMU_OBJECT_SCHEMA = {
                  "status"]
 }
 
+QEMU_RESIZE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Resize a disk in a QEMU VM",
+    "type": "object",
+    "properties": {
+        "drive_name": {
+            "description": "Absolute or relative path of the image",
+            "enum": ["hda", "hdb", "hdc", "hdd"]
+        },
+        "extend": {
+            "description": "Number of Megabytes to extend the image",
+            "type": "integer"
+        },
+        # TODO: support shrink? (could be dangerous)
+    },
+    "required": ["drive_name", "extend"],
+    "additionalProperties": False
+}
+
 QEMU_BINARY_FILTER_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation for a list of QEMU capabilities",
@@ -756,5 +775,27 @@ QEMU_IMAGE_CREATE_SCHEMA = {
         }
     },
     "required": ["qemu_img", "path", "format", "size"],
+    "additionalProperties": False
+}
+
+QEMU_IMAGE_UPDATE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Update an existing QEMU image",
+    "type": "object",
+    "properties": {
+        "qemu_img": {
+            "description": "Path to the qemu-img binary",
+            "type": "string"
+        },
+        "path": {
+            "description": "Absolute or relative path of the image",
+            "type": "string"
+        },
+        "extend": {
+            "description": "Number of Megabytes to extend the image",
+            "type": "integer"
+        },
+    },
+    "required": ["qemu_img", "path"],
     "additionalProperties": False
 }
