@@ -167,7 +167,6 @@ class TraceNGVM(BaseNode):
         yield from self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
-            #TODO: validate destination
             command = self._build_command(destination)
             try:
                 log.info("Starting TraceNG: {}".format(command))
@@ -185,9 +184,8 @@ class TraceNGVM(BaseNode):
                 self._started = True
                 self.status = "started"
             except (OSError, subprocess.SubprocessError) as e:
-                traceng_stdout = self.read_traceng_stdout()
-                log.error("Could not start TraceNG {}: {}\n{}".format(self._traceng_path(), e, traceng_stdout))
-                raise TraceNGError("Could not start TraceNG {}: {}\n{}".format(self._traceng_path(), e, traceng_stdout))
+                log.error("Could not start TraceNG {}: {}\n".format(self._traceng_path(), e))
+                raise TraceNGError("Could not start TraceNG {}: {}\n".format(self._traceng_path(), e))
 
     def _termination_callback(self, returncode):
         """
@@ -202,7 +200,7 @@ class TraceNGVM(BaseNode):
             self.status = "stopped"
             self._process = None
             if returncode != 0:
-                self.project.emit("log.error", {"message": "TraceNG process has stopped, return code: {}\n{}".format(returncode, self.read_traceng_stdout())})
+                self.project.emit("log.error", {"message": "TraceNG process has stopped, return code: {}\n".format(returncode)})
 
     @asyncio.coroutine
     def stop(self):
@@ -384,6 +382,12 @@ class TraceNGVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        # TODO: better validation
+        if not destination:
+            raise TraceNGError("Please provide a destination to trace")
+        if not self._ip_address:
+            raise TraceNGError("Please provide an IP address for this TraceNG node")
+
         command = [self._traceng_path()]
         # use the local UDP tunnel to uBridge instead
         if not self._local_udp_tunnel:
@@ -398,5 +402,6 @@ class TraceNGVM(BaseNode):
             except socket.gaierror as e:
                 raise TraceNGError("Can't resolve hostname {}: {}".format(nio.rhost, e))
 
-        command.extend([destination]) # host or IP to trace
+        command.extend(["-f", self._ip_address])  # source IP address to trace from
+        command.extend([destination])  # host or IP to trace
         return command
