@@ -57,7 +57,7 @@ class TraceNGVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, console=None):
 
-        super().__init__(name, node_id, project, manager, console=console, wrap_console=True)
+        super().__init__(name, node_id, project, manager, console=console)
         self._process = None
         self._started = False
         self._traceng_stdout_file = ""
@@ -151,23 +151,15 @@ class TraceNGVM(BaseNode):
                 log.info("Starting TraceNG: {}".format(command))
                 self._traceng_stdout_file = os.path.join(self.working_dir, "traceng.log")
                 log.info("Logging to {}".format(self._traceng_stdout_file))
-                flags = 0
-                #if sys.platform.startswith("win32"):
-                #    flags = subprocess.CREATE_NEW_PROCESS_GROUP
-                with open(self._traceng_stdout_file, "w", encoding="utf-8") as fd:
-                    self.command_line = ' '.join(command)
-                    self._process = yield from asyncio.create_subprocess_exec(*command,
-                                                                              stdout=fd,
-                                                                              stderr=subprocess.STDOUT,
-                                                                              cwd=self.working_dir,
-                                                                              creationflags=flags)
-                    monitor_process(self._process, self._termination_callback)
-
+                flags = subprocess.CREATE_NEW_CONSOLE
+                self.command_line = ' '.join(command)
+                self._process = yield from asyncio.create_subprocess_exec(*command,
+                                                                          cwd=self.working_dir,
+                                                                          creationflags=flags)
+                monitor_process(self._process, self._termination_callback)
                 yield from self._start_ubridge()
                 if nio:
                     yield from self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
-
-                yield from self.start_wrap_console()
 
                 log.info("TraceNG instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
@@ -232,9 +224,6 @@ class TraceNGVM(BaseNode):
         """
 
         log.info("Stopping TraceNG instance {} PID={}".format(self.name, self._process.pid))
-        #if sys.platform.startswith("win32"):
-        #    self._process.send_signal(signal.CTRL_BREAK_EVENT)
-        #else:
         try:
             self._process.terminate()
         # Sometime the process may already be dead when we garbage collect
@@ -391,24 +380,18 @@ class TraceNGVM(BaseNode):
         """
 
         command = [self._traceng_path()]
-
-        # TODO: remove when testing with  executable
-        command.extend(["-p", str(self._internal_console_port)])  # listen to console port
-        command.extend(["-m", "1"])   # the unique ID is used to set the MAC address offset
-        command.extend(["-i", "1"])  # option to start only one VPC instance
-        command.extend(["-F"])  # option to avoid the daemonization of VPCS
-
         # use the local UDP tunnel to uBridge instead
         if not self._local_udp_tunnel:
             self._local_udp_tunnel = self._create_local_udp_tunnel()
         nio = self._local_udp_tunnel[0]
         if nio and isinstance(nio, NIOUDP):
             # UDP tunnel
-            command.extend(["-s", str(nio.lport)])  # source UDP port
-            command.extend(["-c", str(nio.rport)])  # destination UDP port
+            command.extend(["-c", str(nio.lport)])  # source UDP port
+            command.extend(["-v", str(nio.rport)])  # destination UDP port
             try:
-                command.extend(["-t", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because TraceNG doesn't support it
+                command.extend(["-b", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because TraceNG doesn't support it
             except socket.gaierror as e:
                 raise TraceNGError("Can't resolve hostname {}: {}".format(nio.rhost, e))
 
+        #command.extend(["10.0.0.1"]) # TODO: remove
         return command
