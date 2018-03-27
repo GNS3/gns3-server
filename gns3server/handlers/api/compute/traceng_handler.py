@@ -25,6 +25,7 @@ from gns3server.compute.traceng import TraceNG
 from gns3server.schemas.traceng import (
     TRACENG_CREATE_SCHEMA,
     TRACENG_UPDATE_SCHEMA,
+    TRACENG_START_SCHEMA,
     TRACENG_OBJECT_SCHEMA
 )
 
@@ -54,6 +55,7 @@ class TraceNGHandler:
                                             request.match_info["project_id"],
                                             request.json.get("node_id"),
                                             console=request.json.get("console"))
+        vm.ip_address = request.json.get("ip_address", "")  # FIXME, required IP address to create node?
         response.set_status(201)
         response.json(vm)
 
@@ -96,7 +98,7 @@ class TraceNGHandler:
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         vm.name = request.json.get("name", vm.name)
-        vm.console = request.json.get("console", vm.console)
+        vm.ip_address = request.json.get("ip_address", vm.ip_address)
         vm.updated()
         response.json(vm)
 
@@ -149,12 +151,13 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Start a TraceNG instance",
+        input=TRACENG_START_SCHEMA,
         output=TRACENG_OBJECT_SCHEMA)
     def start(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.start()
+        yield from vm.start(request.json["destination"])
         response.json(vm)
 
     @Route.post(

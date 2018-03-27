@@ -20,21 +20,17 @@ TraceNG VM management  in order to run a TraceNG VM.
 """
 
 import os
-import sys
 import socket
 import subprocess
-import signal
 import asyncio
 import shutil
 
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
-from gns3server.utils import parse_version
 
 from .traceng_error import TraceNGError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
-from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
 
 
@@ -55,12 +51,12 @@ class TraceNGVM(BaseNode):
     :param console: TCP console port
     """
 
-    def __init__(self, name, node_id, project, manager, console=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="none"):
 
-        super().__init__(name, node_id, project, manager, console=console)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
         self._process = None
         self._started = False
-        self._traceng_stdout_file = ""
+        self._ip_address = None
         self._local_udp_tunnel = None
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
@@ -115,11 +111,12 @@ class TraceNGVM(BaseNode):
     def __json__(self):
 
         return {"name": self.name,
+                "ip_address": self.ip_address,
                 "node_id": self.id,
                 "node_directory": self.working_path,
                 "status": self.status,
                 "console": self._console,
-                "console_type": "telnet",
+                "console_type": "none",
                 "project_id": self.project.id,
                 "command_line": self.command_line}
 
@@ -137,8 +134,32 @@ class TraceNGVM(BaseNode):
             return search_path
         return path
 
+    @property
+    def ip_address(self):
+        """
+        Returns the IP address for this node.
+
+        :returns: IP address
+        """
+
+        return self._ip_address
+
+    @ip_address.setter
+    def ip_address(self, ip_address):
+        """
+        Sets the IP address of this node.
+
+        :param ip_address: IP address
+        """
+
+        log.info("{module}: {name} [{id}] set IP address to {ip_address}".format(module=self.manager.module_name,
+                                                                                name=self.name,
+                                                                                id=self.id,
+                                                                                ip_address=ip_address))
+        self._ip_address = ip_address
+
     @asyncio.coroutine
-    def start(self):
+    def start(self, destination=None):
         """
         Starts the TraceNG process.
         """
@@ -146,11 +167,10 @@ class TraceNGVM(BaseNode):
         yield from self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
-            command = self._build_command()
+            #TODO: validate destination
+            command = self._build_command(destination)
             try:
                 log.info("Starting TraceNG: {}".format(command))
-                self._traceng_stdout_file = os.path.join(self.working_dir, "traceng.log")
-                log.info("Logging to {}".format(self._traceng_stdout_file))
                 flags = subprocess.CREATE_NEW_CONSOLE
                 self.command_line = ' '.join(command)
                 self._process = yield from asyncio.create_subprocess_exec(*command,
@@ -229,21 +249,6 @@ class TraceNGVM(BaseNode):
         # Sometime the process may already be dead when we garbage collect
         except ProcessLookupError:
             pass
-
-    def read_traceng_stdout(self):
-        """
-        Reads the standard output of the TraceNG process.
-        Only use when the process has been stopped or has crashed.
-        """
-
-        output = ""
-        if self._traceng_stdout_file:
-            try:
-                with open(self._traceng_stdout_file, "rb") as file:
-                    output = file.read().decode("utf-8", errors="replace")
-            except OSError as e:
-                log.warning("Could not read {}: {}".format(self._traceng_stdout_file, e))
-        return output
 
     def is_running(self):
         """
@@ -373,7 +378,7 @@ class TraceNGVM(BaseNode):
                                                                                                  id=self.id,
                                                                                                  port_number=port_number))
 
-    def _build_command(self):
+    def _build_command(self, destination):
         """
         Command to start the TraceNG process.
         (to be passed to subprocess.Popen())
@@ -393,5 +398,5 @@ class TraceNGVM(BaseNode):
             except socket.gaierror as e:
                 raise TraceNGError("Can't resolve hostname {}: {}".format(nio.rhost, e))
 
-        #command.extend(["10.0.0.1"]) # TODO: remove
+        command.extend([destination]) # host or IP to trace
         return command

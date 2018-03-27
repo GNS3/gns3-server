@@ -905,6 +905,9 @@ class Project:
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
+            if node.node_type == "traceng":
+                #FIXME: maybe not the right place to do this...
+                continue
             pool.append(node.start)
         yield from pool.join()
 

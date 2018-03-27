@@ -43,8 +43,12 @@ TRACENG_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["none"]
         },
+        "ip_address": {
+            "description": "Source IP address for tracing",
+            "type": ["string"]
+        }
     },
     "additionalProperties": False,
     "required": ["name"]
@@ -68,10 +72,27 @@ TRACENG_UPDATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["none"]
         },
+        "ip_address": {
+            "description": "Source IP address for tracing",
+            "type": ["string"]
+        }
     },
     "additionalProperties": False,
+}
+
+TRACENG_START_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Request validation to start a TraceNG instance",
+    "type": "object",
+    "properties": {
+        "destination": {
+            "description": "Host or IP address to trace",
+            "type": ["string"]
+        }
+    },
+    "required": ["destination"],
 }
 
 TRACENG_OBJECT_SCHEMA = {
@@ -103,11 +124,11 @@ TRACENG_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["none"]
         },
         "project_id": {
             "description": "Project UUID",
@@ -119,8 +140,12 @@ TRACENG_OBJECT_SCHEMA = {
         "command_line": {
             "description": "Last command line used by GNS3 to start TraceNG",
             "type": "string"
+        },
+        "ip_address": {
+            "description": "Source IP address for tracing",
+            "type": ["string"]
         }
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "command_line"]
+    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "command_line", "ip_address"]
 }

@@ -47,14 +47,6 @@ def test_traceng_get(http_compute, project, vm):
     assert response.json["status"] == "stopped"
 
 
-def test_traceng_create_startup_script(http_compute, project):
-    response = http_compute.post("/projects/{project_id}/traceng/nodes".format(project_id=project.id), {"name": "TraceNG TEST 1", "startup_script": "ip 192.168.1.2\necho TEST"})
-    assert response.status == 201
-    assert response.route == "/projects/{project_id}/traceng/nodes"
-    assert response.json["name"] == "TraceNG TEST 1"
-    assert response.json["project_id"] == project.id
-
-
 def test_traceng_create_port(http_compute, project, free_console_port):
     response = http_compute.post("/projects/{project_id}/traceng/nodes".format(project_id=project.id), {"name": "TraceNG TEST 1", "console": free_console_port})
     assert response.status == 201
