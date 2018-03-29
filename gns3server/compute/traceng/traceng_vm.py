@@ -178,6 +178,7 @@ class TraceNGVM(BaseNode):
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
             command = self._build_command(destination)
+            yield from self._stop_ubridge()  # make use we start with a fresh uBridge instance
             try:
                 log.info("Starting TraceNG: {}".format(command))
                 flags = subprocess.CREATE_NEW_CONSOLE
@@ -186,6 +187,7 @@ class TraceNGVM(BaseNode):
                                                                           cwd=self.working_dir,
                                                                           creationflags=flags)
                 monitor_process(self._process, self._termination_callback)
+
                 yield from self._start_ubridge()
                 if nio:
                     yield from self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
@@ -252,6 +254,9 @@ class TraceNGVM(BaseNode):
         """
 
         log.info("Stopping TraceNG instance {} PID={}".format(self.name, self._process.pid))
+        #if sys.platform.startswith("win32"):
+        #    self._process.send_signal(signal.CTRL_BREAK_EVENT)
+        #else:
         try:
             self._process.terminate()
         # Sometime the process may already be dead when we garbage collect
@@ -404,6 +409,7 @@ class TraceNGVM(BaseNode):
         nio = self._local_udp_tunnel[0]
         if nio and isinstance(nio, NIOUDP):
             # UDP tunnel
+            command.extend(["-u"])  # enable UDP tunnel
             command.extend(["-c", str(nio.lport)])  # source UDP port
             command.extend(["-v", str(nio.rport)])  # destination UDP port
             try:
@@ -411,6 +417,7 @@ class TraceNGVM(BaseNode):
             except socket.gaierror as e:
                 raise TraceNGError("Can't resolve hostname {}: {}".format(nio.rhost, e))
 
+        command.extend(["-s", "ICMP"])  # Use ICMP probe type by default
         command.extend(["-f", self._ip_address])  # source IP address to trace from
         command.extend([destination])  # host or IP to trace
         return command
