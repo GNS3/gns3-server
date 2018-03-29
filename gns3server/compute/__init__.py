@@ -24,15 +24,14 @@ from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .qemu import Qemu
 from .vmware import VMware
+from .traceng import TraceNG
 
-MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
+MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware, TraceNG]
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-
-    from .docker import Docker
-    MODULES.append(Docker)
-
-    # IOU runs only on Linux but testsuite work on UNIX platform
+    # IOU & Docker only runs on Linux but test suite works on UNIX platform
     if not sys.platform.startswith("win"):
+        from .docker import Docker
+        MODULES.append(Docker)
         from .iou import IOU
         MODULES.append(IOU)

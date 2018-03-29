@@ -30,6 +30,7 @@ NODE_TYPE_SCHEMA = {
         "docker",
         "dynamips",
         "vpcs",
+        "traceng",
         "virtualbox",
         "vmware",
         "iou",
@@ -144,7 +145,7 @@ NODE_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["vnc", "telnet", "http", "https", "spice", None]
+            "enum": ["vnc", "telnet", "http", "https", "spice", "none", None]
         },
         "properties": {
             "description": "Properties specific to an emulator",
