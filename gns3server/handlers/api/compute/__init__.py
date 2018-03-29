@@ -34,13 +34,10 @@ from .ethernet_hub_handler import EthernetHubHandler
 from .ethernet_switch_handler import EthernetSwitchHandler
 from .frame_relay_switch_handler import FrameRelaySwitchHandler
 from .atm_switch_handler import ATMSwitchHandler
+from .traceng_handler import TraceNGHandler
 
 if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
     # IOU & Docker only runs on Linux but test suite works on UNIX platform
     if not sys.platform.startswith("win"):
         from .iou_handler import IOUHandler
         from .docker_handler import DockerHandler
-
-#if sys.platform.startswith("win") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-# FIXME: TraceNG only runs on Windows but test suite works on UNIX platform
-from .traceng_handler import TraceNGHandler

@@ -19,11 +19,13 @@
 TraceNG VM management  in order to run a TraceNG VM.
 """
 
+import sys
 import os
 import socket
 import subprocess
 import asyncio
 import shutil
+import ipaddress
 
 from gns3server.utils.asyncio import wait_for_process_termination
 from gns3server.utils.asyncio import monitor_process
@@ -152,11 +154,17 @@ class TraceNGVM(BaseNode):
         :param ip_address: IP address
         """
 
+        try:
+            if ip_address:
+                ipaddress.IPv4Address(ip_address)
+        except ipaddress.AddressValueError:
+            raise TraceNGError("Invalid IP address: {}\n".format(ip_address))
+
+        self._ip_address = ip_address
         log.info("{module}: {name} [{id}] set IP address to {ip_address}".format(module=self.manager.module_name,
                                                                                 name=self.name,
                                                                                 id=self.id,
                                                                                 ip_address=ip_address))
-        self._ip_address = ip_address
 
     @asyncio.coroutine
     def start(self, destination=None):
@@ -164,6 +172,8 @@ class TraceNGVM(BaseNode):
         Starts the TraceNG process.
         """
 
+        if not sys.platform.startswith("win"):
+            raise TraceNGError("Sorry, TraceNG can only run on Windows")
         yield from self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
@@ -382,11 +392,10 @@ class TraceNGVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
-        # TODO: better validation
         if not destination:
-            raise TraceNGError("Please provide a destination to trace")
+            raise TraceNGError("Please provide a host or IP address to trace")
         if not self._ip_address:
-            raise TraceNGError("Please provide an IP address for this TraceNG node")
+            raise TraceNGError("Please configure an IP address for this TraceNG node")
 
         command = [self._traceng_path()]
         # use the local UDP tunnel to uBridge instead

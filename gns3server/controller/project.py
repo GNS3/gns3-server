@@ -906,7 +906,7 @@ class Project:
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             if node.node_type == "traceng":
-                #FIXME: maybe not the right place to do this...
+                self.controller.notification.emit("log.warning", "TraceNG nodes must be started one by one")
                 continue
             pool.append(node.start)
         yield from pool.join()
