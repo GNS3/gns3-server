@@ -31,6 +31,7 @@ import socket
 import gns3server
 import subprocess
 import time
+import json
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
@@ -116,6 +117,7 @@ class QemuVM(BaseNode):
         self._kernel_command_line = ""
         self._legacy_networking = False
         self._acpi_shutdown = False
+        self._save_vm_state = False
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
 
@@ -595,6 +597,30 @@ class QemuVM(BaseNode):
         self._acpi_shutdown = acpi_shutdown
 
     @property
+    def save_vm_state(self):
+        """
+        Returns either this QEMU VM state can be saved.
+
+        :returns: boolean
+        """
+
+        return self._save_vm_state
+
+    @save_vm_state.setter
+    def save_vm_state(self, save_vm_state):
+        """
+        Sets either this QEMU VM state can be saved.
+
+        :param save_vm_state: boolean
+        """
+
+        if save_vm_state:
+            log.info('QEMU VM "{name}" [{id}] has enabled the save VM state option'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled the save VM state option'.format(name=self._name, id=self._id))
+        self._save_vm_state = save_vm_state
+
+    @property
     def cpu_throttling(self):
         """
         Returns the percentage of CPU allowed.
@@ -1003,7 +1029,19 @@ class QemuVM(BaseNode):
             if self.is_running():
                 log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
                 try:
-                    if self.acpi_shutdown:
+
+                    if self.save_vm_state:
+                        yield from self._control_vm("stop")
+                        yield from self._control_vm("savevm GNS3_SAVED_STATE")
+                        wait_for_savevm = 120
+                        while wait_for_savevm:
+                            yield from asyncio.sleep(1)
+                            status = yield from self._saved_state_option()
+                            wait_for_savevm -= 1
+                            if status != []:
+                                break
+
+                    if self.acpi_shutdown and not self.save_vm_state:
                         yield from self._control_vm("system_powerdown")
                         yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
                     else:
@@ -1021,6 +1059,8 @@ class QemuVM(BaseNode):
                             log.warning('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
+            if not self.save_vm_state:
+                yield from self._clear_save_vm_stated()
             yield from super().stop()
 
     @asyncio.coroutine
@@ -1480,7 +1520,7 @@ class QemuVM(BaseNode):
     def _get_qemu_img(self):
         """
         Search the qemu-img binary in the same binary of the qemu binary
-        for avoiding version incompatibily.
+        for avoiding version incompatibility.
 
         :returns: qemu-img path or raise an error
         """
@@ -1815,6 +1855,57 @@ class QemuVM(BaseNode):
         return False
 
     @asyncio.coroutine
+    def _clear_save_vm_stated(self, snapshot_name="GNS3_SAVED_STATE"):
+
+        drives = ["a", "b", "c", "d"]
+        qemu_img_path = self._get_qemu_img()
+        for disk_index, drive in enumerate(drives):
+            disk_image = getattr(self, "_hd{}_disk_image".format(drive))
+            if not disk_image:
+                continue
+            try:
+                if self.linked_clone:
+                    disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
+                else:
+                    disk = disk_image
+                command = [qemu_img_path, "snapshot", "-c", snapshot_name, disk]
+                retcode = yield from self._qemu_img_exec(command)
+                if retcode:
+                    stdout = self.read_qemu_img_stdout()
+                    log.warning("Could not delete saved VM state from disk {}: {}".format(disk, stdout))
+                else:
+                    log.info("Deleted saved VM state from disk {}".format(disk))
+            except subprocess.SubprocessError as e:
+                raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
+
+    @asyncio.coroutine
+    def _saved_state_option(self, snapshot_name="GNS3_SAVED_STATE"):
+
+        drives = ["a", "b", "c", "d"]
+        qemu_img_path = self._get_qemu_img()
+        for disk_index, drive in enumerate(drives):
+            disk_image = getattr(self, "_hd{}_disk_image".format(drive))
+            if not disk_image:
+                continue
+            try:
+                if self.linked_clone:
+                    disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
+                else:
+                    disk = disk_image
+                output = yield from subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
+                json_data = json.loads(output)
+                if "snapshots" in json_data:
+                    for snapshot in json_data["snapshots"]:
+                        if snapshot["name"] == snapshot_name:
+                            log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
+                                                                                                                          id=self.id,
+                                                                                                                          snapshot=snapshot_name))
+                            return ["-loadvm", snapshot_name]
+            except subprocess.SubprocessError as e:
+                raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
+        return []
+
+    @asyncio.coroutine
     def _build_command(self):
         """
         Command to start the QEMU process.
@@ -1860,6 +1951,11 @@ class QemuVM(BaseNode):
         command.extend(self._monitor_options())
         command.extend((yield from self._network_options()))
         command.extend(self._graphic())
+        if not self.save_vm_state:
+            yield from self._clear_save_vm_stated()
+        else:
+            command.extend((yield from self._saved_state_option()))
+
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))

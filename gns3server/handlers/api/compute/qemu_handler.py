@@ -544,8 +544,8 @@ class QEMUHandler:
     def download_image(request, response):
         filename = request.match_info["filename"]
 
-        iou_manager = Qemu.instance()
-        image_path = iou_manager.get_abs_image_path(filename)
+        qemu_manager = Qemu.instance()
+        image_path = qemu_manager.get_abs_image_path(filename)
 
         # Raise error if user try to escape
         if filename[0] == ".":

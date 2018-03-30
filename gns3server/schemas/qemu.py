@@ -188,6 +188,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "ACPI shutdown support",
             "type": ["boolean", "null"],
         },
+        "save_vm_state": {
+            "description": "Save VM state support",
+            "type": ["boolean", "null"],
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -371,6 +375,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "acpi_shutdown": {
             "description": "ACPI shutdown support",
+            "type": ["boolean", "null"],
+        },
+        "save_vm_state": {
+            "description": "Save VM state support",
             "type": ["boolean", "null"],
         },
         "cpu_throttling": {
@@ -571,6 +579,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "ACPI shutdown support",
             "type": "boolean",
         },
+        "save_vm_state": {
+            "description": "Save VM state support",
+            "type": ["boolean", "null"],
+        },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
             "minimum": 0,
@@ -633,6 +645,7 @@ QEMU_OBJECT_SCHEMA = {
                  "kernel_command_line",
                  "legacy_networking",
                  "acpi_shutdown",
+                 "save_vm_state",
                  "cpu_throttling",
                  "process_priority",
                  "options",
