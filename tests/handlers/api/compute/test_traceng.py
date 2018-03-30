@@ -47,15 +47,6 @@ def test_traceng_get(http_compute, project, vm):
     assert response.json["status"] == "stopped"
 
 
-def test_traceng_create_port(http_compute, project, free_console_port):
-    response = http_compute.post("/projects/{project_id}/traceng/nodes".format(project_id=project.id), {"name": "TraceNG TEST 1", "console": free_console_port})
-    assert response.status == 201
-    assert response.route == "/projects/{project_id}/traceng/nodes"
-    assert response.json["name"] == "TraceNG TEST 1"
-    assert response.json["project_id"] == project.id
-    assert response.json["console"] == free_console_port
-
-
 def test_traceng_nio_create_udp(http_compute, vm):
     with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.add_ubridge_udp_connection"):
         response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
