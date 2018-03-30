@@ -59,6 +59,7 @@ class TraceNGVM(BaseNode):
         self._process = None
         self._started = False
         self._ip_address = None
+        self._destination = None
         self._local_udp_tunnel = None
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
 
@@ -181,7 +182,9 @@ class TraceNGVM(BaseNode):
             yield from self._stop_ubridge()  # make use we start with a fresh uBridge instance
             try:
                 log.info("Starting TraceNG: {}".format(command))
-                flags = subprocess.CREATE_NEW_CONSOLE
+                flags = 0
+                if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
+                    flags = subprocess.CREATE_NEW_CONSOLE
                 self.command_line = ' '.join(command)
                 self._process = yield from asyncio.create_subprocess_exec(*command,
                                                                           cwd=self.working_dir,
@@ -246,7 +249,7 @@ class TraceNGVM(BaseNode):
         """
 
         yield from self.stop()
-        yield from self.start()
+        yield from self.start(self._destination)
 
     def _terminate_process(self):
         """
@@ -402,6 +405,7 @@ class TraceNGVM(BaseNode):
         if not self._ip_address:
             raise TraceNGError("Please configure an IP address for this TraceNG node")
 
+        self._destination = destination
         command = [self._traceng_path()]
         # use the local UDP tunnel to uBridge instead
         if not self._local_udp_tunnel:

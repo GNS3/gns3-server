@@ -96,7 +96,7 @@ def test_traceng_delete_nio(http_compute, vm):
 def test_traceng_start(http_compute, vm):
 
     with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.start", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+        response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"destination": "192.168.1.2"}, example=True)
         assert mock.called
         assert response.status == 200
         assert response.json["name"] == "TraceNG TEST 1"
@@ -139,9 +139,9 @@ def test_traceng_duplicate(http_compute, vm):
 
 def test_traceng_update(http_compute, vm, tmpdir, free_console_port):
     response = http_compute.put("/projects/{project_id}/traceng/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
-                                                                                                                                           "console": free_console_port,
-                                                                                                                                           },
+                                                                                                                                              "ip_address": "192.168.1.1",
+                                                                                                                                             },
                                 example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
+    assert response.json["ip_address"] == "192.168.1.1"

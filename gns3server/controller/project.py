@@ -904,9 +904,11 @@ class Project:
         Start all nodes
         """
         pool = Pool(concurrency=3)
+        emit_warning = True
         for node in self.nodes.values():
-            if node.node_type == "traceng":
-                #self.controller.notification.emit("log.warning", "TraceNG nodes must be started one by one")
+            if node.node_type == "traceng" and emit_warning:
+                self.controller.notification.emit("log.warning", {"message": "TraceNG nodes must be started one by one"})
+                emit_warning = False
                 continue
             pool.append(node.start)
         yield from pool.join()

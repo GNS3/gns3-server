@@ -17,17 +17,16 @@
 
 import pytest
 import asyncio
-import os
 import sys
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
-from gns3server.utils import parse_version
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock, ANY, PropertyMock
 
 from gns3server.compute.traceng.traceng_vm import TraceNGVM
 from gns3server.compute.traceng.traceng_error import TraceNGError
 from gns3server.compute.traceng import TraceNG
 from gns3server.compute.notification_manager import NotificationManager
+
 
 
 @pytest.fixture
@@ -69,19 +68,26 @@ def test_start(loop, vm, async_run):
     with NotificationManager.instance().queue() as queue:
         async_run(queue.get(0))  # Ping
 
-        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
-            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
-                loop.run_until_complete(asyncio.async(vm.start()))
-                assert mock_exec.call_args[0] == (vm._traceng_path(),
-                                                  '-c',
-                                                  ANY,
-                                                  '-v',
-                                                  ANY,
-                                                  '-b',
-                                                  '127.0.0.1',
-                                                  '10.0.0.1')
-                assert vm.is_running()
-                assert vm.command_line == ' '.join(mock_exec.call_args[0])
+        vm.ip_address = "192.168.1.1"
+        with patch("sys.platform", return_value="win"):
+            with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
+                    loop.run_until_complete(asyncio.async(vm.start("192.168.1.2")))
+                    assert mock_exec.call_args[0] == (vm._traceng_path(),
+                                                      '-u',
+                                                      '-c',
+                                                      ANY,
+                                                      '-v',
+                                                      ANY,
+                                                      '-b',
+                                                      '127.0.0.1',
+                                                      '-s',
+                                                      'ICMP',
+                                                      '-f',
+                                                      '192.168.1.1',
+                                                      '192.168.1.2')
+                    assert vm.is_running()
+                    assert vm.command_line == ' '.join(mock_exec.call_args[0])
         (action, event, kwargs) = async_run(queue.get(0))
         assert action == "node.updated"
         assert event == vm
@@ -96,30 +102,30 @@ def test_stop(loop, vm, async_run):
     process.wait.return_value = future
     process.returncode = None
 
+    vm.ip_address = "192.168.1.1"
     with NotificationManager.instance().queue() as queue:
-        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
-            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-                nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
-                async_run(vm.port_add_nio_binding(0, nio))
+        with patch("sys.platform", return_value="win"):
+            with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
+                with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                    nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
+                    async_run(vm.port_add_nio_binding(0, nio))
 
-                async_run(vm.start())
-                assert vm.is_running()
+                    vm._ubridge_send = AsyncioMagicMock()
+                    async_run(vm.start("192.168.1.2"))
+                    assert vm.is_running()
 
-                with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                    loop.run_until_complete(asyncio.async(vm.stop()))
-                assert vm.is_running() is False
+                    with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                        loop.run_until_complete(asyncio.async(vm.stop()))
+                    assert vm.is_running() is False
 
-                if sys.platform.startswith("win"):
-                    process.send_signal.assert_called_with(1)
-                else:
                     process.terminate.assert_called_with()
 
-                async_run(queue.get(0))  #  Ping
-                async_run(queue.get(0))  #  Started
+                    async_run(queue.get(0))  #  Ping
+                    async_run(queue.get(0))  #  Started
 
-                (action, event, kwargs) = async_run(queue.get(0))
-                assert action == "node.updated"
-                assert event == vm
+                    (action, event, kwargs) = async_run(queue.get(0))
+                    assert action == "node.updated"
+                    assert event == vm
 
 
 def test_reload(loop, vm, async_run):
@@ -131,22 +137,25 @@ def test_reload(loop, vm, async_run):
     process.wait.return_value = future
     process.returncode = None
 
-    with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
-            nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
-            async_run(vm.port_add_nio_binding(0, nio))
-            async_run(vm.start())
-            assert vm.is_running()
+    vm.ip_address = "192.168.1.1"
+    with patch("sys.platform", return_value="win"):
+        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
+                nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
+                async_run(vm.port_add_nio_binding(0, nio))
 
-            vm._ubridge_send = AsyncioMagicMock()
-            with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
-                async_run(vm.reload())
-            assert vm.is_running() is True
+                vm._ubridge_send = AsyncioMagicMock()
+                async_run(vm.start("192.168.1.2"))
+                assert vm.is_running()
 
-            #if sys.platform.startswith("win"):
-            #    process.send_signal.assert_called_with(1)
-            #else:
-            process.terminate.assert_called_with()
+                with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
+                    async_run(vm.reload())
+                assert vm.is_running() is True
+
+                #if sys.platform.startswith("win"):
+                #    process.send_signal.assert_called_with(1)
+                #else:
+                process.terminate.assert_called_with()
 
 
 def test_add_nio_binding_udp(vm, async_run):
