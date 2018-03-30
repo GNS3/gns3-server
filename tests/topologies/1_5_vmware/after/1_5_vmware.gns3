@@ -35,7 +35,7 @@
                 "first_port_name": null,
                 "properties": {
                     "linked_clone": false,
-                    "acpi_shutdown": false,
+                    "on_close": "power_off",
                     "adapter_type": "e1000",
                     "adapters": 1,
                     "headless": false,

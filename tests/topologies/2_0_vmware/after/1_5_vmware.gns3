@@ -34,7 +34,7 @@
                 "port_segment_size": 0,
                 "first_port_name": null,
                 "properties": {
-                    "acpi_shutdown": false,
+                    "on_close": "power_off",
                     "adapter_type": "e1000",
                     "adapters": 1,
                     "headless": false,

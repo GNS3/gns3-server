@@ -535,7 +535,7 @@ class Controller:
         return compute_id in self._computes
 
     @asyncio.coroutine
-    def add_project(self, project_id=None, name=None, **kwargs):
+    def add_project(self, project_id=None, name=None, path=None, **kwargs):
         """
         Creates a project or returns an existing project
 
@@ -547,8 +547,11 @@ class Controller:
         if project_id not in self._projects:
             for project in self._projects.values():
                 if name and project.name == name:
-                    raise aiohttp.web.HTTPConflict(text='Project name "{}" already exists'.format(name))
-            project = Project(project_id=project_id, controller=self, name=name, **kwargs)
+                    if path and path == project.path:
+                        raise aiohttp.web.HTTPConflict(text='Project "{}" already exists in location "{}"'.format(name, path))
+                    else:
+                        raise aiohttp.web.HTTPConflict(text='Project "{}" already exists'.format(name))
+            project = Project(project_id=project_id, controller=self, name=name, path=path, **kwargs)
             self._projects[project.id] = project
             return self._projects[project.id]
         return self._projects[project_id]

@@ -100,7 +100,7 @@ def test_convert(directory, tmpdir):
 
 def compare_dict(path, source, reference):
     """
-    Compare two dictionnary of a topology
+    Compare two dictionary of a topology
     """
     assert isinstance(source, dict), "Source is not a dict in {}".format(path)
     for key in source:
