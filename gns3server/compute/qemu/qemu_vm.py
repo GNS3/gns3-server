@@ -116,8 +116,7 @@ class QemuVM(BaseNode):
         self._kernel_image = ""
         self._kernel_command_line = ""
         self._legacy_networking = False
-        self._acpi_shutdown = False
-        self._save_vm_state = False
+        self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
 
@@ -573,52 +572,25 @@ class QemuVM(BaseNode):
         self._legacy_networking = legacy_networking
 
     @property
-    def acpi_shutdown(self):
+    def on_close(self):
         """
-        Returns either this QEMU VM can be ACPI shutdown.
+        Returns the action to execute when the VM is stopped/closed
 
-        :returns: boolean
-        """
-
-        return self._acpi_shutdown
-
-    @acpi_shutdown.setter
-    def acpi_shutdown(self, acpi_shutdown):
-        """
-        Sets either this QEMU VM can be ACPI shutdown.
-
-        :param acpi_shutdown: boolean
+        :returns: string
         """
 
-        if acpi_shutdown:
-            log.info('QEMU VM "{name}" [{id}] has enabled ACPI shutdown'.format(name=self._name, id=self._id))
-        else:
-            log.info('QEMU VM "{name}" [{id}] has disabled ACPI shutdown'.format(name=self._name, id=self._id))
-        self._acpi_shutdown = acpi_shutdown
+        return self._on_close
 
-    @property
-    def save_vm_state(self):
+    @on_close.setter
+    def on_close(self, on_close):
         """
-        Returns either this QEMU VM state can be saved.
+        Sets the action to execute when the VM is stopped/closed
 
-        :returns: boolean
+        :param on_close: string
         """
 
-        return self._save_vm_state
-
-    @save_vm_state.setter
-    def save_vm_state(self, save_vm_state):
-        """
-        Sets either this QEMU VM state can be saved.
-
-        :param save_vm_state: boolean
-        """
-
-        if save_vm_state:
-            log.info('QEMU VM "{name}" [{id}] has enabled the save VM state option'.format(name=self._name, id=self._id))
-        else:
-            log.info('QEMU VM "{name}" [{id}] has disabled the save VM state option'.format(name=self._name, id=self._id))
-        self._save_vm_state = save_vm_state
+        log.info('QEMU VM "{name}" [{id}] set the close action to "{action}"'.format(name=self._name, id=self._id, action=on_close))
+        self._on_close = on_close
 
     @property
     def cpu_throttling(self):
@@ -1030,7 +1002,7 @@ class QemuVM(BaseNode):
                 log.info('Stopping QEMU VM "{}" PID={}'.format(self._name, self._process.pid))
                 try:
 
-                    if self.save_vm_state:
+                    if self.on_close == "save_vm_state":
                         yield from self._control_vm("stop")
                         yield from self._control_vm("savevm GNS3_SAVED_STATE")
                         wait_for_savevm = 120
@@ -1041,7 +1013,7 @@ class QemuVM(BaseNode):
                             if status != []:
                                 break
 
-                    if self.acpi_shutdown and not self.save_vm_state:
+                    if self.on_close == "shutdown_signal":
                         yield from self._control_vm("system_powerdown")
                         yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
                     else:
@@ -1059,7 +1031,7 @@ class QemuVM(BaseNode):
                             log.warning('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
-            if not self.save_vm_state:
+            if self.on_close != "save_vm_state":
                 yield from self._clear_save_vm_stated()
             yield from super().stop()
 
@@ -1164,7 +1136,7 @@ class QemuVM(BaseNode):
         if not (yield from super().close()):
             return False
 
-        self.acpi_shutdown = False
+        self.on_close = "power_off"
         yield from self.stop()
 
         for adapter in self._ethernet_adapters:
@@ -1951,7 +1923,7 @@ class QemuVM(BaseNode):
         command.extend(self._monitor_options())
         command.extend((yield from self._network_options()))
         command.extend(self._graphic())
-        if not self.save_vm_state:
+        if self.on_close != "save_vm_state":
             yield from self._clear_save_vm_stated()
         else:
             command.extend((yield from self._saved_state_option()))

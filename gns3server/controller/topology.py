@@ -37,7 +37,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 8
+GNS3_FILE_FORMAT_REVISION = 9
 
 
 def _check_topology_schema(topo):
@@ -151,6 +151,10 @@ def load_topology(path):
     if topo["revision"] < 8:
         topo = _convert_2_0_0(topo, path)
 
+    # Version before GNS3 2.1
+    if topo["revision"] < 9:
+        topo = _convert_2_1_0(topo, path)
+
     try:
         _check_topology_schema(topo)
     except aiohttp.web.HTTPConflict as e:
@@ -163,6 +167,25 @@ def load_topology(path):
                 json.dump(topo, f, indent=4, sort_keys=True)
         except (OSError) as e:
             raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
+    return topo
+
+
+def _convert_2_1_0(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.1.x to 2.2
+
+    Changes:
+     * Removed acpi_shutdown option from Qemu, VMware and VirtualBox
+    """
+    topo["revision"] = 9
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        if "properties" in node:
+            if node["node_type"] in ("qemu", "vmware", "virtualbox"):
+                if "acpi_shutdown" in node["properties"]:
+                    del node["properties"]["acpi_shutdown"]
+                if "save_vm_state" in node["properties"]:
+                    del node["properties"]["save_vm_state"]
     return topo
 
 

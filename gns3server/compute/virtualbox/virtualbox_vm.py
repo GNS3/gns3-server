@@ -66,7 +66,7 @@ class VirtualBoxVM(BaseNode):
         self._adapters = adapters
         self._ethernet_adapters = {}
         self._headless = False
-        self._acpi_shutdown = False
+        self._on_close = "power_off"
         self._vmname = vmname
         self._use_any_adapter = False
         self._ram = 0
@@ -81,7 +81,7 @@ class VirtualBoxVM(BaseNode):
                 "project_id": self.project.id,
                 "vmname": self.vmname,
                 "headless": self.headless,
-                "acpi_shutdown": self.acpi_shutdown,
+                "on_close": self.on_close,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "ram": self.ram,
@@ -307,7 +307,12 @@ class VirtualBoxVM(BaseNode):
         yield from self._stop_remote_console()
         vm_state = yield from self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
-            if self.acpi_shutdown:
+
+            if self.on_close == "save_vm_state":
+                result = yield from self._control_vm("savestate")
+                self.status = "stopped"
+                log.debug("Stop result: {}".format(result))
+            elif self.on_close == "shutdown_signal":
                 # use ACPI to shutdown the VM
                 result = yield from self._control_vm("acpipowerbutton")
                 trial = 0
@@ -509,7 +514,7 @@ class VirtualBoxVM(BaseNode):
             self.manager.port_manager.release_udp_port(udp_tunnel[1].lport, self._project)
         self._local_udp_tunnels = {}
 
-        self.acpi_shutdown = False
+        self.on_close = "power_off"
         yield from self.stop()
 
         if self.linked_clone:
@@ -564,28 +569,25 @@ class VirtualBoxVM(BaseNode):
         self._headless = headless
 
     @property
-    def acpi_shutdown(self):
+    def on_close(self):
         """
-        Returns either the VM will use ACPI shutdown
+        Returns the action to execute when the VM is stopped/closed
 
-        :returns: boolean
-        """
-
-        return self._acpi_shutdown
-
-    @acpi_shutdown.setter
-    def acpi_shutdown(self, acpi_shutdown):
-        """
-        Sets either the VM will use ACPI shutdown
-
-        :param acpi_shutdown: boolean
+        :returns: string
         """
 
-        if acpi_shutdown:
-            log.info("VirtualBox VM '{name}' [{id}] has enabled the ACPI shutdown mode".format(name=self.name, id=self.id))
-        else:
-            log.info("VirtualBox VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
-        self._acpi_shutdown = acpi_shutdown
+        return self._on_close
+
+    @on_close.setter
+    def on_close(self, on_close):
+        """
+        Sets the action to execute when the VM is stopped/closed
+
+        :param on_close: string
+        """
+
+        log.info('VirtualBox VM "{name}" [{id}] set the close action to "{action}"'.format(name=self._name, id=self._id, action=on_close))
+        self._on_close = on_close
 
     @property
     def ram(self):

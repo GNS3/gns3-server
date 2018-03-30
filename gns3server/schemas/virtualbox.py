@@ -80,10 +80,10 @@ VBOX_CREATE_SCHEMA = {
             "description": "Headless mode",
             "type": "boolean"
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
-        }
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
+        },
     },
     "additionalProperties": False,
     "required": ["name", "vmname"],
@@ -131,9 +131,9 @@ VBOX_OBJECT_SCHEMA = {
             "description": "Headless mode",
             "type": "boolean"
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "adapters": {
             "description": "Number of adapters",

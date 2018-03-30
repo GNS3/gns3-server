@@ -184,13 +184,9 @@ QEMU_CREATE_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": ["boolean", "null"],
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown support",
-            "type": ["boolean", "null"],
-        },
-        "save_vm_state": {
-            "description": "Save VM state support",
-            "type": ["boolean", "null"],
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
@@ -373,13 +369,9 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": ["boolean", "null"],
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown support",
-            "type": ["boolean", "null"],
-        },
-        "save_vm_state": {
-            "description": "Save VM state support",
-            "type": ["boolean", "null"],
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "cpu_throttling": {
             "description": "Percentage of CPU allowed for QEMU",
@@ -575,9 +567,9 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": "boolean",
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown support",
-            "type": "boolean",
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "save_vm_state": {
             "description": "Save VM state support",
@@ -644,8 +636,7 @@ QEMU_OBJECT_SCHEMA = {
                  "kernel_image_md5sum",
                  "kernel_command_line",
                  "legacy_networking",
-                 "acpi_shutdown",
-                 "save_vm_state",
+                 "on_close",
                  "cpu_throttling",
                  "process_priority",
                  "options",

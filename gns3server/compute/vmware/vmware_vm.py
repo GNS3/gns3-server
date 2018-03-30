@@ -58,7 +58,7 @@ class VMwareVM(BaseNode):
         # VMware VM settings
         self._headless = False
         self._vmx_path = vmx_path
-        self._acpi_shutdown = False
+        self._on_close = "power_off"
         self._adapters = 0
         self._ethernet_adapters = {}
         self._adapter_type = "e1000"
@@ -80,7 +80,7 @@ class VMwareVM(BaseNode):
                 "project_id": self.project.id,
                 "vmx_path": self.vmx_path,
                 "headless": self.headless,
-                "acpi_shutdown": self.acpi_shutdown,
+                "on_close": self.on_close,
                 "adapters": self._adapters,
                 "adapter_type": self.adapter_type,
                 "use_any_adapter": self.use_any_adapter,
@@ -482,7 +482,9 @@ class VMwareVM(BaseNode):
 
         try:
             if (yield from self.is_running()):
-                if self.acpi_shutdown:
+                if self.on_close == "save_vm_state":
+                    yield from self._control_vm("suspend")
+                elif self.on_close == "shutdown_signal":
                     # use ACPI to shutdown the VM
                     yield from self._control_vm("stop", "soft")
                 else:
@@ -563,7 +565,7 @@ class VMwareVM(BaseNode):
                     if nio and isinstance(nio, NIOUDP):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
         try:
-            self.acpi_shutdown = False
+            self.on_close = "power_off"
             yield from self.stop()
         except VMwareError:
             pass
@@ -596,28 +598,25 @@ class VMwareVM(BaseNode):
         self._headless = headless
 
     @property
-    def acpi_shutdown(self):
+    def on_close(self):
         """
-        Returns either the VM will use ACPI shutdown
+        Returns the action to execute when the VM is stopped/closed
 
-        :returns: boolean
-        """
-
-        return self._acpi_shutdown
-
-    @acpi_shutdown.setter
-    def acpi_shutdown(self, acpi_shutdown):
-        """
-        Sets either the VM will use ACPI shutdown
-
-        :param acpi_shutdown: boolean
+        :returns: string
         """
 
-        if acpi_shutdown:
-            log.info("VMware VM '{name}' [{id}] has enabled the ACPI shutdown mode".format(name=self.name, id=self.id))
-        else:
-            log.info("VMware VM '{name}' [{id}] has disabled the ACPI shutdown mode".format(name=self.name, id=self.id))
-        self._acpi_shutdown = acpi_shutdown
+        return self._on_close
+
+    @on_close.setter
+    def on_close(self, on_close):
+        """
+        Sets the action to execute when the VM is stopped/closed
+
+        :param on_close: string
+        """
+
+        log.info('VMware VM "{name}" [{id}] set the close action to "{action}"'.format(name=self._name, id=self._id, action=on_close))
+        self._on_close = on_close
 
     @property
     def vmx_path(self):
