@@ -223,7 +223,7 @@ class NodeHandler:
 
         project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.start()
+        yield from node.start(data=request.json)
         response.json(node)
         response.set_status(201)
 

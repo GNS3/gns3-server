@@ -30,6 +30,7 @@ NODE_TYPE_SCHEMA = {
         "docker",
         "dynamips",
         "vpcs",
+        "traceng",
         "virtualbox",
         "vmware",
         "iou",

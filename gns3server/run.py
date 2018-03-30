@@ -183,7 +183,7 @@ def kill_ghosts():
     """
     Kill process from previous GNS3 session
     """
-    detect_process = ["vpcs", "ubridge", "dynamips"]
+    detect_process = ["vpcs", "traceng", "ubridge", "dynamips"]
     for proc in psutil.process_iter():
         try:
             name = proc.name().lower().split(".")[0]

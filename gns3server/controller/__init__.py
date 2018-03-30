@@ -116,6 +116,9 @@ class Controller:
         for vm in self._settings.get("VPCS", {}).get("nodes", []):
             vm["node_type"] = "vpcs"
             vms.append(vm)
+        for vm in self._settings.get("TraceNG", {}).get("nodes", []):
+            vm["node_type"] = "traceng"
+            vms.append(vm)
 
         for vm in vms:
             # remove deprecated properties
@@ -154,6 +157,8 @@ class Controller:
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        if sys.platform.startswith("win"):
+            builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"node_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
         for b in builtins:
             self._appliances[b.id] = b
 

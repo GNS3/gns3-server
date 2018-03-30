@@ -120,7 +120,7 @@ class Node:
         return self.node_type not in (
             "qemu", "docker", "dynamips",
             "vpcs", "vmware", "virtualbox",
-            "iou")
+            "iou", "traceng")
 
     @property
     def id(self):
@@ -454,7 +454,7 @@ class Node:
         yield from self.delete()
 
     @asyncio.coroutine
-    def start(self):
+    def start(self, data=None):
         """
         Start a node
         """
@@ -467,7 +467,7 @@ class Node:
                     raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
                 yield from self.post("/start", timeout=240, data={"iourc_content": licence})
             else:
-                yield from self.post("/start", timeout=240)
+                yield from self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
 
@@ -622,7 +622,7 @@ class Node:
             for port in self._properties["ports_mapping"]:
                 self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name="e{}".format(port_number)))
                 port_number += 1
-        elif self._node_type in ("vpcs"):
+        elif self._node_type in ("vpcs", "traceng"):
             self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
         elif self._node_type in ("cloud", "nat"):
             port_number = 0
