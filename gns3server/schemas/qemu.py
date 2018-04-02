@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
 QEMU_PLATFORMS = ["aarch64", "alpha", "arm", "cris", "i386", "lm32", "m68k", "microblaze", "microblazeel", "mips", "mips64", "mips64el", "mipsel", "moxie", "or32", "ppc", "ppc64", "ppcemb", "s390x", "sh4", "sh4eb", "sparc", "sparc64", "tricore", "unicore32", "x86_64", "xtensa", "xtensaeb"]
 
 
@@ -207,7 +209,8 @@ QEMU_CREATE_SCHEMA = {
         "options": {
             "description": "Additional QEMU options",
             "type": ["string", "null"],
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name"],
@@ -392,7 +395,8 @@ QEMU_UPDATE_SCHEMA = {
         "options": {
             "description": "Additional QEMU options",
             "type": ["string", "null"],
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
 }

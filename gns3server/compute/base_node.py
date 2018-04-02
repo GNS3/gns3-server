@@ -77,6 +77,7 @@ class BaseNode:
         self._wrap_console = wrap_console
         self._wrapper_telnet_server = None
         self._internal_console_port = None
+        self._custom_adapters = []
 
         if self._console is not None:
             if console_type == "vnc":
@@ -122,6 +123,14 @@ class BaseNode:
     @linked_clone.setter
     def linked_clone(self, val):
         self._linked_clone = val
+
+    @property
+    def custom_adapters(self):
+        return self._custom_adapters
+
+    @custom_adapters.setter
+    def custom_adapters(self, val):
+        self._custom_adapters = val
 
     @property
     def status(self):
@@ -760,3 +769,10 @@ class BaseNode:
                                                                                                                  percentage_left,
                                                                                                                  platform.node())
             self.project.emit("log.warning", {"message": message})
+
+    def _get_custom_adapter_settings(self, adapter_number):
+
+        for custom_adapter in self.custom_adapters:
+            if custom_adapter["adapter_number"] == adapter_number:
+                return custom_adapter
+        return {}

@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
+
 VBOX_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new VirtualBox VM instance",
@@ -84,6 +87,7 @@ VBOX_CREATE_SCHEMA = {
             "description": "Action to execute on the VM is closed",
             "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name", "vmname"],
@@ -169,7 +173,8 @@ VBOX_OBJECT_SCHEMA = {
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
 }

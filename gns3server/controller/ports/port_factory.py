@@ -51,7 +51,7 @@ class StandardPortFactory:
     """
     Create ports for standard device
     """
-    def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size):
+    def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size, custom_adapters):
         ports = []
         adapter_number = interface_number = segment_number = 0
 
@@ -61,9 +61,16 @@ class StandardPortFactory:
             ethernet_adapters = properties.get("adapters", 1)
 
         for adapter_number in range(adapter_number, ethernet_adapters + adapter_number):
+
+            custom_adapter_settings = {}
+            for custom_adapter in custom_adapters:
+                if custom_adapter["adapter_number"] == adapter_number:
+                    custom_adapter_settings = custom_adapter
+                    break
+
             for port_number in range(0, port_by_adapter):
                 if first_port_name and adapter_number == 0:
-                    port_name = first_port_name
+                    port_name = custom_adapter_settings.get("port_name", first_port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
                 else:
                     try:
@@ -74,6 +81,8 @@ class StandardPortFactory:
                             **cls._generate_replacement(interface_number, segment_number))
                     except (ValueError, KeyError) as e:
                         raise aiohttp.web.HTTPConflict(text="Invalid port name format {}: {}".format(port_name_format, str(e)))
+
+                    port_name = custom_adapter_settings.get("port_name", port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
                     interface_number += 1
                     if port_segment_size:

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
 
 VMWARE_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -74,7 +76,8 @@ VMWARE_CREATE_SCHEMA = {
         "use_any_adapter": {
             "description": "Allow GNS3 to use any VMware adapter",
             "type": "boolean",
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name", "vmx_path", "linked_clone"],
@@ -154,7 +157,8 @@ VMWARE_OBJECT_SCHEMA = {
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False
 }

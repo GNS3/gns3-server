@@ -258,17 +258,20 @@ class VMwareVM(BaseNode):
         self.manager.refresh_vmnet_list()
         for adapter_number in range(0, self._adapters):
 
+            custom_adapter = self._get_custom_adapter_settings(adapter_number)
+            adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
+
             # add/update the interface
-            if self._adapter_type == "default":
+            if adapter_type == "default":
                 # force default to e1000 because some guest OS don't detect the adapter (i.e. Windows 2012 server)
                 # when 'virtualdev' is not set in the VMX file.
-                adapter_type = "e1000"
+                vmware_adapter_type = "e1000"
             else:
-                adapter_type = self._adapter_type
+                vmware_adapter_type = adapter_type
             ethernet_adapter = {"ethernet{}.present".format(adapter_number): "TRUE",
                                 "ethernet{}.addresstype".format(adapter_number): "generated",
                                 "ethernet{}.generatedaddressoffset".format(adapter_number): "0",
-                                "ethernet{}.virtualdev".format(adapter_number): adapter_type}
+                                "ethernet{}.virtualdev".format(adapter_number): vmware_adapter_type}
             self._vmx_pairs.update(ethernet_adapter)
 
             connection_type = "ethernet{}.connectiontype".format(adapter_number)

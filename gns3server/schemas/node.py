@@ -17,6 +17,7 @@
 
 import copy
 from .label import LABEL_OBJECT_SCHEMA
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
 
 NODE_TYPE_SCHEMA = {
     "description": "Type of node",
@@ -194,6 +195,7 @@ NODE_OBJECT_SCHEMA = {
             "description": "Name of the first port",
             "type": ["string", "null"],
         },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA,
         "ports": {
             "description": "List of node ports READ only",
             "type": "array",

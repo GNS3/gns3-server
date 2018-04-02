@@ -852,18 +852,22 @@ class VirtualBoxVM(BaseNode):
                     continue
 
                 yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
+
+                custom_adapter = self._get_custom_adapter_settings(adapter_number)
+                adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
+
                 vbox_adapter_type = "82540EM"
-                if self._adapter_type == "PCnet-PCI II (Am79C970A)":
+                if adapter_type == "PCnet-PCI II (Am79C970A)":
                     vbox_adapter_type = "Am79C970A"
-                if self._adapter_type == "PCNet-FAST III (Am79C973)":
+                if adapter_type == "PCNet-FAST III (Am79C973)":
                     vbox_adapter_type = "Am79C973"
-                if self._adapter_type == "Intel PRO/1000 MT Desktop (82540EM)":
+                if adapter_type == "Intel PRO/1000 MT Desktop (82540EM)":
                     vbox_adapter_type = "82540EM"
-                if self._adapter_type == "Intel PRO/1000 T Server (82543GC)":
+                if adapter_type == "Intel PRO/1000 T Server (82543GC)":
                     vbox_adapter_type = "82543GC"
-                if self._adapter_type == "Intel PRO/1000 MT Server (82545EM)":
+                if adapter_type == "Intel PRO/1000 MT Server (82545EM)":
                     vbox_adapter_type = "82545EM"
-                if self._adapter_type == "Paravirtualized Network (virtio-net)":
+                if adapter_type == "Paravirtualized Network (virtio-net)":
                     vbox_adapter_type = "virtio"
                 args = [self._vmname, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
                 yield from self.manager.execute("modifyvm", args)

@@ -221,7 +221,7 @@ class DockerHandler:
             "project_id": "Project UUID",
             "node_id": "Node UUID",
             "adapter_number": "Adapter where the nio should be added",
-            "port_number": "Port on the adapter"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             201: "NIO created",

@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
+
 DOCKER_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Docker container",
@@ -93,7 +96,8 @@ DOCKER_CREATE_SCHEMA = {
             "minLength": 12,
             "maxLength": 64,
             "pattern": "^[a-f0-9]+$"
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA  # not used at this time
     },
     "additionalProperties": False,
     "required": ["name", "image"]
@@ -192,6 +196,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "VM status Read only",
             "enum": ["started", "stopped", "suspended"]
         },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA  # not used at this time
     },
     "additionalProperties": False,
 }

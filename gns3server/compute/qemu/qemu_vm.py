@@ -1696,10 +1696,17 @@ class QemuVM(BaseNode):
             if adapter_number not in self._local_udp_tunnels:
                 self._local_udp_tunnels[adapter_number] = self._create_local_udp_tunnel()
             nio = self._local_udp_tunnels[adapter_number][0]
+
+            custom_adapter = self._get_custom_adapter_settings(adapter_number)
+            adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
+            custom_mac_address = custom_adapter.get("mac_address")
+            if custom_mac_address:
+                mac = int_to_macaddress(macaddress_to_int(custom_mac_address))
+
             if self._legacy_networking:
                 # legacy QEMU networking syntax (-net)
                 if nio:
-                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
+                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, adapter_type)])
                     if isinstance(nio, NIOUDP):
                         if patched_qemu:
                             # use patched Qemu syntax
@@ -1719,11 +1726,11 @@ class QemuVM(BaseNode):
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", "tap,name=gns3-{},ifname={}".format(adapter_number, nio.tap_device)])
                 else:
-                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, self._adapter_type)])
+                    network_options.extend(["-net", "nic,vlan={},macaddr={},model={}".format(adapter_number, mac, adapter_type)])
 
             else:
                 # newer QEMU networking syntax
-                device_string = "{},mac={}".format(self._adapter_type, mac)
+                device_string = "{},mac={}".format(adapter_type, mac)
                 bridge_id = math.floor(pci_device_id / 32)
                 if bridge_id > 0:
                     addr = pci_device_id % 32

@@ -74,6 +74,7 @@ class Node:
         self._z = 0
         self._ports = None
         self._symbol = None
+        self._custom_adapters = []
         if node_type == "iou":
             self._port_name_format = "Ethernet{segment0}/{port0}"
             self._port_by_adapter = 4
@@ -305,6 +306,14 @@ class Node:
     def first_port_name(self, val):
         self._first_port_name = val
 
+    @property
+    def custom_adapters(self):
+        return self._custom_adapters
+
+    @custom_adapters.setter
+    def custom_adapters(self, val):
+        self._custom_adapters = val
+
     def add_link(self, link):
         """
         A link is connected to the node
@@ -330,6 +339,7 @@ class Node:
         data["node_id"] = self._id
         if self._node_type == "docker":
             timeout = None
+
         else:
             timeout = 1200
         trial = 0
@@ -374,6 +384,9 @@ class Node:
                 else:
                     setattr(self, prop, kwargs[prop])
 
+        if compute_properties and "custom_adapters" in compute_properties:
+            # we need to check custom adapters to update the custom port names
+            self.custom_adapters = compute_properties["custom_adapters"]
         self._list_ports()
         if update_compute:
             data = self._node_data(properties=compute_properties)
@@ -442,6 +455,8 @@ class Node:
             data["console"] = self._console
         if self._console_type:
             data["console_type"] = self._console_type
+        if self.custom_adapters:
+            data["custom_adapters"] = self.custom_adapters
 
         # None properties are not be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):
@@ -585,7 +600,7 @@ class Node:
         """
         Generate the list of port display in the client
         if the compute has sent a list we return it (use by
-        node where you can not personnalize the port naming).
+        node where you can not personalize the port naming).
         """
         self._ports = []
         # Some special cases
@@ -615,7 +630,14 @@ class Node:
             return
         elif self._node_type == "docker":
             for adapter_number in range(0, self._properties["adapters"]):
-                self._ports.append(PortFactory("eth{}".format(adapter_number), 0, adapter_number, 0, "ethernet", short_name="eth{}".format(adapter_number)))
+                custom_adapter_settings = {}
+                for custom_adapter in self.custom_adapters:
+                    if custom_adapter["adapter_number"] == adapter_number:
+                        custom_adapter_settings = custom_adapter
+                        break
+                port_name = "eth{}".format(adapter_number)
+                port_name = custom_adapter_settings.get("port_name", port_name)
+                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name="eth{}".format(adapter_number)))
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0
@@ -630,7 +652,7 @@ class Node:
                 self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=port["name"]))
                 port_number += 1
         else:
-            self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size)
+            self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size, self._custom_adapters)
 
     def __repr__(self):
         return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
@@ -644,6 +666,7 @@ class Node:
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """
+
         if topology_dump:
             return {
                 "compute_id": str(self._compute.id),
@@ -662,7 +685,8 @@ class Node:
                 "symbol": self._symbol,
                 "port_name_format": self._port_name_format,
                 "port_segment_size": self._port_segment_size,
-                "first_port_name": self._first_port_name
+                "first_port_name": self._first_port_name,
+                "custom_adapters": self._custom_adapters
             }
         return {
             "compute_id": str(self._compute.id),
@@ -687,5 +711,6 @@ class Node:
             "port_name_format": self._port_name_format,
             "port_segment_size": self._port_segment_size,
             "first_port_name": self._first_port_name,
+            "custom_adapters": self._custom_adapters,
             "ports": [port.__json__() for port in self.ports]
         }
