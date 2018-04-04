@@ -148,6 +148,10 @@ NODE_OBJECT_SCHEMA = {
             "description": "Console type",
             "enum": ["vnc", "telnet", "http", "https", "spice", "spice+agent", "none", None]
         },
+        "console_auto_start": {
+            "description": "Automatically start the console when the node has started",
+            "type": "boolean"
+        },
         "properties": {
             "description": "Properties specific to an emulator",
             "type": "object"

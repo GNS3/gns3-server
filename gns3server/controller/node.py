@@ -36,7 +36,7 @@ class Node:
     # This properties are used only on controller and are not forwarded to the compute
     CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "width", "height", "symbol", "label", "console_host",
                                   "port_name_format", "first_port_name", "port_segment_size", "ports",
-                                  "category"]
+                                  "category", "console_auto_start"]
 
     def __init__(self, project, compute, name, node_id=None, node_type=None, **kwargs):
         """
@@ -84,6 +84,7 @@ class Node:
             self._port_by_adapter = 1
             self._port_segment_size = 0
         self._first_port_name = None
+        self._console_auto_start = False
 
         # This properties will be recompute
         ignore_properties = ("width", "height", "hover_symbol")
@@ -162,6 +163,14 @@ class Node:
     @console_type.setter
     def console_type(self, val):
         self._console_type = val
+
+    @property
+    def console_auto_start(self):
+        return self._console_auto_start
+
+    @console_auto_start.setter
+    def console_auto_start(self, val):
+        self._console_auto_start = val
 
     @property
     def properties(self):
@@ -675,6 +684,7 @@ class Node:
                 "name": self._name,
                 "console": self._console,
                 "console_type": self._console_type,
+                "console_auto_start": self._console_auto_start,
                 "properties": self._properties,
                 "label": self._label,
                 "x": self._x,
@@ -698,6 +708,7 @@ class Node:
             "console": self._console,
             "console_host": str(self._compute.console_host),
             "console_type": self._console_type,
+            "console_auto_start": self._console_auto_start,
             "command_line": self._command_line,
             "properties": self._properties,
             "status": self._status,
