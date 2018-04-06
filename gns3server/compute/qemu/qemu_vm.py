@@ -1847,6 +1847,8 @@ class QemuVM(BaseNode):
                     disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
                 else:
                     disk = disk_image
+                if not os.path.exists(disk):
+                    continue
                 command = [qemu_img_path, "snapshot", "-c", snapshot_name, disk]
                 retcode = yield from self._qemu_img_exec(command)
                 if retcode:
@@ -1871,6 +1873,8 @@ class QemuVM(BaseNode):
                     disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
                 else:
                     disk = disk_image
+                if not os.path.exists(disk):
+                    continue
                 output = yield from subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
                 json_data = json.loads(output)
                 if "snapshots" in json_data:
