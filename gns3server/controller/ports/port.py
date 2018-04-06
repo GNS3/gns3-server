@@ -93,13 +93,16 @@ class Port:
         self._short_name = val
 
     def __json__(self):
-        return {
+        info = {
             "name": self._name,
             "short_name": self.short_name,
             "data_link_types": self.data_link_types,
             "port_number": self._port_number,
             "adapter_number": self._adapter_number,
-            "adapter_type": self._adapter_type,
-            "mac_address": self._mac_address,
             "link_type": self.link_type
         }
+        if self._adapter_type:
+            info["adapter_type"] = self._adapter_type
+        if self._mac_address:
+            info["mac_address"] = self._mac_address
+        return info
