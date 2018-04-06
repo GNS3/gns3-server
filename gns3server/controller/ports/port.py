@@ -27,6 +27,8 @@ class Port:
         self._port_number = port_number
         self._name = name
         self._short_name = short_name
+        self._adapter_type = None
+        self._mac_address = None
         self._link = None
 
     @property
@@ -47,6 +49,22 @@ class Port:
     @property
     def port_number(self):
         return self._port_number
+
+    @property
+    def adapter_type(self):
+        return self._adapter_type
+
+    @adapter_type.setter
+    def adapter_type(self, val):
+        self._adapter_type = val
+
+    @property
+    def mac_address(self):
+        return self._mac_address
+
+    @mac_address.setter
+    def mac_address(self, val):
+        self._mac_address = val
 
     @property
     def data_link_types(self):
@@ -81,5 +99,7 @@ class Port:
             "data_link_types": self.data_link_types,
             "port_number": self._port_number,
             "adapter_number": self._adapter_number,
+            "adapter_type": self._adapter_type,
+            "mac_address": self._mac_address,
             "link_type": self.link_type
         }

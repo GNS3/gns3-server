@@ -219,6 +219,11 @@ NODE_OBJECT_SCHEMA = {
                         "type": "integer",
                         "description": "Adapter slot"
                     },
+                    "adapter_type": {
+                        "description": "Adapter type",
+                        "type": ["string", "null"],
+                        "minLength": 1,
+                    },
                     "port_number": {
                         "type": "integer",
                         "description": "Port slot"
@@ -229,8 +234,14 @@ NODE_OBJECT_SCHEMA = {
                     },
                     "data_link_types": {
                         "type": "object",
-                        "description": "Available PCAP type for capture",
+                        "description": "Available PCAP types for capture",
                         "properties": {}
+                    },
+                    "mac_address": {
+                        "description": "MAC address (if available)",
+                        "type": ["string", "null"],
+                        "minLength": 1,
+                        "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
                     },
                 },
                 "additionalProperties": False

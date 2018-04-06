@@ -17,6 +17,7 @@
 
 import aiohttp
 
+from gns3server.utils import macaddress_to_int, int_to_macaddress
 from .atm_port import ATMPort
 from .frame_relay_port import FrameRelayPort
 from .gigabitethernet_port import GigabitEthernetPort
@@ -92,6 +93,11 @@ class StandardPortFactory:
                     else:
                         segment_number += 1
 
+                port.adapter_type = custom_adapter_settings.get("adapter_type", properties.get("adapter_type", None))
+                mac_address = custom_adapter_settings.get("mac_address")
+                if not mac_address and "mac_address" in properties:
+                    mac_address = int_to_macaddress(macaddress_to_int(properties["mac_address"]) + adapter_number)
+                port.mac_address = mac_address
                 ports.append(port)
 
         if len(ports):
