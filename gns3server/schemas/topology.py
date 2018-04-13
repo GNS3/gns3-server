@@ -89,6 +89,10 @@ TOPOLOGY_SCHEMA = {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
