@@ -75,7 +75,8 @@ def test_json(tmpdir):
         "show_grid": False,
         "show_interface_labels": False,
         "show_layers": False,
-        "snap_to_grid": False
+        "snap_to_grid": False,
+        "grid_size": 0,
     }
 
 
