@@ -848,7 +848,10 @@ class VMwareVM(BaseNode):
                                      writer=self._remote_pipe,
                                      binary=True,
                                      echo=True)
-        self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+        try:
+            self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+        except OSError as e:
+            self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
 
     @asyncio.coroutine
     def _stop_remote_console(self):

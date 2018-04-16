@@ -346,6 +346,7 @@ class BaseNode:
             remaining_trial -= 1
         yield from AsyncioTelnetServer.write_client_intro(writer, echo=True)
         server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
+        # warning: this will raise OSError exception if there is a problem...
         self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
     @property
