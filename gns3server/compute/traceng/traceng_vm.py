@@ -59,6 +59,7 @@ class TraceNGVM(BaseNode):
         self._process = None
         self._started = False
         self._ip_address = None
+        self._default_destination = None
         self._destination = None
         self._local_udp_tunnel = None
         self._ethernet_adapter = EthernetAdapter()  # one adapter with 1 Ethernet interface
@@ -115,6 +116,7 @@ class TraceNGVM(BaseNode):
 
         return {"name": self.name,
                 "ip_address": self.ip_address,
+                "default_destination": self._default_destination,
                 "node_id": self.id,
                 "node_directory": self.working_path,
                 "status": self.status,
@@ -166,6 +168,30 @@ class TraceNGVM(BaseNode):
                                                                                 name=self.name,
                                                                                 id=self.id,
                                                                                 ip_address=ip_address))
+
+    @property
+    def default_destination(self):
+        """
+        Returns the default destination IP/host for this node.
+
+        :returns: destination IP/host
+        """
+
+        return self._default_destination
+
+    @default_destination.setter
+    def default_destination(self, destination):
+        """
+        Sets the destination IP/host for this node.
+
+        :param destination: destination IP/host
+        """
+
+        self._default_destination = destination
+        log.info("{module}: {name} [{id}] set default destination to {destination}".format(module=self.manager.module_name,
+                                                                                           name=self.name,
+                                                                                           id=self.id,
+                                                                                           destination=destination))
 
     @asyncio.coroutine
     def start(self, destination=None):
@@ -401,9 +427,14 @@ class TraceNGVM(BaseNode):
         """
 
         if not destination:
+            # use the default destination if no specific destination provided
+            destination = self.default_destination
+        if not destination:
             raise TraceNGError("Please provide a host or IP address to trace")
-        if not self._ip_address:
+        if not self.ip_address:
             raise TraceNGError("Please configure an IP address for this TraceNG node")
+        if self.ip_address == destination:
+            raise TraceNGError("Destination cannot be the same as the IP address")
 
         self._destination = destination
         command = [self._traceng_path()]
