@@ -514,7 +514,7 @@ class BaseNode:
         try:
             yield from self._ubridge_hypervisor.send(command)
         except UbridgeError as e:
-            raise UbridgeError("{}: {}".format(e, self._ubridge_hypervisor.read_stdout()))
+            raise UbridgeError("Error while sending command '{}': {}: {}".format(command, e, self._ubridge_hypervisor.read_stdout()))
 
     @locked_coroutine
     def _start_ubridge(self):

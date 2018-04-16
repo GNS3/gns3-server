@@ -62,6 +62,7 @@ class Hypervisor(UBridgeHypervisor):
                     af, socktype, proto, _, sa = res
                     # let the OS find an unused port for the uBridge hypervisor
                     with socket.socket(af, socktype, proto) as sock:
+                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         sock.bind(sa)
                         port = sock.getsockname()[1]
                         break
