@@ -22,14 +22,14 @@
     "images": [
         {
             "filename": "c7200-adventerprisek9-mz.124-24.T5.image",
-            "version": "124-25.T5",
+            "version": "124-24.T5",
             "md5sum": "6b89d0d804e1f2bb5b8bda66b5692047",
             "filesize": 102345240
         }
     ],
     "versions": [
         {
-            "name": "124-25.T5",
+            "name": "124-24.T5",
             "idlepc": "0x606df838",
             "images": {
                 "image": "c7200-adventerprisek9-mz.124-24.T5.image"

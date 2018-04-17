@@ -27,17 +27,31 @@
     },
     "images": [
        {
-            "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
-            "version": "6.1.0 (ESX)",
-            "md5sum": "64b1e81cd54008318235832ea6d71424",
-            "filesize": 2959736832,
+            "filename": "PA-VM-ESX-8.1.0-disk1.vmdk",
+            "version": "8.1.0",
+            "md5sum": "49af8e8225c2e90414bde0be15eaf421",
+            "filesize": 2281454080,
             "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
        },
        {
-            "filename": "PA-VM-KVM-7.1.0.qcow2",
-            "version": "7.1.0",
-            "md5sum": "da300253709740068927408239c2e321",
-            "filesize": 1858797568,
+            "filename": "PA-VM-KVM-8.1.0.qcow2",
+            "version": "8.1.0",
+            "md5sum": "459558515b965b2e43fde2842abbae66",
+            "filesize": 2260467712,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
+       {
+            "filename": "PA-VM-ESX-8.0.0-disk1.vmdk",
+            "version": "8.0.0",
+            "md5sum": "a505fb1dbcc855ecf98630fd5d329f9a",
+            "filesize": 2002713088,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
+       {
+            "filename": "PA-VM-KVM-8.0.0.qcow2",
+            "version": "8.0.0",
+            "md5sum": "b6a1ddc8552aff87f05f9c0d4cb54dc3",
+            "filesize": 1987444736,
             "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
         },
        {
@@ -48,31 +62,37 @@
             "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
         },
        {
-            "filename": "PA-VM-KVM-8.0.0.qcow2",
-            "version": "8.0.0",
-            "md5sum": "b6a1ddc8552aff87f05f9c0d4cb54dc3",
-            "filesize": 1987444736,
+            "filename": "PA-VM-KVM-7.1.0.qcow2",
+            "version": "7.1.0",
+            "md5sum": "da300253709740068927408239c2e321",
+            "filesize": 1858797568,
             "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
-        }
-
+        },
+       {
+            "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
+            "version": "6.1.0 (ESX)",
+            "md5sum": "64b1e81cd54008318235832ea6d71424",
+            "filesize": 2959736832,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+       }
     ],
     "versions": [
          {
-            "name": "6.1.0 (ESX)",
+            "name": "8.1.0 (ESX)",
             "images": {
-                "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+                "hda_disk_image": "PA-VM-ESX-8.1.0-disk1.vmdk"
             }
-         },
+        },
          {
-            "name": "7.1.0",
+            "name": "8.1.0",
             "images": {
-                "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
+                "hda_disk_image": "PA-VM-KVM-8.1.0.qcow2"
             }
-         },
+        },
          {
-            "name": "7.1.0 (ESX)",
+            "name": "8.0.0 (ESX)",
             "images": {
-                "hda_disk_image": "PA-VM-ESX-7.1.0-disk1.vmdk"
+                "hda_disk_image": "PA-VM-ESX-8.0.0-disk1.vmdk2"
             }
         },
          {
@@ -80,6 +100,24 @@
             "images": {
                 "hda_disk_image": "PA-VM-KVM-8.0.0.qcow2"
             }
-        }
+        },
+         {
+            "name": "7.1.0 (ESX)",
+            "images": {
+                "hda_disk_image": "PA-VM-ESX-7.1.0-disk1.vmdk"
+            }
+        },
+         {
+            "name": "7.1.0",
+            "images": {
+                "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
+            }
+         },
+         {
+            "name": "6.1.0 (ESX)",
+            "images": {
+                "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+            }
+         }
     ]
 }
