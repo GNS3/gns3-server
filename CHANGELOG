@@ -1,5 +1,21 @@
 # Change Log
 
+## 2.1.5 18/04/2018
+
+* Set the first byte to 0C when generating a random MAC address for a Qemu VM. Ref #1267.
+* Update appliance files.
+* Do not use VMnet0 when allocating VMnet adapters.
+* Use SO_REUSEADDR before calling bind() where missing. Fixes #1289.
+* Do not fail a Dynamips project conversion if a file being used.
+* Catch exceptions when using AsyncioTelnetServer. Fixes #1321.
+* Grid size support for projects.
+* Remove 'include INSTALL' from MANIFEST.
+* Fix issue with start all.
+* Check for valid IP address and prevent to run on non-Windows platforms.
+* Enable UDP tunnel option and use ICMP probing by default.
+* Use the configured IP address to trace.
+* Have TraceNG start without needing cmd.exe
+
 ## 2.1.4 12/03/2018
 
 * Add Juniper JunOS space appliance.
