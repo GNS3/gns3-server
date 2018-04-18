@@ -48,6 +48,10 @@ TRACENG_CREATE_SCHEMA = {
         "ip_address": {
             "description": "Source IP address for tracing",
             "type": ["string"]
+        },
+        "default_destination": {
+            "description": "Default destination IP address or hostname for tracing",
+            "type": ["string"]
         }
     },
     "additionalProperties": False,
@@ -77,6 +81,10 @@ TRACENG_UPDATE_SCHEMA = {
         "ip_address": {
             "description": "Source IP address for tracing",
             "type": ["string"]
+        },
+        "default_destination": {
+            "description": "Default destination IP address or hostname for tracing",
+            "type": ["string"]
         }
     },
     "additionalProperties": False,
@@ -92,7 +100,6 @@ TRACENG_START_SCHEMA = {
             "type": ["string"]
         }
     },
-    "required": ["destination"],
 }
 
 TRACENG_OBJECT_SCHEMA = {
@@ -144,8 +151,12 @@ TRACENG_OBJECT_SCHEMA = {
         "ip_address": {
             "description": "Source IP address for tracing",
             "type": ["string"]
+        },
+        "default_destination": {
+            "description": "Default destination IP address or hostname for tracing",
+            "type": ["string"]
         }
     },
     "additionalProperties": False,
-    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "command_line", "ip_address"]
+    "required": ["name", "node_id", "status", "console", "console_type", "project_id", "command_line", "ip_address", "default_destination"]
 }

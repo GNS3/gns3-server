@@ -68,7 +68,7 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
                  scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
-                 show_interface_labels=False):
+                 grid_size=0, show_interface_labels=False):
 
         self._controller = controller
         assert name is not None
@@ -83,6 +83,7 @@ class Project:
         self._show_layers = show_layers
         self._snap_to_grid = snap_to_grid
         self._show_grid = show_grid
+        self._grid_size = grid_size
         self._show_interface_labels = show_interface_labels
         self._loading = False
 
@@ -235,6 +236,21 @@ class Project:
         Setter for showing the grid mode
         """
         self._show_grid = show_grid
+
+    @property
+    def grid_size(self):
+        """
+        Grid size
+        :return: integer
+        """
+        return self._grid_size
+
+    @grid_size.setter
+    def grid_size(self, grid_size):
+        """
+        Setter for grid size
+        """
+        self._grid_size = grid_size
 
     @property
     def show_interface_labels(self):
@@ -794,6 +810,7 @@ class Project:
                 "show_layers",
                 "snap_to_grid",
                 "show_grid",
+                "grid_size",
                 "show_interface_labels"
             ]
 
@@ -939,12 +956,7 @@ class Project:
         Start all nodes
         """
         pool = Pool(concurrency=3)
-        emit_warning = True
         for node in self.nodes.values():
-            if node.node_type == "traceng" and emit_warning:
-                self.controller.notification.emit("log.warning", {"message": "TraceNG nodes must be started one by one"})
-                emit_warning = False
-                continue
             pool.append(node.start)
         yield from pool.join()
 
@@ -1043,6 +1055,7 @@ class Project:
             "show_layers": self._show_layers,
             "snap_to_grid": self._snap_to_grid,
             "show_grid": self._show_grid,
+            "grid_size": self._grid_size,
             "show_interface_labels": self._show_interface_labels
         }
 

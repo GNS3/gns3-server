@@ -360,6 +360,7 @@ class BaseNode:
             remaining_trial -= 1
         yield from AsyncioTelnetServer.write_client_intro(writer, echo=True)
         server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
+        # warning: this will raise OSError exception if there is a problem...
         self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
     @asyncio.coroutine
@@ -544,7 +545,7 @@ class BaseNode:
         try:
             yield from self._ubridge_hypervisor.send(command)
         except UbridgeError as e:
-            raise UbridgeError("{}: {}".format(e, self._ubridge_hypervisor.read_stdout()))
+            raise UbridgeError("Error while sending command '{}': {}: {}".format(command, e, self._ubridge_hypervisor.read_stdout()))
 
     @locked_coroutine
     def _start_ubridge(self):

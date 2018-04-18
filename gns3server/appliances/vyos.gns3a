@@ -81,6 +81,13 @@
             }
         },
         {
+            "name": "1.1.8",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.1.8-amd64.iso"
+            }
+        },
+        {
             "name": "1.1.7",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",

@@ -129,14 +129,16 @@ class Router(BaseNode):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+                    log.error("Can't move {}: {}".format(path, str(e)))
+                    continue
         for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
             dst = os.path.join(self._working_directory, os.path.basename(path))
             if not os.path.exists(dst):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+                    log.error("Can't move {}: {}".format(path, str(e)))
+                    continue
 
     def __json__(self):
 

@@ -539,7 +539,7 @@ class QemuVM(BaseNode):
 
         if not mac_address:
             # use the node UUID to generate a random MAC address
-            self._mac_address = "52:%s:%s:%s:%s:00" % (self.project.id[-4:-2], self.project.id[-2:], self.id[-4:-2], self.id[-2:])
+            self._mac_address = "0c:%s:%s:%s:%s:00" % (self.project.id[-4:-2], self.project.id[-2:], self.id[-4:-2], self.id[-2:])
         else:
             self._mac_address = mac_address
 
@@ -918,6 +918,7 @@ class QemuVM(BaseNode):
                         af, socktype, proto, _, sa = res
                         # let the OS find an unused port for the Qemu monitor
                         with socket.socket(af, socktype, proto) as sock:
+                            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                             sock.bind(sa)
                             self._monitor = sock.getsockname()[1]
                 except OSError as e:

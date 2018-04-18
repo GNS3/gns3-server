@@ -421,7 +421,10 @@ class DockerVM(BaseNode):
             stderr=asyncio.subprocess.STDOUT,
             stdin=asyncio.subprocess.PIPE)
         server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
-        self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
+        try:
+            self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
+        except OSError as e:
+            raise DockerError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.aux, e))
         log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
 
     @asyncio.coroutine
@@ -518,7 +521,10 @@ class DockerVM(BaseNode):
         input_stream = InputStream()
 
         telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
-        self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
+        try:
+            self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
+        except OSError as e:
+            raise DockerError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e))
 
         self._console_websocket = yield from self.manager.websocket_query("containers/{}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1".format(self._cid))
         input_stream.ws = self._console_websocket

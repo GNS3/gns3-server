@@ -254,7 +254,7 @@ class VMware(BaseManager):
                 if winreg.QueryInfoKey(hkeyvmnet)[1]:
                     # the vmnet has not been configure if the key has no values
                     vmnet = vmnet.replace("vm", "VM")
-                    if vmnet not in ("VMnet1", "VMnet8"):
+                    if vmnet not in ("VMnet0", "VMnet1", "VMnet8"):
                         vmnet_interfaces.append(vmnet)
                 winreg.CloseKey(hkeyvmnet)
             winreg.CloseKey(hkey)
@@ -279,7 +279,7 @@ class VMware(BaseManager):
                     match = re.search("VNET_([0-9]+)_VIRTUAL_ADAPTER", line)
                     if match:
                         vmnet = "vmnet{}".format(match.group(1))
-                        if vmnet not in ("vmnet1", "vmnet8"):
+                        if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
                             vmnet_interfaces.append(vmnet)
         except OSError as e:
             raise VMwareError("Cannot open {}: {}".format(vmware_networking_file, e))
@@ -298,11 +298,11 @@ class VMware(BaseManager):
                 match = re.search("(VMnet[0-9]+)", windows_name)
                 if match:
                     vmnet = match.group(1)
-                    if vmnet not in ("VMnet1", "VMnet8"):
+                    if vmnet not in ("VMnet0", "VMnet1", "VMnet8"):
                         vmnet_interfaces.append(vmnet)
             elif interface["name"].startswith("vmnet"):
                 vmnet = interface["name"]
-                if vmnet not in ("vmnet1", "vmnet8"):
+                if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
                     vmnet_interfaces.append(interface["name"])
         return vmnet_interfaces
 

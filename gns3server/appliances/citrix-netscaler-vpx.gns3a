@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "NSVPX-KVM-12.0-56.20_nc_32.qcow2",
+            "version": "12.0-56.20",
+            "md5sum": "0ea1c23e3b8eb8451037d46ee472cfa6",
+            "filesize": 739704832,
+            "download_url": "https://www.citrix.com/lp/try/netscaler-vpx-express.html"
+        },
+        {
             "filename": "NSVPX-KVM-11.1-47.14_nc.raw",
             "version": "11.1-47.14 F",
             "md5sum": "f7100f8b6588e152ce6f64e45b1e99fc",
@@ -42,6 +49,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "12.0-56.20",
+            "images": {
+                "hda_disk_image": "NSVPX-KVM-12.0-56.20_nc_32.qcow2"
+            }
+        },
         {
             "name": "11.1-47.14 F",
             "images": {

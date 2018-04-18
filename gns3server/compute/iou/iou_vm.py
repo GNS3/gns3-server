@@ -543,7 +543,11 @@ class IOUVM(BaseNode):
 
             if self.console and self.console_type == "telnet":
                 server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True)
-                self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+                try:
+                    self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+                except OSError as e:
+                    yield from self.stop()
+                    raise IOUError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e))
 
             # configure networking support
             yield from self._networking()

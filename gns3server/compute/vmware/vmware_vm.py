@@ -279,6 +279,7 @@ class VMwareVM(BaseNode):
                 continue
 
             self._vmx_pairs["ethernet{}.connectiontype".format(adapter_number)] = "custom"
+
             # make sure we have a vmnet per adapter if we use uBridge
             allocate_vmnet = False
 
@@ -287,7 +288,7 @@ class VMwareVM(BaseNode):
             if vnet in self._vmx_pairs:
                 vmnet = os.path.basename(self._vmx_pairs[vnet])
                 if self.manager.is_managed_vmnet(vmnet) or vmnet in ("vmnet0", "vmnet1", "vmnet8"):
-                    # vmnet already managed, try to allocate a new one
+                    # vmnet already managed or a special vmnet, try to allocate a new one
                     allocate_vmnet = True
             else:
                 # otherwise allocate a new one
@@ -301,7 +302,7 @@ class VMwareVM(BaseNode):
                     self._vmnets.clear()
                     raise
 
-            # mark the vmnet managed by us
+            # mark the vmnet as managed by us
             if vmnet not in self._vmnets:
                 self._vmnets.append(vmnet)
             self._vmx_pairs["ethernet{}.vnet".format(adapter_number)] = vmnet
@@ -740,17 +741,18 @@ class VMwareVM(BaseNode):
         if self._get_vmx_setting("ethernet{}.present".format(adapter_number), "TRUE"):
             # check for the connection type
             connection_type = "ethernet{}.connectiontype".format(adapter_number)
-            if connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                if not self._use_any_adapter:
-                    raise VMwareError("Attachment '{attachment}' is already configured on network adapter {adapter_number}. "
-                                      "Please remove it or allow VMware VM '{name}' to use any adapter.".format(attachment=self._vmx_pairs[connection_type],
-                                                                                                                adapter_number=adapter_number,
-                                                                                                                name=self.name))
-                elif (yield from self.is_running()):
+            if not self._use_any_adapter and connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
+                if (yield from self.is_running()):
                     raise VMwareError("Attachment '{attachment}' is configured on network adapter {adapter_number}. "
                                       "Please stop VMware VM '{name}' to link to this adapter and allow GNS3 to change the attachment type.".format(attachment=self._vmx_pairs[connection_type],
                                                                                                                                                     adapter_number=adapter_number,
                                                                                                                                                     name=self.name))
+                else:
+                    raise VMwareError("Attachment '{attachment}' is already configured on network adapter {adapter_number}. "
+                                      "Please remove it or allow VMware VM '{name}' to use any adapter.".format(attachment=self._vmx_pairs[connection_type],
+                                                                                                                adapter_number=adapter_number,
+                                                                                                                name=self.name))
+
 
         adapter.add_nio(0, nio)
         if self._started and self._ubridge_hypervisor:
@@ -847,8 +849,14 @@ class VMwareVM(BaseNode):
 
         if self.console and self.console_type == "telnet":
             self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
-            server = AsyncioTelnetServer(reader=self._remote_pipe, writer=self._remote_pipe, binary=True, echo=True)
-            self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+            server = AsyncioTelnetServer(reader=self._remote_pipe,
+                                         writer=self._remote_pipe,
+                                         binary=True,
+                                         echo=True)
+            try:
+                self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+            except OSError as e:
+                self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
 
     @asyncio.coroutine
     def _stop_remote_console(self):

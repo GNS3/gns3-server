@@ -182,8 +182,10 @@ class EthernetSwitch(Device):
         self._telnet_shell = EthernetSwitchConsole(self)
         self._telnet_shell.prompt = self._name + '> '
         self._telnet = create_telnet_shell(self._telnet_shell)
-        self._telnet_server = (yield from asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
-
+        try:
+            self._telnet_server = (yield from asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
+        except OSError as e:
+            self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
         self._hypervisor.devices.append(self)
 
     @asyncio.coroutine
