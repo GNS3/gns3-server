@@ -202,6 +202,28 @@ def test_create_vnc(loop, project, manager):
         assert vm._console_type == "vnc"
 
 
+def test_create_with_extra_hosts(loop, project, manager):
+    extra_hosts = "test:199.199.199.1\ntest2:199.199.199.1"
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", extra_hosts=extra_hosts)
+            vm._start_vnc = MagicMock()
+            vm._display = 42
+            loop.run_until_complete(asyncio.async(vm.create()))
+            called_kwargs = mock.call_args[1]
+            assert called_kwargs["data"]["HostConfig"]["ExtraHosts"] == [
+                "test:199.199.199.1",
+                "test2:199.199.199.1"
+            ]
+        assert vm._extra_hosts == extra_hosts
+
+
 def test_create_start_cmd(loop, project, manager):
 
     response = {
