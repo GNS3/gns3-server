@@ -313,7 +313,10 @@ class VPCSVM(BaseNode):
 
         log.info("Stopping VPCS instance {} PID={}".format(self.name, self._process.pid))
         if sys.platform.startswith("win32"):
-            self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            try:
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)
+            except OSError:
+                pass
         else:
             try:
                 self._process.terminate()
