@@ -61,6 +61,7 @@ def test_json(vm, project):
         'console_resolution': '1024x768',
         'console_http_port': 80,
         'console_http_path': '/',
+        'extra_hosts': None,
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -210,18 +211,44 @@ def test_create_with_extra_hosts(loop, project, manager):
         "Warnings": []
     }
 
-    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", extra_hosts=extra_hosts)
-            vm._start_vnc = MagicMock()
-            vm._display = 42
             loop.run_until_complete(asyncio.async(vm.create()))
             called_kwargs = mock.call_args[1]
-            assert called_kwargs["data"]["HostConfig"]["ExtraHosts"] == [
-                "test:199.199.199.1",
-                "test2:199.199.199.1"
-            ]
+            assert "GNS3_EXTRA_HOSTS=199.199.199.1\ttest\n199.199.199.1\ttest2" in called_kwargs["data"]["Env"]
         assert vm._extra_hosts == extra_hosts
+
+
+def test_create_with_extra_hosts_wrong_format(loop, project, manager):
+    extra_hosts = "test"
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", extra_hosts=extra_hosts)
+            with pytest.raises(DockerError):
+                loop.run_until_complete(asyncio.async(vm.create()))
+
+
+def test_create_with_empty_extra_hosts(loop, project, manager):
+    extra_hosts = "test:\n"
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", extra_hosts=extra_hosts)
+            loop.run_until_complete(asyncio.async(vm.create()))
+            called_kwargs = mock.call_args[1]
+            assert len([ e for e in called_kwargs["data"]["Env"] if "GNS3_EXTRA_HOSTS" in e]) == 0
 
 
 def test_create_start_cmd(loop, project, manager):

@@ -337,17 +337,30 @@ class DockerVM(BaseNode):
             params["Env"].append("DISPLAY=:{}".format(self._display))
             params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
 
-        if self._extra_hosts is not None and self._extra_hosts.strip() != "":
-            params["HostConfig"]["ExtraHosts"] = [h.strip()
-                                                  for h in self._extra_hosts.split("\n")
-                                                  if h.strip() != "" ]
-
+        if self._extra_hosts:
+            extra_hosts = self._format_extra_hosts(self._extra_hosts)
+            if extra_hosts:
+                params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
 
         result = yield from self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
         log.info("Docker container '{name}' [{id}] created".format(
             name=self._name, id=self._id))
         return True
+
+    def _format_extra_hosts(self, extra_hosts):
+        lines = [h.strip() for h in self._extra_hosts.split("\n") if h.strip() != ""]
+        hosts = []
+        try:
+            for host in lines:
+                hostname, ip = host.split(":")
+                hostname = hostname.strip()
+                ip = ip.strip()
+                if hostname and ip:
+                    hosts.append((hostname, ip))
+        except ValueError:
+            raise DockerError("Can't apply `ExtraHosts`, wrong format: {}".format(extra_hosts))
+        return "\n".join(["{}\t{}".format(h[1], h[0]) for h in hosts])
 
     @asyncio.coroutine
     def update(self):
