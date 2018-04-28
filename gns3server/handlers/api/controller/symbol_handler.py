@@ -66,7 +66,7 @@ class SymbolHandler:
         try:
             with open(path, 'wb') as f:
                 while True:
-                    packet = yield from request.content.read(512)
+                    packet = yield from request.content.read(1024)
                     if not packet:
                         break
                     f.write(packet)

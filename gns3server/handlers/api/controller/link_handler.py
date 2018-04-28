@@ -73,7 +73,7 @@ class LinkHandler:
                                          node.get("adapter_number", 0),
                                          node.get("port_number", 0),
                                          label=node.get("label"))
-        except aiohttp.web_exceptions.HTTPException as e:
+        except aiohttp.web.HTTPException as e:
             yield from project.delete_link(link.id)
             raise e
         response.set_status(201)

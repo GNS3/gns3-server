@@ -335,7 +335,7 @@ class ProjectHandler:
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:
-                    packet = yield from request.content.read(512)
+                    packet = yield from request.content.read(1024)
                     if not packet:
                         break
                     temp.write(packet)
@@ -448,7 +448,7 @@ class ProjectHandler:
         try:
             with open(path, 'wb+') as f:
                 while True:
-                    packet = yield from request.content.read(512)
+                    packet = yield from request.content.read(1024)
                     if not packet:
                         break
                     f.write(packet)
