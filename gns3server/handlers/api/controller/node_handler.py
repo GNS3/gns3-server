@@ -409,8 +409,6 @@ class NodeHandler:
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
-
-        data = yield from request.content.read()
-
+        data = yield from request.content.read()  #FIXME: are we handling timeout or large files correctly?
         yield from node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
         response.set_status(201)

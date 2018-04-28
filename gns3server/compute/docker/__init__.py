@@ -198,7 +198,7 @@ class Docker(BaseManager):
             pass
 
         if progress_callback:
-            progress_callback("Pull {} from docker hub".format(image))
+            progress_callback("Pulling '{}' from docker hub".format(image))
         response = yield from self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
         # The pull api will stream status via an HTTP JSON stream
         content = ""
@@ -206,6 +206,10 @@ class Docker(BaseManager):
             try:
                 chunk = yield from response.content.read(1024)
             except aiohttp.ServerDisconnectedError:
+                log.error("Disconnected from server while pulling Docker image '{}' from docker hub".format(image))
+                break
+            except asyncio.TimeoutError:
+                log.error("Timeout while pulling Docker image '{}' from docker hub".format(image))
                 break
             if not chunk:
                 break
