@@ -37,6 +37,7 @@ from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine, asyncio_ensure_future
+from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
 from .import_project import import_project
 
@@ -662,27 +663,10 @@ class Project:
         :param name: Name of the snapshot
         """
 
-        if name in [snap.name for snap in self.snapshots.values()]:
-            raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
-
+        if name in [snap.name for snap in self._snapshots.values()]:
+            raise aiohttp.web.HTTPConflict(text="The snapshot name {} already exists".format(name))
         snapshot = Snapshot(self, name=name)
-        try:
-            if os.path.exists(snapshot.path):
-                raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
-
-            os.makedirs(os.path.join(self.path, "snapshots"), exist_ok=True)
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                try:
-                    with open(snapshot.path, "wb") as f:
-                        for data in zipstream:
-                            f.write(data)
-                except OSError as e:
-                    raise aiohttp.web.HTTPConflict(text="Could not write snapshot file '{}': {}".format(snapshot.path, e))
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
-
+        yield from snapshot.create()
         self._snapshots[snapshot.id] = snapshot
         return snapshot
 
@@ -891,6 +875,15 @@ class Project:
         while self._loading:
             yield from asyncio.sleep(0.5)
 
+    def _create_duplicate_project_file(self, path, zipstream):
+        """
+        Creates the project file (to be run in its own thread)
+        """
+
+        with open(path, "wb") as f:
+            for data in zipstream:
+                f.write(data)
+
     @asyncio.coroutine
     def duplicate(self, name=None, location=None):
         """
@@ -913,10 +906,9 @@ class Project:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(os.path.join(tmpdir, "project.gns3p"), "wb") as f:
-                    for data in zipstream:
-                        f.write(data)
-                with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
+                project_path = os.path.join(tmpdir, "project.gns3p")
+                yield from wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
+                with open(project_path, "rb") as f:
                     project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
         except (OSError, UnicodeEncodeError) as e:
             raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))

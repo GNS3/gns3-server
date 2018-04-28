@@ -17,6 +17,8 @@
 
 import os
 import aiohttp
+import asyncio
+
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
@@ -66,10 +68,13 @@ class SymbolHandler:
         try:
             with open(path, 'wb') as f:
                 while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
+                    try:
+                        chunk = yield from request.content.read(1024)
+                    except asyncio.TimeoutError:
+                        raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to symbol '{}'".format(path))
+                    if not chunk:
                         break
-                    f.write(packet)
+                    f.write(chunk)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write symbol file '{}': {}".format(path, e))
         # Reset the symbol list

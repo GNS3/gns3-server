@@ -193,13 +193,13 @@ class Controller:
                                                              user=server_config.get("user", ""),
                                                              password=server_config.get("password", ""),
                                                              force=True)
-        except aiohttp.web_exceptions.HTTPConflict as e:
+        except aiohttp.web.HTTPConflict as e:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except (aiohttp.web_exceptions.HTTPConflict, KeyError):
+            except (aiohttp.web.HTTPConflict, KeyError):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
         try:
@@ -228,7 +228,7 @@ class Controller:
             try:
                 yield from compute.close()
             # We don't care if a compute is down at this step
-            except (ComputeError, aiohttp.web_exceptions.HTTPError, OSError):
+            except (ComputeError, aiohttp.web.HTTPError, OSError):
                 pass
         yield from self.gns3vm.exit_vm()
         self._computes = {}
@@ -311,7 +311,7 @@ class Controller:
                         if file.endswith(".gns3"):
                             try:
                                 yield from self.load_project(os.path.join(project_dir, file), load=False)
-                            except (aiohttp.web_exceptions.HTTPConflict, NotImplementedError):
+                            except (aiohttp.web.HTTPConflict, NotImplementedError):
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))

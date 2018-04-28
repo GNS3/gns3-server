@@ -134,7 +134,7 @@ class ServerHandler:
 
     @Route.post(
         r"/debug",
-        description="Dump debug informations to disk (debug directory in config directory). Work only for local server",
+        description="Dump debug information to disk (debug directory in config directory). Work only for local server",
         status_codes={
             201: "Writed"
         })

@@ -319,10 +319,13 @@ class ProjectHandler:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb+') as f:
                 while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
+                    try:
+                        chunk = yield from request.content.read(1024)
+                    except asyncio.TimeoutError:
+                        raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
+                    if not chunk:
                         break
-                    f.write(packet)
+                    f.write(chunk)
 
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
@@ -380,10 +383,10 @@ class ProjectHandler:
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
+                    chunk = yield from request.content.read(1024)
+                    if not chunk:
                         break
-                    temp.write(packet)
+                    temp.write(chunk)
                 project.import_zip(temp, gns3vm=bool(int(request.GET.get("gns3vm", "1"))))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))

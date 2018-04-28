@@ -28,7 +28,7 @@ from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, AsyncioBytesIO
 
 from gns3server.controller.project import Project
-from gns3server.controller.export_project import export_project, _filter_files
+from gns3server.controller.export_project import export_project, _is_exportable
 
 
 @pytest.fixture
@@ -51,14 +51,14 @@ def node(controller, project, async_run):
     return node
 
 
-def test_filter_files():
-    assert not _filter_files("hello/world")
-    assert _filter_files("project-files/tmp")
-    assert _filter_files("project-files/test_log.txt")
-    assert _filter_files("project-files/test.log")
-    assert _filter_files("test/snapshots")
-    assert _filter_files("test/project-files/snapshots")
-    assert _filter_files("test/project-files/snapshots/test.gns3p")
+def test_exportable_files():
+    assert _is_exportable("hello/world")
+    assert not _is_exportable("project-files/tmp")
+    assert not _is_exportable("project-files/test_log.txt")
+    assert not _is_exportable("project-files/test.log")
+    assert not _is_exportable("test/snapshots")
+    assert not _is_exportable("test/project-files/snapshots")
+    assert not _is_exportable("test/project-files/snapshots/test.gns3p")
 
 
 def test_export(tmpdir, project, async_run):
