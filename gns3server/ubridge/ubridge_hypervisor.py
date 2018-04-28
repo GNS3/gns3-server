@@ -208,8 +208,8 @@ class UBridgeHypervisor:
             self._writer.write(command.encode())
             yield from self._writer.drain()
         except OSError as e:
-            raise UbridgeError("Lost communication with {host}:{port} :{error}, Dynamips process running: {run}"
-                               .format(host=self._host, port=self._port, error=e, run=self.is_running()))
+            raise UbridgeError("Lost communication with {host}:{port} when sending command '{command}': {error}, uBridge process running: {run}"
+                               .format(host=self._host, port=self._port, command=command, error=e, run=self.is_running()))
 
         # Now retrieve the result
         data = []
@@ -232,8 +232,8 @@ class UBridgeHypervisor:
                     continue
                 if not chunk:
                     if retries > max_retries:
-                        raise UbridgeError("No data returned from {host}:{port}, uBridge process running: {run}"
-                                            .format(host=self._host, port=self._port, run=self.is_running()))
+                        raise UbridgeError("No data returned from {host}:{port} after sending command '{command}', uBridge process running: {run}"
+                                            .format(host=self._host, port=self._port, command=command, run=self.is_running()))
                     else:
                         retries += 1
                         yield from asyncio.sleep(0.1)
@@ -241,16 +241,16 @@ class UBridgeHypervisor:
                 retries = 0
                 buf += chunk.decode("utf-8")
             except OSError as e:
-                raise UbridgeError("Lost communication with {host}:{port} :{error}, uBridge process running: {run}"
-                                   .format(host=self._host, port=self._port, error=e, run=self.is_running()))
+                raise UbridgeError("Lost communication with {host}:{port} after sending command '{command}': {error}, uBridge process running: {run}"
+                                   .format(host=self._host, port=self._port, command=command, error=e, run=self.is_running()))
 
             # If the buffer doesn't end in '\n' then we can't be done
             try:
                 if buf[-1] != '\n':
                     continue
             except IndexError:
-                raise UbridgeError("Could not communicate with {host}:{port}, uBridge process running: {run}"
-                                   .format(host=self._host, port=self._port, run=self.is_running()))
+                raise UbridgeError("Could not communicate with {host}:{port} after sending command '{command}', uBridge process running: {run}"
+                                   .format(host=self._host, port=self._port, command=command, run=self.is_running()))
 
             data += buf.split('\r\n')
             if data[-1] == '':
