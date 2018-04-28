@@ -57,7 +57,9 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
         with zipfile.ZipFile(stream) as zip_file:
             project_file = zip_file.read("project.gns3").decode()
     except zipfile.BadZipFile:
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid zip) or project.gns3 file could not be found")
+        raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid zip)")
+    except KeyError:
+        raise aiohttp.web.HTTPConflict(text="Cannot import project, project.gns3 file could not be found")
 
     try:
         topology = json.loads(project_file)

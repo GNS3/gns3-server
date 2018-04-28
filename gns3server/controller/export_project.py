@@ -198,8 +198,7 @@ def _patch_project_file(project, path, zstream, include_images, keep_compute_id,
     for compute_id, image_type, image in remote_images:
         yield from _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
 
-        zstream.writestr("project.gns3", json.dumps(topology).encode())
-
+    zstream.writestr("project.gns3", json.dumps(topology).encode())
     return images
 
 def _export_local_image(image, zstream):
