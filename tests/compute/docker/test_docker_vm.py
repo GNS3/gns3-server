@@ -251,6 +251,28 @@ def test_create_with_empty_extra_hosts(loop, project, manager):
             assert len([ e for e in called_kwargs["data"]["Env"] if "GNS3_EXTRA_HOSTS" in e]) == 0
 
 
+def test_create_with_project_variables(loop, project_with_variables, manager):
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    project.variables = [
+        {"name": "VAR1"},
+        {"name": "VAR2", "value": "VAL1"}
+    ]
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+            loop.run_until_complete(asyncio.async(vm.create()))
+            called_kwargs = mock.call_args[1]
+            assert "VAR1=" in called_kwargs["data"]["Env"]
+            assert "VAR2=VAL1" in called_kwargs["data"]["Env"]
+        assert vm._extra_hosts == extra_hosts
+
+    project.variables = None
+
 def test_create_start_cmd(loop, project, manager):
 
     response = {

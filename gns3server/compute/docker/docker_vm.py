@@ -325,6 +325,10 @@ class DockerVM(BaseNode):
         # Give the information to the container the list of volume path mounted
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
+        if self.project.variables:
+            for var in self.project.variables:
+                params["Env"].append("{}={}".format(var["name"], var.get('value', '')))
+
         if self._environment:
             for e in self._environment.strip().split("\n"):
                 e = e.strip()

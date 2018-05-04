@@ -67,6 +67,31 @@ def test_create_project_with_uuid(http_controller):
     assert response.json["name"] == "test"
 
 
+def test_create_project_with_variables(http_controller):
+    variables = [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f", "variables": variables}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    assert response.json["variables"] ==  [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+
+
+def test_create_project_with_supplier(http_controller):
+    supplier = {
+        'logo': 'logo.png',
+        'url': 'http://example.com'
+    }
+    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f", "supplier": supplier}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    assert response.json["supplier"] == supplier
+
+
 def test_update_project(http_controller):
     query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_controller.post("/projects", query)
