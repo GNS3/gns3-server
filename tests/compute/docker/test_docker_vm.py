@@ -251,7 +251,7 @@ def test_create_with_empty_extra_hosts(loop, project, manager):
             assert len([ e for e in called_kwargs["data"]["Env"] if "GNS3_EXTRA_HOSTS" in e]) == 0
 
 
-def test_create_with_project_variables(loop, project_with_variables, manager):
+def test_create_with_project_variables(loop, project, manager):
     response = {
         "Id": "e90e34656806",
         "Warnings": []
@@ -269,9 +269,8 @@ def test_create_with_project_variables(loop, project_with_variables, manager):
             called_kwargs = mock.call_args[1]
             assert "VAR1=" in called_kwargs["data"]["Env"]
             assert "VAR2=VAL1" in called_kwargs["data"]["Env"]
-        assert vm._extra_hosts == extra_hosts
-
     project.variables = None
+
 
 def test_create_start_cmd(loop, project, manager):
 
