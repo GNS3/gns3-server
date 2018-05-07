@@ -21,9 +21,6 @@ This test suite check /project endpoint
 
 import uuid
 import os
-import asyncio
-import aiohttp
-import zipfile
 
 from unittest.mock import patch
 from tests.utils import asyncio_patch
@@ -60,9 +57,10 @@ def test_show_project(http_compute):
     response = http_compute.post("/projects", query)
     assert response.status == 201
     response = http_compute.get("/projects/40010203-0405-0607-0809-0a0b0c0d0e02", example=True)
-    assert len(response.json.keys()) == 2
+    assert len(response.json.keys()) == 3
     assert response.json["project_id"] == "40010203-0405-0607-0809-0a0b0c0d0e02"
     assert response.json["name"] == "test"
+    assert response.json["variables"] is None
 
 
 def test_show_project_invalid_uuid(http_compute):

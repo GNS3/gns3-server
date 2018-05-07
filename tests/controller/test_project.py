@@ -78,7 +78,7 @@ def test_json(tmpdir):
         "snap_to_grid": False,
         "grid_size": 0,
         "supplier": None,
-        "variables": []
+        "variables": None
     }
 
 
