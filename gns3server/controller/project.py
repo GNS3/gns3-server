@@ -725,6 +725,15 @@ class Project:
                 except KeyError:
                     pass
 
+            # don't remove supplier's logo
+            if self.supplier:
+                try:
+                    logo = self.supplier['logo']
+                    pictures.remove(logo)
+                except KeyError:
+                    pass
+
+
             for pict in pictures:
                 os.remove(os.path.join(self.pictures_directory, pict))
         except OSError as e:
