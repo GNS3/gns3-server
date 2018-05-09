@@ -259,7 +259,8 @@ def test_create_with_project_variables(loop, project, manager):
 
     project.variables = [
         {"name": "VAR1"},
-        {"name": "VAR2", "value": "VAL1"}
+        {"name": "VAR2", "value": "VAL1"},
+        {"name": "VAR3", "value": "2x${VAR2}"}
     ]
 
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
@@ -269,6 +270,7 @@ def test_create_with_project_variables(loop, project, manager):
             called_kwargs = mock.call_args[1]
             assert "VAR1=" in called_kwargs["data"]["Env"]
             assert "VAR2=VAL1" in called_kwargs["data"]["Env"]
+            assert "VAR3=2xVAL1" in called_kwargs["data"]["Env"]
     project.variables = None
 
 

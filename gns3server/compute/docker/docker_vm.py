@@ -325,15 +325,20 @@ class DockerVM(BaseNode):
         # Give the information to the container the list of volume path mounted
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
-        if self.project.variables:
-            for var in self.project.variables:
-                params["Env"].append("{}={}".format(var["name"], var.get('value', '')))
+        variables = self.project.variables
+        if not variables:
+            variables = []
+
+        for var in variables:
+            formatted = self._format_env(variables, var.get('value', ''))
+            params["Env"].append("{}={}".format(var["name"], formatted))
 
         if self._environment:
             for e in self._environment.strip().split("\n"):
                 e = e.strip()
                 if not e.startswith("GNS3_"):
-                    params["Env"].append(e)
+                    formatted = self._format_env(variables, e)
+                    params["Env"].append(formatted)
 
         if self._console_type == "vnc":
             yield from self._start_vnc()
@@ -351,6 +356,11 @@ class DockerVM(BaseNode):
         log.info("Docker container '{name}' [{id}] created".format(
             name=self._name, id=self._id))
         return True
+
+    def _format_env(self, variables, env):
+        for variable in variables:
+            env = env.replace('${' + variable["name"] + '}', variable.get("value", ""))
+        return env
 
     def _format_extra_hosts(self, extra_hosts):
         lines = [h.strip() for h in self._extra_hosts.split("\n") if h.strip() != ""]
