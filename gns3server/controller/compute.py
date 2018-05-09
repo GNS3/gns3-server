@@ -464,8 +464,6 @@ class Compute:
                 self._cpu_usage_percent = event["cpu_usage_percent"]
                 self._memory_usage_percent = event["memory_usage_percent"]
                 self._controller.notification.emit("compute.updated", self.__json__())
-            elif action == 'project.updated':
-                print(event)
             else:
                 yield from self._controller.notification.dispatch(action, event, compute_id=self.id)
         if self._ws:
