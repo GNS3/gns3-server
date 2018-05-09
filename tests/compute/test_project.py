@@ -205,3 +205,10 @@ def test_emit(async_run):
         (action, event, context) = async_run(queue.get(0.5))
         assert action == "test"
         assert context["project_id"] == project.id
+
+
+def test_update_project(loop):
+    variables = [{"name": "TEST", "value": "VAL"}]
+    project = Project(project_id=str(uuid.uuid4()))
+    loop.run_until_complete(asyncio.async(project.update(variables=variables)))
+    assert project.variables == variables

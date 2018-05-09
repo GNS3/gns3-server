@@ -85,11 +85,25 @@ def test_json(tmpdir):
 def test_update(controller, async_run):
     project = Project(controller=controller, name="Hello")
     controller._notification = MagicMock()
-
     assert project.name == "Hello"
     async_run(project.update(name="World"))
     assert project.name == "World"
     controller.notification.emit.assert_any_call("project.updated", project.__json__())
+
+
+def test_update_on_compute(controller, async_run):
+    variables = [{"name": "TEST", "value": "VAL1"}]
+    compute = MagicMock()
+    compute.id = "local"
+    project = Project(controller=controller, name="Test")
+    project._project_created_on_compute = [compute]
+    controller._notification = MagicMock()
+
+    async_run(project.update(variables=variables))
+
+    compute.put.assert_any_call('/projects/{}'.format(project.id), {
+        "variables": variables
+    })
 
 
 def test_path(tmpdir):
@@ -150,7 +164,8 @@ def test_add_node_local(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "path": project._path
+        "path": project._path,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -178,7 +193,8 @@ def test_add_node_non_local(async_run, controller):
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
-        "project_id": project._id
+        "project_id": project._id,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -218,7 +234,8 @@ def test_add_node_from_appliance(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "path": project._path
+        "path": project._path,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,

@@ -25,12 +25,12 @@ import zipfile
 import json
 
 from uuid import UUID, uuid4
+
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -296,6 +296,17 @@ class Project:
         if node in self._nodes:
             yield from node.delete()
             self._nodes.remove(node)
+
+    @asyncio.coroutine
+    def update(self, variables=None, **kwargs):
+        original_variables = self.variables
+        self.variables = variables
+
+        # we need to update docker nodes when variables changes
+        if original_variables != variables:
+            for node in self.nodes:
+                if hasattr(node, 'update'):
+                    yield from node.update()
 
     @asyncio.coroutine
     def close(self):

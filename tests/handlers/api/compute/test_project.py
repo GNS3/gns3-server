@@ -91,6 +91,23 @@ def test_delete_project(http_compute, project):
         assert mock.called
 
 
+def test_update_project(http_compute):
+    query = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = http_compute.post("/projects", query)
+    assert response.status == 201
+
+    query = {
+        "variables": [{"name": "TEST1", "value": "VAL1"}]
+    }
+    response = http_compute.put(
+        "/projects/{project_id}".format(project_id="51010203-0405-0607-0809-0a0b0c0d0e0f"),
+        query,
+        example=True
+    )
+    assert response.status == 200
+    assert response.json["variables"] == [{"name": "TEST1", "value": "VAL1"}]
+
+
 def test_delete_project_invalid_uuid(http_compute):
     response = http_compute.delete("/projects/{project_id}".format(project_id=uuid.uuid4()))
     assert response.status == 404

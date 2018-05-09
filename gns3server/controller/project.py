@@ -136,6 +136,15 @@ class Project:
             self.controller.notification.emit("project.updated", self.__json__())
             self.dump()
 
+            # update on computes
+            for compute in list(self._project_created_on_compute):
+                yield from compute.put(
+                    "/projects/{}".format(self._id), {
+                        "variables": self.variables
+                    }
+                )
+
+
     def reset(self):
         """
         Called when open/close a project. Cleanup internal stuff
@@ -493,12 +502,14 @@ class Project:
                 yield from compute.post("/projects", data={
                     "name": self._name,
                     "project_id": self._id,
-                    "path": self._path
+                    "path": self._path,
+                    "variables": self._variables
                 })
             else:
                 yield from compute.post("/projects", data={
                     "name": self._name,
                     "project_id": self._id,
+                    "variables": self._variables
                 })
 
             self._project_created_on_compute.add(compute)

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
+import asyncio
 import psutil
 import platform
 from .project import Project
@@ -95,16 +96,16 @@ class ProjectManager:
             log.warning(message)
             project.emit("log.warning", {"message": message})
 
-    def create_project(self, name=None, project_id=None, path=None):
+    def create_project(self, name=None, project_id=None, path=None, variables=None):
         """
         Create a project and keep a references to it in project manager.
 
         See documentation of Project for arguments
         """
-
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
-        project = Project(name=name, project_id=project_id, path=path)
+        project = Project(name=name, project_id=project_id,
+                          path=path, variables=variables)
         self._check_available_disk_space(project)
         self._projects[project.id] = project
         return project

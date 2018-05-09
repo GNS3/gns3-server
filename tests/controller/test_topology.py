@@ -53,6 +53,8 @@ def test_project_to_topology_empty(tmpdir):
             "drawings": []
         },
         "type": "topology",
+        "supplier": None,
+        "variables": None,
         "version": __version__
     }
 
