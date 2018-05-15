@@ -460,7 +460,6 @@ class Compute:
             msg = json.loads(response.data)
             action = msg.pop("action")
             event = msg.pop("event")
-
             if action == "ping":
                 self._cpu_usage_percent = event["cpu_usage_percent"]
                 self._memory_usage_percent = event["memory_usage_percent"]

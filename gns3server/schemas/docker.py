@@ -87,6 +87,11 @@ DOCKER_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 0,
         },
+        "extra_hosts": {
+            "description": "Docker extra hosts (added to /etc/hosts)",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
         "container_id": {
             "description": "Docker container ID Read only",
             "type": "string",
@@ -181,6 +186,11 @@ DOCKER_OBJECT_SCHEMA = {
         },
         "environment": {
             "description": "Docker environment",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
+        "extra_hosts": {
+            "description": "Docker extra hosts (added to /etc/hosts)",
             "type": ["string", "null"],
             "minLength": 0,
         },

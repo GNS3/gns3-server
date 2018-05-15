@@ -69,7 +69,7 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
                  scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
-                 grid_size=0, show_interface_labels=False):
+                 grid_size=0, show_interface_labels=False, variables=None, supplier=None):
 
         self._controller = controller
         assert name is not None
@@ -86,6 +86,9 @@ class Project:
         self._show_grid = show_grid
         self._grid_size = grid_size
         self._show_interface_labels = show_interface_labels
+        self._variables = variables
+        self._supplier = supplier
+
         self._loading = False
 
         # Disallow overwrite of existing project
@@ -133,6 +136,15 @@ class Project:
         if old_json != self.__json__():
             self.controller.notification.emit("project.updated", self.__json__())
             self.dump()
+
+            # update on computes
+            for compute in list(self._project_created_on_compute):
+                yield from compute.put(
+                    "/projects/{}".format(self._id), {
+                        "variables": self.variables
+                    }
+                )
+
 
     def reset(self):
         """
@@ -266,6 +278,36 @@ class Project:
         Setter for show interface labels
         """
         self._show_interface_labels = show_interface_labels
+
+    @property
+    def variables(self):
+        """
+        Variables applied to the project
+        :return: list
+        """
+        return self._variables
+
+    @variables.setter
+    def variables(self, variables):
+        """
+        Setter for variables applied to the project
+        """
+        self._variables = variables
+
+    @property
+    def supplier(self):
+        """
+        Supplier of the project
+        :return: dict
+        """
+        return self._supplier
+
+    @supplier.setter
+    def supplier(self, supplier):
+        """
+        Setter for supplier of the project
+        """
+        self._supplier = supplier
 
     @property
     def auto_start(self):
@@ -461,12 +503,14 @@ class Project:
                 yield from compute.post("/projects", data={
                     "name": self._name,
                     "project_id": self._id,
-                    "path": self._path
+                    "path": self._path,
+                    "variables": self._variables
                 })
             else:
                 yield from compute.post("/projects", data={
                     "name": self._name,
                     "project_id": self._id,
+                    "variables": self._variables
                 })
 
             self._project_created_on_compute.add(compute)
@@ -675,6 +719,15 @@ class Project:
                     pictures.remove(drawing.ressource_filename)
                 except KeyError:
                     pass
+
+            # don't remove supplier's logo
+            if self.supplier:
+                try:
+                    logo = self.supplier['logo']
+                    pictures.remove(logo)
+                except KeyError:
+                    pass
+
 
             for pict in pictures:
                 os.remove(os.path.join(self.pictures_directory, pict))
@@ -1004,7 +1057,9 @@ class Project:
             "snap_to_grid": self._snap_to_grid,
             "show_grid": self._show_grid,
             "grid_size": self._grid_size,
-            "show_interface_labels": self._show_interface_labels
+            "show_interface_labels": self._show_interface_labels,
+            "supplier": self._supplier,
+            "variables": self._variables
         }
 
     def __repr__(self):

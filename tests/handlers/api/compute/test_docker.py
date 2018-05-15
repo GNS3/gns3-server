@@ -32,7 +32,7 @@ pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supp
 @pytest.fixture
 def base_params():
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet", "console_resolution": "1280x1024"}
+    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet", "console_resolution": "1280x1024", "extra_hosts": "test:127.0.0.1"}
 
 
 @pytest.yield_fixture(autouse=True)
@@ -69,7 +69,7 @@ def test_docker_create(http_compute, project, base_params):
     assert response.json["adapters"] == 2
     assert response.json["environment"] == "YES=1\nNO=0"
     assert response.json["console_resolution"] == "1280x1024"
-
+    assert response.json["extra_hosts"] == "test:127.0.0.1"
 
 def test_docker_start(http_compute, vm):
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.start", return_value=True) as mock:
@@ -150,7 +150,8 @@ def test_docker_update(http_compute, vm, tmpdir, free_console_port):
         response = http_compute.put("/projects/{project_id}/docker/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
                                                                                                                                                  "console": free_console_port,
                                                                                                                                                  "start_command": "yes",
-                                                                                                                                                 "environment": "GNS3=1\nGNS4=0"},
+                                                                                                                                                 "environment": "GNS3=1\nGNS4=0",
+                                                                                                                                                 "extra_hosts": "test:127.0.0.1"},
                                     example=True)
     assert mock.called
     assert response.status == 200
@@ -158,6 +159,7 @@ def test_docker_update(http_compute, vm, tmpdir, free_console_port):
     assert response.json["console"] == free_console_port
     assert response.json["start_command"] == "yes"
     assert response.json["environment"] == "GNS3=1\nGNS4=0"
+    assert response.json["extra_hosts"] == "test:127.0.0.1"
 
 
 def test_docker_start_capture(http_compute, vm, tmpdir, project):

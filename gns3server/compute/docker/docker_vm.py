@@ -61,11 +61,12 @@ class DockerVM(BaseNode):
     :param console_resolution: Resolution of the VNC display
     :param console_http_port: Port to redirect HTTP queries
     :param console_http_path: Url part with the path of the web interface
+    :param extra_hosts: Hosts which will be written into /etc/hosts into docker conainer
     """
 
     def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
-                 console_http_port=80, console_http_path="/"):
+                 console_http_port=80, console_http_path="/", extra_hosts=None):
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
@@ -84,6 +85,8 @@ class DockerVM(BaseNode):
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
         self._console_websocket = None
+        self._extra_hosts = extra_hosts
+
         self._volumes = []
         # Keep a list of created bridge
         self._bridges = set()
@@ -114,7 +117,8 @@ class DockerVM(BaseNode):
             "start_command": self.start_command,
             "status": self.status,
             "environment": self.environment,
-            "node_directory": self.working_path
+            "node_directory": self.working_path,
+            "extra_hosts": self.extra_hosts
         }
 
     def _get_free_display_port(self):
@@ -177,6 +181,14 @@ class DockerVM(BaseNode):
     @environment.setter
     def environment(self, command):
         self._environment = command
+
+    @property
+    def extra_hosts(self):
+        return self._extra_hosts
+
+    @extra_hosts.setter
+    def extra_hosts(self, extra_hosts):
+        self._extra_hosts = extra_hosts
 
     @asyncio.coroutine
     def _get_container_state(self):
@@ -288,7 +300,7 @@ class DockerVM(BaseNode):
             "HostConfig": {
                 "CapAdd": ["ALL"],
                 "Privileged": True,
-                "Binds": self._mount_binds(image_infos)
+                "Binds": self._mount_binds(image_infos),
             },
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
@@ -313,11 +325,20 @@ class DockerVM(BaseNode):
         # Give the information to the container the list of volume path mounted
         params["Env"].append("GNS3_VOLUMES={}".format(":".join(self._volumes)))
 
+        variables = self.project.variables
+        if not variables:
+            variables = []
+
+        for var in variables:
+            formatted = self._format_env(variables, var.get('value', ''))
+            params["Env"].append("{}={}".format(var["name"], formatted))
+
         if self._environment:
             for e in self._environment.strip().split("\n"):
                 e = e.strip()
                 if not e.startswith("GNS3_"):
-                    params["Env"].append(e)
+                    formatted = self._format_env(variables, e)
+                    params["Env"].append(formatted)
 
         if self._console_type == "vnc":
             yield from self._start_vnc()
@@ -325,11 +346,35 @@ class DockerVM(BaseNode):
             params["Env"].append("DISPLAY=:{}".format(self._display))
             params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
 
+        if self._extra_hosts:
+            extra_hosts = self._format_extra_hosts(self._extra_hosts)
+            if extra_hosts:
+                params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
+
         result = yield from self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
         log.info("Docker container '{name}' [{id}] created".format(
             name=self._name, id=self._id))
         return True
+
+    def _format_env(self, variables, env):
+        for variable in variables:
+            env = env.replace('${' + variable["name"] + '}', variable.get("value", ""))
+        return env
+
+    def _format_extra_hosts(self, extra_hosts):
+        lines = [h.strip() for h in self._extra_hosts.split("\n") if h.strip() != ""]
+        hosts = []
+        try:
+            for host in lines:
+                hostname, ip = host.split(":")
+                hostname = hostname.strip()
+                ip = ip.strip()
+                if hostname and ip:
+                    hosts.append((hostname, ip))
+        except ValueError:
+            raise DockerError("Can't apply `ExtraHosts`, wrong format: {}".format(extra_hosts))
+        return "\n".join(["{}\t{}".format(h[1], h[0]) for h in hosts])
 
     @asyncio.coroutine
     def update(self):

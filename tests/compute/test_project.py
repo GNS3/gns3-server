@@ -92,9 +92,29 @@ def test_changing_path_not_allowed(tmpdir):
             p.path = str(tmpdir)
 
 
+def test_variables(tmpdir):
+    variables = [{"name": "VAR1", "value": "VAL1"}]
+    p = Project(project_id=str(uuid4()), variables=variables)
+    assert p.variables == variables
+
+
 def test_json(tmpdir):
     p = Project(project_id=str(uuid4()))
-    assert p.__json__() == {"name": p.name, "project_id": p.id}
+    assert p.__json__() == {
+        "name": p.name,
+        "project_id": p.id,
+        "variables": None
+    }
+
+
+def test_json_with_variables(tmpdir):
+    variables = [{"name": "VAR1", "value": "VAL1"}]
+    p = Project(project_id=str(uuid4()), variables=variables)
+    assert p.__json__() == {
+        "name": p.name,
+        "project_id": p.id,
+        "variables": variables
+    }
 
 
 def test_node_working_directory(tmpdir, node):
@@ -185,3 +205,10 @@ def test_emit(async_run):
         (action, event, context) = async_run(queue.get(0.5))
         assert action == "test"
         assert context["project_id"] == project.id
+
+
+def test_update_project(loop):
+    variables = [{"name": "TEST", "value": "VAL"}]
+    project = Project(project_id=str(uuid.uuid4()))
+    loop.run_until_complete(asyncio.async(project.update(variables=variables)))
+    assert project.variables == variables

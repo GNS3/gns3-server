@@ -77,17 +77,33 @@ def test_json(tmpdir):
         "show_layers": False,
         "snap_to_grid": False,
         "grid_size": 0,
+        "supplier": None,
+        "variables": None
     }
 
 
 def test_update(controller, async_run):
     project = Project(controller=controller, name="Hello")
     controller._notification = MagicMock()
-
     assert project.name == "Hello"
     async_run(project.update(name="World"))
     assert project.name == "World"
     controller.notification.emit.assert_any_call("project.updated", project.__json__())
+
+
+def test_update_on_compute(controller, async_run):
+    variables = [{"name": "TEST", "value": "VAL1"}]
+    compute = MagicMock()
+    compute.id = "local"
+    project = Project(controller=controller, name="Test")
+    project._project_created_on_compute = [compute]
+    controller._notification = MagicMock()
+
+    async_run(project.update(variables=variables))
+
+    compute.put.assert_any_call('/projects/{}'.format(project.id), {
+        "variables": variables
+    })
 
 
 def test_path(tmpdir):
@@ -148,7 +164,8 @@ def test_add_node_local(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "path": project._path
+        "path": project._path,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -176,7 +193,8 @@ def test_add_node_non_local(async_run, controller):
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
-        "project_id": project._id
+        "project_id": project._id,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -216,7 +234,8 @@ def test_add_node_from_appliance(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "path": project._path
+        "path": project._path,
+        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -393,6 +412,26 @@ def test_clean_pictures(async_run, project, controller):
     async_run(project.close())
     assert os.path.exists(os.path.join(project.pictures_directory, "test.png"))
     assert not os.path.exists(os.path.join(project.pictures_directory, "test2.png"))
+
+
+def test_clean_pictures_and_keep_supplier_logo(async_run, project, controller):
+    """
+    When a project is close old pictures should be removed
+    """
+    project.supplier = {
+        'logo': 'logo.png'
+    }
+
+    drawing = async_run(project.add_drawing())
+    drawing._svg = "test.png"
+    open(os.path.join(project.pictures_directory, "test.png"), "w+").close()
+    open(os.path.join(project.pictures_directory, "test2.png"), "w+").close()
+    open(os.path.join(project.pictures_directory, "logo.png"), "w+").close()
+
+    async_run(project.close())
+    assert os.path.exists(os.path.join(project.pictures_directory, "test.png"))
+    assert not os.path.exists(os.path.join(project.pictures_directory, "test2.png"))
+    assert os.path.exists(os.path.join(project.pictures_directory, "logo.png"))
 
 
 def test_delete(async_run, project, controller):

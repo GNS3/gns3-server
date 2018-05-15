@@ -73,10 +73,30 @@ class ProjectHandler:
         p = pm.create_project(
             name=request.json.get("name"),
             path=request.json.get("path"),
-            project_id=request.json.get("project_id")
+            project_id=request.json.get("project_id"),
+            variables=request.json.get("variables", None)
         )
         response.set_status(201)
         response.json(p)
+
+    @Route.put(
+        r"/projects/{project_id}",
+        description="Update the project on the server",
+        status_codes={
+            201: "Project updated",
+            403: "Forbidden to update a project"
+        },
+        output=PROJECT_OBJECT_SCHEMA,
+        input=PROJECT_UPDATE_SCHEMA)
+    def update_project(request, response):
+
+        pm = ProjectManager.instance()
+        project = pm.get_project(request.match_info["project_id"])
+        yield from project.update(
+            variables=request.json.get("variables", None)
+        )
+        response.set_status(200)
+        response.json(project)
 
     @Route.get(
         r"/projects/{project_id}",

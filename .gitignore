@@ -39,6 +39,7 @@ nosetests.xml
 .project
 .pydevproject
 .settings
+.vscode
 
 # Pycharm
 .idea
