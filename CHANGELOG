@@ -1,5 +1,21 @@
 # Change Log
 
+## 2.1.6 22/05/2018
+
+* Locks down async-timeout<3.0.0 for P3.4 support; Fixes: #1331
+* Create/update project on compute when variables changes
+* Support for nested global variables
+* Don't clean logo images when applied to the project
+* Support of supplier and variables in topology
+* Project global variables
+* Add command information when uBridge has an error. Ref #1289
+* Handle asyncio timeouts. Ref #1307.
+* Fix bug with export project. Ref #1187 #1307.
+* Offload slow file operations to threads for snapshots and project "save as". Ref #1187 #1307.
+*  support based on init.sh, Ref: #2482
+* Fix exception from send_signal() on Windows.
+* Add support of ExtraHosts for Docker, Ref. gns3-gui#2482
+
 ## 2.1.5 18/04/2018
 
 * Set the first byte to 0C when generating a random MAC address for a Qemu VM. Ref #1267.
