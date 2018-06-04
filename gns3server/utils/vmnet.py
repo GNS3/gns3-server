@@ -124,26 +124,36 @@ def find_vnetlib_registry(regkey):
 
 def find_vnetlib_on_windows():
 
-    vnetlib_path = shutil.which("vnetlib")
+    # look for vnetlib in PATH
+    vnetlib_path = shutil.which("vnetlib64")
+
     if vnetlib_path is None:
-        # look for vnetlib.exe in default VMware Workstation directory
+        vnetlib_path = shutil.which("vnetlib")
+
+    if vnetlib_path is None:
+        # look for vnetlib using the directory listed in the registry (for VMware Workstation)
+        vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
+
+    if vnetlib_path is None:
+        # look for vnetlib using the directory listed in the registry (for VMware Player)
+        vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
+
+    if vnetlib_path is None:
+        # look for vnetlib in default VMware Workstation directory
         vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib64.exe")
         if not os.path.exists(vnetlib_ws):
             vnetlib_ws = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware Workstation\vnetlib.exe")
         if os.path.exists(vnetlib_ws):
             vnetlib_path = vnetlib_ws
 
-        if vnetlib_path is None:
-            # look for vnetlib.exe using the directory listed in the registry
-            vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
-        if vnetlib_path is None:
-            # look for vnetlib.exe in default VMware VIX directory
+    if vnetlib_path is None:
+        # look for vnetlib in default VMware VIX directory
+        vnetlib_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vnetlib64.exe")
+        if not os.path.exists(vnetlib_vix):
             vnetlib_vix = os.path.expandvars(r"%PROGRAMFILES(X86)%\VMware\VMware VIX\vnetlib.exe")
-            if os.path.exists(vnetlib_vix):
-                vnetlib_path = vnetlib_vix
-            else:
-                # look for vnetlib.exe using the directory listed in the registry
-                vnetlib_path = find_vnetlib_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
+        if os.path.exists(vnetlib_vix):
+            vnetlib_path = vnetlib_vix
+
     return vnetlib_path
 
 
