@@ -85,6 +85,8 @@ def project_to_topology(project):
         "show_grid": project.show_grid,
         "grid_size": project.grid_size,
         "show_interface_labels": project.show_interface_labels,
+        "variables": project.variables,
+        "supplier": project.supplier,
         "topology": {
             "nodes": [],
             "links": [],

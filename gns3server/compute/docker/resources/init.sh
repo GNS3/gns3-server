@@ -60,6 +60,14 @@ ff02::1	ip6-allnodes
 ff02::2	ip6-allrouters
 __EOF__
 
+# imitate docker's `ExtraHosts` behaviour
+sed -i '/GNS3_EXTRA_HOSTS_START/,/GNS3_EXTRA_HOSTS_END/d' /etc/hosts
+[ -n "$GNS3_EXTRA_HOSTS" ] && cat >> /etc/hosts << __EOF__
+# GNS3_EXTRA_HOSTS_START
+$GNS3_EXTRA_HOSTS
+# GNS3_EXTRA_HOSTS_END
+__EOF__
+
 # configure loopback interface
 ip link set dev lo up
 
