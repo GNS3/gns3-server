@@ -156,7 +156,7 @@ def md5sum(path):
 
     try:
         with open(path + '.md5sum') as f:
-            md5 = f.read()
+            md5 = f.read().strip()
             if len(md5) == 32:
                 return md5
     # Unicode error is when user rename an image to .md5sum ....
