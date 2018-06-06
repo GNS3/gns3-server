@@ -321,7 +321,7 @@ class Node:
         self._links.remove(link)
 
     @property
-    def link(self):
+    def links(self):
         return self._links
 
     @asyncio.coroutine
