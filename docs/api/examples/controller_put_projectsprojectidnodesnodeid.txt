@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/758ba972-b86f-4fe1-8ee4-55a47010ccd6/nodes/fc936387-be57-4907-b240-bc2806f28a30' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/f71e5c25-d021-45fe-bc7b-85fa1705cc20/nodes/f3578817-f20c-4bd8-9b1e-b23af18ab7b7' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/758ba972-b86f-4fe1-8ee4-55a47010ccd6/nodes/fc936387-be57-4907-b240-bc2806f28a30 HTTP/1.1
+PUT /v2/projects/f71e5c25-d021-45fe-bc7b-85fa1705cc20/nodes/f3578817-f20c-4bd8-9b1e-b23af18ab7b7 HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -15,15 +15,15 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 1080
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:37 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:56 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/projects/{project_id}/nodes/{node_id}
 
 {
     "command_line": null,
     "compute_id": "example.com",
     "console": 2048,
-    "console_host": "<MagicMock name='mock.console_host' id='5864971904'>",
+    "console_host": "<MagicMock name='mock.console_host' id='5889075856'>",
     "console_type": null,
     "first_port_name": null,
     "height": 59,
@@ -36,7 +36,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "fc936387-be57-4907-b240-bc2806f28a30",
+    "node_id": "f3578817-f20c-4bd8-9b1e-b23af18ab7b7",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -52,7 +52,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
             "short_name": "e0"
         }
     ],
-    "project_id": "758ba972-b86f-4fe1-8ee4-55a47010ccd6",
+    "project_id": "f71e5c25-d021-45fe-bc7b-85fa1705cc20",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

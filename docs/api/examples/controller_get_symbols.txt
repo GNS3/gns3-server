@@ -6,10 +6,10 @@ GET /v2/symbols HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 5174
+Content-Length: 5292
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:40 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:14:22 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/symbols
 
 [
@@ -187,6 +187,11 @@ X-Route: /v2/symbols
         "builtin": true,
         "filename": "sip_server.svg",
         "symbol_id": ":/symbols/sip_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "traceng.svg",
+        "symbol_id": ":/symbols/traceng.svg"
     },
     {
         "builtin": true,

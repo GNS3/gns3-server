@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/9af8deca-3a3c-4a62-871e-1f03ce648219'
+
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/9af8deca-3a3c-4a62-871e-1f03ce648219 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Thu, 07 Jun 2018 08:13:28 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
+X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}
+

@@ -8,10 +8,10 @@ PUT /v2/projects/10010203-0405-0607-0809-0a0b0c0d0e0f HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 510
+Content-Length: 706
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:38 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:57 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/projects/{project_id}
 
 {
@@ -19,8 +19,9 @@ X-Route: /v2/projects/{project_id}
     "auto_open": false,
     "auto_start": false,
     "filename": "test.gns3",
+    "grid_size": 0,
     "name": "test2",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp3n7ijfjb/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp3hcl29s3/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
     "scene_height": 1000,
     "scene_width": 2000,
@@ -29,5 +30,15 @@ X-Route: /v2/projects/{project_id}
     "show_layers": false,
     "snap_to_grid": false,
     "status": "opened",
+    "supplier": null,
+    "variables": [
+        {
+            "name": "TEST1"
+        },
+        {
+            "name": "TEST2",
+            "value": "value1"
+        }
+    ],
     "zoom": 100
 }

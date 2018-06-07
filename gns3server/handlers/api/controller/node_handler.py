@@ -308,6 +308,28 @@ class NodeHandler:
         response.set_status(204)
 
     @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}/links",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            200: "Links returned",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Return all the links connected to this node")
+    def links(request, response):
+
+        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        links = []
+        for link in node.links:
+            links.append(link.__json__())
+        response.json(links)
+        response.set_status(200)
+
+    @Route.get(
         r"/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc",
         parameters={
             "project_id": "Project UUID",

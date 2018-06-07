@@ -1,15 +1,15 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/870c464a-d236-4a5e-8a1d-87893c493f4c'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b766dfcb-041e-48a5-a06e-612c4628a95f'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/870c464a-d236-4a5e-8a1d-87893c493f4c HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b766dfcb-041e-48a5-a06e-612c4628a95f HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1584
+Content-Length: 2926
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:42 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:14 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
@@ -48,11 +48,71 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
             "name": "p2p0",
             "special": true,
             "type": "ethernet"
+        },
+        {
+            "name": "vmnet1",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet10",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet11",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet12",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet13",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet14",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet15",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet16",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet17",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet18",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet19",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet8",
+            "special": true,
+            "type": "ethernet"
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/builtin/870c464a-d236-4a5e-8a1d-87893c493f4c",
-    "node_id": "870c464a-d236-4a5e-8a1d-87893c493f4c",
+    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/builtin/b766dfcb-041e-48a5-a06e-612c4628a95f",
+    "node_id": "b766dfcb-041e-48a5-a06e-612c4628a95f",
     "ports_mapping": [
         {
             "interface": "en0",

@@ -90,9 +90,9 @@ class ProjectManager:
             return
         # send a warning if used disk space is >= 90%
         if used_disk_space >= 90:
-            message = 'Only {}% or less of disk space detected in "{}" on "{}"'.format(used_disk_space,
-                                                                                       project.path,
-                                                                                       platform.node())
+            message = 'Only {:.2f}% or less of free disk space detected in "{}" on "{}"'.format(100 - used_disk_space,
+                                                                                                project.path,
+                                                                                                platform.node())
             log.warning(message)
             project.emit("log.warning", {"message": message})
 

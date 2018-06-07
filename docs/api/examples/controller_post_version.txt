@@ -1,8 +1,8 @@
-curl -i -X POST 'http://localhost:3080/v2/version' -d '{"version": "2.1.2dev1"}'
+curl -i -X POST 'http://localhost:3080/v2/version' -d '{"version": "2.1.7dev1"}'
 
 POST /v2/version HTTP/1.1
 {
-    "version": "2.1.2dev1"
+    "version": "2.1.7dev1"
 }
 
 
@@ -10,10 +10,10 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 30
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:41 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:14:22 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/version
 
 {
-    "version": "2.1.2dev1"
+    "version": "2.1.7dev1"
 }
