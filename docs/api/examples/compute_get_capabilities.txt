@@ -6,10 +6,10 @@ GET /v2/compute/capabilities HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 347
+Content-Length: 366
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:42 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:14 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/compute/capabilities
 
 {
@@ -25,9 +25,10 @@ X-Route: /v2/compute/capabilities
         "atm_switch",
         "qemu",
         "vmware",
+        "traceng",
         "docker",
         "iou"
     ],
     "platform": "linuxdebian",
-    "version": "2.1.2dev1"
+    "version": "2.1.7dev1"
 }

@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 428
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:11 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:42 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/compute/projects/{project_id}/vpcs/nodes
 
 {
@@ -19,8 +19,8 @@ X-Route: /v2/compute/projects/{project_id}/vpcs/nodes
     "console": 5004,
     "console_type": "telnet",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpk__by17a/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/de5b89af-2907-411f-bc88-d7aacc015763",
-    "node_id": "de5b89af-2907-411f-bc88-d7aacc015763",
+    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp_svt10ce/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/dd2fd65a-97d2-4e59-9627-b733fe88ee78",
+    "node_id": "dd2fd65a-97d2-4e59-9627-b733fe88ee78",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped"
 }

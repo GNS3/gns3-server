@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Mon, 08 Jan 2018 08:15:55 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:25 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/compute/projects/{project_id}/close
 

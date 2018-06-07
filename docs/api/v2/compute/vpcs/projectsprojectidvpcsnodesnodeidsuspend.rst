@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/vpcs/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend a VPCS instance (stop it)
+Suspend a VPCS instance (does nothing)
 
 Parameters
 **********
@@ -14,7 +14,7 @@ Parameters
 
 Response status codes
 **********************
-- **204**: Instance stopped
+- **204**: Instance suspended
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 

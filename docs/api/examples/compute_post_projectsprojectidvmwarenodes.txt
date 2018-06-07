@@ -12,8 +12,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 688
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:58 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:29 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes
 
 {
@@ -25,8 +25,8 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes
     "headless": false,
     "linked_clone": false,
     "name": "VM1",
-    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpk__by17a/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/363338c7-451e-4f3d-a74a-5d7400b2325b",
-    "node_id": "363338c7-451e-4f3d-a74a-5d7400b2325b",
+    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp_svt10ce/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/049de18e-e9b8-4b96-85b7-b81ef50ca43b",
+    "node_id": "049de18e-e9b8-4b96-85b7-b81ef50ca43b",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
     "use_any_adapter": false,

@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/ethernet_hub/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend an Ethernet hub
+Suspend an Ethernet hub (does nothing)
 
 Parameters
 **********

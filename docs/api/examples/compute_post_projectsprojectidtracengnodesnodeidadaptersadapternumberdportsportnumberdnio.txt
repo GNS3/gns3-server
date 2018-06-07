@@ -1,0 +1,25 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/45c99055-403f-4da2-a435-626c591d6185/adapters/0/ports/0/nio' -d '{"lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/45c99055-403f-4da2-a435-626c591d6185/adapters/0/ports/0/nio HTTP/1.1
+{
+    "lport": 4242,
+    "rhost": "127.0.0.1",
+    "rport": 4343,
+    "type": "nio_udp"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 89
+Content-Type: application/json
+Date: Thu, 07 Jun 2018 08:13:28 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
+X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
+
+{
+    "lport": 4242,
+    "rhost": "127.0.0.1",
+    "rport": 4343,
+    "type": "nio_udp"
+}
