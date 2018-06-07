@@ -527,8 +527,8 @@ class Compute:
                 headers=headers
             ))
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
-        except asyncio.TimeoutError as e:
-            raise ComputeError("Timeout error when connecting to {}".format(url))
+        except asyncio.TimeoutError:
+            raise ComputeError("Timeout error for {} call to {} after {}s".format(method, url, timeout))
         except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
             #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
@@ -641,7 +641,7 @@ class Compute:
         List files in the project on computes
         """
         path = "/projects/{}/files".format(project.id)
-        res = yield from self.http_query("GET", path, timeout=120)
+        res = yield from self.http_query("GET", path, timeout=None)
         return res.json
 
     @asyncio.coroutine
