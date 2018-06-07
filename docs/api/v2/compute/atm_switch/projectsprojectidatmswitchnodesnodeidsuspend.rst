@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/atm_switch/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend an ATM Relay switch
+Suspend an ATM Relay switch (does nothing)
 
 Parameters
 **********

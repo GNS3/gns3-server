@@ -64,9 +64,52 @@
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
+        },
+        "supplier": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "description": "Supplier of the project",
+            "properties": {
+                "logo": {
+                    "type": "string",
+                    "description": "Path to the project supplier logo"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL to the project supplier site"
+                }
+            }
+        },
+        "variables": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "description": "Variables required to run the project",
+            "items": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Variable name"
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "Variable value"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            }
         },
         "topology": {
             "description": "The topology content",
@@ -162,6 +205,7 @@
                                                 "docker",
                                                 "dynamips",
                                                 "vpcs",
+                                                "traceng",
                                                 "virtualbox",
                                                 "vmware",
                                                 "iou",
@@ -399,6 +443,7 @@
                                     "docker",
                                     "dynamips",
                                     "vpcs",
+                                    "traceng",
                                     "virtualbox",
                                     "vmware",
                                     "iou",
@@ -446,6 +491,7 @@
                                     "http",
                                     "https",
                                     "spice",
+                                    "none",
                                     null
                                 ]
                             },

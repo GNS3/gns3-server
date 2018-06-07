@@ -6,10 +6,10 @@ GET /v2/appliances HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2694
+Content-Length: 2690
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:12 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:43 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/appliances
 
 [
@@ -40,7 +40,7 @@ X-Route: /v2/appliances
         "builtin": true,
         "category": "guest",
         "compute_id": null,
-        "default_name_format": "{name}-{0}",
+        "default_name_format": "PC-{0}",
         "name": "VPCS",
         "node_type": "vpcs",
         "platform": null,
@@ -91,7 +91,7 @@ X-Route: /v2/appliances
         "symbol": ":/symbols/atm_switch.svg"
     },
     {
-        "appliance_id": "dd7ae518-30e9-48fd-b6de-bc9a69720c00",
+        "appliance_id": "04d7a206-b723-4cca-aa22-88a56b3a789e",
         "builtin": false,
         "category": "router",
         "compute_id": "local",

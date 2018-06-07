@@ -3,9 +3,10 @@
     "auto_open": false,
     "auto_start": false,
     "filename": "test.gns3",
+    "grid_size": 0,
     "name": "test",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpsh708y29/projects/2f24e0e9-9f39-41d3-a413-e7c14c5db6f7",
-    "project_id": "2f24e0e9-9f39-41d3-a413-e7c14c5db6f7",
+    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpt3_89lcp/projects/fb65405c-5698-4712-8a79-68c79991e05c",
+    "project_id": "fb65405c-5698-4712-8a79-68c79991e05c",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,
@@ -13,5 +14,7 @@
     "show_layers": false,
     "snap_to_grid": false,
     "status": "closed",
+    "supplier": null,
+    "variables": null,
     "zoom": 100
 }
