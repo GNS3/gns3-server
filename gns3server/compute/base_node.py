@@ -442,7 +442,7 @@ class BaseNode:
             return
 
         if self._console_type == "vnc" and console is not None and console < 5900:
-            raise NodeError("VNC console require a port superior or equal to 5900 currently it's {}".format(console))
+            raise NodeError("VNC console require a port superior or equal to 5900, current port is {}".format(console))
 
         if self._console:
             self._manager.port_manager.release_tcp_port(self._console, self._project)

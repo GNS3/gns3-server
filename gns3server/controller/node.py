@@ -387,7 +387,7 @@ class Node:
                 if prop not in self.CONTROLLER_ONLY_PROPERTIES:
                     update_compute = True
 
-                # We update properties on the compute and wait for the anwser from the compute node
+                # We update properties on the compute and wait for the answer from the compute node
                 if prop == "properties":
                     compute_properties = kwargs[prop]
                 else:

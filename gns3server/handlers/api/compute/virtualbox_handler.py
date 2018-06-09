@@ -138,6 +138,9 @@ class VirtualBoxHandler:
             if ram != vm.ram:
                 yield from vm.set_ram(ram)
 
+        # update the console first to avoid issue if updating console type
+        vm.console = request.json.pop("console", vm.console)
+
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)

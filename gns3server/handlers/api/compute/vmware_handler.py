@@ -106,7 +106,8 @@ class VMwareHandler:
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
+        # update the console first to avoid issue if updating console type
+        vm.console = request.json.pop("console", vm.console)
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
