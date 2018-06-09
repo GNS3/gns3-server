@@ -1850,7 +1850,7 @@ class QemuVM(BaseNode):
                     disk = disk_image
                 if not os.path.exists(disk):
                     continue
-                command = [qemu_img_path, "snapshot", "-c", snapshot_name, disk]
+                command = [qemu_img_path, "snapshot", "-d", snapshot_name, disk]
                 retcode = yield from self._qemu_img_exec(command)
                 if retcode:
                     stdout = self.read_qemu_img_stdout()
