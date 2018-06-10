@@ -46,6 +46,10 @@ class Cloud(BaseNode):
 
         super().__init__(name, node_id, project, manager)
         self._nios = {}
+        self._remote_console_host = ""
+        self._remote_console_port = 23
+        self._remote_console_type = "none"
+        self._remote_console_http_path = "/"
 
         # Populate the cloud with host interfaces if it is not configured
         if not ports or len(ports) == 0:
@@ -84,11 +88,95 @@ class Cloud(BaseNode):
         return {"name": self.name,
                 "node_id": self.id,
                 "project_id": self.project.id,
+                "remote_console_host": self.remote_console_host,
+                "remote_console_port": self.remote_console_port,
+                "remote_console_type": self.remote_console_type,
+                "remote_console_http_path": self.remote_console_http_path,
                 "ports_mapping": self._ports_mapping,
                 "interfaces": host_interfaces,
                 "status": self.status,
                 "node_directory": self.working_path
                 }
+
+    @property
+    def remote_console_host(self):
+        """
+        Returns the remote console host for this cloud.
+
+        :returns: remote console host
+        """
+
+        return self._remote_console_host
+
+    @remote_console_host.setter
+    def remote_console_host(self, remote_console_host):
+        """
+        Sets the remote console host for this cloud.
+
+        :param remote_console_host: remote console host
+        """
+
+        self._remote_console_host = remote_console_host
+
+    @property
+    def remote_console_port(self):
+        """
+        Returns the remote console port for this cloud.
+
+        :returns: remote console port
+        """
+
+        return self._remote_console_port
+
+    @remote_console_port.setter
+    def remote_console_port(self, remote_console_port):
+        """
+        Sets the remote console port for this cloud.
+
+        :param remote_console_port: remote console port
+        """
+
+        self._remote_console_port = remote_console_port
+
+    @property
+    def remote_console_type(self):
+        """
+        Returns the remote console type for this cloud.
+
+        :returns: remote console host
+        """
+
+        return self._remote_console_type
+
+    @remote_console_type.setter
+    def remote_console_type(self, remote_console_type):
+        """
+        Sets the remote console type for this cloud.
+
+        :param remote_console_type: remote console type
+        """
+
+        self._remote_console_type = remote_console_type
+
+    @property
+    def remote_console_http_path(self):
+        """
+        Returns the remote console HTTP path for this cloud.
+
+        :returns: remote console HTTP path
+        """
+
+        return self._remote_console_http_path
+
+    @remote_console_http_path.setter
+    def remote_console_http_path(self, remote_console_http_path):
+        """
+        Sets the remote console HTTP path for this cloud.
+
+        :param remote_console_http_path: remote console HTTP path
+        """
+
+        self._remote_console_http_path = remote_console_http_path
 
     @property
     def ports_mapping(self):

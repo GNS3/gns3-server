@@ -62,6 +62,24 @@ CLOUD_CREATE_SCHEMA = {
                  "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"}
             ]
         },
+        "remote_console_host": {
+            "description": "Remote console host or IP",
+            "type": ["string"]
+        },
+        "remote_console_port": {
+            "description": "Console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "remote_console_type": {
+            "description": "Console type",
+            "enum": ["telnet", "vnc", "spice", "http", "https", "none"]
+        },
+        "remote_console_http_path": {
+            "description": "Path of the remote web interface",
+            "type": "string",
+        },
         "ports_mapping": {
             "type": "array",
             "items": [
@@ -108,6 +126,24 @@ CLOUD_OBJECT_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "remote_console_host": {
+            "description": "Remote console host or IP",
+            "type": ["string"]
+        },
+        "remote_console_port": {
+            "description": "Console TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "remote_console_type": {
+            "description": "Console type",
+            "enum": ["telnet", "vnc", "spice", "http", "https", "none"]
+        },
+        "remote_console_http_path": {
+            "description": "Path of the remote web interface",
+            "type": "string",
         },
         "ports_mapping": {
             "type": "array",
