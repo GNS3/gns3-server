@@ -50,6 +50,10 @@ def test_json_with_ports(on_gns3vm, project, manager):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
+        "remote_console_host": "",
+        "remote_console_http_path": "/",
+        "remote_console_port": 23,
+        "remote_console_type": "none",
         "status": "stopped",
         "node_directory": cloud.working_dir,
         "ports_mapping": [
@@ -77,6 +81,10 @@ def test_json_without_ports(on_gns3vm, project, manager):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
+        "remote_console_host": "",
+        "remote_console_http_path": "/",
+        "remote_console_port": 23,
+        "remote_console_type": "none",
         "status": "stopped",
         "node_directory": cloud.working_dir,
         "ports_mapping": [
