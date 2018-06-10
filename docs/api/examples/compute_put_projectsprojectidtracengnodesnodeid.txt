@@ -1,0 +1,29 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/865521e4-1ebf-4c23-bedf-01263f49e78d' -d '{"ip_address": "192.168.1.1", "name": "test"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/865521e4-1ebf-4c23-bedf-01263f49e78d HTTP/1.1
+{
+    "ip_address": "192.168.1.1",
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 488
+Content-Type: application/json
+Date: Thu, 07 Jun 2018 08:13:28 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
+X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}
+
+{
+    "command_line": "",
+    "console": 5004,
+    "console_type": "none",
+    "default_destination": "",
+    "ip_address": "192.168.1.1",
+    "name": "test",
+    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp_svt10ce/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/traceng/865521e4-1ebf-4c23-bedf-01263f49e78d",
+    "node_id": "865521e4-1ebf-4c23-bedf-01263f49e78d",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped"
+}

@@ -248,6 +248,7 @@ class Node:
 
     @symbol.setter
     def symbol(self, val):
+
         if val is None:
             val = ":/symbols/computer.svg"
 
@@ -261,8 +262,9 @@ class Node:
         self._symbol = val
         try:
             self._width, self._height, filetype = self._project.controller.symbols.get_size(val)
-        # If symbol is invalid we replace it by default
-        except (ValueError, OSError):
+        except (ValueError, OSError) as e:
+            log.error("Could not write symbol: {}".format(e))
+            # If symbol is invalid we replace it by the default
             self.symbol = ":/symbols/computer.svg"
         if self._label is None:
             # Apply to label user style or default
@@ -336,7 +338,7 @@ class Node:
         self._links.remove(link)
 
     @property
-    def link(self):
+    def links(self):
         return self._links
 
     @asyncio.coroutine

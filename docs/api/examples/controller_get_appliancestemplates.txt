@@ -6,10 +6,10 @@ GET /v2/appliances/templates HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 470863
+Content-Length: 507853
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:12 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Thu, 07 Jun 2018 08:13:43 GMT
+Server: Python/3.6 GNS3/2.1.7dev1
 X-Route: /v2/appliances/templates
 
 [
@@ -696,6 +696,13 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001",
+                "filename": "VirtualTrafficManager-174.qcow2",
+                "filesize": 2036465664,
+                "md5sum": "3c44f385e5faf310ca8e3d46bf4e0564",
+                "version": "17.4"
+            },
+            {
+                "download_url": "http://www1.brocade.com/forms/jsp/steelapp-traffic-manager-developer/index.jsp?src=WS&lsd=BRCD&lst=English&cn=PA-GDG-16Q1-EVAL-TrafficManagerDeveloper&intcmp=lp_en_vTMdeveloper_eval_bn_00001",
                 "filename": "VirtualTrafficManager-173.qcow2",
                 "filesize": 2022178816,
                 "md5sum": "c3425d8ec3f8c7789c0a88b8ed6bdf3b",
@@ -767,6 +774,12 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Brocade",
         "vendor_url": "http://www.brocade.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "VirtualTrafficManager-174.qcow2"
+                },
+                "name": "17.4"
+            },
             {
                 "images": {
                     "hda_disk_image": "VirtualTrafficManager-173.qcow2"
@@ -868,6 +881,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "free",
         "builtin": true,
         "category": "guest",
         "description": "The CentOS Linux distribution is a stable, predictable, manageable and reproducible platform derived from the sources of Red Hat Enterprise Linux (RHEL). We are now looking to expand on that by creating the resources needed by other communities to come together and be able to build on the CentOS Linux platform. And today we start the process by delivering a clear governance model, increased transparency and access. In the coming weeks we aim to publish our own roadmap that includes variants of the core CentOS Linux.",
@@ -940,11 +954,11 @@ X-Route: /v2/appliances/templates
                 "version": "77.20"
             },
             {
-                "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download",
+                "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download",
                 "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-                "filename": "empty8G.qcow2",
+                "filename": "empty100G.qcow2",
                 "filesize": 197120,
-                "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+                "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
                 "version": "1.0"
             }
         ],
@@ -958,11 +972,12 @@ X-Route: /v2/appliances/templates
             "arch": "x86_64",
             "boot_priority": "dc",
             "console_type": "telnet",
+            "cpus": 2,
             "kvm": "require",
             "process_priority": "normal",
-            "ram": 2048
+            "ram": 4096
         },
-        "registry_version": 3,
+        "registry_version": 4,
         "status": "experimental",
         "usage": "At boot choose the install on disk options. You need to open quickly the terminal after launching the appliance if you want to see the menu. You need a web browser in order to finalize the installation. You can use the firefox appliance for this.",
         "vendor_name": "Checkpoint",
@@ -971,21 +986,21 @@ X-Route: /v2/appliances/templates
             {
                 "images": {
                     "cdrom_image": "Check_Point_R80.10_T421_Gaia.iso",
-                    "hda_disk_image": "empty8G.qcow2"
+                    "hda_disk_image": "empty100G.qcow2"
                 },
                 "name": "80.10"
             },
             {
                 "images": {
                     "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso",
-                    "hda_disk_image": "empty8G.qcow2"
+                    "hda_disk_image": "empty100G.qcow2"
                 },
                 "name": "77.30"
             },
             {
                 "images": {
                     "cdrom_image": "Check_Point_R77.20_T124_Install.Gaia.iso",
-                    "hda_disk_image": "empty8G.qcow2"
+                    "hda_disk_image": "empty100G.qcow2"
                 },
                 "name": "77.20"
             }
@@ -1341,7 +1356,7 @@ X-Route: /v2/appliances/templates
                 "filename": "c7200-adventerprisek9-mz.124-24.T5.image",
                 "filesize": 102345240,
                 "md5sum": "6b89d0d804e1f2bb5b8bda66b5692047",
-                "version": "124-25.T5"
+                "version": "124-24.T5"
             }
         ],
         "maintainer": "GNS3 Team",
@@ -1358,7 +1373,7 @@ X-Route: /v2/appliances/templates
                 "images": {
                     "image": "c7200-adventerprisek9-mz.124-24.T5.image"
                 },
-                "name": "124-25.T5"
+                "name": "124-24.T5"
             }
         ]
     },
@@ -1531,21 +1546,28 @@ X-Route: /v2/appliances/templates
         "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
         "images": [
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1",
                 "filename": "csr1000v-universalk9.16.07.01-serial.qcow2",
-                "filesize": 882769920,
-                "md5sum": "13adbfc2586d06c9802b9805168c0c44",
+                "filesize": 884539392,
+                "md5sum": "bad9000d4ae8317bbc99a34a8cdd2eb4",
                 "version": "16.7.1"
             },
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.2",
+                "filename": "csr1000v-universalk9.16.06.02-serial.qcow2",
+                "filesize": 1570242560,
+                "md5sum": "11e393b31ab9d1ace8e5f7551c491ba2",
+                "version": "16.6.2"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.1",
                 "filename": "csr1000v-universalk9.16.06.01-serial.qcow2",
                 "filesize": 1566179328,
                 "md5sum": "909e74446d3ff0b82c14327c0058fdc2",
                 "version": "16.6.1"
             },
             {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Denali-16.3.5&relind=AVAILABLE&rellifecycle=ED&reltype=latest",
+                "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.5.2",
                 "filename": "csr1000v-universalk9.16.05.02-serial.qcow2",
                 "filesize": 1322385408,
                 "md5sum": "59a84da28d59ee75176aa05ecde7f72a",
@@ -1619,6 +1641,12 @@ X-Route: /v2/appliances/templates
                     "hda_disk_image": "csr1000v-universalk9.16.07.01-serial.qcow2"
                 },
                 "name": "16.7.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "csr1000v-universalk9.16.06.02-serial.qcow2"
+                },
+                "name": "16.6.2"
             },
             {
                 "images": {
@@ -1725,6 +1753,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "service-contract",
         "builtin": true,
         "category": "firewall",
         "description": "This is your administrative nerve center for managing critical Cisco network security solutions. It provides complete and unified management over firewalls, application control, intrusion prevention, URL filtering, and advanced malware protection. Easily go from managing a firewall to controlling applications to investigating and remediating malware outbreaks.",
@@ -1850,6 +1879,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "service-contract",
         "builtin": true,
         "category": "firewall",
         "description": "Cisco Firepower Threat Defense Virtual NGFW appliances combine Cisco's proven network firewall with the industry\u2019s most effective next-gen IPS and advanced malware protection. All so you can get more visibility, be more flexible, save more, and protect better.",
@@ -2401,6 +2431,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "service-contract",
         "builtin": true,
         "category": "firewall",
         "description": "Cisco Firepower Next-Generation IPS (NGIPS) threat appliances combine superior visibility, embedded security intelligence, automated analysis, and industry-leading threat effectiveness.",
@@ -2537,6 +2568,20 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://software.cisco.com/download/",
+                "filename": "nxosv-final.7.0.3.I7.3.qcow2",
+                "filesize": 983629824,
+                "md5sum": "9d7a20367bf681a239f14097bbce470a",
+                "version": "7.0.3.I7.3"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
+                "filename": "nxosv-final.7.0.3.I7.2.qcow2",
+                "filesize": 906231808,
+                "md5sum": "17295efb13e83b24a439148449bfd5ab",
+                "version": "7.0.3.I7.2"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/",
                 "filename": "nxosv-final.7.0.3.I7.1.qcow2",
                 "filesize": 903151616,
                 "md5sum": "3c122f27d0c3684c63657207eadf4d06",
@@ -2594,6 +2639,20 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
         "versions": [
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.7.0.3.I7.3.qcow2"
+                },
+                "name": "7.0.3.I7.3"
+            },
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.7.0.3.I7.2.qcow2"
+                },
+                "name": "7.0.3.I7.2"
+            },
             {
                 "images": {
                     "bios_image": "OVMF-20160813.fd",
@@ -2773,6 +2832,13 @@ X-Route: /v2/appliances/templates
         "documentation_url": "https://www.citrix.com/products/netscaler-adc/support.html",
         "images": [
             {
+                "download_url": "https://www.citrix.com/lp/try/netscaler-vpx-express.html",
+                "filename": "NSVPX-KVM-12.0-56.20_nc_32.qcow2",
+                "filesize": 739704832,
+                "md5sum": "0ea1c23e3b8eb8451037d46ee472cfa6",
+                "version": "12.0-56.20"
+            },
+            {
                 "download_url": "https://www.citrix.com/downloads/netscaler-adc/virtual-appliances/netscaler-vpx-express.html",
                 "filename": "NSVPX-KVM-11.1-47.14_nc.raw",
                 "filesize": 21474836480,
@@ -2813,6 +2879,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "NSVPX-KVM-12.0-56.20_nc_32.qcow2"
+                },
+                "name": "12.0-56.20"
+            },
+            {
+                "images": {
                     "hda_disk_image": "NSVPX-KVM-11.1-47.14_nc.raw"
                 },
                 "name": "11.1-47.14 F"
@@ -2831,6 +2903,13 @@ X-Route: /v2/appliances/templates
         "description": "ClearOS is an operating system for your Server, Network, and Gateway systems. It is designed for homes, small to medium businesses, and distributed environments. ClearOS is commonly known as the Next Generation Small Business Server, while including indispensable Gateway and Networking functionality. It delivers a powerful IT solution with an elegant user interface that is completely web-based. Simply put.. ClearOS is the new way of delivering IT.",
         "documentation_url": "https://www.clearos.com/resources/documentation/clearos-7-documentation-overview",
         "images": [
+            {
+                "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads",
+                "filename": "ClearOS-7.4-DVD-x86_64.iso",
+                "filesize": 1029701632,
+                "md5sum": "826da592f9cd4b59f5fc996ff2d569f1",
+                "version": "7.4"
+            },
             {
                 "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads",
                 "filename": "ClearOS-7.3-DVD-x86_64.iso",
@@ -2874,6 +2953,13 @@ X-Route: /v2/appliances/templates
         "vendor_name": "ClearCenter, Corp.",
         "vendor_url": "https://www.clearos.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "ClearOS-7.4-DVD-x86_64.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "7.4"
+            },
             {
                 "images": {
                     "cdrom_image": "ClearOS-7.3-DVD-x86_64.iso",
@@ -2967,6 +3053,24 @@ X-Route: /v2/appliances/templates
         "description": "CoreOS is designed for security, consistency, and reliability. Instead of installing packages via yum or apt, CoreOS uses Linux containers to manage your services at a higher level of abstraction. A single service's code and all dependencies are packaged within a container that can be run on one or many CoreOS machines.",
         "documentation_url": "https://coreos.com/docs/",
         "images": [
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1632.2.1/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1632.2.1/",
+                "filename": "coreos_production_qemu_image.1632.2.1.img",
+                "filesize": 885719040,
+                "md5sum": "facd05ca85eb87e2dc6aefd6779f6806",
+                "version": "1632.2.1"
+            },
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1576.4.0/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1576.4.0/",
+                "filename": "coreos_production_qemu_image.1576.4.0.img",
+                "filesize": 849739776,
+                "md5sum": "7d3c647807afe1f18fd0c76730e612b4",
+                "version": "1576.4.0"
+            },
             {
                 "compression": "bzip2",
                 "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1520.8.0/coreos_production_qemu_image.img.bz2",
@@ -3106,6 +3210,18 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1576.4.0.img"
+                },
+                "name": "1632.2.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1576.4.0.img"
+                },
+                "name": "1576.4.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "coreos_production_qemu_image.1520.8.0.img"
                 },
                 "name": "1520.8.0"
@@ -3191,6 +3307,22 @@ X-Route: /v2/appliances/templates
         "documentation_url": "http://docs.cumulusnetworks.com/",
         "first_port_name": "eth0",
         "images": [
+            {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.0-vx-amd64.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.5.2-vx-amd64.qcow2",
+                "filesize": 996605952,
+                "md5sum": "87d1d8b297e5ebd77924669dfb7e4c9f",
+                "version": "3.5.2"
+            },
+            {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.0-vx-amd64.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.5.0-vx-amd64.qcow2",
+                "filesize": 1044250624,
+                "md5sum": "9ad1f352d0603becf4bcc749b77c99dd",
+                "version": "3.5.0"
+            },
             {
                 "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.4.3-vx-amd64.qcow2",
                 "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
@@ -3312,6 +3444,18 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Cumulus Network",
         "vendor_url": "https://www.cumulusnetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.5.2-vx-amd64.qcow2"
+                },
+                "name": "3.5.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.5.0-vx-amd64.qcow2"
+                },
+                "name": "3.5.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "cumulus-linux-3.4.3-vx-amd64.qcow2"
@@ -3556,6 +3700,14 @@ X-Route: /v2/appliances/templates
         "first_port_name": "Management",
         "images": [
             {
+                "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.4.1.4.iso",
+                "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
+                "filename": "exosvm-22.4.1.4.iso",
+                "filesize": 49993728,
+                "md5sum": "2134a511084519a5f8ad00a6f7cd71a9",
+                "version": "22.4.1.4"
+            },
+            {
                 "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.2.1.5.iso",
                 "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
                 "filename": "exosvm-22.2.1.5.iso",
@@ -3645,6 +3797,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "exosvm-22.4.1.4.iso",
+                    "hda_disk_image": "empty8G.qcow2"
+                },
+                "name": "22.4.1.4"
+            },
+            {
+                "images": {
                     "cdrom_image": "exosvm-22.2.1.5.iso",
                     "hda_disk_image": "empty8G.qcow2"
                 },
@@ -3700,6 +3859,20 @@ X-Route: /v2/appliances/templates
         "description": "The BIG-IP family of products offers the application intelligence that network managers need to ensure applications are fast, secure, and available. All BIG-IP products share a common underlying architecture, F5's Traffic Management Operating System (TMOS), which provides unified intelligence, flexibility, and programmability. Together, BIG-IP's powerful platforms, advanced modules, and centralized management system make up the most comprehensive set of application delivery tools in the industry. BIG-IP Virtual Edition (VE) is a version of the BIG-IP system that runs as a virtual machine in specifically-supported hypervisors. BIG-IP VE emulates a hardware-based BIG-IP system running a VE-compatible version of BIG-IP software.",
         "documentation_url": "https://support.f5.com/kb/en-us/products/big-ip_ltm/manuals/product/bigip-ve-kvm-setup-11-3-0.html",
         "images": [
+            {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.1.0/english/13.1.0.2_virtual-edition/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.1.0&container=13.1.0.2_Virtual-Edition&file=BIGIP-13.1.0.2.0.0.6.ALL.qcow2.zip",
+                "filename": "BIGIP-13.1.0.2.0.0.6.qcow2",
+                "filesize": 4363649024,
+                "md5sum": "d29eb861d8906fc36f88d9861a0055f4",
+                "version": "13.1.0 HF2"
+            },
+            {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.1.0/english/13.1.0.1_virtual-edition/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.1.0&container=13.1.0.1_Virtual-Edition&file=BIGIP-13.1.0.1.0.0.8.ALL.qcow2.zip",
+                "filename": "BIGIP-13.1.0.1.0.0.8.qcow2",
+                "filesize": 4352966656,
+                "md5sum": "70f92192e66a82cb8f47bdae0cb267d8",
+                "version": "13.1.0 HF1"
+            },
             {
                 "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.0.0/english/virtual-edition_base-plus-hf2/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.0.0&container=Virtual-Edition_Base-Plus-HF2&file=BIGIP-13.0.0.2.0.1671.LTM.qcow2.zip",
                 "filename": "BIGIP-13.0.0.2.0.1671.qcow2",
@@ -3806,6 +3979,20 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "BIGIP-13.1.0.2.0.0.6.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "13.1.0 HF2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "BIGIP-13.1.0.1.0.0.8.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "13.1.0 HF1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "BIGIP-13.0.0.2.0.1671.qcow2",
                     "hdb_disk_image": "empty100G.qcow2"
                 },
@@ -3884,6 +4071,13 @@ X-Route: /v2/appliances/templates
         "first_port_name": "mgmt",
         "images": [
             {
+                "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.4.0/english/v5.4.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.4.0&container=v5.4.0&file=BIG-IQ-5.4.0.0.0.7437.qcow2.zip",
+                "filename": "BIG-IQ-5.4.0.0.0.7437.qcow2",
+                "filesize": 3300917248,
+                "md5sum": "068b1f4d21048b9b2a082c0c27ef4d53",
+                "version": "5.4.0"
+            },
+            {
                 "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.3.0/english/v5.3.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.3.0&container=v5.3.0&file=BIG-IQ-5.3.0.0.0.1119.qcow2.zip",
                 "filename": "BIG-IQ-5.3.0.0.0.1119.qcow2",
                 "filesize": 3269263360,
@@ -3953,6 +4147,13 @@ X-Route: /v2/appliances/templates
         "vendor_name": "F5",
         "vendor_url": "http://www.f5.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "BIG-IQ-5.4.0.0.0.7437.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "5.4.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "BIG-IQ-5.3.0.0.0.1119.qcow2",
@@ -4054,6 +4255,20 @@ X-Route: /v2/appliances/templates
                 "filesize": 30998528,
                 "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
                 "version": "4.x.x"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 72810496,
+                "md5sum": "c1926d5979ef24d9d14d3394c0bb832b",
+                "version": "4.8.4"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V400-build0983-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 72876032,
+                "md5sum": "d4cfc3b215780b2fb4c9d8f55208e8be",
+                "version": "4.8.3"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -4187,6 +4402,20 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.8.4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V400-build0983-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "4.8.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAD_KVM-V400-build0977-FORTINET.out.kvm-boot.qcow2",
                     "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
                 },
@@ -4300,6 +4529,13 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v5-build1619-FORTINET.out.kvm.qcow2",
+                "filesize": 105705472,
+                "md5sum": "1bd94c920f8747de671832ef92e8dfbc",
+                "version": "5.6.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAZ_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
                 "filesize": 106905600,
                 "md5sum": "6aa0a185723efcab464aa298b364d12b",
@@ -4403,6 +4639,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v5-build1619-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAZ_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -4481,6 +4724,13 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v5-build0155-FORTINET.out.kvm.qcow2",
+                "filesize": 71782400,
+                "md5sum": "69b55ce7c8094ccd736bbfe8a3262b31",
+                "version": "5.2.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAC_VM_KVM-v500-build0091-FORTINET.out.kvm.qcow2",
                 "filesize": 71135232,
                 "md5sum": "7bdafd32db552954c4c7fe60296fc600",
@@ -4541,6 +4791,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v5-build0155-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.2.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAC_VM_KVM-v500-build0091-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
                 },
@@ -4575,6 +4832,13 @@ X-Route: /v2/appliances/templates
         "description": "FortiCache VM high performance Web Caching virtual appliances address bandwidth saturation, high latency, and poor performance caused by caching popular internet content locally for carriers, service providers, enterprises and educational networks. FortiCache VM appliances reduce the cost and impact of cached content on the network, while increasing performance and end- user satisfaction by improving the speed of delivery of popular repeated content.",
         "documentation_url": "http://docs.fortinet.com/forticache/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FCHKVM-v400-build0216-FORTINET.out.kvm.qcow2",
+                "filesize": 27553792,
+                "md5sum": "867e0569b8466db744547422a1d6f17a",
+                "version": "4.2.6"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
@@ -4666,6 +4930,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FCHKVM-v400-build0216-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty100G.qcow2"
+                },
+                "name": "4.2.6"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FCHKVM-v400-build0213-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty100G.qcow2"
                 },
@@ -4730,6 +5001,13 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
+                "filesize": 40939520,
+                "md5sum": "a908f8620e8bbccce8794733f3637e13",
+                "version": "5.6.3"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
                 "filesize": 39231488,
                 "md5sum": "afb9f237de2545db8663f4a2c5805355",
@@ -4748,6 +5026,20 @@ X-Route: /v2/appliances/templates
                 "filesize": 38760448,
                 "md5sum": "17ee2cc8c76c4928a68a2d016aa83ace",
                 "version": "5.6.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1183-FORTINET.out.kvm.qcow2",
+                "filesize": 38608896,
+                "md5sum": "c1eb02996a0919c934785d5f48df9507",
+                "version": "5.4.8"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build6446-FORTINET.out.kvm.qcow2",
+                "filesize": 38715392,
+                "md5sum": "17d3dfebd4b222569cf10cfab83e0e56",
+                "version": "5.4.7"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -4797,6 +5089,20 @@ X-Route: /v2/appliances/templates
                 "filesize": 35373056,
                 "md5sum": "22fc2bdca456dfe3027ad48dff370352",
                 "version": "5.4.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build0762-FORTINET.out.kvm.qcow2",
+                "filesize": 38776832,
+                "md5sum": "78df232e516a863f233de88ffba5bc4b",
+                "version": "5.2.13"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build0760-FORTINET.out.kvm.qcow2",
+                "filesize": 38363136,
+                "md5sum": "2efa0c110abed83b71927145d1e87805",
+                "version": "5.2.12"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -4875,6 +5181,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -4893,6 +5206,20 @@ X-Route: /v2/appliances/templates
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "5.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1183-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.8"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build6446-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.7"
             },
             {
                 "images": {
@@ -4945,6 +5272,20 @@ X-Route: /v2/appliances/templates
             },
             {
                 "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build0762-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.2.13"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build0760-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.2.12"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FGT_VM64_KVM-v5-build0754-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -4993,6 +5334,13 @@ X-Route: /v2/appliances/templates
         "description": "FortiMail is a complete Secure Email Gateway offering suitable for any size organization. It provides a single solution to protect against inbound attacks - including advanced malware -, as well as outbound threats and data loss with a wide range of top-rated security capabilities.",
         "documentation_url": "http://docs.fortinet.com/fortimail/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v54-build0712-FORTINET.out.kvm.qcow2",
+                "filesize": 93454336,
+                "md5sum": "977effe7b885ca5cedec7740a2a637aa",
+                "version": "5.4.3"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
@@ -5119,6 +5467,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FML_VMKV-64-v54-build0712-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FML_VMKV-64-v54-build0707-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -5216,6 +5571,13 @@ X-Route: /v2/appliances/templates
         "description": "FortiManager Security Management appliances allow you to centrally manage any number of Fortinet Network Security devices, from several to thousands, including FortiGate, FortiWiFi, and FortiCarrier.",
         "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v5-build1619-FORTINET.out.kvm.qcow2",
+                "filesize": 106831872,
+                "md5sum": "8cc553842564d232af295d6a0c784c1f",
+                "version": "5.6.1"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FMG_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
@@ -5321,6 +5683,13 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v5-build1619-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FMG_VM64_KVM-v5-build1557-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -5399,6 +5768,13 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FSA_KVM-v200-build0329-FORTINET.out.kvm.qcow2",
+                "filesize": 114491904,
+                "md5sum": "782ba56a644d78da59b89f4ac91bd319",
+                "version": "2.5.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FSA_KVM-v200-build0261-FORTINET.out.kvm.qcow2",
                 "filesize": 98763264,
                 "md5sum": "6551ccca8ffe6333742dad54770a01cd",
@@ -5465,6 +5841,13 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FSA_KVM-v200-build0329-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FSA_v200-datadrive.qcow2"
+                },
+                "name": "2.5.1"
+            },
             {
                 "images": {
                     "hda_disk_image": "FSA_KVM-v200-build0261-FORTINET.out.kvm.qcow2",
@@ -5780,12 +6163,28 @@ X-Route: /v2/appliances/templates
         "documentation_url": "https://doc.freenas.org/9.10/freenas.html",
         "images": [
             {
+                "direct_download_url": "http://download.freenas.org/11/11.1-RELEASE/x64/FreeNAS-11.1-RELEASE.iso",
+                "download_url": "http://www.freenas.org/download/",
+                "filename": "FreeNAS-11.1-U1.iso",
+                "filesize": 626601984,
+                "md5sum": "ccbd9990a5878d35c6bc0cc6eea34b16",
+                "version": "11.1 U1"
+            },
+            {
+                "direct_download_url": "http://download.freenas.org/11/11.1-RELEASE/x64/FreeNAS-11.1-RELEASE.iso",
+                "download_url": "http://www.freenas.org/download/",
+                "filename": "FreeNAS-11.1-RELEASE.iso",
+                "filesize": 626761728,
+                "md5sum": "67bea5816bc889169e5e3054362b2053",
+                "version": "11.1"
+            },
+            {
                 "direct_download_url": "http://download.freenas.org/11/11.0-U4/x64/FreeNAS-11.0-U4.iso",
                 "download_url": "http://www.freenas.org/download/",
                 "filename": "FreeNAS-11.0-U4.iso",
                 "filesize": 567312384,
                 "md5sum": "4c210f1a6510d1fa95257d81ef569ff8",
-                "version": "11.0-U4"
+                "version": "11.0 U4"
             },
             {
                 "direct_download_url": "https://download.freenas.org/9.10/STABLE/latest/x64/FreeNAS-9.10.1-U4.iso",
@@ -5793,7 +6192,7 @@ X-Route: /v2/appliances/templates
                 "filename": "FreeNAS-9.10.1-U4.iso",
                 "filesize": 533098496,
                 "md5sum": "b4fb14513dcbb4eb4c5596c5911ca9cc",
-                "version": "9.10"
+                "version": "9.10 U4"
             },
             {
                 "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download",
@@ -5819,7 +6218,7 @@ X-Route: /v2/appliances/templates
             "hda_disk_interface": "ide",
             "hdb_disk_interface": "ide",
             "kvm": "require",
-            "ram": 8096
+            "ram": 8192
         },
         "registry_version": 3,
         "status": "stable",
@@ -5828,11 +6227,27 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "FreeNAS-11.1-U1.iso",
+                    "hda_disk_image": "empty30G.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "11.1 U1"
+            },
+            {
+                "images": {
+                    "cdrom_image": "FreeNAS-11.1-RELEASE.iso",
+                    "hda_disk_image": "empty30G.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "11.1"
+            },
+            {
+                "images": {
                     "cdrom_image": "FreeNAS-11.0-U4.iso",
                     "hda_disk_image": "empty30G.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
-                "name": "11.0"
+                "name": "11.0 U4"
             },
             {
                 "images": {
@@ -5840,7 +6255,7 @@ X-Route: /v2/appliances/templates
                     "hda_disk_image": "empty30G.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
-                "name": "9.10"
+                "name": "9.10 U4"
             }
         ]
     },
@@ -6029,6 +6444,15 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "compression": "gzip",
+                "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.19-core117/ipfire-2.19.1gb-ext4-scon.x86_64-full-core117.img.gz",
+                "download_url": "http://www.ipfire.org/download",
+                "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core117.img",
+                "filesize": 1063256064,
+                "md5sum": "657673d88b94ed7d22332aebe817bc86",
+                "version": "2.19.117"
+            },
+            {
+                "compression": "gzip",
                 "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.19-core116/ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img.gz",
                 "download_url": "http://www.ipfire.org/download",
                 "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img",
@@ -6079,6 +6503,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core117.img"
+                },
+                "name": "2.19.117"
+            },
+            {
+                "images": {
                     "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core116.img"
                 },
                 "name": "2.19.116"
@@ -6115,6 +6545,50 @@ X-Route: /v2/appliances/templates
         "usage": "The /root directory is persistent.",
         "vendor_name": "ipterm",
         "vendor_url": "https://www.debian.org"
+    },
+    {
+        "builtin": true,
+        "category": "guest",
+        "description": "Junos Space Network Management Platform works with Juniper's management applications to simplify and automate management of Juniper's switching, routing, and security devices. As part of a complete solution, the platform provides broad fault, configuration, accounting, performance, and security management (FCAPS) capability, same day support for new devices and Junos OS releases, a task-specific user interface, and northbound APIs for integration with existing network management systems (NMS) or operations/business support systems (OSS/BSS).\n\nThe platform helps network operators at enterprises and service providers scale operations, reduce complexity, and enable new applications and services to be brought to market quickly, through multilayered network abstractions, operator-centric automation schemes, and a simple point-and-click UI.",
+        "documentation_url": "http://www.juniper.net/techpubs/",
+        "images": [
+            {
+                "download_url": "https://www.juniper.net/support/downloads/?p=space#sw",
+                "filename": "space-17.2R1.4.qcow2",
+                "filesize": 5150474240,
+                "md5sum": "4124fa756c3a78be0619e876b8ee687e",
+                "version": "17.2R1.4"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Junos Space",
+        "port_name_format": "em{0}",
+        "product_name": "Junos Space",
+        "product_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 4,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "kvm": "require",
+            "options": "-smp 4 -nographic",
+            "ram": 16384
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "juniper-vqfx.svg",
+        "usage": "16 GB RAM is the bare minimum; you should use 32/64 GB in production deplyments.\nDefault credentials:\n- CLI: admin / abc123\n- WebUI: super / juniper123",
+        "vendor_name": "Juniper",
+        "vendor_url": "https://www.juniper.net/us/en/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "space-17.2R1.4.qcow2"
+                },
+                "name": "17.2R1.4"
+            }
+        ]
     },
     {
         "builtin": true,
@@ -6783,13 +7257,28 @@ X-Route: /v2/appliances/templates
         "category": "firewall",
         "description": "The vSRX delivers core firewall, networking, advanced security, and automated lifecycle management capabilities for enterprises and service providers. The industry\u2019s fastest virtual security platform, the vSRX offers firewall speeds up to 17 Gbps using only two virtual CPUs, providing scalable, secure protection across private, public, and hybrid clouds.\n\nJuniper version 12 can support only 1GB of ram.",
         "documentation_url": "http://www.juniper.net/techpubs/",
+        "first_port_name": "fxp0",
         "images": [
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-17.4R1.16.qcow2",
+                "filesize": 3965386752,
+                "md5sum": "616c4742b09652318c73a7cc598468e7",
+                "version": "17.4R1"
+            },
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
                 "filename": "media-vsrx-vmdisk-17.3R1.10.qcow2",
                 "filesize": 3782541312,
                 "md5sum": "49b276e9ccdd8588f9e2ff38cccc884a",
                 "version": "17.3R1"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "media-vsrx-vmdisk-15.1X49-D120.3.qcow2",
+                "filesize": 3280273408,
+                "md5sum": "02cf4df3dc988a407ccd5ddc30ee5385",
+                "version": "15.1X49-D120"
             },
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
@@ -6892,9 +7381,21 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-17.4R1.16.qcow2"
+                },
+                "name": "17.4R1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "media-vsrx-vmdisk-17.3R1.10.qcow2"
                 },
                 "name": "17.3R1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D120.3.qcow2"
+                },
+                "name": "15.1X49-D120"
             },
             {
                 "images": {
@@ -7029,6 +7530,14 @@ X-Route: /v2/appliances/templates
         "documentation_url": "https://www.kali.org/kali-linux-documentation/",
         "images": [
             {
+                "direct_download_url": "http://cdimage.kali.org/kali-2017.3/kali-linux-2017.3-amd64.iso",
+                "download_url": "http://cdimage.kali.org/kali-2017.3/",
+                "filename": "kali-linux-2017.3-amd64.iso",
+                "filesize": 2886402048,
+                "md5sum": "b465580c897e94675ac1daf031fa66b9",
+                "version": "2017.3"
+            },
+            {
                 "direct_download_url": "http://cdimage.kali.org/kali-2017.2/kali-linux-2017.2-amd64.iso",
                 "download_url": "http://cdimage.kali.org/kali-2017.2/",
                 "filename": "kali-linux-2017.2-amd64.iso",
@@ -7087,6 +7596,12 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Kali Linux",
         "vendor_url": "https://www.kali.org/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "kali-linux-2017.3-amd64.iso"
+                },
+                "name": "2017.3"
+            },
             {
                 "images": {
                     "cdrom_image": "kali-linux-2017.2-amd64.iso"
@@ -7527,6 +8042,22 @@ X-Route: /v2/appliances/templates
         "documentation_url": "http://wiki.openwrt.org/doc/",
         "images": [
             {
+                "direct_download_url": "https://downloads.lede-project.org/releases/17.01.4/targets/x86/generic/lede-17.01.4-x86-generic-combined-squashfs.img",
+                "download_url": "https://downloads.lede-project.org/releases/17.01.4/targets/x86/generic/",
+                "filename": "lede-17.01.4-x86-generic-combined-squashfs.img",
+                "filesize": 19779546,
+                "md5sum": "ae5d8d3fcab109565fe337d28e51c4b4",
+                "version": "17.01.4"
+            },
+            {
+                "direct_download_url": "https://downloads.lede-project.org/releases/17.01.3/targets/x86/generic/lede-17.01.3-x86-generic-combined-squashfs.img",
+                "download_url": "https://downloads.lede-project.org/releases/17.01.3/targets/x86/generic/",
+                "filename": "lede-17.01.3-x86-generic-combined-squashfs.img",
+                "filesize": 19775618,
+                "md5sum": "d315fc638160a9aec0966d58828bfccf",
+                "version": "17.01.3"
+            },
+            {
                 "direct_download_url": "https://downloads.lede-project.org/releases/17.01.2/targets/x86/generic/lede-17.01.2-x86-generic-combined-squashfs.img",
                 "download_url": "https://downloads.lede-project.org/releases/17.01.2/targets/x86/generic/",
                 "filename": "lede-17.01.2-x86-generic-combined-squashfs.img",
@@ -7570,6 +8101,18 @@ X-Route: /v2/appliances/templates
         "vendor_name": "LEDE Project",
         "vendor_url": "https://lede-project.org/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "lede-17.01.4-x86-generic-combined-squashfs.img"
+                },
+                "name": "lede 17.01.4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "lede-17.01.3-x86-generic-combined-squashfs.img"
+                },
+                "name": "lede 17.01.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "lede-17.01.2-x86-generic-combined-squashfs.img"
@@ -7723,6 +8266,33 @@ X-Route: /v2/appliances/templates
         "description": "Cloud Hosted Router (CHR) is a RouterOS version meant for running as a virtual machine. It supports x86 64-bit architecture and can be used on most of popular hypervisors such as VMWare, Hyper-V, VirtualBox, KVM and others. CHR has full RouterOS features enabled by default but has a different licensing model than other RouterOS versions.",
         "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
         "images": [
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.42/chr-6.42.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.42.img",
+                "filesize": 134217728,
+                "md5sum": "279bb518497b40f41c8585128916a2fb",
+                "version": "6.42"
+            },
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.41.4/chr-6.41.4.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.41.4.img",
+                "filesize": 134217728,
+                "md5sum": "63b555b2b7f0d78b79edb92f7e7d2ed7",
+                "version": "6.41.4"
+            },
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.40.7/chr-6.40.7.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.40.7.img",
+                "filesize": 134217728,
+                "md5sum": "424b897d631c4cac4324ca310e81b494",
+                "version": "6.40.7"
+            },
             {
                 "compression": "zip",
                 "direct_download_url": "https://download2.mikrotik.com/routeros/6.40.5/chr-6.40.5.img.zip",
@@ -7955,6 +8525,18 @@ X-Route: /v2/appliances/templates
         "vendor_name": "MikroTik",
         "vendor_url": "http://mikrotik.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "chr-6.41.4.img"
+                },
+                "name": "6.41.4"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "chr-6.40.7.img"
+                },
+                "name": "6.40.7"
+            },
             {
                 "images": {
                     "hda_disk_image": "chr-6.40.5.img"
@@ -8292,6 +8874,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "free",
         "builtin": true,
         "category": "guest",
         "description": "openSUSE is a free and Linux-based operating system for PC, Laptop or Server. The openSUSE project is a community program sponsored by Novell. It is a general purpose operating system built on top of the Linux kernel, developed by the community-supported openSUSE Project and sponsored by SUSE and a number of other companies.",
@@ -8527,12 +9110,12 @@ X-Route: /v2/appliances/templates
         "documentation_url": "http://ostinato.org/docs.html",
         "images": [
             {
-                "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-97c7d79.qcow2",
+                "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.9-1.qcow2",
                 "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
-                "filename": "ostinato-0.8-97c7d79.qcow2",
-                "filesize": 98631680,
-                "md5sum": "5aad15c1eb7baac588a4c8c3faafa380",
-                "version": "0.8-97c7d79"
+                "filename": "ostinato-0.9-1.qcow2",
+                "filesize": 101646336,
+                "md5sum": "00b4856ec9fffbcbcab7a8f757355d69",
+                "version": "0.9"
             },
             {
                 "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-1.qcow2",
@@ -8567,9 +9150,9 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "ostinato-0.8-97c7d79.qcow2"
+                    "hda_disk_image": "ostinato-0.9-1.qcow2"
                 },
-                "name": "0.8-97c7d79"
+                "name": "0.9"
             },
             {
                 "images": {
@@ -8585,6 +9168,15 @@ X-Route: /v2/appliances/templates
         "description": "PacketFence is a fully supported, trusted, Free and Open Source network access control (NAC) solution. Boasting an impressive feature set including a captive-portal for registration and remediation, centralized wired and wireless management, 802.1X support, layer-2 isolation of problematic devices, integration with the Snort IDS and the Nessus vulnerability scanner; PacketFence can be used to effectively secure networks - from small to very large heterogeneous networks.",
         "documentation_url": "https://packetfence.org/support/index.html#/documentation",
         "images": [
+            {
+                "compression": "bzip2",
+                "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.4.0/PacketFenceZEN_USB-7.4.0.tar.bz2/download",
+                "download_url": "https://packetfence.org/download.html#/zen",
+                "filename": "PacketFenceZEN_USB-7.4.0.img",
+                "filesize": 3221225472,
+                "md5sum": "83951211540f16dd5813c26955c52429",
+                "version": "7.4.0"
+            },
             {
                 "compression": "bzip2",
                 "direct_download_url": "http://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.3.0/PacketFenceZEN_USB-7.3.0.tar.bz2/download",
@@ -8680,6 +9272,12 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "PacketFenceZEN_USB-7.4.0.img"
+                },
+                "name": "7.4.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "PacketFenceZEN_USB-7.3.0.img"
                 },
                 "name": "7.3.0"
@@ -8737,17 +9335,31 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
-                "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
-                "filesize": 2959736832,
-                "md5sum": "64b1e81cd54008318235832ea6d71424",
-                "version": "6.1.0 (ESX)"
+                "filename": "PA-VM-ESX-8.1.0-disk1.vmdk",
+                "filesize": 2281454080,
+                "md5sum": "49af8e8225c2e90414bde0be15eaf421",
+                "version": "8.1.0"
             },
             {
                 "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
-                "filename": "PA-VM-KVM-7.1.0.qcow2",
-                "filesize": 1858797568,
-                "md5sum": "da300253709740068927408239c2e321",
-                "version": "7.1.0"
+                "filename": "PA-VM-KVM-8.1.0.qcow2",
+                "filesize": 2260467712,
+                "md5sum": "459558515b965b2e43fde2842abbae66",
+                "version": "8.1.0"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-ESX-8.0.0-disk1.vmdk",
+                "filesize": 2002713088,
+                "md5sum": "a505fb1dbcc855ecf98630fd5d329f9a",
+                "version": "8.0.0"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-KVM-8.0.0.qcow2",
+                "filesize": 1987444736,
+                "md5sum": "b6a1ddc8552aff87f05f9c0d4cb54dc3",
+                "version": "8.0.0"
             },
             {
                 "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
@@ -8758,10 +9370,17 @@ X-Route: /v2/appliances/templates
             },
             {
                 "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
-                "filename": "PA-VM-KVM-8.0.0.qcow2",
-                "filesize": 1987444736,
-                "md5sum": "b6a1ddc8552aff87f05f9c0d4cb54dc3",
-                "version": "8.0.0"
+                "filename": "PA-VM-KVM-7.1.0.qcow2",
+                "filesize": 1858797568,
+                "md5sum": "da300253709740068927408239c2e321",
+                "version": "7.1.0"
+            },
+            {
+                "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/",
+                "filename": "PA-VM-ESX-6.1.0-disk1.vmdk",
+                "filesize": 2959736832,
+                "md5sum": "64b1e81cd54008318235832ea6d71424",
+                "version": "6.1.0 (ESX)"
             }
         ],
         "maintainer": "Community",
@@ -8789,15 +9408,27 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+                    "hda_disk_image": "PA-VM-ESX-8.1.0-disk1.vmdk"
                 },
-                "name": "6.1.0 (ESX)"
+                "name": "8.1.0 (ESX)"
             },
             {
                 "images": {
-                    "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
+                    "hda_disk_image": "PA-VM-KVM-8.1.0.qcow2"
                 },
-                "name": "7.1.0"
+                "name": "8.1.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-ESX-8.0.0-disk1.vmdk2"
+                },
+                "name": "8.0.0 (ESX)"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-KVM-8.0.0.qcow2"
+                },
+                "name": "8.0.0"
             },
             {
                 "images": {
@@ -8807,9 +9438,15 @@ X-Route: /v2/appliances/templates
             },
             {
                 "images": {
-                    "hda_disk_image": "PA-VM-KVM-8.0.0.qcow2"
+                    "hda_disk_image": "PA-VM-KVM-7.1.0.qcow2"
                 },
-                "name": "8.0.0"
+                "name": "7.1.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "PA-VM-ESX-6.1.0-disk1.vmdk"
+                },
+                "name": "6.1.0 (ESX)"
             }
         ]
     },
@@ -9236,10 +9873,24 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://www.sophos.com/en-us/support/utm-downloads.aspx",
+                "filename": "asg-9.506-2.1.iso",
+                "filesize": 1006057472,
+                "md5sum": "6b4374f8c5ee66ccdf9683f7349f59cb",
+                "version": "9.506-2.1"
+            },
+            {
+                "download_url": "https://www.sophos.com/en-us/support/utm-downloads.aspx",
                 "filename": "asg-9.500-9.1.iso",
                 "filesize": 981612544,
                 "md5sum": "8531349cdb7f07c94596b19f8e08081a",
                 "version": "9.500-9.1"
+            },
+            {
+                "download_url": "https://www.sophos.com/en-us/support/utm-downloads.aspx",
+                "filename": "asg-9.415-1.1.iso",
+                "filesize": 961087488,
+                "md5sum": "505004bf5a5d5f2234b2056ec7b553d8",
+                "version": "9.415-1.1"
             },
             {
                 "download_url": "https://www.sophos.com/en-us/support/utm-downloads.aspx",
@@ -9358,10 +10009,24 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "asg-9.506-2.1.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "9.506-2.1"
+            },
+            {
+                "images": {
                     "cdrom_image": "asg-9.500-9.1.iso",
                     "hda_disk_image": "empty30G.qcow2"
                 },
                 "name": "9.500-9.1"
+            },
+            {
+                "images": {
+                    "cdrom_image": "asg-9.415-1.1.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "9.415-1.1"
             },
             {
                 "images": {
@@ -9457,6 +10122,20 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx",
+                "filename": "VI-SFOS_17.0.2_MR-2.KVM-116-PRIMARY.qcow2",
+                "filesize": 324599808,
+                "md5sum": "2555fa6dcdcecad02c9f02dcb1c0c5e5",
+                "version": "17.0.2 MR2"
+            },
+            {
+                "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx",
+                "filename": "VI-SFOS_17.0.2_MR-2.KVM-116-AUXILARY.qcow2",
+                "filesize": 59441152,
+                "md5sum": "c3ef795423dbfc01771348b0daa75125",
+                "version": "16.05.1 MR1"
+            },
+            {
+                "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx",
                 "filename": "VI-SFOS_16.05.4_MR-4.KVM-215-PRIMARY.qcow2",
                 "filesize": 287113216,
                 "md5sum": "20535c9e624f42e1977f1e407fbc565e",
@@ -9547,6 +10226,13 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Sophos",
         "vendor_url": "https://www.sophos.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "VI-SFOS_17.0.2_MR-2.KVM-116-PRIMARY.qcow2",
+                    "hdb_disk_image": "VI-SFOS_17.0.2_MR-2.KVM-116-AUXILARY.qcow2"
+                },
+                "name": "17.0.2 MR2"
+            },
             {
                 "images": {
                     "hda_disk_image": "VI-SFOS_16.05.4_MR-4.KVM-215-PRIMARY.qcow2",
@@ -9772,6 +10458,106 @@ X-Route: /v2/appliances/templates
     {
         "builtin": true,
         "category": "guest",
+        "description": "The term 'Ubuntu Cloud Guest' refers to the Official Ubuntu images that are available at http://cloud-images.ubuntu.com . These images are built by Canonical. They are then registered on EC2, and compressed tarfiles are made also available for download. For using those images on a public cloud such as Amazon EC2, you simply choose an image and launch it. To use those images on a private cloud, or to run the image on a local hypervisor (such as KVM) you would need to download those images and either publish them to your private cloud, or launch them directly on a hypervisor. The following sections explain in more details how to perform each of those actions",
+        "documentation_url": "https://help.ubuntu.com/community/UEC/Images",
+        "images": [
+            {
+                "download_url": "https://cloud-images.ubuntu.com/releases/17.10/release-20180404/ubuntu-17.10-server-cloudimg-amd64.img",
+                "filename": "ubuntu-17.10-server-cloudimg-amd64.img",
+                "filesize": 320405504,
+                "md5sum": "331b44f2b05858c251b3ea92c8b65152",
+                "version": "17.10"
+            },
+            {
+                "download_url": "https://cloud-images.ubuntu.com/releases/16.04/release-20180405/ubuntu-16.04-server-cloudimg-amd64-disk1.img",
+                "filename": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
+                "filesize": 290193408,
+                "md5sum": "22c124ba65ea096cdef8b0a197dd613a",
+                "version": "16.04"
+            },
+            {
+                "download_url": "https://cloud-images.ubuntu.com/releases/14.04/release-20180404/ubuntu-14.04-server-cloudimg-amd64-disk1.img",
+                "filename": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
+                "filesize": 262668800,
+                "md5sum": "d11b89321d41d0eeddcacf73bf0d2262",
+                "version": "14.04"
+            },
+            {
+                "download_url": "https://github.com/asenci/gns3-ubuntu-cloud-init-data/raw/master/ubuntu-cloud-init-data.iso",
+                "filename": "ubuntu-cloud-init-data.iso",
+                "filesize": 131072,
+                "md5sum": "328469100156ae8dbf262daa319c27ff",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Ubuntu Cloud Guest",
+        "port_name_format": "Ethernet{0}",
+        "product_name": "Ubuntu Cloud Guest",
+        "product_url": "https://www.ubuntu.com/cloud",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "options": "-nographic",
+            "ram": 1024
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "usage": "Username: ubuntu\nPassword: ubuntu",
+        "vendor_name": "Canonical Inc.",
+        "vendor_url": "https://www.ubuntu.com",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "ubuntu-cloud-init-data.iso",
+                    "hda_disk_image": "ubuntu-17.10-server-cloudimg-amd64.img"
+                },
+                "name": "17.10"
+            },
+            {
+                "images": {
+                    "cdrom_image": "ubuntu-cloud-init-data.iso",
+                    "hda_disk_image": "ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+                },
+                "name": "16.04 (LTS)"
+            },
+            {
+                "images": {
+                    "cdrom_image": "ubuntu-cloud-init-data.iso",
+                    "hda_disk_image": "ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+                },
+                "name": "14.04 (LTS)"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "guest",
+        "description": "Ubuntu is a Debian-based Linux operating system, with Unity as its default desktop environment. It is based on free software and named after the Southern African philosophy of ubuntu (literally, \"human-ness\"), which often is translated as \"humanity towards others\" or \"the belief in a universal bond of sharing that connects all humanity\".",
+        "docker": {
+            "adapters": 1,
+            "console_type": "telnet",
+            "image": "gns3/ubuntu:xenial"
+        },
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Ubuntu Docker Guest",
+        "product_name": "Ubuntu",
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "linux_guest.svg",
+        "vendor_name": "Canonical",
+        "vendor_url": "http://www.ubuntu.com"
+    },
+    {
+        "builtin": true,
+        "category": "guest",
         "description": "Ubuntu is a full-featured Linux operating system which is based on Debian distribution and freely available with both community and professional support, it comes with Unity as its default desktop environment. There are other flavors of Ubuntu available with other desktops as default like Ubuntu Gnome, Lubuntu, Xubuntu, and so on. A tightly-integrated selection of excellent applications is included, and an incredible variety of add-on software is just a few clicks away. A default installation of Ubuntu contains a wide range of software that includes LibreOffice, Firefox, Empathy, Transmission, etc.",
         "documentation_url": "https://help.ubuntu.com",
         "images": [
@@ -9799,7 +10585,7 @@ X-Route: /v2/appliances/templates
         ],
         "maintainer": "GNS3 Team",
         "maintainer_email": "developers@gns3.net",
-        "name": "Ubuntu",
+        "name": "Ubuntu Desktop Guest",
         "port_name_format": "eth{0}",
         "product_name": "Ubuntu",
         "product_url": "https://www.ubuntu.com/desktop",
@@ -9842,29 +10628,17 @@ X-Route: /v2/appliances/templates
     },
     {
         "builtin": true,
-        "category": "guest",
-        "description": "Ubuntu is a Debian-based Linux operating system, with Unity as its default desktop environment. It is based on free software and named after the Southern African philosophy of ubuntu (literally, \"human-ness\"), which often is translated as \"humanity towards others\" or \"the belief in a universal bond of sharing that connects all humanity\".",
-        "docker": {
-            "adapters": 1,
-            "console_type": "telnet",
-            "image": "gns3/ubuntu:xenial"
-        },
-        "maintainer": "GNS3 Team",
-        "maintainer_email": "developers@gns3.net",
-        "name": "Ubuntu",
-        "product_name": "Ubuntu",
-        "registry_version": 3,
-        "status": "stable",
-        "symbol": "linux_guest.svg",
-        "vendor_name": "Canonical",
-        "vendor_url": "http://www.ubuntu.com"
-    },
-    {
-        "builtin": true,
         "category": "firewall",
         "description": "Untangle\u2019s NG Firewall enables you to quickly and easily create the network policies that deliver the perfect balance between security and productivity. Untangle combines Unified Threat Management (UTM)\u2014to address all of the key network threats\u2014with policy management tools that enable you to define access and control by individuals, groups or company-wide. And with industry-leading reports, you\u2019ll have complete visibility into and control over everything that\u2019s happening on your network.",
         "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
         "images": [
+            {
+                "download_url": "https://www.untangle.com/get-untangle/",
+                "filename": "untangle_1320_x64.iso",
+                "filesize": 768000000,
+                "md5sum": "0ce2293acec0f37f1339e703653727f8",
+                "version": "13.2.0"
+            },
             {
                 "download_url": "https://www.untangle.com/get-untangle/",
                 "filename": "untangle_1310_x64.iso",
@@ -9952,6 +10726,13 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Untangle",
         "vendor_url": "https://www.untangle.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "untangle_1320_x64.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "13.2.0"
+            },
             {
                 "images": {
                     "cdrom_image": "untangle_1310_x64.iso",
@@ -10142,24 +10923,32 @@ X-Route: /v2/appliances/templates
                 "version": "1.2.0-beta1"
             },
             {
-                "direct_download_url": "http://mirror.vyos.net/iso/release/1.1.7/vyos-1.1.7-amd64.iso",
-                "download_url": "http://mirror.vyos.net/iso/release/1.1.7/",
+                "direct_download_url": "https://downloads.vyos.io/release/1.1.8/vyos-1.1.8-amd64.iso",
+                "download_url": "https://downloads.vyos.io/?dir=release/1.1.8",
+                "filename": "vyos-1.1.8-amd64.iso",
+                "filesize": 241172480,
+                "md5sum": "95a141d4b592b81c803cdf7e9b11d8ea",
+                "version": "1.1.8"
+            },
+            {
+                "direct_download_url": "https://downloads.vyos.io/release/1.1.7/vyos-1.1.7-amd64.iso",
+                "download_url": "https://downloads.vyos.io/?dir=release/1.1.7/",
                 "filename": "vyos-1.1.7-amd64.iso",
                 "filesize": 245366784,
                 "md5sum": "9a7f745a0b0db0d4f1d9eee2a437fb54",
                 "version": "1.1.7"
             },
             {
-                "direct_download_url": "http://mirror.vyos.net/iso/release/1.1.6/vyos-1.1.6-amd64.iso",
-                "download_url": "http://mirror.vyos.net/iso/release/1.1.6/",
+                "direct_download_url": "https://downloads.vyos.io/release/1.1.6/vyos-1.1.6-amd64.iso",
+                "download_url": "hhttps://downloads.vyos.io/?dir=release/1.1.6/",
                 "filename": "vyos-1.1.6-amd64.iso",
                 "filesize": 245366784,
                 "md5sum": "3128954d026e567402a924c2424ce2bf",
                 "version": "1.1.6"
             },
             {
-                "direct_download_url": "http://mirror.vyos.net/iso/release/1.1.5/vyos-1.1.5-amd64.iso",
-                "download_url": "http://mirror.vyos.net/iso/release/1.1.5/",
+                "direct_download_url": "https://downloads.vyos.io/release/1.1.5/vyos-1.1.5-amd64.iso",
+                "download_url": "https://downloads.vyos.io/?dir=release/1.1.5/",
                 "filename": "vyos-1.1.5-amd64.iso",
                 "filesize": 247463936,
                 "md5sum": "193179532011ceaa87ee725bd8f22022",
@@ -10201,6 +10990,13 @@ X-Route: /v2/appliances/templates
                     "hda_disk_image": "empty8G.qcow2"
                 },
                 "name": "1.2.0-beta1"
+            },
+            {
+                "images": {
+                    "cdrom_image": "vyos-1.1.8-amd64.iso",
+                    "hda_disk_image": "empty8G.qcow2"
+                },
+                "name": "1.1.8"
             },
             {
                 "images": {
@@ -10246,11 +11042,19 @@ X-Route: /v2/appliances/templates
         "vendor_url": "https://www.debian.org"
     },
     {
+        "availability": "free-to-try",
         "builtin": true,
         "category": "guest",
         "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
         "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
         "images": [
+            {
+                "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
+                "filename": "MSEdge-Win10-VMWare-disk1.vmdk",
+                "filesize": 5636608512,
+                "md5sum": "fef74c69e1949480d4e2095324a169af",
+                "version": "10 w/ Edge"
+            },
             {
                 "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/",
                 "filename": "MSEdge_-_Win10_preview.vmdk",
@@ -10319,9 +11123,15 @@ X-Route: /v2/appliances/templates
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "MSEdge_-_Win10_preview.vmdk"
+                    "hda_disk_image": "MSEdge-Win10-VMWare-disk1.vmdk"
                 },
                 "name": "10 w/ Edge"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "MSEdge_-_Win10_preview.vmdk"
+                },
+                "name": "10 w/ Edge (Preview)"
             },
             {
                 "images": {
@@ -10356,6 +11166,7 @@ X-Route: /v2/appliances/templates
         ]
     },
     {
+        "availability": "free-to-try",
         "builtin": true,
         "category": "guest",
         "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
@@ -10398,6 +11209,7 @@ X-Route: /v2/appliances/templates
             "console_type": "vnc",
             "hda_disk_interface": "sata",
             "kvm": "require",
+            "options": "-usbdevice tablet",
             "ram": 2048
         },
         "registry_version": 4,
@@ -10543,6 +11355,24 @@ X-Route: /v2/appliances/templates
         "images": [
             {
                 "compression": "gzip",
+                "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.2-X86-USB.img.gz",
+                "download_url": "http://www.zeroshell.org/download/",
+                "filename": "ZeroShell-3.8.2-X86-USB.img",
+                "filesize": 1992294400,
+                "md5sum": "bb8c7f24c86eb59e26ce36ff1979ecd4",
+                "version": "3.8.2"
+            },
+            {
+                "compression": "gzip",
+                "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.1-X86-USB.img.gz",
+                "download_url": "http://www.zeroshell.org/download/",
+                "filename": "ZeroShell-3.8.1-X86-USB.img",
+                "filesize": 1992294400,
+                "md5sum": "49256e396d160e88fbc3a3889e172482",
+                "version": "3.8.1"
+            },
+            {
+                "compression": "gzip",
                 "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.0-X86-USB.img.gz",
                 "download_url": "http://www.zeroshell.org/download/",
                 "filename": "ZeroShell-3.8.0-X86-USB.img",
@@ -10578,6 +11408,18 @@ X-Route: /v2/appliances/templates
         "vendor_name": "Fulvio Ricciardi",
         "vendor_url": "http://www.zeroshell.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "ZeroShell-3.8.2-X86-USB.img"
+                },
+                "name": "3.8.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "ZeroShell-3.8.1-X86-USB.img"
+                },
+                "name": "3.8.1"
+            },
             {
                 "images": {
                     "hda_disk_image": "ZeroShell-3.8.0-X86-USB.img"

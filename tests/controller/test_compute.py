@@ -295,8 +295,8 @@ def test_streamFile(project, async_run, compute):
     response = MagicMock()
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        async_run(compute.stream_file(project, "test/titi"))
-    mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None, timeout=None)
+        async_run(compute.stream_file(project, "test/titi", timeout=120))
+    mock.assert_called_with("GET", "https://example.com:84/v2/compute/projects/{}/stream/test/titi".format(project.id), auth=None, timeout=120)
 
 
 def test_downloadFile(project, async_run, compute):
@@ -380,7 +380,7 @@ def test_list_files(project, async_run, compute):
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         assert async_run(compute.list_files(project)) == res
-        mock.assert_any_call("GET", "https://example.com:84/v2/compute/projects/{}/files".format(project.id), auth=None, chunked=None, data=None, headers={'content-type': 'application/json'}, timeout=120)
+        mock.assert_any_call("GET", "https://example.com:84/v2/compute/projects/{}/files".format(project.id), auth=None, chunked=None, data=None, headers={'content-type': 'application/json'}, timeout=None)
 
 
 def test_interfaces(project, async_run, compute):

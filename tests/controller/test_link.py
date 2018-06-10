@@ -98,7 +98,7 @@ def test_add_node(async_run, project, compute):
 
     assert link.create.called
     link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
-    assert link in node2.link
+    assert link in node2.links
 
 
 def test_add_node_already_connected(async_run, project, compute):
@@ -348,10 +348,10 @@ def test_delete(async_run, project, compute):
     node2._ports = [EthernetPort("E0", 0, 0, 4)]
     async_run(link.add_node(node2, 0, 4))
 
-    assert link in node2.link
+    assert link in node2.links
 
     async_run(link.delete())
-    assert link not in node2.link
+    assert link not in node2.links
 
 
 def test_update_filters(async_run, project, compute):

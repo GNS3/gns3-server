@@ -103,10 +103,16 @@ def get_size(data, default_width=0, default_height=0):
         root = tree.getroot()
 
         try:
-            width = _svg_convert_size(root.attrib.get("width", "0"))
-            height = _svg_convert_size(root.attrib.get("height", "0"))
-        except IndexError:
-            raise ValueError("Invalid SVG file")
+            width_attr = root.attrib.get("width", "0")
+            height_attr = root.attrib.get("height", "0")
+            if width_attr.endswith("%") or height_attr.endswith("%"):
+                # check to viewBox attribute if width or height value is a percentage
+                _, _, width_attr, height_attr = root.attrib.get("viewBox").split()
+            else:
+                width = _svg_convert_size(width_attr)
+                height = _svg_convert_size(height_attr)
+        except (AttributeError, IndexError) as e:
+            raise ValueError("Invalid SVG file: {}".format(e))
 
     return width, height, filetype
 
