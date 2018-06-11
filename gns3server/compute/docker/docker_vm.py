@@ -386,7 +386,8 @@ class DockerVM(BaseNode):
         aux = self.aux
         state = yield from self._get_container_state()
 
-        yield from self.reset()
+        # reset the docker container, but don't release the NIO UDP ports
+        yield from self.reset(False)
         yield from self.create()
         self.console = console
         self.aux = aux
@@ -680,7 +681,8 @@ class DockerVM(BaseNode):
         yield from self.reset()
 
     @asyncio.coroutine
-    def reset(self):
+    def reset(self, release_nio_udp_ports=True):
+
         try:
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
@@ -706,11 +708,12 @@ class DockerVM(BaseNode):
             log.info("Docker container '{name}' [{image}] removed".format(
                 name=self._name, image=self._image))
 
-            for adapter in self._ethernet_adapters:
-                if adapter is not None:
-                    for nio in adapter.ports.values():
-                        if nio and isinstance(nio, NIOUDP):
-                            self.manager.port_manager.release_udp_port(nio.lport, self._project)
+            if release_nio_udp_ports:
+                for adapter in self._ethernet_adapters:
+                    if adapter is not None:
+                        for nio in adapter.ports.values():
+                            if nio and isinstance(nio, NIOUDP):
+                                self.manager.port_manager.release_udp_port(nio.lport, self._project)
         # Ignore runtime error because when closing the server
         except (DockerHttp404Error, RuntimeError) as e:
             log.debug("Docker error when closing: {}".format(str(e)))
