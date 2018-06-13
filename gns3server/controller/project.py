@@ -500,18 +500,21 @@ class Project:
         if compute not in self._project_created_on_compute:
             # For a local server we send the project path
             if compute.id == "local":
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
                     "project_id": self._id,
-                    "path": self._path,
-                    "variables": self._variables
-                })
+                    "path": self._path
+                }
             else:
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
-                    "project_id": self._id,
-                    "variables": self._variables
-                })
+                    "project_id": self._id
+                }
+
+            if self._variables:
+                data["variables"] = self._variables
+
+            yield from compute.post("/projects", data=data)
 
             self._project_created_on_compute.add(compute)
         yield from node.create()
