@@ -12,8 +12,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 459
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:29 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:58 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
 
 {
@@ -26,7 +26,7 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
     "linked_clone": false,
     "name": "VM1",
     "node_directory": null,
-    "node_id": "e649e24c-a24b-4f43-8d60-42a054924fde",
+    "node_id": "8275c17b-1e23-4d65-ab30-be28889654ca",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

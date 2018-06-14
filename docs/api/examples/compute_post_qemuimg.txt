@@ -17,7 +17,7 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Thu, 07 Jun 2018 08:13:27 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:57 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/qemu/img
 

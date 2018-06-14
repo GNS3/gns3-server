@@ -9,13 +9,13 @@ Duplicate a node instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **201**: Instance duplicated
 - **400**: Invalid request
+- **201**: Instance duplicated
 - **404**: Instance doesn't exist
 
 Input

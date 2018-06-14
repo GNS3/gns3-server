@@ -9,16 +9,16 @@ Stop a packet capture on an IOU VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **node_id**: Node UUID
 - **adapter_number**: Adapter to stop a packet capture
+- **node_id**: Node UUID
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
-- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Capture stopped
 - **409**: VM not started
 
 Sample session

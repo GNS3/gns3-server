@@ -9,14 +9,14 @@ Stop a packet capture on a Frame Relay switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **node_id**: Node UUID
 - **adapter_number**: Adapter on the switch (always 0)
+- **node_id**: Node UUID
+- **project_id**: Project UUID
 - **port_number**: Port on the switch
 
 Response status codes
 **********************
-- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Capture stopped
 

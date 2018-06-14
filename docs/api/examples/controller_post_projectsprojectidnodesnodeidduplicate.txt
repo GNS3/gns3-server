@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/002ebaa7-5d6a-4c2d-a609-697ad91fe1a3/nodes/44ae28b6-6977-4093-9a6b-5bde7c94c298/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
+curl -i -X POST 'http://localhost:3080/v2/projects/7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7/nodes/3cb45937-864f-44cc-8500-c347ff15dc48/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
 
-POST /v2/projects/002ebaa7-5d6a-4c2d-a609-697ad91fe1a3/nodes/44ae28b6-6977-4093-9a6b-5bde7c94c298/duplicate HTTP/1.1
+POST /v2/projects/7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7/nodes/3cb45937-864f-44cc-8500-c347ff15dc48/duplicate HTTP/1.1
 {
     "x": 10,
     "y": 5,
@@ -10,17 +10,17 @@ POST /v2/projects/002ebaa7-5d6a-4c2d-a609-697ad91fe1a3/nodes/44ae28b6-6977-4093-
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1083
+Content-Length: 1088
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:56 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:35:16 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
 
 {
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
-    "console_host": "<MagicMock name='mock.console_host' id='5893935344'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140064615197552'>",
     "console_type": null,
     "first_port_name": null,
     "height": 59,
@@ -33,7 +33,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
     },
     "name": "test1",
     "node_directory": null,
-    "node_id": "4ea1c6ef-99eb-450f-9151-577539d63125",
+    "node_id": "ee0b6a58-5c7e-4a0f-9432-b1d8bb12b5a9",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -49,7 +49,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
             "short_name": "e0"
         }
     ],
-    "project_id": "002ebaa7-5d6a-4c2d-a609-697ad91fe1a3",
+    "project_id": "7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

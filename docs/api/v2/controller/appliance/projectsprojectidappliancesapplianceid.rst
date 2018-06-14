@@ -9,8 +9,8 @@ Create a node from an appliance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **appliance_id**: Appliance template UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

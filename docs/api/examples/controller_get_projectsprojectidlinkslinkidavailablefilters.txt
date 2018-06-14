@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/26181390-45a9-43fe-8333-6b6a029846a8/links/8ec4f85b-4ba5-469b-9e31-b74de55e82ef/available_filters'
+curl -i -X GET 'http://localhost:3080/v2/projects/101dc781-9625-4f4d-8dfc-68b50b9f5936/links/f7746aee-b800-4e61-937f-ef07a81384c4/available_filters'
 
-GET /v2/projects/26181390-45a9-43fe-8333-6b6a029846a8/links/8ec4f85b-4ba5-469b-9e31-b74de55e82ef/available_filters HTTP/1.1
+GET /v2/projects/101dc781-9625-4f4d-8dfc-68b50b9f5936/links/f7746aee-b800-4e61-937f-ef07a81384c4/available_filters HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 2119
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:55 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:35:14 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/projects/{project_id}/links/{link_id}/available_filters
 
 [

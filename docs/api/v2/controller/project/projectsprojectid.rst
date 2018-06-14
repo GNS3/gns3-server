@@ -99,8 +99,8 @@ Parameters
 
 Response status codes
 **********************
-- **204**: Changes have been written on disk
 - **404**: The project doesn't exist
+- **204**: Changes have been written on disk
 
 Sample session
 ***************

@@ -24,27 +24,27 @@ def test_init_logger(caplog):
 
     logger = init_logger(logging.DEBUG)
     logger.debug("DEBUG1")
-    assert "DEBUG1" in caplog.text
+    assert "DEBUG1" in caplog.text()
     logger.info("INFO1")
-    assert "INFO1" in caplog.text
+    assert "INFO1" in caplog.text()
     logger.warn("WARN1")
-    assert "WARN1" in caplog.text
+    assert "WARN1" in caplog.text()
     logger.error("ERROR1")
-    assert "ERROR1" in caplog.text
+    assert "ERROR1" in caplog.text()
     logger.critical("CRITICAL1")
-    assert "CRITICAL1" in caplog.text
+    assert "CRITICAL1" in caplog.text()
 
 
 def test_init_logger_quiet(caplog):
 
     logger = init_logger(logging.DEBUG, quiet=True)
     logger.debug("DEBUG1")
-    assert "DEBUG1" not in caplog.text
+    assert "DEBUG1" not in caplog.text()
     logger.info("INFO1")
-    assert "INFO1" not in caplog.text
+    assert "INFO1" not in caplog.text()
     logger.warn("WARN1")
-    assert "WARN1" not in caplog.text
+    assert "WARN1" not in caplog.text()
     logger.error("ERROR1")
-    assert "ERROR1" not in caplog.text
+    assert "ERROR1" not in caplog.text()
     logger.critical("CRITICAL1")
-    assert "CRITICAL1" not in caplog.text
+    assert "CRITICAL1" not in caplog.text()

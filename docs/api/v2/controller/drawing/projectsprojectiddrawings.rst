@@ -32,8 +32,8 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Drawing created
 - **400**: Invalid request
+- **201**: Drawing created
 
 Input
 *******
