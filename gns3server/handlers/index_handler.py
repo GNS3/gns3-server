@@ -14,12 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import aiohttp
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.version import __version__
+from gns3server.utils.static import get_static_path
 
 
 class IndexHandler:
@@ -63,6 +66,29 @@ class IndexHandler:
         controller = Controller.instance()
         response.template("project.html",
                           project=controller.get_project(request.match_info["project_id"]))
+
+    @Route.get(
+        r"/static/{filename:.+}",
+        parameters={
+            "filename": "Static filename"
+        },
+        status_codes={
+            200: "Static file returned",
+            404: "Static cannot be found",
+        },
+        raw=True,
+        description="Get static resource")
+    def static(request, response):
+        filename = request.match_info["filename"]
+        filename = os.path.normpath(filename).strip("/")
+
+        # Raise error if user try to escape
+        if filename[0] == ".":
+            raise aiohttp.web.HTTPForbidden()
+
+        static = get_static_path(filename)
+
+        yield from response.file(static)
 
     @Route.get(
         r"/v1/version",
