@@ -117,6 +117,9 @@ class Response(aiohttp.web.Response):
         """
         Return a file as a response
         """
+        if not os.path.exists(path):
+            raise aiohttp.web.HTTPNotFound()
+
         ct, encoding = mimetypes.guess_type(path)
         if not ct:
             ct = 'application/octet-stream'

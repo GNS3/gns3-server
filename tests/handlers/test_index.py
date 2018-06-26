@@ -15,13 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import aiohttp
 import os
-from unittest.mock import patch
+
 
 from gns3server.version import __version__
 from gns3server.controller import Controller
+from gns3server.utils.static import get_static_path
 
 
 def test_index(http_root):
@@ -47,6 +46,21 @@ def test_compute(http_root):
 def test_project(http_root, async_run):
     project = async_run(Controller.instance().add_project(name="test"))
     response = http_root.get('/projects/{}'.format(project.id))
+    assert response.status == 200
+
+
+def test_web_ui(http_root, tmpdir):
+    tmpfile = get_static_path('web-ui/testing.txt')
+    with open(tmpfile, 'w+') as f:
+        f.write('world')
+    response = http_root.get('/static/web-ui/testing.txt')
+    assert response.status == 200
+    os.remove(tmpfile)
+
+
+def test_web_ui_not_found(http_root, tmpdir):
+    response = http_root.get('/static/web-ui/not-found.txt')
+    # should serve web-ui/index.html
     assert response.status == 200
 
 
