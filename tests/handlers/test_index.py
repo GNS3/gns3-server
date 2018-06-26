@@ -62,9 +62,16 @@ def test_web_ui(http_root, tmpdir):
 
 
 def test_web_ui_not_found(http_root, tmpdir):
-    response = http_root.get('/static/web-ui/not-found.txt')
-    # should serve web-ui/index.html
-    assert response.status == 200
+    with patch('gns3server.utils.static.get_static_dir') as mock:
+        mock.return_value = str(tmpdir)
+        os.makedirs(str(tmpdir / 'web-ui'))
+        tmpfile = static.get_static_path('web-ui/index.html')
+        with open(tmpfile, 'w+') as f:
+            f.write('world')
+
+        response = http_root.get('/static/web-ui/not-found.txt')
+        # should serve web-ui/index.html
+        assert response.status == 200
 
 
 def test_v1(http_root):
