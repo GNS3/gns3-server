@@ -68,7 +68,7 @@ class IndexHandler:
                           project=controller.get_project(request.match_info["project_id"]))
 
     @Route.get(
-        r"/static/{filename:.+}",
+        r"/static/web-ui/{filename:.+}",
         parameters={
             "filename": "Static filename"
         },
@@ -78,15 +78,19 @@ class IndexHandler:
         },
         raw=True,
         description="Get static resource")
-    def static(request, response):
+    def webui(request, response):
         filename = request.match_info["filename"]
         filename = os.path.normpath(filename).strip("/")
+        filename = os.path.join('web-ui', filename)
 
         # Raise error if user try to escape
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
         static = get_static_path(filename)
+
+        if not os.path.exists(static):
+            static = get_static_path('web-ui/index.html')
 
         yield from response.file(static)
 

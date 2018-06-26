@@ -29,6 +29,7 @@ import functools
 import time
 import atexit
 
+from gns3server.utils.static import get_static_dir
 from .route import Route
 from ..config import Config
 from ..compute import MODULES
@@ -273,6 +274,13 @@ class WebServer:
             log.debug("Loading module {}".format(module.__name__))
             m = module.instance()
             m.port_manager = PortManager.instance()
+
+        # adding static route
+        self._app.router.add_static(
+            '/static/',
+            path=get_static_dir(),
+            name='static'
+        )
 
         log.info("Starting server on {}:{}".format(self._host, self._port))
 

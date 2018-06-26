@@ -49,18 +49,19 @@ def test_project(http_root, async_run):
     assert response.status == 200
 
 
-def test_static(http_root, tmpdir):
-    tmpfile = get_static_path('testing.txt')
+def test_web_ui(http_root, tmpdir):
+    tmpfile = get_static_path('web-ui/testing.txt')
     with open(tmpfile, 'w+') as f:
         f.write('world')
-    response = http_root.get('/static/testing.txt')
+    response = http_root.get('/static/web-ui/testing.txt')
     assert response.status == 200
     os.remove(tmpfile)
 
 
-def test_static_not_found(http_root, tmpdir):
-    response = http_root.get('/static/not-found.txt')
-    assert response.status == 404
+def test_web_ui_not_found(http_root, tmpdir):
+    response = http_root.get('/static/web-ui/not-found.txt')
+    # should serve web-ui/index.html
+    assert response.status == 200
 
 
 def test_v1(http_root):

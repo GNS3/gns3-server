@@ -24,6 +24,15 @@ def get_static_path(filename):
     :param filename: relative filename
     :return: absolute path
     """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    static_directory = os.path.abspath(os.path.join(current_dir, '..', 'static'))
+
+    static_directory = get_static_dir()
     return os.path.join(static_directory, filename)
+
+
+def get_static_dir():
+    """
+    Returns location of static directory
+    :return: absolute path
+    """
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(current_dir, '..', 'static'))
