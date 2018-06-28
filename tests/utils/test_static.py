@@ -15,8 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from gns3server.utils.static import get_static_path
 
 
 def test_get_static_path():
-    assert get_static_path('test').endswith('gns3server/static/test')
+    expected = os.path.join('gns3server', 'static', 'test')
+    assert get_static_path('test').endswith(expected)

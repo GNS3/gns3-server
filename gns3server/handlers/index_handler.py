@@ -90,7 +90,7 @@ class IndexHandler:
         static = get_static_path(filename)
 
         if not os.path.exists(static):
-            static = get_static_path('web-ui/index.html')
+            static = get_static_path(os.path.join('web-ui', 'index.html'))
 
         yield from response.file(static)
 
