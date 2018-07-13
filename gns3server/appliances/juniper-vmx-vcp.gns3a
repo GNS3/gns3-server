@@ -18,13 +18,31 @@
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 2,
-        "ram": 2048,
+        "ram": 1024,
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
         "options": "-nographic -enable-kvm"
     },
     "images": [
+        {
+            "filename": "junos-vmx-x86-64-17.4R1.16.qcow2",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "85239193e852d643dfd9d5c257240bdf",
+            "filesize": 1325400064
+        },
+        {
+            "filename": "vmxhdd-17.4R1.16.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "69e9821ebc59367527336d8bcecd171c",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-17.4R1.16.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "a5b125822b798c7167c35966ea00229a",
+            "filesize": 16777216
+        },
         {
             "filename": "vcp_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
@@ -261,9 +279,35 @@
             "md5sum": "af48f7e03f94ffcfeecd15a59a4f1567",
             "filesize": 16777216,
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "junos-vmx-x86-64-15.1F6.9.qcow2",
+            "version": "15.1F6.9-KVM",
+            "md5sum": "595f532b95d6d98590d0375a3d6d14b6",
+            "filesize": 994181120
+        },
+        {
+            "filename": "vmxhdd-15.1F6.9.img",
+            "version": "15.1F6.9-KVM",
+            "md5sum": "bae35d0bb72946d1e91ff9c5e7ddbf86",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-15.1F6.9.img",
+            "version": "15.1F6.9-KVM",
+            "md5sum": "15238c3dbc987d1a641c919efe2731c5",
+            "filesize": 16777216
         }
     ],
     "versions": [
+        {
+            "name": "17.4R1.16-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-17.4R1.16.qcow2",
+                "hdb_disk_image": "vmxhdd-17.4R1.16.img",
+                "hdc_disk_image": "metadata-usb-re-17.4R1.16.img"
+            }
+        },
         {
             "name": "17.1R1.8-ESXi",
             "images": {
@@ -367,6 +411,14 @@
                 "hdb_disk_image": "vmxhdd-15.1.img",
                 "hdc_disk_image": "metadata-usb-15.1.img"
             }
-         }
+        },
+        {
+            "name": "15.1F6.9",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-15.1F6.9.qcow2",
+                "hdb_disk_image": "vmxhdd-15.1F6.9.img",
+                "hdc_disk_image": "metadata-usb-re-15.1F6.9.img"
+            }
+        }
     ]
 }

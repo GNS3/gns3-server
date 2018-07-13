@@ -92,7 +92,7 @@
          {
             "name": "8.0.0 (ESX)",
             "images": {
-                "hda_disk_image": "PA-VM-ESX-8.0.0-disk1.vmdk2"
+                "hda_disk_image": "PA-VM-ESX-8.0.0-disk1.vmdk"
             }
         },
          {

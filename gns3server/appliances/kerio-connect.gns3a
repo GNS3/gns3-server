@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "kerio-connect-appliance-9.2.6-3851-p1-vmware-amd64-disk1.vmdk",
+            "version": "9.2.6p1",
+            "md5sum": "c6ed064114c6fd70608b7951b707528c",
+            "filesize": 625852004,
+            "download_url": "http://www.kerio.com/support/kerio-connect",
+            "direct_download_url": "http://cdn.kerio.com/dwn/connect/connect-9.2.6-3851/kerio-connect-appliance-9.2.6-3851-p1-vmware-amd64-disk1.vmdk"
+        },
+        {
             "filename": "kerio-connect-appliance-9.2.5-3336-p3-vmware-amd64-disk1.vmdk",
             "version": "9.2.5p3",
             "md5sum": "f2a202f29e71dc6e8bebce4c05a9e44d",
@@ -68,7 +76,13 @@
     ],
     "versions": [
         {
-            "name": "9.2.5",
+            "name": "9.2.6p1",
+            "images": {
+                "hda_disk_image": "kerio-connect-appliance-9.2.6-3851-p1-vmware-amd64-disk1.vmdk"
+            }
+        },
+        {
+            "name": "9.2.5p3",
             "images": {
                 "hda_disk_image": "kerio-connect-appliance-9.2.5-3336-p3-vmware-amd64-disk1.vmdk"
             }

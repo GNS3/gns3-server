@@ -14,7 +14,7 @@
     "usage": "There is no default password and enable password. A default configuration is present.",
     "port_name_format": "Gi{port1}",
     "qemu": {
-        "adapter_type": "virtio-net-pci",
+        "adapter_type": "vmxnet3",
         "adapters": 4,
         "ram": 3072,
         "arch": "x86_64",
@@ -22,6 +22,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "csr1000v-universalk9.16.08.01a-serial.qcow2",
+            "version": "16.8.1a",
+            "md5sum": "91e2572f20c77606d710223511cd279a",
+            "filesize": 890044416,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477"
+        },
         {
             "filename": "csr1000v-universalk9.16.07.01-serial.qcow2",
             "version": "16.7.1",
@@ -94,6 +101,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "16.8.1a",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.08.01a-serial.qcow2"
+            }
+        },
         {
             "name": "16.7.1",
             "images": {

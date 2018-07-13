@@ -12,7 +12,7 @@
     "symbol": "linux_guest.svg",
     "docker": {
         "adapters": 1,
-        "image": "gns3/network_automation:latest",
+        "image": "adosztal/network_automation:latest",
         "console_type": "telnet"
     }
 }

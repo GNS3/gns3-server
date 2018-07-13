@@ -25,18 +25,31 @@
     },
     "images": [
         {
-            "filename": "OPNsense-17.7-OpenSSL-nano-amd64.img",
-            "version": "17.7",
-            "md5sum": "14cde5c7a15b2298a242238ad3c3b65a",
-            "filesize": 3221233664,
-            "download_url": "https://opnsense.org/download/"
+            "filename": "OPNsense-18.1.6-OpenSSL-nano-amd64.img",
+            "version": "18.1.6",
+            "md5sum": "042f328380ad0c8008759c43435e8843",
+            "filesize": 272003136,
+            "download_url": "https://opnsense.c0urier.net/releases/18.1/"
+        },
+        {
+            "filename": "OPNsense-17.7.5-OpenSSL-nano-amd64.img",
+            "version": "17.7.5",
+            "md5sum": "6ec5b7f99cc727f904bbf2aaadcab0b8",
+            "filesize": 237038601,
+            "download_url": "https://opnsense.c0urier.net/releases/17.7/"
         }
     ],
     "versions": [
         {
-            "name": "17.7",
+            "name": "18.1.6",
             "images": {
-                "hda_disk_image": "OPNsense-17.7-OpenSSL-nano-amd64.img"
+                "hda_disk_image": "OPNsense-18.1.6-OpenSSL-nano-amd64.img"
+            }
+        },
+        {
+            "name": "17.7.5",
+            "images": {
+                "hda_disk_image": "OPNsense-17.7.5-OpenSSL-nano-amd64.img"
             }
         }
     ]

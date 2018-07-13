@@ -25,6 +25,24 @@
     },
     "images": [
         {
+            "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core119.img",
+            "version": "2.19.119",
+            "md5sum": "b57be976ff54569b71eae4ee66634b0d",
+            "filesize": 1063256064,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.19-core119/ipfire-2.19.1gb-ext4-scon.x86_64-full-core119.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core118.img",
+            "version": "2.19.118",
+            "md5sum": "4dbeb474848d87c16c20ff4e31feb204",
+            "filesize": 1063256064,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.19-core118/ipfire-2.19.1gb-ext4-scon.x86_64-full-core118.img.gz",
+            "compression": "gzip"
+        },
+        {
             "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core117.img",
             "version": "2.19.117",
             "md5sum": "657673d88b94ed7d22332aebe817bc86",
@@ -62,6 +80,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.19.119",
+            "images": {
+                "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core119.img"
+            }
+        },
+        {
+            "name": "2.19.118",
+            "images": {
+                "hda_disk_image": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core118.img"
+            }
+        },
         {
             "name": "2.19.117",
             "images": {

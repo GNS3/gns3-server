@@ -27,6 +27,20 @@
     },
     "images": [
         {
+            "filename": "FAC_VM_KVM-v5-build0163-FORTINET.out.kvm.qcow2",
+            "version": "5.2.2",
+            "md5sum": "e746b3c6c29b0356ec6b90ed14d4b098",
+            "filesize": 71565312,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAC_VM_KVM-v500-build0161-FORTINET.out.kvm.qcow2",
+            "version": "5.2.1",
+            "md5sum": "c46ad2de4a20296ebd35b3fcc2d81a1d",
+            "filesize": 72536064,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FAC_VM_KVM-v5-build0155-FORTINET.out.kvm.qcow2",
             "version": "5.2.0",
             "md5sum": "69b55ce7c8094ccd736bbfe8a3262b31",
@@ -70,6 +84,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.2.2",
+            "images": {
+                "hda_disk_image": "FAC_VM_KVM-v5-build0163-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+            }
+        },
+        {
+            "name": "5.2.1",
+            "images": {
+                "hda_disk_image": "FAC_VM_KVM-v500-build0161-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+            }
+        },
         {
             "name": "5.2.0",
             "images": {
