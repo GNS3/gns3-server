@@ -83,7 +83,7 @@ def test_close(node, loop, port_manager):
 
     node.aux = aux
     port = node.console
-    assert loop.run_until_complete(asyncio.async(node.close()))
+    assert loop.run_until_complete(asyncio.coroutine(node.close()))
     # Raise an exception if the port is not free
     port_manager.reserve_tcp_port(port, node.project)
     # Raise an exception if the port is not free
@@ -92,7 +92,7 @@ def test_close(node, loop, port_manager):
     assert node.aux is None
 
     # Called twice closed should return False
-    assert loop.run_until_complete(asyncio.async(node.close())) is False
+    assert loop.run_until_complete(asyncio.coroutine(node.close())) is False
 
 
 def test_aux(project, manager, port_manager):

@@ -69,8 +69,8 @@ class AsyncioRawCommandServer:
             else:
                 replaces.append((replace[0], replace[1], ))
 
-        network_read = asyncio.async(network_reader.read(READ_SIZE))
-        reader_read = asyncio.async(process_reader.read(READ_SIZE))
+        network_read = asyncio.coroutine(network_reader.read(READ_SIZE))
+        reader_read = asyncio.coroutine(process_reader.read(READ_SIZE))
         timeout = 30
 
         while True:
@@ -89,7 +89,7 @@ class AsyncioRawCommandServer:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
 
-                    network_read = asyncio.async(network_reader.read(READ_SIZE))
+                    network_read = asyncio.coroutine(network_reader.read(READ_SIZE))
 
                     process_writer.write(data)
                     yield from process_writer.drain()
@@ -97,7 +97,7 @@ class AsyncioRawCommandServer:
                     if process_reader.at_eof():
                         raise ConnectionResetError()
 
-                    reader_read = asyncio.async(process_reader.read(READ_SIZE))
+                    reader_read = asyncio.coroutine(process_reader.read(READ_SIZE))
 
                     for replace in replaces:
                         data = data.replace(replace[0], replace[1])

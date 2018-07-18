@@ -246,7 +246,7 @@ class ProjectHandler:
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)
 
-        asyncio.async(process_websocket(ws))
+        asyncio.coroutine(process_websocket(ws))
 
         with controller.notification.queue(project) as queue:
             while True:

@@ -92,7 +92,7 @@ def test_list_vms(manager, loop):
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock
-        vms = loop.run_until_complete(asyncio.async(manager.list_vms()))
+        vms = loop.run_until_complete(asyncio.coroutine(manager.list_vms()))
     assert vms == [
         {"vmname": "Windows 8.1", "ram": 512},
         {"vmname": "Linux Microcore 4.7.1", "ram": 256}

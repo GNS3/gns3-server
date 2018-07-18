@@ -830,7 +830,7 @@ class Project:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it
-            asyncio.async(self.start_all())
+            asyncio.coroutine(self.start_all())
 
     @asyncio.coroutine
     def wait_loaded(self):
