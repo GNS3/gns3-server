@@ -69,5 +69,5 @@ def test_rebase(tmpdir, loop):
     qcow2 = Qcow2(str(tmpdir / "linked.qcow2"))
     assert qcow2.version == 3
     assert qcow2.backing_file == "empty8G.qcow2"
-    loop.run_until_complete(asyncio.async(qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))))
+    loop.run_until_complete(asyncio.coroutine(qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))))
     assert qcow2.backing_file == str(tmpdir / "empty16G.qcow2")

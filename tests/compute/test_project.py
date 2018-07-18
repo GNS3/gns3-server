@@ -43,7 +43,7 @@ def manager(port_manager):
 @pytest.fixture(scope="function")
 def node(project, manager, loop):
     node = manager.create_node("test", project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
-    return loop.run_until_complete(asyncio.async(node))
+    return loop.run_until_complete(asyncio.coroutine(node))
 
 
 def test_affect_uuid():
@@ -120,7 +120,7 @@ def test_project_delete(loop):
     project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
-    loop.run_until_complete(asyncio.async(project.delete()))
+    loop.run_until_complete(asyncio.coroutine(project.delete()))
     assert os.path.exists(directory) is False
 
 
@@ -130,7 +130,7 @@ def test_project_delete_permission_issue(loop):
     assert os.path.exists(directory)
     os.chmod(directory, 0)
     with pytest.raises(aiohttp.web.HTTPInternalServerError):
-        loop.run_until_complete(asyncio.async(project.delete()))
+        loop.run_until_complete(asyncio.coroutine(project.delete()))
     os.chmod(directory, 700)
 
 
@@ -144,7 +144,7 @@ def test_project_add_node(manager):
 def test_project_close(loop, node, project):
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.close") as mock:
-        loop.run_until_complete(asyncio.async(project.close()))
+        loop.run_until_complete(asyncio.coroutine(project.close()))
         assert mock.called
     assert node.id not in node.manager._nodes
 
@@ -161,7 +161,7 @@ def test_list_files(tmpdir, loop):
         with open(os.path.join(path, "test.txt"), "w+") as f:
             f.write("test2")
 
-        files = loop.run_until_complete(asyncio.async(project.list_files()))
+        files = loop.run_until_complete(asyncio.coroutine(project.list_files()))
 
         assert files == [
             {

@@ -74,7 +74,7 @@ class Query:
             response = yield from self._session.ws_connect(self.get_url(path))
             future.set_result(response)
         future = asyncio.Future()
-        asyncio.async(go_request(future))
+        asyncio.coroutine(go_request(future))
         self._loop.run_until_complete(future)
         return future.result()
 
@@ -85,7 +85,7 @@ class Query:
             - example if True the session is included inside documentation
             - raw do not JSON encode the query
         """
-        return self._loop.run_until_complete(asyncio.async(self._async_fetch(method, path, body=body, **kwargs)))
+        return self._loop.run_until_complete(asyncio.coroutine(self._async_fetch(method, path, body=body, **kwargs)))
 
     @asyncio.coroutine
     def _async_fetch(self, method, path, body=None, **kwargs):

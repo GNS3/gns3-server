@@ -86,7 +86,7 @@ def test_create(loop, project, manager):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
                 "OpenStdin": True,
@@ -125,7 +125,7 @@ def test_create_with_tag(loop, project, manager):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:16.04")
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
                 "OpenStdin": True,
@@ -167,7 +167,7 @@ def test_create_vnc(loop, project, manager):
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu", console_type="vnc", console=5900)
             vm._start_vnc = MagicMock()
             vm._display = 42
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
                 "OpenStdin": True,
@@ -212,7 +212,7 @@ def test_create_start_cmd(loop, project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest")
             vm._start_command = "/bin/ls"
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
                 "OpenStdin": True,
@@ -256,7 +256,7 @@ def test_create_environment(loop, project, manager):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
             vm.environment = "YES=1\nNO=0\nGNS3_MAX_ETHERNET=eth2"
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             assert mock.call_args[1]['data']['Env'] == [
                 "container=docker",
                 "GNS3_MAX_ETHERNET=eth0",
@@ -280,7 +280,7 @@ def test_create_environment_with_last_new_line_character(loop, project, manager)
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
             vm.environment = "YES=1\nNO=0\nGNS3_MAX_ETHERNET=eth2\n"
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             assert mock.call_args[1]['data']['Env'] == [
                 "container=docker",
                 "GNS3_MAX_ETHERNET=eth0",
@@ -313,7 +313,7 @@ def test_create_image_not_available(loop, project, manager):
     vm._get_image_information.side_effect = information
     with asyncio_patch("gns3server.compute.docker.DockerVM.pull_image", return_value=True) as mock_pull:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-            loop.run_until_complete(asyncio.async(vm.create()))
+            loop.run_until_complete(asyncio.coroutine(vm.create()))
             mock.assert_called_with("POST", "containers/create", data={
                 "Tty": True,
                 "OpenStdin": True,
@@ -359,17 +359,17 @@ def test_get_container_state(loop, vm):
         }
     }
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        assert loop.run_until_complete(asyncio.async(vm._get_container_state())) == "running"
+        assert loop.run_until_complete(asyncio.coroutine(vm._get_container_state())) == "running"
 
     response["State"]["Running"] = False
     response["State"]["Paused"] = True
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        assert loop.run_until_complete(asyncio.async(vm._get_container_state())) == "paused"
+        assert loop.run_until_complete(asyncio.coroutine(vm._get_container_state())) == "paused"
 
     response["State"]["Running"] = False
     response["State"]["Paused"] = False
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        assert loop.run_until_complete(asyncio.async(vm._get_container_state())) == "exited"
+        assert loop.run_until_complete(asyncio.coroutine(vm._get_container_state())) == "exited"
 
 
 def test_is_running(loop, vm):
@@ -380,17 +380,17 @@ def test_is_running(loop, vm):
         }
     }
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        assert loop.run_until_complete(asyncio.async(vm.is_running())) is False
+        assert loop.run_until_complete(asyncio.coroutine(vm.is_running())) is False
 
     response["State"]["Running"] = True
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        assert loop.run_until_complete(asyncio.async(vm.is_running())) is True
+        assert loop.run_until_complete(asyncio.coroutine(vm.is_running())) is True
 
 
 def test_pause(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
-        loop.run_until_complete(asyncio.async(vm.pause()))
+        loop.run_until_complete(asyncio.coroutine(vm.pause()))
 
     mock.assert_called_with("POST", "containers/e90e34656842/pause")
     assert vm.status == "suspended"
@@ -399,7 +399,7 @@ def test_pause(loop, vm):
 def test_unpause(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
-        loop.run_until_complete(asyncio.async(vm.unpause()))
+        loop.run_until_complete(asyncio.coroutine(vm.unpause()))
 
     mock.assert_called_with("POST", "containers/e90e34656842/unpause")
 
@@ -419,10 +419,10 @@ def test_start(loop, vm, manager, free_console_port):
     vm._start_console = AsyncioMagicMock()
 
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-        loop.run_until_complete(asyncio.async(vm.start()))
+        loop.run_until_complete(asyncio.coroutine(vm.start()))
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     vm._add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -438,7 +438,7 @@ def test_start_namespace_failed(loop, vm, manager, free_console_port):
     vm.adapters = 1
 
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
@@ -448,7 +448,7 @@ def test_start_namespace_failed(loop, vm, manager, free_console_port):
                         with asyncio_patch("gns3server.compute.docker.DockerVM._get_log", return_value='Hello not available') as mock_log:
 
                             with pytest.raises(DockerError):
-                                loop.run_until_complete(asyncio.async(vm.start()))
+                                loop.run_until_complete(asyncio.coroutine(vm.start()))
 
     mock_query.assert_any_call("POST", "containers/e90e34656842/start")
     mock_add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -470,7 +470,7 @@ def test_start_without_nio(loop, vm, manager, free_console_port):
                 with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42) as mock_namespace:
                     with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
                         with asyncio_patch("gns3server.compute.docker.DockerVM._start_console") as mock_start_console:
-                            loop.run_until_complete(asyncio.async(vm.start()))
+                            loop.run_until_complete(asyncio.coroutine(vm.start()))
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     assert mock_add_ubridge_connection.called
@@ -483,7 +483,7 @@ def test_start_unpause(loop, vm, manager, free_console_port):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
         with asyncio_patch("gns3server.compute.docker.DockerVM.unpause", return_value="paused") as mock:
-            loop.run_until_complete(asyncio.async(vm.start()))
+            loop.run_until_complete(asyncio.coroutine(vm.start()))
     assert mock.called
     assert vm.status == "started"
 
@@ -491,7 +491,7 @@ def test_start_unpause(loop, vm, manager, free_console_port):
 def test_restart(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
-        loop.run_until_complete(asyncio.async(vm.restart()))
+        loop.run_until_complete(asyncio.coroutine(vm.restart()))
 
     mock.assert_called_with("POST", "containers/e90e34656842/restart")
 
@@ -504,7 +504,7 @@ def test_stop(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            loop.run_until_complete(asyncio.async(vm.stop()))
+            loop.run_until_complete(asyncio.coroutine(vm.stop()))
             mock_query.assert_called_with("POST", "containers/e90e34656842/stop", params={"t": 5})
     assert mock.stop.called
     assert vm._ubridge_hypervisor is None
@@ -516,7 +516,7 @@ def test_stop_paused_container(loop, vm):
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
         with asyncio_patch("gns3server.compute.docker.DockerVM.unpause") as mock_unpause:
             with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-                loop.run_until_complete(asyncio.async(vm.stop()))
+                loop.run_until_complete(asyncio.coroutine(vm.stop()))
                 mock_query.assert_called_with("POST", "containers/e90e34656842/stop", params={"t": 5})
                 assert mock_unpause.called
 
@@ -534,7 +534,7 @@ def test_update(loop, vm):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
-                loop.run_until_complete(asyncio.async(vm.update()))
+                loop.run_until_complete(asyncio.coroutine(vm.update()))
 
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call("POST", "containers/create", data={
@@ -584,7 +584,7 @@ def test_update_vnc(loop, vm):
         with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
             with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
                 with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
-                    loop.run_until_complete(asyncio.async(vm.update()))
+                    loop.run_until_complete(asyncio.coroutine(vm.update()))
 
     assert vm.console == original_console
     assert vm.aux == original_aux
@@ -603,7 +603,7 @@ def test_update_running(loop, vm):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
             with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
-                loop.run_until_complete(asyncio.async(vm.update()))
+                loop.run_until_complete(asyncio.coroutine(vm.update()))
 
     mock_query.assert_any_call("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
     mock_query.assert_any_call("POST", "containers/create", data={
@@ -641,7 +641,7 @@ def test_delete(loop, vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            loop.run_until_complete(asyncio.async(vm.delete()))
+            loop.run_until_complete(asyncio.coroutine(vm.delete()))
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
 
@@ -651,11 +651,11 @@ def test_close(loop, vm, port_manager):
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            loop.run_until_complete(asyncio.async(vm.close()))
+            loop.run_until_complete(asyncio.coroutine(vm.close()))
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
@@ -670,7 +670,7 @@ def test_close_vnc(loop, vm, port_manager):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            loop.run_until_complete(asyncio.async(vm.close()))
+            loop.run_until_complete(asyncio.coroutine(vm.close()))
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
@@ -684,7 +684,7 @@ def test_get_namespace(loop, vm):
         }
     }
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock_query:
-        assert loop.run_until_complete(asyncio.async(vm._get_namespace())) == 42
+        assert loop.run_until_complete(asyncio.coroutine(vm._get_namespace())) == 42
     mock_query.assert_called_with("GET", "containers/e90e34656842/json")
 
 
@@ -699,7 +699,7 @@ def test_add_ubridge_connection(loop, vm):
     vm._ubridge_hypervisor = MagicMock()
     vm._namespace = 42
 
-    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
+    loop.run_until_complete(asyncio.coroutine(vm._add_ubridge_connection(nio, 0)))
 
     calls = [
         call.send('bridge create bridge0'),
@@ -720,7 +720,7 @@ def test_add_ubridge_connection_none_nio(loop, vm):
     vm._ubridge_hypervisor = MagicMock()
     vm._namespace = 42
 
-    loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
+    loop.run_until_complete(asyncio.coroutine(vm._add_ubridge_connection(nio, 0)))
 
     calls = [
         call.send('bridge create bridge0'),
@@ -741,7 +741,7 @@ def test_add_ubridge_connection_invalid_adapter_number(loop, vm):
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
-        loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 12)))
+        loop.run_until_complete(asyncio.coroutine(vm._add_ubridge_connection(nio, 12)))
 
 
 def test_add_ubridge_connection_no_free_interface(loop, vm):
@@ -757,7 +757,7 @@ def test_add_ubridge_connection_no_free_interface(loop, vm):
         interfaces = ["tap-gns3-e{}".format(index) for index in range(4096)]
 
         with patch("psutil.net_if_addrs", return_value=interfaces):
-            loop.run_until_complete(asyncio.async(vm._add_ubridge_connection(nio, 0)))
+            loop.run_until_complete(asyncio.coroutine(vm._add_ubridge_connection(nio, 0)))
 
 
 def test_adapter_add_nio_binding(vm, loop):
@@ -766,7 +766,7 @@ def test_adapter_add_nio_binding(vm, loop):
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
     assert vm._ethernet_adapters[0].get_nio(0) == nio
 
 
@@ -781,9 +781,9 @@ def test_adapter_udpate_nio_binding(vm, loop):
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
-        loop.run_until_complete(asyncio.async(vm.adapter_update_nio_binding(0, nio)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_update_nio_binding(0, nio)))
     assert vm._ubridge_apply_filters.called
 
 
@@ -795,9 +795,9 @@ def test_adapter_udpate_nio_binding_bridge_not_started(vm, loop):
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
-        loop.run_until_complete(asyncio.async(vm.adapter_update_nio_binding(0, nio)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_update_nio_binding(0, nio)))
     assert vm._ubridge_apply_filters.called is False
 
 
@@ -808,7 +808,7 @@ def test_adapter_add_nio_binding_invalid_adapter(vm, loop):
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
     with pytest.raises(DockerError):
-        loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(12, nio)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(12, nio)))
 
 
 def test_adapter_remove_nio_binding(vm, loop):
@@ -820,10 +820,10 @@ def test_adapter_remove_nio_binding(vm, loop):
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._ubridge_send") as delete_ubridge_mock:
-        loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(0)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_remove_nio_binding(0)))
         assert vm._ethernet_adapters[0].get_nio(0) is None
         delete_ubridge_mock.assert_any_call('bridge stop bridge0')
         delete_ubridge_mock.assert_any_call('bridge remove_nio_udp bridge0 4242 127.0.0.1 4343')
@@ -831,15 +831,15 @@ def test_adapter_remove_nio_binding(vm, loop):
 
 def test_adapter_remove_nio_binding_invalid_adapter(vm, loop):
     with pytest.raises(DockerError):
-        loop.run_until_complete(asyncio.async(vm.adapter_remove_nio_binding(12)))
+        loop.run_until_complete(asyncio.coroutine(vm.adapter_remove_nio_binding(12)))
 
 
 def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
-    loop.run_until_complete(asyncio.async(vm.start_capture(0, output_file)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.start_capture(0, output_file)))
     assert vm._ethernet_adapters[0].get_nio(0).capturing
 
 
@@ -847,10 +847,10 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
-    loop.run_until_complete(asyncio.async(vm.adapter_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.coroutine(vm.adapter_add_nio_binding(0, nio)))
     loop.run_until_complete(vm.start_capture(0, output_file))
     assert vm._ethernet_adapters[0].get_nio(0).capturing
-    loop.run_until_complete(asyncio.async(vm.stop_capture(0)))
+    loop.run_until_complete(asyncio.coroutine(vm.stop_capture(0)))
     assert vm._ethernet_adapters[0].get_nio(0).capturing is False
 
 
@@ -863,7 +863,7 @@ def test_get_log(loop, vm):
     mock_query.read = read
 
     with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
-        images = loop.run_until_complete(asyncio.async(vm._get_log()))
+        images = loop.run_until_complete(asyncio.coroutine(vm._get_log()))
         mock.assert_called_with("GET", "containers/e90e34656842/logs", params={"stderr": 1, "stdout": 1}, data={})
 
 
@@ -872,7 +872,7 @@ def test_get_image_informations(project, manager, loop):
     }
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
         vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
-        loop.run_until_complete(asyncio.async(vm._get_image_information()))
+        loop.run_until_complete(asyncio.coroutine(vm._get_image_information()))
         mock.assert_called_with("GET", "images/ubuntu:latest/json")
 
 
@@ -902,7 +902,7 @@ def test_start_vnc(vm, loop):
     with patch("shutil.which", return_value="/bin/x"):
         with asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation") as mock_wait:
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
-                loop.run_until_complete(asyncio.async(vm._start_vnc()))
+                loop.run_until_complete(asyncio.coroutine(vm._start_vnc()))
     assert vm._display is not None
     mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
     mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-rfbportv6", str(vm.console), "-noncache", "-listen", "127.0.0.1")
@@ -911,13 +911,13 @@ def test_start_vnc(vm, loop):
 
 def test_start_vnc_xvfb_missing(vm, loop):
     with pytest.raises(DockerError):
-        loop.run_until_complete(asyncio.async(vm._start_vnc()))
+        loop.run_until_complete(asyncio.coroutine(vm._start_vnc()))
 
 
 def test_start_aux(vm, loop):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
-        loop.run_until_complete(asyncio.async(vm._start_aux()))
+        loop.run_until_complete(asyncio.coroutine(vm._start_aux()))
     mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do TERM=vt100 /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
 
 
@@ -979,5 +979,5 @@ def test_read_console_output_with_binary_mode(vm, loop):
     output_stream = MagicMock()
 
     with asyncio_patch('gns3server.compute.docker.docker_vm.DockerVM.stop'):
-        loop.run_until_complete(asyncio.async(vm._read_console_output(input_stream, output_stream)))
+        loop.run_until_complete(asyncio.coroutine(vm._read_console_output(input_stream, output_stream)))
         output_stream.feed_data.assert_called_once_with(b"test")

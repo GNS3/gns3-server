@@ -57,7 +57,7 @@ class ServerHandler:
 
         tasks = []
         for project in projects:
-            tasks.append(asyncio.async(project.close()))
+            tasks.append(asyncio.coroutine(project.close()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -71,7 +71,7 @@ class ServerHandler:
         # then shutdown the server itself
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
-        asyncio.async(server.shutdown_server())
+        asyncio.coroutine(server.shutdown_server())
         response.set_status(201)
 
     @Route.get(

@@ -194,7 +194,7 @@ class Router(BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        asyncio.async(self.save_configs())
+        asyncio.coroutine(self.save_configs())
 
     @property
     def dynamips_id(self):

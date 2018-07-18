@@ -314,7 +314,7 @@ def async_run(loop):
     """
     Shortcut for running in asyncio loop
     """
-    return lambda x: loop.run_until_complete(asyncio.async(x))
+    return lambda x: loop.run_until_complete(asyncio.coroutine(x))
 
 
 @pytest.yield_fixture
