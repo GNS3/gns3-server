@@ -11,6 +11,6 @@
     "maintainer_email": "developers@gns3.net",
     "docker": {
         "adapters": 1,
-        "image": "gns3/python-go-perl-php:latest"
+        "image": "adosztal/python-go-perl-php:latest"
     }
 }

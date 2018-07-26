@@ -29,6 +29,27 @@
     },
     "images": [
         {
+            "filename": "FortiSIEM-VA-5.0.0.1201.qcow2",
+            "version": "5.0.0",
+            "md5sum": "1f2f0b1d84e89495fc5b5ca722cb5710",
+            "filesize": 10029432832,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-5.0.0.1201-1.qcow2",
+            "version": "5.0.0",
+            "md5sum": "88e96259f44a82b7c545b82925880513",
+            "filesize": 46858240,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-5.0.0.1201-2.qcow2",
+            "version": "5.0.0",
+            "md5sum": "58d61498e1adc1df062fc12113d42d86",
+            "filesize": 46858240,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+        },
+        {
             "filename": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
             "version": "4.10.0",
             "md5sum": "636d94c78ea02e5a39eadb9d44210dfb",
@@ -72,6 +93,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.0.0",
+            "images": {
+                "hda_disk_image": "FortiSIEM-VA-5.0.0.1201.qcow2",
+                "hdb_disk_image": "FortiSIEM-VA-5.0.0.1201-1.qcow2",
+                "hdc_disk_image": "FortiSIEM-VA-5.0.0.1201-2.qcow2"
+            }
+        },
         {
             "name": "4.10.0",
             "images": {

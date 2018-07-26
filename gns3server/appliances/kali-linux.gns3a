@@ -21,6 +21,14 @@
     },
     "images": [
         {
+            "filename": "kali-linux-2018.1-amd64.iso",
+            "version": "2018.1",
+            "md5sum": "a3feb90df5b71b3c7f4a02bdddf221d7",
+            "filesize": 3028500480,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2018.1/kali-linux-2018.1-amd64.iso"
+        },
+        {
             "filename": "kali-linux-2017.3-amd64.iso",
             "version": "2017.3",
             "md5sum": "b465580c897e94675ac1daf031fa66b9",
@@ -70,6 +78,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2018.8",
+            "images": {
+                "cdrom_image": "kali-linux-2018.1-amd64.iso"
+            }
+        },
         {
             "name": "2017.3",
             "images": {

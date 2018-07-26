@@ -25,6 +25,13 @@
     },
     "images": [
         {
+           "filename": "jinstall-vqfx-10-f-17.4R1.16.img",
+           "version": "17.4R1",
+           "md5sum": "dd83313b0f5beaf68488ed3d5e1e5240",
+           "filesize": 553910272,
+           "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+        },
+        {
            "filename": "vqfx10k-re-15.1X53-D60.vmdk",
            "version": "15.1X53-D60",
            "md5sum": "758669e88213fbd7943f5da7f6d7bd59",
@@ -33,6 +40,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.4R1",
+            "images": {
+                "hda_disk_image": "jinstall-vqfx-10-f-17.4R1.16.img"
+            }
+        },
         {
             "name": "15.1X53-D60",
             "images": {

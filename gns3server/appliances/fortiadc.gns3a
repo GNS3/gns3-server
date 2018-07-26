@@ -28,10 +28,31 @@
     },
     "images": [
         {
-            "filename": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2",
-            "version": "4.x.x",
+            "filename": "FAD_KVM-FORTINET.out.kvm-data.qcow2",
+            "version": "ALL",
             "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
             "filesize": 30998528,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAD_KVM-V500-build0056-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.0.1",
+            "md5sum": "8b3b789fb540b2c30066f66bcbe7f307",
+            "filesize": 75038720,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAD_KVM-V500-build0045-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.0.0",
+            "md5sum": "d7381b3fb7a4534370ce8983e441d888",
+            "filesize": 74383360,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAD_KVM-V400-build0999-FORTINET.out.kvm-boot.qcow2",
+            "version": "4.8.5",
+            "md5sum": "d7825b8d0962800c37ffa814a6b2ad45",
+            "filesize": 73334784,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -156,122 +177,143 @@
     ],
     "versions": [
         {
+            "name": "5.0.1",
+            "images": {
+                "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+            }
+        },
+        {
+            "name": "5.0.0",
+            "images": {
+                "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+            }
+        },
+        {
+            "name": "4.8.5",
+            "images": {
+                "hda_disk_image": "FAD_KVM-V400-build0999-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+            }
+        },
+        {
             "name": "4.8.4",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.8.3",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0983-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.8.2",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0977-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.8.1",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0970-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.8.0",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0937-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.7.4",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0858-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.7.3",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0849-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.7.2",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0844-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.7.1",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0832-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.7.0",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0828-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.6.2",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0679-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.6.1",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0677-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.6.0",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0660-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.5.3",
             "images": {
                 "hda_disk_image": "FAD_KVM-V400-build0605-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.5.2",
             "images": {
                 "hda_disk_image": "FAD_KVM-v400-build0597-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.5.1",
             "images": {
                 "hda_disk_image": "FAD_KVM-v400-build0581-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "4.5.0",
             "images": {
                 "hda_disk_image": "FAD_KVM-v400-build0560-FORTINET.out.kvm-boot.qcow2",
-                "hdb_disk_image": "FAD_KVM-v400-FORTINET.out.kvm-data.qcow2"
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         }
     ]

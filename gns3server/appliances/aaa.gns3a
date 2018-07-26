@@ -1,0 +1,19 @@
+{
+    "name": "AAA",
+    "category": "guest",
+    "description": "This appliance provides RADIUS and TACACS+ services with preconfigured users and groups.",
+    "vendor_name": "Ubuntu",
+    "vendor_url": "https://www.ubuntu.com/",
+    "product_name": "AAA",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Andras Dosztal",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "linux_guest.svg",
+    "usage": "RADIUS users:\n- alice\n- bob\n\nTACACS+ users:\n- gns3 (role: admin)\n- readonly\n\nAll users, as well as the RADIUS/TACACS+ clients have the password 'gns3' set.",
+    "docker": {
+        "adapters": 1,
+        "image": "adosztal/aaa:latest",
+        "console_type": "telnet"
+    }
+}
