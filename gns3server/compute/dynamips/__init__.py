@@ -561,6 +561,7 @@ class Dynamips(BaseManager):
 
         yield from vm.set_idlepc("0x0")
         was_auto_started = False
+        old_priority = None
         try:
             status = yield from vm.get_status()
             if status != "running":
@@ -572,6 +573,8 @@ class Dynamips(BaseManager):
             if not idlepcs:
                 raise DynamipsError("No Idle-PC values found")
 
+            if sys.platform.startswith("win"):
+                old_priority = vm.set_process_priority_windows(vm.hypervisor.process.pid)
             for idlepc in idlepcs:
                 match = re.search(r"^0x[0-9a-f]{8}$", idlepc.split()[0])
                 if not match:
@@ -600,6 +603,8 @@ class Dynamips(BaseManager):
         except DynamipsError:
             raise
         finally:
+            if old_priority is not None:
+                vm.set_process_priority_windows(vm.hypervisor.process.pid, old_priority)
             if was_auto_started:
                 yield from vm.stop()
         return validated_idlepc

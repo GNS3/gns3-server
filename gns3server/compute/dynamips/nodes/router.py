@@ -683,6 +683,29 @@ class Router(BaseNode):
         log.info('Router "{name}" [{id}]: idle-PC set to {idlepc}'.format(name=self._name, id=self._id, idlepc=idlepc))
         self._idlepc = idlepc
 
+    def set_process_priority_windows(self, pid, priority=None):
+        """
+        Sets process priority on Windows
+
+        :param pid: process PID
+        """
+
+        import win32api
+        import win32process
+        import win32con
+        import pywintypes
+
+        old_priority = None
+        try:
+            handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
+            old_priority = win32process.GetPriorityClass(handle)
+            if priority is None:
+                priority = win32process.BELOW_NORMAL_PRIORITY_CLASS
+            win32process.SetPriorityClass(handle, priority)
+        except pywintypes.error as e:
+            log.error("Cannot set priority for Dynamips process (PID={}) ".format(pid, e.strerror))
+        return old_priority
+
     @asyncio.coroutine
     def get_idle_pc_prop(self):
         """
@@ -701,8 +724,13 @@ class Router(BaseNode):
             yield from asyncio.sleep(20)  # leave time to the router to boot
 
         log.info('Router "{name}" [{id}] has started calculating Idle-PC values'.format(name=self._name, id=self._id))
+        old_priority = None
+        if sys.platform.startswith("win"):
+            old_priority = self.set_process_priority_windows(self._hypervisor.process.pid)
         begin = time.time()
         idlepcs = yield from self._hypervisor.send('vm get_idle_pc_prop "{}" 0'.format(self._name))
+        if old_priority is not None:
+            self.set_process_priority_windows(self._hypervisor.process.pid, old_priority)
         log.info('Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(name=self._name,
                                                                                                                   id=self._id,
                                                                                                                   time=time.time() - begin))
