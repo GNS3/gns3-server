@@ -14,8 +14,8 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Capture started
 - **400**: Invalid request
+- **201**: Capture started
 
 Input
 *******

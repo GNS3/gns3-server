@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 366
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:14 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:52 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/capabilities
 
 {
@@ -30,5 +30,5 @@ X-Route: /v2/compute/capabilities
         "iou"
     ],
     "platform": "linuxdebian",
-    "version": "2.1.7dev1"
+    "version": "2.1.8dev1"
 }

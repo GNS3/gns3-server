@@ -1,0 +1,19 @@
+{
+    "name": "Toolbox",
+    "category": "guest",
+    "description": "This appliance contains server side software for secondary management of network devices:\n- www (nginx) \n- ftp (vsftpd)\n- tftp (tftpd)\n- syslog (rsyslog)\n- dhcp (isc-dhcpd)\n- snmp server (snmpd + snmptrapd)",
+    "vendor_name": "Ubuntu",
+    "vendor_url": "https://www.ubuntu.com/",
+    "product_name": "Networkers' toolbox",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Andras Dosztal",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "linux_guest.svg",
+    "usage": "Root password: gns3",
+    "docker": {
+        "adapters": 1,
+        "image": "adosztal/net_toolbox:latest",
+        "console_type": "telnet"
+    }
+}

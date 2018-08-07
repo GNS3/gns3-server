@@ -9,8 +9,8 @@ Return all the links connected to this node
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************

@@ -36,6 +36,16 @@ def test_create_project_with_path(http_compute, tmpdir):
         assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
+def test_create_project_with_path_and_empty_variables(http_compute, tmpdir):
+    with patch("gns3server.compute.project.Project.is_local", return_value=True):
+        response = http_compute.post("/projects", {
+            "name": "test",
+            "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
+            "variables": None})
+        assert response.status == 201
+        assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+
+
 def test_create_project_without_dir(http_compute):
     query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_compute.post("/projects", query, example=True)

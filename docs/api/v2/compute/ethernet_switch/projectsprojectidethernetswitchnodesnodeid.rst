@@ -9,8 +9,8 @@ Get an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -40,8 +40,8 @@ Update an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -106,12 +106,12 @@ Delete an Ethernet switch instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Instance deleted
 

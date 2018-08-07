@@ -23,96 +23,31 @@
     },
     "images": [
         {
+            "filename": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img",
+            "version": "2.4.3",
+            "md5sum": "b754d7e75dece5e756b6539c95714a74",
+            "filesize": 650392576,
+            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
+        },
+        {
             "filename": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img",
             "version": "2.3.5",
             "md5sum": "b6cb76adba3e1113892f84ea01894228",
             "filesize": 1989969408,
             "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-CE-2.3.4-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3.4",
-            "md5sum": "0c9871b54f932be2d550908f7c23b302",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-CE-2.3.3-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3.3",
-            "md5sum": "200f073c4f0a4ba6690920079f23d5dd",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-CE-2.3.2-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3.2",
-            "md5sum": "c91f2c8e287f4930695e65a6793cb8fe",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-CE-2.3.1-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3.1",
-            "md5sum": "719149eed51e03872a8cfd235d958d2e",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-CE-2.3-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3",
-            "md5sum": "8ab5047bd4c5bbabf71055fb75177d85",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
-        },
-        {
-            "filename": "pfSense-2.2.6-RELEASE-1g-amd64-nanobsd.img",
-            "version": "2.2.6",
-            "md5sum": "7bbe39c4ec698685c9f9b615926820a9",
-            "filesize": 997097472,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
         }
     ],
     "versions": [
         {
+            "name": "2.4.3",
+            "images": {
+                "hda_disk_image": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img"
+            }
+        },
+        {
             "name": "2.3.5",
             "images": {
                 "hda_disk_image": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.3.4",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3.4-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.3.3",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3.3-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.3.2",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3.2-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.3.1",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3.1-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.3",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3-RELEASE-2g-amd64-nanobsd.img"
-            }
-        },
-        {
-            "name": "2.2.6",
-            "images": {
-                "hda_disk_image": "pfSense-2.2.6-RELEASE-1g-amd64-nanobsd.img"
             }
         }
     ]

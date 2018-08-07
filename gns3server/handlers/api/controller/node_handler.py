@@ -213,7 +213,7 @@ class NodeHandler:
             "node_id": "Node UUID"
         },
         status_codes={
-            204: "Instance started",
+            200: "Instance started",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
@@ -225,7 +225,7 @@ class NodeHandler:
         node = project.get_node(request.match_info["node_id"])
         yield from node.start(data=request.json)
         response.json(node)
-        response.set_status(201)
+        response.set_status(200)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/stop",
@@ -234,7 +234,7 @@ class NodeHandler:
             "node_id": "Node UUID"
         },
         status_codes={
-            204: "Instance stopped",
+            200: "Instance stopped",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
@@ -246,7 +246,7 @@ class NodeHandler:
         node = project.get_node(request.match_info["node_id"])
         yield from node.stop()
         response.json(node)
-        response.set_status(201)
+        response.set_status(200)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/suspend",
@@ -255,7 +255,7 @@ class NodeHandler:
             "node_id": "Node UUID"
         },
         status_codes={
-            204: "Instance suspended",
+            200: "Instance suspended",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
@@ -267,7 +267,7 @@ class NodeHandler:
         node = project.get_node(request.match_info["node_id"])
         yield from node.suspend()
         response.json(node)
-        response.set_status(201)
+        response.set_status(200)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/reload",
@@ -276,7 +276,7 @@ class NodeHandler:
             "node_id": "Node UUID"
         },
         status_codes={
-            204: "Instance reloaded",
+            200: "Instance reloaded",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
@@ -288,7 +288,7 @@ class NodeHandler:
         node = project.get_node(request.match_info["node_id"])
         #yield from node.reload()
         response.json(node)
-        response.set_status(201)
+        response.set_status(200)
 
     @Route.delete(
         r"/projects/{project_id}/nodes/{node_id}",

@@ -26,12 +26,19 @@
     },
     "images": [
         {
+            "filename": "vFPC-20171213.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "848a6256da7296e8fede368a258c68e4",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
             "filename": "vfpc_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
             "md5sum": "169dd487b8547d58b12b2918a5667360",
             "filesize": 102820352,
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
-        }, 
+        },
         {
             "filename": "vFPC-20170216.img",
             "version": "17.1R1.8-KVM",
@@ -108,17 +115,30 @@
             "md5sum": "5ccf252002184a21413cad23fd239c3f",
             "filesize": 2313158656,
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
-        }, 
+        },
+        {
+            "filename": "vFPC-15.1F6.9.img",
+            "version": "15.1F6.9-KVM",
+            "md5sum": "7328501fdfa9b160955bc136664f1e86",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
         {
             "filename": "vFPC-20151203.img",
             "version": "15.1F4.15",
             "md5sum": "b3faa91b4d20836a9a6dd6bad2629dd1",
             "filesize": 2313158656,
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
-        } 
+        }
     ],
 
     "versions": [
+        {
+            "name": "17.4R1.16-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20171213.img"
+            }
+        },
         {
             "name": "17.1R1.8-ESXi",
             "images": {
@@ -192,11 +212,17 @@
             }
         },
         {
+            "name": "15.1F6.9-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-15.1F6.9.img"
+            }
+        },
+        {
             "name": "15.1F4.15",
             "images": {
                 "hda_disk_image": "vFPC-20151203.img"
             }
         }
-       
+
     ]
 }

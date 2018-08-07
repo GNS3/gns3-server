@@ -54,7 +54,7 @@ class UDPLink(Link):
         try:
             (node1_host, node2_host) = yield from node1.compute.get_ip_on_same_subnet(node2.compute)
         except ValueError as e:
-            raise aiohttp.web.HTTPConflict(text=str(e))
+            raise aiohttp.web.HTTPConflict(text="Cannot get an IP address on same subnet: {}".format(e))
 
         # Reserve a UDP port on both side
         response = yield from node1.compute.post("/projects/{}/ports/udp".format(self._project.id))

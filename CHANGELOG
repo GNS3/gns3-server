@@ -1,5 +1,26 @@
 # Change Log
 
+## 2.1.8 14/06/2018
+
+* 'caplog.text()' syntax is deprecated, use 'caplog.text' property instead.
+* Remove problematic pytest-capturelog dev dependency.
+* Fix API status code for start/stop/suspend/reload a node. Fixes #1353. Fix issues with test. Update documentation.
+* Don't send variables to computes where are empty, Ref: #1340
+
+## 2.1.7 12/06/2018
+
+* Don't release NIO UDP ports when updating docker container.
+* Timeout for stream file.
+* Fix switching console type from telnet to VNC throws error.
+* Fix timeout error with "save as" for large projects.
+* Update API documentation
+* Add API endpoint to return all links attached to a node.
+* Fix issue with some SVG symbols that could not be used in GNS3. This was due to the height and width values being percentages.
+* Show correct free disk space value.
+* Force prompt-toolkit to version 1.0.15
+* Remove unwanted trailing characters and other white spaces when reading .md5sum files.
+* Change order to find vnetlib on Windows (PATH -> Registry -> Default directories).
+
 ## 2.1.6 22/05/2018
 
 * Locks down async-timeout<3.0.0 for P3.4 support; Fixes: #1331

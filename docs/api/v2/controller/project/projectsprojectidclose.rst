@@ -13,8 +13,8 @@ Parameters
 
 Response status codes
 **********************
-- **204**: The project has been closed
 - **404**: The project doesn't exist
+- **204**: The project has been closed
 
 Output
 *******

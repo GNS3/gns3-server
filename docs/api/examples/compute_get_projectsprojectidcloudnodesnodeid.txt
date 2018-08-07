@@ -1,51 +1,36 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b766dfcb-041e-48a5-a06e-612c4628a95f'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b81b6f71-e77e-4b7b-8db9-916d4fa832e3'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b766dfcb-041e-48a5-a06e-612c4628a95f HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/b81b6f71-e77e-4b7b-8db9-916d4fa832e3 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2926
+Content-Length: 1608
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:14 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:52 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
     "interfaces": [
         {
-            "name": "bridge0",
+            "name": "docker0",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "en0",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "en1",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "en2",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "fw0",
+            "name": "lo",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "lo0",
+            "name": "virbr0",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "p2p0",
+            "name": "virbr0-nic",
             "special": true,
             "type": "ethernet"
         },
@@ -55,52 +40,17 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
             "type": "ethernet"
         },
         {
-            "name": "vmnet10",
+            "name": "vmnet2",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "vmnet11",
+            "name": "vmnet3",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "vmnet12",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet13",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet14",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet15",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet16",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet17",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet18",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet19",
+            "name": "vmnet4",
             "special": true,
             "type": "ethernet"
         },
@@ -108,28 +58,21 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
             "name": "vmnet8",
             "special": true,
             "type": "ethernet"
+        },
+        {
+            "name": "wlp58s0",
+            "special": false,
+            "type": "ethernet"
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/builtin/b766dfcb-041e-48a5-a06e-612c4628a95f",
-    "node_id": "b766dfcb-041e-48a5-a06e-612c4628a95f",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-23/test_json4/project-files/builtin/b81b6f71-e77e-4b7b-8db9-916d4fa832e3",
+    "node_id": "b81b6f71-e77e-4b7b-8db9-916d4fa832e3",
     "ports_mapping": [
         {
-            "interface": "en0",
-            "name": "en0",
+            "interface": "wlp58s0",
+            "name": "wlp58s0",
             "port_number": 0,
-            "type": "ethernet"
-        },
-        {
-            "interface": "en1",
-            "name": "en1",
-            "port_number": 1,
-            "type": "ethernet"
-        },
-        {
-            "interface": "en2",
-            "name": "en2",
-            "port_number": 2,
             "type": "ethernet"
         }
     ],

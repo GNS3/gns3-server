@@ -9,14 +9,14 @@ Stop a packet capture on a TraceNG instance
 
 Parameters
 **********
-- **project_id**: Project UUID
-- **node_id**: Node UUID
 - **adapter_number**: Adapter to stop a packet capture
+- **node_id**: Node UUID
+- **project_id**: Project UUID
 - **port_number**: Port on the adapter
 
 Response status codes
 **********************
-- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Capture stopped
 

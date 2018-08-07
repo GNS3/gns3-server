@@ -53,8 +53,8 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Link updated
 - **400**: Invalid request
+- **201**: Link updated
 
 Input
 *******
@@ -108,8 +108,8 @@ Parameters
 
 Response status codes
 **********************
-- **204**: Link deleted
 - **400**: Invalid request
+- **204**: Link deleted
 
 Sample session
 ***************

@@ -1,15 +1,15 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d49b3617-cdad-4d3c-99e7-77ae9aad537f/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/8ec1a8d6-2783-4a93-81d3-52ef72e786b0/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/d49b3617-cdad-4d3c-99e7-77ae9aad537f/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/8ec1a8d6-2783-4a93-81d3-52ef72e786b0/start HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1468
+Content-Length: 1380
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:26 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:57 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
 
 {
@@ -44,15 +44,15 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/start
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "0c:dd:80:53:7f:00",
+    "mac_address": "0c:dd:80:86:b0:00",
     "name": "PC TEST 1",
-    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp_svt10ce/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/d49b3617-cdad-4d3c-99e7-77ae9aad537f",
-    "node_id": "d49b3617-cdad-4d3c-99e7-77ae9aad537f",
+    "node_directory": "/tmp/tmp4zak1_kl/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/8ec1a8d6-2783-4a93-81d3-52ef72e786b0",
+    "node_id": "8ec1a8d6-2783-4a93-81d3-52ef72e786b0",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpuv9ozeux/qemu-system-x86_64",
+    "qemu_path": "/tmp/tmpxudfhxk5/qemu-system-x86_64",
     "ram": 256,
     "status": "stopped",
     "usage": ""
