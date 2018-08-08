@@ -37,7 +37,7 @@ class Drawing:
     text, images, rectangle... They are pure SVG elements.
     """
 
-    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
+    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=2, rotation=0):
         self._project = project
         if drawing_id is None:
             self._id = str(uuid.uuid4())

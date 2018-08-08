@@ -71,7 +71,7 @@ class Node:
         self._status = "stopped"
         self._x = 0
         self._y = 0
-        self._z = 0
+        self._z = 1  # default z value is 1
         self._ports = None
         self._symbol = None
         self._custom_adapters = []
