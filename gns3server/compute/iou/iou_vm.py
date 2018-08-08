@@ -74,7 +74,7 @@ class IOUVM(BaseNode):
         self._iou_stdout_file = ""
         self._started = False
         self._nvram_watcher = None
-        self._path = self.manager.get_abs_image_path(path)
+        self._path = self.manager.get_abs_image_path(path, project.path)
 
         # IOU settings
         self._ethernet_adapters = []
@@ -136,7 +136,7 @@ class IOUVM(BaseNode):
         :param path: path to the IOU image executable
         """
 
-        self._path = self.manager.get_abs_image_path(path)
+        self._path = self.manager.get_abs_image_path(path, self.project.path)
         log.info('IOU "{name}" [{id}]: IOU image updated to "{path}"'.format(name=self._name, id=self._id, path=self._path))
 
     @property
@@ -233,8 +233,7 @@ class IOUVM(BaseNode):
                        "command_line": self.command_line,
                        "application_id": self.application_id}
 
-        # return the relative path if the IOU image is in the images_path directory
-        iou_vm_info["path"] = self.manager.get_relative_image_path(self.path)
+        iou_vm_info["path"] = self.path
         return iou_vm_info
 
     @property
