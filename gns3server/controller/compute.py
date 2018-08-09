@@ -409,12 +409,16 @@ class Compute:
                 log.info("Connecting to compute '{}'".format(self._id))
                 response = yield from self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
-                # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
+                log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
+                # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+                    if self.id != "local" and not self._controller.compute_has_open_project(self):
+                        log.info("Not reconnecting to compute '{}' because there is no project opened on it".format(self._id))
+                        return
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
-                    if self._connection_failure == 5:
-                        log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
+                    if self._connection_failure == 10:
+                        log.error("Could not connect to compute '{}' after multiple attempts: {}".format(self._id, e))
                         yield from self._controller.close_compute_projects(self)
                     asyncio.get_event_loop().call_later(2, lambda: asyncio_ensure_future(self._try_reconnect()))
                 return
@@ -522,11 +526,7 @@ class Compute:
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
-            log.debug("Attempting request to compute: {method} {url} {headers}".format(
-                method=method,
-                url=url,
-                headers=headers
-            ))
+            log.debug("Attempting request to compute: {method} {url} {headers}".format(method=method, url=url, headers=headers))
             response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError:
             raise ComputeError("Timeout error for {} call to {} after {}s".format(method, url, timeout))
@@ -633,7 +633,7 @@ class Compute:
             else:
                 images = sorted(images, key=itemgetter('image'))
         except OSError as e:
-            raise ComputeError("Can't list images: {}".format(str(e)))
+            raise ComputeError("Cannot list images: {}".format(str(e)))
         return images
 
     @asyncio.coroutine

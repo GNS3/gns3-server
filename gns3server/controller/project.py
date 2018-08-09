@@ -146,7 +146,6 @@ class Project:
                     }
                 )
 
-
     def reset(self):
         """
         Called when open/close a project. Cleanup internal stuff
@@ -324,7 +323,7 @@ class Project:
     @property
     def auto_close(self):
         """
-        Should project automaticaly closed when client
+        Should project automatically closed when client
         stop listening for notification
         """
         return self._auto_close
@@ -764,7 +763,6 @@ class Project:
                     pictures.remove(logo)
                 except KeyError:
                     pass
-
 
             for pict in pictures:
                 os.remove(os.path.join(self.pictures_directory, pict))

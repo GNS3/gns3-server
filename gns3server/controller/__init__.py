@@ -481,6 +481,18 @@ class Controller:
             if compute in project.computes:
                 yield from project.close()
 
+    def compute_has_open_project(self, compute):
+        """
+        Check is compute has a project opened.
+
+        :returns: True if a project is open
+        """
+
+        for project in self._projects.values():
+            if compute in project.computes and project.status == "opened":
+                return True
+        return False
+
     @asyncio.coroutine
     def delete_compute(self, compute_id):
         """
