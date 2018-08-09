@@ -119,6 +119,13 @@ NODE_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "appliance_id": {
+            "description": "Appliance UUID from which the node has been created. Read only",
+            "type": ["null", "string"],
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
         "node_type": NODE_TYPE_SCHEMA,
         "node_directory": {
             "description": "Working directory of the node. Read only",

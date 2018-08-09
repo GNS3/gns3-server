@@ -480,7 +480,7 @@ class Project:
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)
         node_id = str(uuid.uuid4())
-        node = yield from self.add_node(compute, name, node_id, node_type=node_type, **template)
+        node = yield from self.add_node(compute, name, node_id, node_type=node_type, appliance_id=appliance_id, **template)
         return node
 
     @open_required
