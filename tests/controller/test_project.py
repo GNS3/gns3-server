@@ -18,6 +18,7 @@
 
 import os
 import sys
+import uuid
 import pytest
 import aiohttp
 import zipstream
@@ -211,7 +212,7 @@ def test_add_node_from_appliance(async_run, controller):
     compute.id = "local"
     project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
-    controller._appliances["fakeid"] = Appliance("fakeid", {
+    appliance = Appliance(str(uuid.uuid4()), {
         "server": "local",
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -219,15 +220,15 @@ def test_add_node_from_appliance(async_run, controller):
         "properties": {
             "a": 1
         }
-
     })
+    controller._appliances[appliance.id] = appliance
     controller._computes["local"] = compute
 
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node_from_appliance("fakeid", x=23, y=12))
+    node = async_run(project.add_node_from_appliance(appliance.id, x=23, y=12))
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
@@ -244,7 +245,7 @@ def test_add_node_from_appliance(async_run, controller):
     controller.notification.emit.assert_any_call("node.created", node.__json__())
 
     # Make sure we can call twice the node creation
-    node = async_run(project.add_node_from_appliance("fakeid", x=13, y=12))
+    node = async_run(project.add_node_from_appliance(appliance.id, x=13, y=12))
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
                                        'name': 'Test-2',
