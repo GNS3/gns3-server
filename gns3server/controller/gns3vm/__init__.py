@@ -24,6 +24,7 @@ import ipaddress
 from ...utils.asyncio import locked_coroutine, asyncio_ensure_future
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
+from .hyperv_gns3_vm import HyperVGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
 from .gns3_vm_error import GNS3VMError
 from ...version import __version__
@@ -71,6 +72,15 @@ class GNS3VM:
         else:
             vmware_info["name"] = "VMware Workstation / Player (recommended)"
 
+        hyperv_info = {
+            "engine_id": "hyper-v",
+            "name": "Hyper-V",
+            "description": 'Hyper-V support (Windows 10/Server 2016 and above). Nested virtualization must be supported and enabled (Intel processor only)',
+            "support_when_exit": True,
+            "support_headless": True,
+            "support_ram": True
+        }
+
         download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VirtualBox.{version}.zip".format(version=__version__)
         virtualbox_info = {
             "engine_id": "virtualbox",
@@ -90,11 +100,14 @@ class GNS3VM:
             "support_ram": False
         }
 
-        return [
-            vmware_info,
-            virtualbox_info,
-            remote_info
-        ]
+        engines = [vmware_info,
+                   virtualbox_info,
+                   remote_info]
+
+        if sys.platform.startswith("win"):
+            engines.append(hyperv_info)
+
+        return engines
 
     def current_engine(self):
 
@@ -221,6 +234,9 @@ class GNS3VM:
         if engine == "vmware":
             self._engines["vmware"] = VMwareGNS3VM(self._controller)
             return self._engines["vmware"]
+        elif engine == "hyper-v":
+            self._engines["hyper-v"] = HyperVGNS3VM(self._controller)
+            return self._engines["hyper-v"]
         elif engine == "virtualbox":
             self._engines["virtualbox"] = VirtualBoxGNS3VM(self._controller)
             return self._engines["virtualbox"]

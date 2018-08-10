@@ -1,3 +1,4 @@
 -rrequirements.txt
 
 pywin32>=223 # pyup: ignore
+wmi==1.4.9
