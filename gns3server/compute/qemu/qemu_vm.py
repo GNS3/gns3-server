@@ -207,7 +207,7 @@ class QemuVM(BaseNode):
         :param variable: Variable name in the class
         :param value: New disk value
         """
-        value = self.manager.get_abs_image_path(value)
+        value = self.manager.get_abs_image_path(value, self.project.path)
         if not self.linked_clone:
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
@@ -406,7 +406,7 @@ class QemuVM(BaseNode):
 
         :param cdrom_image: QEMU cdrom image path
         """
-        self._cdrom_image = self.manager.get_abs_image_path(cdrom_image)
+        self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
                                                                                                      id=self._id,
                                                                                                      cdrom_image=self._cdrom_image))
@@ -428,7 +428,7 @@ class QemuVM(BaseNode):
 
         :param bios_image: QEMU bios image path
         """
-        self._bios_image = self.manager.get_abs_image_path(bios_image)
+        self._bios_image = self.manager.get_abs_image_path(bios_image, self.project.path)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(name=self._name,
                                                                                                    id=self._id,
                                                                                                    bios_image=self._bios_image))
@@ -731,7 +731,7 @@ class QemuVM(BaseNode):
         :param initrd: QEMU initrd path
         """
 
-        initrd = self.manager.get_abs_image_path(initrd)
+        initrd = self.manager.get_abs_image_path(initrd, self.project.path)
 
         log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
                                                                                            id=self._id,
@@ -758,7 +758,7 @@ class QemuVM(BaseNode):
         :param kernel_image: QEMU kernel image path
         """
 
-        kernel_image = self.manager.get_abs_image_path(kernel_image)
+        kernel_image = self.manager.get_abs_image_path(kernel_image, self.project.path)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(name=self._name,
                                                                                                        id=self._id,
                                                                                                        kernel_image=kernel_image))
@@ -1698,22 +1698,22 @@ class QemuVM(BaseNode):
                     answer[field] = getattr(self, field)
                 except AttributeError:
                     pass
-        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image)
+        answer["hda_disk_image"] = self._hda_disk_image
         answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
-        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image)
+        answer["hdb_disk_image"] = self._hdb_disk_image
         answer["hdb_disk_image_md5sum"] = md5sum(self._hdb_disk_image)
-        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image)
+        answer["hdc_disk_image"] = self._hdc_disk_image
         answer["hdc_disk_image_md5sum"] = md5sum(self._hdc_disk_image)
-        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image)
+        answer["hdd_disk_image"] = self._hdd_disk_image
         answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
-        answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image)
+        answer["cdrom_image"] = self._cdrom_image
         answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image)
-        answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image)
+        answer["bios_image"] = self._bios_image
         answer["bios_image_md5sum"] = md5sum(self._bios_image)
-        answer["initrd"] = self.manager.get_relative_image_path(self._initrd)
+        answer["initrd"] = self._initrd
         answer["initrd_md5sum"] = md5sum(self._initrd)
 
-        answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image)
+        answer["kernel_image"] = self._kernel_image
         answer["kernel_image_md5sum"] = md5sum(self._kernel_image)
 
         return answer
