@@ -55,7 +55,10 @@ class HyperVGNS3VM(BaseGNS3VM):
         if not sys.platform.startswith("win") or sys.getwindowsversion().major < 10:# or sys.getwindowsversion().build < 14393:
             raise GNS3VMError("Hyper-V nested virtualization is only supported on Windows 10 and Windows Server 2016 or later")
 
-        conn = wmi.WMI()
+        try:
+            conn = wmi.WMI()
+        except wmi.x_wmi as e:
+            raise GNS3VMError("Could not connect to WMI: {}".format(e))
 
         if conn.Win32_Processor()[0].Manufacturer != "GenuineIntel":
             raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization")
@@ -63,8 +66,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         if not conn.Win32_ComputerSystem()[0].HypervisorPresent:
             raise GNS3VMError("Hyper-V is not installed")
 
-        #if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
-        #    raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
+        if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
+            raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
 
     def _connect(self):
         """
@@ -82,13 +85,14 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("The Windows account running GNS3 does not have the required permissions for Hyper-V")
 
         self._management = self._conn.Msvm_VirtualSystemManagementService()[0]
-        self._vm = self._find_vm(self.vmname)
 
     def _find_vm(self, vm_name):
         """
         Finds a Hyper-V VM.
         """
 
+        if self._conn is None:
+            self._connect()
         vms = self._conn.Msvm_ComputerSystem(ElementName=vm_name)
         nb_vms = len(vms)
         if nb_vms == 0:
@@ -108,11 +112,23 @@ class HyperVGNS3VM(BaseGNS3VM):
         return False
 
     def _get_vm_setting_data(self, vm):
+        """
+        Gets the VM settings.
+
+        :param vm: VM instance
+        """
+
         vm_settings = vm.associators(wmi_result_class='Msvm_VirtualSystemSettingData')
-        # Avoid snapshots
         return [s for s in vm_settings if s.VirtualSystemType == 'Microsoft:Hyper-V:System:Realized'][0]
 
     def _get_vm_resources(self, vm, resource_class):
+        """
+        Gets specific VM resource.
+
+        :param vm: VM instance
+        :param resource_class: resource class name
+        """
+
         setting_data = self._get_vm_setting_data(vm)
         return setting_data.associators(wmi_result_class=resource_class)
 
@@ -129,9 +145,8 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("You have allocated too many vCPUs for the GNS3 VM! (max available is {} vCPUs)".format(available_vcpus))
 
         try:
-            vm_settings = self._vm.associators(wmi_result_class='Msvm_VirtualSystemSettingData')[0]
-            mem_settings = vm_settings.associators(wmi_result_class='Msvm_MemorySettingData')[0]
-            cpu_settings = vm_settings.associators(wmi_result_class='Msvm_ProcessorSettingData')[0]
+            mem_settings = self._get_vm_resources(self._vm, 'Msvm_MemorySettingData')[0]
+            cpu_settings = self._get_vm_resources(self._vm, 'Msvm_ProcessorSettingData')[0]
 
             mem_settings.VirtualQuantity = ram
             mem_settings.Reservation = ram
@@ -179,6 +194,10 @@ class HyperVGNS3VM(BaseGNS3VM):
         Set the desired state of the VM
         """
 
+        if not self._vm:
+            self._vm = self._find_vm(self.vmname)
+        if not self._vm:
+            raise GNS3VMError("Could not find Hyper-V VM {}".format(self.vmname))
         job_path, ret = self._vm.RequestStateChange(state)
         if ret == HyperVGNS3VM._WMI_JOB_STATUS_STARTED:
             job = self._get_wmi_obj(job_path)
@@ -196,9 +215,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         Starts the GNS3 VM.
         """
 
-        if self._conn is None:
-            self._connect()
-
+        self._vm = self._find_vm(self.vmname)
         if not self._vm:
             raise GNS3VMError("Could not find Hyper-V VM {}".format(self.vmname))
 
@@ -249,11 +266,8 @@ class HyperVGNS3VM(BaseGNS3VM):
     @asyncio.coroutine
     def suspend(self):
         """
-        Suspend the GNS3 VM.
+        Suspends the GNS3 VM.
         """
-
-        if self.running is False:
-            return
 
         try:
             yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_PAUSED)
@@ -268,8 +282,6 @@ class HyperVGNS3VM(BaseGNS3VM):
         Stops the GNS3 VM.
         """
 
-        if self.running is False:
-            return
         try:
             yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_DISABLED)
         except GNS3VMError as e:
