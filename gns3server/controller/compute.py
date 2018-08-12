@@ -404,7 +404,7 @@ class Compute:
         Check if remote server is accessible
         """
 
-        if not self._connected and not self._closed:
+        if not self._connected and not self._closed and self.host:
             try:
                 log.info("Connecting to compute '{}'".format(self._id))
                 response = yield from self._run_http_query("GET", "/capabilities")

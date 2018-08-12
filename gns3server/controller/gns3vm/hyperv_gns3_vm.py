@@ -19,6 +19,7 @@ import sys
 import logging
 import asyncio
 import psutil
+import ipaddress
 
 if sys.platform.startswith("win"):
     import wmi
@@ -51,7 +52,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         Checks if the GNS3 VM can run on Hyper-V.
         """
 
-        if not sys.platform.startswith("win") or sys.getwindowsversion().major < 10:
+        if not sys.platform.startswith("win") or sys.getwindowsversion().major < 10:# or sys.getwindowsversion().build < 14393:
             raise GNS3VMError("Hyper-V nested virtualization is only supported on Windows 10 and Windows Server 2016 or later")
 
         conn = wmi.WMI()
@@ -62,8 +63,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         if not conn.Win32_ComputerSystem()[0].HypervisorPresent:
             raise GNS3VMError("Hyper-V is not installed")
 
-        if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
-            raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
+        #if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
+        #    raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
 
     def _connect(self):
         """
@@ -75,7 +76,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         try:
             self._conn = wmi.WMI(namespace=r"root\virtualization\v2")
         except wmi.x_wmi as e:
-            print("Could not connect to WMI {}".format(e))
+            raise GNS3VMError("Could not connect to WMI: {}".format(e))
 
         if not self._conn.Msvm_VirtualSystemManagementService():
             raise GNS3VMError("The Windows account running GNS3 does not have the required permissions for Hyper-V")
@@ -105,6 +106,15 @@ class HyperVGNS3VM(BaseGNS3VM):
         if self._vm is not None and self._vm.EnabledState == HyperVGNS3VM._HYPERV_VM_STATE_ENABLED:
             return True
         return False
+
+    def _get_vm_setting_data(self, vm):
+        vm_settings = vm.associators(wmi_result_class='Msvm_VirtualSystemSettingData')
+        # Avoid snapshots
+        return [s for s in vm_settings if s.VirtualSystemType == 'Microsoft:Hyper-V:System:Realized'][0]
+
+    def _get_vm_resources(self, vm, resource_class):
+        setting_data = self._get_vm_setting_data(vm)
+        return setting_data.associators(wmi_result_class=resource_class)
 
     def _set_vcpus_ram(self, vcpus, ram):
         """
@@ -144,11 +154,14 @@ class HyperVGNS3VM(BaseGNS3VM):
         List all Hyper-V VMs
         """
 
+        if self._conn is None:
+            self._connect()
+
         vms = []
         try:
             for vm in self._conn.Msvm_ComputerSystem():
                 if vm.Caption == "Virtual Machine":
-                    vms.append(vm.ElementName)
+                    vms.append({"vmname": vm.ElementName})
         except wmi.x_wmi as e:
             raise GNS3VMError("Could not list Hyper-V VMs: {}".format(e))
         return vms
@@ -186,6 +199,9 @@ class HyperVGNS3VM(BaseGNS3VM):
         if self._conn is None:
             self._connect()
 
+        if not self._vm:
+            raise GNS3VMError("Could not find Hyper-V VM {}".format(self.vmname))
+
         if not self._is_running():
 
             log.info("Update GNS3 VM settings")
@@ -199,9 +215,35 @@ class HyperVGNS3VM(BaseGNS3VM):
                 raise GNS3VMError("Failed to start the GNS3 VM: {}".format(e))
             log.info("GNS3 VM has been started")
 
-        #TODO: get the guest IP address
-        #self.ip_address = guest_ip_address
-        #log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
+        # Get the guest IP address
+        trial = 120
+        guest_ip_address = ""
+        log.info("Waiting for GNS3 VM IP")
+        ports = self._get_vm_resources(self._vm, 'Msvm_EthernetPortAllocationSettingData')
+        vnics = self._get_vm_resources(self._vm, 'Msvm_SyntheticEthernetPortSettingData')
+        while True:
+            for port in ports:
+                vnic = [v for v in vnics if port.Parent == v.path_()][0]
+                config = vnic.associators(wmi_result_class='Msvm_GuestNetworkAdapterConfiguration')
+                ip_addresses = config[0].IPAddresses
+                for ip_address in ip_addresses:
+                    # take the first valid IPv4 address
+                    try:
+                        ipaddress.IPv4Address(ip_address)
+                        guest_ip_address = ip_address
+                    except ipaddress.AddressValueError:
+                        continue
+                if len(ip_addresses):
+                    guest_ip_address = ip_addresses[0]
+                    break
+            trial -= 1
+            if guest_ip_address:
+                break
+            elif trial == 0:
+                raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
+            yield from asyncio.sleep(1)
+        self.ip_address = guest_ip_address
+        log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
         self.running = True
 
     @asyncio.coroutine
@@ -210,8 +252,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         Suspend the GNS3 VM.
         """
 
-        if self._conn is None:
-            self._connect()
+        if self.running is False:
+            return
 
         try:
             yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_PAUSED)
@@ -226,9 +268,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         Stops the GNS3 VM.
         """
 
-        if self._conn is None:
-            self._connect()
-
+        if self.running is False:
+            return
         try:
             yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_DISABLED)
         except GNS3VMError as e:
