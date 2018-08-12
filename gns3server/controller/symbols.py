@@ -55,18 +55,17 @@ class Symbols:
 
         directory = self.symbols_path()
         if directory:
-            for file in os.listdir(directory):
-                if file.startswith('.'):
-                    continue
-                if not os.path.isfile(os.path.join(directory, file)):
-                    continue
-                symbol_id = file
-                symbols.append({
-                    'symbol_id': symbol_id,
-                    'filename': file,
-                    'builtin': False,
-                })
-                self._symbols_path[symbol_id] = os.path.join(directory, file)
+            for root, _, files in os.walk(directory):
+                for filename in files:
+                    if filename.startswith('.'):
+                        continue
+                    symbol_file = os.path.relpath(os.path.join(root, filename), directory)
+                    symbols.append({
+                        'symbol_id': symbol_file,
+                        'filename': symbol_file,
+                        'builtin': False,
+                    })
+                    self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])
         return symbols
