@@ -279,7 +279,7 @@ class BaseGNS3VM:
         raise NotImplementedError
 
     @asyncio.coroutine
-    def stop(self, force=False):
+    def stop(self):
         """
         Stops the GNS3 VM.
         """

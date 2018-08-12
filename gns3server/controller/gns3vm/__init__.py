@@ -77,7 +77,7 @@ class GNS3VM:
             "name": "Hyper-V",
             "description": 'Hyper-V support (Windows 10/Server 2016 and above). Nested virtualization must be supported and enabled (Intel processor only)',
             "support_when_exit": True,
-            "support_headless": True,
+            "support_headless": False,
             "support_ram": True
         }
 

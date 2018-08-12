@@ -33,6 +33,7 @@ class HyperVGNS3VM(BaseGNS3VM):
 
     _HYPERV_VM_STATE_ENABLED = 2
     _HYPERV_VM_STATE_DISABLED = 3
+    _HYPERV_VM_STATE_SHUTDOWN = 4
     _HYPERV_VM_STATE_PAUSED = 9
 
     _WMI_JOB_STATUS_STARTED = 4096
@@ -283,7 +284,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         """
 
         try:
-            yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_DISABLED)
+            yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_SHUTDOWN)
         except GNS3VMError as e:
             raise GNS3VMError("Failed to stop the GNS3 VM: {}".format(e))
         log.info("GNS3 VM has been stopped")
