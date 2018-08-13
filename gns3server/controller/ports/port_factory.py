@@ -72,7 +72,7 @@ class StandardPortFactory:
             for port_number in range(0, port_by_adapter):
                 if first_port_name and adapter_number == 0:
                     port_name = custom_adapter_settings.get("port_name", first_port_name)
-                    port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
+                    port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet", short_name=port_name)
                 else:
                     try:
                         port_name = port_name_format.format(
@@ -208,7 +208,9 @@ class DynamipsPortFactory:
                 if port_class:
                     for port_number in range(0, cls.ADAPTER_MATRIX[properties[name]]["nb_ports"]):
                         name = "{}{}/{}".format(port_class.long_name_type(), adapter_number, port_number)
-                        ports.append(port_class(name, adapter_number, adapter_number, port_number))
+                        port = port_class(name, adapter_number, adapter_number, port_number)
+                        port.short_name = "{}{}/{}".format(port.short_name_type, adapter_number, port_number)
+                        ports.append(port)
                 adapter_number += 1
             elif name.startswith("wic") and properties[name]:
                 port_class = cls.WIC_MATRIX[properties[name]]["port"]
