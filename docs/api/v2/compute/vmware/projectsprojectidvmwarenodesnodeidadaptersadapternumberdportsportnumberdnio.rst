@@ -10,8 +10,8 @@ Add a NIO to a VMware VM instance
 Parameters
 **********
 - **adapter_number**: Adapter where the nio should be added
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
@@ -34,8 +34,8 @@ Update a NIO from a Virtualbox instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port from where the nio should be updated
 
 Response status codes
@@ -58,8 +58,8 @@ Remove a NIO from a VMware VM instance
 Parameters
 **********
 - **adapter_number**: Adapter from where the nio should be removed
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes

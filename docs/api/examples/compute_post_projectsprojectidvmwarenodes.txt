@@ -1,23 +1,22 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes' -d '{"linked_clone": false, "name": "VM1", "vmx_path": "/tmp/pytest-of-grossmj/pytest-23/test_vmware_create0/test.vmx"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes' -d '{"linked_clone": false, "name": "VM1", "vmx_path": "/tmp/pytest-of-grossmj/pytest-19/test_vmware_create0/test.vmx"}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes HTTP/1.1
 {
     "linked_clone": false,
     "name": "VM1",
-    "vmx_path": "/tmp/pytest-of-grossmj/pytest-23/test_vmware_create0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-19/test_vmware_create0/test.vmx"
 }
 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 593
+Content-Length: 594
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:34:59 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:06 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "e1000",
     "adapters": 0,
     "console": 5004,
@@ -25,10 +24,11 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes
     "headless": false,
     "linked_clone": false,
     "name": "VM1",
-    "node_directory": "/tmp/tmp4zak1_kl/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/7973e845-5a86-463b-bdbc-480cd83c76a2",
-    "node_id": "7973e845-5a86-463b-bdbc-480cd83c76a2",
+    "node_directory": "/tmp/tmp0fzqt09o/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/3f14057f-de2e-4254-b140-3ed8430c1f87",
+    "node_id": "3f14057f-de2e-4254-b140-3ed8430c1f87",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
     "use_any_adapter": false,
-    "vmx_path": "/tmp/pytest-of-grossmj/pytest-23/test_vmware_create0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-19/test_vmware_create0/test.vmx"
 }

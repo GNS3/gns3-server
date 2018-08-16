@@ -10,8 +10,8 @@ Add a NIO to a IOU instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port where the nio should be added
 
 Response status codes
@@ -34,8 +34,8 @@ Update a NIO from a IOU instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port where the nio should be added
 
 Response status codes
@@ -58,8 +58,8 @@ Remove a NIO from a IOU instance
 Parameters
 **********
 - **adapter_number**: Network adapter where the nio is located
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port from where the nio should be removed
 
 Response status codes

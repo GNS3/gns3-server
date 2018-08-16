@@ -72,7 +72,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
             except OSError as e:
                 msg = "Could not export file {}: {}".format(path, e)
                 log.warning(msg)
-                project.controller.notification.emit("log.warning", {"message": msg})
+                project.controller.notification.project_emit("log.warning", {"message": msg})
                 continue
             # ignore the .gns3 file
             if file.endswith(".gns3"):

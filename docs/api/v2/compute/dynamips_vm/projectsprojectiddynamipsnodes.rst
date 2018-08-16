@@ -27,8 +27,8 @@ Input
     <tr><td>aux</td>                    <td> </td>                     <td>['null', 'integer']</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
-    <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
+    <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>Disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>Disk1 size in MB</td>                     </tr>
     <tr><td>dynamips_id</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Dynamips ID</td>                     </tr>
@@ -76,8 +76,8 @@ Output
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
-    <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
+    <tr><td>console</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>Disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>Disk1 size in MB</td>                     </tr>
     <tr><td>dynamips_id</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>ID to use with Dynamips</td>                     </tr>

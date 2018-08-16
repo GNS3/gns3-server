@@ -363,12 +363,12 @@ def test_update_only_controller(node, controller, compute, project, async_run):
     async_run(node.update(x=42))
     assert not compute.put.called
     assert node.x == 42
-    controller._notification.emit.assert_called_with("node.updated", node.__json__())
+    controller._notification.project_emit.assert_called_with("node.updated", node.__json__())
 
     # If nothing change a second notif should not be send
     controller._notification = AsyncioMagicMock()
     async_run(node.update(x=42))
-    assert not controller._notification.emit.called
+    assert not controller._notification.project_emit.called
 
 
 def test_update_no_changes(node, compute, project, async_run):

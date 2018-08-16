@@ -109,6 +109,7 @@ class ServerHandler:
             # The init of the server could take some times
             # we ensure settings are loaded before returning them
             settings = Controller.instance().settings
+
             if settings is not None:
                 break
             yield from asyncio.sleep(0.5)
@@ -116,17 +117,16 @@ class ServerHandler:
 
     @Route.post(
         r"/settings",
-        description="Write gui settings on the server. Temporary will we removed in later releas",
+        description="Write gui settings on the server. Temporary will we removed in later releases",
         status_codes={
-            201: "Writed"
+            201: "Settings saved"
         })
     def write_settings(request, response):
         controller = Controller.instance()
         if controller.settings is None:  # Server is not loaded ignore settings update to prevent buggy client sync issue
             return
-        controller.settings = request.json
         try:
-            controller.save()
+            controller.settings = request.json
         except (OSError, PermissionError) as e:
             raise HTTPConflict(text="Can't save the settings {}".format(str(e)))
         response.json(controller.settings)

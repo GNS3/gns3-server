@@ -10,14 +10,13 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 459
+Content-Length: 460
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:34:58 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:06 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
     "console": 5004,
@@ -26,7 +25,8 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
     "linked_clone": false,
     "name": "VM1",
     "node_directory": null,
-    "node_id": "8275c17b-1e23-4d65-ab30-be28889654ca",
+    "node_id": "57acf8e0-a72c-45a2-8fcf-a065b37e9c7a",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",

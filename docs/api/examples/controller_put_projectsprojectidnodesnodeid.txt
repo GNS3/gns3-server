@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/13218acd-e860-4b30-a037-d22248a6e9a4/nodes/84cf3670-98ea-4899-a1e7-6b77bab3ceba' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/16891deb-e0f0-4d26-a78e-510cda7a405e/nodes/7506ebd8-933f-485c-8d12-ba414d5dce50' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/13218acd-e860-4b30-a037-d22248a6e9a4/nodes/84cf3670-98ea-4899-a1e7-6b77bab3ceba HTTP/1.1
+PUT /v2/projects/16891deb-e0f0-4d26-a78e-510cda7a405e/nodes/7506ebd8-933f-485c-8d12-ba414d5dce50 HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -13,18 +13,21 @@ PUT /v2/projects/13218acd-e860-4b30-a037-d22248a6e9a4/nodes/84cf3670-98ea-4899-a
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1085
+Content-Length: 1171
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:15 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:22 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/projects/{project_id}/nodes/{node_id}
 
 {
+    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": 2048,
-    "console_host": "<MagicMock name='mock.console_host' id='140064577545496'>",
+    "console_auto_start": false,
+    "console_host": "<MagicMock name='mock.console_host' id='139653923661752'>",
     "console_type": null,
+    "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
@@ -36,7 +39,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "84cf3670-98ea-4899-a1e7-6b77bab3ceba",
+    "node_id": "7506ebd8-933f-485c-8d12-ba414d5dce50",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -52,12 +55,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
             "short_name": "e0"
         }
     ],
-    "project_id": "13218acd-e860-4b30-a037-d22248a6e9a4",
+    "project_id": "16891deb-e0f0-4d26-a78e-510cda7a405e",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
     "width": 65,
     "x": 0,
     "y": 0,
-    "z": 0
+    "z": 1
 }

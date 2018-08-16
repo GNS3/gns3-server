@@ -174,7 +174,7 @@ def test_notification(http_controller, project, controller, loop, async_run):
         connector = aiohttp.TCPConnector()
         response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
         response.body = yield from response.content.read(200)
-        controller.notification.emit("node.created", {"a": "b"})
+        controller.notification.project_emit("node.created", {"a": "b"})
         response.body += yield from response.content.readany()
         response.close()
         return response
@@ -198,7 +198,7 @@ def test_notification_ws(http_controller, controller, project, async_run):
     answer = json.loads(answer.data)
     assert answer["action"] == "ping"
 
-    controller.notification.emit("test", {})
+    controller.notification.project_emit("test", {})
 
     answer = async_run(ws.receive())
     answer = json.loads(answer.data)

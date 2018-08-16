@@ -111,7 +111,7 @@ def test_compute_httpQueryNotConnected(compute, controller, async_run):
         mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data=b'{"a": "b"}', headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=20)
     assert compute._connected
     assert compute._capabilities["version"] == __version__
-    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
+    controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
 
 
 def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller, async_run):
@@ -135,7 +135,7 @@ def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller, asyn
     assert controller.gns3vm.start.called
     assert compute._connected
     assert compute._capabilities["version"] == __version__
-    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
+    controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
 
 
 def test_compute_httpQueryNotConnectedInvalidVersion(compute, async_run):
@@ -259,7 +259,7 @@ def test_connectNotificationPing(compute, async_run):
     async_run(compute._connect_notification())
 
     assert not compute._controller.notification.dispatch.called
-    args, _ = compute._controller.notification.emit.call_args_list[0]
+    args, _ = compute._controller.notification.controller_emit.call_args_list[0]
     assert args[0] == "compute.updated"
     assert args[1]["memory_usage_percent"] == 80.7
     assert args[1]["cpu_usage_percent"] == 35.7
@@ -322,7 +322,7 @@ def test_update(compute, controller, async_run):
     async_run(compute.update(name="Test 2"))
     assert compute.name == "Test 2"
     assert compute.host == "example.org"
-    controller.notification.emit.assert_called_with("compute.updated", compute.__json__())
+    controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
     assert compute.connected is False
     assert compute._controller.save.called
 

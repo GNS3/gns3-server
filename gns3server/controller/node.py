@@ -407,7 +407,7 @@ class Node:
             yield from self.parse_node_response(response.json)
         elif old_json != self.__json__():
             # We send notif only if object has changed
-            self.project.controller.notification.emit("node.updated", self.__json__())
+            self.project.controller.notification.project_emit("node.updated", self.__json__())
         self.project.dump()
 
     @asyncio.coroutine
@@ -575,13 +575,13 @@ class Node:
         for directory in images_directories(type):
             image = os.path.join(directory, img)
             if os.path.exists(image):
-                self.project.controller.notification.emit("log.info", {"message": "Uploading missing image {}".format(img)})
+                self.project.controller.notification.project_emit("log.info", {"message": "Uploading missing image {}".format(img)})
                 try:
                     with open(image, 'rb') as f:
                         yield from self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
                 except OSError as e:
                     raise aiohttp.web.HTTPConflict(text="Can't upload {}: {}".format(image, str(e)))
-                self.project.controller.notification.emit("log.info", {"message": "Upload finished for {}".format(img)})
+                self.project.controller.notification.project_emit("log.info", {"message": "Upload finished for {}".format(img)})
                 return True
         return False
 

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/7c68eae8-c6e0-4ce5-835e-353389395807' -d '{"console": 5005, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/916b0c2c-0a27-46d5-8660-b150d928368e' -d '{"console": 5005, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/7c68eae8-c6e0-4ce5-835e-353389395807 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/916b0c2c-0a27-46d5-8660-b150d928368e HTTP/1.1
 {
     "console": 5005,
     "name": "test"
@@ -9,14 +9,13 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/7c68e
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 594
+Content-Length: 595
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:10 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:18 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "e1000",
     "adapters": 0,
     "console": 5005,
@@ -24,10 +23,11 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
     "headless": false,
     "linked_clone": false,
     "name": "test",
-    "node_directory": "/tmp/tmp4zak1_kl/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/7c68eae8-c6e0-4ce5-835e-353389395807",
-    "node_id": "7c68eae8-c6e0-4ce5-835e-353389395807",
+    "node_directory": "/tmp/tmp0fzqt09o/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/916b0c2c-0a27-46d5-8660-b150d928368e",
+    "node_id": "916b0c2c-0a27-46d5-8660-b150d928368e",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
     "use_any_adapter": false,
-    "vmx_path": "/tmp/pytest-of-grossmj/pytest-23/test_vmware_update0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-19/test_vmware_update0/test.vmx"
 }

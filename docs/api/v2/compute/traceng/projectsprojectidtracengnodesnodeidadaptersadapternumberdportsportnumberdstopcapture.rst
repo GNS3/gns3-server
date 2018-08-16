@@ -10,8 +10,8 @@ Stop a packet capture on a TraceNG instance
 Parameters
 **********
 - **adapter_number**: Adapter to stop a packet capture
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port on the adapter
 
 Response status codes

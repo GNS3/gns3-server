@@ -367,7 +367,7 @@ class GNS3VM:
                             if vm_network.compare_networks(compute_network) != 0:
                                 msg = "The GNS3 VM ({}) is not on the same network as the {} server ({}), please make sure the local server binding is in the same network as the GNS3 VM".format(
                                     vm_network, compute_id, compute_network)
-                                self._controller.notification.emit("log.warning", {"message": msg})
+                                self._controller.notification.controller_emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
 

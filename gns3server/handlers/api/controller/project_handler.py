@@ -227,7 +227,7 @@ class ProjectHandler:
         response.enable_chunked_encoding()
 
         yield from response.prepare(request)
-        with controller.notification.queue(project) as queue:
+        with controller.notification.project_queue(project) as queue:
             while True:
                 try:
                     msg = yield from queue.get_json(5)
@@ -263,7 +263,7 @@ class ProjectHandler:
 
         asyncio_ensure_future(process_websocket(ws))
 
-        with controller.notification.queue(project) as queue:
+        with controller.notification.project_queue(project) as queue:
             while True:
                 try:
                     notification = yield from queue.get_json(5)

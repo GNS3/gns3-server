@@ -202,7 +202,7 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
 def test_settings(controller):
     controller._notification = MagicMock()
     controller.settings = {"a": 1}
-    controller._notification.emit.assert_called_with("settings.updated", controller.settings)
+    controller._notification.controller_emit.assert_called_with("settings.updated", controller.settings)
     assert controller.settings["modification_uuid"] is not None
 
 
@@ -220,10 +220,10 @@ def test_load_projects(controller, projects_dir, async_run):
 def test_add_compute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1", connect=False))
-    controller._notification.emit.assert_called_with("compute.created", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test1", connect=False))
-    controller._notification.emit.assert_called_with("compute.updated", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test2", connect=False))
     assert len(controller.computes) == 2
@@ -244,7 +244,7 @@ def test_deleteCompute(controller, controller_config_path, async_run):
     c._connected = True
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
-    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
         assert len(data["computes"]) == 0
@@ -271,7 +271,7 @@ def test_deleteComputeProjectOpened(controller, controller_config_path, async_ru
     c._connected = True
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
-    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
         assert len(data["computes"]) == 0

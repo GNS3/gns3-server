@@ -135,7 +135,7 @@ class Project:
 
         # We send notif only if object has changed
         if old_json != self.__json__():
-            self.controller.notification.emit("project.updated", self.__json__())
+            self.controller.notification.project_emit("project.updated", self.__json__())
             self.dump()
 
             # update on computes
@@ -519,7 +519,7 @@ class Project:
             self._project_created_on_compute.add(compute)
         yield from node.create()
         self._nodes[node.id] = node
-        self.controller.notification.emit("node.created", node.__json__())
+        self.controller.notification.project_emit("node.created", node.__json__())
         if dump:
             self.dump()
         return node
@@ -545,7 +545,7 @@ class Project:
         del self._nodes[node.id]
         yield from node.destroy()
         self.dump()
-        self.controller.notification.emit("node.deleted", node.__json__())
+        self.controller.notification.project_emit("node.deleted", node.__json__())
 
     @open_required
     def get_node(self, node_id):
@@ -611,7 +611,7 @@ class Project:
         if drawing_id not in self._drawings:
             drawing = Drawing(self, drawing_id=drawing_id, **kwargs)
             self._drawings[drawing.id] = drawing
-            self.controller.notification.emit("drawing.created", drawing.__json__())
+            self.controller.notification.project_emit("drawing.created", drawing.__json__())
             if dump:
                 self.dump()
             return drawing
@@ -633,7 +633,7 @@ class Project:
         drawing = self.get_drawing(drawing_id)
         del self._drawings[drawing.id]
         self.dump()
-        self.controller.notification.emit("drawing.deleted", drawing.__json__())
+        self.controller.notification.project_emit("drawing.deleted", drawing.__json__())
 
     @open_required
     @asyncio.coroutine
@@ -662,7 +662,7 @@ class Project:
             if force_delete is False:
                 raise
         self.dump()
-        self.controller.notification.emit("link.deleted", link.__json__())
+        self.controller.notification.project_emit("link.deleted", link.__json__())
 
     @open_required
     def get_link(self, link_id):
@@ -737,7 +737,7 @@ class Project:
         self._cleanPictures()
         self._status = "closed"
         if not ignore_notification:
-            self.controller.notification.emit("project.closed", self.__json__())
+            self.controller.notification.project_emit("project.closed", self.__json__())
         self.reset()
 
     def _cleanPictures(self):

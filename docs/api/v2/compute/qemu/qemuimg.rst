@@ -37,3 +37,23 @@ Sample session
 
 .. literalinclude:: ../../../examples/compute_post_qemuimg.txt
 
+
+PUT /v2/compute/qemu/img
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update a Qemu image
+
+Response status codes
+**********************
+- **201**: Image Updated
+
+Input
+*******
+.. raw:: html
+
+    <table>
+    <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
+    <tr><td>extend</td>                    <td> </td>                     <td>integer</td>                     <td>Number of Megabytes to extend the image</td>                     </tr>
+    <tr><td>path</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Absolute or relative path of the image</td>                     </tr>
+    <tr><td>qemu_img</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Path to the qemu-img binary</td>                     </tr>
+    </table>
+

@@ -15,8 +15,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 335
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:12 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:20 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/computes/{compute_id}
 
 {

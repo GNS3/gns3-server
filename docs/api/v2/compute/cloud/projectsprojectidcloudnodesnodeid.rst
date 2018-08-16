@@ -9,8 +9,8 @@ Get a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -30,6 +30,10 @@ Output
     <tr><td>node_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td>&#10004;</td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>remote_console_host</td>                    <td> </td>                     <td>['string']</td>                     <td>Remote console host or IP</td>                     </tr>
+    <tr><td>remote_console_http_path</td>                    <td> </td>                     <td>string</td>                     <td>Path of the remote web interface</td>                     </tr>
+    <tr><td>remote_console_port</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>remote_console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice, http, https, none</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
@@ -46,8 +50,8 @@ Update a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************
@@ -85,6 +89,10 @@ Body
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>remote_console_host</td>                    <td> </td>                     <td>['string']</td>                     <td>Remote console host or IP</td>                     </tr>
+    <tr><td>remote_console_http_path</td>                    <td> </td>                     <td>string</td>                     <td>Path of the remote web interface</td>                     </tr>
+    <tr><td>remote_console_port</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>remote_console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice, http, https, none</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
@@ -100,6 +108,10 @@ Output
     <tr><td>node_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
     <tr><td>ports_mapping</td>                    <td>&#10004;</td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
+    <tr><td>remote_console_host</td>                    <td> </td>                     <td>['string']</td>                     <td>Remote console host or IP</td>                     </tr>
+    <tr><td>remote_console_http_path</td>                    <td> </td>                     <td>string</td>                     <td>Path of the remote web interface</td>                     </tr>
+    <tr><td>remote_console_port</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>remote_console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice, http, https, none</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     </table>
 
@@ -116,8 +128,8 @@ Delete a cloud instance
 
 Parameters
 **********
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 
 Response status codes
 **********************

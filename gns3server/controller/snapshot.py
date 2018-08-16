@@ -124,7 +124,7 @@ class Snapshot:
         except (OSError, PermissionError) as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
         yield from project.open()
-        self._project.controller.notification.emit("snapshot.restored", self.__json__())
+        self._project.controller.notification.project_emit("snapshot.restored", self.__json__())
         return self._project
 
     def __json__(self):

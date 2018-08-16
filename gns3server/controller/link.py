@@ -174,7 +174,7 @@ class Link:
             self._filters = new_filters
             if self._created:
                 yield from self.update()
-                self._project.controller.notification.emit("link.updated", self.__json__())
+                self._project.controller.notification.project_emit("link.updated", self.__json__())
                 self._project.dump()
 
     @asyncio.coroutine
@@ -182,7 +182,7 @@ class Link:
         if value != self._suspended:
             self._suspended = value
             yield from self.update()
-            self._project.controller.notification.emit("link.updated", self.__json__())
+            self._project.controller.notification.project_emit("link.updated", self.__json__())
             self._project.dump()
 
     @property
@@ -214,14 +214,14 @@ class Link:
 
             if node.node_type in ["nat", "cloud"]:
                 if other_node["node"].node_type in ["nat", "cloud"]:
-                    raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_node["node"].node_type, node.node_type))
+                    raise aiohttp.web.HTTPConflict(text="Connecting a {} to a {} is not allowed".format(other_node["node"].node_type, node.node_type))
 
             # Check if user is not connecting serial => ethernet
             other_port = other_node["node"].get_port(other_node["adapter_number"], other_node["port_number"])
             if other_port is None:
                 raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(other_node["adapter_number"], other_node["port_number"], other_node["node"].name))
             if port.link_type != other_port.link_type:
-                raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_port.link_type, port.link_type))
+                raise aiohttp.web.HTTPConflict(text="Connecting a {} interface to a {} interface is not allowed".format(other_port.link_type, port.link_type))
 
         if label is None:
             label = {
@@ -246,7 +246,7 @@ class Link:
                 n["node"].add_link(self)
                 n["port"].link = self
             self._created = True
-            self._project.controller.notification.emit("link.created", self.__json__())
+            self._project.controller.notification.project_emit("link.created", self.__json__())
 
         if dump:
             self._project.dump()
@@ -260,7 +260,7 @@ class Link:
                     label = node_data.get("label")
                     if label:
                         port["label"] = label
-        self._project.controller.notification.emit("link.updated", self.__json__())
+        self._project.controller.notification.project_emit("link.updated", self.__json__())
         self._project.dump()
 
     @asyncio.coroutine
@@ -300,7 +300,7 @@ class Link:
         self._capturing = True
         self._capture_file_name = capture_file_name
         self._streaming_pcap = asyncio_ensure_future(self._start_streaming_pcap())
-        self._project.controller.notification.emit("link.updated", self.__json__())
+        self._project.controller.notification.project_emit("link.updated", self.__json__())
 
     @asyncio.coroutine
     def _start_streaming_pcap(self):
@@ -320,8 +320,8 @@ class Link:
             error_msg = "Could not stream PCAP file: error {}: {}".format(e.status, e.text)
             log.error(error_msg)
             self._capturing = False
-            self._project.notification.emit("log.error", {"message": error_msg})
-            self._project.controller.notification.emit("link.updated", self.__json__())
+            self._project.notification.project_emit("log.error", {"message": error_msg})
+            self._project.controller.notification.project_emit("link.updated", self.__json__())
 
         with stream_content as stream:
             try:
@@ -345,7 +345,7 @@ class Link:
         """
 
         self._capturing = False
-        self._project.controller.notification.emit("link.updated", self.__json__())
+        self._project.controller.notification.project_emit("link.updated", self.__json__())
 
     @asyncio.coroutine
     def _read_pcap_from_source(self):

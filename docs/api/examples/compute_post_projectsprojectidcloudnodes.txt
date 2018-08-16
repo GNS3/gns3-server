@@ -8,10 +8,10 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes HTTP/
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1608
+Content-Length: 1742
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:34:52 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:22:41 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes
 
 {
@@ -68,8 +68,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-23/test_json4/project-files/builtin/6afa389a-7677-4c7c-9ba4-92c792d58254",
-    "node_id": "6afa389a-7677-4c7c-9ba4-92c792d58254",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-19/test_json4/project-files/builtin/febb8530-37b2-4121-afdd-ce614170245b",
+    "node_id": "febb8530-37b2-4121-afdd-ce614170245b",
     "ports_mapping": [
         {
             "interface": "wlp58s0",
@@ -79,5 +79,9 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "remote_console_host": "",
+    "remote_console_http_path": "/",
+    "remote_console_port": 23,
+    "remote_console_type": "none",
     "status": "started"
 }

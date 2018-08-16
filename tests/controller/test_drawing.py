@@ -75,7 +75,7 @@ def test_update(drawing, project, async_run, controller):
 
     async_run(drawing.update(x=42, svg="<svg><rect></rect></svg>"))
     assert drawing.x == 42
-    args, kwargs = controller._notification.emit.call_args
+    args, kwargs = controller._notification.project_emit.call_args
     assert args[0] == "drawing.updated"
     # JSON
     assert args[1]["x"] == 42
@@ -83,7 +83,7 @@ def test_update(drawing, project, async_run, controller):
 
     async_run(drawing.update(x=12, svg="<svg><rect></rect></svg>"))
     assert drawing.x == 12
-    args, kwargs = controller._notification.emit.call_args
+    args, kwargs = controller._notification.project_emit.call_args
     assert args[0] == "drawing.updated"
     # JSON
     assert args[1]["x"] == 12

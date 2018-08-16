@@ -20,11 +20,11 @@ Sample session
 
 POST /v2/settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Write gui settings on the server. Temporary will we removed in later releas
+Write gui settings on the server. Temporary will we removed in later releases
 
 Response status codes
 **********************
-- **201**: Writed
+- **201**: Settings saved
 
 Sample session
 ***************

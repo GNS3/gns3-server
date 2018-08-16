@@ -8,11 +8,22 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 2690
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:11 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:19 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/appliances
 
 [
+    {
+        "appliance_id": "f8e6b43c-e844-4a83-9586-ab3696ca9eca",
+        "builtin": false,
+        "category": "router",
+        "compute_id": "local",
+        "default_name_format": "{name}-{0}",
+        "name": "test",
+        "node_type": "qemu",
+        "platform": null,
+        "symbol": "guest.svg"
+    },
     {
         "appliance_id": "dd0f6f3a-ba58-3249-81cb-a1dd88407a47",
         "builtin": true,
@@ -23,39 +34,6 @@ X-Route: /v2/appliances
         "node_type": "frame_relay_switch",
         "platform": null,
         "symbol": ":/symbols/frame_relay_switch.svg"
-    },
-    {
-        "appliance_id": "df8f4ea9-33b7-3e96-86a2-c39bc9bb649c",
-        "builtin": true,
-        "category": "guest",
-        "compute_id": null,
-        "default_name_format": "{name}-{0}",
-        "name": "NAT",
-        "node_type": "nat",
-        "platform": null,
-        "symbol": ":/symbols/cloud.svg"
-    },
-    {
-        "appliance_id": "19021f99-e36f-394d-b4a1-8aaa902ab9cc",
-        "builtin": true,
-        "category": "guest",
-        "compute_id": null,
-        "default_name_format": "PC-{0}",
-        "name": "VPCS",
-        "node_type": "vpcs",
-        "platform": null,
-        "symbol": ":/symbols/vpcs_guest.svg"
-    },
-    {
-        "appliance_id": "b4503ea9-d6b6-3695-9fe4-1db3b39290b0",
-        "builtin": true,
-        "category": "switch",
-        "compute_id": null,
-        "default_name_format": "{name}-{0}",
-        "name": "Ethernet hub",
-        "node_type": "ethernet_hub",
-        "platform": null,
-        "symbol": ":/symbols/hub.svg"
     },
     {
         "appliance_id": "39e257dc-8412-3174-b6b3-0ee3ed6a43e9",
@@ -69,26 +47,15 @@ X-Route: /v2/appliances
         "symbol": ":/symbols/cloud.svg"
     },
     {
-        "appliance_id": "1966b864-93e7-32d5-965f-001384eec461",
+        "appliance_id": "b4503ea9-d6b6-3695-9fe4-1db3b39290b0",
         "builtin": true,
         "category": "switch",
         "compute_id": null,
         "default_name_format": "{name}-{0}",
-        "name": "Ethernet switch",
-        "node_type": "ethernet_switch",
+        "name": "Ethernet hub",
+        "node_type": "ethernet_hub",
         "platform": null,
-        "symbol": ":/symbols/ethernet_switch.svg"
-    },
-    {
-        "appliance_id": "882691e1-9fc0-4bf5-9711-46309a4e66f7",
-        "builtin": false,
-        "category": "router",
-        "compute_id": "local",
-        "default_name_format": "{name}-{0}",
-        "name": "test",
-        "node_type": "qemu",
-        "platform": null,
-        "symbol": "guest.svg"
+        "symbol": ":/symbols/hub.svg"
     },
     {
         "appliance_id": "aaa764e2-b383-300f-8a0e-3493bbfdb7d2",
@@ -100,5 +67,38 @@ X-Route: /v2/appliances
         "node_type": "atm_switch",
         "platform": null,
         "symbol": ":/symbols/atm_switch.svg"
+    },
+    {
+        "appliance_id": "19021f99-e36f-394d-b4a1-8aaa902ab9cc",
+        "builtin": true,
+        "category": "guest",
+        "compute_id": null,
+        "default_name_format": "PC-{0}",
+        "name": "VPCS",
+        "node_type": "vpcs",
+        "platform": null,
+        "symbol": ":/symbols/vpcs_guest.svg"
+    },
+    {
+        "appliance_id": "df8f4ea9-33b7-3e96-86a2-c39bc9bb649c",
+        "builtin": true,
+        "category": "guest",
+        "compute_id": null,
+        "default_name_format": "{name}-{0}",
+        "name": "NAT",
+        "node_type": "nat",
+        "platform": null,
+        "symbol": ":/symbols/cloud.svg"
+    },
+    {
+        "appliance_id": "1966b864-93e7-32d5-965f-001384eec461",
+        "builtin": true,
+        "category": "switch",
+        "compute_id": null,
+        "default_name_format": "{name}-{0}",
+        "name": "Ethernet switch",
+        "node_type": "ethernet_switch",
+        "platform": null,
+        "symbol": ":/symbols/ethernet_switch.svg"
     }
 ]

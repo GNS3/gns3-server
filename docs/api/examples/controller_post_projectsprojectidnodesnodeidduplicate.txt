@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7/nodes/3cb45937-864f-44cc-8500-c347ff15dc48/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
+curl -i -X POST 'http://localhost:3080/v2/projects/67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db/nodes/d1efeae0-0cc6-49b9-8ea1-c0bbb5d07c00/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
 
-POST /v2/projects/7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7/nodes/3cb45937-864f-44cc-8500-c347ff15dc48/duplicate HTTP/1.1
+POST /v2/projects/67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db/nodes/d1efeae0-0cc6-49b9-8ea1-c0bbb5d07c00/duplicate HTTP/1.1
 {
     "x": 10,
     "y": 5,
@@ -10,18 +10,21 @@ POST /v2/projects/7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7/nodes/3cb45937-864f-44cc-
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1088
+Content-Length: 1174
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:16 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:23 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
 
 {
+    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
-    "console_host": "<MagicMock name='mock.console_host' id='140064615197552'>",
+    "console_auto_start": false,
+    "console_host": "<MagicMock name='mock.console_host' id='139653921622168'>",
     "console_type": null,
+    "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
@@ -33,7 +36,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
     },
     "name": "test1",
     "node_directory": null,
-    "node_id": "ee0b6a58-5c7e-4a0f-9432-b1d8bb12b5a9",
+    "node_id": "2e525f2d-7a23-4d51-8438-8c7cb7d05e8f",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -49,7 +52,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
             "short_name": "e0"
         }
     ],
-    "project_id": "7a2e464c-1aa5-4bc9-988b-36b73cbd9ed7",
+    "project_id": "67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

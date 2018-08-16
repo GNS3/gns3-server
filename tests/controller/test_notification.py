@@ -45,14 +45,14 @@ def test_emit_to_all(async_run, controller, project):
     Send an event to all if we don't have a project id in the event
     """
     notif = controller.notification
-    with notif.queue(project) as queue:
-        assert len(notif._listeners[project.id]) == 1
+    with notif.project_queue(project) as queue:
+        assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        notif.emit('test', {})
+        notif.project_emit('test', {})
         msg = async_run(queue.get(5))
         assert msg == ('test', {}, {})
 
-    assert len(notif._listeners[project.id]) == 0
+    assert len(notif._project_listeners[project.id]) == 0
 
 
 def test_emit_to_project(async_run, controller, project):
@@ -60,22 +60,22 @@ def test_emit_to_project(async_run, controller, project):
     Send an event to a project listeners
     """
     notif = controller.notification
-    with notif.queue(project) as queue:
-        assert len(notif._listeners[project.id]) == 1
+    with notif.project_queue(project) as queue:
+        assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         # This event has not listener
-        notif.emit('ignore', {"project_id": 42})
-        notif.emit('test', {"project_id": project.id})
+        notif.project_emit('ignore', {"project_id": 42})
+        notif.project_emit('test', {"project_id": project.id})
         msg = async_run(queue.get(5))
         assert msg == ('test', {"project_id": project.id}, {})
 
-    assert len(notif._listeners[project.id]) == 0
+    assert len(notif._project_listeners[project.id]) == 0
 
 
 def test_dispatch(async_run, controller, project):
     notif = controller.notification
-    with notif.queue(project) as queue:
-        assert len(notif._listeners[project.id]) == 1
+    with notif.project_queue(project) as queue:
+        assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         async_run(notif.dispatch("test", {}, compute_id=1))
         msg = async_run(queue.get(5))
@@ -84,8 +84,8 @@ def test_dispatch(async_run, controller, project):
 
 def test_dispatch_ping(async_run, controller, project):
     notif = controller.notification
-    with notif.queue(project) as queue:
-        assert len(notif._listeners[project.id]) == 1
+    with notif.project_queue(project) as queue:
+        assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         async_run(notif.dispatch("ping", {}, compute_id=12))
         msg = async_run(queue.get(5))
@@ -99,8 +99,8 @@ def test_dispatch_node_updated(async_run, controller, node, project):
     """
 
     notif = controller.notification
-    with notif.queue(project) as queue:
-        assert len(notif._listeners[project.id]) == 1
+    with notif.project_queue(project) as queue:
+        assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         async_run(notif.dispatch("node.updated", {
             "node_id": node.id,
@@ -118,7 +118,7 @@ def test_dispatch_node_updated(async_run, controller, node, project):
 
 def test_various_notification(controller, node):
     notif = controller.notification
-    notif.emit("log.info", {"message": "Image uploaded"})
-    notif.emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3"})
-    notif.emit("log.error", {"message": "Permission denied on /tmp"})
-    notif.emit("node.updated", node.__json__())
+    notif.project_emit("log.info", {"message": "Image uploaded"})
+    notif.project_emit("log.warning", {"message": "Warning ASA 8 is not officialy supported by GNS3"})
+    notif.project_emit("log.error", {"message": "Permission denied on /tmp"})
+    notif.project_emit("node.updated", node.__json__())

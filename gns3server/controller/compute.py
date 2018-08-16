@@ -158,7 +158,7 @@ class Compute:
         if self._http_session:
             self._http_session.close()
         self._connected = False
-        self._controller.notification.emit("compute.updated", self.__json__())
+        self._controller.notification.controller_emit("compute.updated", self.__json__())
         self._controller.save()
 
     @asyncio.coroutine
@@ -442,7 +442,7 @@ class Compute:
             self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
             self._connection_failure = 0
-            self._controller.notification.emit("compute.updated", self.__json__())
+            self._controller.notification.controller_emit("compute.updated", self.__json__())
 
     @asyncio.coroutine
     def _connect_notification(self):
@@ -468,7 +468,7 @@ class Compute:
             if action == "ping":
                 self._cpu_usage_percent = event["cpu_usage_percent"]
                 self._memory_usage_percent = event["memory_usage_percent"]
-                self._controller.notification.emit("compute.updated", self.__json__())
+                self._controller.notification.controller_emit("compute.updated", self.__json__())
             else:
                 yield from self._controller.notification.dispatch(action, event, compute_id=self.id)
         if self._ws:
@@ -480,7 +480,7 @@ class Compute:
         self._ws = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
-        self._controller.notification.emit("compute.updated", self.__json__())
+        self._controller.notification.controller_emit("compute.updated", self.__json__())
 
     def _getUrl(self, path):
         host = self._host

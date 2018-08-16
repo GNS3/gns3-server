@@ -429,7 +429,7 @@ class Controller:
         self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings to help the gui to detect changes
         self.save()
         self.load_appliances()
-        self.notification.emit("settings.updated", val)
+        self.notification.controller_emit("settings.updated", val)
 
     @asyncio.coroutine
     def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
@@ -463,12 +463,12 @@ class Controller:
             self.save()
             if connect:
                 yield from compute.connect()
-            self.notification.emit("compute.created", compute.__json__())
+            self.notification.controller_emit("compute.created", compute.__json__())
             return compute
         else:
             if connect:
                 yield from self._computes[compute_id].connect()
-            self.notification.emit("compute.updated", self._computes[compute_id].__json__())
+            self.notification.controller_emit("compute.updated", self._computes[compute_id].__json__())
             return self._computes[compute_id]
 
     @asyncio.coroutine
@@ -509,7 +509,7 @@ class Controller:
         yield from compute.close()
         del self._computes[compute_id]
         self.save()
-        self.notification.emit("compute.deleted", compute.__json__())
+        self.notification.controller_emit("compute.deleted", compute.__json__())
 
     @property
     def notification(self):

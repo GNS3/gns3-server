@@ -8,11 +8,11 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 85
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:18 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:27 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/settings
 
 {
-    "modification_uuid": "c8a68ba6-b99c-491d-b12b-9ff4089f04ac",
+    "modification_uuid": "b8acf218-c6e4-4a4f-992f-b57b286897d9",
     "test": true
 }

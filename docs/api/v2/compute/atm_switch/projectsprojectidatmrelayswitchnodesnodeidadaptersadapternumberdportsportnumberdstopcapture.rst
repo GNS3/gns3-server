@@ -10,8 +10,8 @@ Stop a packet capture on an ATM switch instance
 Parameters
 **********
 - **adapter_number**: Adapter on the switch (always 0)
-- **node_id**: Node UUID
 - **project_id**: Project UUID
+- **node_id**: Node UUID
 - **port_number**: Port on the switch
 
 Response status codes

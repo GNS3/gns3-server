@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/7b438af0-3276-47f7-a213-d0238838f49d/duplicate' -d '{"name": "hello"}'
+curl -i -X POST 'http://localhost:3080/v2/projects/fe649fc3-9b6a-48ff-8e1f-89f9294c935a/duplicate' -d '{"name": "hello"}'
 
-POST /v2/projects/7b438af0-3276-47f7-a213-d0238838f49d/duplicate HTTP/1.1
+POST /v2/projects/fe649fc3-9b6a-48ff-8e1f-89f9294c935a/duplicate HTTP/1.1
 {
     "name": "hello"
 }
@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 532
 Content-Type: application/json
-Date: Thu, 14 Jun 2018 08:35:17 GMT
-Server: Python/3.5 GNS3/2.1.8dev1
+Date: Thu, 16 Aug 2018 14:23:26 GMT
+Server: Python/3.5 GNS3/2.2.0dev2
 X-Route: /v2/projects/{project_id}/duplicate
 
 {
@@ -21,8 +21,8 @@ X-Route: /v2/projects/{project_id}/duplicate
     "filename": "hello.gns3",
     "grid_size": 0,
     "name": "hello",
-    "path": "/tmp/tmpnll2ywz8/projects/1823edf6-594d-40e8-b4b4-2bd47870f976",
-    "project_id": "1823edf6-594d-40e8-b4b4-2bd47870f976",
+    "path": "/tmp/tmpep4binxl/projects/10ac2d9f-448d-443f-877c-dd39614dbffd",
+    "project_id": "10ac2d9f-448d-443f-877c-dd39614dbffd",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,
