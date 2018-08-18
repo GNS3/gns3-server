@@ -24,6 +24,14 @@
     },
     "images": [
         {
+            "filename": "cumulus-linux-3.6.2-vx-amd64.qcow2",
+            "version": "3.6.2",
+            "md5sum": "02b0621d68fb2e709b4bcc48748c7b6f",
+            "filesize": 1150746624,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "https://s3.amazonaws.com/cumulusfiles/CumulusLinux-3.6.2/cumulus-linux-3.6.2-vx-amd64.qcow2"
+        },
+        {
             "filename": "cumulus-linux-3.6.1-vx-amd64.qcow2",
             "version": "3.6.1",
             "md5sum": "b2145a689ceea668d003a0d2f2faa045",
@@ -165,6 +173,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.6.2",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.6.2-vx-amd64.qcow2"
+            }
+        },    
         {
             "name": "3.6.1",
             "images": {

@@ -11,19 +11,32 @@
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present.",
+    "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present. Interfaces may take several minutes to be usable after appliance boot.",
     "first_port_name": "MgmtEth0/0/CPU0/0",
     "port_name_format": "GigabitEthernet0/0/0/{0}",
     "qemu": {
-        "adapter_type": "e1000",
-        "adapters": 4,
+        "adapter_type": "virtio-net-pci",
+        "adapters": 7,
         "ram": 16384,
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-smp 4"
+        "options": "-smp 4 -cpu host"
     },
     "images": [
+        {
+            "filename": "xrv9k-fullk9-x-6.4.2.qcow2",
+            "version": "6.4.2",
+            "md5sum": "6958763192c7bb59a1b8049d377de1b4",
+            "filesize": 1311703040,
+            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.4.2"
+        },
+        {   "filename": "xrv9k-fullk9-x-6.4.1.qcow2",
+            "version": "6.4.1",
+            "md5sum": "9c56b684e307706005a503e289cb9317",
+            "filesize": 1304887296,
+            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.4.1"
+        },
         {
             "filename": "xrv9k-fullk9-x-6.2.25.qcow2",
             "version": "6.2.25",
@@ -47,6 +60,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.4.2",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-6.4.2.qcow2"
+            }
+        },
+        {
+            "name": "6.4.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-6.4.1.qcow2"
+            }
+        },
         {
             "name": "6.2.25",
             "images": {
