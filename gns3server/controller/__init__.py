@@ -49,6 +49,7 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
+        self._downloaded_appliance_templates_cache = {}
 
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
@@ -62,12 +63,58 @@ class Controller:
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
-    def load_appliances(self):
+    @asyncio.coroutine
+    def download_appliance_templates(self):
+
+        session = aiohttp.ClientSession()
+        response = yield from session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances')
+        json_data = yield from response.json()
+        if response.status != 200:
+            raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub")
+        response.close()
+        try:
+            appliances_dir = get_resource('appliances')
+            for appliance in json_data:
+                if appliance["type"] == "file":
+                    headers = {}
+                    appliance_name = appliance["name"]
+                    #if appliance_name in self._downloaded_appliance_templates_cache:
+                    #    headers["If-None-Match"] = self._downloaded_appliance_templates_cache[appliance_name]
+                    #log.debug("Download appliance template file from '{}'".format(appliance["download_url"]))
+                    response = yield from session.get(appliance["download_url"], headers=headers)
+                    if response.status != 200:
+                        log.debug("Could not download '{}'".format(appliance["download_url"]))
+                        continue
+                    #if resp.status == 304:
+                    #    log.debug("{} is already up-to-date".format(appliance_name))
+                    #    continue
+
+                    try:
+                        appliance_data = yield from response.read()
+                    except asyncio.TimeoutError:
+                        log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
+                        continue
+                    path = os.path.join(appliances_dir, appliance_name)
+
+                    try:
+                        log.debug("Saving {} file to {}".format(appliance_name, path))
+                        with open(path, 'wb') as f:
+                            f.write(appliance_data)
+                    except OSError as e:
+                        raise aiohttp.web.HTTPConflict(text="Could not write appliance template file '{}': {}".format(path, e))
+
+                    #etag = response.headers.get("ETag")
+                    #if etag:
+                    #    self._downloaded_appliance_templates_cache[appliance_name] = etag
+        except ValueError as e:
+            raise aiohttp.web.HTTPConflict(text="Could not read appliance templates information from GitHub: {}".format(e))
+        finally:
+            session.close()
+
+    def load_appliance_templates(self):
 
         self._appliance_templates = {}
-        for directory, builtin in (
-            (get_resource('appliances'), True,), (self.appliances_path(), False,)
-        ):
+        for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
             if os.path.isdir(directory):
                 for file in os.listdir(directory):
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
@@ -83,6 +130,8 @@ class Controller:
                     except (ValueError, OSError, KeyError) as e:
                         log.warning("Cannot load appliance template file '%s': %s", path, str(e))
                         continue
+
+    def load_appliances(self):
 
         self._appliances = {}
         vms = []
@@ -291,6 +340,7 @@ class Controller:
         if "gns3vm" in data:
             self.gns3vm.settings = data["gns3vm"]
 
+        self.load_appliance_templates()
         self.load_appliances()
         return data.get("computes", [])
 
@@ -428,6 +478,7 @@ class Controller:
         self._settings = val
         self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings to help the gui to detect changes
         self.save()
+        self.load_appliance_templates()
         self.load_appliances()
         self.notification.controller_emit("settings.updated", val)
 

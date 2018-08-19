@@ -37,6 +37,9 @@ class ApplianceHandler:
     def list_templates(request, response):
 
         controller = Controller.instance()
+        if request.query.get("update", "no") == "yes":
+            yield from controller.download_appliance_templates()
+            controller.load_appliance_templates()
         response.json([c for c in controller.appliance_templates.values()])
 
     @Route.get(
