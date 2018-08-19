@@ -490,7 +490,7 @@ def test_appliance_templates(controller, async_run, tmpdir):
         json.dump(my_appliance, f)
 
     with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
-        controller.load_appliances()
+        controller.load_appliance_templates()
     assert len(controller.appliance_templates) > 0
     for appliance in controller.appliance_templates.values():
         assert appliance.__json__()["status"] != "broken"

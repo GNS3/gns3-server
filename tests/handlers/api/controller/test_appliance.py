@@ -60,7 +60,7 @@ def test_appliance_list(http_controller, controller):
 
 def test_appliance_templates_list(http_controller, controller, async_run):
 
-    controller.load_appliances()
+    controller.load_appliance_templates()
     response = http_controller.get("/appliances/templates", example=True)
     assert response.status == 200
     assert len(response.json) > 0
