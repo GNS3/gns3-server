@@ -101,6 +101,20 @@ def test_qemu_create_with_params(http_compute, project, base_params, fake_qemu_v
     assert response.json["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
 
 
+def test_qemu_create_with_project_file(http_compute, project, base_params, fake_qemu_vm):
+    response = http_compute.post("/projects/{project_id}/files/hello.img".format(project_id=project.id), body="world", raw=True)
+    assert response.status == 200
+
+    params = base_params
+    params["hda_disk_image"] = "hello.img"
+
+    response = http_compute.post("/projects/{project_id}/qemu/nodes".format(project_id=project.id), params, example=True)
+
+    assert response.status == 201
+    assert response.json["hda_disk_image"] == "hello.img"
+    assert response.json["hda_disk_image_md5sum"] == "7d793037a0760186574b0282f2f435e7"
+
+
 def test_qemu_get(http_compute, project, vm):
     response = http_compute.get("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 200
