@@ -78,7 +78,7 @@ class Controller:
                 log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
                 return
             elif response.status != 200:
-                raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub")
+                raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub due to HTTP error code {}".format(response.status))
             etag = response.headers.get("ETag")
             if etag:
                 self._appliance_templates_etag = etag
@@ -92,7 +92,7 @@ class Controller:
                     log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
                     response = yield from session.get(appliance["download_url"])
                     if response.status != 200:
-                        log.warning("Could not download '{}'".format(appliance["download_url"]))
+                        log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
                         continue
                     try:
                         appliance_data = yield from response.read()
