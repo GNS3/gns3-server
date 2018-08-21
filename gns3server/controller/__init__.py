@@ -35,6 +35,7 @@ from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
 from ..utils.get_resource import get_resource
+from ..utils.asyncio import locked_coroutine
 from .gns3vm.gns3_vm_error import GNS3VMError
 
 import logging
@@ -49,7 +50,6 @@ class Controller:
     def __init__(self):
         self._computes = {}
         self._projects = {}
-        self._downloaded_appliance_templates_cache = {}
 
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
@@ -59,36 +59,41 @@ class Controller:
         self._settings = None
         self._appliances = {}
         self._appliance_templates = {}
+        self._appliance_templates_etag = None
 
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
-    @asyncio.coroutine
+    @locked_coroutine
     def download_appliance_templates(self):
 
         session = aiohttp.ClientSession()
-        response = yield from session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances')
-        json_data = yield from response.json()
-        if response.status != 200:
-            raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub")
-        response.close()
         try:
+            headers = {}
+            if self._appliance_templates_etag:
+                log.info("Checking if appliance templates are up-to-date (ETag {})".format(self._appliance_templates_etag))
+                headers["If-None-Match"] = self._appliance_templates_etag
+            response = yield from session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers)
+            if response.status == 304:
+                log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
+                return
+            elif response.status != 200:
+                raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub")
+            etag = response.headers.get("ETag")
+            if etag:
+                self._appliance_templates_etag = etag
+                self.save()
+            json_data = yield from response.json()
+            response.close()
             appliances_dir = get_resource('appliances')
             for appliance in json_data:
                 if appliance["type"] == "file":
-                    headers = {}
                     appliance_name = appliance["name"]
-                    #if appliance_name in self._downloaded_appliance_templates_cache:
-                    #    headers["If-None-Match"] = self._downloaded_appliance_templates_cache[appliance_name]
-                    #log.debug("Download appliance template file from '{}'".format(appliance["download_url"]))
-                    response = yield from session.get(appliance["download_url"], headers=headers)
+                    log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
+                    response = yield from session.get(appliance["download_url"])
                     if response.status != 200:
-                        log.debug("Could not download '{}'".format(appliance["download_url"]))
+                        log.warning("Could not download '{}'".format(appliance["download_url"]))
                         continue
-                    #if resp.status == 304:
-                    #    log.debug("{} is already up-to-date".format(appliance_name))
-                    #    continue
-
                     try:
                         appliance_data = yield from response.read()
                     except asyncio.TimeoutError:
@@ -97,15 +102,11 @@ class Controller:
                     path = os.path.join(appliances_dir, appliance_name)
 
                     try:
-                        log.debug("Saving {} file to {}".format(appliance_name, path))
+                        log.info("Saving {} file to {}".format(appliance_name, path))
                         with open(path, 'wb') as f:
                             f.write(appliance_data)
                     except OSError as e:
                         raise aiohttp.web.HTTPConflict(text="Could not write appliance template file '{}': {}".format(path, e))
-
-                    #etag = response.headers.get("ETag")
-                    #if etag:
-                    #    self._downloaded_appliance_templates_cache[appliance_name] = etag
         except ValueError as e:
             raise aiohttp.web.HTTPConflict(text="Could not read appliance templates information from GitHub: {}".format(e))
         finally:
@@ -295,6 +296,7 @@ class Controller:
             "computes": [],
             "settings": self._settings,
             "gns3vm": self.gns3vm.__json__(),
+            "appliance_templates_etag": self._appliance_templates_etag,
             "version": __version__
         }
 
@@ -340,6 +342,7 @@ class Controller:
         if "gns3vm" in data:
             self.gns3vm.settings = data["gns3vm"]
 
+        self._appliance_templates_etag = data.get("appliance_templates_etag")
         self.load_appliance_templates()
         self.load_appliances()
         return data.get("computes", [])

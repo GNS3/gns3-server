@@ -22,7 +22,7 @@ import os
 
 class FileWatcher:
     """
-    Watch for file change and call the callback when something happen
+    Watch for file change and call the callback when something happens
 
     :param paths: A path or a list of file to watch
     :param delay: Delay between file check (seconds)

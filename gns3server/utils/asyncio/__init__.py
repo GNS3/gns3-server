@@ -163,8 +163,8 @@ def wait_for_named_pipe_creation(pipe_path, timeout=60):
 
 def locked_coroutine(f):
     """
-    Method decorator that replace asyncio.coroutine that warranty
-    that this specific method of this class instance will not we
+    Method decorator that replace asyncio.coroutine that guarantee
+    that this specific method of this class instance will not be
     executed twice at the same time
     """
     @asyncio.coroutine
