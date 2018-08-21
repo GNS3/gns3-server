@@ -191,7 +191,7 @@ class DynamipsPortFactory:
                     for port_number in range(0, cls.ADAPTER_MATRIX[properties[name]]["nb_ports"]):
                         name = "{}{}/{}".format(port_class.long_name_type(), adapter_number, port_number)
                         port = port_class(name, adapter_number, adapter_number, port_number)
-                        port.short_name = "{}{}/{}".format(port.short_name_type, adapter_number, port_number)
+                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), adapter_number, port_number)
                         ports.append(port)
                 adapter_number += 1
             elif name.startswith("wic") and properties[name]:
@@ -200,7 +200,7 @@ class DynamipsPortFactory:
                     for port_number in range(0, cls.WIC_MATRIX[properties[name]]["nb_ports"]):
                         name = "{}{}/{}".format(port_class.long_name_type(), 0, display_wic_port_number)
                         port = port_class(name, 0, 0, wic_port_number)
-                        port.short_name = "{}{}/{}".format(port.short_name_type, 0, display_wic_port_number)
+                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), 0, display_wic_port_number)
                         ports.append(port)
                         display_wic_port_number += 1
                         wic_port_number += 1
