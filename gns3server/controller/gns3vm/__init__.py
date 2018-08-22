@@ -336,6 +336,8 @@ class GNS3VM:
                                 self._controller.notification.emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
+        except aiohttp.web.HTTPConflict as e:
+            log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e.text))
 
     @locked_coroutine
     def _suspend(self):
