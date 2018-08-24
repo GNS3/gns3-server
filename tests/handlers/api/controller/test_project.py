@@ -179,7 +179,7 @@ def test_notification(http_controller, project, controller, loop, async_run):
         response.close()
         return response
 
-    response = async_run(asyncio.async(go()))
+    response = async_run(asyncio.ensure_future(go()))
     assert response.status == 200
     assert b'"action": "ping"' in response.body
     assert b'"cpu_usage_percent"' in response.body
