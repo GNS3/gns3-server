@@ -108,7 +108,7 @@ def _check_process(process, termination_callback):
 def monitor_process(process, termination_callback):
     """Call termination_callback when a process dies"""
 
-    asyncio.async(_check_process(process, termination_callback))
+    asyncio_ensure_future(_check_process(process, termination_callback))
 
 
 @asyncio.coroutine
@@ -158,3 +158,10 @@ def locked_coroutine(f):
             return (yield from f(*args, **kwargs))
 
     return new_function
+
+#FIXME: conservative approach to supported versions, please remove it when we drop the support to Python < 3.4.4
+try:
+    from asyncio import ensure_future
+    asyncio_ensure_future = asyncio.ensure_future
+except ImportError:
+    asyncio_ensure_future = getattr(asyncio, 'async')

@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 from gns3server.utils.interfaces import interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import asyncio_ensure_future
 from uuid import uuid4
 from ..base_manager import BaseManager
 from ..port_manager import PortManager
@@ -172,7 +173,7 @@ class Dynamips(BaseManager):
 
         tasks = []
         for device in self._devices.values():
-            tasks.append(asyncio.async(device.hypervisor.stop()))
+            tasks.append(asyncio_ensure_future(device.hypervisor.stop()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -196,7 +197,7 @@ class Dynamips(BaseManager):
         tasks = []
         for device in self._devices.values():
             if device.project.id == project.id:
-                tasks.append(asyncio.async(device.delete()))
+                tasks.append(asyncio_ensure_future(device.delete()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)

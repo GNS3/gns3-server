@@ -27,7 +27,7 @@ from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
-from ..utils.asyncio import locked_coroutine
+from ..utils.asyncio import locked_coroutine, asyncio_ensure_future
 from ..controller.controller_error import ControllerError
 from ..version import __version__, __version_info__
 
@@ -418,7 +418,7 @@ class Compute:
                     if self._connection_failure == 5:
                         log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
                         yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio_ensure_future(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
@@ -494,7 +494,7 @@ class Compute:
 
         # Try to reconnect after 1 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
-            asyncio.get_event_loop().call_later(1, lambda: asyncio.async(self.connect()))
+            asyncio.get_event_loop().call_later(1, lambda: asyncio_ensure_future(self.connect()))
         self._ws = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None

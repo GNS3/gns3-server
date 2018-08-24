@@ -21,7 +21,7 @@ import asyncio
 import aiohttp
 import ipaddress
 
-from ...utils.asyncio import locked_coroutine
+from ...utils.asyncio import locked_coroutine, asyncio_ensure_future
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
@@ -302,7 +302,7 @@ class GNS3VM:
 
             # check if the VM is in the same subnet as the local server, start 10 seconds later to give
             # some time for the compute in the VM to be ready for requests
-            asyncio.get_event_loop().call_later(10, lambda: asyncio.async(self._check_network(compute)))
+            asyncio.get_event_loop().call_later(10, lambda: asyncio_ensure_future(self._check_network(compute)))
 
     @asyncio.coroutine
     def _check_network(self, compute):

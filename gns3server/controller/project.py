@@ -38,6 +38,7 @@ from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import asyncio_ensure_future
 from .export_project import export_project
 from .import_project import import_project
 
@@ -887,7 +888,7 @@ class Project:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it
-            asyncio.async(self.start_all())
+            asyncio_ensure_future(self.start_all())
 
     @asyncio.coroutine
     def wait_loaded(self):

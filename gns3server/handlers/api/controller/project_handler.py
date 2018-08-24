@@ -25,6 +25,7 @@ from gns3server.controller import Controller
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
 from gns3server.config import Config
+from gns3server.utils.asyncio import asyncio_ensure_future
 
 
 from gns3server.schemas.project import (
@@ -246,7 +247,7 @@ class ProjectHandler:
         ws = aiohttp.web.WebSocketResponse()
         yield from ws.prepare(request)
 
-        asyncio.async(process_websocket(ws))
+        asyncio_ensure_future(process_websocket(ws))
 
         with controller.notification.queue(project) as queue:
             while True:
