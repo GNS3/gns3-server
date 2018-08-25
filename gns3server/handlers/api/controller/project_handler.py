@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import aiohttp
 import asyncio
 import tempfile
@@ -333,14 +334,25 @@ class ProjectHandler:
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
         # Spooled means the file is temporary kept in memory until max_size is reached
+        # Cannot use tempfile.SpooledTemporaryFile(max_size=10000) in Python 3.7 due
+        # to a bug https://bugs.python.org/issue26175
         try:
-            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
-                while True:
-                    chunk = yield from request.content.read(1024)
-                    if not chunk:
-                        break
-                    temp.write(chunk)
-                project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+            if sys.version_info >= (3, 7) and sys.version_info < (3, 8):
+                with tempfile.TemporaryFile() as temp:
+                    while True:
+                        chunk = yield from request.content.read(1024)
+                        if not chunk:
+                            break
+                        temp.write(chunk)
+                    project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+            else:
+                with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
+                    while True:
+                        chunk = yield from request.content.read(1024)
+                        if not chunk:
+                            break
+                        temp.write(chunk)
+                    project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 

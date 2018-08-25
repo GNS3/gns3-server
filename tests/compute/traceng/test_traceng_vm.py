@@ -66,7 +66,7 @@ def test_start(loop, vm, async_run):
     process.returncode = None
 
     with NotificationManager.instance().queue() as queue:
-        async_run(queue.get(0))  # Ping
+        async_run(queue.get(1))  # Ping
 
         vm.ip_address = "192.168.1.1"
         with patch("sys.platform", return_value="win"):
@@ -88,7 +88,7 @@ def test_start(loop, vm, async_run):
                                                       '192.168.1.2')
                     assert vm.is_running()
                     assert vm.command_line == ' '.join(mock_exec.call_args[0])
-        (action, event, kwargs) = async_run(queue.get(0))
+        (action, event, kwargs) = async_run(queue.get(1))
         assert action == "node.updated"
         assert event == vm
 
@@ -120,10 +120,10 @@ def test_stop(loop, vm, async_run):
 
                     process.terminate.assert_called_with()
 
-                    async_run(queue.get(0))  #  Ping
-                    async_run(queue.get(0))  #  Started
+                    async_run(queue.get(1))  #  Ping
+                    async_run(queue.get(1))  #  Started
 
-                    (action, event, kwargs) = async_run(queue.get(0))
+                    (action, event, kwargs) = async_run(queue.get(1))
                     assert action == "node.updated"
                     assert event == vm
 
