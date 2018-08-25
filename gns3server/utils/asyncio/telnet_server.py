@@ -322,6 +322,7 @@ class AsyncioTelnetServer:
         else:
             log.debug("Not supported negotiation sequence, received {} bytes", len(data))
 
+    @asyncio.coroutine
     def _IAC_parser(self, buf, network_reader, network_writer, connection):
         """
         Processes and removes any Telnet commands from the buffer.
