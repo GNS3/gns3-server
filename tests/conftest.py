@@ -104,7 +104,7 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
         monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
         loop.run_until_complete(instance.unload())
     srv.close()
-    srv.wait_closed()
+    loop.run_until_complete(srv.wait_closed())
 
 
 @pytest.fixture

@@ -138,26 +138,28 @@ def wait_for_named_pipe_creation(pipe_path, timeout=60):
             return
     raise asyncio.TimeoutError()
 
+#FIXME: Use the following wrapper when we drop Python 3.4 and use the async def syntax
+# def locking(f):
+#
+#     @wraps(f)
+#     async def wrapper(oself, *args, **kwargs):
+#         lock_name = "__" + f.__name__ + "_lock"
+#         if not hasattr(oself, lock_name):
+#             setattr(oself, lock_name, asyncio.Lock())
+#         async with getattr(oself, lock_name):
+#             return await f(oself, *args, **kwargs)
+#     return wrapper
 
-def locked_coroutine(f):
-    """
-    Method decorator that replace asyncio.coroutine that warranty
-    that this specific method of this class instance will not we
-    executed twice at the same time
-    """
-    @asyncio.coroutine
-    def new_function(*args, **kwargs):
+def locking(f):
 
-        # In the instance of the class we will store
-        # a lock has an attribute.
-        lock_var_name = "__" + f.__name__ + "_lock"
-        if not hasattr(args[0], lock_var_name):
-            setattr(args[0], lock_var_name, asyncio.Lock())
-
-        with (yield from getattr(args[0], lock_var_name)):
-            return (yield from f(*args, **kwargs))
-
-    return new_function
+    @functools.wraps(f)
+    def wrapper(oself, *args, **kwargs):
+        lock_name = "__" + f.__name__ + "_lock"
+        if not hasattr(oself, lock_name):
+            setattr(oself, lock_name, asyncio.Lock())
+        with (yield from getattr(oself, lock_name)):
+            return (yield from f(oself, *args, **kwargs))
+    return wrapper
 
 #FIXME: conservative approach to supported versions, please remove it when we drop the support to Python < 3.4.4
 try:

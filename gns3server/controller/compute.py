@@ -27,7 +27,7 @@ from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
-from ..utils.asyncio import locked_coroutine, asyncio_ensure_future
+from ..utils.asyncio import locking, asyncio_ensure_future
 from ..controller.controller_error import ControllerError
 from ..version import __version__, __version_info__
 
@@ -400,7 +400,8 @@ class Compute:
         except aiohttp.web.HTTPConflict:
             pass
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def connect(self):
         """
         Check if remote server is accessible
