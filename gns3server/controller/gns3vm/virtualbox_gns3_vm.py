@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import aiohttp
 import logging
 import asyncio
@@ -144,6 +145,22 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         return False
 
     @asyncio.coroutine
+    def _find_first_available_vboxnet(self):
+        """
+        Find the first available vboxnet.
+        """
+
+        properties = yield from self._execute("list", ["hostonlyifs"])
+        for prop in properties.splitlines():
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "Name":
+                return value.strip()
+        return None
+
+    @asyncio.coroutine
     def _check_vbox_port_forwarding(self):
         """
         Checks if the NAT port forwarding rule exists.
@@ -176,20 +193,29 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         # get a NAT interface number
         nat_interface_number = yield from self._look_for_interface("nat")
         if nat_interface_number < 0:
-            raise GNS3VMError('The VM "{}" must have a NAT interface configured in order to start'.format(self.vmname))
+            raise GNS3VMError('VM "{}" must have a NAT interface configured in order to start'.format(self.vmname))
 
         hostonly_interface_number = yield from self._look_for_interface("hostonly")
         if hostonly_interface_number < 0:
-            raise GNS3VMError('The VM "{}" must have a host-only interface configured in order to start'.format(self.vmname))
+            raise GNS3VMError('VM "{}" must have a host-only interface configured in order to start'.format(self.vmname))
 
         vboxnet = yield from self._look_for_vboxnet(hostonly_interface_number)
         if vboxnet is None:
             raise GNS3VMError('A VirtualBox host-only network could not be found on network adapter {} for "{}"'.format(hostonly_interface_number, self._vmname))
 
         if not (yield from self._check_vboxnet_exists(vboxnet)):
-            raise GNS3VMError('VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(vboxnet,
-                                                                                                                                                                   hostonly_interface_number,
-                                                                                                                                                                   self._vmname))
+            if sys.platform.startswith("win") and vboxnet == "vboxnet0":
+                # The GNS3 VM is configured with vboxnet0 by default which is not available
+                # on Windows. Try to patch this with the first available vboxnet we find.
+                first_available_vboxnet = yield from self._find_first_available_vboxnet()
+                if first_available_vboxnet is None:
+                    raise GNS3VMError('Please add a VirtualBox host-only network with DHCP enabled and attached it to network adapter {} for "{}"'.format(hostonly_interface_number, self._vmname))
+                yield from self.set_hostonly_network(hostonly_interface_number, first_available_vboxnet)
+                vboxnet = first_available_vboxnet
+            else:
+                raise GNS3VMError('VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(vboxnet,
+                                                                                                                                                                         hostonly_interface_number,
+                                                                                                                                                                         self._vmname))
 
         if not (yield from self._check_dhcp_server(vboxnet)):
             raise GNS3VMError('DHCP must be enabled on VirtualBox host-only network "{}"'.format(vboxnet))
@@ -334,3 +360,17 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
 
         yield from self._execute("modifyvm", [self._vmname, "--memory", str(ram)], timeout=3)
         log.info("GNS3 VM RAM amount set to {}".format(ram))
+
+    @asyncio.coroutine
+    def set_hostonly_network(self, adapter_number, hostonly_network_name):
+        """
+        Set a VirtualBox host-only network on a network adapter for the GNS3 VM.
+
+        :param adapter_number: network adapter number
+        :param hostonly_network_name: name of the VirtualBox host-only network
+        """
+
+        yield from self._execute("modifyvm", [self._vmname, "--hostonlyadapter{}".format(adapter_number), hostonly_network_name], timeout=3)
+        log.info('VirtualBox host-only network "{}" set on network adapter {} for "{}"'.format(hostonly_network_name,
+                                                                                               adapter_number,
+                                                                                               self._vmname))
