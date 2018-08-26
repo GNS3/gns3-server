@@ -25,7 +25,7 @@ import asyncio
 import logging
 import aiohttp
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio import locked_coroutine
+from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
@@ -182,7 +182,8 @@ class Docker(BaseManager):
                                                          autoping=True)
         return connection
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def pull_image(self, image, progress_callback=None):
         """
         Pull image from docker repository

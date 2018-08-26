@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b4040cc6-0b70-4855-a036-1b978d3851d7/start' -d '{"iourc_content": "test"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/32cba1e5-0164-45a4-872f-82a5f6ef03a4/start' -d '{"iourc_content": "test"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b4040cc6-0b70-4855-a036-1b978d3851d7/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/32cba1e5-0164-45a4-872f-82a5f6ef03a4/start HTTP/1.1
 {
     "iourc_content": "test"
 }
@@ -8,10 +8,10 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/b4040cc
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 665
+Content-Length: 614
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:19 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:54 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/start
 
 {
@@ -23,8 +23,8 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/start
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/iou/b4040cc6-0b70-4855-a036-1b978d3851d7",
-    "node_id": "b4040cc6-0b70-4855-a036-1b978d3851d7",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-23/test_json4/project-files/iou/32cba1e5-0164-45a4-872f-82a5f6ef03a4",
+    "node_id": "32cba1e5-0164-45a4-872f-82a5f6ef03a4",
     "nvram": 128,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",

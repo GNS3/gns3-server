@@ -33,7 +33,7 @@ import xml.etree.ElementTree as ET
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.serial import asyncio_open_serial
-from gns3server.utils.asyncio import locked_coroutine
+from gns3server.utils.asyncio import locking
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.nios.nio_udp import NIOUDP
 from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
@@ -296,7 +296,8 @@ class VirtualBoxVM(BaseNode):
         if (yield from self.check_hw_virtualization()):
             self._hw_virtualization = True
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def stop(self):
         """
         Stops this VirtualBox VM.

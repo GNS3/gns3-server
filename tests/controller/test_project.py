@@ -165,7 +165,6 @@ def test_add_node_local(async_run, controller):
         "name": project._name,
         "project_id": project._id,
         "path": project._path,
-        "variables": None
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -193,8 +192,7 @@ def test_add_node_non_local(async_run, controller):
 
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
-        "project_id": project._id,
-        "variables": None
+        "project_id": project._id
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,
@@ -234,8 +232,7 @@ def test_add_node_from_appliance(async_run, controller):
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
-        "path": project._path,
-        "variables": None
+        "path": project._path
     })
     compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
                                  data={'node_id': node.id,

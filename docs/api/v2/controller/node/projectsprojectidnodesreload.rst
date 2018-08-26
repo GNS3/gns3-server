@@ -13,9 +13,9 @@ Parameters
 
 Response status codes
 **********************
-- **204**: All nodes successfully reloaded
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: All nodes successfully reloaded
 
 Output
 *******

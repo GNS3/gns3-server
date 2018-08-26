@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/17acdd5b-0e7e-43d0-97ad-56b3c028b933/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/98f97bfa-322d-425a-ba2e-d03486033ae9/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/17acdd5b-0e7e-43d0-97ad-56b3c028b933/adapters/0/ports/0/start_capture HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/98f97bfa-322d-425a-ba2e-d03486033ae9/adapters/0/ports/0/start_capture HTTP/1.1
 {
     "capture_file_name": "test.pcap",
     "data_link_type": "DLT_EN10MB"
@@ -9,12 +9,12 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/17acdd5
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 145
+Content-Length: 94
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:21 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:55 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
 
 {
-    "pcap_file_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/tmp/captures/test.pcap"
+    "pcap_file_path": "/tmp/pytest-of-grossmj/pytest-23/test_json4/tmp/captures/test.pcap"
 }

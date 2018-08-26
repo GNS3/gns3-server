@@ -1,0 +1,19 @@
+{
+    "name": "DNS",
+    "category": "guest",
+    "description": "This appliance provides DNS using dnsmasq with the local domain set to \"lab\".",
+    "vendor_name": "Ubuntu",
+    "vendor_url": "https://www.ubuntu.com/",
+    "product_name": "DNS",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Andras Dosztal",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "linux_guest.svg",
+    "usage": "You can add records by adding entries to the /etc/hosts file in the following format:\n%IP_ADDRESS% %HOSTNAME%.lab %HOSTNAME%\n\nExample:\n192.168.123.10 router1.lab router1",
+    "docker": {
+        "adapters": 1,
+        "image": "adosztal/dns:latest",
+        "console_type": "telnet"
+    }
+}

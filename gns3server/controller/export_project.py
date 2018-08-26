@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import json
 import asyncio
 import aiohttp
@@ -23,6 +24,7 @@ import zipfile
 import tempfile
 import zipstream
 
+from datetime import datetime
 
 import logging
 log = logging.getLogger(__name__)
@@ -77,6 +79,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
             # ignore the .gns3 file
             if file.endswith(".gns3"):
                 continue
+            _patch_mtime(path)
             zstream.write(path, os.path.relpath(path, project._path), compress_type=zipfile.ZIP_DEFLATED)
 
     # Export files from remote computes
@@ -99,11 +102,28 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
                         f.write(data)
                     response.close()
                     f.close()
+                    _patch_mtime(temp_path)
                     zstream.write(temp_path, arcname=compute_file["path"], compress_type=zipfile.ZIP_DEFLATED)
                     downloaded_files.add(compute_file['path'])
 
     return zstream
 
+
+def _patch_mtime(path):
+    """
+    Patch the file mtime because ZIP does not support timestamps before 1980
+
+    :param path: file path
+    """
+
+    if sys.platform.startswith("win"):
+        # only UNIX type platforms
+        return
+    st = os.stat(path)
+    file_date = datetime.fromtimestamp(st.st_mtime)
+    if file_date.year < 1980:
+        new_mtime = file_date.replace(year=1980).timestamp()
+        os.utime(path, (st.st_atime, new_mtime))
 
 def _is_exportable(path):
     """
@@ -228,6 +248,7 @@ def _export_local_image(image, zstream):
 
         if os.path.exists(path):
             arcname = os.path.join("images", directory, os.path.basename(image))
+            _patch_mtime(path)
             zstream.write(path, arcname)
             return
 

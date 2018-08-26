@@ -20,7 +20,7 @@ from tests.utils import asyncio_patch
 from unittest.mock import patch
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def vm(http_compute, project, vmx_path):
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.create", return_value=True) as mock:
@@ -33,7 +33,7 @@ def vm(http_compute, project, vmx_path):
     return response.json
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def vmx_path(tmpdir):
     """
     Return a fake VMX file

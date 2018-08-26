@@ -131,6 +131,7 @@ def test_compute_list(http_controller, controller):
                 'name': 'My super server',
                 'cpu_usage_percent': None,
                 'memory_usage_percent': None,
+                'last_error': None,
                 'capabilities': {
                     'version': None,
                     'node_types': []

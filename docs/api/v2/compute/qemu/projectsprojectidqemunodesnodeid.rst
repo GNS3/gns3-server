@@ -9,8 +9,8 @@ Get a Qemu VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -82,8 +82,8 @@ Update a Qemu VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
@@ -203,14 +203,14 @@ Delete a Qemu VM instance
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **node_id**: Node UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **204**: Instance deleted
 
 Sample session
 ***************

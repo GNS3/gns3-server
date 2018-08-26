@@ -9,13 +9,13 @@ Delete a snapshot from disk
 
 Parameters
 **********
-- **project_id**: Project UUID
 - **snapshot_id**: Snasphot UUID
+- **project_id**: Project UUID
 
 Response status codes
 **********************
-- **204**: Changes have been written on disk
 - **404**: The project or snapshot doesn't exist
+- **204**: Changes have been written on disk
 
 Sample session
 ***************

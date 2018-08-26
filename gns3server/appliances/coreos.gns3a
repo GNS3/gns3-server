@@ -22,6 +22,15 @@
     },
     "images": [
         {
+            "filename": "coreos_production_qemu_image.1688.5.3.img",
+            "version": "1688.5.3",
+            "md5sum": "f1015a9573fb6e378d2a5e86b4243acd",
+            "filesize": 867368960,
+            "download_url": "http://stable.release.core-os.net/amd64-usr/1688.5.3/",
+            "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1688.5.3/coreos_production_qemu_image.img.bz2",
+            "compression": "bzip2"
+        },
+        {
             "filename": "coreos_production_qemu_image.1632.2.1.img",
             "version": "1632.2.1",
             "md5sum": "facd05ca85eb87e2dc6aefd6779f6806",
@@ -159,9 +168,15 @@
     ],
     "versions": [
         {
+            "name": "1688.5.3",
+            "images": {
+                "hda_disk_image": "coreos_production_qemu_image.1688.5.3.img"
+            }
+        },
+        {
             "name": "1632.2.1",
             "images": {
-                "hda_disk_image": "coreos_production_qemu_image.1576.4.0.img"
+                "hda_disk_image": "coreos_production_qemu_image.1632.2.1.img"
             }
         },
         {

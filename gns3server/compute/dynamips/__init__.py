@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 from gns3server.utils.interfaces import interfaces, is_interface_up
 from gns3server.utils.asyncio import wait_run_in_executor
 from gns3server.utils import parse_version
+from gns3server.utils.asyncio import asyncio_ensure_future
 from uuid import uuid4
 from ..base_manager import BaseManager
 from ..port_manager import PortManager
@@ -172,7 +173,7 @@ class Dynamips(BaseManager):
 
         tasks = []
         for device in self._devices.values():
-            tasks.append(asyncio.async(device.hypervisor.stop()))
+            tasks.append(asyncio_ensure_future(device.hypervisor.stop()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -196,7 +197,7 @@ class Dynamips(BaseManager):
         tasks = []
         for device in self._devices.values():
             if device.project.id == project.id:
-                tasks.append(asyncio.async(device.delete()))
+                tasks.append(asyncio_ensure_future(device.delete()))
 
         if tasks:
             done, _ = yield from asyncio.wait(tasks)
@@ -561,6 +562,7 @@ class Dynamips(BaseManager):
 
         yield from vm.set_idlepc("0x0")
         was_auto_started = False
+        old_priority = None
         try:
             status = yield from vm.get_status()
             if status != "running":
@@ -572,6 +574,8 @@ class Dynamips(BaseManager):
             if not idlepcs:
                 raise DynamipsError("No Idle-PC values found")
 
+            if sys.platform.startswith("win"):
+                old_priority = vm.set_process_priority_windows(vm.hypervisor.process.pid)
             for idlepc in idlepcs:
                 match = re.search(r"^0x[0-9a-f]{8}$", idlepc.split()[0])
                 if not match:
@@ -600,6 +604,8 @@ class Dynamips(BaseManager):
         except DynamipsError:
             raise
         finally:
+            if old_priority is not None:
+                vm.set_process_priority_windows(vm.hypervisor.process.pid, old_priority)
             if was_auto_started:
                 yield from vm.stop()
         return validated_idlepc

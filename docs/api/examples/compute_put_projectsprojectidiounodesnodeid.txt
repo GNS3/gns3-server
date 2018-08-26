@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/526cbb33-9ffb-4ad3-8d63-ab26b94cfb73' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c0596699-5195-4264-9474-104e4f7fb78f' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/526cbb33-9ffb-4ad3-8d63-ab26b94cfb73 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c0596699-5195-4264-9474-104e4f7fb78f HTTP/1.1
 {
     "console": 5005,
     "ethernet_adapters": 4,
@@ -15,10 +15,10 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/526cbb33
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 660
+Content-Length: 609
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:20 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:34:54 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
@@ -30,8 +30,8 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/iou/526cbb33-9ffb-4ad3-8d63-ab26b94cfb73",
-    "node_id": "526cbb33-9ffb-4ad3-8d63-ab26b94cfb73",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-23/test_json4/project-files/iou/c0596699-5195-4264-9474-104e4f7fb78f",
+    "node_id": "c0596699-5195-4264-9474-104e4f7fb78f",
     "nvram": 2048,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",

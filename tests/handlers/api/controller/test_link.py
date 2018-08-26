@@ -356,7 +356,7 @@ def test_pcap(http_controller, tmpdir, project, compute, loop):
     project._links = {link.id: link}
 
     future = asyncio.Future()
-    asyncio.async(go(future))
+    asyncio.ensure_future(go(future))
     response = loop.run_until_complete(future)
     assert response.status == 200
     assert b'hello' == response.body

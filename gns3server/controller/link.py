@@ -22,6 +22,8 @@ import html
 import asyncio
 import aiohttp
 
+from gns3server.utils.asyncio import asyncio_ensure_future
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -296,7 +298,7 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._streaming_pcap = asyncio.async(self._start_streaming_pcap())
+        self._streaming_pcap = asyncio_ensure_future(self._start_streaming_pcap())
         self._project.controller.notification.emit("link.updated", self.__json__())
 
     @asyncio.coroutine

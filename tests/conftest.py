@@ -104,7 +104,7 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
         monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
         loop.run_until_complete(instance.unload())
     srv.close()
-    srv.wait_closed()
+    loop.run_until_complete(srv.wait_closed())
 
 
 @pytest.fixture
@@ -314,7 +314,7 @@ def async_run(loop):
     """
     Shortcut for running in asyncio loop
     """
-    return lambda x: loop.run_until_complete(asyncio.async(x))
+    return lambda x: loop.run_until_complete(asyncio.ensure_future(x))
 
 
 @pytest.yield_fixture

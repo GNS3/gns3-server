@@ -9,10 +9,10 @@ POST /v2/projects HTTP/1.1
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 574
+Content-Length: 530
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:57 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:35:16 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/projects
 
 {
@@ -22,7 +22,7 @@ X-Route: /v2/projects
     "filename": "test.gns3",
     "grid_size": 0,
     "name": "test",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmphsp_xfyy/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/tmp/tmpwszmok4d/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
     "scene_height": 1000,
     "scene_width": 2000,

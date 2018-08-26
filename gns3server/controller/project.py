@@ -36,8 +36,9 @@ from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
-from ..utils.asyncio import locked_coroutine
+from ..utils.asyncio import locking
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import asyncio_ensure_future
 from .export_project import export_project
 from .import_project import import_project
 
@@ -500,18 +501,21 @@ class Project:
         if compute not in self._project_created_on_compute:
             # For a local server we send the project path
             if compute.id == "local":
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
                     "project_id": self._id,
-                    "path": self._path,
-                    "variables": self._variables
-                })
+                    "path": self._path
+                }
             else:
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
-                    "project_id": self._id,
-                    "variables": self._variables
-                })
+                    "project_id": self._id
+                }
+
+            if self._variables:
+                data["variables"] = self._variables
+
+            yield from compute.post("/projects", data=data)
 
             self._project_created_on_compute.add(compute)
         yield from node.create()
@@ -521,7 +525,8 @@ class Project:
             self.dump()
         return node
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def __delete_node_links(self, node):
         """
         Delete all link connected to this node.
@@ -779,7 +784,8 @@ class Project:
     def _topology_file(self):
         return os.path.join(self.path, self._filename)
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def open(self):
         """
         Load topology elements
@@ -884,7 +890,7 @@ class Project:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it
-            asyncio.async(self.start_all())
+            asyncio_ensure_future(self.start_all())
 
     @asyncio.coroutine
     def wait_loaded(self):
@@ -928,7 +934,7 @@ class Project:
                 yield from wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
                 with open(project_path, "rb") as f:
                     project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
-        except (OSError, UnicodeEncodeError) as e:
+        except (ValueError, OSError, UnicodeEncodeError) as e:
             raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":

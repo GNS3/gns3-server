@@ -8,21 +8,21 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 2690
 Content-Type: application/json
-Date: Thu, 07 Jun 2018 08:13:43 GMT
-Server: Python/3.6 GNS3/2.1.7dev1
+Date: Thu, 14 Jun 2018 08:35:11 GMT
+Server: Python/3.5 GNS3/2.1.8dev1
 X-Route: /v2/appliances
 
 [
     {
-        "appliance_id": "39e257dc-8412-3174-b6b3-0ee3ed6a43e9",
+        "appliance_id": "dd0f6f3a-ba58-3249-81cb-a1dd88407a47",
         "builtin": true,
-        "category": "guest",
+        "category": "switch",
         "compute_id": null,
         "default_name_format": "{name}-{0}",
-        "name": "Cloud",
-        "node_type": "cloud",
+        "name": "Frame Relay switch",
+        "node_type": "frame_relay_switch",
         "platform": null,
-        "symbol": ":/symbols/cloud.svg"
+        "symbol": ":/symbols/frame_relay_switch.svg"
     },
     {
         "appliance_id": "df8f4ea9-33b7-3e96-86a2-c39bc9bb649c",
@@ -47,17 +47,6 @@ X-Route: /v2/appliances
         "symbol": ":/symbols/vpcs_guest.svg"
     },
     {
-        "appliance_id": "1966b864-93e7-32d5-965f-001384eec461",
-        "builtin": true,
-        "category": "switch",
-        "compute_id": null,
-        "default_name_format": "{name}-{0}",
-        "name": "Ethernet switch",
-        "node_type": "ethernet_switch",
-        "platform": null,
-        "symbol": ":/symbols/ethernet_switch.svg"
-    },
-    {
         "appliance_id": "b4503ea9-d6b6-3695-9fe4-1db3b39290b0",
         "builtin": true,
         "category": "switch",
@@ -69,15 +58,37 @@ X-Route: /v2/appliances
         "symbol": ":/symbols/hub.svg"
     },
     {
-        "appliance_id": "dd0f6f3a-ba58-3249-81cb-a1dd88407a47",
+        "appliance_id": "39e257dc-8412-3174-b6b3-0ee3ed6a43e9",
+        "builtin": true,
+        "category": "guest",
+        "compute_id": null,
+        "default_name_format": "{name}-{0}",
+        "name": "Cloud",
+        "node_type": "cloud",
+        "platform": null,
+        "symbol": ":/symbols/cloud.svg"
+    },
+    {
+        "appliance_id": "1966b864-93e7-32d5-965f-001384eec461",
         "builtin": true,
         "category": "switch",
         "compute_id": null,
         "default_name_format": "{name}-{0}",
-        "name": "Frame Relay switch",
-        "node_type": "frame_relay_switch",
+        "name": "Ethernet switch",
+        "node_type": "ethernet_switch",
         "platform": null,
-        "symbol": ":/symbols/frame_relay_switch.svg"
+        "symbol": ":/symbols/ethernet_switch.svg"
+    },
+    {
+        "appliance_id": "882691e1-9fc0-4bf5-9711-46309a4e66f7",
+        "builtin": false,
+        "category": "router",
+        "compute_id": "local",
+        "default_name_format": "{name}-{0}",
+        "name": "test",
+        "node_type": "qemu",
+        "platform": null,
+        "symbol": "guest.svg"
     },
     {
         "appliance_id": "aaa764e2-b383-300f-8a0e-3493bbfdb7d2",
@@ -89,16 +100,5 @@ X-Route: /v2/appliances
         "node_type": "atm_switch",
         "platform": null,
         "symbol": ":/symbols/atm_switch.svg"
-    },
-    {
-        "appliance_id": "04d7a206-b723-4cca-aa22-88a56b3a789e",
-        "builtin": false,
-        "category": "router",
-        "compute_id": "local",
-        "default_name_format": "{name}-{0}",
-        "name": "test",
-        "node_type": "qemu",
-        "platform": null,
-        "symbol": "guest.svg"
     }
 ]

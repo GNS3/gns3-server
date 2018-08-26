@@ -21,7 +21,7 @@ import asyncio
 import aiohttp
 import ipaddress
 
-from ...utils.asyncio import locked_coroutine
+from ...utils.asyncio import locking, asyncio_ensure_future
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .remote_gns3_vm import RemoteGNS3VM
@@ -265,7 +265,8 @@ class GNS3VM:
             except GNS3VMError as e:
                 log.warn(str(e))
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def start(self):
         """
         Start the GNS3 VM
@@ -302,7 +303,7 @@ class GNS3VM:
 
             # check if the VM is in the same subnet as the local server, start 10 seconds later to give
             # some time for the compute in the VM to be ready for requests
-            asyncio.get_event_loop().call_later(10, lambda: asyncio.async(self._check_network(compute)))
+            asyncio.get_event_loop().call_later(10, lambda: asyncio_ensure_future(self._check_network(compute)))
 
     @asyncio.coroutine
     def _check_network(self, compute):
@@ -336,8 +337,11 @@ class GNS3VM:
                                 self._controller.notification.emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
+        except aiohttp.web.HTTPConflict as e:
+            log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e.text))
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def _suspend(self):
         """
         Suspend the GNS3 VM
@@ -349,7 +353,8 @@ class GNS3VM:
             log.info("Suspend the GNS3 VM")
             yield from engine.suspend()
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def _stop(self):
         """
         Stop the GNS3 VM
