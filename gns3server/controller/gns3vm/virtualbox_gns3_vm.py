@@ -107,7 +107,6 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         Check if the DHCP server associated with a vboxnet is enabled.
 
         :param vboxnet: vboxnet name
-
         :returns: boolean
         """
 
@@ -123,6 +122,25 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             if flag_dhcp_server_found and name.strip() == "Enabled":
                 if value.strip() == "Yes":
                     return True
+        return False
+
+    @asyncio.coroutine
+    def _check_vboxnet_exists(self, vboxnet):
+        """
+        Check if the vboxnet interface exists
+
+        :param vboxnet: vboxnet name
+        :returns: boolean
+        """
+
+        properties = yield from self._execute("list", ["hostonlyifs"])
+        for prop in properties.splitlines():
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "Name" and value.strip() == vboxnet:
+                return True
         return False
 
     @asyncio.coroutine
@@ -158,18 +176,23 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         # get a NAT interface number
         nat_interface_number = yield from self._look_for_interface("nat")
         if nat_interface_number < 0:
-            raise GNS3VMError("The GNS3 VM: {} must have a NAT interface configured in order to start".format(self.vmname))
+            raise GNS3VMError('The VM "{}" must have a NAT interface configured in order to start'.format(self.vmname))
 
         hostonly_interface_number = yield from self._look_for_interface("hostonly")
         if hostonly_interface_number < 0:
-            raise GNS3VMError("The GNS3 VM: {} must have a host only interface configured in order to start".format(self.vmname))
+            raise GNS3VMError('The VM "{}" must have a host-only interface configured in order to start'.format(self.vmname))
 
         vboxnet = yield from self._look_for_vboxnet(hostonly_interface_number)
         if vboxnet is None:
-            raise GNS3VMError("VirtualBox host-only network could not be found for interface {} on GNS3 VM".format(hostonly_interface_number))
+            raise GNS3VMError('A VirtualBox host-only network could not be found on network adapter {} for "{}"'.format(hostonly_interface_number, self._vmname))
+
+        if not (yield from self._check_vboxnet_exists(vboxnet)):
+            raise GNS3VMError('VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(vboxnet,
+                                                                                                                                                                   hostonly_interface_number,
+                                                                                                                                                                   self._vmname))
 
         if not (yield from self._check_dhcp_server(vboxnet)):
-            raise GNS3VMError("DHCP must be enabled on VirtualBox host-only network: {} for GNS3 VM".format(vboxnet))
+            raise GNS3VMError('DHCP must be enabled on VirtualBox host-only network "{}"'.format(vboxnet))
 
         vm_state = yield from self._get_state()
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
