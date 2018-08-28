@@ -246,13 +246,15 @@ class GNS3VM:
             except GNS3VMError as e:
                 # User will receive the error later when they will try to use the node
                 try:
-                    yield from self._controller.add_compute(compute_id="vm",
-                                                            name="GNS3 VM ({})".format(self.current_engine().vmname),
-                                                            host=None,
-                                                            force=True)
+                    compute = yield from self._controller.add_compute(compute_id="vm",
+                                                                      name="GNS3 VM ({})".format(self.current_engine().vmname),
+                                                                      host=None,
+                                                                      force=True)
+                    compute.set_last_error(str(e))
+
                 except aiohttp.web.HTTPConflict:
                     pass
-                log.error("Can't start the GNS3 VM: %s", str(e))
+                log.error("Cannot start the GNS3 VM: {}".format(e))
 
     @asyncio.coroutine
     def exit_vm(self):
@@ -290,8 +292,9 @@ class GNS3VM:
                 yield from engine.start()
             except Exception as e:
                 yield from self._controller.delete_compute("vm")
-                log.error("Can't start the GNS3 VM: {}".format(str(e)))
+                log.error("Cannot start the GNS3 VM: {}".format(str(e)))
                 yield from compute.update(name="GNS3 VM ({})".format(engine.vmname))
+                compute.set_last_error(str(e))
                 raise e
             yield from compute.connect()  # we can connect now that the VM has started
             yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),

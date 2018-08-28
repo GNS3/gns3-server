@@ -138,6 +138,14 @@ class Compute:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
 
+    def set_last_error(self, msg):
+        """
+        Set the last error message for this compute.
+
+        :param msg: message
+        """
+        self._last_error = msg
+
     @asyncio.coroutine
     def interfaces(self):
         """
