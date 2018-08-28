@@ -72,7 +72,10 @@ class ServerHandler:
         # then shutdown the server itself
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
-        asyncio_ensure_future(server.shutdown_server())
+        try:
+            asyncio_ensure_future(server.shutdown_server())
+        except asyncio.CancelledError:
+            pass
         response.set_status(201)
 
     @Route.get(
