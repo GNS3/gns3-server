@@ -87,14 +87,7 @@ done
 set -e
 
 export DEBIAN_FRONTEND="noninteractive"
-
-UBUNTU_VERSION=`lsb_release -r -s`
-if [ "$UBUNTU_VERSION" == "14.04" ]
-then
-    UBUNTU_CODENAME="trusty"
-else
-    UBUNTU_CODENAME="xenial"
-fi
+UBUNTU_CODENAME=`lsb_release -c -s`
 
 log "Add GNS3 repository"
 
