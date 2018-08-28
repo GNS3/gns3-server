@@ -39,7 +39,6 @@ from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locked_coroutine
 from .export_project import export_project
 from .import_project import import_project
-from ..compute.iou.utils.application_id import get_next_application_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -434,12 +433,9 @@ class Project:
         :param dump: Dump topology to disk
         :param kwargs: See the documentation of node
         """
+
         if node_id in self._nodes:
             return self._nodes[node_id]
-
-        if node_type == "iou" and 'application_id' not in kwargs.keys():
-
-            kwargs['application_id'] = get_next_application_id(self._nodes.values())
 
         node = Node(self, compute, name, node_id=node_id, node_type=node_type, **kwargs)
         if compute not in self._project_created_on_compute:
@@ -631,9 +627,12 @@ class Project:
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(snapshot.path, "wb+") as f:
-                    for data in zipstream:
-                        f.write(data)
+                try:
+                    with open(snapshot.path, "wb") as f:
+                        for data in zipstream:
+                            f.write(data)
+                except OSError as e:
+                    raise aiohttp.web.HTTPConflict(text="Could not write snapshot file '{}': {}".format(snapshot.path, e))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
 
@@ -787,8 +786,11 @@ class Project:
                 for node_link in link_data["nodes"]:
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
+                    if port is None:
+                        log.warning("Port {}/{} for {} not found".format(node_link["adapter_number"], node_link["port_number"], node.name))
+                        continue
                     if port.link is not None:
-                        # the node port is already attached to another link
+                        log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
                         continue
                     yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:
@@ -859,7 +861,7 @@ class Project:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(os.path.join(tmpdir, "project.gns3p"), "wb+") as f:
+                with open(os.path.join(tmpdir, "project.gns3p"), "wb") as f:
                     for data in zipstream:
                         f.write(data)
                 with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
@@ -941,10 +943,12 @@ class Project:
             raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data while the node is running")
 
         data = copy.deepcopy(node.__json__(topology_dump=True))
-        # Some properties like internal ID should not be duplicate
+        # Some properties like internal ID should not be duplicated
         for unique_property in (
                 'node_id',
                 'name',
+                'mac_addr',
+                'mac_address',
                 'compute_id',
                 'application_id',
                 'dynamips_id'):

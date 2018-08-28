@@ -1,0 +1,94 @@
+{
+    "name": "Ubuntu Cloud Guest",
+    "category": "guest",
+    "description": "The term 'Ubuntu Cloud Guest' refers to the Official Ubuntu images that are available at http://cloud-images.ubuntu.com . These images are built by Canonical. They are then registered on EC2, and compressed tarfiles are made also available for download. For using those images on a public cloud such as Amazon EC2, you simply choose an image and launch it. To use those images on a private cloud, or to run the image on a local hypervisor (such as KVM) you would need to download those images and either publish them to your private cloud, or launch them directly on a hypervisor. The following sections explain in more details how to perform each of those actions",
+    "vendor_name": "Canonical Inc.",
+    "vendor_url": "https://www.ubuntu.com",
+    "documentation_url": "https://help.ubuntu.com/community/UEC/Images",
+    "product_name": "Ubuntu Cloud Guest",
+    "product_url": "https://www.ubuntu.com/cloud",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: ubuntu\nPassword: ubuntu",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "ubuntu-17.10-server-cloudimg-amd64.img",
+            "version": "17.10",
+            "md5sum": "5d221878d8b2e49c5de7ebb58a2b35e3",
+            "filesize": 318373888,
+            "download_url": "https://cloud-images.ubuntu.com/releases/17.10/release/"
+        },
+        {
+            "filename": "ubuntu-17.04-server-cloudimg-amd64.img",
+            "version": "17.04",
+            "md5sum": "d4da8157dbf2e64f2fa1fb5d121398e5",
+            "filesize": 351993856,
+            "download_url": "https://cloud-images.ubuntu.com/releases/17.04/release/"
+        },
+        {
+            "filename": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
+            "version": "16.04.3",
+            "md5sum": "bd0c168a83b1f483bd240b3d874edd6c",
+            "filesize": 288686080,
+            "download_url": "https://cloud-images.ubuntu.com/releases/16.04/release/"
+        },
+        {
+            "filename": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
+            "version": "14.04.5",
+            "md5sum": "d7b4112c7d797e5e77ef9995d06a76f1",
+            "filesize": 262406656,
+            "download_url": "https://cloud-images.ubuntu.com/releases/14.04/release/"
+        },
+        {
+            "filename": "ubuntu-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "328469100156ae8dbf262daa319c27ff",
+            "filesize": 131072,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/ubuntu-cloud-init-data.iso/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.10",
+            "images": {
+                "hda_disk_image": "ubuntu-17.10-server-cloudimg-amd64.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "17.04",
+            "images": {
+                "hda_disk_image": "ubuntu-17.04-server-cloudimg-amd64.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "16.04 (LTS)",
+            "images": {
+                "hda_disk_image": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "14.04 (LTS)",
+            "images": {
+                "hda_disk_image": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        }
+    ]
+}

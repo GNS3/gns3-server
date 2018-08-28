@@ -171,12 +171,16 @@ class Link:
             self._filters = new_filters
             if self._created:
                 yield from self.update()
+                self._project.controller.notification.emit("link.updated", self.__json__())
+                self._project.dump()
 
     @asyncio.coroutine
     def update_suspend(self, value):
         if value != self._suspend:
             self._suspend = value
             yield from self.update()
+            self._project.controller.notification.emit("link.updated", self.__json__())
+            self._project.dump()
 
     @property
     def created(self):
@@ -194,6 +198,8 @@ class Link:
         """
 
         port = node.get_port(adapter_number, port_number)
+        if port is None:
+            raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(adapter_number, port_number, node.name))
         if port.link is not None:
             raise aiohttp.web.HTTPConflict(text="Port is already used")
 
@@ -209,6 +215,8 @@ class Link:
 
             # Check if user is not connecting serial => ethernet
             other_port = other_node["node"].get_port(other_node["adapter_number"], other_node["port_number"])
+            if other_port is None:
+                raise aiohttp.web.HTTPNotFound(text="Port {}/{} for {} not found".format(other_node["adapter_number"], other_node["port_number"], other_node["node"].name))
             if port.link_type != other_port.link_type:
                 raise aiohttp.web.HTTPConflict(text="It's not allowed to connect a {} to a {}".format(other_port.link_type, port.link_type))
 
@@ -297,6 +305,12 @@ class Link:
         Dump a pcap file on disk
         """
 
+        if os.path.exists(self.capture_file_path):
+            try:
+                os.remove(self.capture_file_path)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Could not delete old capture file '{}': {}".format(self.capture_file_path, e))
+
         try:
             stream_content = yield from self.read_pcap_from_source()
         except aiohttp.web.HTTPException as e:
@@ -307,16 +321,19 @@ class Link:
             self._project.controller.notification.emit("link.updated", self.__json__())
 
         with stream_content as stream:
-            with open(self.capture_file_path, "wb+") as f:
-                while self._capturing:
-                    # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
-                    data = yield from stream.read(1)
-                    if data:
-                        f.write(data)
-                        # Flush to disk otherwise the live is not really live
-                        f.flush()
-                    else:
-                        break
+            try:
+                with open(self.capture_file_path, "wb") as f:
+                    while self._capturing:
+                        # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
+                        data = yield from stream.read(1)
+                        if data:
+                            f.write(data)
+                            # Flush to disk otherwise the live is not really live
+                            f.flush()
+                        else:
+                            break
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Could not write capture file '{}': {}".format(self.capture_file_path, e))
 
     @asyncio.coroutine
     def stop_capture(self):

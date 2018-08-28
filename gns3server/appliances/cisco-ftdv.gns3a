@@ -9,6 +9,7 @@
     "product_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/ftdv-kvm-qsg.html",
     "registry_version": 4,
     "status": "experimental",
+    "availability": "service-contract",
     "maintainer": "Community",
     "maintainer_email": "",
     "usage": "Default username/password: admin/Admin123.",

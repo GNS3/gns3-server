@@ -166,7 +166,7 @@ class NatHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend a nat")
+        description="Suspend a nat (does nothing)")
     def suspend(request, response):
 
         Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

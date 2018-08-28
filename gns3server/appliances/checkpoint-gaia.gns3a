@@ -6,15 +6,16 @@
     "vendor_url": "https://www.checkpoint.com",
     "documentation_url": "http://downloads.checkpoint.com/dc/download.htm?ID=26770",
     "product_name": "Gaia",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "At boot choose the install on disk options. You need to open quickly the terminal after launching the appliance if you want to see the menu. You need a web browser in order to finalize the installation. You can use the firefox appliance for this.",
     "qemu": {
+        "cpus": 2,
         "adapter_type": "e1000",
         "adapters": 8,
-        "ram": 2048,
+        "ram": 4096,
         "arch": "x86_64",
         "console_type": "telnet",
         "boot_priority": "dc",
@@ -44,33 +45,33 @@
             "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859"
         },
         {
-            "filename": "empty8G.qcow2",
+            "filename": "empty100G.qcow2",
             "version": "1.0",
-            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
             "filesize": 197120,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
     ],
     "versions": [
         {
             "name": "80.10",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R80.10_T421_Gaia.iso"
             }
         },
         {
             "name": "77.30",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso"
             }
         },
         {
             "name": "77.20",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "Check_Point_R77.20_T124_Install.Gaia.iso"
             }
         }

@@ -9,6 +9,7 @@
     "product_url": "http://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/kvm/fmcv-kvm-qsg.html",
     "registry_version": 4,
     "status": "experimental",
+    "availability": "service-contract",
     "maintainer": "Community",
     "maintainer_email":"",
     "usage": "BE PATIENT\nOn first boot FMCv generates about 6GB of data. This can take 30 minutes or more. Plan on a long wait after the following line in the boot up:\n\n    usbcore: registered new interface driver usb-storage\n\nInitial IP address: 192.168.45.45.\n\nDefault username/password: admin/Admin123.",

@@ -188,7 +188,7 @@ class FrameRelaySwitchHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Suspend a Frame Relay switch")
+        description="Suspend a Frame Relay switch (does nothing)")
     def suspend(request, response):
 
         Dynamips.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])

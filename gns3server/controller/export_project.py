@@ -29,7 +29,8 @@ log = logging.getLogger(__name__)
 
 
 @asyncio.coroutine
-def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
+def export_project(project, temporary_dir, include_images=False, keep_compute_id=False,
+                   allow_all_nodes=False, ignore_prefixes=None):
     """
     Export the project as zip. It's a ZipStream object.
     The file will be read chunk by chunk when you iterate on
@@ -63,7 +64,6 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
 
     for root, dirs, files in os.walk(project._path, topdown=True):
         files = [f for f in files if not _filter_files(os.path.join(root, f))]
-
         for file in files:
             path = os.path.join(root, file)
             # Try open the file
@@ -109,6 +109,10 @@ def _filter_files(path):
     s = os.path.normpath(path).split(os.path.sep)
 
     if path.endswith("snapshots"):
+        return True
+
+    # filter directory of snapshots
+    if "{sep}snapshots{sep}".format(sep=os.path.sep) in path:
         return True
 
     try:
@@ -157,9 +161,12 @@ def _export_project_file(project, path, z, include_images, keep_compute_id, allo
 
                 if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
-                        if not prop.endswith("image"):
-                            continue
 
+                        if node["node_type"] == "iou":
+                            if not prop == "path":
+                                continue
+                        elif not prop.endswith("image"):
+                            continue
                         if value is None or value.strip() == '':
                             continue
 
@@ -209,7 +216,6 @@ def _export_local_images(project, image, z):
             continue
 
         directory = os.path.split(img_directory)[-1:][0]
-
         if os.path.exists(image):
             path = image
         else:
@@ -260,4 +266,3 @@ def _export_remote_images(project, compute_id, image_type, image, project_zipfil
     arcname = os.path.join("images", image_type, image)
     log.info("Saved {}".format(arcname))
     project_zipfile.write(temp_path, arcname=arcname, compress_type=zipfile.ZIP_DEFLATED)
-

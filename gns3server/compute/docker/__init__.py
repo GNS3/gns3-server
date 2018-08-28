@@ -99,7 +99,7 @@ class Docker(BaseManager):
 
         :param method: HTTP method
         :param path: Endpoint in API
-        :param data: Dictionnary with the body. Will be transformed to a JSON
+        :param data: Dictionary with the body. Will be transformed to a JSON
         :param params: Parameters added as a query arg
         """
 

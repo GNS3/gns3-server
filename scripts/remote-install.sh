@@ -25,7 +25,7 @@ function help {
   echo "Usage:" >&2
   echo "--with-openvpn: Install Open VPN" >&2
   echo "--with-iou: Install IOU" >&2
-  echo "--with-i386-repository: Add i386 repositories require by IOU if they are not available on the system. Warning this will replace your source.list in order to use official ubuntu mirror" >&2
+  echo "--with-i386-repository: Add the i386 repositories required by IOU if they are not already available on the system. Warning: this will replace your source.list in order to use the official Ubuntu mirror" >&2
   echo "--unstable: Use the GNS3 unstable repository"
   echo "--help: This help" >&2
 }
@@ -37,7 +37,7 @@ function log {
 lsb_release -d | grep "LTS" > /dev/null
 if [ $? != 0 ]
 then
-  echo "You can use this script on Ubuntu LTS only"
+  echo "This script can only be run on a Linux Ubuntu LTS release"
   exit 1
 fi
 
@@ -310,7 +310,7 @@ apt-get install -y     \
   dnsutils             \
   nginx-light
 
-MY_IP_ADDR=$(dig @ns1.google.com -t txt o-o.myaddr.l.google.com +short | sed 's/"//g')
+MY_IP_ADDR=$(dig @ns1.google.com -t txt o-o.myaddr.l.google.com +short -4 | sed 's/"//g')
 
 log "IP detected: $MY_IP_ADDR"
 

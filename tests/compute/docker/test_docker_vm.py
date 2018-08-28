@@ -257,35 +257,37 @@ def test_create_environment(loop, project, manager):
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
             vm.environment = "YES=1\nNO=0\nGNS3_MAX_ETHERNET=eth2"
             loop.run_until_complete(asyncio.async(vm.create()))
-            mock.assert_called_with("POST", "containers/create", data={
-                "Tty": True,
-                "OpenStdin": True,
-                "StdinOnce": False,
-                "HostConfig":
-                    {
-                        "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
-                        ],
-                        "Privileged": True
-                    },
-                "Env": [
-                    "container=docker",
-                    "GNS3_MAX_ETHERNET=eth0",
-                    "GNS3_VOLUMES=/etc/network",
-                    "YES=1",
-                    "NO=0"
-                ],
-                "Volumes": {},
-                "NetworkDisabled": True,
-                "Name": "test",
-                "Hostname": "test",
-                "Image": "ubuntu:latest",
-                "Entrypoint": ["/gns3/init.sh"],
-                "Cmd": ["/bin/sh"]
-            })
-        assert vm._cid == "e90e34656806"
+            assert mock.call_args[1]['data']['Env'] == [
+                "container=docker",
+                "GNS3_MAX_ETHERNET=eth0",
+                "GNS3_VOLUMES=/etc/network",
+                "YES=1",
+                "NO=0"
+            ]
+
+
+def test_create_environment_with_last_new_line_character(loop, project, manager):
+    """
+    Allow user to pass an environnement. User can't override our
+    internal variables
+    """
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu")
+            vm.environment = "YES=1\nNO=0\nGNS3_MAX_ETHERNET=eth2\n"
+            loop.run_until_complete(asyncio.async(vm.create()))
+            assert mock.call_args[1]['data']['Env'] == [
+                "container=docker",
+                "GNS3_MAX_ETHERNET=eth0",
+                "GNS3_VOLUMES=/etc/network",
+                "YES=1",
+                "NO=0"
+            ]
 
 
 def test_create_image_not_available(loop, project, manager):

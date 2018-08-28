@@ -138,8 +138,14 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                if parse_version(self._version) < parse_version("0.9.12"):
-                    raise UbridgeError("uBridge executable version must be >= 0.9.12")
+                if sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+                    minimum_required_version = "0.9.12"
+                else:
+                    # uBridge version 0.9.14 is required for packet filters 
+                    # to work for IOU nodes.
+                    minimum_required_version = "0.9.14"
+                if parse_version(self._version) < parse_version(minimum_required_version):
+                    raise UbridgeError("uBridge executable version must be >= {}".format(minimum_required_version))
             else:
                 raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
         except (OSError, subprocess.SubprocessError) as e:

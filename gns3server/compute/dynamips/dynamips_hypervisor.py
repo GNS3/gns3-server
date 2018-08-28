@@ -260,6 +260,8 @@ class DynamipsHypervisor:
             # Now retrieve the result
             data = []
             buf = ''
+            retries = 0
+            max_retries = 10
             while True:
                 try:
                     try:
@@ -276,8 +278,14 @@ class DynamipsHypervisor:
                         log.warning("Connection reset received while reading Dynamips response: {}".format(e))
                         continue
                     if not chunk:
-                        raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
-                                            .format(host=self._host, port=self._port, run=self.is_running()))
+                        if retries > max_retries:
+                            raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
+                                                .format(host=self._host, port=self._port, run=self.is_running()))
+                        else:
+                            retries += 1
+                            yield from asyncio.sleep(0.1)
+                            continue
+                    retries = 0
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
                     raise DynamipsError("Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}"

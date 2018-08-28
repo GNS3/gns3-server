@@ -1,11 +1,10 @@
 jsonschema>=2.4.0
 aiohttp>=2.2.0,<2.4.0 # pyup: ignore
 aiohttp-cors>=0.5.3,<0.6.0 # pyup: ignore
-yarl>=0.11,<0.12 # pyup: ignore
+yarl>=0.11
 Jinja2>=2.7.3
 raven>=5.23.0
 psutil>=3.0.0
 zipstream>=1.1.4
-typing>=3.5.3.0 # Otherwise yarl fails with python 3.4
-multidict<3.2.0  # Otherwise fails when upgraded to v3.2.0
-prompt-toolkit
+typing>=3.5.3.0;python_version<"3.5" # Otherwise yarl fails with python 3.4
+prompt-toolkit==1.0.15

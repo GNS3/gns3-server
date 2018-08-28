@@ -335,11 +335,14 @@ class BaseManager:
         :returns: Node instance
         """
 
+        node = None
         try:
-            node = yield from self.close_node(node_id)
+            node = self.get_node(node_id)
+            yield from self.close_node(node_id)
         finally:
-            node.project.emit("node.deleted", node)
-        yield from node.project.remove_node(node)
+            if node:
+                node.project.emit("node.deleted", node)
+                yield from node.project.remove_node(node)
         if node.id in self._nodes:
             del self._nodes[node.id]
         return node
@@ -546,7 +549,7 @@ class BaseManager:
             # We store the file under his final name only when the upload is finished
             tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(tmp_path, 'wb+') as f:
+            with open(tmp_path, 'wb') as f:
                 while True:
                     packet = yield from stream.read(4096)
                     if not packet:

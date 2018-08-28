@@ -65,7 +65,7 @@ class IOUVM(BaseNode):
     :param console: TCP console port
     """
 
-    def __init__(self, name, node_id, project, manager, path=None, console=None):
+    def __init__(self, name, node_id, project, manager, application_id=None, path=None, console=None):
 
         super().__init__(name, node_id, project, manager, console=console)
 
@@ -86,7 +86,7 @@ class IOUVM(BaseNode):
         self._startup_config = ""
         self._private_config = ""
         self._ram = 256  # Megabytes
-        self._application_id = None
+        self._application_id = application_id
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
     def _config(self):
@@ -348,14 +348,14 @@ class IOUVM(BaseNode):
             # reload
             path = os.path.join(os.path.expanduser("~/"), ".iourc")
             try:
-                with open(path, "wb+") as f:
+                with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
                 raise IOUError("Could not write the iourc file {}: {}".format(path, e))
 
             path = os.path.join(self.temporary_directory, "iourc")
             try:
-                with open(path, "wb+") as f:
+                with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
                 raise IOUError("Could not write the iourc file {}: {}".format(path, e))
@@ -1141,8 +1141,7 @@ class IOUVM(BaseNode):
 
         :returns: integer between 1 and 512
         """
-        if self._application_id is None:
-            return self._manager.get_application_id(self.id)
+
         return self._application_id
 
     @application_id.setter

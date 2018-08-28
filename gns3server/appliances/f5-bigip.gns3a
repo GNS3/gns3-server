@@ -28,6 +28,20 @@
     },
     "images": [
         {
+            "filename": "BIGIP-13.1.0.2.0.0.6.qcow2",
+            "version": "13.1.0 HF2",
+            "md5sum": "d29eb861d8906fc36f88d9861a0055f4",
+            "filesize": 4363649024,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.1.0/english/13.1.0.2_virtual-edition/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.1.0&container=13.1.0.2_Virtual-Edition&file=BIGIP-13.1.0.2.0.0.6.ALL.qcow2.zip"
+        },
+        {
+            "filename": "BIGIP-13.1.0.1.0.0.8.qcow2",
+            "version": "13.1.0 HF1",
+            "md5sum": "70f92192e66a82cb8f47bdae0cb267d8",
+            "filesize": 4352966656,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v13.x/13.1.0/english/13.1.0.1_virtual-edition/&sw=BIG-IP&pro=big-ip_v13.x&ver=13.1.0&container=13.1.0.1_Virtual-Edition&file=BIGIP-13.1.0.1.0.0.8.ALL.qcow2.zip"
+        },
+        {
             "filename": "BIGIP-13.0.0.2.0.1671.qcow2",
             "version": "13.0.0 HF2",
             "md5sum": "62d27f37c66118710c69c07a2ee78d67",
@@ -107,6 +121,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "13.1.0 HF2",
+            "images": {
+                "hda_disk_image": "BIGIP-13.1.0.2.0.0.6.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "13.1.0 HF1",
+            "images": {
+                "hda_disk_image": "BIGIP-13.1.0.1.0.0.8.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "13.0.0 HF2",
             "images": {

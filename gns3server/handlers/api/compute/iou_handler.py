@@ -65,6 +65,8 @@ class IOUHandler:
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
+                if name == "application_id":
+                    continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
                 if name == "startup_config_content" and (vm.startup_config_content and len(vm.startup_config_content) > 0):
                     continue
                 if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):
@@ -116,6 +118,8 @@ class IOUHandler:
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
+                if name == "application_id":
+                    continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
                 setattr(vm, name, value)
 
         if vm.use_default_iou_values:
@@ -205,6 +209,24 @@ class IOUHandler:
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         yield from vm.stop()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/iou/nodes/{node_id}/suspend",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance suspended",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Suspend an IOU instance (does nothing)")
+    def suspend(request, response):
+
+        iou_manager = IOU.instance()
+        iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         response.set_status(204)
 
     @Route.post(

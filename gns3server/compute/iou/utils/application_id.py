@@ -24,13 +24,14 @@ log = logging.getLogger(__name__)
 def get_next_application_id(nodes):
     """
     Calculates free application_id from given nodes
+
     :param nodes:
     :raises IOUError when exceeds number
     :return: integer first free id
     """
-    used = set([n.properties.get('application_id') for n in nodes if n.node_type == 'iou'])
+    used = set([n.application_id for n in nodes])
     pool = set(range(1, 512))
     try:
         return (pool - used).pop()
     except KeyError:
-        raise IOUError("Cannot create a new IOU VM (limit of 512 VMs reached)")
+        raise IOUError("Cannot create a new IOU VM (limit of 512 VMs on one host reached)")

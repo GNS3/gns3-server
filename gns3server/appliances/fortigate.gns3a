@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
+            "version": "5.6.3",
+            "md5sum": "a908f8620e8bbccce8794733f3637e13",
+            "filesize": 40939520,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
             "version": "5.6.2",
             "md5sum": "afb9f237de2545db8663f4a2c5805355",
@@ -45,6 +52,20 @@
             "version": "5.6.0",
             "md5sum": "17ee2cc8c76c4928a68a2d016aa83ace",
             "filesize": 38760448,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build1183-FORTINET.out.kvm.qcow2",
+            "version": "5.4.8",
+            "md5sum": "c1eb02996a0919c934785d5f48df9507",
+            "filesize": 38608896,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build6446-FORTINET.out.kvm.qcow2",
+            "version": "5.4.7",
+            "md5sum": "17d3dfebd4b222569cf10cfab83e0e56",
+            "filesize": 38715392,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -94,6 +115,20 @@
             "version": "5.4.0",
             "md5sum": "22fc2bdca456dfe3027ad48dff370352",
             "filesize": 35373056,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build0762-FORTINET.out.kvm.qcow2",
+            "version": "5.2.13",
+            "md5sum": "78df232e516a863f233de88ffba5bc4b",
+            "filesize": 38776832,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build0760-FORTINET.out.kvm.qcow2",
+            "version": "5.2.12",
+            "md5sum": "2efa0c110abed83b71927145d1e87805",
+            "filesize": 38363136,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -149,6 +184,13 @@
     ],
     "versions": [
         {
+            "name": "5.6.3",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "5.6.2",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v5-build1486-FORTINET.out.kvm.qcow2",
@@ -166,6 +208,20 @@
             "name": "5.6.0",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v5-build1449-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.4.8",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1183-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.4.7",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build6446-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },
@@ -215,6 +271,20 @@
             "name": "5.4.0",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v5-build1011-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.2.13",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build0762-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.2.12",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build0760-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },
