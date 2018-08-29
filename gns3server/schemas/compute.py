@@ -104,6 +104,10 @@ COMPUTE_OBJECT_SCHEMA = {
             "maximum": 100,
             "minimum": 0
         },
+        "last_error": {
+            "description": "Last error on the compute",
+            "type": ["string", "null"]
+        },
         "capabilities": CAPABILITIES_SCHEMA
     },
     "additionalProperties": False,

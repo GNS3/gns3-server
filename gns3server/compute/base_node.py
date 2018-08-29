@@ -29,7 +29,7 @@ import re
 
 from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
-from ..utils.asyncio import wait_run_in_executor, locked_coroutine
+from ..utils.asyncio import wait_run_in_executor, locking
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
@@ -547,7 +547,8 @@ class BaseNode:
         except UbridgeError as e:
             raise UbridgeError("Error while sending command '{}': {}: {}".format(command, e, self._ubridge_hypervisor.read_stdout()))
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def _start_ubridge(self):
         """
         Starts uBridge (handles connections to and from this node).

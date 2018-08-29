@@ -34,8 +34,8 @@ class SerialPort(Port):
 
         return "Serial"
 
-    @property
-    def short_name_type(self):
+    @staticmethod
+    def short_name_type():
         """
         Returns the short name type for this port.
 

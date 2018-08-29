@@ -210,5 +210,5 @@ def test_emit(async_run):
 def test_update_project(loop):
     variables = [{"name": "TEST", "value": "VAL"}]
     project = Project(project_id=str(uuid.uuid4()))
-    loop.run_until_complete(asyncio.async(project.update(variables=variables)))
+    loop.run_until_complete(asyncio.ensure_future(project.update(variables=variables)))
     assert project.variables == variables

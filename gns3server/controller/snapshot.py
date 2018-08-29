@@ -101,7 +101,7 @@ class Snapshot:
             with tempfile.TemporaryDirectory() as tmpdir:
                 zipstream = yield from export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
                 yield from wait_run_in_executor(self._create_snapshot_file, zipstream)
-        except OSError as e:
+        except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
 
     @asyncio.coroutine

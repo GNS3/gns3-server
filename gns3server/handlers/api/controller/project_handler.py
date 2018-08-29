@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import aiohttp
 import asyncio
 import tempfile
@@ -26,6 +27,7 @@ from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
 from gns3server.config import Config
 from gns3server.utils.asyncio import asyncio_ensure_future
+
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
@@ -317,8 +319,8 @@ class ProjectHandler:
                 yield from response.write_eof()
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
-        except (OSError, RuntimeError) as e:
-            raise aiohttp.web.HTTPNotFound(text="Can't export project: {}".format(str(e)))
+        except (ValueError, OSError, RuntimeError) as e:
+            raise aiohttp.web.HTTPNotFound(text="Cannot export project: {}".format(str(e)))
 
     @Route.post(
         r"/projects/{project_id}/import",
@@ -347,14 +349,25 @@ class ProjectHandler:
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
         # Spooled means the file is temporary kept in memory until max_size is reached
+        # Cannot use tempfile.SpooledTemporaryFile(max_size=10000) in Python 3.7 due
+        # to a bug https://bugs.python.org/issue26175
         try:
-            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
-                while True:
-                    chunk = yield from request.content.read(1024)
-                    if not chunk:
-                        break
-                    temp.write(chunk)
-                project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+            if sys.version_info >= (3, 7) and sys.version_info < (3, 8):
+                with tempfile.TemporaryFile() as temp:
+                    while True:
+                        chunk = yield from request.content.read(1024)
+                        if not chunk:
+                            break
+                        temp.write(chunk)
+                    project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+            else:
+                with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
+                    while True:
+                        chunk = yield from request.content.read(1024)
+                        if not chunk:
+                            break
+                        temp.write(chunk)
+                    project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
 

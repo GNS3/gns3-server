@@ -27,9 +27,9 @@ from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
-from ..utils.asyncio import locked_coroutine, asyncio_ensure_future
+from ..utils.asyncio import locking, asyncio_ensure_future
 from ..controller.controller_error import ControllerError
-from ..version import __version__
+from ..version import __version__, __version_info__
 
 
 import logging
@@ -95,6 +95,7 @@ class Compute:
         self._set_auth(user, password)
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
+        self._last_error = None
         self._capabilities = {
             "version": None,
             "node_types": []
@@ -136,6 +137,14 @@ class Compute:
             else:
                 self._password = None
                 self._auth = aiohttp.BasicAuth(self._user, "")
+
+    def set_last_error(self, msg):
+        """
+        Set the last error message for this compute.
+
+        :param msg: message
+        """
+        self._last_error = msg
 
     @asyncio.coroutine
     def interfaces(self):
@@ -301,7 +310,8 @@ class Compute:
             "connected": self._connected,
             "cpu_usage_percent": self._cpu_usage_percent,
             "memory_usage_percent": self._memory_usage_percent,
-            "capabilities": self._capabilities
+            "capabilities": self._capabilities,
+            "last_error": self._last_error
         }
 
     @asyncio.coroutine
@@ -398,7 +408,8 @@ class Compute:
         except aiohttp.web.HTTPConflict:
             pass
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def connect(self):
         """
         Check if remote server is accessible
@@ -420,7 +431,7 @@ class Compute:
                     if self._connection_failure == 10:
                         log.error("Could not connect to compute '{}' after multiple attempts: {}".format(self._id, e))
                         yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio_ensure_future(self._try_reconnect()))
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
@@ -432,16 +443,36 @@ class Compute:
                 raise aiohttp.web.HTTPConflict(text="Invalid server url for server {}".format(self._id))
 
             if "version" not in response.json:
+                msg = "The server {} is not a GNS3 server".format(self._id)
+                log.error(msg)
                 self._http_session.close()
-                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+                raise aiohttp.web.HTTPConflict(text=msg)
             self._capabilities = response.json
-            if parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
-                self._http_session.close()
-                raise aiohttp.web.HTTPConflict(text="The server {} versions are not compatible {} != {}".format(self._id, __version__, response.json["version"]))
+
+            if response.json["version"].split("-")[0] != __version__.split("-")[0]:
+                msg = "GNS3 controller version {} is not the same as compute server {} version {}".format(__version__,
+                                                                                                          self._name,
+                                                                                                          response.json["version"])
+                if __version_info__[3] == 0:
+                    # Stable release
+                    log.error(msg)
+                    self._http_session.close()
+                    self._last_error = msg
+                    raise aiohttp.web.HTTPConflict(text=msg)
+                elif parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
+                    # We don't allow different major version to interact even with dev build
+                    log.error(msg)
+                    self._http_session.close()
+                    self._last_error = msg
+                    raise aiohttp.web.HTTPConflict(text=msg)
+                else:
+                    msg = "{}\nUsing different versions may result in unexpected problems. Please use at your own risk.".format(msg)
+                    self._controller.notification.emit("log.warning", {"message": msg})
 
             self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
             self._connection_failure = 0
+            self._last_error = None
             self._controller.notification.controller_emit("compute.updated", self.__json__())
 
     @asyncio.coroutine

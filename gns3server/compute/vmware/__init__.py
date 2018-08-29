@@ -32,6 +32,7 @@ import shlex
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
+from gns3server.utils.asyncio import asyncio_ensure_future
 from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)

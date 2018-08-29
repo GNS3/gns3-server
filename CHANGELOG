@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.1.9 13/08/2018
+
+* Fix some more problems with interface short names. Fixes https://github.com/GNS3/gns3-gui/issues/2562
+* Fix incorrect short port names in topology summary. Fixes https://github.com/GNS3/gns3-gui/issues/2562
+* Set lower process priority when computing idle-pc value on Windows. Ref #2522.
+* Catch exception: ZIP does not support timestamps before 1980. Ref #1360.
+* Sync appliances
+
 ## 2.1.8 14/06/2018
 
 * 'caplog.text()' syntax is deprecated, use 'caplog.text' property instead.

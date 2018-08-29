@@ -28,7 +28,8 @@ import os
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
-from gns3server.utils.asyncio import wait_for_file_creation, asyncio_ensure_future
+from gns3server.utils.asyncio import wait_for_file_creation
+from gns3server.utils.asyncio import asyncio_ensure_future
 from gns3server.utils.get_resource import get_resource
 
 from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError

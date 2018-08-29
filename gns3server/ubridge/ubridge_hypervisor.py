@@ -20,7 +20,7 @@ import time
 import logging
 import asyncio
 
-from ..utils.asyncio import locked_coroutine
+from ..utils.asyncio import locking
 from .ubridge_error import UbridgeError
 
 log = logging.getLogger(__name__)
@@ -176,7 +176,8 @@ class UBridgeHypervisor:
 
         self._host = host
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def send(self, command):
         """
         Sends commands to this hypervisor.

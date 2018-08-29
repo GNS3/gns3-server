@@ -33,18 +33,14 @@ class ATMPort(SerialPort):
         """
         return "ATM"
 
-    @property
-    def short_name_type(self):
+    @staticmethod
+    def short_name_type():
         """
         Returns the short name type for this port.
 
         :returns: string
         """
         return "a"
-
-    @property
-    def short_name(self):
-        return "{}".format(self._port_number)
 
     @property
     def data_link_types(self):

@@ -214,9 +214,12 @@ class AsyncioTelnetServer:
     @asyncio.coroutine
     def close(self):
         for writer, connection in self._connections.items():
-            writer.write_eof()
-            yield from writer.drain()
-        
+            try:
+                writer.write_eof()
+                yield from writer.drain()
+            except ConnectionResetError:
+                continue
+
     @asyncio.coroutine
     def client_connected_hook(self):
         pass
@@ -319,6 +322,7 @@ class AsyncioTelnetServer:
         else:
             log.debug("Not supported negotiation sequence, received {} bytes", len(data))
 
+    @asyncio.coroutine
     def _IAC_parser(self, buf, network_reader, network_writer, connection):
         """
         Processes and removes any Telnet commands from the buffer.
@@ -421,9 +425,9 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     process = loop.run_until_complete(asyncio_ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
-                                                                                              stdout=asyncio.subprocess.PIPE,
-                                                                                              stderr=asyncio.subprocess.STDOUT,
-                                                                                              stdin=asyncio.subprocess.PIPE)))
+                                                                                                      stdout=asyncio.subprocess.PIPE,
+                                                                                                      stderr=asyncio.subprocess.STDOUT,
+                                                                                                      stdin=asyncio.subprocess.PIPE)))
     server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
 
     coro = asyncio.start_server(server.run, '127.0.0.1', 4444, loop=loop)

@@ -277,6 +277,7 @@ def test_json(compute):
         "cpu_usage_percent": None,
         "memory_usage_percent": None,
         "connected": True,
+        "last_error": None,
         "capabilities": {
             "version": None,
             "node_types": []

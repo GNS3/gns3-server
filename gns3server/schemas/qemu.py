@@ -133,7 +133,7 @@ QEMU_CREATE_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d", "n", "cn", "cd"]
+            "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"]
         },
         "ram": {
             "description": "Amount of RAM in MB",
@@ -319,7 +319,7 @@ QEMU_UPDATE_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d", "n", "cn", "cd"]
+            "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"]
         },
         "ram": {
             "description": "Amount of RAM in MB",
@@ -504,7 +504,7 @@ QEMU_OBJECT_SCHEMA = {
         },
         "boot_priority": {
             "description": "QEMU boot priority",
-            "enum": ["c", "d", "n", "cn", "cd"]
+            "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"]
         },
         "node_directory": {
             "description": "Path to the VM working directory",

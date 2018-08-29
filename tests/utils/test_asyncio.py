@@ -21,7 +21,7 @@ import pytest
 import sys
 from unittest.mock import MagicMock
 
-from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination, locked_coroutine
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output, wait_for_process_termination, locking
 from tests.utils import AsyncioMagicMock
 
 
@@ -84,7 +84,8 @@ def test_lock_decorator(loop):
         def __init__(self):
             self._test_val = 0
 
-        @locked_coroutine
+        @locking
+        @asyncio.coroutine
         def method_to_lock(self):
             res = self._test_val
             yield from asyncio.sleep(0.1)

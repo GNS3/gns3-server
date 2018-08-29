@@ -36,8 +36,7 @@ from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
-
-from gns3server.utils.asyncio import asyncio_ensure_future
+from ..utils.asyncio import asyncio_ensure_future
 
 # do not delete this import
 import gns3server.handlers
@@ -139,7 +138,10 @@ class WebServer:
 
         def signal_handler(signame, *args):
             log.warning("Server has got signal {}, exiting...".format(signame))
-            asyncio_ensure_future(self.shutdown_server())
+            try:
+                asyncio_ensure_future(self.shutdown_server())
+            except asyncio.CancelledError:
+                pass
 
         signals = ["SIGTERM", "SIGINT"]
         if sys.platform.startswith("win"):
@@ -304,4 +306,7 @@ class WebServer:
             log.warning("TypeError exception in the loop {}".format(e))
         finally:
             if self._loop.is_running():
-                self._loop.run_until_complete(self.shutdown_server())
+                try:
+                    self._loop.run_until_complete(self.shutdown_server())
+                except asyncio.CancelledError:
+                    pass

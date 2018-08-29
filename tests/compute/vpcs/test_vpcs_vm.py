@@ -91,7 +91,7 @@ def test_start(loop, vm, async_run):
     process.returncode = None
 
     with NotificationManager.instance().queue() as queue:
-        async_run(queue.get(0))  # Ping
+        async_run(queue.get(1))  # Ping
 
         with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
             with asyncio_patch("asyncio.create_subprocess_exec", return_value=process) as mock_exec:
@@ -113,7 +113,7 @@ def test_start(loop, vm, async_run):
                                                       '127.0.0.1')
                 assert vm.is_running()
                 assert vm.command_line == ' '.join(mock_exec.call_args[0])
-        (action, event, kwargs) = async_run(queue.get(0))
+        (action, event, kwargs) = async_run(queue.get(1))
         assert action == "node.updated"
         assert event == vm
 
@@ -177,10 +177,10 @@ def test_stop(loop, vm, async_run):
                     else:
                         process.terminate.assert_called_with()
 
-                    async_run(queue.get(0))  #  Ping
-                    async_run(queue.get(0))  #  Started
+                    async_run(queue.get(1))  #  Ping
+                    async_run(queue.get(1))  #  Started
 
-                    (action, event, kwargs) = async_run(queue.get(0))
+                    (action, event, kwargs) = async_run(queue.get(1))
                     assert action == "node.updated"
                     assert event == vm
 

@@ -26,7 +26,7 @@ import tempfile
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.serial import asyncio_open_serial
-from gns3server.utils.asyncio import locked_coroutine
+from gns3server.utils.asyncio import locking
 from collections import OrderedDict
 from .vmware_error import VMwareError
 from ..nios.nio_udp import NIOUDP
@@ -94,7 +94,8 @@ class VMwareVM(BaseNode):
 
         return self._vmnets
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def _control_vm(self, subcommand, *additional_args):
 
         args = [self._vmx_path]
