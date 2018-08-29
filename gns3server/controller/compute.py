@@ -431,7 +431,7 @@ class Compute:
                     if self._connection_failure == 10:
                         log.error("Could not connect to compute '{}' after multiple attempts: {}".format(self._id, e))
                         yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio.async(self._try_reconnect()))
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio_ensure_future(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
