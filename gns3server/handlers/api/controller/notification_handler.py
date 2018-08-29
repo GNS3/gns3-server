@@ -72,7 +72,7 @@ class NotificationHandler:
         yield from ws.prepare(request)
 
         asyncio_ensure_future(process_websocket(ws))
-        with controller.notification.controler_queue() as queue:
+        with controller.notification.controller_queue() as queue:
             while True:
                 try:
                     notification = yield from queue.get_json(5)
