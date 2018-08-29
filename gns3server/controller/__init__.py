@@ -35,7 +35,7 @@ from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
 from ..utils.get_resource import get_resource
-from ..utils.asyncio import locked_coroutine
+from ..utils.asyncio import locking
 from .gns3vm.gns3_vm_error import GNS3VMError
 
 import logging
@@ -64,7 +64,8 @@ class Controller:
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
-    @locked_coroutine
+    @locking
+    @asyncio.coroutine
     def download_appliance_templates(self):
 
         session = aiohttp.ClientSession()
