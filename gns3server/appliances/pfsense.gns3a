@@ -17,7 +17,6 @@
         "ram": 2048,
         "arch": "x86_64",
         "console_type": "telnet",
-        "boot_priority": "dc",
         "kvm": "allow",
         "process_priority": "normal"
     },
