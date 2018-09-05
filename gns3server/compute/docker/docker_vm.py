@@ -30,6 +30,7 @@ from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio import asyncio_ensure_future
+from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.get_resource import get_resource
 
 from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
@@ -505,13 +506,36 @@ class DockerVM(BaseNode):
 
         self._display = self._get_free_display_port()
         if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
-            raise DockerError("Please install Xvfb and x11vnc before using the VNC support")
+            raise DockerError("Please install Xvfb and x11vnc before using VNC support")
         self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
         # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
         self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
 
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         yield from wait_for_file_creation(x11_socket)
+
+        monitor_process(self._xvfb_process, self._xvfb_callback)
+        monitor_process(self._x11vnc_process, self._x11vnc_callback)
+
+    def _xvfb_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+
+        if returncode != 0:
+            self.project.emit("log.error", {"message": "The Xvfb process has stopped, return code: {}.".format(returncode)})
+
+    def _x11vnc_callback(self, returncode):
+        """
+        Called when the process has stopped.
+
+        :param returncode: Process returncode
+        """
+
+        if returncode != 0:
+            self.project.emit("log.error", {"message": "The x11vnc process has stopped, return code: {}.".format(returncode)})
 
     @asyncio.coroutine
     def _start_http(self):
