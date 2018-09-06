@@ -177,7 +177,7 @@ class Node:
         try:
             with open(path) as f:
                 return f.read()
-        except (PermissionError, OSError):
+        except OSError:
             return None
 
     @property

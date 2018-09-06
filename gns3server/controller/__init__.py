@@ -69,7 +69,7 @@ class Controller:
         for directory, builtin in (
             (get_resource('appliances'), True,), (self.appliances_path(), False,)
         ):
-            if os.path.isdir(directory):
+            if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
                         continue
@@ -509,7 +509,7 @@ class Controller:
             return self._computes[compute_id]
         except KeyError:
             if compute_id == "vm":
-                raise aiohttp.web.HTTPNotFound(text="You try to use a node on the GNS3 VM server but the GNS3 VM is not configured")
+                raise aiohttp.web.HTTPNotFound(text="A node is set to use the GNS3 VM server but the GNS3 VM is not configured")
             raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
 
     def has_compute(self, compute_id):

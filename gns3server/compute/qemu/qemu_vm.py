@@ -1028,7 +1028,7 @@ class QemuVM(BaseNode):
                             if expect in line:
                                 result = line.decode("utf-8").strip()
                                 break
-                except EOFError as e:
+                except (ConnectionError, EOFError) as e:
                     log.warn("Could not read from QEMU monitor: {}".format(e))
             writer.close()
         return result

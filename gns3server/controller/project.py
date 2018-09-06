@@ -871,7 +871,7 @@ class Project:
             try:
                 if os.path.exists(path + ".backup"):
                     shutil.copy(path + ".backup", path)
-            except (PermissionError, OSError):
+            except OSError:
                 pass
             self._status = "closed"
             self._loading = False

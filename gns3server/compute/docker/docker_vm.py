@@ -228,11 +228,13 @@ class DockerVM(BaseNode):
         binds = ["{}:/gns3:ro".format(ressources)]
 
         # We mount our own etc/network
-        network_config = self._create_network_config()
+        try:
+            network_config = self._create_network_config()
+        except OSError as e:
+            raise DockerError("Could not create network config in the container: {}".format(e))
         binds.append("{}:/gns3volumes/etc/network:rw".format(network_config))
 
         self._volumes = ["/etc/network"]
-
         volumes = image_infos.get("Config", {}).get("Volumes")
         if volumes is None:
             return binds
@@ -285,11 +287,12 @@ class DockerVM(BaseNode):
         try:
             image_infos = yield from self._get_image_information()
         except DockerHttp404Error:
-            log.info("Image %s is missing pulling it from docker hub", self._image)
+            log.info("Image '{}' is missing, pulling it from Docker hub...".format(self._image))
             yield from self.pull_image(self._image)
             image_infos = yield from self._get_image_information()
-            if image_infos is None:
-                raise DockerError("Can't get image informations, please try again.")
+
+        if image_infos is None:
+            raise DockerError("Cannot get information for image '{}', please try again.".format(self._image))
 
         params = {
             "Hostname": self._name,
@@ -313,7 +316,10 @@ class DockerVM(BaseNode):
         if params["Entrypoint"] is None:
             params["Entrypoint"] = []
         if self._start_command:
-            params["Cmd"] = shlex.split(self._start_command)
+            try:
+                params["Cmd"] = shlex.split(self._start_command)
+            except ValueError as e:
+                raise DockerError("Invalid start command '{}': {}".format(self._start_command, e))
         if len(params["Cmd"]) == 0:
             params["Cmd"] = image_infos.get("Config", {"Cmd": []})["Cmd"]
             if params["Cmd"] is None:
@@ -355,8 +361,7 @@ class DockerVM(BaseNode):
 
         result = yield from self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
-        log.info("Docker container '{name}' [{id}] created".format(
-            name=self._name, id=self._id))
+        log.info("Docker container '{name}' [{id}] created".format(name=self._name, id=self._id))
         return True
 
     def _format_env(self, variables, env):
@@ -449,16 +454,19 @@ class DockerVM(BaseNode):
     @asyncio.coroutine
     def _start_aux(self):
         """
-        Start an auxilary console
+        Start an auxiliary console
         """
 
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
-        process = yield from asyncio.subprocess.create_subprocess_exec(
-            "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            stdin=asyncio.subprocess.PIPE)
+        try:
+            process = yield from asyncio.subprocess.create_subprocess_exec(
+                "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                stdin=asyncio.subprocess.PIPE)
+        except OSError as e:
+            raise DockerError("Could not start auxiliary console process: {}".format(e))
         server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
         try:
             self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
@@ -481,21 +489,25 @@ class DockerVM(BaseNode):
         for volume in self._volumes:
             log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
                 name=self._name, image=self._image, path=volume))
-            process = yield from asyncio.subprocess.create_subprocess_exec(
-                "docker",
-                "exec",
-                self._cid,
-                "/gns3/bin/busybox",
-                "sh",
-                "-c",
-                "("
-                "/gns3/bin/busybox find \"{path}\" -depth -print0"
-                " | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\""
-                ")"
-                " && /gns3/bin/busybox chmod -R u+rX \"{path}\""
-                " && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\""
-                .format(uid=os.getuid(), gid=os.getgid(), path=volume),
-            )
+
+            try:
+                process = yield from asyncio.subprocess.create_subprocess_exec(
+                    "docker",
+                    "exec",
+                    self._cid,
+                    "/gns3/bin/busybox",
+                    "sh",
+                    "-c",
+                    "("
+                    "/gns3/bin/busybox find \"{path}\" -depth -print0"
+                    " | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\""
+                    ")"
+                    " && /gns3/bin/busybox chmod -R u+rX \"{path}\""
+                    " && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\""
+                    .format(uid=os.getuid(), gid=os.getgid(), path=volume),
+                )
+            except OSError as e:
+                raise DockerError("Could not fix permissions for {}: {}".format(volume, e))
             yield from process.wait()
 
     @asyncio.coroutine
