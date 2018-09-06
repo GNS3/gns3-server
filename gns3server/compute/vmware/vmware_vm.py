@@ -845,7 +845,12 @@ class VMwareVM(BaseNode):
         """
         Starts remote console support for this VM.
         """
-        self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+
+        pipe_name = self._get_pipe_name()
+        try:
+            self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+        except OSError as e:
+            raise VMwareError("Could not open serial pipe '{}': {}".format(pipe_name, e))
         server = AsyncioTelnetServer(reader=self._remote_pipe,
                                      writer=self._remote_pipe,
                                      binary=True,

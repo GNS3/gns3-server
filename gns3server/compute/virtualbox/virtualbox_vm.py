@@ -938,7 +938,12 @@ class VirtualBoxVM(BaseNode):
         """
         Starts remote console support for this VM.
         """
-        self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+
+        pipe_name = self._get_pipe_name()
+        try:
+            self._remote_pipe = yield from asyncio_open_serial(pipe_name)
+        except OSError as e:
+            raise VirtualBoxError("Could not open serial pipe '{}': {}".format(pipe_name, e))
         server = AsyncioTelnetServer(reader=self._remote_pipe,
                                      writer=self._remote_pipe,
                                      binary=True,
