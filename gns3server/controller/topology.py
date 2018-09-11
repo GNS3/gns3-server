@@ -409,7 +409,7 @@ def _convert_1_3_later(topo, topo_path):
             symbol = old_node.get("symbol", ":/symbols/computer.svg")
             old_node["ports"] = _create_cloud(node, old_node, symbol)
         else:
-            raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
+            raise aiohttp.web.HTTPConflict(text="Conversion of {} is not supported".format(old_node["type"]))
 
         for prop in old_node.get("properties", {}):
             if prop not in ["console", "name", "console_type", "console_host", "use_ubridge"]:
@@ -608,13 +608,13 @@ def _create_cloud(node, old_node, icon):
         elif old_port["name"].startswith("nio_nat"):
             continue
         else:
-            raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
+            raise aiohttp.web.HTTPConflict(text="The conversion of cloud with {} is not supported".format(old_port["name"]))
 
         if port_type == "udp":
             try:
                 _, lport, rhost, rport = old_port["name"].split(":")
             except ValueError:
-                raise NotImplementedError("UDP tunnel using IPV6 is not supported in cloud")
+                raise aiohttp.web.HTTPConflict(text="UDP tunnel using IPV6 is not supported in cloud")
             port = {
                 "name": "UDP tunnel {}".format(len(ports) + 1),
                 "port_number": len(ports) + 1,
@@ -645,7 +645,7 @@ def _convert_snapshots(topo_dir):
     old_snapshots_dir = os.path.join(topo_dir, "project-files", "snapshots")
     if os.path.exists(old_snapshots_dir):
         new_snapshots_dir = os.path.join(topo_dir, "snapshots")
-        os.makedirs(new_snapshots_dir)
+        os.makedirs(new_snapshots_dir, exist_ok=True)
 
         for snapshot in os.listdir(old_snapshots_dir):
             snapshot_dir = os.path.join(old_snapshots_dir, snapshot)

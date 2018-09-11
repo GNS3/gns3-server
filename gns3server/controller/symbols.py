@@ -22,6 +22,9 @@ from ..utils.get_resource import get_resource
 from ..utils.picture import get_size
 from ..config import Config
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Symbols:
     """
@@ -72,19 +75,25 @@ class Symbols:
     def symbols_path(self):
         directory = os.path.expanduser(Config.instance().get_section_config("Server").get("symbols_path", "~/GNS3/symbols"))
         if directory:
-            os.makedirs(directory, exist_ok=True)
+            try:
+                os.makedirs(directory, exist_ok=True)
+            except OSError as e:
+                log.error("Could not create symbol directory '{}': {}".format(directory, e))
+                return None
         return directory
 
     def get_path(self, symbol_id):
         try:
             return self._symbols_path[symbol_id]
-        # Symbol not found refresh cache
+        # Symbol not found, let's refresh the cache
         except KeyError:
-            self.list()
             try:
+                self.list()
                 return self._symbols_path[symbol_id]
-            except KeyError:
-                return self._symbols_path[":/symbols/computer.svg"]
+            except (OSError, KeyError):
+                log.warning("Could not retrieve symbol '{}'".format(symbol_id))
+                symbols_path = self._symbols_path
+                return symbols_path[":/symbols/computer.svg"]
 
     def get_size(self, symbol_id):
         try:

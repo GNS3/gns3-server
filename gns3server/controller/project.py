@@ -843,7 +843,7 @@ class Project:
                 link = yield from self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
                     yield from link.update_filters(link_data["filters"])
-                for node_link in link_data["nodes"]:
+                for node_link in link_data.get("nodes", []):
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
                     if port is None:

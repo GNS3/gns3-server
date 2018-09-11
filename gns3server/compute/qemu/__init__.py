@@ -193,7 +193,7 @@ class Qemu(BaseManager):
                     return version
                 else:
                     raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
-            except subprocess.SubprocessError as e:
+            except (OSError, subprocess.SubprocessError) as e:
                 raise QemuError("Error while looking for the Qemu version: {}".format(e))
 
     @staticmethod
@@ -213,7 +213,7 @@ class Qemu(BaseManager):
                 return version
             else:
                 raise QemuError("Could not determine the Qemu-img version for {}".format(qemu_img_path))
-        except subprocess.SubprocessError as e:
+        except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Error while looking for the Qemu-img version: {}".format(e))
 
     @staticmethod

@@ -66,9 +66,7 @@ class Controller:
 
     def load_appliances(self):
         self._appliance_templates = {}
-        for directory, builtin in (
-            (get_resource('appliances'), True,), (self.appliances_path(), False,)
-        ):
+        for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
             if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
@@ -200,7 +198,7 @@ class Controller:
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except (aiohttp.web.HTTPConflict, KeyError):
+            except (aiohttp.web.HTTPError, KeyError):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
         try:

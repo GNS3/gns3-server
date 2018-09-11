@@ -52,7 +52,8 @@ class SymbolHandler:
         controller = Controller.instance()
         try:
             yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
-        except (KeyError, FileNotFoundError, PermissionError):
+        except (KeyError, OSError) as e:
+            log.warning("Could not get symbol file: {}".format(e))
             response.set_status(404)
 
     @Route.post(
@@ -66,7 +67,7 @@ class SymbolHandler:
         controller = Controller.instance()
         path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
         try:
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 while True:
                     try:
                         chunk = yield from request.content.read(1024)
@@ -75,7 +76,7 @@ class SymbolHandler:
                     if not chunk:
                         break
                     f.write(chunk)
-        except OSError as e:
+        except (UnicodeEncodeError, OSError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not write symbol file '{}': {}".format(path, e))
         # Reset the symbol list
         controller.symbols.list()

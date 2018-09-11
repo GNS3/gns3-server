@@ -526,8 +526,8 @@ class DockerVM(BaseNode):
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         yield from wait_for_file_creation(x11_socket)
 
-        monitor_process(self._xvfb_process, self._xvfb_callback)
-        monitor_process(self._x11vnc_process, self._x11vnc_callback)
+        #monitor_process(self._xvfb_process, self._xvfb_callback)
+        #monitor_process(self._x11vnc_process, self._x11vnc_callback)
 
     def _xvfb_callback(self, returncode):
         """
