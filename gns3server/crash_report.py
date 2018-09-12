@@ -20,7 +20,7 @@ import sys
 import struct
 import aiohttp
 import platform
-
+import locale
 
 try:
     import raven
@@ -92,7 +92,8 @@ class CrashReport:
                     "url": request.path,
                     "data": request.json,
                 })
-            self._client.tags_context({
+
+            context = {
                 "os:name": platform.system(),
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
@@ -105,7 +106,28 @@ class CrashReport:
                 "python:bit": struct.calcsize("P") * 8,
                 "python:encoding": sys.getdefaultencoding(),
                 "python:frozen": "{}".format(hasattr(sys, "frozen"))
-            })
+            }
+
+            if sys.platform.startswith("linux") and not hasattr(sys, "frozen"):
+                # add locale information
+                try:
+                    language, encoding = locale.getlocale()
+                    context["locale:language"] = language
+                    context["locale:encoding"] = encoding
+                except ValueError:
+                    pass
+
+                # add GNS3 VM version if it exists
+                home = os.path.expanduser("~")
+                gns3vm_version = os.path.join(home, ".config", "GNS3", "gns3vm_version")
+                if os.path.isfile(gns3vm_version):
+                    try:
+                        with open(gns3vm_version) as fd:
+                            context["gns3vm:version"] = fd.readline().strip()
+                    except OSError:
+                        pass
+
+            self._client.tags_context(context)
             try:
                 report = self._client.captureException()
             except Exception as e:
