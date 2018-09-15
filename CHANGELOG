@@ -1,5 +1,27 @@
 # Change Log
 
+## 2.1.10 15/09/2018
+
+* Include locale information and GNS3 VM version in crash reports.
+* Fix small errors like unhandled exceptions etc.
+* Import encodings.idna to avoid LookupError when standard library is in a zip file.
+* Catch exceptions in various locations to fix small issues reported by Sentry.
+* Check if serial pipe can be opened for VMware and VirtualBox VMs.
+* Improve the invalid port format detection. Fixes https://github.com/GNS3/gns3-gui/issues/2580
+* Update aiohttp verion requirement in order to support Python 3.7. Fixes https://github.com/GNS3/gns3-gui/issues/2566
+* Update setup.py and fix minor issues.
+* Catch asyncio.CancelledError when shutting down the server.
+* Report GNS3 VM errors to the GUI server summary. Ref #1359.
+* Replace vboxnet0 (if it does not exist) by the first available vboxnet interface on Windows. Fixes https://github.com/GNS3/gns3-vm/issues/102
+* Check if the VirtualBox host-only network exists when starting a GNS3 VM running on VirtualBox. Ref https://github.com/GNS3/gns3-vm/issues/102
+* Change file timestamps if necessary because ZIP does not support timestamps before 1980. Fixes #1360.
+* Add missing coroutine decorator Ref https://github.com/GNS3/gns3-gui/issues/2566
+* Refactor asyncio locking system for Python 3.7 support. Ref https://github.com/GNS3/gns3-gui/issues/2566 Ref https://github.com/GNS3/gns3-gui/issues/2568
+* Use asyncio.ensure_future() instead of asyncio.async() with conservative approach to support Python < 3.4.4. Fixes https://github.com/GNS3/gns3-gui/issues/2566
+* Forbid controller and compute servers to be different versions. Report last compute server error to clients and display in the server summary.
+* Fix exception with short names for Dynamips interfaces. Fixes #1386.
+* Add missing Qemu boot priority values. Fixes https://github.com/GNS3/gns3-server/issues/1385
+
 ## 2.1.9 13/08/2018
 
 * Fix some more problems with interface short names. Fixes https://github.com/GNS3/gns3-gui/issues/2562
