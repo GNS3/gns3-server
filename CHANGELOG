@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.11 28/09/2018
+
+* Catch some exceptions.
+
 ## 2.1.10 15/09/2018
 
 * Include locale information and GNS3 VM version in crash reports.
