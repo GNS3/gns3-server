@@ -215,7 +215,7 @@ class AsyncioTelnetServer:
             try:
                 writer.write_eof()
                 yield from writer.drain()
-            except ConnectionError:
+            except (AttributeError, ConnectionError):
                 continue
 
     @asyncio.coroutine

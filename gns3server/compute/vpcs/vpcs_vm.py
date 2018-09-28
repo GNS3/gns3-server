@@ -315,7 +315,7 @@ class VPCSVM(BaseNode):
         if sys.platform.startswith("win32"):
             try:
                 self._process.send_signal(signal.CTRL_BREAK_EVENT)
-            except OSError:
+            except (SystemError, OSError):
                 pass
         else:
             try:
