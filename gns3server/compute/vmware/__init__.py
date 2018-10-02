@@ -149,6 +149,7 @@ class VMware(BaseManager):
         VIX 1.13 was the release for Player 6.
         VIX 1.14 was the release for Player 7.
         VIX 1.15 was the release for Workstation Player 12.
+        VIX 1.17 was the release for Workstation Player 14.
 
         :param player_version: VMware Player major version.
         """
@@ -162,6 +163,8 @@ class VMware(BaseManager):
             yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif player_version >= 12:
             yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+        elif player_version >= 14:
+            yield from self.check_vmrun_version(minimum_required_version="1.17.0")
         self._host_type = "player"
 
     @asyncio.coroutine
@@ -172,6 +175,7 @@ class VMware(BaseManager):
         VIX 1.13 was the release for Workstation 10.
         VIX 1.14 was the release for Workstation 11.
         VIX 1.15 was the release for Workstation Pro 12.
+        VIX 1.17 was the release for Workstation Pro 14.
 
         :param ws_version: VMware Workstation major version.
         """
@@ -185,6 +189,8 @@ class VMware(BaseManager):
             yield from self.check_vmrun_version(minimum_required_version="1.14.0")
         elif ws_version >= 12:
             yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+        elif ws_version >= 14:
+            yield from self.check_vmrun_version(minimum_required_version="1.17.0")
         self._host_type = "ws"
 
     @asyncio.coroutine
