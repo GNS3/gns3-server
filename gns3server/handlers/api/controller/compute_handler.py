@@ -59,7 +59,7 @@ class ComputeHandler:
 
     @Route.put(
         r"/computes/{compute_id}",
-        description="Get a compute server information",
+        description="Update a compute server",
         status_codes={
             200: "Compute server updated",
             400: "Invalid request",

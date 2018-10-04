@@ -42,9 +42,9 @@ class ServerHandler:
 
     @Route.get(
         r"/debug",
-        description="Return debug informations about the compute",
+        description="Return debug information about the compute",
         status_codes={
-            201: "Writed"
+            201: "Written"
         })
     def debug(request, response):
         response.content_type = "text/plain"

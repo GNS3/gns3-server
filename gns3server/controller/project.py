@@ -935,7 +935,7 @@ class Project:
                 with open(project_path, "rb") as f:
                     project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
         except (ValueError, OSError, UnicodeEncodeError) as e:
-            raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":
             yield from self.close()

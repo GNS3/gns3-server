@@ -139,7 +139,7 @@ class ServerHandler:
         r"/debug",
         description="Dump debug information to disk (debug directory in config directory). Work only for local server",
         status_codes={
-            201: "Writed"
+            201: "Written"
         })
     def debug(request, response):
 
@@ -156,7 +156,7 @@ class ServerHandler:
                 f.write(ServerHandler._getDebugData())
         except Exception as e:
             # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
-            log.error("Could not export debug informations {}".format(e), exc_info=1)
+            log.error("Could not export debug information {}".format(e), exc_info=1)
 
         try:
             if Controller.instance().gns3vm.engine == "vmware":

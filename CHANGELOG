@@ -681,7 +681,7 @@
 * Fix naming of IOU serial interfaces
 * Improve timeout management
 * When exporting debug information export GNS3 VM vmx content
-* /debug for exporting debug informations
+* /debug for exporting debug information
 * Raise error if using a non linked clone VM twice
 * Fix a possible deadlock at exit
 * Fix import of some old dynamips topologies
