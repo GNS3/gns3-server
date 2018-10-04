@@ -450,9 +450,13 @@ class Compute:
             self._capabilities = response.json
 
             if response.json["version"].split("-")[0] != __version__.split("-")[0]:
-                msg = "GNS3 controller version {} is not the same as compute server {} version {}".format(__version__,
-                                                                                                          self._name,
-                                                                                                          response.json["version"])
+                if self._name.startswith("GNS3 VM"):
+                    msg = "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(__version__,
+                                                                                                                          response.json["version"])
+                else:
+                    msg = "GNS3 controller version {} is not the same as compute server {} version {}".format(__version__,
+                                                                                                              self._name,
+                                                                                                              response.json["version"])
                 if __version_info__[3] == 0:
                     # Stable release
                     log.error(msg)

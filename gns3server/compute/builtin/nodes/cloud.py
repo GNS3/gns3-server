@@ -259,7 +259,7 @@ class Cloud(BaseNode):
 
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output("networksetup", "-listallhardwareports")
-        except (FileNotFoundError, subprocess.SubprocessError) as e:
+        except (OSError, subprocess.SubprocessError) as e:
             log.warning("Could not execute networksetup: {}".format(e))
             return False
 

@@ -20,7 +20,7 @@ import sys
 import struct
 import aiohttp
 import platform
-
+import locale
 
 try:
     import raven
@@ -57,7 +57,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "sync+https://56af21e241ed4c1894ebe17bf06b1cd1:6075f91067954267b51e90b9638a6fad@sentry.io/38482"
+    DSN = "https://8a4a7325dfcf4661a0b04d92b0a7d32e:14f83f7a65e54df88e5f06abad85b152@sentry.io/38482"
     if hasattr(sys, "frozen"):
         cacert = get_resource("cacert.pem")
         if cacert is not None and os.path.isfile(cacert):
@@ -92,7 +92,8 @@ class CrashReport:
                     "url": request.path,
                     "data": request.json,
                 })
-            self._client.tags_context({
+
+            context = {
                 "os:name": platform.system(),
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
@@ -105,7 +106,28 @@ class CrashReport:
                 "python:bit": struct.calcsize("P") * 8,
                 "python:encoding": sys.getdefaultencoding(),
                 "python:frozen": "{}".format(hasattr(sys, "frozen"))
-            })
+            }
+
+            if sys.platform.startswith("linux") and not hasattr(sys, "frozen"):
+                # add locale information
+                try:
+                    language, encoding = locale.getlocale()
+                    context["locale:language"] = language
+                    context["locale:encoding"] = encoding
+                except ValueError:
+                    pass
+
+                # add GNS3 VM version if it exists
+                home = os.path.expanduser("~")
+                gns3vm_version = os.path.join(home, ".config", "GNS3", "gns3vm_version")
+                if os.path.isfile(gns3vm_version):
+                    try:
+                        with open(gns3vm_version) as fd:
+                            context["gns3vm:version"] = fd.readline().strip()
+                    except OSError:
+                        pass
+
+            self._client.tags_context(context)
             try:
                 report = self._client.captureException()
             except Exception as e:

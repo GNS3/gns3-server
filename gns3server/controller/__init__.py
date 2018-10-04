@@ -117,7 +117,7 @@ class Controller:
 
         self._appliance_templates = {}
         for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
-            if os.path.isdir(directory):
+            if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
                         continue
@@ -208,8 +208,10 @@ class Controller:
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
         builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
-        if sys.platform.startswith("win"):
-            builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"node_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
+
+        #FIXME: disable TraceNG
+        #if sys.platform.startswith("win"):
+        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"node_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
         for b in builtins:
             self._appliances[b.id] = b
 
@@ -250,7 +252,7 @@ class Controller:
         for c in computes:
             try:
                 yield from self.add_compute(**c)
-            except (aiohttp.web.HTTPConflict, KeyError):
+            except (aiohttp.web.HTTPError, KeyError):
                 pass  # Skip not available servers at loading
         yield from self.load_projects()
         try:

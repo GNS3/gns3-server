@@ -1,0 +1,43 @@
+{
+    "name": "TacacsGUI",
+    "category": "guest",
+    "description": "TacacsGUI Free Access Control Server for Your Network Devices. GUI for powerful daemon. The project of Alexey Mochalin, based on tacacs daemon by Marc Huber",
+    "vendor_name": "TacacsGUI",
+    "vendor_url": "https://tacacsgui.com/",
+    "documentation_url": "https://tacacsgui.com/documentation/",
+    "product_name": "TacacsGUI",
+    "product_url": "https://drive.google.com/open?id=1U8tbj14NqEyCmarayhZm54qTyjgsJm4B",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Credentials: SSH ---> username: root ---> password: 1234 MySQL DB: ---> username: root --> password: tacacs Web interface: ---> username: tacgui ---> password: abc123",
+    "port_name_format": "Port{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "tac_plus.qcow2",
+            "version": "201710201114",
+            "md5sum": "6b5e66590051124dae586b8640b2eb11",
+            "filesize": 160301056,
+            "download_url": "https://drive.google.com/open?id=1U8tbj14NqEyCmarayhZm54qTyjgsJm4B"
+        }
+    ],
+    "versions": [
+        {
+            "name": "201710201114",
+            "images": {
+                "hda_disk_image": "tac_plus.qcow2"
+            }
+        }
+    ]
+}

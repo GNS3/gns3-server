@@ -43,8 +43,16 @@ class PingStats:
            cur_time > cls._last_measurement + 1.9:
             cls._last_measurement = cur_time
             # Non blocking call to get cpu usage. First call will return 0
-            cls._last_cpu_percent = psutil.cpu_percent(interval=None)
-            cls._last_mem_percent = psutil.virtual_memory().percent
+            try:
+                cls._last_cpu_percent = psutil.cpu_percent(interval=None)
+                cls._last_mem_percent = psutil.virtual_memory().percent
+            except RuntimeError:
+                # ignore the following error:
+                # RuntimeError: host_statistics(HOST_CPU_LOAD_INFO) syscall failed: (ipc/send) invalid reply port
+                pass
+            except PermissionError:
+                # [Errno 13] Permission denied: '/proc/stat'
+                pass
         stats["cpu_usage_percent"] = cls._last_cpu_percent
         stats["memory_usage_percent"] = cls._last_mem_percent
         return stats

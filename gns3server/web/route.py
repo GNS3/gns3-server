@@ -225,6 +225,11 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Client error", "status": 408})
+                except MemoryError:
+                    log.error("Memory error detected, server has run out of memory!", exc_info=1)
+                    response = Response(request=request, route=route)
+                    response.set_status(500)
+                    response.json({"message": "Memory error", "status": 500})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)

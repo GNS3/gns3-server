@@ -94,12 +94,12 @@ class Node:
 
         # Update node properties with additional elements
         for prop in kwargs:
-            if prop not in ignore_properties:
+            if prop and prop not in ignore_properties:
                 if hasattr(self, prop):
                     try:
                         setattr(self, prop, kwargs[prop])
                     except AttributeError as e:
-                        log.critical("Can't set attribute %s", prop)
+                        log.critical("Cannot set attribute '%s'".format(prop))
                         raise e
                 else:
                     if prop not in self.CONTROLLER_ONLY_PROPERTIES and kwargs[prop] is not None and kwargs[prop] != "":
@@ -186,9 +186,9 @@ class Node:
         if not os.path.isabs(path):
             path = os.path.join(self.project.controller.configs_path(), path)
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 return f.read()
-        except (PermissionError, OSError):
+        except OSError:
             return None
 
     @property

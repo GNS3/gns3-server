@@ -87,6 +87,7 @@ class EthernetSwitch(Device):
         self._mappings = {}
         self._telnet_console = None
         self._telnet_shell = None
+        self._telnet_server = None
         self._console = console
         self._console_type = console_type
 
@@ -233,8 +234,9 @@ class EthernetSwitch(Device):
         """
 
         yield from self._telnet.close()
-        self._telnet_server.close()
-        
+        if self._telnet_server:
+            self._telnet_server.close()
+
         for nio in self._nios.values():
             if nio:
                 yield from nio.close()

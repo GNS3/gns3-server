@@ -80,7 +80,7 @@ class StandardPortFactory:
                             segment_number,
                             adapter=adapter_number,
                             **cls._generate_replacement(interface_number, segment_number))
-                    except (ValueError, KeyError) as e:
+                    except (IndexError, ValueError, KeyError) as e:
                         raise aiohttp.web.HTTPConflict(text="Invalid port name format {}: {}".format(port_name_format, str(e)))
 
                     port_name = custom_adapter_settings.get("port_name", port_name)

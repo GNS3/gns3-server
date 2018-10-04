@@ -217,6 +217,8 @@ class VirtualBoxVM(BaseNode):
             except ET.ParseError:
                 raise VirtualBoxError("Cannot modify VirtualBox linked nodes file. "
                                       "File {} is corrupted.".format(self._linked_vbox_file()))
+            except OSError as e:
+                raise VirtualBoxError("Cannot modify VirtualBox linked nodes file '{}': {}".format(self._linked_vbox_file(), e))
 
             machine = tree.getroot().find("{http://www.virtualbox.org/}Machine")
             if machine is not None and machine.get("uuid") != "{" + self.id + "}":
@@ -245,6 +247,7 @@ class VirtualBoxVM(BaseNode):
             return True
         return False
 
+    @locking
     @asyncio.coroutine
     def start(self):
         """
@@ -949,7 +952,11 @@ class VirtualBoxVM(BaseNode):
         """
 
         if self.console and self.console_type == "telnet":
-            self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+            pipe_name = self._get_pipe_name()
+            try:
+                self._remote_pipe = yield from asyncio_open_serial(pipe_name)
+            except OSError as e:
+                raise VirtualBoxError("Could not open serial pipe '{}': {}".format(pipe_name, e))
             server = AsyncioTelnetServer(reader=self._remote_pipe,
                                          writer=self._remote_pipe,
                                          binary=True,

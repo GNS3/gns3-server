@@ -302,9 +302,9 @@ class ProjectHandler:
 
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
-                datas = yield from export_project(
-                    project, tmp_dir,
-                    include_images=bool(int(request.query.get("include_images", "0"))))
+                stream = yield from export_project(project,
+                                                   tmp_dir,
+                                                   include_images=bool(int(request.query.get("include_images", "0"))))
                 # We need to do that now because export could failed and raise an HTTP error
                 # that why response start need to be the later possible
                 response.content_type = 'application/gns3project'
@@ -312,7 +312,7 @@ class ProjectHandler:
                 response.enable_chunked_encoding()
                 yield from response.prepare(request)
 
-                for data in datas:
+                for data in stream:
                     response.write(data)
                     yield from response.drain()
 

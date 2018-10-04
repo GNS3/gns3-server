@@ -369,7 +369,7 @@ class IOUVM(BaseNode):
 
         try:
             output = yield from gns3server.utils.asyncio.subprocess_check_output("ldd", self._path)
-        except (FileNotFoundError, subprocess.SubprocessError) as e:
+        except (OSError, subprocess.SubprocessError) as e:
             log.warning("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
@@ -422,7 +422,7 @@ class IOUVM(BaseNode):
                 hostid = (yield from gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
             except FileNotFoundError as e:
                 raise IOUError("Could not find hostid: {}".format(e))
-            except subprocess.SubprocessError as e:
+            except (OSError, subprocess.SubprocessError) as e:
                 raise IOUError("Could not execute hostid: {}".format(e))
 
             try:

@@ -29,7 +29,10 @@ import functools
 import time
 import atexit
 
-from gns3server.utils.static import get_static_dir
+# Import encoding now, to avoid implicit import later.
+# Implicit import within threads may cause LookupError when standard library is in a ZIP
+import encodings.idna
+
 from .route import Route
 from ..config import Config
 from ..compute import MODULES
@@ -37,6 +40,8 @@ from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
 from ..utils.asyncio import asyncio_ensure_future
+
+from gns3server.utils.static import get_static_dir
 
 # do not delete this import
 import gns3server.handlers

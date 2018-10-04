@@ -197,11 +197,9 @@ class AsyncioTelnetServer:
             yield from self._write_intro(network_writer, echo=self._echo, binary=self._binary, naws=self._naws)
             yield from connection.connected()
             yield from self._process(network_reader, network_writer, connection)
-        except ConnectionResetError:
+        except ConnectionError:
             with (yield from self._lock):
-
                 network_writer.close()
-
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -217,7 +215,7 @@ class AsyncioTelnetServer:
             try:
                 writer.write_eof()
                 yield from writer.drain()
-            except ConnectionResetError:
+            except (AttributeError, ConnectionError):
                 continue
 
     @asyncio.coroutine
