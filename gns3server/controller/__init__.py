@@ -769,3 +769,15 @@ class Controller:
         yield from project.delete()
         self.remove_project(project)
         return res
+
+    @asyncio.coroutine
+    def compute_ports(self, compute_id):
+        """
+        Get the ports used by a compute.
+
+        :param compute_id: ID of the compute
+        """
+
+        compute = self.get_compute(compute_id)
+        response = yield from compute.get("/network/ports")
+        return response.json

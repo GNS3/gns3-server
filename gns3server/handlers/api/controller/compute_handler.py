@@ -22,7 +22,8 @@ from gns3server.schemas.compute import (
     COMPUTE_CREATE_SCHEMA,
     COMPUTE_OBJECT_SCHEMA,
     COMPUTE_UPDATE_SCHEMA,
-    COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA
+    COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA,
+    COMPUTE_PORTS_OBJECT_SCHEMA
 )
 
 import logging
@@ -214,4 +215,19 @@ class ComputeHandler:
         controller = Controller.instance()
         res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
         response.json(res)
-        response.set_status(200)
+
+    @Route.get(
+        r"/computes/{compute_id}/ports",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "Ports information returned",
+        },
+        description="Get ports used by a compute",
+        output=COMPUTE_PORTS_OBJECT_SCHEMA)
+    def ports(request, response):
+        controller = Controller.instance()
+        res = yield from controller.compute_ports(request.match_info["compute_id"])
+        response.json(res)
+

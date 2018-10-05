@@ -67,6 +67,13 @@ class PortManager:
             cls._instance = cls()
         return cls._instance
 
+    def __json__(self):
+
+        return {"console_port_range": self._console_port_range,
+                "console_ports": list(self._used_tcp_ports),
+                "udp_port_range": self._udp_port_range,
+                "udp_ports": list(self._used_udp_ports)}
+
     @property
     def console_host(self):
 

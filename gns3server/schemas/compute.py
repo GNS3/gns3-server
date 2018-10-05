@@ -127,3 +127,56 @@ COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA = {
     "additionalProperties": False,
 }
 
+COMPUTE_PORTS_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Output schema for open ports on a compute",
+    "type": "object",
+    "properties": {
+        "console_port_range": {
+            "description": "Console port range",
+            "type": "array",
+            "uniqueItems": True,
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "console_ports": {
+            "description": "Console ports used by the compute",
+            "type": "array",
+            "uniqueItems": True,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "udp_port_range": {
+            "description": "UDP port range",
+            "type": "array",
+            "uniqueItems": True,
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "udp_ports": {
+            "description": "UDP ports used by the compute",
+            "type": "array",
+            "uniqueItems": True,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+    },
+    "additionalProperties": False,
+}
+
