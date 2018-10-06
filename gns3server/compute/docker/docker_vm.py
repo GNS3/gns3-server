@@ -89,6 +89,7 @@ class DockerVM(BaseNode):
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._extra_hosts = extra_hosts
+        self._display = None
         self._closing = False
 
         self._volumes = []
@@ -757,21 +758,20 @@ class DockerVM(BaseNode):
                         yield from self._x11vnc_process.wait()
                     except ProcessLookupError:
                         pass
-                    self._x11vnc_process = None
                 if self._xvfb_process:
                     try:
                         self._xvfb_process.terminate()
                         yield from self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
-                    self._xvfb_process = None
 
-                display = "/tmp/.X11-unix/X{}".format(self._display)
-                try:
-                    if os.path.exists(display):
-                        os.remove(display)
-                except OSError as e:
-                    log.warning("Could not remove display {}: {}".format(display, e))
+                if self._display:
+                    display = "/tmp/.X11-unix/X{}".format(self._display)
+                    try:
+                        if os.path.exists(display):
+                            os.remove(display)
+                    except OSError as e:
+                        log.warning("Could not remove display {}: {}".format(display, e))
 
             # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
