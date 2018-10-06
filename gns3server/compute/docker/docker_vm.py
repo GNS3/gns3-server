@@ -82,12 +82,14 @@ class DockerVM(BaseNode):
         self._ethernet_adapters = []
         self._temporary_directory = None
         self._telnet_servers = []
+        self._xvfb_process = None
         self._x11vnc_process = None
         self._console_resolution = console_resolution
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._extra_hosts = extra_hosts
+        self._closing = False
 
         self._volumes = []
         # Keep a list of created bridge
@@ -425,6 +427,11 @@ class DockerVM(BaseNode):
         elif state == "running":
             return
         else:
+
+            if self._console_type == "vnc" and not self._x11vnc_process:
+                # start the x11vnc process in case it had previously crashed
+                self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+
             yield from self._clean_servers()
 
             yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
@@ -532,22 +539,11 @@ class DockerVM(BaseNode):
         self._xvfb_process = yield from asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
         # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
         self._x11vnc_process = yield from asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
-
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         yield from wait_for_file_creation(x11_socket)
 
-        #monitor_process(self._xvfb_process, self._xvfb_callback)
-        #monitor_process(self._x11vnc_process, self._x11vnc_callback)
-
-    def _xvfb_callback(self, returncode):
-        """
-        Called when the process has stopped.
-
-        :param returncode: Process returncode
-        """
-
-        if returncode != 0:
-            self.project.emit("log.error", {"message": "The Xvfb process has stopped, return code: {}.".format(returncode)})
+        # sometimes the x11vnc process can crash
+        monitor_process(self._x11vnc_process, self._x11vnc_callback)
 
     def _x11vnc_callback(self, returncode):
         """
@@ -556,8 +552,9 @@ class DockerVM(BaseNode):
         :param returncode: Process returncode
         """
 
-        if returncode != 0:
-            self.project.emit("log.error", {"message": "The x11vnc process has stopped, return code: {}.".format(returncode)})
+        if returncode != 0 and self._closing is False:
+            self.project.emit("log.error", {"message": "The x11vnc process has stopped with return code {} for node '{}'. Please restart this node.".format(returncode, self.name)})
+            self._x11vnc_process = None
 
     @asyncio.coroutine
     def _start_http(self):
@@ -740,6 +737,7 @@ class DockerVM(BaseNode):
         Closes this Docker container.
         """
 
+        self._closing = True
         if not (yield from super().close()):
             return False
         yield from self.reset()
@@ -751,6 +749,7 @@ class DockerVM(BaseNode):
             state = yield from self._get_container_state()
             if state == "paused" or state == "running":
                 yield from self.stop()
+
             if self.console_type == "vnc":
                 if self._x11vnc_process:
                     try:
@@ -758,11 +757,22 @@ class DockerVM(BaseNode):
                         yield from self._x11vnc_process.wait()
                     except ProcessLookupError:
                         pass
+                    self._x11vnc_process = None
+                if self._xvfb_process:
                     try:
                         self._xvfb_process.terminate()
                         yield from self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
+                    self._xvfb_process = None
+
+                display = "/tmp/.X11-unix/X{}".format(self._display)
+                try:
+                    if os.path.exists(display):
+                        os.remove(display)
+                except OSError as e:
+                    log.warning("Could not remove display {}: {}".format(display, e))
+
             # v – 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false.
             # force - 1/True/true or 0/False/false, Kill then remove the container. Default false.
             try:
