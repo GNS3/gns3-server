@@ -171,7 +171,7 @@ and homebrew: http://brew.sh/.
 .. code:: bash
 
    brew install python3
-   mkvirtualenv gns3-server --python=/usr/local/bin/python3.4
+   mkvirtualenv gns3-server --python=/usr/local/bin/python3.5
    python3 setup.py install
    gns3server
 
