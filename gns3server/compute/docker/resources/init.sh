@@ -20,7 +20,7 @@
 # the start command of the container
 #
 OLD_PATH="$PATH"
-PATH=/gns3/bin:/tmp/gns3/bin
+PATH=/gns3/bin:/tmp/gns3/bin:/sbin
 
 # bootstrap busybox commands
 if [ ! -d /tmp/gns3/bin ]; then
