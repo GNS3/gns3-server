@@ -85,10 +85,9 @@ def test_lock_decorator(loop):
             self._test_val = 0
 
         @locking
-        @asyncio.coroutine
-        def method_to_lock(self):
+        async def method_to_lock(self):
             res = self._test_val
-            yield from asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)
             self._test_val += 1
             return res
 

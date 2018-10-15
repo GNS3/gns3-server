@@ -211,8 +211,7 @@ def test_create_image_missing(node, compute, project, async_run):
 
     node.__calls = 0
 
-    @asyncio.coroutine
-    def resp(*args, **kwargs):
+    async def resp(*args, **kwargs):
         node.__calls += 1
         response = MagicMock()
         if node.__calls == 1:

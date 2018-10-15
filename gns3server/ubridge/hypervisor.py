@@ -129,13 +129,12 @@ class Hypervisor(UBridgeHypervisor):
 
         return self._version
 
-    @asyncio.coroutine
-    def _check_ubridge_version(self, env=None):
+    async def _check_ubridge_version(self, env=None):
         """
         Checks if the ubridge executable version
         """
         try:
-            output = yield from subprocess_check_output(self._path, "-v", cwd=self._working_dir, env=env)
+            output = await subprocess_check_output(self._path, "-v", cwd=self._working_dir, env=env)
             match = re.search("ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
@@ -152,8 +151,7 @@ class Hypervisor(UBridgeHypervisor):
         except (OSError, subprocess.SubprocessError) as e:
             raise UbridgeError("Error while looking for uBridge version: {}".format(e))
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the uBridge hypervisor process.
         """
@@ -164,14 +162,14 @@ class Hypervisor(UBridgeHypervisor):
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
                 env["PATH"] = system_root + ';' + env["PATH"]
-        yield from self._check_ubridge_version(env)
+        await self._check_ubridge_version(env)
         try:
             command = self._build_command()
             log.info("starting ubridge: {}".format(command))
             self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
             log.info("logging to {}".format(self._stdout_file))
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                self._process = yield from asyncio.create_subprocess_exec(*command,
+                self._process = await asyncio.create_subprocess_exec(*command,
                                                                           stdout=fd,
                                                                           stderr=subprocess.STDOUT,
                                                                           cwd=self._working_dir,
@@ -194,17 +192,16 @@ class Hypervisor(UBridgeHypervisor):
         if returncode != 0:
             self._project.emit("log.error", {"message": "uBridge process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the uBridge hypervisor process.
         """
 
         if self.is_running():
             log.info("Stopping uBridge process PID={}".format(self._process.pid))
-            yield from UBridgeHypervisor.stop(self)
+            await UBridgeHypervisor.stop(self)
             try:
-                yield from wait_for_process_termination(self._process, timeout=3)
+                await wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process and self._process.returncode is None:
                     log.warning("uBridge process {} is still running... killing it".format(self._process.pid))

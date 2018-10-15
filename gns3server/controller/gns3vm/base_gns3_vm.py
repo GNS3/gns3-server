@@ -254,32 +254,28 @@ class BaseGNS3VM:
 
         return self._engine
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         List all VMs
         """
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the GNS3 VM.
         """
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspend the GNS3 VM.
         """
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the GNS3 VM.
         """

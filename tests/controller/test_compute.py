@@ -205,8 +205,7 @@ def test_connectNotification(compute, async_run):
 
     call = 0
 
-    @asyncio.coroutine
-    def receive():
+    async def receive():
         nonlocal call
         call += 1
         if call == 1:
@@ -238,8 +237,7 @@ def test_connectNotificationPing(compute, async_run):
 
     call = 0
 
-    @asyncio.coroutine
-    def receive():
+    async def receive():
         nonlocal call
         call += 1
         if call == 1:

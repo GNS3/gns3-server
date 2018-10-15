@@ -42,9 +42,8 @@ class Query:
         self._api_version = api_version
         self._session = None
 
-    @asyncio.coroutine
-    def close(self):
-        yield from self._session.close()
+    async def close(self):
+        await self._session.close()
 
     def post(self, path, body={}, **kwargs):
         return self._fetch("POST", path, body, **kwargs)
@@ -69,9 +68,8 @@ class Query:
         """
         self._session = aiohttp.ClientSession()
 
-        @asyncio.coroutine
-        def go_request(future):
-            response = yield from self._session.ws_connect(self.get_url(path))
+        async def go_request(future):
+            response = await self._session.ws_connect(self.get_url(path))
             future.set_result(response)
         future = asyncio.Future()
         asyncio.ensure_future(go_request(future))
@@ -87,14 +85,13 @@ class Query:
         """
         return self._loop.run_until_complete(asyncio.ensure_future(self._async_fetch(method, path, body=body, **kwargs)))
 
-    @asyncio.coroutine
-    def _async_fetch(self, method, path, body=None, **kwargs):
+    async def _async_fetch(self, method, path, body=None, **kwargs):
         if body is not None and not kwargs.get("raw", False):
             body = json.dumps(body)
 
         connector = aiohttp.TCPConnector()
-        response = yield from aiohttp.request(method, self.get_url(path), data=body, loop=self._loop, connector=connector)
-        response.body = yield from response.read()
+        response = await aiohttp.request(method, self.get_url(path), data=body, loop=self._loop, connector=connector)
+        response.body = await response.read()
         x_route = response.headers.get('X-Route', None)
         if x_route is not None:
             response.route = x_route.replace("/v{}".format(self._api_version), "")

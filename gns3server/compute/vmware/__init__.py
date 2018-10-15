@@ -32,7 +32,6 @@ import shlex
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
-from gns3server.utils.asyncio import asyncio_ensure_future
 from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)
@@ -40,7 +39,6 @@ log = logging.getLogger(__name__)
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware.vmware_error import VMwareError
-from gns3server.utils.asyncio import asyncio_ensure_future
 
 
 class VMware(BaseManager):
@@ -142,8 +140,7 @@ class VMware(BaseManager):
                 version = match.group(1)
         return version
 
-    @asyncio.coroutine
-    def _check_vmware_player_requirements(self, player_version):
+    async def _check_vmware_player_requirements(self, player_version):
         """
         Check minimum requirements to use VMware Player.
 
@@ -159,17 +156,16 @@ class VMware(BaseManager):
         if player_version < 6:
             raise VMwareError("Using VMware Player requires version 6 or above")
         elif player_version == 6:
-            yield from self.check_vmrun_version(minimum_required_version="1.13.0")
+            await self.check_vmrun_version(minimum_required_version="1.13.0")
         elif player_version == 7:
-            yield from self.check_vmrun_version(minimum_required_version="1.14.0")
+            await self.check_vmrun_version(minimum_required_version="1.14.0")
         elif player_version >= 12:
-            yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+            await self.check_vmrun_version(minimum_required_version="1.15.0")
         elif player_version >= 14:
-            yield from self.check_vmrun_version(minimum_required_version="1.17.0")
+            await self.check_vmrun_version(minimum_required_version="1.17.0")
         self._host_type = "player"
 
-    @asyncio.coroutine
-    def _check_vmware_workstation_requirements(self, ws_version):
+    async def _check_vmware_workstation_requirements(self, ws_version):
         """
         Check minimum requirements to use VMware Workstation.
 
@@ -185,17 +181,16 @@ class VMware(BaseManager):
         if ws_version < 10:
             raise VMwareError("Using VMware Workstation requires version 10 or above")
         elif ws_version == 10:
-            yield from self.check_vmrun_version(minimum_required_version="1.13.0")
+            await self.check_vmrun_version(minimum_required_version="1.13.0")
         elif ws_version == 11:
-            yield from self.check_vmrun_version(minimum_required_version="1.14.0")
+            await self.check_vmrun_version(minimum_required_version="1.14.0")
         elif ws_version >= 12:
-            yield from self.check_vmrun_version(minimum_required_version="1.15.0")
+            await self.check_vmrun_version(minimum_required_version="1.15.0")
         elif ws_version >= 14:
-            yield from self.check_vmrun_version(minimum_required_version="1.17.0")
+            await self.check_vmrun_version(minimum_required_version="1.17.0")
         self._host_type = "ws"
 
-    @asyncio.coroutine
-    def check_vmware_version(self):
+    async def check_vmware_version(self):
         """
         Check VMware version
         """
@@ -207,13 +202,13 @@ class VMware(BaseManager):
                 player_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
                 if player_version:
                     log.debug("VMware Player version {} detected".format(player_version))
-                    yield from self._check_vmware_player_requirements(player_version)
+                    await self._check_vmware_player_requirements(player_version)
                 else:
                     log.warning("Could not find VMware version")
                     self._host_type = "ws"
             else:
                 log.debug("VMware Workstation version {} detected".format(ws_version))
-                yield from self._check_vmware_workstation_requirements(ws_version)
+                await self._check_vmware_workstation_requirements(ws_version)
         else:
             if sys.platform.startswith("darwin"):
                 if not os.path.isdir("/Applications/VMware Fusion.app"):
@@ -226,20 +221,20 @@ class VMware(BaseManager):
                 raise VMwareError("VMware is not installed (vmware or vmplayer executable could not be found in $PATH)")
 
             try:
-                output = yield from subprocess_check_output(vmware_path, "-v")
+                output = await subprocess_check_output(vmware_path, "-v")
                 match = re.search("VMware Workstation ([0-9]+)\.", output)
                 version = None
                 if match:
                     # VMware Workstation has been detected
                     version = match.group(1)
                     log.debug("VMware Workstation version {} detected".format(version))
-                    yield from self._check_vmware_workstation_requirements(version)
+                    await self._check_vmware_workstation_requirements(version)
                 match = re.search("VMware Player ([0-9]+)\.", output)
                 if match:
                     # VMware Player has been detected
                     version = match.group(1)
                     log.debug("VMware Player version {} detected".format(version))
-                    yield from self._check_vmware_player_requirements(version)
+                    await self._check_vmware_player_requirements(version)
                 if version is None:
                     log.warning("Could not find VMware version. Output of VMware: {}".format(output))
                     raise VMwareError("Could not find VMware version. Output of VMware: {}".format(output))
@@ -365,28 +360,26 @@ class VMware(BaseManager):
 
         return self._host_type
 
-    @asyncio.coroutine
-    def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
         trial = 2
 
         while True:
             try:
-                return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
+                return (await self._execute(subcommand, args, timeout=timeout, log_level=log_level))
             except VMwareError as e:
                 # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
                 if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
                     self._host_type = "player"
-                    return (yield from self._execute(subcommand, args, timeout=timeout, log_level=log_level))
+                    return (await self._execute(subcommand, args, timeout=timeout, log_level=log_level))
                 else:
                     if trial <= 0:
                         raise e
                     trial -= 1
-                    yield from asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)
 
-    @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=120, log_level=logging.INFO):
         if self.host_type is None:
-            yield from self.check_vmware_version()
+            await self.check_vmware_version()
 
         vmrun_path = self.vmrun_path
         if not vmrun_path:
@@ -397,12 +390,12 @@ class VMware(BaseManager):
         command_string = " ".join([shlex.quote(c) for c in command])
         log.log(log_level, "Executing vmrun with command: {}".format(command_string))
         try:
-            process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            process = await asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
         except (OSError, subprocess.SubprocessError) as e:
             raise VMwareError("Could not execute vmrun: {}".format(e))
 
         try:
-            stdout_data, _ = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+            stdout_data, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             raise VMwareError("vmrun has timed out after {} seconds!\nTry to run {} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus.".format(timeout, command_string))
 
@@ -413,8 +406,7 @@ class VMware(BaseManager):
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
-    @asyncio.coroutine
-    def check_vmrun_version(self, minimum_required_version="1.13.0"):
+    async def check_vmrun_version(self, minimum_required_version="1.13.0"):
         """
         Checks the vmrun version.
 
@@ -431,7 +423,7 @@ class VMware(BaseManager):
             vmrun_path = self.find_vmrun()
 
         try:
-            output = yield from subprocess_check_output(vmrun_path)
+            output = await subprocess_check_output(vmrun_path)
             match = re.search("vmrun version ([0-9\.]+)", output)
             version = None
             if match:
@@ -446,15 +438,14 @@ class VMware(BaseManager):
             log.error("Error while looking for the VMware vmrun version: {}".format(e))
             raise VMwareError("Error while looking for the VMware vmrun version: {}".format(e))
 
-    @asyncio.coroutine
-    def remove_from_vmware_inventory(self, vmx_path):
+    async def remove_from_vmware_inventory(self, vmx_path):
         """
         Removes a linked clone from the VMware inventory file.
 
         :param vmx_path: path of the linked clone VMX file
         """
 
-        with (yield from self._vmware_inventory_lock):
+        async with self._vmware_inventory_lock:
             inventory_path = self.get_vmware_inventory_path()
             if os.path.exists(inventory_path):
                 try:
@@ -677,14 +668,13 @@ class VMware(BaseManager):
         else:
             return [os.path.expanduser("~/vmware")]
 
-    @asyncio.coroutine
-    def list_vms(self):
+    async def list_vms(self):
         """
         Gets VMware VM list.
         """
 
         # check for the right VMware version
-        yield from self.check_vmware_version()
+        await self.check_vmware_version()
         vmware_vms = []
         inventory_path = self.get_vmware_inventory_path()
         if os.path.exists(inventory_path) and self.host_type != "player":
@@ -746,4 +736,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     vmware = VMware.instance()
     print("=> Check version")
-    loop.run_until_complete(asyncio_ensure_future(vmware.check_vmware_version()))
+    loop.run_until_complete(asyncio.ensure_future(vmware.check_vmware_version()))

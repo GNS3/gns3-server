@@ -41,8 +41,7 @@ class Qemu(BaseManager):
     _NODE_TYPE = "qemu"
 
     @staticmethod
-    @asyncio.coroutine
-    def get_kvm_archs():
+    async def get_kvm_archs():
         """
         Gets a list of architectures for which KVM is available on this server.
 
@@ -108,7 +107,7 @@ class Qemu(BaseManager):
         return paths
 
     @staticmethod
-    def binary_list(archs=None):
+    async def binary_list(archs=None):
         """
         Gets QEMU binaries list available on the host.
 
@@ -128,11 +127,11 @@ class Qemu(BaseManager):
                             for arch in archs:
                                 if f.endswith(arch) or f.endswith("{}.exe".format(arch)) or f.endswith("{}w.exe".format(arch)):
                                     qemu_path = os.path.join(path, f)
-                                    version = yield from Qemu.get_qemu_version(qemu_path)
+                                    version = await Qemu.get_qemu_version(qemu_path)
                                     qemus.append({"path": qemu_path, "version": version})
                         else:
                             qemu_path = os.path.join(path, f)
-                            version = yield from Qemu.get_qemu_version(qemu_path)
+                            version = await Qemu.get_qemu_version(qemu_path)
                             qemus.append({"path": qemu_path, "version": version})
 
             except OSError:
@@ -141,7 +140,7 @@ class Qemu(BaseManager):
         return qemus
 
     @staticmethod
-    def img_binary_list():
+    async def img_binary_list():
         """
         Gets QEMU-img binaries list available on the host.
 
@@ -155,7 +154,7 @@ class Qemu(BaseManager):
                             os.access(os.path.join(path, f), os.X_OK) and \
                             os.path.isfile(os.path.join(path, f)):
                         qemu_path = os.path.join(path, f)
-                        version = yield from Qemu._get_qemu_img_version(qemu_path)
+                        version = await Qemu._get_qemu_img_version(qemu_path)
                         qemu_imgs.append({"path": qemu_path, "version": version})
             except OSError:
                 continue
@@ -163,8 +162,7 @@ class Qemu(BaseManager):
         return qemu_imgs
 
     @staticmethod
-    @asyncio.coroutine
-    def get_qemu_version(qemu_path):
+    async def get_qemu_version(qemu_path):
         """
         Gets the Qemu version.
 
@@ -187,7 +185,7 @@ class Qemu(BaseManager):
             return ""
         else:
             try:
-                output = yield from subprocess_check_output(qemu_path, "-version")
+                output = await subprocess_check_output(qemu_path, "-version")
                 match = re.search("version\s+([0-9a-z\-\.]+)", output)
                 if match:
                     version = match.group(1)
@@ -198,8 +196,7 @@ class Qemu(BaseManager):
                 raise QemuError("Error while looking for the Qemu version: {}".format(e))
 
     @staticmethod
-    @asyncio.coroutine
-    def _get_qemu_img_version(qemu_img_path):
+    async def _get_qemu_img_version(qemu_img_path):
         """
         Gets the Qemu-img version.
 
@@ -207,7 +204,7 @@ class Qemu(BaseManager):
         """
 
         try:
-            output = yield from subprocess_check_output(qemu_img_path, "--version")
+            output = await subprocess_check_output(qemu_img_path, "--version")
             match = re.search("version\s+([0-9a-z\-\.]+)", output)
             if match:
                 version = match.group(1)
@@ -258,8 +255,7 @@ class Qemu(BaseManager):
 
         return os.path.join("qemu", "vm-{}".format(legacy_vm_id))
 
-    @asyncio.coroutine
-    def create_disk(self, qemu_img, path, options):
+    async def create_disk(self, qemu_img, path, options):
         """
         Create a Qemu disk with qemu-img
 
@@ -290,13 +286,12 @@ class Qemu(BaseManager):
             command.append(path)
             command.append("{}M".format(img_size))
 
-            process = yield from asyncio.create_subprocess_exec(*command)
-            yield from process.wait()
+            process = await asyncio.create_subprocess_exec(*command)
+            await process.wait()
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Could not create disk image {}:{}".format(path, e))
 
-    @asyncio.coroutine
-    def resize_disk(self, qemu_img, path, extend):
+    async def resize_disk(self, qemu_img, path, extend):
         """
         Resize a Qemu disk with qemu-img
 
@@ -314,8 +309,8 @@ class Qemu(BaseManager):
             if not os.path.exists(path):
                 raise QemuError("Qemu disk '{}' does not exist".format(path))
             command = [qemu_img, "resize", path, "+{}M".format(extend)]
-            process = yield from asyncio.create_subprocess_exec(*command)
-            yield from process.wait()
+            process = await asyncio.create_subprocess_exec(*command)
+            await process.wait()
             log.info("Qemu disk '{}' extended by {} MB".format(path, extend))
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Could not update disk image {}:{}".format(path, e))

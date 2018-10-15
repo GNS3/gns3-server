@@ -30,8 +30,7 @@ class NotificationQueue(asyncio.Queue):
         super().__init__()
         self._first = True
 
-    @asyncio.coroutine
-    def get(self, timeout):
+    async def get(self, timeout):
         """
         When timeout is expire we send a ping notification with server information
         """
@@ -42,17 +41,16 @@ class NotificationQueue(asyncio.Queue):
             return ("ping", PingStats.get(), {})
 
         try:
-            (action, msg, kwargs) = yield from asyncio.wait_for(super().get(), timeout)
+            (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout)
         except asyncio.futures.TimeoutError:
             return ("ping", PingStats.get(), {})
         return (action, msg, kwargs)
 
-    @asyncio.coroutine
-    def get_json(self, timeout):
+    async def get_json(self, timeout):
         """
         Get a message as a JSON
         """
-        (action, msg, kwargs) = yield from self.get(timeout)
+        (action, msg, kwargs) = await self.get(timeout)
         if hasattr(msg, "__json__"):
             msg = {"action": action, "event": msg.__json__()}
         else:

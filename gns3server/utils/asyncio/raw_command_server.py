@@ -20,8 +20,6 @@ import copy
 import asyncio
 import asyncio.subprocess
 
-from gns3server.utils.asyncio import asyncio_ensure_future
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -44,24 +42,22 @@ class AsyncioRawCommandServer:
         # We limit number of process
         self._lock = asyncio.Semaphore(value=4)
 
-    @asyncio.coroutine
-    def run(self, network_reader, network_writer):
-        yield from self._lock.acquire()
-        process = yield from asyncio.subprocess.create_subprocess_exec(*self._command,
+    async def run(self, network_reader, network_writer):
+        await self._lock.acquire()
+        process = await asyncio.subprocess.create_subprocess_exec(*self._command,
                                                                        stdout=asyncio.subprocess.PIPE,
                                                                        stderr=asyncio.subprocess.STDOUT,
                                                                        stdin=asyncio.subprocess.PIPE)
         try:
-            yield from self._process(network_reader, network_writer, process.stdout, process.stdin)
+            await self._process(network_reader, network_writer, process.stdout, process.stdin)
         except ConnectionResetError:
             network_writer.close()
         if process.returncode is None:
             process.kill()
-        yield from process.wait()
+        await process.wait()
         self._lock.release()
 
-    @asyncio.coroutine
-    def _process(self, network_reader, network_writer, process_reader, process_writer):
+    async def _process(self, network_reader, network_writer, process_reader, process_writer):
         replaces = []
         # Server host from the client point of view
         host = network_writer.transport.get_extra_info("sockname")[0]
@@ -71,12 +67,12 @@ class AsyncioRawCommandServer:
             else:
                 replaces.append((replace[0], replace[1], ))
 
-        network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
-        reader_read = asyncio_ensure_future(process_reader.read(READ_SIZE))
+        network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
+        reader_read = asyncio.ensure_future(process_reader.read(READ_SIZE))
         timeout = 30
 
         while True:
-            done, pending = yield from asyncio.wait(
+            done, pending = await asyncio.wait(
                 [
                     network_read,
                     reader_read
@@ -91,22 +87,22 @@ class AsyncioRawCommandServer:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
 
-                    network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
+                    network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
 
                     process_writer.write(data)
-                    yield from process_writer.drain()
+                    await process_writer.drain()
                 elif coro == reader_read:
                     if process_reader.at_eof():
                         raise ConnectionResetError()
 
-                    reader_read = asyncio_ensure_future(process_reader.read(READ_SIZE))
+                    reader_read = asyncio.ensure_future(process_reader.read(READ_SIZE))
 
                     for replace in replaces:
                         data = data.replace(replace[0], replace[1])
                     timeout = 2  # We reduce the timeout when the process start to return stuff to avoid problem with server not closing the connection
 
                     network_writer.write(data)
-                    yield from network_writer.drain()
+                    await network_writer.drain()
 
 
 if __name__ == '__main__':

@@ -88,11 +88,11 @@ class ProjectHandler:
         },
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_UPDATE_SCHEMA)
-    def update_project(request, response):
+    async def update_project(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        yield from project.update(
+        await project.update(
             variables=request.json.get("variables", None)
         )
         response.set_status(200)
@@ -125,12 +125,12 @@ class ProjectHandler:
             204: "Project closed",
             404: "The project doesn't exist"
         })
-    def close(request, response):
+    async def close(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         if ProjectHandler._notifications_listening.setdefault(project.id, 0) <= 1:
-            yield from project.close()
+            await project.close()
             pm.remove_project(project.id)
             try:
                 del ProjectHandler._notifications_listening[project.id]
@@ -150,11 +150,11 @@ class ProjectHandler:
             204: "Changes have been written on disk",
             404: "The project doesn't exist"
         })
-    def delete(request, response):
+    async def delete(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        yield from project.delete()
+        await project.delete()
         pm.remove_project(project.id)
         response.set_status(204)
 
@@ -168,7 +168,7 @@ class ProjectHandler:
             200: "End of stream",
             404: "The project doesn't exist"
         })
-    def notification(request, response):
+    async def notification(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
@@ -184,7 +184,7 @@ class ProjectHandler:
         response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         while True:
             try:
-                (action, msg) = yield from asyncio.wait_for(queue.get(), 5)
+                (action, msg) = await asyncio.wait_for(queue.get(), 5)
                 if hasattr(msg, "__json__"):
                     msg = json.dumps({"action": action, "event": msg.__json__()}, sort_keys=True)
                 else:
@@ -219,11 +219,11 @@ class ProjectHandler:
             404: "The project doesn't exist"
         },
         output=PROJECT_FILE_LIST_SCHEMA)
-    def list_files(request, response):
+    async def list_files(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        files = yield from project.list_files()
+        files = await project.list_files()
         response.json(files)
         response.set_status(200)
 
@@ -238,7 +238,7 @@ class ProjectHandler:
             403: "Permission denied",
             404: "The file doesn't exist"
         })
-    def get_file(request, response):
+    async def get_file(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
@@ -256,12 +256,12 @@ class ProjectHandler:
 
         try:
             with open(path, "rb") as f:
-                yield from response.prepare(request)
+                await response.prepare(request)
                 while True:
                     data = f.read(4096)
                     if not data:
                         break
-                    yield from response.write(data)
+                    await response.write(data)
 
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
@@ -279,7 +279,7 @@ class ProjectHandler:
             403: "Permission denied",
             404: "The file doesn't exist"
         })
-    def stream_file(request, response):
+    async def stream_file(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
@@ -297,12 +297,12 @@ class ProjectHandler:
 
         try:
             with open(path, "rb") as f:
-                yield from response.prepare(request)
+                await response.prepare(request)
                 while True:
                     data = f.read(4096)
                     if not data:
-                        yield from asyncio.sleep(0.1)
-                    yield from response.write(data)
+                        await asyncio.sleep(0.1)
+                    await response.write(data)
 
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
@@ -321,7 +321,7 @@ class ProjectHandler:
             403: "Permission denied",
             404: "The path doesn't exist"
         })
-    def write_file(request, response):
+    async def write_file(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
@@ -340,7 +340,7 @@ class ProjectHandler:
             with open(path, 'wb+') as f:
                 while True:
                     try:
-                        chunk = yield from request.content.read(1024)
+                        chunk = await request.content.read(1024)
                     except asyncio.TimeoutError:
                         raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
                     if not chunk:
@@ -363,21 +363,21 @@ class ProjectHandler:
             200: "File returned",
             404: "The project doesn't exist"
         })
-    def export_project(request, response):
+    async def export_project(request, response):
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
         response.content_type = 'application/gns3project'
         response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
         response.enable_chunked_encoding()
-        yield from response.prepare(request)
+        await response.prepare(request)
 
         include_images = bool(int(request.json.get("include_images", "0")))
         for data in project.export(include_images=include_images):
             response.write(data)
-            yield from response.drain()
+            await response.drain()
 
-        yield from response.write_eof()
+        await response.write_eof()
 
     @Route.post(
         r"/projects/{project_id}/import",
@@ -391,7 +391,7 @@ class ProjectHandler:
             200: "Project imported",
             403: "Forbidden to import project"
         })
-    def import_project(request, response):
+    async def import_project(request, response):
 
         pm = ProjectManager.instance()
         project_id = request.match_info["project_id"]
@@ -403,7 +403,7 @@ class ProjectHandler:
         try:
             with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
                 while True:
-                    chunk = yield from request.content.read(1024)
+                    chunk = await request.content.read(1024)
                     if not chunk:
                         break
                     temp.write(chunk)

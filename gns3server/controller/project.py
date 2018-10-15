@@ -38,7 +38,6 @@ from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
 from ..utils.asyncio import wait_run_in_executor
-from ..utils.asyncio import asyncio_ensure_future
 from .export_project import export_project
 from .import_project import import_project
 
@@ -122,8 +121,7 @@ class Project:
             assert self._status != "closed"
             self.dump()
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    async def update(self, **kwargs):
         """
         Update the project
         :param kwargs: Project properties
@@ -141,7 +139,7 @@ class Project:
 
             # update on computes
             for compute in list(self._project_created_on_compute):
-                yield from compute.put(
+                await compute.put(
                     "/projects/{}".format(self._id), {
                         "variables": self.variables
                     }
@@ -462,8 +460,7 @@ class Project:
         return new_name
 
     @open_required
-    @asyncio.coroutine
-    def add_node_from_appliance(self, appliance_id, x=0, y=0, compute_id=None):
+    async def add_node_from_appliance(self, appliance_id, x=0, y=0, compute_id=None):
         """
         Create a node from an appliance
         """
@@ -481,12 +478,11 @@ class Project:
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)
         node_id = str(uuid.uuid4())
-        node = yield from self.add_node(compute, name, node_id, node_type=node_type, appliance_id=appliance_id, **template)
+        node = await self.add_node(compute, name, node_id, node_type=node_type, appliance_id=appliance_id, **template)
         return node
 
     @open_required
-    @asyncio.coroutine
-    def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
+    async def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
         """
         Create a node or return an existing node
 
@@ -515,10 +511,10 @@ class Project:
             if self._variables:
                 data["variables"] = self._variables
 
-            yield from compute.post("/projects", data=data)
+            await compute.post("/projects", data=data)
 
             self._project_created_on_compute.add(compute)
-        yield from node.create()
+        await node.create()
         self._nodes[node.id] = node
         self.controller.notification.project_emit("node.created", node.__json__())
         if dump:
@@ -526,8 +522,7 @@ class Project:
         return node
 
     @locking
-    @asyncio.coroutine
-    def __delete_node_links(self, node):
+    async def __delete_node_links(self, node):
         """
         Delete all link connected to this node.
 
@@ -536,16 +531,15 @@ class Project:
         """
         for link in list(self._links.values()):
             if node in link.nodes:
-                yield from self.delete_link(link.id, force_delete=True)
+                await self.delete_link(link.id, force_delete=True)
 
     @open_required
-    @asyncio.coroutine
-    def delete_node(self, node_id):
+    async def delete_node(self, node_id):
         node = self.get_node(node_id)
-        yield from self.__delete_node_links(node)
+        await self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
-        yield from node.destroy()
+        await node.destroy()
         self.dump()
         self.controller.notification.project_emit("node.deleted", node.__json__())
 
@@ -602,8 +596,7 @@ class Project:
         return self._drawings
 
     @open_required
-    @asyncio.coroutine
-    def add_drawing(self, drawing_id=None, dump=True, **kwargs):
+    async def add_drawing(self, drawing_id=None, dump=True, **kwargs):
         """
         Create an drawing or return an existing drawing
 
@@ -630,16 +623,14 @@ class Project:
             raise aiohttp.web.HTTPNotFound(text="Drawing ID {} doesn't exist".format(drawing_id))
 
     @open_required
-    @asyncio.coroutine
-    def delete_drawing(self, drawing_id):
+    async def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
         del self._drawings[drawing.id]
         self.dump()
         self.controller.notification.project_emit("drawing.deleted", drawing.__json__())
 
     @open_required
-    @asyncio.coroutine
-    def add_link(self, link_id=None, dump=True):
+    async def add_link(self, link_id=None, dump=True):
         """
         Create a link. By default the link is empty
 
@@ -654,12 +645,11 @@ class Project:
         return link
 
     @open_required
-    @asyncio.coroutine
-    def delete_link(self, link_id, force_delete=False):
+    async def delete_link(self, link_id, force_delete=False):
         link = self.get_link(link_id)
         del self._links[link.id]
         try:
-            yield from link.delete()
+            await link.delete()
         except Exception:
             if force_delete is False:
                 raise
@@ -703,8 +693,7 @@ class Project:
             raise aiohttp.web.HTTPNotFound(text="Snapshot ID {} doesn't exist".format(snapshot_id))
 
     @open_required
-    @asyncio.coroutine
-    def snapshot(self, name):
+    async def snapshot(self, name):
         """
         Snapshot the project
 
@@ -714,25 +703,23 @@ class Project:
         if name in [snap.name for snap in self._snapshots.values()]:
             raise aiohttp.web.HTTPConflict(text="The snapshot name {} already exists".format(name))
         snapshot = Snapshot(self, name=name)
-        yield from snapshot.create()
+        await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
         return snapshot
 
     @open_required
-    @asyncio.coroutine
-    def delete_snapshot(self, snapshot_id):
+    async def delete_snapshot(self, snapshot_id):
         snapshot = self.get_snapshot(snapshot_id)
         del self._snapshots[snapshot.id]
         os.remove(snapshot.path)
 
-    @asyncio.coroutine
-    def close(self, ignore_notification=False):
+    async def close(self, ignore_notification=False):
         if self._status == "closed":
             return
-        yield from self.stop_all()
+        await self.stop_all()
         for compute in list(self._project_created_on_compute):
             try:
-                yield from compute.post("/projects/{}/close".format(self._id), dont_connect=True)
+                await compute.post("/projects/{}/close".format(self._id), dont_connect=True)
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
@@ -771,30 +758,28 @@ class Project:
         except OSError as e:
             log.warning(str(e))
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
 
         if self._status != "opened":
             try:
-                yield from self.open()
+                await self.open()
             except aiohttp.web.HTTPConflict as e:
                 # ignore missing images or other conflicts when deleting a project
                 log.warning("Conflict while deleting project: {}".format(e.text))
-        yield from self.delete_on_computes()
-        yield from self.close()
+        await self.delete_on_computes()
+        await self.close()
         try:
             shutil.rmtree(self.path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can not delete project directory {}: {}".format(self.path, str(e)))
 
-    @asyncio.coroutine
-    def delete_on_computes(self):
+    async def delete_on_computes(self):
         """
         Delete the project on computes but not on controller
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                yield from compute.delete("/projects/{}".format(self._id))
+                await compute.delete("/projects/{}".format(self._id))
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
@@ -817,8 +802,7 @@ class Project:
         return os.path.join(self.path, self._filename)
 
     @locking
-    @asyncio.coroutine
-    def open(self):
+    async def open(self):
         """
         Load topology elements
         """
@@ -862,19 +846,19 @@ class Project:
 
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
-                yield from self.controller.add_compute(**compute)
+                await self.controller.add_compute(**compute)
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id", str(uuid.uuid4()))
-                yield from self.add_node(compute, name, node_id, dump=False, **node)
+                await self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
                 if 'link_id' not in link_data.keys():
                     # skip the link
                     continue
-                link = yield from self.add_link(link_id=link_data["link_id"])
+                link = await self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
-                    yield from link.update_filters(link_data["filters"])
+                    await link.update_filters(link_data["filters"])
                 for node_link in link_data.get("nodes", []):
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
@@ -884,19 +868,19 @@ class Project:
                     if port.link is not None:
                         log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
                         continue
-                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
+                    await link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:
                     # a link should have 2 attached nodes, this can happen with corrupted projects
-                    yield from self.delete_link(link.id, force_delete=True)
+                    await self.delete_link(link.id, force_delete=True)
             for drawing_data in topology.get("drawings", []):
-                yield from self.add_drawing(dump=False, **drawing_data)
+                await self.add_drawing(dump=False, **drawing_data)
 
             self.dump()
         # We catch all error to be able to rollback the .gns3 to the previous state
         except Exception as e:
             for compute in list(self._project_created_on_compute):
                 try:
-                    yield from compute.post("/projects/{}/close".format(self._id))
+                    await compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step
                 except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict, aiohttp.ServerDisconnectedError):
                     pass
@@ -922,15 +906,14 @@ class Project:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it
-            asyncio_ensure_future(self.start_all())
+            asyncio.ensure_future(self.start_all())
 
-    @asyncio.coroutine
-    def wait_loaded(self):
+    async def wait_loaded(self):
         """
         Wait until the project finish loading
         """
         while self._loading:
-            yield from asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
     def _create_duplicate_project_file(self, path, zipstream):
         """
@@ -941,8 +924,7 @@ class Project:
             for data in zipstream:
                 f.write(data)
 
-    @asyncio.coroutine
-    def duplicate(self, name=None, location=None):
+    async def duplicate(self, name=None, location=None):
         """
         Duplicate a project
 
@@ -956,22 +938,22 @@ class Project:
         # If the project was not open we open it temporary
         previous_status = self._status
         if self._status == "closed":
-            yield from self.open()
+            await self.open()
 
         self.dump()
         assert self._status != "closed"
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                zipstream = await export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
                 project_path = os.path.join(tmpdir, "project.gns3p")
-                yield from wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
+                await wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
                 with open(project_path, "rb") as f:
-                    project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+                    project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
         except (ValueError, OSError, UnicodeEncodeError) as e:
             raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":
-            yield from self.close()
+            await self.close()
 
         return project
 
@@ -999,38 +981,34 @@ class Project:
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
 
-    @asyncio.coroutine
-    def start_all(self):
+    async def start_all(self):
         """
         Start all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.start)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def stop_all(self):
+    async def stop_all(self):
         """
         Stop all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.stop)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def suspend_all(self):
+    async def suspend_all(self):
         """
         Suspend all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.suspend)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def duplicate_node(self, node, x, y, z):
+    async def duplicate_node(self, node, x, y, z):
         """
         Duplicate a node
 
@@ -1061,21 +1039,21 @@ class Project:
         data['y'] = y
         data['z'] = z
         new_node_uuid = str(uuid.uuid4())
-        new_node = yield from self.add_node(
+        new_node = await self.add_node(
             node.compute,
             node.name,
             new_node_uuid,
             node_type=node_type,
             **data)
         try:
-            yield from node.post("/duplicate", timeout=None, data={
+            await node.post("/duplicate", timeout=None, data={
                 "destination_node_id": new_node_uuid
             })
         except aiohttp.web.HTTPNotFound as e:
-            yield from self.delete_node(new_node_uuid)
+            await self.delete_node(new_node_uuid)
             raise aiohttp.web.HTTPConflict(text="This node type cannot be duplicated")
         except aiohttp.web.HTTPConflict as e:
-            yield from self.delete_node(new_node_uuid)
+            await self.delete_node(new_node_uuid)
             raise e
         return new_node
 

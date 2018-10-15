@@ -30,8 +30,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-@asyncio.coroutine
-def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
+async def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
     """
     Export a project to a zip file.
 
@@ -61,7 +60,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
-            yield from _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir)
+            await _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir)
 
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True):
@@ -86,15 +85,15 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     downloaded_files = set()
     for compute in project.computes:
         if compute.id != "local":
-            compute_files = yield from compute.list_files(project)
+            compute_files = await compute.list_files(project)
             for compute_file in compute_files:
                 if _is_exportable(compute_file["path"]):
                     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
                     f = open(fd, "wb", closefd=True)
-                    response = yield from compute.download_file(project, compute_file["path"])
+                    response = await compute.download_file(project, compute_file["path"])
                     while True:
                         try:
-                            data = yield from response.content.read(1024)
+                            data = await response.content.read(1024)
                         except asyncio.TimeoutError:
                             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute server {}:{}".format(compute_file["path"], compute.host, compute.port))
                         if not data:
@@ -154,8 +153,7 @@ def _is_exportable(path):
     return True
 
 
-@asyncio.coroutine
-def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir):
+async def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir):
     """
     Patch a project file (.gns3) to export a project.
     The .gns3 file is renamed to project.gns3
@@ -219,7 +217,7 @@ def _patch_project_file(project, path, zstream, include_images, keep_compute_id,
         for i in images if i['compute_id'] != 'local'])
 
     for compute_id, image_type, image in remote_images:
-        yield from _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
+        await _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
 
     zstream.writestr("project.gns3", json.dumps(topology).encode())
     return images
@@ -253,8 +251,7 @@ def _export_local_image(image, zstream):
             return
 
 
-@asyncio.coroutine
-def _export_remote_images(project, compute_id, image_type, image, project_zipfile, temporary_dir):
+async def _export_remote_images(project, compute_id, image_type, image, project_zipfile, temporary_dir):
     """
     Export specific image from remote compute.
     """
@@ -268,14 +265,14 @@ def _export_remote_images(project, compute_id, image_type, image, project_zipfil
 
     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
     f = open(fd, "wb", closefd=True)
-    response = yield from compute.download_image(image_type, image)
+    response = await compute.download_image(image_type, image)
 
     if response.status != 200:
         raise aiohttp.web.HTTPConflict(text="Cannot export image from '{}' compute. Compute returned status code {}.".format(compute_id, response.status))
 
     while True:
         try:
-            data = yield from response.content.read(1024)
+            data = await response.content.read(1024)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute server {}:{}".format(image, compute.host, compute.port))
         if not data:

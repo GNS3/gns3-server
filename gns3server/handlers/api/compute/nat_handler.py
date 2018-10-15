@@ -48,10 +48,10 @@ class NatHandler:
         description="Create a new nat instance",
         input=NAT_CREATE_SCHEMA,
         output=NAT_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         builtin_manager = Builtin.instance()
-        node = yield from builtin_manager.create_node(request.json.pop("name"),
+        node = await builtin_manager.create_node(request.json.pop("name"),
                                                       request.match_info["project_id"],
                                                       request.json.get("node_id"),
                                                       node_type="nat",
@@ -115,10 +115,10 @@ class NatHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a nat instance")
-    def delete(request, response):
+    async def delete(request, response):
 
         builtin_manager = Builtin.instance()
-        yield from builtin_manager.delete_node(request.match_info["node_id"])
+        await builtin_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -188,13 +188,13 @@ class NatHandler:
         description="Add a NIO to a nat instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = builtin_manager.create_nio(request.json)
         port_number = int(request.match_info["port_number"])
-        yield from node.add_nio(nio, port_number)
+        await node.add_nio(nio, port_number)
         response.set_status(201)
         response.json(nio)
 
@@ -214,14 +214,14 @@ class NatHandler:
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
         description="Update a NIO from a NAT instance")
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = node.nios[int(request.match_info["adapter_number"])]
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from node.update_nio(int(request.match_info["port_number"]), nio)
+        await node.update_nio(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -239,12 +239,12 @@ class NatHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a nat instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from node.remove_nio(port_number)
+        await node.remove_nio(port_number)
         response.set_status(204)
 
     @Route.post(
@@ -262,13 +262,13 @@ class NatHandler:
         },
         description="Start a packet capture on a nat instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
+        await node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -285,10 +285,10 @@ class NatHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a nat instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from node.stop_capture(port_number)
+        await node.stop_capture(port_number)
         response.set_status(204)

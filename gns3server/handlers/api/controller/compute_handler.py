@@ -41,9 +41,9 @@ class ComputeHandler:
         },
         input=COMPUTE_CREATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
-        compute = yield from Controller.instance().add_compute(**request.json)
+        compute = await Controller.instance().add_compute(**request.json)
         response.set_status(201)
         response.json(compute)
 
@@ -68,14 +68,14 @@ class ComputeHandler:
         },
         input=COMPUTE_UPDATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
 
         # Ignore these because we only use them when creating a node
         request.json.pop("compute_id", None)
-        yield from compute.update(**request.json)
+        await compute.update(**request.json)
         response.set_status(200)
         response.json(compute)
 
@@ -89,10 +89,10 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Return the list of images available on compute and controller for this emulator type")
-    def images(request, response):
+    async def images(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.images(request.match_info["emulator"])
+        res = await compute.images(request.match_info["emulator"])
         response.json(res)
 
     @Route.get(
@@ -133,10 +133,10 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def get_forward(request, response):
+    async def get_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
+        res = await compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
         response.json(res)
 
     @Route.post(
@@ -150,10 +150,10 @@ class ComputeHandler:
         },
         raw=True,
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def post_forward(request, response):
+    async def post_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        res = await compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
         response.json(res)
 
     @Route.put(
@@ -167,10 +167,10 @@ class ComputeHandler:
         },
         raw=True,
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def put_forward(request, response):
+    async def put_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.forward("PUT", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        res = await compute.forward("PUT", request.match_info["emulator"], request.match_info["action"], data=request.content)
         response.json(res)
 
     @Route.get(
@@ -197,9 +197,9 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a compute instance")
-    def delete(request, response):
+    async def delete(request, response):
         controller = Controller.instance()
-        yield from controller.delete_compute(request.match_info["compute_id"])
+        await controller.delete_compute(request.match_info["compute_id"])
         response.set_status(204)
 
     @Route.post(
@@ -211,9 +211,9 @@ class ComputeHandler:
             200: "Idle PC computed",
         },
         description="Compute IDLE PC value")
-    def autoidlepc(request, response):
+    async def autoidlepc(request, response):
         controller = Controller.instance()
-        res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
+        res = await controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
         response.json(res)
 
     @Route.get(
@@ -226,8 +226,8 @@ class ComputeHandler:
         },
         description="Get ports used by a compute",
         output=COMPUTE_PORTS_OBJECT_SCHEMA)
-    def ports(request, response):
+    async def ports(request, response):
         controller = Controller.instance()
-        res = yield from controller.compute_ports(request.match_info["compute_id"])
+        res = await controller.compute_ports(request.match_info["compute_id"])
         response.json(res)
 

@@ -95,12 +95,11 @@ class VMwareVM(BaseNode):
         return self._vmnets
 
     @locking
-    @asyncio.coroutine
-    def _control_vm(self, subcommand, *additional_args):
+    async def _control_vm(self, subcommand, *additional_args):
 
         args = [self._vmx_path]
         args.extend(additional_args)
-        result = yield from self.manager.execute(subcommand, args)
+        result = await self.manager.execute(subcommand, args)
         log.debug("Control VM '{}' result: {}".format(subcommand, result))
         return result
 
@@ -124,16 +123,14 @@ class VMwareVM(BaseNode):
         except OSError as e:
             raise VMwareError('Could not write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-    @asyncio.coroutine
-    def is_running(self):
+    async def is_running(self):
 
-        result = yield from self.manager.execute("list", [])
+        result = await self.manager.execute("list", [])
         if self._vmx_path in result:
             return True
         return False
 
-    @asyncio.coroutine
-    def _check_duplicate_linked_clone(self):
+    async def _check_duplicate_linked_clone(self):
         """
         Without linked clone two VM using the same image can't run
         at the same time.
@@ -157,17 +154,16 @@ class VMwareVM(BaseNode):
             if not found:
                 return
             trial += 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Creates this VM and handle linked clones.
         """
         if not self.linked_clone:
-            yield from self._check_duplicate_linked_clone()
+            await self._check_duplicate_linked_clone()
 
-        yield from self.manager.check_vmrun_version()
+        await self.manager.check_vmrun_version()
         if self.linked_clone and not os.path.exists(os.path.join(self.working_dir, os.path.basename(self._vmx_path))):
             if self.manager.host_type == "player":
                 raise VMwareError("Linked clones are not supported by VMware Player")
@@ -187,11 +183,11 @@ class VMwareVM(BaseNode):
                     break
             if not gns3_snapshot_exists:
                 log.info("Creating snapshot '{}'".format(base_snapshot_name))
-                yield from self._control_vm("snapshot", base_snapshot_name)
+                await self._control_vm("snapshot", base_snapshot_name)
 
             # create the linked clone based on the base snapshot
             new_vmx_path = os.path.join(self.working_dir, self.name + ".vmx")
-            yield from self._control_vm("clone",
+            await self._control_vm("clone",
                                         new_vmx_path,
                                         "linked",
                                         "-snapshot={}".format(base_snapshot_name),
@@ -323,8 +319,7 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         return vnet
 
-    @asyncio.coroutine
-    def _add_ubridge_connection(self, nio, adapter_number):
+    async def _add_ubridge_connection(self, nio, adapter_number):
         """
         Creates a connection in uBridge.
 
@@ -333,30 +328,29 @@ class VMwareVM(BaseNode):
         """
 
         vnet = self._get_vnet(adapter_number)
-        yield from self._ubridge_send("bridge create {name}".format(name=vnet))
+        await self._ubridge_send("bridge create {name}".format(name=vnet))
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
 
         if sys.platform.startswith("darwin"):
             # special case on OSX, we cannot bind VMnet interfaces using the libpcap
-            yield from self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
+            await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
             block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
-            yield from self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
+            await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):
-            yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
+            await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=vnet,
                                                                                                      lport=nio.lport,
                                                                                                      rhost=nio.rhost,
                                                                                                      rport=nio.rport))
 
         if nio.capturing:
-            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet, pcap_file=nio.pcap_output_file))
+            await self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=vnet, pcap_file=nio.pcap_output_file))
 
-        yield from self._ubridge_send('bridge start {name}'.format(name=vnet))
-        yield from self._ubridge_apply_filters(vnet, nio.filters)
+        await self._ubridge_send('bridge start {name}'.format(name=vnet))
+        await self._ubridge_apply_filters(vnet, nio.filters)
 
-    @asyncio.coroutine
-    def _update_ubridge_connection(self, adapter_number, nio):
+    async def _update_ubridge_connection(self, adapter_number, nio):
         """
         Update a connection in uBridge.
 
@@ -367,10 +361,9 @@ class VMwareVM(BaseNode):
             bridge_name = self._get_vnet(adapter_number)
         except VMwareError:
             return  # vnet not yet available
-        yield from self._ubridge_apply_filters(bridge_name, nio.filters)
+        await self._ubridge_apply_filters(bridge_name, nio.filters)
 
-    @asyncio.coroutine
-    def _delete_ubridge_connection(self, adapter_number):
+    async def _delete_ubridge_connection(self, adapter_number):
         """
         Deletes a connection in uBridge.
 
@@ -380,10 +373,9 @@ class VMwareVM(BaseNode):
         vnet = "ethernet{}.vnet".format(adapter_number)
         if vnet not in self._vmx_pairs:
             raise VMwareError("vnet {} not in VMX file".format(vnet))
-        yield from self._ubridge_send("bridge delete {name}".format(name=vnet))
+        await self._ubridge_send("bridge delete {name}".format(name=vnet))
 
-    @asyncio.coroutine
-    def _start_ubridge_capture(self, adapter_number, output_file):
+    async def _start_ubridge_capture(self, adapter_number, output_file):
         """
         Start a packet capture in uBridge.
 
@@ -396,11 +388,10 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot start the packet capture: uBridge is not running")
-        yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
+        await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=vnet,
                                                                                            output_file=output_file))
 
-    @asyncio.coroutine
-    def _stop_ubridge_capture(self, adapter_number):
+    async def _stop_ubridge_capture(self, adapter_number):
         """
         Stop a packet capture in uBridge.
 
@@ -412,7 +403,7 @@ class VMwareVM(BaseNode):
             raise VMwareError("vnet {} not in VMX file".format(vnet))
         if not self._ubridge_hypervisor:
             raise VMwareError("Cannot stop the packet capture: uBridge is not running")
-        yield from self._ubridge_send("bridge stop_capture {name}".format(name=vnet))
+        await self._ubridge_send("bridge stop_capture {name}".format(name=vnet))
 
     def check_hw_virtualization(self):
         """
@@ -426,8 +417,7 @@ class VMwareVM(BaseNode):
             return True
         return False
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts this VMware VM.
         """
@@ -435,14 +425,14 @@ class VMwareVM(BaseNode):
         if self.status == "started":
             return
 
-        if (yield from self.is_running()):
+        if (await self.is_running()):
             raise VMwareError("The VM is already running in VMware")
 
         ubridge_path = self.ubridge_path
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        yield from self._start_ubridge()
+        await self._start_ubridge()
         self._read_vmx_file()
         # check if there is enough RAM to run
         if "memsize" in self._vmx_pairs:
@@ -452,20 +442,20 @@ class VMwareVM(BaseNode):
         self._write_vmx_file()
 
         if self._headless:
-            yield from self._control_vm("start", "nogui")
+            await self._control_vm("start", "nogui")
         else:
-            yield from self._control_vm("start")
+            await self._control_vm("start")
 
         try:
             if self._ubridge_hypervisor:
                 for adapter_number in range(0, self._adapters):
                     nio = self._ethernet_adapters[adapter_number].get_nio(0)
                     if nio:
-                        yield from self._add_ubridge_connection(nio, adapter_number)
+                        await self._add_ubridge_connection(nio, adapter_number)
 
-            yield from self._start_console()
+            await self._start_console()
         except VMwareError:
-            yield from self.stop()
+            await self.stop()
             raise
 
         if self._get_vmx_setting("vhv.enable", "TRUE"):
@@ -475,25 +465,24 @@ class VMwareVM(BaseNode):
         self.status = "started"
         log.info("VMware VM '{name}' [{id}] started".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops this VMware VM.
         """
 
         self._hw_virtualization = False
-        yield from self._stop_remote_console()
-        yield from self._stop_ubridge()
+        await self._stop_remote_console()
+        await self._stop_ubridge()
 
         try:
-            if (yield from self.is_running()):
+            if (await self.is_running()):
                 if self.on_close == "save_vm_state":
-                    yield from self._control_vm("suspend")
+                    await self._control_vm("suspend")
                 elif self.on_close == "shutdown_signal":
                     # use ACPI to shutdown the VM
-                    yield from self._control_vm("stop", "soft")
+                    await self._control_vm("stop", "soft")
                 else:
-                    yield from self._control_vm("stop")
+                    await self._control_vm("stop")
         finally:
             self._started = False
             self.status = "stopped"
@@ -519,49 +508,45 @@ class VMwareVM(BaseNode):
                     self._vmx_pairs["ethernet{}.startconnected".format(adapter_number)] = "TRUE"
             self._write_vmx_file()
 
-        yield from super().stop()
+        await super().stop()
         log.info("VMware VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspends this VMware VM.
         """
 
         if self.manager.host_type != "ws":
             raise VMwareError("Pausing a VM is only supported by VMware Workstation")
-        yield from self._control_vm("pause")
+        await self._control_vm("pause")
         self.status = "suspended"
         log.info("VMware VM '{name}' [{id}] paused".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def resume(self):
+    async def resume(self):
         """
         Resumes this VMware VM.
         """
 
         if self.manager.host_type != "ws":
             raise VMwareError("Unpausing a VM is only supported by VMware Workstation")
-        yield from self._control_vm("unpause")
+        await self._control_vm("unpause")
         self.status = "started"
         log.info("VMware VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Reloads this VMware VM.
         """
 
-        yield from self._control_vm("reset")
+        await self._control_vm("reset")
         log.info("VMware VM '{name}' [{id}] reloaded".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes this VMware VM.
         """
 
-        if not (yield from super().close()):
+        if not (await super().close()):
             return False
 
         for adapter in self._ethernet_adapters.values():
@@ -571,12 +556,12 @@ class VMwareVM(BaseNode):
                         self.manager.port_manager.release_udp_port(nio.lport, self._project)
         try:
             self.on_close = "power_off"
-            yield from self.stop()
+            await self.stop()
         except VMwareError:
             pass
 
         if self.linked_clone:
-            yield from self.manager.remove_from_vmware_inventory(self._vmx_path)
+            await self.manager.remove_from_vmware_inventory(self._vmx_path)
 
     @property
     def headless(self):
@@ -722,8 +707,7 @@ class VMwareVM(BaseNode):
             log.info("VMware VM '{name}' [{id}] is not allowed to use any adapter".format(name=self.name, id=self.id))
         self._use_any_adapter = use_any_adapter
 
-    @asyncio.coroutine
-    def adapter_add_nio_binding(self, adapter_number, nio):
+    async def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
 
@@ -743,7 +727,7 @@ class VMwareVM(BaseNode):
             # check for the connection type
             connection_type = "ethernet{}.connectiontype".format(adapter_number)
             if not self._use_any_adapter and connection_type in self._vmx_pairs and self._vmx_pairs[connection_type] in ("nat", "bridged", "hostonly"):
-                if (yield from self.is_running()):
+                if (await self.is_running()):
                     raise VMwareError("Attachment '{attachment}' is configured on network adapter {adapter_number}. "
                                       "Please stop VMware VM '{name}' to link to this adapter and allow GNS3 to change the attachment type.".format(attachment=self._vmx_pairs[connection_type],
                                                                                                                                                     adapter_number=adapter_number,
@@ -757,15 +741,14 @@ class VMwareVM(BaseNode):
 
         adapter.add_nio(0, nio)
         if self._started and self._ubridge_hypervisor:
-            yield from self._add_ubridge_connection(nio, adapter_number)
+            await self._add_ubridge_connection(nio, adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
                                                                                              id=self.id,
                                                                                              nio=nio,
                                                                                              adapter_number=adapter_number))
 
-    @asyncio.coroutine
-    def adapter_update_nio_binding(self, adapter_number, nio):
+    async def adapter_update_nio_binding(self, adapter_number, nio):
         """
         Update a port NIO binding.
 
@@ -775,15 +758,14 @@ class VMwareVM(BaseNode):
 
         if self._ubridge_hypervisor:
             try:
-                yield from self._update_ubridge_connection(adapter_number, nio)
+                await self._update_ubridge_connection(adapter_number, nio)
             except IndexError:
                 raise VMwareError('Adapter {adapter_number} does not exist on VMware VM "{name}"'.format(
                     name=self._name,
                     adapter_number=adapter_number
                 ))
 
-    @asyncio.coroutine
-    def adapter_remove_nio_binding(self, adapter_number):
+    async def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes an adapter NIO binding.
 
@@ -803,7 +785,7 @@ class VMwareVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
         if self._started and self._ubridge_hypervisor:
-            yield from self._delete_ubridge_connection(adapter_number)
+            await self._delete_ubridge_connection(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
                                                                                                  id=self.id,
@@ -842,8 +824,7 @@ class VMwareVM(BaseNode):
                        "serial0.startconnected": "TRUE"}
         self._vmx_pairs.update(serial_port)
 
-    @asyncio.coroutine
-    def _start_console(self):
+    async def _start_console(self):
         """
         Starts remote console support for this VM.
         """
@@ -851,7 +832,7 @@ class VMwareVM(BaseNode):
         if self.console and self.console_type == "telnet":
             pipe_name = self._get_pipe_name()
             try:
-                self._remote_pipe = yield from asyncio_open_serial(self._get_pipe_name())
+                self._remote_pipe = await asyncio_open_serial(self._get_pipe_name())
             except OSError as e:
                 raise VMwareError("Could not open serial pipe '{}': {}".format(pipe_name, e))
             server = AsyncioTelnetServer(reader=self._remote_pipe,
@@ -859,18 +840,17 @@ class VMwareVM(BaseNode):
                                          binary=True,
                                          echo=True)
             try:
-                self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+                self._telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
 
-    @asyncio.coroutine
-    def _stop_remote_console(self):
+    async def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
         if self._telnet_server:
             self._telnet_server.close()
-            yield from self._telnet_server.wait_closed()
+            await self._telnet_server.wait_closed()
             self._remote_pipe.close()
             self._telnet_server = None
 
@@ -887,8 +867,7 @@ class VMwareVM(BaseNode):
 
         super(VMwareVM, VMwareVM).console_type.__set__(self, new_console_type)
 
-    @asyncio.coroutine
-    def start_capture(self, adapter_number, output_file):
+    async def start_capture(self, adapter_number, output_file):
         """
         Starts a packet capture.
 
@@ -913,13 +892,13 @@ class VMwareVM(BaseNode):
         nio.startPacketCapture(output_file)
 
         if self._started:
-            yield from self._start_ubridge_capture(adapter_number, output_file)
+            await self._start_ubridge_capture(adapter_number, output_file)
 
         log.info("VMware VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                          id=self.id,
                                                                                                          adapter_number=adapter_number))
 
-    def stop_capture(self, adapter_number):
+    async def stop_capture(self, adapter_number):
         """
         Stops a packet capture.
 
@@ -940,7 +919,7 @@ class VMwareVM(BaseNode):
         nio.stopPacketCapture()
 
         if self._started:
-            yield from self._stop_ubridge_capture(adapter_number)
+            await self._stop_ubridge_capture(adapter_number)
 
         log.info("VMware VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                          id=self.id,

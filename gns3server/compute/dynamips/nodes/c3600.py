@@ -66,12 +66,11 @@ class C3600(Router):
         router_info.update(c3600_router_info)
         return router_info
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from Router.create(self)
+        await Router.create(self)
         if self._chassis != "3640":
-            yield from self.set_chassis(self._chassis)
+            await self.set_chassis(self._chassis)
         self._setup_chassis()
 
     def _setup_chassis(self):
@@ -98,15 +97,14 @@ class C3600(Router):
 
         return self._chassis
 
-    @asyncio.coroutine
-    def set_chassis(self, chassis):
+    async def set_chassis(self, chassis):
         """
         Sets the chassis.
 
         :param: chassis string: 3620, 3640 or 3660
         """
 
-        yield from self._hypervisor.send('c3600 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
+        await self._hypervisor.send('c3600 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
 
         log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
                                                                            id=self._id,
@@ -125,15 +123,14 @@ class C3600(Router):
 
         return self._iomem
 
-    @asyncio.coroutine
-    def set_iomem(self, iomem):
+    async def set_iomem(self, iomem):
         """
         Set I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        yield from self._hypervisor.send('c3600 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send('c3600 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

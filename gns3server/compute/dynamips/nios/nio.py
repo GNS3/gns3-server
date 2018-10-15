@@ -48,53 +48,48 @@ class NIO:
         self._output_filter_options = None  # no output filter options by default
         self._dynamips_direction = {"in": 0, "out": 1, "both": 2}
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         Returns all NIOs.
 
         :returns: NIO list
         """
 
-        nio_list = yield from self._hypervisor.send("nio list")
+        nio_list = await self._hypervisor.send("nio list")
         return nio_list
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Deletes this NIO.
         """
 
         if self._input_filter or self._output_filter:
-            yield from self.unbind_filter("both")
-        yield from self._hypervisor.send("nio delete {}".format(self._name))
+            await self.unbind_filter("both")
+        await self._hypervisor.send("nio delete {}".format(self._name))
         log.info("NIO {name} has been deleted".format(name=self._name))
 
-    @asyncio.coroutine
-    def rename(self, new_name):
+    async def rename(self, new_name):
         """
         Renames this NIO
 
         :param new_name: new NIO name
         """
 
-        yield from self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name, new_name=new_name))
+        await self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name, new_name=new_name))
 
         log.info("NIO {name} renamed to {new_name}".format(name=self._name, new_name=new_name))
         self._name = new_name
 
-    @asyncio.coroutine
-    def debug(self, debug):
+    async def debug(self, debug):
         """
         Enables/Disables debugging for this NIO.
 
         :param debug: debug value (0 = disable, enable = 1)
         """
 
-        yield from self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name, debug=debug))
+        await self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name, debug=debug))
 
-    @asyncio.coroutine
-    def bind_filter(self, direction, filter_name):
+    async def bind_filter(self, direction, filter_name):
         """
         Adds a packet filter to this NIO.
         Filter "freq_drop" drops packets.
@@ -108,7 +103,7 @@ class NIO:
             raise DynamipsError("Unknown direction {} to bind filter {}:".format(direction, filter_name))
         dynamips_direction = self._dynamips_direction[direction]
 
-        yield from self._hypervisor.send("nio bind_filter {name} {direction} {filter}".format(name=self._name,
+        await self._hypervisor.send("nio bind_filter {name} {direction} {filter}".format(name=self._name,
                                                                                               direction=dynamips_direction,
                                                                                               filter=filter_name))
 
@@ -120,8 +115,7 @@ class NIO:
             self._input_filter = filter_name
             self._output_filter = filter_name
 
-    @asyncio.coroutine
-    def unbind_filter(self, direction):
+    async def unbind_filter(self, direction):
         """
         Removes packet filter for this NIO.
 
@@ -132,7 +126,7 @@ class NIO:
             raise DynamipsError("Unknown direction {} to unbind filter:".format(direction))
         dynamips_direction = self._dynamips_direction[direction]
 
-        yield from self._hypervisor.send("nio unbind_filter {name} {direction}".format(name=self._name,
+        await self._hypervisor.send("nio unbind_filter {name} {direction}".format(name=self._name,
                                                                                        direction=dynamips_direction))
 
         if direction == "in":
@@ -143,8 +137,7 @@ class NIO:
             self._input_filter = None
             self._output_filter = None
 
-    @asyncio.coroutine
-    def setup_filter(self, direction, options):
+    async def setup_filter(self, direction, options):
         """
         Setups a packet filter bound with this NIO.
 
@@ -166,7 +159,7 @@ class NIO:
             raise DynamipsError("Unknown direction {} to setup filter:".format(direction))
         dynamips_direction = self._dynamips_direction[direction]
 
-        yield from self._hypervisor.send("nio setup_filter {name} {direction} {options}".format(name=self._name,
+        await self._hypervisor.send("nio setup_filter {name} {direction} {options}".format(name=self._name,
                                                                                                 direction=dynamips_direction,
                                                                                                 options=options))
 
@@ -198,24 +191,22 @@ class NIO:
 
         return self._output_filter, self._output_filter_options
 
-    @asyncio.coroutine
-    def get_stats(self):
+    async def get_stats(self):
         """
         Gets statistics for this NIO.
 
         :returns: NIO statistics (string with packets in, packets out, bytes in, bytes out)
         """
 
-        stats = yield from self._hypervisor.send("nio get_stats {}".format(self._name))
+        stats = await self._hypervisor.send("nio get_stats {}".format(self._name))
         return stats[0]
 
-    @asyncio.coroutine
-    def reset_stats(self):
+    async def reset_stats(self):
         """
         Resets statistics for this NIO.
         """
 
-        yield from self._hypervisor.send("nio reset_stats {}".format(self._name))
+        await self._hypervisor.send("nio reset_stats {}".format(self._name))
 
     @property
     def bandwidth(self):
@@ -227,15 +218,14 @@ class NIO:
 
         return self._bandwidth
 
-    @asyncio.coroutine
-    def set_bandwidth(self, bandwidth):
+    async def set_bandwidth(self, bandwidth):
         """
         Sets bandwidth constraint.
 
         :param bandwidth: bandwidth integer value (in Kb/s)
         """
 
-        yield from self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name, bandwidth=bandwidth))
+        await self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name, bandwidth=bandwidth))
         self._bandwidth = bandwidth
 
     @property

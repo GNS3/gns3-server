@@ -22,8 +22,6 @@ import html
 import asyncio
 import aiohttp
 
-from gns3server.utils.asyncio import asyncio_ensure_future
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -151,8 +149,7 @@ class Link:
             return {"frequency_drop": [-1]}
         return self._filters
 
-    @asyncio.coroutine
-    def update_filters(self, filters):
+    async def update_filters(self, filters):
         """
         Modify the filters list.
 
@@ -173,15 +170,14 @@ class Link:
         if new_filters != self.filters:
             self._filters = new_filters
             if self._created:
-                yield from self.update()
+                await self.update()
                 self._project.controller.notification.project_emit("link.updated", self.__json__())
                 self._project.dump()
 
-    @asyncio.coroutine
-    def update_suspend(self, value):
+    async def update_suspend(self, value):
         if value != self._suspended:
             self._suspended = value
-            yield from self.update()
+            await self.update()
             self._project.controller.notification.project_emit("link.updated", self.__json__())
             self._project.dump()
 
@@ -192,8 +188,7 @@ class Link:
         """
         return self._created
 
-    @asyncio.coroutine
-    def add_node(self, node, adapter_number, port_number, label=None, dump=True):
+    async def add_node(self, node, adapter_number, port_number, label=None, dump=True):
         """
         Add a node to the link
 
@@ -241,7 +236,7 @@ class Link:
         })
 
         if len(self._nodes) == 2:
-            yield from self.create()
+            await self.create()
             for n in self._nodes:
                 n["node"].add_link(self)
                 n["port"].link = self
@@ -251,8 +246,7 @@ class Link:
         if dump:
             self._project.dump()
 
-    @asyncio.coroutine
-    def update_nodes(self, nodes):
+    async def update_nodes(self, nodes):
         for node_data in nodes:
             node = self._project.get_node(node_data["node_id"])
             for port in self._nodes:
@@ -263,23 +257,20 @@ class Link:
         self._project.controller.notification.project_emit("link.updated", self.__json__())
         self._project.dump()
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Create the link
         """
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def update(self):
+    async def update(self):
         """
         Update a link
         """
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Delete the link
         """
@@ -289,8 +280,7 @@ class Link:
                 n["port"].link = None
                 n["node"].remove_link(self)
 
-    @asyncio.coroutine
-    def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """
         Start capture on the link
 
@@ -299,11 +289,10 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._streaming_pcap = asyncio_ensure_future(self._start_streaming_pcap())
+        self._streaming_pcap = asyncio.ensure_future(self._start_streaming_pcap())
         self._project.controller.notification.project_emit("link.updated", self.__json__())
 
-    @asyncio.coroutine
-    def _start_streaming_pcap(self):
+    async def _start_streaming_pcap(self):
         """
         Dump a pcap file on disk
         """
@@ -315,7 +304,7 @@ class Link:
                 raise aiohttp.web.HTTPConflict(text="Could not delete old capture file '{}': {}".format(self.capture_file_path, e))
 
         try:
-            stream_content = yield from self.read_pcap_from_source()
+            stream_content = await self.read_pcap_from_source()
         except aiohttp.web.HTTPException as e:
             error_msg = "Could not stream PCAP file: error {}: {}".format(e.status, e.text)
             log.error(error_msg)
@@ -328,7 +317,7 @@ class Link:
                 with open(self.capture_file_path, "wb") as f:
                     while self._capturing:
                         # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
-                        data = yield from stream.read(1)
+                        data = await stream.read(1)
                         if data:
                             f.write(data)
                             # Flush to disk otherwise the live is not really live
@@ -338,8 +327,7 @@ class Link:
             except OSError as e:
                 raise aiohttp.web.HTTPConflict(text="Could not write capture file '{}': {}".format(self.capture_file_path, e))
 
-    @asyncio.coroutine
-    def stop_capture(self):
+    async def stop_capture(self):
         """
         Stop capture on the link
         """
@@ -347,16 +335,14 @@ class Link:
         self._capturing = False
         self._project.controller.notification.project_emit("link.updated", self.__json__())
 
-    @asyncio.coroutine
-    def _read_pcap_from_source(self):
+    async def _read_pcap_from_source(self):
         """
         Return a FileStream of the Pcap from the compute server
         """
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def node_updated(self, node):
+    async def node_updated(self, node):
         """
         Called when a node member of the link is updated
         """

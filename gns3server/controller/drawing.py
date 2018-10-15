@@ -165,8 +165,7 @@ class Drawing:
     def rotation(self, val):
         self._rotation = val
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    async def update(self, **kwargs):
         """
         Update the drawing
 

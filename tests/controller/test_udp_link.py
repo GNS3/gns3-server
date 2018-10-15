@@ -41,8 +41,7 @@ def test_create(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -54,8 +53,7 @@ def test_create(async_run, project):
     async_run(link.add_node(node1, 0, 4))
     async_run(link.update_filters({"latency": [10]}))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -64,8 +62,7 @@ def test_create(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -107,8 +104,7 @@ def test_create_one_side_failure(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -119,8 +115,7 @@ def test_create_one_side_failure(async_run, project):
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -129,8 +124,7 @@ def test_create_one_side_failure(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -322,8 +316,7 @@ def test_update(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -335,8 +328,7 @@ def test_update(async_run, project):
     async_run(link.add_node(node1, 0, 4))
     async_run(link.update_filters({"latency": [10]}))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -345,8 +337,7 @@ def test_update(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -402,8 +393,7 @@ def test_update_suspend(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -416,8 +406,7 @@ def test_update_suspend(async_run, project):
     async_run(link.update_filters({"latency": [10]}))
     async_run(link.update_suspend(True))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -426,8 +415,7 @@ def test_update_suspend(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """

@@ -43,24 +43,21 @@ class VMwareGNS3VM(BaseGNS3VM):
     def vmx_path(self):
         return self._vmx_path
 
-    @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):
+    async def _execute(self, subcommand, args, timeout=60, log_level=logging.INFO):
 
         try:
-            result = yield from self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
+            result = await self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
             return (''.join(result))
         except VMwareError as e:
             raise GNS3VMError("Error while executing VMware command: {}".format(e))
 
-    @asyncio.coroutine
-    def _is_running(self):
-        result = yield from self._vmware_manager.execute("list", [])
+    async def _is_running(self):
+        result = await self._vmware_manager.execute("list", [])
         if self._vmx_path in result:
             return True
         return False
 
-    @asyncio.coroutine
-    def _set_vcpus_ram(self, vcpus, ram):
+    async def _set_vcpus_ram(self, vcpus, ram):
         """
         Set the number of vCPU cores and amount of RAM for the GNS3 VM.
 
@@ -85,8 +82,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         except OSError as e:
             raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-    @asyncio.coroutine
-    def _set_extra_options(self):
+    async def _set_extra_options(self):
         try:
             """
             Due to bug/change in VMWare 14 we're not able to pass Hardware Virtualization in GNS3VM.
@@ -109,23 +105,21 @@ class VMwareGNS3VM(BaseGNS3VM):
         except OSError as e:
             raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         List all VMware VMs
         """
         try:
-            return (yield from self._vmware_manager.list_vms())
+            return (await self._vmware_manager.list_vms())
         except VMwareError as e:
             raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the GNS3 VM.
         """
 
-        vms = yield from self.list()
+        vms = await self.list()
         for vm in vms:
             if vm["vmname"] == self.vmname:
                 self._vmx_path = vm["vmx_path"]
@@ -138,25 +132,25 @@ class VMwareGNS3VM(BaseGNS3VM):
             raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
 
         # check if the VMware guest tools are installed
-        vmware_tools_state = yield from self._execute("checkToolsState", [self._vmx_path])
+        vmware_tools_state = await self._execute("checkToolsState", [self._vmx_path])
         if vmware_tools_state not in ("installed", "running"):
             raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
 
         try:
-            running = yield from self._is_running()
+            running = await self._is_running()
         except VMwareError as e:
             raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
         if not running:
             log.info("Update GNS3 VM settings")
             # set the number of vCPUs and amount of RAM
-            yield from self._set_vcpus_ram(self.vcpus, self.ram)
-            yield from self._set_extra_options()
+            await self._set_vcpus_ram(self.vcpus, self.ram)
+            await self._set_extra_options()
 
             # start the VM
             args = [self._vmx_path]
             if self._headless:
                 args.extend(["nogui"])
-            yield from self._execute("start", args)
+            await self._execute("start", args)
             log.info("GNS3 VM has been started")
 
         # get the guest IP address (first adapter only)
@@ -164,7 +158,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         guest_ip_address = ""
         log.info("Waiting for GNS3 VM IP")
         while True:
-            guest_ip_address = yield from self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
+            guest_ip_address = await self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
             guest_ip_address = guest_ip_address.strip()
             if len(guest_ip_address) != 0:
                 break
@@ -172,15 +166,14 @@ class VMwareGNS3VM(BaseGNS3VM):
             # If ip not found fallback on old method
             if trial == 0:
                 log.warning("No IP found for the VM via readVariable fallback to getGuestIPAddress")
-                guest_ip_address = yield from self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
+                guest_ip_address = await self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
                 break
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         self.ip_address = guest_ip_address
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
         self.running = True
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspend the GNS3 VM.
         """
@@ -188,14 +181,13 @@ class VMwareGNS3VM(BaseGNS3VM):
         if self._vmx_path is None:
             raise GNS3VMError("No VMX path configured, can't suspend the VM")
         try:
-            yield from self._execute("suspend", [self._vmx_path])
+            await self._execute("suspend", [self._vmx_path])
         except GNS3VMError as e:
             log.warning("Error when suspending the VM: {}".format(str(e)))
         log.info("GNS3 VM has been suspended")
         self.running = False
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the GNS3 VM.
         """
@@ -203,7 +195,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         if self._vmx_path is None:
             raise GNS3VMError("No VMX path configured, can't stop the VM")
         try:
-            yield from self._execute("stop", [self._vmx_path, "soft"])
+            await self._execute("stop", [self._vmx_path, "soft"])
         except GNS3VMError as e:
             log.warning("Error when stopping the VM: {}".format(str(e)))
         log.info("GNS3 VM has been stopped")

@@ -88,8 +88,7 @@ class Notification:
         """
         return project.id in self._project_listeners and len(self._project_listeners[project.id]) > 0
 
-    @asyncio.coroutine
-    def dispatch(self, action, event, compute_id):
+    async def dispatch(self, action, event, compute_id):
         """
         Notification received from compute node. Send it directly
         to clients or process it
@@ -103,7 +102,7 @@ class Notification:
                 # Update controller node data and send the event node.updated
                 project = self._controller.get_project(event["project_id"])
                 node = project.get_node(event["node_id"])
-                yield from node.parse_node_response(event)
+                await node.parse_node_response(event)
 
                 self.project_emit("node.updated", node.__json__())
             except (aiohttp.web.HTTPNotFound, aiohttp.web.HTTPForbidden):  # Project closing

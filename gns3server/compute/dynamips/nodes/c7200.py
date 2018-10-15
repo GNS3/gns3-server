@@ -86,19 +86,18 @@ class C7200(Router):
         router_info.update(c7200_router_info)
         return router_info
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from Router.create(self)
+        await Router.create(self)
 
         if self._npe != "npe-400":
-            yield from self.set_npe(self._npe)
+            await self.set_npe(self._npe)
 
         # first slot is a mandatory Input/Output controller (based on NPE type)
         if self.npe == "npe-g2":
-            yield from self.slot_add_binding(0, C7200_IO_GE_E())
+            await self.slot_add_binding(0, C7200_IO_GE_E())
         else:
-            yield from self.slot_add_binding(0, C7200_IO_FE())
+            await self.slot_add_binding(0, C7200_IO_FE())
 
     @property
     def npe(self):
@@ -110,8 +109,7 @@ class C7200(Router):
 
         return self._npe
 
-    @asyncio.coroutine
-    def set_npe(self, npe):
+    async def set_npe(self, npe):
         """
         Sets the NPE model.
 
@@ -120,10 +118,10 @@ class C7200(Router):
         npe-225, npe-300, npe-400 and npe-g2 (PowerPC c7200 only)
         """
 
-        if (yield from self.is_running()):
+        if (await self.is_running()):
             raise DynamipsError("Cannot change NPE on running router")
 
-        yield from self._hypervisor.send('c7200 set_npe "{name}" {npe}'.format(name=self._name, npe=npe))
+        await self._hypervisor.send('c7200 set_npe "{name}" {npe}'.format(name=self._name, npe=npe))
 
         log.info('Router "{name}" [{id}]: NPE updated from {old_npe} to {new_npe}'.format(name=self._name,
                                                                                           id=self._id,
@@ -141,15 +139,14 @@ class C7200(Router):
 
         return self._midplane
 
-    @asyncio.coroutine
-    def set_midplane(self, midplane):
+    async def set_midplane(self, midplane):
         """
         Sets the midplane model.
 
         :returns: midplane model string (e.g. "vxr" or "std")
         """
 
-        yield from self._hypervisor.send('c7200 set_midplane "{name}" {midplane}'.format(name=self._name, midplane=midplane))
+        await self._hypervisor.send('c7200 set_midplane "{name}" {midplane}'.format(name=self._name, midplane=midplane))
 
         log.info('Router "{name}" [{id}]: midplane updated from {old_midplane} to {new_midplane}'.format(name=self._name,
                                                                                                          id=self._id,
@@ -167,8 +164,7 @@ class C7200(Router):
 
         return self._sensors
 
-    @asyncio.coroutine
-    def set_sensors(self, sensors):
+    async def set_sensors(self, sensors):
         """
         Sets the 4 sensors with temperature in degree Celcius.
 
@@ -182,7 +178,7 @@ class C7200(Router):
 
         sensor_id = 0
         for sensor in sensors:
-            yield from self._hypervisor.send('c7200 set_temp_sensor "{name}" {sensor_id} {temp}'.format(name=self._name,
+            await self._hypervisor.send('c7200 set_temp_sensor "{name}" {sensor_id} {temp}'.format(name=self._name,
                                                                                                         sensor_id=sensor_id,
                                                                                                         temp=sensor))
 
@@ -205,8 +201,7 @@ class C7200(Router):
 
         return self._power_supplies
 
-    @asyncio.coroutine
-    def set_power_supplies(self, power_supplies):
+    async def set_power_supplies(self, power_supplies):
         """
         Sets the 2 power supplies with 0 = off, 1 = on.
 
@@ -216,7 +211,7 @@ class C7200(Router):
 
         power_supply_id = 0
         for power_supply in power_supplies:
-            yield from self._hypervisor.send('c7200 set_power_supply "{name}" {power_supply_id} {powered_on}'.format(name=self._name,
+            await self._hypervisor.send('c7200 set_power_supply "{name}" {power_supply_id} {powered_on}'.format(name=self._name,
                                                                                                                      power_supply_id=power_supply_id,
                                                                                                                      powered_on=power_supply))
 
@@ -228,8 +223,7 @@ class C7200(Router):
 
         self._power_supplies = power_supplies
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts this router.
         At least the IOS image must be set before starting it.
@@ -237,8 +231,8 @@ class C7200(Router):
 
         # trick: we must send sensors and power supplies info after starting the router
         # otherwise they are not taken into account (Dynamips bug?)
-        yield from Router.start(self)
+        await Router.start(self)
         if self._sensors != [22, 22, 22, 22]:
-            yield from self.set_sensors(self._sensors)
+            await self.set_sensors(self._sensors)
         if self._power_supplies != [1, 1]:
-            yield from self.set_power_supplies(self._power_supplies)
+            await self.set_power_supplies(self._power_supplies)

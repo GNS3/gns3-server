@@ -26,7 +26,7 @@ from uuid import UUID, uuid4
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
-from ..utils.asyncio import wait_run_in_executor, asyncio_ensure_future
+from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
 
 import logging
@@ -282,7 +282,7 @@ class Project:
 
         raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
-    def remove_node(self, node):
+    async def remove_node(self, node):
         """
         Removes a node from the project.
         In theory this should be called by the node manager.
@@ -291,11 +291,10 @@ class Project:
         """
 
         if node in self._nodes:
-            yield from node.delete()
+            await node.delete()
             self._nodes.remove(node)
 
-    @asyncio.coroutine
-    def update(self, variables=None, **kwargs):
+    async def update(self, variables=None, **kwargs):
         original_variables = self.variables
         self.variables = variables
 
@@ -303,10 +302,9 @@ class Project:
         if original_variables != variables:
             for node in self.nodes:
                 if hasattr(node, 'update'):
-                    yield from node.update()
+                    await node.update()
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes the project, but keep project data on disk
         """
@@ -317,15 +315,15 @@ class Project:
             module_nodes_id = set([n.id for n in module.instance().nodes])
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
-                yield from module.instance().project_closing(self)
+                await module.instance().project_closing(self)
 
-        yield from self._close_and_clean(False)
+        await self._close_and_clean(False)
 
         for module in self.compute():
             module_nodes_id = set([n.id for n in module.instance().nodes])
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
-                yield from module.instance().project_closed(self)
+                await module.instance().project_closed(self)
 
         try:
             if os.path.exists(self.tmp_working_directory()):
@@ -333,8 +331,7 @@ class Project:
         except OSError:
             pass
 
-    @asyncio.coroutine
-    def _close_and_clean(self, cleanup):
+    async def _close_and_clean(self, cleanup):
         """
         Closes the project, and cleanup the disk if cleanup is True
 
@@ -343,10 +340,10 @@ class Project:
 
         tasks = []
         for node in self._nodes:
-            tasks.append(asyncio_ensure_future(node.manager.close_node(node.id)))
+            tasks.append(asyncio.ensure_future(node.manager.close_node(node.id)))
 
         if tasks:
-            done, _ = yield from asyncio.wait(tasks)
+            done, _ = await asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
@@ -356,7 +353,7 @@ class Project:
         if cleanup and os.path.exists(self.path):
             self._deleted = True
             try:
-                yield from wait_run_in_executor(shutil.rmtree, self.path)
+                await wait_run_in_executor(shutil.rmtree, self.path)
                 log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
@@ -375,17 +372,16 @@ class Project:
         for port in self._used_udp_ports.copy():
             port_manager.release_udp_port(port, self)
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Removes project from disk
         """
 
         for module in self.compute():
-            yield from module.instance().project_closing(self)
-        yield from self._close_and_clean(True)
+            await module.instance().project_closing(self)
+        await self._close_and_clean(True)
         for module in self.compute():
-            yield from module.instance().project_closed(self)
+            await module.instance().project_closed(self)
 
     def compute(self):
         """
@@ -405,8 +401,7 @@ class Project:
         """
         NotificationManager.instance().emit(action, event, project_id=self.id)
 
-    @asyncio.coroutine
-    def list_files(self):
+    async def list_files(self):
         """
         :returns: Array of files in project without temporary files. The files are dictionary {"path": "test.bin", "md5sum": "aaaaa"}
         """
@@ -421,7 +416,7 @@ class Project:
                     file_info = {"path": path}
 
                     try:
-                        file_info["md5sum"] = yield from wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
+                        file_info["md5sum"] = await wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
                     except OSError:
                         continue
                     files.append(file_info)

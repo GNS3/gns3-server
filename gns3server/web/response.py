@@ -50,8 +50,7 @@ class Response(aiohttp.web.Response):
             self.content_length = None
         super().enable_chunked_encoding()
 
-    @asyncio.coroutine
-    def prepare(self, request):
+    async def prepare(self, request):
         if log.getEffectiveLevel() == logging.DEBUG:
             log.info("%s %s", request.method, request.path_qs)
             log.debug("%s", dict(request.headers))
@@ -61,7 +60,7 @@ class Response(aiohttp.web.Response):
             log.debug(dict(self.headers))
             if hasattr(self, 'body') and self.body is not None and self.headers["CONTENT-TYPE"] == "application/json":
                 log.debug(json.loads(self.body.decode('utf-8')))
-        return (yield from super().prepare(request))
+        return (await super().prepare(request))
 
     def html(self, answer):
         """
@@ -112,8 +111,7 @@ class Response(aiohttp.web.Response):
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
 
-    @asyncio.coroutine
-    def file(self, path, status=200, set_content_length=True):
+    async def file(self, path, status=200, set_content_length=True):
         """
         Return a file as a response
         """
@@ -138,14 +136,14 @@ class Response(aiohttp.web.Response):
 
         try:
             with open(path, 'rb') as fobj:
-                yield from self.prepare(self._request)
+                await self.prepare(self._request)
 
                 while True:
                     data = fobj.read(4096)
                     if not data:
                         break
-                    yield from self.write(data)
-                    yield from self.drain()
+                    await self.write(data)
+                    await self.drain()
 
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()

@@ -41,20 +41,19 @@ class IOU(BaseManager):
         super().__init__()
         self._iou_id_lock = asyncio.Lock()
 
-    @asyncio.coroutine
-    def create_node(self, *args, **kwargs):
+    async def create_node(self, *args, **kwargs):
         """
         Creates a new IOU VM.
 
         :returns: IOUVM instance
         """
 
-        with (yield from self._iou_id_lock):
+        async with self._iou_id_lock:
             # wait for a node to be completely created before adding a new one
             # this is important otherwise we allocate the same application ID
             # when creating multiple IOU node at the same time
             application_id = get_next_application_id(self.nodes)
-            node = yield from super().create_node(*args, application_id=application_id, **kwargs)
+            node = await super().create_node(*args, application_id=application_id, **kwargs)
         return node
 
     @staticmethod

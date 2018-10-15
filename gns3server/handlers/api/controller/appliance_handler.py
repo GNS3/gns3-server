@@ -34,11 +34,11 @@ class ApplianceHandler:
         status_codes={
             200: "Appliance template list returned"
         })
-    def list_templates(request, response):
+    async def list_templates(request, response):
 
         controller = Controller.instance()
         if request.query.get("update", "no") == "yes":
-            yield from controller.download_appliance_templates()
+            await controller.download_appliance_templates()
         controller.load_appliance_templates()
         response.json([c for c in controller.appliance_templates.values()])
 
@@ -66,11 +66,11 @@ class ApplianceHandler:
         },
         input=APPLIANCE_USAGE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
-    def create_node_from_appliance(request, response):
+    async def create_node_from_appliance(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.add_node_from_appliance(request.match_info["appliance_id"],
+        await project.add_node_from_appliance(request.match_info["appliance_id"],
                                                    x=request.json["x"],
                                                    y=request.json["y"],
                                                    compute_id=request.json.get("compute_id"))

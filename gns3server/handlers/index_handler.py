@@ -78,7 +78,7 @@ class IndexHandler:
         },
         raw=True,
         description="Get static resource")
-    def webui(request, response):
+    async def webui(request, response):
         filename = request.match_info["filename"]
         filename = os.path.normpath(filename).strip("/")
         filename = os.path.join('web-ui', filename)
@@ -92,7 +92,7 @@ class IndexHandler:
         if not os.path.exists(static):
             static = get_static_path(os.path.join('web-ui', 'index.html'))
 
-        yield from response.file(static)
+        await response.file(static)
 
     @Route.get(
         r"/v1/version",

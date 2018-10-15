@@ -30,8 +30,7 @@ class Pool():
     def append(self, task, *args, **kwargs):
         self._tasks.append((task, args, kwargs))
 
-    @asyncio.coroutine
-    def join(self):
+    async def join(self):
         """
         Wait for all task to finish
         """
@@ -41,7 +40,7 @@ class Pool():
             while len(self._tasks) > 0 and len(pending) < self._concurrency:
                 task, args, kwargs = self._tasks.pop(0)
                 pending.add(task(*args, **kwargs))
-            (done, pending) = yield from asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            (done, pending) = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 if task.exception():
                     exceptions.add(task.exception())
@@ -50,10 +49,9 @@ class Pool():
 
 
 def main():
-    @asyncio.coroutine
-    def task(id):
+    async def task(id):
         print("Run", id)
-        yield from asyncio.sleep(0.5)
+        await asyncio.sleep(0.5)
 
     pool = Pool(concurrency=5)
     for i in range(1, 20):

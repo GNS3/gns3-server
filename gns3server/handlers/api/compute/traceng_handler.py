@@ -48,10 +48,10 @@ class TraceNGHandler:
         description="Create a new TraceNG instance",
         input=TRACENG_CREATE_SCHEMA,
         output=TRACENG_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         traceng = TraceNG.instance()
-        vm = yield from traceng.create_node(request.json["name"],
+        vm = await traceng.create_node(request.json["name"],
                                             request.match_info["project_id"],
                                             request.json.get("node_id"),
                                             console=request.json.get("console"))
@@ -116,9 +116,9 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a TraceNG instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        yield from TraceNG.instance().delete_node(request.match_info["node_id"])
+        await TraceNG.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -132,9 +132,9 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a TraceNG instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from TraceNG.instance().duplicate_node(
+        new_node = await TraceNG.instance().duplicate_node(
             request.match_info["node_id"],
             request.json["destination_node_id"]
         )
@@ -155,11 +155,11 @@ class TraceNGHandler:
         description="Start a TraceNG instance",
         input=TRACENG_START_SCHEMA,
         output=TRACENG_OBJECT_SCHEMA)
-    def start(request, response):
+    async def start(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.start(request.get("destination"))
+        await vm.start(request.get("destination"))
         response.json(vm)
 
     @Route.post(
@@ -174,11 +174,11 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a TraceNG instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -211,11 +211,11 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a TraceNG instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -234,7 +234,7 @@ class TraceNGHandler:
         description="Add a NIO to a TraceNG instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -242,7 +242,7 @@ class TraceNGHandler:
         if nio_type not in ("nio_udp"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = traceng_manager.create_nio(request.json)
-        yield from vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -262,14 +262,14 @@ class TraceNGHandler:
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
         description="Update a NIO from a TraceNG instance")
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = vm.ethernet_adapter.get_nio(int(request.match_info["port_number"]))
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -287,11 +287,11 @@ class TraceNGHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a TraceNG instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        await vm.port_remove_nio_binding(int(request.match_info["port_number"]))
         response.set_status(204)
 
     @Route.post(
@@ -309,13 +309,13 @@ class TraceNGHandler:
         },
         description="Start a packet capture on a TraceNG instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from vm.start_capture(port_number, pcap_file_path)
+        await vm.start_capture(port_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -332,10 +332,10 @@ class TraceNGHandler:
             404: "Instance doesn't exist",
         },
         description="Stop a packet capture on a TraceNG instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.stop_capture(port_number)
+        await vm.stop_capture(port_number)
         response.set_status(204)

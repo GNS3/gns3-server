@@ -98,10 +98,9 @@ class VirtualBoxVM(BaseNode):
     def ethernet_adapters(self):
         return self._ethernet_adapters
 
-    @asyncio.coroutine
-    def _get_system_properties(self):
+    async def _get_system_properties(self):
 
-        properties = yield from self.manager.execute("list", ["systemproperties"])
+        properties = await self.manager.execute("list", ["systemproperties"])
         for prop in properties:
             try:
                 name, value = prop.split(':', 1)
@@ -109,15 +108,14 @@ class VirtualBoxVM(BaseNode):
                 continue
             self._system_properties[name.strip()] = value.strip()
 
-    @asyncio.coroutine
-    def _get_vm_state(self):
+    async def _get_vm_state(self):
         """
         Returns the VM state (e.g. running, paused etc.)
 
         :returns: state (string)
         """
 
-        results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = await self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             if '=' in info:
                 name, value = info.split('=', 1)
@@ -125,8 +123,7 @@ class VirtualBoxVM(BaseNode):
                     return value.strip('"')
         raise VirtualBoxError("Could not get VM state for {}".format(self._vmname))
 
-    @asyncio.coroutine
-    def _control_vm(self, params):
+    async def _control_vm(self, params):
         """
         Change setting in this VM when running.
 
@@ -136,11 +133,10 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        result = yield from self.manager.execute("controlvm", [self._vmname] + args)
+        result = await self.manager.execute("controlvm", [self._vmname] + args)
         return result
 
-    @asyncio.coroutine
-    def _modify_vm(self, params):
+    async def _modify_vm(self, params):
         """
         Change setting in this VM when not running.
 
@@ -148,10 +144,9 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        yield from self.manager.execute("modifyvm", [self._vmname] + args)
+        await self.manager.execute("modifyvm", [self._vmname] + args)
 
-    @asyncio.coroutine
-    def _check_duplicate_linked_clone(self):
+    async def _check_duplicate_linked_clone(self):
         """
         Without linked clone two VM using the same image can't run
         at the same time.
@@ -175,14 +170,13 @@ class VirtualBoxVM(BaseNode):
             if not found:
                 return
             trial += 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         if not self.linked_clone:
-            yield from self._check_duplicate_linked_clone()
+            await self._check_duplicate_linked_clone()
 
-        yield from self._get_system_properties()
+        await self._get_system_properties()
         if "API version" not in self._system_properties:
             raise VirtualBoxError("Can't access to VirtualBox API version:\n{}".format(self._system_properties))
         if parse_version(self._system_properties["API version"]) < parse_version("4_3"):
@@ -192,15 +186,15 @@ class VirtualBoxVM(BaseNode):
         if self.linked_clone:
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 self._patch_vm_uuid()
-                yield from self.manager.execute("registervm", [self._linked_vbox_file()])
-                yield from self._reattach_linked_hdds()
+                await self.manager.execute("registervm", [self._linked_vbox_file()])
+                await self._reattach_linked_hdds()
             else:
-                yield from self._create_linked_clone()
+                await self._create_linked_clone()
 
         if self._adapters:
-            yield from self.set_adapters(self._adapters)
+            await self.set_adapters(self._adapters)
 
-        vm_info = yield from self._get_vm_info()
+        vm_info = await self._get_vm_info()
         if "memory" in vm_info:
             self._ram = int(vm_info["memory"])
 
@@ -234,22 +228,20 @@ class VirtualBoxVM(BaseNode):
                 machine.set("uuid", "{" + self.id + "}")
                 tree.write(self._linked_vbox_file())
 
-    @asyncio.coroutine
-    def check_hw_virtualization(self):
+    async def check_hw_virtualization(self):
         """
         Returns either hardware virtualization is activated or not.
 
         :returns: boolean
         """
 
-        vm_info = yield from self._get_vm_info()
+        vm_info = await self._get_vm_info()
         if "hwvirtex" in vm_info and vm_info["hwvirtex"] == "on":
             return True
         return False
 
     @locking
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts this VirtualBox VM.
         """
@@ -258,17 +250,17 @@ class VirtualBoxVM(BaseNode):
             return
 
         # resume the VM if it is paused
-        vm_state = yield from self._get_vm_state()
+        vm_state = await self._get_vm_state()
         if vm_state == "paused":
-            yield from self.resume()
+            await self.resume()
             return
 
         # VM must be powered off to start it
         if vm_state != "poweroff":
             raise VirtualBoxError("VirtualBox VM not powered off")
 
-        yield from self._set_network_options()
-        yield from self._set_serial_console()
+        await self._set_network_options()
+        await self._set_serial_console()
 
         # check if there is enough RAM to run
         self.check_available_ram(self.ram)
@@ -276,92 +268,90 @@ class VirtualBoxVM(BaseNode):
         args = [self._vmname]
         if self._headless:
             args.extend(["--type", "headless"])
-        result = yield from self.manager.execute("startvm", args)
+        result = await self.manager.execute("startvm", args)
         self.status = "started"
         log.info("VirtualBox VM '{name}' [{id}] started".format(name=self.name, id=self.id))
         log.debug("Start result: {}".format(result))
 
         # add a guest property to let the VM know about the GNS3 name
-        yield from self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
+        await self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
         # add a guest property to let the VM know about the GNS3 project directory
-        yield from self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
+        await self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
 
-        yield from self._start_ubridge()
+        await self._start_ubridge()
         for adapter_number in range(0, self._adapters):
             nio = self._ethernet_adapters[adapter_number].get_nio(0)
             if nio:
-                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                await self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
 
-        yield from self._start_console()
+        await self._start_console()
 
-        if (yield from self.check_hw_virtualization()):
+        if (await self.check_hw_virtualization()):
             self._hw_virtualization = True
 
     @locking
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops this VirtualBox VM.
         """
 
         self._hw_virtualization = False
-        yield from self._stop_ubridge()
-        yield from self._stop_remote_console()
-        vm_state = yield from self._get_vm_state()
+        await self._stop_ubridge()
+        await self._stop_remote_console()
+        vm_state = await self._get_vm_state()
         if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
 
             if self.on_close == "save_vm_state":
-                result = yield from self._control_vm("savestate")
+                result = await self._control_vm("savestate")
                 self.status = "stopped"
                 log.debug("Stop result: {}".format(result))
             elif self.on_close == "shutdown_signal":
                 # use ACPI to shutdown the VM
-                result = yield from self._control_vm("acpipowerbutton")
+                result = await self._control_vm("acpipowerbutton")
                 trial = 0
                 while True:
-                    vm_state = yield from self._get_vm_state()
+                    vm_state = await self._get_vm_state()
                     if vm_state == "poweroff":
                         break
-                    yield from asyncio.sleep(1)
+                    await asyncio.sleep(1)
                     trial += 1
                     if trial >= 120:
-                        yield from self._control_vm("poweroff")
+                        await self._control_vm("poweroff")
                         break
                 self.status = "stopped"
                 log.debug("ACPI shutdown result: {}".format(result))
             else:
                 # power off the VM
-                result = yield from self._control_vm("poweroff")
+                result = await self._control_vm("poweroff")
                 self.status = "stopped"
                 log.debug("Stop result: {}".format(result))
 
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
-            yield from asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
+            await asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             try:
                 # deactivate the first serial port
-                yield from self._modify_vm("--uart1 off")
+                await self._modify_vm("--uart1 off")
             except VirtualBoxError as e:
                 log.warning("Could not deactivate the first serial port: {}".format(e))
 
             for adapter_number in range(0, self._adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
                 if nio:
-                    yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
-                    yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
-                    yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
-        yield from super().stop()
+                    await self._modify_vm("--nictrace{} off".format(adapter_number + 1))
+                    await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                    await self._modify_vm("--nic{} null".format(adapter_number + 1))
+        await super().stop()
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspends this VirtualBox VM.
         """
 
-        vm_state = yield from self._get_vm_state()
+        vm_state = await self._get_vm_state()
         if vm_state == "running":
-            yield from self._control_vm("pause")
+            await self._control_vm("pause")
             self.status = "suspended"
             log.info("VirtualBox VM '{name}' [{id}] suspended".format(name=self.name, id=self.id))
         else:
@@ -369,31 +359,28 @@ class VirtualBoxVM(BaseNode):
                                                                                                         id=self.id,
                                                                                                         state=vm_state))
 
-    @asyncio.coroutine
-    def resume(self):
+    async def resume(self):
         """
         Resumes this VirtualBox VM.
         """
 
-        yield from self._control_vm("resume")
+        await self._control_vm("resume")
         self.status = "started"
         log.info("VirtualBox VM '{name}' [{id}] resumed".format(name=self.name, id=self.id))
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Reloads this VirtualBox VM.
         """
 
-        result = yield from self._control_vm("reset")
+        result = await self._control_vm("reset")
         log.info("VirtualBox VM '{name}' [{id}] reloaded".format(name=self.name, id=self.id))
         log.debug("Reload result: {}".format(result))
 
-    @asyncio.coroutine
-    def _get_all_hdd_files(self):
+    async def _get_all_hdd_files(self):
 
         hdds = []
-        properties = yield from self.manager.execute("list", ["hdds"])
+        properties = await self.manager.execute("list", ["hdds"])
         for prop in properties:
             try:
                 name, value = prop.split(':', 1)
@@ -403,8 +390,7 @@ class VirtualBoxVM(BaseNode):
                 hdds.append(value.strip())
         return hdds
 
-    @asyncio.coroutine
-    def _reattach_linked_hdds(self):
+    async def _reattach_linked_hdds(self):
         """
         Reattach linked cloned hard disks.
         """
@@ -428,7 +414,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                                     medium=hdd_file))
 
                 try:
-                    yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
+                    await self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium "{}"'.format(hdd_info["controller"],
                                                                                                                               hdd_info["port"],
                                                                                                                               hdd_info["device"],
                                                                                                                               hdd_file))
@@ -443,8 +429,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                                                          error=e))
                     continue
 
-    @asyncio.coroutine
-    def save_linked_hdds_info(self):
+    async def save_linked_hdds_info(self):
         """
         Save linked cloned hard disks information.
 
@@ -454,8 +439,8 @@ class VirtualBoxVM(BaseNode):
         hdd_table = []
         if self.linked_clone:
             if os.path.exists(self.working_dir):
-                hdd_files = yield from self._get_all_hdd_files()
-                vm_info = yield from self._get_vm_info()
+                hdd_files = await self._get_all_hdd_files()
+                vm_info = await self._get_vm_info()
                 for entry, value in vm_info.items():
                     match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)  # match Controller-PortNumber-DeviceNumber entry
                     if match:
@@ -489,8 +474,7 @@ class VirtualBoxVM(BaseNode):
 
         return hdd_table
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes this VirtualBox VM.
         """
@@ -499,7 +483,7 @@ class VirtualBoxVM(BaseNode):
             # VM is already closed
             return
 
-        if not (yield from super().close()):
+        if not (await super().close()):
             return False
 
         log.debug("VirtualBox VM '{name}' [{id}] is closing".format(name=self.name, id=self.id))
@@ -519,10 +503,10 @@ class VirtualBoxVM(BaseNode):
         self._local_udp_tunnels = {}
 
         self.on_close = "power_off"
-        yield from self.stop()
+        await self.stop()
 
         if self.linked_clone:
-            hdd_table = yield from self.save_linked_hdds_info()
+            hdd_table = await self.save_linked_hdds_info()
             for hdd in hdd_table.copy():
                 log.info("VirtualBox VM '{name}' [{id}] detaching HDD {controller} {port} {device}".format(name=self.name,
                                                                                                            id=self.id,
@@ -530,7 +514,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                            port=hdd["port"],
                                                                                                            device=hdd["device"]))
                 try:
-                    yield from self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(hdd["controller"],
+                    await self._storage_attach('--storagectl "{}" --port {} --device {} --type hdd --medium none'.format(hdd["controller"],
                                                                                                                               hdd["port"],
                                                                                                                               hdd["device"]))
                 except VirtualBoxError as e:
@@ -543,7 +527,7 @@ class VirtualBoxVM(BaseNode):
                     continue
 
             log.info("VirtualBox VM '{name}' [{id}] unregistering".format(name=self.name, id=self.id))
-            yield from self.manager.execute("unregistervm", [self._name])
+            await self.manager.execute("unregistervm", [self._name])
 
         log.info("VirtualBox VM '{name}' [{id}] closed".format(name=self.name, id=self.id))
         self._closed = True
@@ -603,8 +587,7 @@ class VirtualBoxVM(BaseNode):
 
         return self._ram
 
-    @asyncio.coroutine
-    def set_ram(self, ram):
+    async def set_ram(self, ram):
         """
         Set the amount of RAM allocated to this VirtualBox VM.
 
@@ -614,7 +597,7 @@ class VirtualBoxVM(BaseNode):
         if ram == 0:
             return
 
-        yield from self._modify_vm('--memory {}'.format(ram))
+        await self._modify_vm('--memory {}'.format(ram))
 
         log.info("VirtualBox VM '{name}' [{id}] has set amount of RAM to {ram}".format(name=self.name, id=self.id, ram=ram))
         self._ram = ram
@@ -629,8 +612,7 @@ class VirtualBoxVM(BaseNode):
 
         return self._vmname
 
-    @asyncio.coroutine
-    def set_vmname(self, vmname):
+    async def set_vmname(self, vmname):
         """
         Renames the VirtualBox VM.
 
@@ -644,10 +626,10 @@ class VirtualBoxVM(BaseNode):
             if self.status == "started":
                 raise VirtualBoxError("You can't change the name of running VM {}".format(self._name))
             # We can't rename a VM to name that already exists
-            vms = yield from self.manager.list_vms(allow_clone=True)
+            vms = await self.manager.list_vms(allow_clone=True)
             if vmname in [vm["vmname"] for vm in vms]:
                 raise VirtualBoxError("You can't change the name to {} it's already use in VirtualBox".format(vmname))
-            yield from self._modify_vm('--name "{}"'.format(vmname))
+            await self._modify_vm('--name "{}"'.format(vmname))
 
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
         self._vmname = vmname
@@ -662,8 +644,7 @@ class VirtualBoxVM(BaseNode):
 
         return self._adapters
 
-    @asyncio.coroutine
-    def set_adapters(self, adapters):
+    async def set_adapters(self, adapters):
         """
         Sets the number of Ethernet adapters for this VirtualBox VM instance.
 
@@ -671,7 +652,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         # check for the maximum adapters supported by the VM
-        vm_info = yield from self._get_vm_info()
+        vm_info = await self._get_vm_info()
         chipset = "piix3"  # default chipset for VirtualBox VMs
         self._maximum_adapters = 8  # default maximum network adapter count for PIIX3 chipset
         if "chipset" in vm_info:
@@ -749,8 +730,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                 id=self.id,
                                                                                                 adapter_type=adapter_type))
 
-    @asyncio.coroutine
-    def _get_vm_info(self):
+    async def _get_vm_info(self):
         """
         Returns this VM info.
 
@@ -758,7 +738,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         vm_info = {}
-        results = yield from self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = await self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in results:
             try:
                 name, value = info.split('=', 1)
@@ -784,22 +764,20 @@ class VirtualBoxVM(BaseNode):
                 raise VirtualBoxError("Could not create the VirtualBox pipe directory: {}".format(e))
         return pipe_name
 
-    @asyncio.coroutine
-    def _set_serial_console(self):
+    async def _set_serial_console(self):
         """
         Configures the first serial port to allow a serial console connection.
         """
 
         # activate the first serial port
-        yield from self._modify_vm("--uart1 0x3F8 4")
+        await self._modify_vm("--uart1 0x3F8 4")
 
         # set server mode with a pipe on the first serial port
         pipe_name = self._get_pipe_name()
         args = [self._vmname, "--uartmode1", "server", pipe_name]
-        yield from self.manager.execute("modifyvm", args)
+        await self.manager.execute("modifyvm", args)
 
-    @asyncio.coroutine
-    def _storage_attach(self, params):
+    async def _storage_attach(self, params):
         """
         Change storage medium in this VM.
 
@@ -807,10 +785,9 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        yield from self.manager.execute("storageattach", [self._vmname] + args)
+        await self.manager.execute("storageattach", [self._vmname] + args)
 
-    @asyncio.coroutine
-    def _get_nic_attachements(self, maximum_adapters):
+    async def _get_nic_attachements(self, maximum_adapters):
         """
         Returns NIC attachements.
 
@@ -819,7 +796,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         nics = []
-        vm_info = yield from self._get_vm_info()
+        vm_info = await self._get_vm_info()
         for adapter_number in range(0, maximum_adapters):
             entry = "nic{}".format(adapter_number + 1)
             if entry in vm_info:
@@ -829,22 +806,21 @@ class VirtualBoxVM(BaseNode):
                 nics.append(None)
         return nics
 
-    @asyncio.coroutine
-    def _set_network_options(self):
+    async def _set_network_options(self):
         """
         Configures network options.
         """
 
-        nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
+        nic_attachments = await self._get_nic_attachements(self._maximum_adapters)
         for adapter_number in range(0, self._adapters):
             attachment = nic_attachments[adapter_number]
             if attachment == "null":
                 # disconnect the cable if no backend is attached.
-                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
             if attachment == "none":
                 # set the backend to null to avoid a difference in the number of interfaces in the Guest.
-                yield from self._modify_vm("--nic{} null".format(adapter_number + 1))
-                yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                await self._modify_vm("--nic{} null".format(adapter_number + 1))
+                await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
 
             # use a local UDP tunnel to connect to uBridge instead
             if adapter_number not in self._local_udp_tunnels:
@@ -855,7 +831,7 @@ class VirtualBoxVM(BaseNode):
                 if not self._use_any_adapter and attachment in ("nat", "bridged", "intnet", "hostonly", "natnetwork"):
                     continue
 
-                yield from self._modify_vm("--nictrace{} off".format(adapter_number + 1))
+                await self._modify_vm("--nictrace{} off".format(adapter_number + 1))
 
                 custom_adapter = self._get_custom_adapter_settings(adapter_number)
                 adapter_type = custom_adapter.get("adapter_type", self._adapter_type)
@@ -874,45 +850,44 @@ class VirtualBoxVM(BaseNode):
                 if adapter_type == "Paravirtualized Network (virtio-net)":
                     vbox_adapter_type = "virtio"
                 args = [self._vmname, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
-                yield from self.manager.execute("modifyvm", args)
+                await self.manager.execute("modifyvm", args)
 
                 if isinstance(nio, NIOUDP):
                     log.debug("setting UDP params on adapter {}".format(adapter_number))
-                    yield from self._modify_vm("--nic{} generic".format(adapter_number + 1))
-                    yield from self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_number + 1))
-                    yield from self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
-                    yield from self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
-                    yield from self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
+                    await self._modify_vm("--nic{} generic".format(adapter_number + 1))
+                    await self._modify_vm("--nicgenericdrv{} UDPTunnel".format(adapter_number + 1))
+                    await self._modify_vm("--nicproperty{} sport={}".format(adapter_number + 1, nio.lport))
+                    await self._modify_vm("--nicproperty{} dest={}".format(adapter_number + 1, nio.rhost))
+                    await self._modify_vm("--nicproperty{} dport={}".format(adapter_number + 1, nio.rport))
                     if nio.suspend:
-                        yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                        await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
                     else:
-                        yield from self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
+                        await self._modify_vm("--cableconnected{} on".format(adapter_number + 1))
 
                 if nio.capturing:
-                    yield from self._modify_vm("--nictrace{} on".format(adapter_number + 1))
-                    yield from self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
+                    await self._modify_vm("--nictrace{} on".format(adapter_number + 1))
+                    await self._modify_vm('--nictracefile{} "{}"'.format(adapter_number + 1, nio.pcap_output_file))
 
                 if not self._ethernet_adapters[adapter_number].get_nio(0):
-                    yield from self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                    await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
 
         for adapter_number in range(self._adapters, self._maximum_adapters):
             log.debug("disabling remaining adapter {}".format(adapter_number))
-            yield from self._modify_vm("--nic{} none".format(adapter_number + 1))
+            await self._modify_vm("--nic{} none".format(adapter_number + 1))
 
-    @asyncio.coroutine
-    def _create_linked_clone(self):
+    async def _create_linked_clone(self):
         """
         Creates a new linked clone.
         """
 
         gns3_snapshot_exists = False
-        vm_info = yield from self._get_vm_info()
+        vm_info = await self._get_vm_info()
         for entry, value in vm_info.items():
             if entry.startswith("SnapshotName") and value == "GNS3 Linked Base for clones":
                 gns3_snapshot_exists = True
 
         if not gns3_snapshot_exists:
-            result = yield from self.manager.execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
+            result = await self.manager.execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
             log.debug("GNS3 snapshot created: {}".format(result))
 
         args = [self._vmname,
@@ -926,17 +901,17 @@ class VirtualBoxVM(BaseNode):
                 self.working_dir,
                 "--register"]
 
-        result = yield from self.manager.execute("clonevm", args)
+        result = await self.manager.execute("clonevm", args)
         log.debug("VirtualBox VM: {} cloned".format(result))
 
         self._vmname = self._name
-        yield from self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
+        await self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
 
         # We create a reset snapshot in order to simplify life of user who want to rollback their VM
         # Warning: Do not document this it's seem buggy we keep it because Raizo students use it.
         try:
             args = [self._vmname, "take", "reset"]
-            result = yield from self.manager.execute("snapshot", args)
+            result = await self.manager.execute("snapshot", args)
             log.debug("Snapshot 'reset' created: {}".format(result))
         # It seem sometimes this failed due to internal race condition of Vbox
         # we have no real explanation of this.
@@ -945,8 +920,7 @@ class VirtualBoxVM(BaseNode):
 
         os.makedirs(os.path.join(self.working_dir, self._vmname), exist_ok=True)
 
-    @asyncio.coroutine
-    def _start_console(self):
+    async def _start_console(self):
         """
         Starts remote console support for this VM.
         """
@@ -954,7 +928,7 @@ class VirtualBoxVM(BaseNode):
         if self.console and self.console_type == "telnet":
             pipe_name = self._get_pipe_name()
             try:
-                self._remote_pipe = yield from asyncio_open_serial(pipe_name)
+                self._remote_pipe = await asyncio_open_serial(pipe_name)
             except OSError as e:
                 raise VirtualBoxError("Could not open serial pipe '{}': {}".format(pipe_name, e))
             server = AsyncioTelnetServer(reader=self._remote_pipe,
@@ -962,18 +936,17 @@ class VirtualBoxVM(BaseNode):
                                          binary=True,
                                          echo=True)
             try:
-                self._telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+                self._telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
             except OSError as e:
                 self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
 
-    @asyncio.coroutine
-    def _stop_remote_console(self):
+    async def _stop_remote_console(self):
         """
         Stops remote console support for this VM.
         """
         if self._telnet_server:
             self._telnet_server.close()
-            yield from self._telnet_server.wait_closed()
+            await self._telnet_server.wait_closed()
             self._remote_pipe.close()
             self._telnet_server = None
 
@@ -990,8 +963,7 @@ class VirtualBoxVM(BaseNode):
 
         super(VirtualBoxVM, VirtualBoxVM).console_type.__set__(self, new_console_type)
 
-    @asyncio.coroutine
-    def adapter_add_nio_binding(self, adapter_number, nio):
+    async def adapter_add_nio_binding(self, adapter_number, nio):
         """
         Adds an adapter NIO binding.
 
@@ -1006,7 +978,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                             adapter_number=adapter_number))
 
         # check if trying to connect to a nat, bridged, host-only or any other special adapter
-        nic_attachments = yield from self._get_nic_attachements(self._maximum_adapters)
+        nic_attachments = await self._get_nic_attachements(self._maximum_adapters)
         attachment = nic_attachments[adapter_number]
         if attachment in ("nat", "bridged", "intnet", "hostonly", "natnetwork"):
             if not self._use_any_adapter:
@@ -1018,21 +990,21 @@ class VirtualBoxVM(BaseNode):
                 # dynamically configure an UDP tunnel attachment if the VM is already running
                 local_nio = self._local_udp_tunnels[adapter_number][0]
                 if local_nio and isinstance(local_nio, NIOUDP):
-                    yield from self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
-                    yield from self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, local_nio.lport))
-                    yield from self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, local_nio.rhost))
-                    yield from self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, local_nio.rport))
-                    yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+                    await self._control_vm("nic{} generic UDPTunnel".format(adapter_number + 1))
+                    await self._control_vm("nicproperty{} sport={}".format(adapter_number + 1, local_nio.lport))
+                    await self._control_vm("nicproperty{} dest={}".format(adapter_number + 1, local_nio.rhost))
+                    await self._control_vm("nicproperty{} dport={}".format(adapter_number + 1, local_nio.rport))
+                    await self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         if self.is_running():
             try:
-                yield from self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                await self.add_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
             except KeyError:
                 raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                                 adapter_number=adapter_number))
-            yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+            await self._control_vm("setlinkstate{} on".format(adapter_number + 1))
 
         adapter.add_nio(0, nio)
         log.info("VirtualBox VM '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
@@ -1040,8 +1012,7 @@ class VirtualBoxVM(BaseNode):
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number))
 
-    @asyncio.coroutine
-    def adapter_update_nio_binding(self, adapter_number, nio):
+    async def adapter_update_nio_binding(self, adapter_number, nio):
         """
         Update a port NIO binding.
 
@@ -1051,21 +1022,20 @@ class VirtualBoxVM(BaseNode):
 
         if self.is_running():
             try:
-                yield from self.update_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
+                await self.update_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
                                                               self._local_udp_tunnels[adapter_number][1],
                                                               nio)
                 if nio.suspend:
-                    yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
+                    await self._control_vm("setlinkstate{} off".format(adapter_number + 1))
                 else:
-                    yield from self._control_vm("setlinkstate{} on".format(adapter_number + 1))
+                    await self._control_vm("setlinkstate{} on".format(adapter_number + 1))
             except IndexError:
                 raise VirtualBoxError('Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(
                     name=self._name,
                     adapter_number=adapter_number
                 ))
 
-    @asyncio.coroutine
-    def adapter_remove_nio_binding(self, adapter_number):
+    async def adapter_remove_nio_binding(self, adapter_number):
         """
         Removes an adapter NIO binding.
 
@@ -1081,10 +1051,10 @@ class VirtualBoxVM(BaseNode):
                                                                                                             adapter_number=adapter_number))
 
         if self.is_running():
-            yield from self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
-        vm_state = yield from self._get_vm_state()
+            await self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
+        vm_state = await self._get_vm_state()
         if vm_state == "running":
-            yield from self._control_vm("setlinkstate{} off".format(adapter_number + 1))
+            await self._control_vm("setlinkstate{} off".format(adapter_number + 1))
 
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
@@ -1103,8 +1073,7 @@ class VirtualBoxVM(BaseNode):
         """
         return self.ubridge is not None
 
-    @asyncio.coroutine
-    def start_capture(self, adapter_number, output_file):
+    async def start_capture(self, adapter_number, output_file):
         """
         Starts a packet capture.
 
@@ -1129,14 +1098,14 @@ class VirtualBoxVM(BaseNode):
         nio.startPacketCapture(output_file)
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VBOX-{}-{}".format(self._id, adapter_number),
+            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VBOX-{}-{}".format(self._id, adapter_number),
                                                                                                output_file=output_file))
 
         log.info("VirtualBox VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                              id=self.id,
                                                                                                              adapter_number=adapter_number))
 
-    def stop_capture(self, adapter_number):
+    async def stop_capture(self, adapter_number):
         """
         Stops a packet capture.
 
@@ -1157,7 +1126,7 @@ class VirtualBoxVM(BaseNode):
         nio.stopPacketCapture()
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge stop_capture {name}'.format(name="VBOX-{}-{}".format(self._id, adapter_number)))
+            await self._ubridge_send('bridge stop_capture {name}'.format(name="VBOX-{}-{}".format(self._id, adapter_number)))
 
         log.info("VirtualBox VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
                                                                                                              id=self.id,

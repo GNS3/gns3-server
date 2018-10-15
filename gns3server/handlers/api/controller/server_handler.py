@@ -20,7 +20,6 @@ from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.schemas.version import VERSION_SCHEMA
 from gns3server.version import __version__
-from gns3server.utils.asyncio import asyncio_ensure_future
 
 from aiohttp.web import HTTPConflict, HTTPForbidden
 
@@ -44,7 +43,7 @@ class ServerHandler:
             201: "Server is shutting down",
             403: "Server shutdown refused"
         })
-    def shutdown(request, response):
+    async def shutdown(request, response):
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
@@ -58,10 +57,10 @@ class ServerHandler:
 
         tasks = []
         for project in projects:
-            tasks.append(asyncio_ensure_future(project.close()))
+            tasks.append(asyncio.ensure_future(project.close()))
 
         if tasks:
-            done, _ = yield from asyncio.wait(tasks)
+            done, _ = await asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
@@ -73,7 +72,7 @@ class ServerHandler:
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
         try:
-            asyncio_ensure_future(server.shutdown_server())
+            asyncio.ensure_future(server.shutdown_server())
         except asyncio.CancelledError:
             pass
         response.set_status(201)
@@ -105,7 +104,7 @@ class ServerHandler:
     @Route.get(
         r"/settings",
         description="Retrieve gui settings from the server. Temporary will we removed in later release")
-    def read_settings(request, response):
+    async def read_settings(request, response):
 
         settings = None
         while True:
@@ -115,7 +114,7 @@ class ServerHandler:
 
             if settings is not None:
                 break
-            yield from asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
         response.json(settings)
 
     @Route.post(
@@ -142,7 +141,7 @@ class ServerHandler:
         status_codes={
             201: "Written"
         })
-    def debug(request, response):
+    async def debug(request, response):
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
@@ -170,7 +169,7 @@ class ServerHandler:
 
         for compute in list(Controller.instance().computes.values()):
             try:
-                r = yield from compute.get("/debug", raw=True)
+                r = await compute.get("/debug", raw=True)
                 data = r.body.decode("utf-8")
             except Exception as e:
                 data = str(e)

@@ -27,7 +27,7 @@ from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.images import list_images
-from ..utils.asyncio import locking, asyncio_ensure_future
+from ..utils.asyncio import locking
 from ..controller.controller_error import ControllerError
 from ..version import __version__, __version_info__
 
@@ -146,18 +146,16 @@ class Compute:
         """
         self._last_error = msg
 
-    @asyncio.coroutine
-    def interfaces(self):
+    async def interfaces(self):
         """
         Get the list of network on compute
         """
         if not self._interfaces_cache:
-            response = yield from self.get("/network/interfaces")
+            response = await self.get("/network/interfaces")
             self._interfaces_cache = response.json
         return self._interfaces_cache
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    async def update(self, **kwargs):
         for kw in kwargs:
             if kw not in ("user", "password"):
                 setattr(self, kw, kwargs[kw])
@@ -170,13 +168,12 @@ class Compute:
         self._controller.notification.controller_emit("compute.updated", self.__json__())
         self._controller.save()
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         self._connected = False
         if self._http_session:
             self._http_session.close()
         if self._ws:
-            yield from self._ws.close()
+            await self._ws.close()
             self._ws = None
         self._closed = True
 
@@ -314,8 +311,7 @@ class Compute:
             "last_error": self._last_error
         }
 
-    @asyncio.coroutine
-    def download_file(self, project, path):
+    async def download_file(self, project, path):
         """
         Read file of a project and download it
 
@@ -325,13 +321,12 @@ class Compute:
         """
 
         url = self._getUrl("/projects/{}/files/{}".format(project.id, path))
-        response = yield from self._session().request("GET", url, auth=self._auth)
+        response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
         return response
 
-    @asyncio.coroutine
-    def download_image(self, image_type, image):
+    async def download_image(self, image_type, image):
         """
         Read file of a project and download it
 
@@ -341,13 +336,12 @@ class Compute:
         """
 
         url = self._getUrl("/{}/images/{}".format(image_type, image))
-        response = yield from self._session().request("GET", url, auth=self._auth)
+        response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
         return response
 
-    @asyncio.coroutine
-    def stream_file(self, project, path, timeout=None):
+    async def stream_file(self, project, path, timeout=None):
         """
         Read file of a project and stream it
 
@@ -372,7 +366,7 @@ class Compute:
                 self._response.close()
 
         url = self._getUrl("/projects/{}/stream/{}".format(project.id, path))
-        response = yield from self._session().request("GET", url, auth=self._auth, timeout=timeout)
+        response = await self._session().request("GET", url, auth=self._auth, timeout=timeout)
         if response.status == 404:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
         elif response.status == 403:
@@ -383,34 +377,31 @@ class Compute:
                                                                                                                          path))
         return StreamResponse(response)
 
-    @asyncio.coroutine
-    def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
+    async def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
         """
         :param dont_connect: If true do not reconnect if not connected
         """
 
         if not self._connected and not dont_connect:
             if self._id == "vm" and not self._controller.gns3vm.running:
-                yield from self._controller.gns3vm.start()
-            yield from self.connect()
+                await self._controller.gns3vm.start()
+            await self.connect()
         if not self._connected and not dont_connect:
             raise ComputeError("Cannot connect to compute '{}' with request {} {}".format(self._name, method, path))
-        response = yield from self._run_http_query(method, path, data=data, **kwargs)
+        response = await self._run_http_query(method, path, data=data, **kwargs)
         return response
 
-    @asyncio.coroutine
-    def _try_reconnect(self):
+    async def _try_reconnect(self):
         """
         We catch error during reconnect
         """
         try:
-            yield from self.connect()
+            await self.connect()
         except aiohttp.web.HTTPConflict:
             pass
 
     @locking
-    @asyncio.coroutine
-    def connect(self):
+    async def connect(self):
         """
         Check if remote server is accessible
         """
@@ -418,7 +409,7 @@ class Compute:
         if not self._connected and not self._closed and self.host:
             try:
                 log.info("Connecting to compute '{}'".format(self._id))
-                response = yield from self._run_http_query("GET", "/capabilities")
+                response = await self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
                 log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
                 # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
@@ -430,8 +421,8 @@ class Compute:
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 10:
                         log.error("Could not connect to compute '{}' after multiple attempts: {}".format(self._id, e))
-                        yield from self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio_ensure_future(self._try_reconnect()))
+                        await self._controller.close_compute_projects(self)
+                    asyncio.get_event_loop().call_later(2, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
@@ -479,18 +470,17 @@ class Compute:
             self._last_error = None
             self._controller.notification.controller_emit("compute.updated", self.__json__())
 
-    @asyncio.coroutine
-    def _connect_notification(self):
+    async def _connect_notification(self):
         """
         Connect to the notification stream
         """
         try:
-            self._ws = yield from self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
+            self._ws = await self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
         except (aiohttp.WSServerHandshakeError, aiohttp.ClientResponseError):
             self._ws = None
         while self._ws is not None:
             try:
-                response = yield from self._ws.receive()
+                response = await self._ws.receive()
             except aiohttp.WSServerHandshakeError:
                 self._ws = None
                 break
@@ -505,13 +495,13 @@ class Compute:
                 self._memory_usage_percent = event["memory_usage_percent"]
                 self._controller.notification.controller_emit("compute.updated", self.__json__())
             else:
-                yield from self._controller.notification.dispatch(action, event, compute_id=self.id)
+                await self._controller.notification.dispatch(action, event, compute_id=self.id)
         if self._ws:
-            yield from self._ws.close()
+            await self._ws.close()
 
         # Try to reconnect after 1 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
-            asyncio.get_event_loop().call_later(1, lambda: asyncio_ensure_future(self.connect()))
+            asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
         self._ws = None
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
@@ -536,8 +526,7 @@ class Compute:
         """ Returns URL for specific path at Compute"""
         return self._getUrl(path)
 
-    @asyncio.coroutine
-    def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
+    async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with Timeout(timeout):
             url = self._getUrl(path)
             headers = {}
@@ -562,13 +551,13 @@ class Compute:
                     data = json.dumps(data).encode("utf-8")
         try:
             log.debug("Attempting request to compute: {method} {url} {headers}".format(method=method, url=url, headers=headers))
-            response = yield from self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
+            response = await self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError:
             raise ComputeError("Timeout error for {} call to {} after {}s".format(method, url, timeout))
         except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
             #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
-        body = yield from response.read()
+        body = await response.read()
         if body and not raw:
             body = body.decode()
 
@@ -617,46 +606,40 @@ class Compute:
             response.body = b""
         return response
 
-    @asyncio.coroutine
-    def get(self, path, **kwargs):
-        return (yield from self.http_query("GET", path, **kwargs))
+    async def get(self, path, **kwargs):
+        return (await self.http_query("GET", path, **kwargs))
 
-    @asyncio.coroutine
-    def post(self, path, data={}, **kwargs):
-        response = yield from self.http_query("POST", path, data, **kwargs)
+    async def post(self, path, data={}, **kwargs):
+        response = await self.http_query("POST", path, data, **kwargs)
         return response
 
-    @asyncio.coroutine
-    def put(self, path, data={}, **kwargs):
-        response = yield from self.http_query("PUT", path, data, **kwargs)
+    async def put(self, path, data={}, **kwargs):
+        response = await self.http_query("PUT", path, data, **kwargs)
         return response
 
-    @asyncio.coroutine
-    def delete(self, path, **kwargs):
-        return (yield from self.http_query("DELETE", path, **kwargs))
+    async def delete(self, path, **kwargs):
+        return (await self.http_query("DELETE", path, **kwargs))
 
-    @asyncio.coroutine
-    def forward(self, method, type, path, data=None):
+    async def forward(self, method, type, path, data=None):
         """
         Forward a call to the emulator on compute
         """
         try:
             action = "/{}/{}".format(type, path)
-            res = yield from self.http_query(method, action, data=data, timeout=None)
+            res = await self.http_query(method, action, data=data, timeout=None)
         except aiohttp.ServerDisconnectedError:
             log.error("Connection lost to %s during %s %s", self._id, method, action)
             raise aiohttp.web.HTTPGatewayTimeout()
         return res.json
 
-    @asyncio.coroutine
-    def images(self, type):
+    async def images(self, type):
         """
         Return the list of images available for this type on controller
         and on the compute node.
         """
         images = []
 
-        res = yield from self.http_query("GET", "/{}/images".format(type), timeout=None)
+        res = await self.http_query("GET", "/{}/images".format(type), timeout=None)
         images = res.json
 
         try:
@@ -671,17 +654,15 @@ class Compute:
             raise ComputeError("Cannot list images: {}".format(str(e)))
         return images
 
-    @asyncio.coroutine
-    def list_files(self, project):
+    async def list_files(self, project):
         """
         List files in the project on computes
         """
         path = "/projects/{}/files".format(project.id)
-        res = yield from self.http_query("GET", path, timeout=None)
+        res = await self.http_query("GET", path, timeout=None)
         return res.json
 
-    @asyncio.coroutine
-    def get_ip_on_same_subnet(self, other_compute):
+    async def get_ip_on_same_subnet(self, other_compute):
         """
         Try to find the best ip for communication from one compute
         to another
@@ -695,8 +676,8 @@ class Compute:
         if (self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1')):
             return (self.host_ip, other_compute.host_ip)
 
-        this_compute_interfaces = yield from self.interfaces()
-        other_compute_interfaces = yield from other_compute.interfaces()
+        this_compute_interfaces = await self.interfaces()
+        other_compute_interfaces = await other_compute.interfaces()
 
         # Sort interface to put the compute host in first position
         # we guess that if user specified this host it could have a reason (VMware Nat / Host only interface)

@@ -41,10 +41,9 @@ class NIONull(NIO):
         name = 'null-{}'.format(uuid.uuid4())
         super().__init__(name, hypervisor)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from self._hypervisor.send("nio create_null {}".format(self._name))
+        await self._hypervisor.send("nio create_null {}".format(self._name))
         log.info("NIO NULL {name} created.".format(name=self._name))
 
     def __json__(self):

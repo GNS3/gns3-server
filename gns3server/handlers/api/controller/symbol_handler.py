@@ -47,11 +47,11 @@ class SymbolHandler:
         status_codes={
             200: "Symbol returned"
         })
-    def raw(request, response):
+    async def raw(request, response):
 
         controller = Controller.instance()
         try:
-            yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
+            await response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
         except (KeyError, OSError) as e:
             log.warning("Could not get symbol file: {}".format(e))
             response.set_status(404)
@@ -63,14 +63,14 @@ class SymbolHandler:
             200: "Symbol returned"
         },
         raw=True)
-    def upload(request, response):
+    async def upload(request, response):
         controller = Controller.instance()
         path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
         try:
             with open(path, "wb") as f:
                 while True:
                     try:
-                        chunk = yield from request.content.read(1024)
+                        chunk = await request.content.read(1024)
                     except asyncio.TimeoutError:
                         raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to symbol '{}'".format(path))
                     if not chunk:

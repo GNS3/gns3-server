@@ -65,8 +65,7 @@ class Controller:
         log.info("Load controller configuration file {}".format(self._config_file))
 
     @locking
-    @asyncio.coroutine
-    def download_appliance_templates(self):
+    async def download_appliance_templates(self):
 
         session = aiohttp.ClientSession()
         try:
@@ -74,7 +73,7 @@ class Controller:
             if self._appliance_templates_etag:
                 log.info("Checking if appliance templates are up-to-date (ETag {})".format(self._appliance_templates_etag))
                 headers["If-None-Match"] = self._appliance_templates_etag
-            response = yield from session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers)
+            response = await session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers)
             if response.status == 304:
                 log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
                 return
@@ -84,19 +83,19 @@ class Controller:
             if etag:
                 self._appliance_templates_etag = etag
                 self.save()
-            json_data = yield from response.json()
+            json_data = await response.json()
             response.close()
             appliances_dir = get_resource('appliances')
             for appliance in json_data:
                 if appliance["type"] == "file":
                     appliance_name = appliance["name"]
                     log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
-                    response = yield from session.get(appliance["download_url"])
+                    response = await session.get(appliance["download_url"])
                     if response.status != 200:
                         log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
                         continue
                     try:
-                        appliance_data = yield from response.read()
+                        appliance_data = await response.read()
                     except asyncio.TimeoutError:
                         log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
                         continue
@@ -215,8 +214,7 @@ class Controller:
         for b in builtins:
             self._appliances[b.id] = b
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
 
         log.info("Controller is starting")
         self.load_base_files()
@@ -235,9 +233,9 @@ class Controller:
         if name == "gns3vm":
             name = "Main server"
 
-        computes = yield from self._load_controller_settings()
+        computes = await self._load_controller_settings()
         try:
-            self._local_server = yield from self.add_compute(compute_id="local",
+            self._local_server = await self.add_compute(compute_id="local",
                                                              name=name,
                                                              protocol=server_config.get("protocol", "http"),
                                                              host=host,
@@ -251,15 +249,15 @@ class Controller:
             sys.exit(1)
         for c in computes:
             try:
-                yield from self.add_compute(**c)
+                await self.add_compute(**c)
             except (aiohttp.web.HTTPError, KeyError):
                 pass  # Skip not available servers at loading
-        yield from self.load_projects()
+        await self.load_projects()
         try:
-            yield from self.gns3vm.auto_start_vm()
+            await self.gns3vm.auto_start_vm()
         except GNS3VMError as e:
             log.warning(str(e))
-        yield from self._project_auto_open()
+        await self._project_auto_open()
 
     def _update_config(self):
         """
@@ -271,19 +269,18 @@ class Controller:
             self._local_server.user = server_config.get("user")
             self._local_server.password = server_config.get("password")
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
 
         log.info("Controller is Stopping")
         for project in self._projects.values():
-            yield from project.close()
+            await project.close()
         for compute in self._computes.values():
             try:
-                yield from compute.close()
+                await compute.close()
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, OSError):
                 pass
-        yield from self.gns3vm.exit_vm()
+        await self.gns3vm.exit_vm()
         self._computes = {}
         self._projects = {}
 
@@ -321,15 +318,14 @@ class Controller:
         except OSError as e:
             log.error("Cannnot write configuration file '{}': {}".format(self._config_file, e))
 
-    @asyncio.coroutine
-    def _load_controller_settings(self):
+    async def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """
 
         try:
             if not os.path.exists(self._config_file):
-                yield from self._import_gns3_gui_conf()
+                await self._import_gns3_gui_conf()
                 self.save()
             with open(self._config_file) as f:
                 data = json.load(f)
@@ -350,8 +346,7 @@ class Controller:
         self.load_appliances()
         return data.get("computes", [])
 
-    @asyncio.coroutine
-    def load_projects(self):
+    async def load_projects(self):
         """
         Preload the list of projects from disk
         """
@@ -366,7 +361,7 @@ class Controller:
                     for file in os.listdir(project_dir):
                         if file.endswith(".gns3"):
                             try:
-                                yield from self.load_project(os.path.join(project_dir, file), load=False)
+                                await self.load_project(os.path.join(project_dir, file), load=False)
                             except (aiohttp.web.HTTPConflict, NotImplementedError):
                                 pass  # Skip not compatible projects
         except OSError as e:
@@ -417,8 +412,7 @@ class Controller:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    @asyncio.coroutine
-    def _import_gns3_gui_conf(self):
+    async def _import_gns3_gui_conf(self):
         """
         Import old config from GNS3 GUI
         """
@@ -430,7 +424,7 @@ class Controller:
                 server_settings = data.get("Servers", {})
                 for remote in server_settings.get("remote_servers", []):
                     try:
-                        yield from self.add_compute(
+                        await self.add_compute(
                             host=remote.get("host", "localhost"),
                             port=remote.get("port", 3080),
                             protocol=remote.get("protocol", "http"),
@@ -488,8 +482,7 @@ class Controller:
         self.load_appliances()
         self.notification.controller_emit("settings.updated", val)
 
-    @asyncio.coroutine
-    def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
+    async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
         Add a server to the dictionary of compute servers controlled by this controller
 
@@ -519,24 +512,23 @@ class Controller:
             self._computes[compute.id] = compute
             self.save()
             if connect:
-                yield from compute.connect()
+                await compute.connect()
             self.notification.controller_emit("compute.created", compute.__json__())
             return compute
         else:
             if connect:
-                yield from self._computes[compute_id].connect()
+                await self._computes[compute_id].connect()
             self.notification.controller_emit("compute.updated", self._computes[compute_id].__json__())
             return self._computes[compute_id]
 
-    @asyncio.coroutine
-    def close_compute_projects(self, compute):
+    async def close_compute_projects(self, compute):
         """
         Close projects running on a compute
         """
 
         for project in self._projects.values():
             if compute in project.computes:
-                yield from project.close()
+                await project.close()
 
     def compute_has_open_project(self, compute):
         """
@@ -550,8 +542,7 @@ class Controller:
                 return True
         return False
 
-    @asyncio.coroutine
-    def delete_compute(self, compute_id):
+    async def delete_compute(self, compute_id):
         """
         Delete a compute node. Project using this compute will be close
 
@@ -562,8 +553,8 @@ class Controller:
             compute = self.get_compute(compute_id)
         except aiohttp.web.HTTPNotFound:
             return
-        yield from self.close_compute_projects(compute)
-        yield from compute.close()
+        await self.close_compute_projects(compute)
+        await compute.close()
         del self._computes[compute_id]
         self.save()
         self.notification.controller_emit("compute.deleted", compute.__json__())
@@ -603,8 +594,7 @@ class Controller:
 
         return compute_id in self._computes
 
-    @asyncio.coroutine
-    def add_project(self, project_id=None, name=None, path=None, **kwargs):
+    async def add_project(self, project_id=None, name=None, path=None, **kwargs):
         """
         Creates a project or returns an existing project
 
@@ -635,8 +625,7 @@ class Controller:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
 
-    @asyncio.coroutine
-    def get_loaded_project(self, project_id):
+    async def get_loaded_project(self, project_id):
         """
         Returns a project or raise a 404 error.
 
@@ -644,7 +633,7 @@ class Controller:
         """
 
         project = self.get_project(project_id)
-        yield from project.wait_loaded()
+        await project.wait_loaded()
         return project
 
     def remove_project(self, project):
@@ -652,8 +641,7 @@ class Controller:
         if project.id in self._projects:
             del self._projects[project.id]
 
-    @asyncio.coroutine
-    def load_project(self, path, load=True):
+    async def load_project(self, path, load=True):
         """
         Load a project from a .gns3
 
@@ -670,20 +658,19 @@ class Controller:
         if topo_data["project_id"] in self._projects:
             project = self._projects[topo_data["project_id"]]
         else:
-            project = yield from self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
+            project = await self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
         if load or project.auto_open:
-            yield from project.open()
+            await project.open()
         return project
 
-    @asyncio.coroutine
-    def _project_auto_open(self):
+    async def _project_auto_open(self):
         """
         Auto open the project with auto open enable
         """
 
         for project in self._projects.values():
             if project.auto_open:
-                yield from project.open()
+                await project.open()
 
     def get_free_project_name(self, base_name):
         """
@@ -747,8 +734,7 @@ class Controller:
             Controller._instance = Controller()
         return Controller._instance
 
-    @asyncio.coroutine
-    def autoidlepc(self, compute_id, platform, image, ram):
+    async def autoidlepc(self, compute_id, platform, image, ram):
         """
         Compute and IDLE PC value for an image
 
@@ -761,17 +747,16 @@ class Controller:
         compute = self.get_compute(compute_id)
         for project in list(self._projects.values()):
             if project.name == "AUTOIDLEPC":
-                yield from project.delete()
+                await project.delete()
                 self.remove_project(project)
-        project = yield from self.add_project(name="AUTOIDLEPC")
-        node = yield from project.add_node(compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=ram)
-        res = yield from node.dynamips_auto_idlepc()
-        yield from project.delete()
+        project = await self.add_project(name="AUTOIDLEPC")
+        node = await project.add_node(compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=ram)
+        res = await node.dynamips_auto_idlepc()
+        await project.delete()
         self.remove_project(project)
         return res
 
-    @asyncio.coroutine
-    def compute_ports(self, compute_id):
+    async def compute_ports(self, compute_id):
         """
         Get the ports used by a compute.
 
@@ -779,5 +764,5 @@ class Controller:
         """
 
         compute = self.get_compute(compute_id)
-        response = yield from compute.get("/network/ports")
+        response = await compute.get("/network/ports")
         return response.json

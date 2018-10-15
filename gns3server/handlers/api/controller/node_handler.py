@@ -46,12 +46,12 @@ class NodeHandler:
         description="Create a new node instance",
         input=NODE_CREATE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         controller = Controller.instance()
         compute = controller.get_compute(request.json.pop("compute_id"))
-        project = yield from controller.get_loaded_project(request.match_info["project_id"])
-        node = yield from project.add_node(compute, request.json.pop("name"), request.json.pop("node_id", None), **request.json)
+        project = await controller.get_loaded_project(request.match_info["project_id"])
+        node = await project.add_node(compute, request.json.pop("name"), request.json.pop("node_id", None), **request.json)
         response.set_status(201)
         response.json(node)
 
@@ -79,9 +79,9 @@ class NodeHandler:
             200: "List of nodes returned",
         },
         description="List nodes of a project")
-    def list_nodes(request, response):
+    async def list_nodes(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.nodes.values()])
 
     @Route.put(
@@ -94,8 +94,8 @@ class NodeHandler:
         description="Update a node instance",
         input=NODE_UPDATE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
-    def update(request, response):
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+    async def update(request, response):
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
 
         # Ignore these because we only use them when creating a node
@@ -103,7 +103,7 @@ class NodeHandler:
         request.json.pop("node_type", None)
         request.json.pop("compute_id", None)
 
-        yield from node.update(**request.json)
+        await node.update(**request.json)
         response.set_status(200)
         response.json(node)
 
@@ -119,10 +119,10 @@ class NodeHandler:
         },
         description="Start all nodes belonging to the project",
         output=NODE_OBJECT_SCHEMA)
-    def start_all(request, response):
+    async def start_all(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.start_all()
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.start_all()
         response.set_status(204)
 
     @Route.post(
@@ -137,10 +137,10 @@ class NodeHandler:
         },
         description="Stop all nodes belonging to the project",
         output=NODE_OBJECT_SCHEMA)
-    def stop_all(request, response):
+    async def stop_all(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.stop_all()
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.stop_all()
         response.set_status(204)
 
     @Route.post(
@@ -155,10 +155,10 @@ class NodeHandler:
         },
         description="Suspend all nodes belonging to the project",
         output=NODE_OBJECT_SCHEMA)
-    def suspend_all(request, response):
+    async def suspend_all(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.suspend_all()
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.suspend_all()
         response.set_status(204)
 
     @Route.post(
@@ -173,11 +173,11 @@ class NodeHandler:
         },
         description="Reload all nodes belonging to the project",
         output=NODE_OBJECT_SCHEMA)
-    def reload_all(request, response):
+    async def reload_all(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.stop_all()
-        yield from project.start_all()
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.stop_all()
+        await project.start_all()
         response.set_status(204)
 
     @Route.post(
@@ -194,11 +194,11 @@ class NodeHandler:
         description="Duplicate a node instance",
         input=NODE_DUPLICATE_SCHEMA,
         output=NODE_OBJECT_SCHEMA)
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        new_node = yield from project.duplicate_node(
+        new_node = await project.duplicate_node(
             node,
             request.json["x"],
             request.json["y"],
@@ -219,11 +219,11 @@ class NodeHandler:
         },
         description="Start a node instance",
         output=NODE_OBJECT_SCHEMA)
-    def start(request, response):
+    async def start(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.start(data=request.json)
+        await node.start(data=request.json)
         response.json(node)
         response.set_status(200)
 
@@ -240,11 +240,11 @@ class NodeHandler:
         },
         description="Stop a node instance",
         output=NODE_OBJECT_SCHEMA)
-    def stop(request, response):
+    async def stop(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.stop()
+        await node.stop()
         response.json(node)
         response.set_status(200)
 
@@ -261,11 +261,11 @@ class NodeHandler:
         },
         description="Suspend a node instance",
         output=NODE_OBJECT_SCHEMA)
-    def suspend(request, response):
+    async def suspend(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.suspend()
+        await node.suspend()
         response.json(node)
         response.set_status(200)
 
@@ -282,11 +282,11 @@ class NodeHandler:
         },
         description="Reload a node instance",
         output=NODE_OBJECT_SCHEMA)
-    def reload(request, response):
+    async def reload(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        #yield from node.reload()
+        #await node.reload()
         response.json(node)
         response.set_status(200)
 
@@ -302,9 +302,9 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a node instance")
-    def delete(request, response):
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.delete_node(request.match_info["node_id"])
+    async def delete(request, response):
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.get(
@@ -319,9 +319,9 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Return all the links connected to this node")
-    def links(request, response):
+    async def links(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         links = []
         for link in node.links:
@@ -341,11 +341,11 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Compute the IDLE PC for a Dynamips node")
-    def auto_idlepc(request, response):
+    async def auto_idlepc(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        idle = yield from node.dynamips_auto_idlepc()
+        idle = await node.dynamips_auto_idlepc()
         response.json(idle)
         response.set_status(200)
 
@@ -361,11 +361,11 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Compute a list of potential idle PC for a node")
-    def idlepc_proposals(request, response):
+    async def idlepc_proposals(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        idle = yield from node.dynamips_idlepc_proposals()
+        idle = await node.dynamips_idlepc_proposals()
         response.json(idle)
         response.set_status(200)
 
@@ -381,11 +381,11 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a node instance")
-    def resize_disk(request, response):
+    async def resize_disk(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        yield from node.post("/resize_disk", request.json)
+        await node.post("/resize_disk", request.json)
         response.set_status(201)
 
     @Route.get(
@@ -400,9 +400,9 @@ class NodeHandler:
             404: "Instance doesn't exist"
         },
         description="Get a file in the node directory")
-    def get_file(request, response):
+    async def get_file(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         path = request.match_info["path"]
         path = force_unix_path(path)
@@ -415,14 +415,14 @@ class NodeHandler:
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
 
-        res = yield from node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
+        res = await node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
         response.set_status(200)
         response.content_type = "application/octet-stream"
         response.enable_chunked_encoding()
-        yield from response.prepare(request)
+        await response.prepare(request)
 
         response.write(res.body)
-        yield from response.write_eof()
+        await response.write_eof()
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",
@@ -437,9 +437,9 @@ class NodeHandler:
         },
         raw=True,
         description="Write a file in the node directory")
-    def post_file(request, response):
+    async def post_file(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         path = request.match_info["path"]
         path = force_unix_path(path)
@@ -450,6 +450,6 @@ class NodeHandler:
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
-        data = yield from request.content.read()  #FIXME: are we handling timeout or large files correctly?
-        yield from node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
+        data = await request.content.read()  #FIXME: are we handling timeout or large files correctly?
+        await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
         response.set_status(201)

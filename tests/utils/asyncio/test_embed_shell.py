@@ -23,27 +23,26 @@ from gns3server.utils.asyncio.embed_shell import EmbedShell
 def test_embed_shell_help(async_run):
     class Application(EmbedShell):
 
-        @asyncio.coroutine
-        def hello(self):
+        async def hello(self):
             """
             The hello world function
 
             The hello usage
             """
-            pass
+            await asyncio.sleep(1)
+
     reader = asyncio.StreamReader()
     writer = asyncio.StreamReader()
     app = Application(reader, writer)
-    assert async_run(app._parse_command('help')) == 'Help:\nhello: The hello world function\nhelp: Show help\n\nhelp command for details about a command\n'
-    assert async_run(app._parse_command('?')) == 'Help:\nhello: The hello world function\nhelp: Show help\n\nhelp command for details about a command\n'
+    assert async_run(app._parse_command('help')) == 'Help:\nhello: The hello world function\n\nhelp command for details about a command\n'
+    assert async_run(app._parse_command('?')) == 'Help:\nhello: The hello world function\n\nhelp command for details about a command\n'
     assert async_run(app._parse_command('? hello')) == 'hello: The hello world function\n\nThe hello usage\n'
 
 
 def test_embed_shell_execute(async_run):
     class Application(EmbedShell):
 
-        @asyncio.coroutine
-        def hello(self):
+        async def hello(self):
             """
             The hello world function
 

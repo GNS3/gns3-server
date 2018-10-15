@@ -366,8 +366,7 @@ def test_create_image_not_available(loop, project, manager):
 
     call = 0
 
-    @asyncio.coroutine
-    def information():
+    async def information():
         nonlocal call
         if call == 0:
             call += 1
@@ -927,8 +926,8 @@ def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
 
 
 def test_get_log(loop, vm):
-    @asyncio.coroutine
-    def read():
+
+    async def read():
         return b'Hello\nWorld'
 
     mock_query = MagicMock()
@@ -1036,8 +1035,7 @@ def test_read_console_output_with_binary_mode(vm, loop):
         def __init__(self):
             self.sent = False
 
-        @asyncio.coroutine
-        def receive(self):
+        async def receive(self):
             if not self.sent:
                 self.sent = True
                 return MagicMock(tp=aiohttp.WSMsgType.BINARY, data=b"test")

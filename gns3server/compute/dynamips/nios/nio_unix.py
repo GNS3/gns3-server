@@ -45,10 +45,9 @@ class NIOUNIX(NIO):
         self._remote_file = remote_file
         super().__init__(name, hypervisor)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
+        await self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
                                                                                           local=self._local_file,
                                                                                           remote=self._remote_file))
 

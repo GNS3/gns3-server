@@ -47,10 +47,10 @@ class VPCSHandler:
         description="Create a new VPCS instance",
         input=VPCS_CREATE_SCHEMA,
         output=VPCS_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         vpcs = VPCS.instance()
-        vm = yield from vpcs.create_node(request.json["name"],
+        vm = await vpcs.create_node(request.json["name"],
                                          request.match_info["project_id"],
                                          request.json.get("node_id"),
                                          console=request.json.get("console"),
@@ -115,9 +115,9 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a VPCS instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        yield from VPCS.instance().delete_node(request.match_info["node_id"])
+        await VPCS.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -131,9 +131,9 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a VPCS instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from VPCS.instance().duplicate_node(
+        new_node = await VPCS.instance().duplicate_node(
             request.match_info["node_id"],
             request.json["destination_node_id"]
         )
@@ -153,11 +153,11 @@ class VPCSHandler:
         },
         description="Start a VPCS instance",
         output=VPCS_OBJECT_SCHEMA)
-    def start(request, response):
+    async def start(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.start()
+        await vm.start()
         response.json(vm)
 
     @Route.post(
@@ -172,11 +172,11 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a VPCS instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -209,11 +209,11 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a VPCS instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -232,7 +232,7 @@ class VPCSHandler:
         description="Add a NIO to a VPCS instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -240,7 +240,7 @@ class VPCSHandler:
         if nio_type not in ("nio_udp", "nio_tap"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vpcs_manager.create_nio(request.json)
-        yield from vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -260,14 +260,14 @@ class VPCSHandler:
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
         description="Update a NIO from a VPCS instance")
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = vm.ethernet_adapter.get_nio(int(request.match_info["port_number"]))
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -285,11 +285,11 @@ class VPCSHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a VPCS instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        await vm.port_remove_nio_binding(int(request.match_info["port_number"]))
         response.set_status(204)
 
     @Route.post(
@@ -307,13 +307,13 @@ class VPCSHandler:
         },
         description="Start a packet capture on a VPCS instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from vm.start_capture(port_number, pcap_file_path)
+        await vm.start_capture(port_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -330,10 +330,10 @@ class VPCSHandler:
             404: "Instance doesn't exist",
         },
         description="Stop a packet capture on a VPCS instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.stop_capture(port_number)
+        await vm.stop_capture(port_number)
         response.set_status(204)

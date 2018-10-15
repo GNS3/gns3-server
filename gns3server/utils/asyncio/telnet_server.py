@@ -15,12 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
 import asyncio
 import asyncio.subprocess
 import struct
-
-from gns3server.utils.asyncio import asyncio_ensure_future
 
 import logging
 log = logging.getLogger(__name__)
@@ -75,13 +72,11 @@ class TelnetConnection(object):
     def writer(self):
         return self._writer
 
-    @asyncio.coroutine
-    def connected(self):
+    async def connected(self):
         """Method called when client is connected"""
         pass
 
-    @asyncio.coroutine
-    def disconnected(self):
+    async def disconnected(self):
         """Method called when client is disconnecting"""
         pass
 
@@ -90,8 +85,7 @@ class TelnetConnection(object):
          `naws` flag is enable in server configuration."""
         pass
 
-    @asyncio.coroutine
-    def feed(self, data):
+    async def feed(self, data):
         """
         Handles incoming data
         :return:
@@ -148,8 +142,7 @@ class AsyncioTelnetServer:
         self._connection_factory = connection_factory
 
     @staticmethod
-    @asyncio.coroutine
-    def write_client_intro(writer, echo=False):
+    async def write_client_intro(writer, echo=False):
         # Send initial telnet session opening
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
@@ -157,10 +150,9 @@ class AsyncioTelnetServer:
             writer.write(bytes([
                 IAC, WONT, ECHO,
                 IAC, DONT, ECHO]))
-        yield from writer.drain()
+        await writer.drain()
 
-    @asyncio.coroutine
-    def _write_intro(self, writer, binary=False, echo=False, naws=False):
+    async def _write_intro(self, writer, binary=False, echo=False, naws=False):
         # Send initial telnet session opening
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
@@ -185,20 +177,19 @@ class AsyncioTelnetServer:
             writer.write(bytes([
                 IAC, DO, NAWS
             ]))
-        yield from writer.drain()
+        await writer.drain()
 
-    @asyncio.coroutine
-    def run(self, network_reader, network_writer):
+    async def run(self, network_reader, network_writer):
         # Keep track of connected clients
         connection = self._connection_factory(network_reader, network_writer)
         self._connections[network_writer] = connection
 
         try:
-            yield from self._write_intro(network_writer, echo=self._echo, binary=self._binary, naws=self._naws)
-            yield from connection.connected()
-            yield from self._process(network_reader, network_writer, connection)
+            await self._write_intro(network_writer, echo=self._echo, binary=self._binary, naws=self._naws)
+            await connection.connected()
+            await self._process(network_reader, network_writer, connection)
         except ConnectionError:
-            with (yield from self._lock):
+            async with self._lock:
                 network_writer.close()
                 if self._reader_process == network_reader:
                     self._reader_process = None
@@ -206,53 +197,49 @@ class AsyncioTelnetServer:
                     if self._current_read is not None:
                         self._current_read.cancel()
 
-            yield from connection.disconnected()
+            await connection.disconnected()
             del self._connections[network_writer]
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         for writer, connection in self._connections.items():
             try:
                 writer.write_eof()
-                yield from writer.drain()
+                await writer.drain()
             except (AttributeError, ConnectionError):
                 continue
 
-    @asyncio.coroutine
-    def client_connected_hook(self):
+    async def client_connected_hook(self):
         pass
 
-    @asyncio.coroutine
-    def _get_reader(self, network_reader):
+    async def _get_reader(self, network_reader):
         """
         Get a reader or None if another reader is already reading.
         """
-        with (yield from self._lock):
+        async with self._lock:
             if self._reader_process is None:
                 self._reader_process = network_reader
             if self._reader:
                 if self._reader_process == network_reader:
-                    self._current_read = asyncio_ensure_future(self._reader.read(READ_SIZE))
+                    self._current_read = asyncio.ensure_future(self._reader.read(READ_SIZE))
                     return self._current_read
         return None
 
-    @asyncio.coroutine
-    def _process(self, network_reader, network_writer, connection):
-        network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
-        reader_read = yield from self._get_reader(network_reader)
+    async def _process(self, network_reader, network_writer, connection):
+        network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
+        reader_read = await self._get_reader(network_reader)
 
         while True:
             if reader_read is None:
-                reader_read = yield from self._get_reader(network_reader)
+                reader_read = await self._get_reader(network_reader)
             if reader_read is None:
-                done, pending = yield from asyncio.wait(
+                done, pending = await asyncio.wait(
                     [
                         network_read,
                     ],
                     timeout=1,
                     return_when=asyncio.FIRST_COMPLETED)
             else:
-                done, pending = yield from asyncio.wait(
+                done, pending = await asyncio.wait(
                     [
                         network_read,
                         reader_read
@@ -264,10 +251,10 @@ class AsyncioTelnetServer:
                     if network_reader.at_eof():
                         raise ConnectionResetError()
 
-                    network_read = asyncio_ensure_future(network_reader.read(READ_SIZE))
+                    network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
 
                     if IAC in data:
-                        data = yield from self._IAC_parser(data, network_reader, network_writer, connection)
+                        data = await self._IAC_parser(data, network_reader, network_writer, connection)
 
                     if len(data) == 0:
                         continue
@@ -277,9 +264,9 @@ class AsyncioTelnetServer:
 
                     if self._writer:
                         self._writer.write(data)
-                        yield from self._writer.drain()
+                        await self._writer.drain()
 
-                    yield from connection.feed(data)
+                    await connection.feed(data)
                     if connection.is_closing:
                         raise ConnectionResetError()
 
@@ -287,22 +274,21 @@ class AsyncioTelnetServer:
                     if self._reader and self._reader.at_eof():
                         raise ConnectionResetError()
 
-                    reader_read = yield from self._get_reader(network_reader)
+                    reader_read = await self._get_reader(network_reader)
 
                     # Replicate the output on all clients
                     for connection in self._connections.values():
                         connection.writer.write(data)
-                        yield from connection.writer.drain()
+                        await connection.writer.drain()
 
-    @asyncio.coroutine
-    def _read(self, cmd, buffer, location, reader):
+    async def _read(self, cmd, buffer, location, reader):
         """ Reads next op from the buffer or reader"""
         try:
             op = buffer[location]
             cmd.append(op)
             return op
         except IndexError:
-            op = yield from reader.read(1)
+            op = await reader.read(1)
             buffer.extend(op)
             cmd.append(buffer[location])
             return op
@@ -320,8 +306,7 @@ class AsyncioTelnetServer:
         else:
             log.debug("Not supported negotiation sequence, received {} bytes", len(data))
 
-    @asyncio.coroutine
-    def _IAC_parser(self, buf, network_reader, network_writer, connection):
+    async def _IAC_parser(self, buf, network_reader, network_writer, connection):
         """
         Processes and removes any Telnet commands from the buffer.
 
@@ -342,7 +327,7 @@ class AsyncioTelnetServer:
             try:
                 iac_cmd.append(buf[iac_loc + 1])
             except IndexError:
-                d = yield from network_reader.read(1)
+                d = await network_reader.read(1)
                 buf.extend(d)
                 iac_cmd.append(buf[iac_loc + 1])
 
@@ -366,7 +351,7 @@ class AsyncioTelnetServer:
             elif iac_cmd[1] == SB:  # starts negotiation commands
                 negotiation = []
                 for pos in range(2, self.MAX_NEGOTIATION_READ):
-                    op = yield from self._read(iac_cmd, buf, iac_loc + pos, network_reader)
+                    op = await self._read(iac_cmd, buf, iac_loc + pos, network_reader)
                     negotiation.append(op)
                     if op == SE:
                         # ends negotiation commands
@@ -380,7 +365,7 @@ class AsyncioTelnetServer:
                 try:
                     iac_cmd.append(buf[iac_loc + 2])
                 except IndexError:
-                    d = yield from network_reader.read(1)
+                    d = await network_reader.read(1)
                     buf.extend(d)
                     iac_cmd.append(buf[iac_loc + 2])
                 # We do ECHO, SGA, and BINARY. Period.
@@ -413,7 +398,7 @@ class AsyncioTelnetServer:
             # Remove the entire TELNET command from the buffer
             buf = buf.replace(iac_cmd, b'', 1)
 
-            yield from network_writer.drain()
+            await network_writer.drain()
 
         # Return the new copy of the buffer, minus telnet commands
         return buf
@@ -422,7 +407,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
 
-    process = loop.run_until_complete(asyncio_ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
+    process = loop.run_until_complete(asyncio.ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
                                                                                                       stdout=asyncio.subprocess.PIPE,
                                                                                                       stderr=asyncio.subprocess.STDOUT,
                                                                                                       stdin=asyncio.subprocess.PIPE)))

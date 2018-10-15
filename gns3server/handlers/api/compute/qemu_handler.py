@@ -63,10 +63,10 @@ class QEMUHandler:
         description="Create a new Qemu VM instance",
         input=QEMU_CREATE_SCHEMA,
         output=QEMU_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         qemu = Qemu.instance()
-        vm = yield from qemu.create_node(request.json.pop("name"),
+        vm = await qemu.create_node(request.json.pop("name"),
                                          request.match_info["project_id"],
                                          request.json.pop("node_id", None),
                                          linked_clone=request.json.get("linked_clone", True),
@@ -141,9 +141,9 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a Qemu VM instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        yield from Qemu.instance().delete_node(request.match_info["node_id"])
+        await Qemu.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -157,9 +157,9 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a Qemu instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from Qemu.instance().duplicate_node(
+        new_node = await Qemu.instance().duplicate_node(
             request.match_info["node_id"],
             request.json["destination_node_id"]
         )
@@ -178,11 +178,11 @@ class QEMUHandler:
         },
         description="Resize a Qemu VM disk image",
         input=QEMU_RESIZE_SCHEMA)
-    def resize_disk(request, response):
+    async def resize_disk(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.resize_disk(request.json["drive_name"], request.json["extend"])
+        await vm.resize_disk(request.json["drive_name"], request.json["extend"])
         response.set_status(201)
 
     @Route.post(
@@ -198,7 +198,7 @@ class QEMUHandler:
         },
         description="Start a Qemu VM instance",
         output=QEMU_OBJECT_SCHEMA)
-    def start(request, response):
+    async def start(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -212,7 +212,7 @@ class QEMUHandler:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
                 raise aiohttp.web.HTTPConflict(text="Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
-        yield from vm.start()
+        await vm.start()
         response.json(vm)
 
     @Route.post(
@@ -227,11 +227,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a Qemu VM instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -246,11 +246,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a Qemu VM instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -265,11 +265,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Suspend a Qemu VM instance")
-    def suspend(request, response):
+    async def suspend(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.suspend()
+        await vm.suspend()
         response.set_status(204)
 
     @Route.post(
@@ -284,11 +284,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a Qemu VM instance")
-    def resume(request, response):
+    async def resume(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.resume()
+        await vm.resume()
         response.set_status(204)
 
     @Route.post(
@@ -307,7 +307,7 @@ class QEMUHandler:
         description="Add a NIO to a Qemu VM instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -315,7 +315,7 @@ class QEMUHandler:
         if nio_type not in ("nio_udp"):
             raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = qemu_manager.create_nio(request.json)
-        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -335,7 +335,7 @@ class QEMUHandler:
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
         description="Update a NIO from a Qemu instance")
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -344,7 +344,7 @@ class QEMUHandler:
             nio.filters = request.json["filters"]
         if "suspend" in request.json and nio:
             nio.suspend = request.json["suspend"]
-        yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -362,11 +362,11 @@ class QEMUHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a Qemu VM instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        await vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
     @Route.post(
@@ -384,13 +384,13 @@ class QEMUHandler:
         },
         description="Start a packet capture on a Qemu VM instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from vm.start_capture(adapter_number, pcap_file_path)
+        await vm.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -407,12 +407,12 @@ class QEMUHandler:
             404: "Instance doesn't exist",
         },
         description="Stop a packet capture on a Qemu VM instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
-        yield from vm.stop_capture(adapter_number)
+        await vm.stop_capture(adapter_number)
         response.set_status(204)
 
     @Route.get(
@@ -425,9 +425,9 @@ class QEMUHandler:
         description="Get a list of available Qemu binaries",
         input=QEMU_BINARY_FILTER_SCHEMA,
         output=QEMU_BINARY_LIST_SCHEMA)
-    def list_binaries(request, response):
+    async def list_binaries(request, response):
 
-        binaries = yield from Qemu.binary_list(request.json.get("archs", None))
+        binaries = await Qemu.binary_list(request.json.get("archs", None))
         response.json(binaries)
 
     @Route.get(
@@ -439,9 +439,9 @@ class QEMUHandler:
         },
         description="Get a list of available Qemu-img binaries",
         output=QEMU_BINARY_LIST_SCHEMA)
-    def list_img_binaries(request, response):
+    async def list_img_binaries(request, response):
 
-        binaries = yield from Qemu.img_binary_list()
+        binaries = await Qemu.img_binary_list()
         response.json(binaries)
 
     @Route.get(
@@ -452,9 +452,9 @@ class QEMUHandler:
         description="Get a list of Qemu capabilities on this server",
         output=QEMU_CAPABILITY_LIST_SCHEMA
     )
-    def get_capabilities(request, response):
+    async def get_capabilities(request, response):
         capabilities = {"kvm": []}
-        kvms = yield from Qemu.get_kvm_archs()
+        kvms = await Qemu.get_kvm_archs()
         if kvms:
             capabilities["kvm"] = kvms
         response.json(capabilities)
@@ -467,7 +467,7 @@ class QEMUHandler:
         description="Create a Qemu image",
         input=QEMU_IMAGE_CREATE_SCHEMA
     )
-    def create_img(request, response):
+    async def create_img(request, response):
 
         qemu_img = request.json.pop("qemu_img")
         path = request.json.pop("path")
@@ -477,7 +477,7 @@ class QEMUHandler:
                 response.set_status(403)
                 return
 
-        yield from Qemu.instance().create_disk(qemu_img, path, request.json)
+        await Qemu.instance().create_disk(qemu_img, path, request.json)
         response.set_status(201)
 
     @Route.put(
@@ -488,7 +488,7 @@ class QEMUHandler:
         description="Update a Qemu image",
         input=QEMU_IMAGE_UPDATE_SCHEMA
     )
-    def update_img(request, response):
+    async def update_img(request, response):
 
         qemu_img = request.json.pop("qemu_img")
         path = request.json.pop("path")
@@ -499,7 +499,7 @@ class QEMUHandler:
                 return
 
         if "extend" in request.json:
-            yield from Qemu.instance().resize_disk(qemu_img, path, request.json.pop("extend"))
+            await Qemu.instance().resize_disk(qemu_img, path, request.json.pop("extend"))
         response.set_status(201)
 
     @Route.get(
@@ -509,10 +509,10 @@ class QEMUHandler:
         },
         description="Retrieve the list of Qemu images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_qemu_images(request, response):
+    async def list_qemu_images(request, response):
 
         qemu_manager = Qemu.instance()
-        images = yield from qemu_manager.list_images()
+        images = await qemu_manager.list_images()
         response.set_status(200)
         response.json(images)
 
@@ -526,10 +526,10 @@ class QEMUHandler:
         },
         raw=True,
         description="Upload Qemu image")
-    def upload_image(request, response):
+    async def upload_image(request, response):
 
         qemu_manager = Qemu.instance()
-        yield from qemu_manager.write_image(request.match_info["filename"], request.content)
+        await qemu_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
 
     @Route.get(
@@ -542,7 +542,7 @@ class QEMUHandler:
         },
         raw=True,
         description="Download Qemu image")
-    def download_image(request, response):
+    async def download_image(request, response):
         filename = request.match_info["filename"]
 
         qemu_manager = Qemu.instance()
@@ -552,4 +552,4 @@ class QEMUHandler:
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        yield from response.file(image_path)
+        await response.file(image_path)

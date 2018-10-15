@@ -33,8 +33,7 @@ Handle the import of project from a .gns3project
 """
 
 
-@asyncio.coroutine
-def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False):
+async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False):
     """
     Import a project contain in a zip file
 
@@ -87,7 +86,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
 
     try:
         with zipfile.ZipFile(stream) as zip_file:
-            yield from wait_run_in_executor(zip_file.extractall, path)
+            await wait_run_in_executor(zip_file.extractall, path)
     except zipfile.BadZipFile:
         raise aiohttp.web.HTTPConflict(text="Cannot extract files from GNS3 project (invalid zip)")
 
@@ -138,9 +137,9 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
             # Project created on the remote GNS3 VM?
             if node["compute_id"] not in compute_created:
                 compute = controller.get_compute(node["compute_id"])
-                yield from compute.post("/projects", data={"name": project_name, "project_id": project_id,})
+                await compute.post("/projects", data={"name": project_name, "project_id": project_id,})
                 compute_created.add(node["compute_id"])
-            yield from _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
+            await _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
 
     # And we dump the updated.gns3
     dot_gns3_path = os.path.join(path, project_name + ".gns3")
@@ -153,7 +152,7 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     if os.path.exists(os.path.join(path, "images")):
         _import_images(controller, path)
 
-    project = yield from controller.load_project(dot_gns3_path, load=False)
+    project = await controller.load_project(dot_gns3_path, load=False)
     return project
 
 
@@ -176,8 +175,7 @@ def _move_node_file(path, old_id, new_id):
                     shutil.move(node_dir, os.path.join(module_dir, new_id))
 
 
-@asyncio.coroutine
-def _move_files_to_compute(compute, project_id, directory, files_path):
+async def _move_files_to_compute(compute, project_id, directory, files_path):
     """
     Move files to a remote compute
     """
@@ -188,12 +186,11 @@ def _move_files_to_compute(compute, project_id, directory, files_path):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
                 dst = os.path.relpath(path, directory)
-                yield from _upload_file(compute, project_id, path, dst)
-        yield from wait_run_in_executor(shutil.rmtree, os.path.join(directory, files_path))
+                await _upload_file(compute, project_id, path, dst)
+        await wait_run_in_executor(shutil.rmtree, os.path.join(directory, files_path))
 
 
-@asyncio.coroutine
-def _upload_file(compute, project_id, file_path, path):
+async def _upload_file(compute, project_id, file_path, path):
     """
     Upload a file to a remote project
 
@@ -203,7 +200,7 @@ def _upload_file(compute, project_id, file_path, path):
 
     path = "/projects/{}/files/{}".format(project_id, path.replace("\\", "/"))
     with open(file_path, "rb") as f:
-        yield from compute.http_query("POST", path, f, timeout=None)
+        await compute.http_query("POST", path, f, timeout=None)
 
 
 def _import_images(controller, path):

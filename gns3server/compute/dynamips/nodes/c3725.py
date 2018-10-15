@@ -79,15 +79,14 @@ class C3725(Router):
 
         return self._iomem
 
-    @asyncio.coroutine
-    def set_iomem(self, iomem):
+    async def set_iomem(self, iomem):
         """
         Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        yield from self._hypervisor.send('c3725 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send('c3725 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

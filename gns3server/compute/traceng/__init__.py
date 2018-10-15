@@ -34,12 +34,11 @@ class TraceNG(BaseManager):
 
         super().__init__()
 
-    @asyncio.coroutine
-    def create_node(self, *args, **kwargs):
+    async def create_node(self, *args, **kwargs):
         """
         Creates a new TraceNG VM.
 
         :returns: TraceNGVM instance
         """
 
-        return (yield from super().create_node(*args, **kwargs))
+        return (await super().create_node(*args, **kwargs))

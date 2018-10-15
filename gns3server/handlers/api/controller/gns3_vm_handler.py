@@ -49,9 +49,9 @@ class GNS3VMHandler:
             400: "Invalid request",
         },
         description="Get all the available VMs for a specific virtualization engine")
-    def get_vms(request, response):
+    async def get_vms(request, response):
 
-        vms = yield from Controller.instance().gns3vm.list(request.match_info["engine"])
+        vms = await Controller.instance().gns3vm.list(request.match_info["engine"])
         response.json(vms)
 
     @Route.get(
@@ -72,9 +72,9 @@ class GNS3VMHandler:
         status_codes={
             201: "GNS3 VM updated"
         })
-    def update(request, response):
+    async def update(request, response):
 
         gns3_vm = Controller().instance().gns3vm
-        yield from gns3_vm.update_settings(request.json)
+        await gns3_vm.update_settings(request.json)
         response.json(gns3_vm)
         response.set_status(201)

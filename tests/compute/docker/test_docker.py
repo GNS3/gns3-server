@@ -39,8 +39,7 @@ def test_query_success(loop, vm):
     response.status = 200
     response.headers = {'CONTENT-TYPE': 'application/json'}
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b'{"c": false}'
 
     response.read.side_effect = read
@@ -61,8 +60,7 @@ def test_query_error(loop, vm):
     response = MagicMock()
     response.status = 404
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b"NOT FOUND"
 
     response.read.side_effect = read
@@ -82,8 +80,7 @@ def test_query_error_json(loop, vm):
     response = MagicMock()
     response.status = 404
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b'{"message": "Error"}'
 
     response.read.side_effect = read
@@ -145,8 +142,7 @@ def test_pull_image(loop):
         def __init__(self):
             self._read = -1
 
-        @asyncio.coroutine
-        def read(self, size):
+        async def read(self, size):
             self._read += 1
             if self._read == 0:
                 return b'{"progress": "0/100",'

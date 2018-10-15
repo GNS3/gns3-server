@@ -36,13 +36,12 @@ from ..crash_report import CrashReport
 from ..config import Config
 
 
-@asyncio.coroutine
-def parse_request(request, input_schema, raw):
+async def parse_request(request, input_schema, raw):
     """Parse body of request and raise HTTP errors in case of problems"""
 
     request.json = {}
     if not raw:
-        body = yield from request.read()
+        body = await request.read()
         if body:
             try:
                 request.json = json.loads(body.decode('utf-8'))
@@ -162,8 +161,7 @@ class Route(object):
 
             func = asyncio.coroutine(func)
 
-            @asyncio.coroutine
-            def control_schema(request):
+            async def control_schema(request):
                 # This block is executed at each method call
                 server_config = Config.instance().get_section_config("Server")
 
@@ -177,12 +175,12 @@ class Route(object):
                     if api_version is None or raw is True:
                         response = Response(request=request, route=route, output_schema=output_schema)
 
-                        request = yield from parse_request(request, None, raw)
-                        yield from func(request, response)
+                        request = await parse_request(request, None, raw)
+                        await func(request, response)
                         return response
 
                     # API call
-                    request = yield from parse_request(request, input_schema, raw)
+                    request = await parse_request(request, input_schema, raw)
                     record_file = server_config.get("record")
                     if record_file:
                         try:
@@ -192,7 +190,7 @@ class Route(object):
                         except OSError as e:
                             log.warning("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(request=request, route=route, output_schema=output_schema)
-                    yield from func(request, response)
+                    await func(request, response)
                 except aiohttp.web.HTTPBadRequest as e:
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
@@ -246,8 +244,7 @@ class Route(object):
 
                 return response
 
-            @asyncio.coroutine
-            def node_concurrency(request):
+            async def node_concurrency(request):
                 """
                 To avoid strange effect we prevent concurrency
                 between the same instance of the node
@@ -264,15 +261,15 @@ class Route(object):
                     cls._node_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
                     cls._node_locks[lock_key]["concurrency"] += 1
 
-                    with (yield from cls._node_locks[lock_key]["lock"]):
-                        response = yield from control_schema(request)
+                    async with cls._node_locks[lock_key]["lock"]:
+                        response = await control_schema(request)
                     cls._node_locks[lock_key]["concurrency"] -= 1
 
                     # No more waiting requests, garbage collect the lock
                     if cls._node_locks[lock_key]["concurrency"] <= 0:
                         del cls._node_locks[lock_key]
                 else:
-                    response = yield from control_schema(request)
+                    response = await control_schema(request)
                 return response
 
             cls._routes.append((method, route, node_concurrency))

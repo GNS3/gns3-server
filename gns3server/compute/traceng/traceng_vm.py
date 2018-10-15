@@ -68,13 +68,12 @@ class TraceNGVM(BaseNode):
     def ethernet_adapter(self):
         return self._ethernet_adapter
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes this TraceNG VM.
         """
 
-        if not (yield from super().close()):
+        if not (await super().close()):
             return False
 
         nio = self._ethernet_adapter.get_nio(0)
@@ -86,15 +85,14 @@ class TraceNGVM(BaseNode):
             self.manager.port_manager.release_udp_port(self._local_udp_tunnel[1].lport, self._project)
             self._local_udp_tunnel = None
 
-        yield from self._stop_ubridge()
+        await self._stop_ubridge()
 
         if self.is_running():
             self._terminate_process()
 
         return True
 
-    @asyncio.coroutine
-    def _check_requirements(self):
+    async def _check_requirements(self):
         """
         Check if TraceNG is available.
         """
@@ -193,33 +191,32 @@ class TraceNGVM(BaseNode):
                                                                                            id=self.id,
                                                                                            destination=destination))
 
-    @asyncio.coroutine
-    def start(self, destination=None):
+    async def start(self, destination=None):
         """
         Starts the TraceNG process.
         """
 
         if not sys.platform.startswith("win"):
             raise TraceNGError("Sorry, TraceNG can only run on Windows")
-        yield from self._check_requirements()
+        await self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
             command = self._build_command(destination)
-            yield from self._stop_ubridge()  # make use we start with a fresh uBridge instance
+            await self._stop_ubridge()  # make use we start with a fresh uBridge instance
             try:
                 log.info("Starting TraceNG: {}".format(command))
                 flags = 0
                 if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
                     flags = subprocess.CREATE_NEW_CONSOLE
                 self.command_line = ' '.join(command)
-                self._process = yield from asyncio.create_subprocess_exec(*command,
+                self._process = await asyncio.create_subprocess_exec(*command,
                                                                           cwd=self.working_dir,
                                                                           creationflags=flags)
                 monitor_process(self._process, self._termination_callback)
 
-                yield from self._start_ubridge()
+                await self._start_ubridge()
                 if nio:
-                    yield from self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
+                    await self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
                 log.info("TraceNG instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
@@ -243,18 +240,17 @@ class TraceNGVM(BaseNode):
             if returncode != 0:
                 self.project.emit("log.error", {"message": "TraceNG process has stopped, return code: {}\n".format(returncode)})
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the TraceNG process.
         """
 
-        yield from self._stop_ubridge()
+        await self._stop_ubridge()
         if self.is_running():
             self._terminate_process()
             if self._process.returncode is None:
                 try:
-                    yield from wait_for_process_termination(self._process, timeout=3)
+                    await wait_for_process_termination(self._process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
                         try:
@@ -266,16 +262,15 @@ class TraceNGVM(BaseNode):
 
         self._process = None
         self._started = False
-        yield from super().stop()
+        await super().stop()
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Reloads the TraceNG process (stop & start).
         """
 
-        yield from self.stop()
-        yield from self.start(self._destination)
+        await self.stop()
+        await self.start(self._destination)
 
     def _terminate_process(self):
         """
@@ -303,8 +298,7 @@ class TraceNGVM(BaseNode):
             return True
         return False
 
-    @asyncio.coroutine
-    def port_add_nio_binding(self, port_number, nio):
+    async def port_add_nio_binding(self, port_number, nio):
         """
         Adds a port NIO binding.
 
@@ -317,7 +311,7 @@ class TraceNGVM(BaseNode):
                                                                                            port_number=port_number))
 
         if self.is_running():
-            yield from self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            await self.add_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('TraceNG "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
@@ -327,16 +321,14 @@ class TraceNGVM(BaseNode):
 
         return nio
 
-    @asyncio.coroutine
-    def port_update_nio_binding(self, port_number, nio):
+    async def port_update_nio_binding(self, port_number, nio):
         if not self._ethernet_adapter.port_exists(port_number):
             raise TraceNGError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                               port_number=port_number))
         if self.is_running():
-            yield from self.update_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            await self.update_ubridge_udp_connection("TraceNG-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
-    @asyncio.coroutine
-    def port_remove_nio_binding(self, port_number):
+    async def port_remove_nio_binding(self, port_number):
         """
         Removes a port NIO binding.
 
@@ -350,7 +342,7 @@ class TraceNGVM(BaseNode):
                                                                                               port_number=port_number))
 
         if self.is_running():
-            yield from self._ubridge_send("bridge delete {name}".format(name="TraceNG-{}".format(self._id)))
+            await self._ubridge_send("bridge delete {name}".format(name="TraceNG-{}".format(self._id)))
 
         nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
@@ -363,8 +355,7 @@ class TraceNGVM(BaseNode):
                                                                                          port_number=port_number))
         return nio
 
-    @asyncio.coroutine
-    def start_capture(self, port_number, output_file):
+    async def start_capture(self, port_number, output_file):
         """
         Starts a packet capture.
 
@@ -387,15 +378,14 @@ class TraceNGVM(BaseNode):
         nio.startPacketCapture(output_file)
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="TraceNG-{}".format(self._id),
+            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="TraceNG-{}".format(self._id),
                                                                                                output_file=output_file))
 
         log.info("TraceNG '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
                                                                                                  id=self.id,
                                                                                                  port_number=port_number))
 
-    @asyncio.coroutine
-    def stop_capture(self, port_number):
+    async def stop_capture(self, port_number):
         """
         Stops a packet capture.
 
@@ -414,7 +404,7 @@ class TraceNGVM(BaseNode):
         nio.stopPacketCapture()
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge stop_capture {name}'.format(name="TraceNG-{}".format(self._id)))
+            await self._ubridge_send('bridge stop_capture {name}'.format(name="TraceNG-{}".format(self._id)))
 
         log.info("TraceNG '{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
                                                                                                  id=self.id,

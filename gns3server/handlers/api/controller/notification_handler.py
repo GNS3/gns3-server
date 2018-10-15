@@ -20,16 +20,14 @@ import aiohttp
 from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.controller import Controller
-from gns3server.utils.asyncio import asyncio_ensure_future
 
 
-@asyncio.coroutine
-def process_websocket(ws):
+async def process_websocket(ws):
     """
     Process ping / pong and close message
     """
     try:
-        yield from ws.receive()
+        await ws.receive()
     except aiohttp.WSServerHandshakeError:
         pass
 
@@ -42,22 +40,22 @@ class NotificationHandler:
         status_codes={
             200: "End of stream"
         })
-    def notification(request, response):
+    async def notification(request, response):
 
         controller = Controller.instance()
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
 
-        yield from response.prepare(request)
+        await response.prepare(request)
         with controller.notification.controller_queue() as queue:
             while True:
                 try:
-                    msg = yield from queue.get_json(5)
+                    msg = await queue.get_json(5)
                     response.write(("{}\n".format(msg)).encode("utf-8"))
                 except asyncio.futures.CancelledError:
                     break
-                yield from response.drain()
+                await response.drain()
 
     @Route.get(
         r"/notifications/ws",
@@ -65,17 +63,17 @@ class NotificationHandler:
         status_codes={
             200: "End of stream"
         })
-    def notification_ws(request, response):
+    async def notification_ws(request, response):
 
         controller = Controller.instance()
         ws = aiohttp.web.WebSocketResponse()
-        yield from ws.prepare(request)
+        await ws.prepare(request)
 
-        asyncio_ensure_future(process_websocket(ws))
+        asyncio.ensure_future(process_websocket(ws))
         with controller.notification.controller_queue() as queue:
             while True:
                 try:
-                    notification = yield from queue.get_json(5)
+                    notification = await queue.get_json(5)
                 except asyncio.futures.CancelledError:
                     break
                 if ws.closed:

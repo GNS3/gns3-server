@@ -164,8 +164,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         except Exception as e:
             raise GNS3VMError("Could not set to {} and RAM amount set to {}: {}".format(vcpus, ram, e))
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         List all Hyper-V VMs
         """
@@ -189,8 +188,7 @@ class HyperVGNS3VM(BaseGNS3VM):
 
         return wmi.WMI(moniker=path.replace('\\', '/'))
 
-    @asyncio.coroutine
-    def _set_state(self, state):
+    async def _set_state(self, state):
         """
         Set the desired state of the VM
         """
@@ -203,15 +201,14 @@ class HyperVGNS3VM(BaseGNS3VM):
         if ret == HyperVGNS3VM._WMI_JOB_STATUS_STARTED:
             job = self._get_wmi_obj(job_path)
             while job.JobState == HyperVGNS3VM._WMI_JOB_STATE_RUNNING:
-                yield from asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
                 job = self._get_wmi_obj(job_path)
             if job.JobState != HyperVGNS3VM._WMI_JOB_STATE_COMPLETED:
                 raise GNS3VMError("Error while changing state: {}".format(job.ErrorSummaryDescription))
         elif ret != 0 or ret != 32775:
             raise GNS3VMError("Failed to change state to {}".format(state))
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the GNS3 VM.
         """
@@ -228,7 +225,7 @@ class HyperVGNS3VM(BaseGNS3VM):
 
             # start the VM
             try:
-                yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_ENABLED)
+                await self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_ENABLED)
             except GNS3VMError as e:
                 raise GNS3VMError("Failed to start the GNS3 VM: {}".format(e))
             log.info("GNS3 VM has been started")
@@ -259,32 +256,30 @@ class HyperVGNS3VM(BaseGNS3VM):
                 break
             elif trial == 0:
                 raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         self.ip_address = guest_ip_address
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
         self.running = True
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspends the GNS3 VM.
         """
 
         try:
-            yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_PAUSED)
+            await self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_PAUSED)
         except GNS3VMError as e:
             raise GNS3VMError("Failed to suspend the GNS3 VM: {}".format(e))
         log.info("GNS3 VM has been suspended")
         self.running = False
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the GNS3 VM.
         """
 
         try:
-            yield from self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_SHUTDOWN)
+            await self._set_state(HyperVGNS3VM._HYPERV_VM_STATE_SHUTDOWN)
         except GNS3VMError as e:
             raise GNS3VMError("Failed to stop the GNS3 VM: {}".format(e))
         log.info("GNS3 VM has been stopped")

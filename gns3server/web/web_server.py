@@ -39,7 +39,6 @@ from ..compute import MODULES
 from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
-from ..utils.asyncio import asyncio_ensure_future
 
 from gns3server.utils.static import get_static_dir
 
@@ -90,8 +89,7 @@ class WebServer:
             return False
         return True
 
-    @asyncio.coroutine
-    def shutdown_server(self):
+    async def shutdown_server(self):
         """
         Cleanly shutdown the server.
         """
@@ -104,25 +102,25 @@ class WebServer:
 
         if self._server:
             self._server.close()
-            yield from self._server.wait_closed()
+            await self._server.wait_closed()
         if self._app:
-            yield from self._app.shutdown()
+            await self._app.shutdown()
         if self._handler:
             try:
                 # aiohttp < 2.3
-                yield from self._handler.finish_connections(2)  # Parameter is timeout
+                await self._handler.finish_connections(2)  # Parameter is timeout
             except AttributeError:
                 # aiohttp >= 2.3
-                yield from self._handler.shutdown(2)  # Parameter is timeout
+                await self._handler.shutdown(2)  # Parameter is timeout
         if self._app:
-            yield from self._app.cleanup()
+            await self._app.cleanup()
 
-        yield from Controller.instance().stop()
+        await Controller.instance().stop()
 
         for module in MODULES:
             log.debug("Unloading module {}".format(module.__name__))
             m = module.instance()
-            yield from m.unload()
+            await m.unload()
 
         if PortManager.instance().tcp_ports:
             log.warning("TCP ports are still used {}".format(PortManager.instance().tcp_ports))
@@ -133,7 +131,7 @@ class WebServer:
         for task in asyncio.Task.all_tasks():
             task.cancel()
             try:
-                yield from asyncio.wait_for(task, 1)
+                await asyncio.wait_for(task, 1)
             except BaseException:
                 pass
 
@@ -144,7 +142,7 @@ class WebServer:
         def signal_handler(signame, *args):
             log.warning("Server has got signal {}, exiting...".format(signame))
             try:
-                asyncio_ensure_future(self.shutdown_server())
+                asyncio.ensure_future(self.shutdown_server())
             except asyncio.CancelledError:
                 pass
 
@@ -179,14 +177,13 @@ class WebServer:
         log.info("SSL is enabled")
         return ssl_context
 
-    @asyncio.coroutine
-    def start_shell(self):
+    async def start_shell(self):
         try:
             from ptpython.repl import embed
         except ImportError:
             log.error("Unable to start a shell: the ptpython module must be installed!")
             return
-        yield from embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True, history_filename=".gns3_shell_history")
+        await embed(globals(), locals(), return_asyncio_coroutine=True, patch_stdout=True, history_filename=".gns3_shell_history")
 
     def _exit_handling(self):
         """
@@ -204,16 +201,15 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
-    @asyncio.coroutine
-    def _on_startup(self, *args):
+    async def _on_startup(self, *args):
         """
         Called when the HTTP server start
         """
-        yield from Controller.instance().start()
+        await Controller.instance().start()
         # Because with a large image collection
         # without md5sum already computed we start the
         # computing with server start
-        asyncio_ensure_future(Qemu.instance().list_images())
+        asyncio.ensure_future(Qemu.instance().list_images())
 
     def run(self):
         """
@@ -251,7 +247,7 @@ class WebServer:
 
         if log.getEffectiveLevel() == logging.DEBUG:
             # On debug version we enable info that
-            # coroutine is not called in a way await/yield from
+            # coroutine is not called in a way await/await
             self._loop.set_debug(True)
 
         for key, val in os.environ.items():
@@ -300,7 +296,7 @@ class WebServer:
         self._exit_handling()
 
         if server_config.getboolean("shell"):
-            asyncio_ensure_future(self.start_shell())
+            asyncio.ensure_future(self.start_shell())
 
         try:
             self._loop.run_forever()

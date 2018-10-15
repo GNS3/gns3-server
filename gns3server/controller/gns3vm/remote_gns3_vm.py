@@ -32,8 +32,7 @@ class RemoteGNS3VM(BaseGNS3VM):
         self._engine = "remote"
         super().__init__(controller)
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         List all VMs
         """
@@ -45,8 +44,7 @@ class RemoteGNS3VM(BaseGNS3VM):
                 res.append({"vmname": compute.name})
         return res
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the GNS3 VM.
         """
@@ -65,15 +63,13 @@ class RemoteGNS3VM(BaseGNS3VM):
                 return
         raise GNS3VMError("Can't start the GNS3 VM remote VM {} not found".format(self.vmname))
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspend do nothing for remote server
         """
         self.running = False
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the GNS3 VM.
         """

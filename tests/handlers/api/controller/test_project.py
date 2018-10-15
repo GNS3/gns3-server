@@ -169,13 +169,13 @@ def test_load_project(http_controller, project, config):
 
 
 def test_notification(http_controller, project, controller, loop, async_run):
-    @asyncio.coroutine
-    def go():
+
+    async def go():
         connector = aiohttp.TCPConnector()
-        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
-        response.body = yield from response.content.read(200)
+        response = await aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
+        response.body = await response.content.read(200)
         controller.notification.project_emit("node.created", {"a": "b"})
-        response.body += yield from response.content.readany()
+        response.body += await response.content.readany()
         response.close()
         return response
 

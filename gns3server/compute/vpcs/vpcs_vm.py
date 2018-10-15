@@ -77,13 +77,12 @@ class VPCSVM(BaseNode):
     def ethernet_adapter(self):
         return self._ethernet_adapter
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes this VPCS VM.
         """
 
-        if not (yield from super().close()):
+        if not (await super().close()):
             return False
 
         nio = self._ethernet_adapter.get_nio(0)
@@ -95,15 +94,14 @@ class VPCSVM(BaseNode):
             self.manager.port_manager.release_udp_port(self._local_udp_tunnel[1].lport, self._project)
             self._local_udp_tunnel = None
 
-        yield from self._stop_ubridge()
+        await self._stop_ubridge()
 
         if self.is_running():
             self._terminate_process()
 
         return True
 
-    @asyncio.coroutine
-    def _check_requirements(self):
+    async def _check_requirements(self):
         """
         Check if VPCS is available with the correct version.
         """
@@ -121,7 +119,7 @@ class VPCSVM(BaseNode):
         if not os.access(path, os.X_OK):
             raise VPCSError("VPCS program '{}' is not executable".format(path))
 
-        yield from self._check_vpcs_version()
+        await self._check_vpcs_version()
 
     def __json__(self):
 
@@ -200,13 +198,12 @@ class VPCSVM(BaseNode):
         except OSError as e:
             raise VPCSError('Cannot write the startup script file "{}": {}'.format(startup_script_path, e))
 
-    @asyncio.coroutine
-    def _check_vpcs_version(self):
+    async def _check_vpcs_version(self):
         """
         Checks if the VPCS executable version is >= 0.8b or == 0.6.1.
         """
         try:
-            output = yield from subprocess_check_output(self._vpcs_path(), "-v", cwd=self.working_dir)
+            output = await subprocess_check_output(self._vpcs_path(), "-v", cwd=self.working_dir)
             match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
@@ -218,13 +215,12 @@ class VPCSVM(BaseNode):
         except (OSError, subprocess.SubprocessError) as e:
             raise VPCSError("Error while looking for the VPCS version: {}".format(e))
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the VPCS process.
         """
 
-        yield from self._check_requirements()
+        await self._check_requirements()
         if not self.is_running():
             nio = self._ethernet_adapter.get_nio(0)
             command = self._build_command()
@@ -237,18 +233,18 @@ class VPCSVM(BaseNode):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
                     self.command_line = ' '.join(command)
-                    self._process = yield from asyncio.create_subprocess_exec(*command,
+                    self._process = await asyncio.create_subprocess_exec(*command,
                                                                               stdout=fd,
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir,
                                                                               creationflags=flags)
                     monitor_process(self._process, self._termination_callback)
 
-                yield from self._start_ubridge()
+                await self._start_ubridge()
                 if nio:
-                    yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+                    await self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
-                yield from self.start_wrap_console()
+                await self.start_wrap_console()
 
                 log.info("VPCS instance {} started PID={}".format(self.name, self._process.pid))
                 self._started = True
@@ -273,18 +269,17 @@ class VPCSVM(BaseNode):
             if returncode != 0:
                 self.project.emit("log.error", {"message": "VPCS process has stopped, return code: {}\n{}".format(returncode, self.read_vpcs_stdout())})
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the VPCS process.
         """
 
-        yield from self._stop_ubridge()
+        await self._stop_ubridge()
         if self.is_running():
             self._terminate_process()
             if self._process.returncode is None:
                 try:
-                    yield from wait_for_process_termination(self._process, timeout=3)
+                    await wait_for_process_termination(self._process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._process.returncode is None:
                         try:
@@ -296,16 +291,15 @@ class VPCSVM(BaseNode):
 
         self._process = None
         self._started = False
-        yield from super().stop()
+        await super().stop()
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Reloads the VPCS process (stop & start).
         """
 
-        yield from self.stop()
-        yield from self.start()
+        await self.stop()
+        await self.start()
 
     def _terminate_process(self):
         """
@@ -364,8 +358,7 @@ class VPCSVM(BaseNode):
 
         super(VPCSVM, VPCSVM).console_type.__set__(self, new_console_type)
 
-    @asyncio.coroutine
-    def port_add_nio_binding(self, port_number, nio):
+    async def port_add_nio_binding(self, port_number, nio):
         """
         Adds a port NIO binding.
 
@@ -378,7 +371,7 @@ class VPCSVM(BaseNode):
                                                                                            port_number=port_number))
 
         if self.is_running():
-            yield from self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            await self.add_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
         log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
@@ -388,16 +381,14 @@ class VPCSVM(BaseNode):
 
         return nio
 
-    @asyncio.coroutine
-    def port_update_nio_binding(self, port_number, nio):
+    async def port_update_nio_binding(self, port_number, nio):
         if not self._ethernet_adapter.port_exists(port_number):
             raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
         if self.is_running():
-            yield from self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
+            await self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
 
-    @asyncio.coroutine
-    def port_remove_nio_binding(self, port_number):
+    async def port_remove_nio_binding(self, port_number):
         """
         Removes a port NIO binding.
 
@@ -411,7 +402,7 @@ class VPCSVM(BaseNode):
                                                                                            port_number=port_number))
 
         if self.is_running():
-            yield from self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
+            await self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
 
         nio = self._ethernet_adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
@@ -424,8 +415,7 @@ class VPCSVM(BaseNode):
                                                                                       port_number=port_number))
         return nio
 
-    @asyncio.coroutine
-    def start_capture(self, port_number, output_file):
+    async def start_capture(self, port_number, output_file):
         """
         Starts a packet capture.
 
@@ -448,15 +438,14 @@ class VPCSVM(BaseNode):
         nio.startPacketCapture(output_file)
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VPCS-{}".format(self._id),
+            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VPCS-{}".format(self._id),
                                                                                                output_file=output_file))
 
         log.info("VPCS '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
                                                                                               id=self.id,
                                                                                               port_number=port_number))
 
-    @asyncio.coroutine
-    def stop_capture(self, port_number):
+    async def stop_capture(self, port_number):
         """
         Stops a packet capture.
 
@@ -475,7 +464,7 @@ class VPCSVM(BaseNode):
         nio.stopPacketCapture()
 
         if self.ubridge:
-            yield from self._ubridge_send('bridge stop_capture {name}'.format(name="VPCS-{}".format(self._id)))
+            await self._ubridge_send('bridge stop_capture {name}'.format(name="VPCS-{}".format(self._id)))
 
         log.info("VPCS '{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
                                                                                               id=self.id,

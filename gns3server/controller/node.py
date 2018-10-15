@@ -343,8 +343,7 @@ class Node:
     def links(self):
         return self._links
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Create the node on the compute server
         """
@@ -358,21 +357,20 @@ class Node:
         trial = 0
         while trial != 6:
             try:
-                response = yield from self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data, timeout=timeout)
+                response = await self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data, timeout=timeout)
             except ComputeConflict as e:
                 if e.response.get("exception") == "ImageMissingError":
-                    res = yield from self._upload_missing_image(self._node_type, e.response["image"])
+                    res = await self._upload_missing_image(self._node_type, e.response["image"])
                     if not res:
                         raise e
                 else:
                     raise e
             else:
-                yield from self.parse_node_response(response.json)
+                await self.parse_node_response(response.json)
                 return True
             trial += 1
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    async def update(self, **kwargs):
         """
         Update the node on the compute server
 
@@ -403,15 +401,14 @@ class Node:
         self._list_ports()
         if update_compute:
             data = self._node_data(properties=compute_properties)
-            response = yield from self.put(None, data=data)
-            yield from self.parse_node_response(response.json)
+            response = await self.put(None, data=data)
+            await self.parse_node_response(response.json)
         elif old_json != self.__json__():
             # We send notif only if object has changed
             self.project.controller.notification.project_emit("node.updated", self.__json__())
         self.project.dump()
 
-    @asyncio.coroutine
-    def parse_node_response(self, response):
+    async def parse_node_response(self, response):
         """
         Update the object with the remote node object
         """
@@ -439,7 +436,7 @@ class Node:
                 self._properties[key] = value
         self._list_ports()
         for link in self._links:
-            yield from link.node_updated(self)
+            await link.node_updated(self)
 
     def _node_data(self, properties=None):
         """
@@ -477,12 +474,10 @@ class Node:
                 del data[key]
         return data
 
-    @asyncio.coroutine
-    def destroy(self):
-        yield from self.delete()
+    async def destroy(self):
+        await self.delete()
 
-    @asyncio.coroutine
-    def start(self, data=None):
+    async def start(self, data=None):
         """
         Start a node
         """
@@ -493,57 +488,52 @@ class Node:
                     licence = self._project.controller.settings["IOU"]["iourc_content"]
                 except KeyError:
                     raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
-                yield from self.post("/start", timeout=240, data={"iourc_content": licence})
+                await self.post("/start", timeout=240, data={"iourc_content": licence})
             else:
-                yield from self.post("/start", data=data, timeout=240)
+                await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stop a node
         """
         try:
-            yield from self.post("/stop", timeout=240, dont_connect=True)
+            await self.post("/stop", timeout=240, dont_connect=True)
         # We don't care if a node is down at this step
         except (ComputeError, aiohttp.ClientError, aiohttp.web.HTTPError):
             pass
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when stopping {}".format(self._name))
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspend a node
         """
         try:
-            yield from self.post("/suspend", timeout=240)
+            await self.post("/suspend", timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Suspend a node
         """
         try:
-            yield from self.post("/reload", timeout=240)
+            await self.post("/reload", timeout=240)
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
 
-    @asyncio.coroutine
-    def post(self, path, data=None, **kwargs):
+    async def post(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
         if data:
-            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), data=data, **kwargs))
+            return (await self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), data=data, **kwargs))
         else:
-            return (yield from self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
+            return (await self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
 
-    @asyncio.coroutine
-    def put(self, path, data=None, **kwargs):
+    async def put(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
@@ -552,22 +542,20 @@ class Node:
         else:
             path = "/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)
         if data:
-            return (yield from self._compute.put(path, data=data, **kwargs))
+            return (await self._compute.put(path, data=data, **kwargs))
         else:
-            return (yield from self._compute.put(path, **kwargs))
+            return (await self._compute.put(path, **kwargs))
 
-    @asyncio.coroutine
-    def delete(self, path=None, **kwargs):
+    async def delete(self, path=None, **kwargs):
         """
         HTTP post on the node
         """
         if path is None:
-            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs))
+            return (await self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs))
         else:
-            return (yield from self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
+            return (await self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
 
-    @asyncio.coroutine
-    def _upload_missing_image(self, type, img):
+    async def _upload_missing_image(self, type, img):
         """
         Search an image on local computer and upload it to remote compute
         if the image exists
@@ -578,26 +566,24 @@ class Node:
                 self.project.controller.notification.project_emit("log.info", {"message": "Uploading missing image {}".format(img)})
                 try:
                     with open(image, 'rb') as f:
-                        yield from self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
+                        await self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
                 except OSError as e:
                     raise aiohttp.web.HTTPConflict(text="Can't upload {}: {}".format(image, str(e)))
                 self.project.controller.notification.project_emit("log.info", {"message": "Upload finished for {}".format(img)})
                 return True
         return False
 
-    @asyncio.coroutine
-    def dynamips_auto_idlepc(self):
+    async def dynamips_auto_idlepc(self):
         """
         Compute the idle PC for a dynamips node
         """
-        return (yield from self._compute.get("/projects/{}/{}/nodes/{}/auto_idlepc".format(self._project.id, self._node_type, self._id), timeout=240)).json
+        return (await self._compute.get("/projects/{}/{}/nodes/{}/auto_idlepc".format(self._project.id, self._node_type, self._id), timeout=240)).json
 
-    @asyncio.coroutine
-    def dynamips_idlepc_proposals(self):
+    async def dynamips_idlepc_proposals(self):
         """
         Compute a list of potential idle PC
         """
-        return (yield from self._compute.get("/projects/{}/{}/nodes/{}/idlepc_proposals".format(self._project.id, self._node_type, self._id), timeout=240)).json
+        return (await self._compute.get("/projects/{}/{}/nodes/{}/idlepc_proposals".format(self._project.id, self._node_type, self._id), timeout=240)).json
 
     def get_port(self, adapter_number, port_number):
         """

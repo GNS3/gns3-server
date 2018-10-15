@@ -43,10 +43,9 @@ class NIOTAP(NIO):
         self._tap_device = tap_device
         super().__init__(name, hypervisor)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name, tap=self._tap_device))
+        await self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name, tap=self._tap_device))
         log.info("NIO TAP {name} created with device {device}".format(name=self._name, device=self._tap_device))
 
     @property

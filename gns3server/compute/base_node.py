@@ -273,8 +273,7 @@ class BaseNode:
                                                           name=self.name,
                                                           id=self.id))
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Delete the node (including all its files).
         """
@@ -285,7 +284,7 @@ class BaseNode:
         directory = self.project.node_working_directory(self)
         if os.path.exists(directory):
             try:
-                yield from wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
+                await wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the node working directory: {}".format(e))
 
@@ -296,13 +295,12 @@ class BaseNode:
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stop the node process.
         """
 
-        yield from self.stop_wrap_console()
+        await self.stop_wrap_console()
         self.status = "stopped"
 
     def suspend(self):
@@ -312,8 +310,7 @@ class BaseNode:
 
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Close the node process.
         """
@@ -339,8 +336,7 @@ class BaseNode:
         self._closed = True
         return True
 
-    @asyncio.coroutine
-    def start_wrap_console(self):
+    async def start_wrap_console(self):
         """
         Start a telnet proxy for the console allowing multiple client
         connected at the same time
@@ -351,27 +347,26 @@ class BaseNode:
         remaining_trial = 60
         while True:
             try:
-                (reader, writer) = yield from asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
+                (reader, writer) = await asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
                 break
             except (OSError, ConnectionRefusedError) as e:
                 if remaining_trial <= 0:
                     raise e
-            yield from asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)
             remaining_trial -= 1
-        yield from AsyncioTelnetServer.write_client_intro(writer, echo=True)
+        await AsyncioTelnetServer.write_client_intro(writer, echo=True)
         server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
         # warning: this will raise OSError exception if there is a problem...
-        self._wrapper_telnet_server = yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+        self._wrapper_telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
 
-    @asyncio.coroutine
-    def stop_wrap_console(self):
+    async def stop_wrap_console(self):
         """
         Stops the telnet proxy.
         """
 
         if self._wrapper_telnet_server:
             self._wrapper_telnet_server.close()
-            yield from self._wrapper_telnet_server.wait_closed()
+            await self._wrapper_telnet_server.wait_closed()
 
     @property
     def allocate_aux(self):
@@ -530,8 +525,7 @@ class BaseNode:
         path = shutil.which(path)
         return path
 
-    @asyncio.coroutine
-    def _ubridge_send(self, command):
+    async def _ubridge_send(self, command):
         """
         Sends a command to uBridge hypervisor.
 
@@ -539,17 +533,16 @@ class BaseNode:
         """
 
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
-            yield from self._start_ubridge()
+            await self._start_ubridge()
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
         try:
-            yield from self._ubridge_hypervisor.send(command)
+            await self._ubridge_hypervisor.send(command)
         except UbridgeError as e:
             raise UbridgeError("Error while sending command '{}': {}: {}".format(command, e, self._ubridge_hypervisor.read_stdout()))
 
     @locking
-    @asyncio.coroutine
-    def _start_ubridge(self):
+    async def _start_ubridge(self):
         """
         Starts uBridge (handles connections to and from this node).
         """
@@ -569,24 +562,22 @@ class BaseNode:
         if not self.ubridge:
             self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-        yield from self._ubridge_hypervisor.start()
+        await self._ubridge_hypervisor.start()
         if self._ubridge_hypervisor:
             log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-            yield from self._ubridge_hypervisor.connect()
+            await self._ubridge_hypervisor.connect()
 
-    @asyncio.coroutine
-    def _stop_ubridge(self):
+    async def _stop_ubridge(self):
         """
         Stops uBridge.
         """
 
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             log.info("Stopping uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
-            yield from self._ubridge_hypervisor.stop()
+            await self._ubridge_hypervisor.stop()
         self._ubridge_hypervisor = None
 
-    @asyncio.coroutine
-    def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+    async def add_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         """
         Creates an UDP connection in uBridge.
 
@@ -595,43 +586,41 @@ class BaseNode:
         :param destination_nio: destination NIO instance
         """
 
-        yield from self._ubridge_send("bridge create {name}".format(name=bridge_name))
+        await self._ubridge_send("bridge create {name}".format(name=bridge_name))
 
         if not isinstance(destination_nio, NIOUDP):
             raise NodeError("Destination NIO is not UDP")
 
-        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+        await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
                                                                                                  lport=source_nio.lport,
                                                                                                  rhost=source_nio.rhost,
                                                                                                  rport=source_nio.rport))
 
-        yield from self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
+        await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
                                                                                                  lport=destination_nio.lport,
                                                                                                  rhost=destination_nio.rhost,
                                                                                                  rport=destination_nio.rport))
 
         if destination_nio.capturing:
-            yield from self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
+            await self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
                                                                                              pcap_file=destination_nio.pcap_output_file))
 
-        yield from self._ubridge_send('bridge start {name}'.format(name=bridge_name))
-        yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+        await self._ubridge_send('bridge start {name}'.format(name=bridge_name))
+        await self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
-    @asyncio.coroutine
-    def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
+    async def update_ubridge_udp_connection(self, bridge_name, source_nio, destination_nio):
         if destination_nio:
-            yield from self._ubridge_apply_filters(bridge_name, destination_nio.filters)
+            await self._ubridge_apply_filters(bridge_name, destination_nio.filters)
 
-    def ubridge_delete_bridge(self, name):
+    async def ubridge_delete_bridge(self, name):
         """
         :params name: Delete the bridge with this name
         """
 
         if self.ubridge:
-            yield from self._ubridge_send("bridge delete {name}".format(name=name))
+            await self._ubridge_send("bridge delete {name}".format(name=name))
 
-    @asyncio.coroutine
-    def _ubridge_apply_filters(self, bridge_name, filters):
+    async def _ubridge_apply_filters(self, bridge_name, filters):
         """
         Apply packet filters
 
@@ -639,11 +628,11 @@ class BaseNode:
         :param filters: Array of filter dictionary
         """
 
-        yield from self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
+        await self._ubridge_send('bridge reset_packet_filters ' + bridge_name)
         for packet_filter in self._build_filter_list(filters):
             cmd = 'bridge add_packet_filter {} {}'.format(bridge_name, packet_filter)
             try:
-                yield from self._ubridge_send(cmd)
+                await self._ubridge_send(cmd)
             except UbridgeError as e:
                 match = re.search("Cannot compile filter '(.*)': syntax error", str(e))
                 if match:
@@ -675,8 +664,7 @@ class BaseNode:
                     filter_value=" ".join([str(v) for v in values]))
                 i += 1
 
-    @asyncio.coroutine
-    def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=False):
+    async def _add_ubridge_ethernet_connection(self, bridge_name, ethernet_interface, block_host_traffic=False):
         """
         Creates a connection with an Ethernet interface in uBridge.
 
@@ -687,7 +675,7 @@ class BaseNode:
 
         if sys.platform.startswith("linux") and block_host_traffic is False:
             # on Linux we use RAW sockets by default excepting if host traffic must be blocked
-            yield from self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
+            await self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
         elif sys.platform.startswith("win"):
             # on Windows we use Winpcap/Npcap
             windows_interfaces = interfaces()
@@ -702,26 +690,26 @@ class BaseNode:
                     npf_id = interface["id"]
                     source_mac = interface["mac_address"]
             if npf_id:
-                yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
+                await self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
                                                                                                     interface=npf_id))
             else:
                 raise NodeError("Could not find NPF id for interface {}".format(ethernet_interface))
 
             if block_host_traffic:
                 if source_mac:
-                    yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
+                    await self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
                     log.info('PCAP filter applied on "{interface}" for source MAC {mac}'.format(interface=ethernet_interface, mac=source_mac))
                 else:
                     log.warning("Could not block host network traffic on {} (no MAC address found)".format(ethernet_interface))
         else:
             # on other platforms we just rely on the pcap library
-            yield from self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
+            await self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
             source_mac = None
             for interface in interfaces():
                 if interface["name"] == ethernet_interface:
                     source_mac = interface["mac_address"]
             if source_mac:
-                yield from self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
+                await self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
                 log.info('PCAP filter applied on "{interface}" for source MAC {mac}'.format(interface=ethernet_interface, mac=source_mac))
 
     def _create_local_udp_tunnel(self):

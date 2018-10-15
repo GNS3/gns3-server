@@ -223,9 +223,9 @@ def run():
     if server_config.getboolean("local"):
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
-    # we only support Python 3 version >= 3.4
-    if sys.version_info < (3, 4):
-        raise SystemExit("Python 3.4 or higher is required")
+    # we only support Python 3 version >= 3.5
+    if sys.version_info < (3, 5, 3):
+        raise SystemExit("Python 3.5.3 or higher is required")
 
     user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
                   major=sys.version_info[0], minor=sys.version_info[1],

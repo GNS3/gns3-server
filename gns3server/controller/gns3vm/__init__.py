@@ -21,7 +21,7 @@ import asyncio
 import aiohttp
 import ipaddress
 
-from ...utils.asyncio import locking, asyncio_ensure_future
+from ...utils.asyncio import locking
 from .vmware_gns3_vm import VMwareGNS3VM
 from .virtualbox_gns3_vm import VirtualBoxGNS3VM
 from .hyperv_gns3_vm import HyperVGNS3VM
@@ -204,8 +204,7 @@ class GNS3VM:
 
         self._settings.update(val)
 
-    @asyncio.coroutine
-    def update_settings(self, settings):
+    async def update_settings(self, settings):
         """
         Update settings and will restart the VM if require
         """
@@ -213,15 +212,15 @@ class GNS3VM:
         new_settings = copy.copy(self._settings)
         new_settings.update(settings)
         if self.settings != new_settings:
-            yield from self._stop()
+            await self._stop()
             self._settings = settings
             self._controller.save()
             if self.enable:
-                yield from self.start()
+                await self.start()
         else:
             # When user fix something on his system and try again
             if self.enable and not self.current_engine().running:
-                yield from self.start()
+                await self.start()
 
     def _get_engine(self, engine):
         """
@@ -248,8 +247,7 @@ class GNS3VM:
     def __json__(self):
         return self._settings
 
-    @asyncio.coroutine
-    def list(self, engine):
+    async def list(self, engine):
         """
         List VMS for an engine
         """
@@ -257,7 +255,7 @@ class GNS3VM:
         engine = self._get_engine(engine)
         vms = []
         try:
-            for vm in (yield from engine.list()):
+            for vm in (await engine.list()):
                 vms.append({"vmname": vm["vmname"]})
         except GNS3VMError as e:
             # We raise error only if user activated the GNS3 VM
@@ -266,19 +264,18 @@ class GNS3VM:
                 raise e
         return vms
 
-    @asyncio.coroutine
-    def auto_start_vm(self):
+    async def auto_start_vm(self):
         """
         Auto start the GNS3 VM if require
         """
 
         if self.enable:
             try:
-                yield from self.start()
+                await self.start()
             except GNS3VMError as e:
                 # User will receive the error later when they will try to use the node
                 try:
-                    compute = yield from self._controller.add_compute(compute_id="vm",
+                    compute = await self._controller.add_compute(compute_id="vm",
                                                                       name="GNS3 VM ({})".format(self.current_engine().vmname),
                                                                       host=None,
                                                                       force=True)
@@ -288,21 +285,19 @@ class GNS3VM:
                     pass
                 log.error("Cannot start the GNS3 VM: {}".format(e))
 
-    @asyncio.coroutine
-    def exit_vm(self):
+    async def exit_vm(self):
 
         if self.enable:
             try:
                 if self._settings["when_exit"] == "stop":
-                    yield from self._stop()
+                    await self._stop()
                 elif self._settings["when_exit"] == "suspend":
-                    yield from self._suspend()
+                    await self._suspend()
             except GNS3VMError as e:
                 log.warning(str(e))
 
     @locking
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Start the GNS3 VM
         """
@@ -316,22 +311,22 @@ class GNS3VM:
             engine.ram = self._settings["ram"]
             engine.vcpus = self._settings["vcpus"]
             engine.headless = self._settings["headless"]
-            compute = yield from self._controller.add_compute(compute_id="vm",
+            compute = await self._controller.add_compute(compute_id="vm",
                                                               name="GNS3 VM is starting ({})".format(engine.vmname),
                                                               host=None,
                                                               force=True,
                                                               connect=False)
 
             try:
-                yield from engine.start()
+                await engine.start()
             except Exception as e:
-                yield from self._controller.delete_compute("vm")
+                await self._controller.delete_compute("vm")
                 log.error("Cannot start the GNS3 VM: {}".format(str(e)))
-                yield from compute.update(name="GNS3 VM ({})".format(engine.vmname))
+                await compute.update(name="GNS3 VM ({})".format(engine.vmname))
                 compute.set_last_error(str(e))
                 raise e
-            yield from compute.connect()  # we can connect now that the VM has started
-            yield from compute.update(name="GNS3 VM ({})".format(engine.vmname),
+            await compute.connect()  # we can connect now that the VM has started
+            await compute.update(name="GNS3 VM ({})".format(engine.vmname),
                                       protocol=self.protocol,
                                       host=self.ip_address,
                                       port=self.port,
@@ -340,16 +335,15 @@ class GNS3VM:
 
             # check if the VM is in the same subnet as the local server, start 10 seconds later to give
             # some time for the compute in the VM to be ready for requests
-            asyncio.get_event_loop().call_later(10, lambda: asyncio_ensure_future(self._check_network(compute)))
+            asyncio.get_event_loop().call_later(10, lambda: asyncio.ensure_future(self._check_network(compute)))
 
-    @asyncio.coroutine
-    def _check_network(self, compute):
+    async def _check_network(self, compute):
         """
         Check that the VM is in the same subnet as the local server
         """
 
         try:
-            vm_interfaces = yield from compute.interfaces()
+            vm_interfaces = await compute.interfaces()
             vm_interface_netmask = None
             for interface in vm_interfaces:
                 if interface["ip_address"] == self.ip_address:
@@ -360,7 +354,7 @@ class GNS3VM:
                 for compute_id in self._controller.computes:
                     if compute_id == "local":
                         compute = self._controller.get_compute(compute_id)
-                        interfaces = yield from compute.interfaces()
+                        interfaces = await compute.interfaces()
                         netmask = None
                         for interface in interfaces:
                             if interface["ip_address"] == compute.host_ip:
@@ -378,27 +372,25 @@ class GNS3VM:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e.text))
 
     @locking
-    @asyncio.coroutine
-    def _suspend(self):
+    async def _suspend(self):
         """
         Suspend the GNS3 VM
         """
         engine = self.current_engine()
         if "vm" in self._controller.computes:
-            yield from self._controller.delete_compute("vm")
+            await self._controller.delete_compute("vm")
         if engine.running:
             log.info("Suspend the GNS3 VM")
-            yield from engine.suspend()
+            await engine.suspend()
 
     @locking
-    @asyncio.coroutine
-    def _stop(self):
+    async def _stop(self):
         """
         Stop the GNS3 VM
         """
         engine = self.current_engine()
         if "vm" in self._controller.computes:
-            yield from self._controller.delete_compute("vm")
+            await self._controller.delete_compute("vm")
         if engine.running:
             log.info("Stop the GNS3 VM")
-            yield from engine.stop()
+            await engine.stop()

@@ -20,16 +20,14 @@ import aiohttp
 from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.compute.notification_manager import NotificationManager
-from gns3server.utils.asyncio import asyncio_ensure_future
 
 
-@asyncio.coroutine
-def process_websocket(ws):
+async def process_websocket(ws):
     """
     Process ping / pong and close message
     """
     try:
-        yield from ws.receive()
+        await ws.receive()
     except aiohttp.WSServerHandshakeError:
         pass
 
@@ -39,17 +37,17 @@ class NotificationHandler:
     @Route.get(
         r"/notifications/ws",
         description="Send notifications using Websockets")
-    def notifications(request, response):
+    async def notifications(request, response):
         notifications = NotificationManager.instance()
         ws = WebSocketResponse()
-        yield from ws.prepare(request)
+        await ws.prepare(request)
 
-        asyncio_ensure_future(process_websocket(ws))
+        asyncio.ensure_future(process_websocket(ws))
 
         with notifications.queue() as queue:
             while True:
                 try:
-                    notification = yield from queue.get_json(1)
+                    notification = await queue.get_json(1)
                 except asyncio.futures.CancelledError:
                     break
                 if ws.closed:

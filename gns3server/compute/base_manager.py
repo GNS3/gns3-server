@@ -34,7 +34,6 @@ log = logging.getLogger(__name__)
 
 from uuid import UUID, uuid4
 from gns3server.utils.interfaces import is_interface_up
-from gns3server.utils.asyncio import asyncio_ensure_future
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils import force_unix_path
@@ -130,15 +129,14 @@ class BaseManager:
 
         return self._config
 
-    @asyncio.coroutine
-    def unload(self):
+    async def unload(self):
 
         tasks = []
         for node_id in self._nodes.keys():
-            tasks.append(asyncio_ensure_future(self.close_node(node_id)))
+            tasks.append(asyncio.ensure_future(self.close_node(node_id)))
 
         if tasks:
-            done, _ = yield from asyncio.wait(tasks)
+            done, _ = await asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
@@ -179,8 +177,7 @@ class BaseManager:
 
         return node
 
-    @asyncio.coroutine
-    def convert_old_project(self, project, legacy_id, name):
+    async def convert_old_project(self, project, legacy_id, name):
         """
         Convert projects made before version 1.3
 
@@ -199,7 +196,7 @@ class BaseManager:
             log.info("Converting old project...")
             try:
                 log.info('Moving "{}" to "{}"'.format(legacy_project_files_path, new_project_files_path))
-                yield from wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
+                await wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
                                                                                                                             new_project_files_path, e))
@@ -212,7 +209,7 @@ class BaseManager:
                 log.info("Converting old remote project...")
                 try:
                     log.info('Moving "{}" to "{}"'.format(legacy_remote_project_path, new_remote_project_path))
-                    yield from wait_run_in_executor(shutil.move, legacy_remote_project_path, new_remote_project_path)
+                    await wait_run_in_executor(shutil.move, legacy_remote_project_path, new_remote_project_path)
                 except OSError as e:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move directory: {} to {} {}".format(legacy_remote_project_path,
                                                                                                                   new_remote_project_path, e))
@@ -226,15 +223,14 @@ class BaseManager:
             if os.path.exists(legacy_vm_working_path) and not os.path.exists(new_vm_working_path):
                 try:
                     log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
-                    yield from wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
+                    await wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
                 except OSError as e:
                     raise aiohttp.web.HTTPInternalServerError(text="Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
                                                                                                                              new_vm_working_path, e))
 
         return new_id
 
-    @asyncio.coroutine
-    def create_node(self, name, project_id, node_id, *args, **kwargs):
+    async def create_node(self, name, project_id, node_id, *args, **kwargs):
         """
         Create a new node
 
@@ -249,23 +245,22 @@ class BaseManager:
         project = ProjectManager.instance().get_project(project_id)
         if node_id and isinstance(node_id, int):
             # old project
-            with (yield from BaseManager._convert_lock):
-                node_id = yield from self.convert_old_project(project, node_id, name)
+            async with BaseManager._convert_lock:
+                node_id = await self.convert_old_project(project, node_id, name)
 
         if not node_id:
             node_id = str(uuid4())
 
         node = self._NODE_CLASS(name, node_id, project, self, *args, **kwargs)
         if asyncio.iscoroutinefunction(node.create):
-            yield from node.create()
+            await node.create()
         else:
             node.create()
         self._nodes[node.id] = node
         project.add_node(node)
         return node
 
-    @asyncio.coroutine
-    def duplicate_node(self, source_node_id, destination_node_id):
+    async def duplicate_node(self, source_node_id, destination_node_id):
         """
         Duplicate a node
 
@@ -296,8 +291,7 @@ class BaseManager:
 
         return destination_node
 
-    @asyncio.coroutine
-    def close_node(self, node_id):
+    async def close_node(self, node_id):
         """
         Close a node
 
@@ -308,13 +302,12 @@ class BaseManager:
 
         node = self.get_node(node_id)
         if asyncio.iscoroutinefunction(node.close):
-            yield from node.close()
+            await node.close()
         else:
             node.close()
         return node
 
-    @asyncio.coroutine
-    def project_closing(self, project):
+    async def project_closing(self, project):
         """
         Called when a project is about to be closed.
 
@@ -323,8 +316,7 @@ class BaseManager:
 
         pass
 
-    @asyncio.coroutine
-    def project_closed(self, project):
+    async def project_closed(self, project):
         """
         Called when a project is closed.
 
@@ -335,8 +327,7 @@ class BaseManager:
             if node.id in self._nodes:
                 del self._nodes[node.id]
 
-    @asyncio.coroutine
-    def delete_node(self, node_id):
+    async def delete_node(self, node_id):
         """
         Delete a node. The node working directory will be destroyed when a commit is received.
 
@@ -347,11 +338,11 @@ class BaseManager:
         node = None
         try:
             node = self.get_node(node_id)
-            yield from self.close_node(node_id)
+            await self.close_node(node_id)
         finally:
             if node:
                 node.project.emit("node.deleted", node)
-                yield from node.project.remove_node(node)
+                await node.project.remove_node(node)
         if node.id in self._nodes:
             del self._nodes[node.id]
         return node
@@ -526,8 +517,7 @@ class BaseManager:
                     return relpath
         return path
 
-    @asyncio.coroutine
-    def list_images(self):
+    async def list_images(self):
         """
         Return the list of available images for this node type
 
@@ -548,8 +538,7 @@ class BaseManager:
             return default_images_directory(self._NODE_TYPE)
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def write_image(self, filename, stream):
+    async def write_image(self, filename, stream):
 
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
@@ -563,13 +552,13 @@ class BaseManager:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(tmp_path, 'wb') as f:
                 while True:
-                    packet = yield from stream.read(4096)
+                    packet = await stream.read(4096)
                     if not packet:
                         break
                     f.write(packet)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             shutil.move(tmp_path, path)
-            yield from cancellable_wait_run_in_executor(md5sum, path)
+            await cancellable_wait_run_in_executor(md5sum, path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))
 

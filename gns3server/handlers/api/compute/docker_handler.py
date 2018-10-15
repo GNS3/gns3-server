@@ -46,9 +46,9 @@ class DockerHandler:
         description="Create a new Docker container",
         input=DOCKER_CREATE_SCHEMA,
         output=DOCKER_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
         docker_manager = Docker.instance()
-        container = yield from docker_manager.create_node(request.json.pop("name"),
+        container = await docker_manager.create_node(request.json.pop("name"),
                                                           request.match_info["project_id"],
                                                           request.json.get("node_id"),
                                                           image=request.json.pop("image"),
@@ -82,10 +82,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Start a Docker container")
-    def start(request, response):
+    async def start(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.start()
+        await container.start()
         response.set_status(204)
 
     @Route.post(
@@ -100,10 +100,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a Docker container")
-    def stop(request, response):
+    async def stop(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.stop()
+        await container.stop()
         response.set_status(204)
 
     @Route.post(
@@ -118,10 +118,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Suspend a Docker container")
-    def suspend(request, response):
+    async def suspend(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.pause()
+        await container.pause()
         response.set_status(204)
 
     @Route.post(
@@ -136,10 +136,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Restart a Docker container")
-    def reload(request, response):
+    async def reload(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.restart()
+        await container.restart()
         response.set_status(204)
 
     @Route.delete(
@@ -154,10 +154,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a Docker container")
-    def delete(request, response):
+    async def delete(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.delete()
+        await container.delete()
         response.set_status(204)
 
     @Route.post(
@@ -171,9 +171,9 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a Docker instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from Docker.instance().duplicate_node(
+        new_node = await Docker.instance().duplicate_node(
             request.match_info["node_id"],
             request.json["destination_node_id"]
         )
@@ -192,10 +192,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Pause a Docker container")
-    def pause(request, response):
+    async def pause(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.pause()
+        await container.pause()
         response.set_status(204)
 
     @Route.post(
@@ -210,10 +210,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Unpause a Docker container")
-    def unpause(request, response):
+    async def unpause(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.unpause()
+        await container.unpause()
         response.set_status(204)
 
     @Route.post(
@@ -232,14 +232,14 @@ class DockerHandler:
         description="Add a NIO to a Docker container",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio_type = request.json["type"]
         if nio_type != "nio_udp":
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = docker_manager.create_nio(request.json)
-        yield from container.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await container.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -259,14 +259,14 @@ class DockerHandler:
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
         description="Update a NIO from a Docker instance")
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = container.ethernet_adapters[int(request.match_info["adapter_number"])].get_nio(0)
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from container.adapter_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await container.adapter_update_nio_binding(int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -284,10 +284,10 @@ class DockerHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a Docker container")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from container.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        await container.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
         response.set_status(204)
 
     @Route.put(
@@ -305,7 +305,7 @@ class DockerHandler:
         description="Update a Docker instance",
         input=DOCKER_OBJECT_SCHEMA,
         output=DOCKER_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -323,7 +323,7 @@ class DockerHandler:
                 changed = True
         # We don't call container.update for nothing because it will restart the container
         if changed:
-            yield from container.update()
+            await container.update()
         container.updated()
         response.json(container)
 
@@ -343,14 +343,14 @@ class DockerHandler:
         },
         description="Start a packet capture on a Docker container instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(container.project.capture_working_directory(), request.json["capture_file_name"])
 
-        yield from container.start_capture(adapter_number, pcap_file_path)
+        await container.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": str(pcap_file_path)})
 
     @Route.post(
@@ -368,13 +368,13 @@ class DockerHandler:
             409: "Container not started"
         },
         description="Stop a packet capture on a Docker container instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         adapter_number = int(request.match_info["adapter_number"])
-        yield from container.stop_capture(adapter_number)
+        await container.stop_capture(adapter_number)
         response.set_status(204)
 
     @Route.get(
@@ -384,7 +384,7 @@ class DockerHandler:
         },
         output=DOCKER_LIST_IMAGES_SCHEMA,
         description="Get all available Docker images")
-    def show(request, response):
+    async def show(request, response):
         docker_manager = Docker.instance()
-        images = yield from docker_manager.list_images()
+        images = await docker_manager.list_images()
         response.json(images)

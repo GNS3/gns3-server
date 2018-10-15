@@ -37,9 +37,9 @@ class DrawingHandler:
             200: "List of drawings returned",
         },
         description="List drawings of a project")
-    def list_drawings(request, response):
+    async def list_drawings(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.drawings.values()])
 
     @Route.post(
@@ -54,10 +54,10 @@ class DrawingHandler:
         description="Create a new drawing instance",
         input=DRAWING_OBJECT_SCHEMA,
         output=DRAWING_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        drawing = yield from project.add_drawing(**request.json)
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        drawing = await project.add_drawing(**request.json)
         response.set_status(201)
         response.json(drawing)
 
@@ -74,9 +74,9 @@ class DrawingHandler:
         },
         description="Get a drawing instance",
         output=DRAWING_OBJECT_SCHEMA)
-    def get_drawing(request, response):
+    async def get_drawing(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         drawing = project.get_drawing(request.match_info["drawing_id"])
         response.set_status(200)
         response.json(drawing)
@@ -94,11 +94,11 @@ class DrawingHandler:
         description="Update a drawing instance",
         input=DRAWING_OBJECT_SCHEMA,
         output=DRAWING_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         drawing = project.get_drawing(request.match_info["drawing_id"])
-        yield from drawing.update(**request.json)
+        await drawing.update(**request.json)
         response.set_status(201)
         response.json(drawing)
 
@@ -113,8 +113,8 @@ class DrawingHandler:
             400: "Invalid request"
         },
         description="Delete a drawing instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.delete_drawing(request.match_info["drawing_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.delete_drawing(request.match_info["drawing_id"])
         response.set_status(204)

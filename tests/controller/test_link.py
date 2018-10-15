@@ -284,10 +284,10 @@ def test_json_serial_link(async_run, project, compute, link):
 
 
 def test_start_streaming_pcap(link, async_run, tmpdir, project):
-    @asyncio.coroutine
-    def fake_reader():
+
+    async def fake_reader():
         output = AsyncioBytesIO()
-        yield from output.write(b"hello")
+        await output.write(b"hello")
         output.seek(0)
         return output
 
@@ -314,8 +314,8 @@ def test_default_capture_file_name(project, compute, async_run):
 
 
 def test_start_capture(link, async_run, tmpdir, project, controller):
-    @asyncio.coroutine
-    def fake_reader():
+
+    async def fake_reader():
         return AsyncioBytesIO()
 
     link.read_pcap_from_source = fake_reader

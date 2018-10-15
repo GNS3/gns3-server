@@ -341,10 +341,10 @@ def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
 
 
 def test_pcap(http_controller, tmpdir, project, compute, loop):
-    @asyncio.coroutine
-    def go(future):
-        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id)))
-        response.body = yield from response.content.read(5)
+
+    async def go(future):
+        response = await aiohttp.request("GET", http_controller.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id)))
+        response.body = await response.content.read(5)
         response.close()
         future.set_result(response)
 

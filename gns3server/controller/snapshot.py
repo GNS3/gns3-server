@@ -82,8 +82,7 @@ class Snapshot:
             for data in zipstream:
                 f.write(data)
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Create the snapshot
         """
@@ -99,31 +98,30 @@ class Snapshot:
 
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                yield from wait_run_in_executor(self._create_snapshot_file, zipstream)
+                zipstream = await export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                await wait_run_in_executor(self._create_snapshot_file, zipstream)
         except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
 
-    @asyncio.coroutine
-    def restore(self):
+    async def restore(self):
         """
         Restore the snapshot
         """
 
-        yield from self._project.delete_on_computes()
+        await self._project.delete_on_computes()
         # We don't send close notification to clients because the close / open dance is purely internal
-        yield from self._project.close(ignore_notification=True)
+        await self._project.close(ignore_notification=True)
 
         try:
             # delete the current project files
             project_files_path = os.path.join(self._project.path, "project-files")
             if os.path.exists(project_files_path):
-                yield from wait_run_in_executor(shutil.rmtree, project_files_path)
+                await wait_run_in_executor(shutil.rmtree, project_files_path)
             with open(self._path, "rb") as f:
-                project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
+                project = await import_project(self._project.controller, self._project.id, f, location=self._project.path)
         except (OSError, PermissionError) as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
-        yield from project.open()
+        await project.open()
         self._project.controller.notification.project_emit("snapshot.restored", self.__json__())
         return self._project
 
