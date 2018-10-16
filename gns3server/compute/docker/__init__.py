@@ -93,6 +93,8 @@ class Docker(BaseManager):
         if self._connected:
             if self._connector and not self._connector.closed:
                 self._connector.close()
+        if self._session and not self._session.closed:
+            await self._session.close()
 
     async def query(self, method, path, data={}, params={}):
         """
@@ -106,6 +108,7 @@ class Docker(BaseManager):
 
         response = await self.http_query(method, path, data=data, params=params)
         body = await response.read()
+        response.close()
         if body and len(body):
             if response.headers['CONTENT-TYPE'] == 'application/json':
                 body = json.loads(body.decode("utf-8"))
@@ -140,14 +143,12 @@ class Docker(BaseManager):
             if self._session is None or self._session.closed:
                 connector = self.connector()
                 self._session = aiohttp.ClientSession(connector=connector)
-            response = await self._session.request(
-                method,
-                url,
-                params=params,
-                data=data,
-                headers={"content-type": "application/json", },
-                timeout=timeout
-            )
+            response = await self._session.request(method,
+                                                   url,
+                                                   params=params,
+                                                   data=data,
+                                                   headers={"content-type": "application/json", },
+                                                   timeout=timeout)
         except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
         except (asyncio.TimeoutError):
@@ -177,9 +178,7 @@ class Docker(BaseManager):
         """
 
         url = "http://docker/v" + self._api_version + "/" + path
-        connection = await self._session.ws_connect(url,
-                                                         origin="http://docker",
-                                                         autoping=True)
+        connection = await self._session.ws_connect(url, origin="http://docker", autoping=True)
         return connection
 
     @locking

@@ -18,6 +18,7 @@
 import ipaddress
 import aiohttp
 import asyncio
+import async_timeout
 import socket
 import json
 import uuid
@@ -50,22 +51,6 @@ class ComputeConflict(aiohttp.web.HTTPConflict):
     def __init__(self, response):
         super().__init__(text=response["message"])
         self.response = response
-
-
-class Timeout(aiohttp.Timeout):
-    """
-    Could be removed with aiohttp 0.22 that support None timeout
-    """
-
-    def __enter__(self):
-        if self._timeout:
-            return super().__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._timeout:
-            return super().__exit__(exc_type, exc_val, exc_tb)
-        return self
 
 
 class Compute:
@@ -101,12 +86,8 @@ class Compute:
             "node_types": []
         }
         self.name = name
-        # Websocket for notifications
-        self._ws = None
-
         # Cache of interfaces on remote host
         self._interfaces_cache = None
-
         self._connection_failure = 0
 
     def _session(self):
@@ -114,9 +95,10 @@ class Compute:
             self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True))
         return self._http_session
 
-    def __del__(self):
-        if self._http_session:
-            self._http_session.close()
+    #def __del__(self):
+    #    pass
+    #    if self._http_session:
+    #        self._http_session.close()
 
     def _set_auth(self, user, password):
         """
@@ -162,19 +144,16 @@ class Compute:
         # It's important to set user and password at the same time
         if "user" in kwargs or "password" in kwargs:
             self._set_auth(kwargs.get("user", self._user), kwargs.get("password", self._password))
-        if self._http_session:
-            self._http_session.close()
+        if self._http_session and not self._http_session.closed:
+            await self._http_session.close()
         self._connected = False
         self._controller.notification.controller_emit("compute.updated", self.__json__())
         self._controller.save()
 
     async def close(self):
         self._connected = False
-        if self._http_session:
-            self._http_session.close()
-        if self._ws:
-            await self._ws.close()
-            self._ws = None
+        if self._http_session and not self._http_session.closed:
+            await self._http_session.close()
         self._closed = True
 
     @property
@@ -474,35 +453,27 @@ class Compute:
         """
         Connect to the notification stream
         """
-        try:
-            self._ws = await self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth)
-        except (aiohttp.WSServerHandshakeError, aiohttp.ClientResponseError):
-            self._ws = None
-        while self._ws is not None:
-            try:
-                response = await self._ws.receive()
-            except aiohttp.WSServerHandshakeError:
-                self._ws = None
-                break
-            if response.tp == aiohttp.WSMsgType.closed or response.tp == aiohttp.WSMsgType.error or response.data is None:
-                self._connected = False
-                break
-            msg = json.loads(response.data)
-            action = msg.pop("action")
-            event = msg.pop("event")
-            if action == "ping":
-                self._cpu_usage_percent = event["cpu_usage_percent"]
-                self._memory_usage_percent = event["memory_usage_percent"]
-                self._controller.notification.controller_emit("compute.updated", self.__json__())
-            else:
-                await self._controller.notification.dispatch(action, event, compute_id=self.id)
-        if self._ws:
-            await self._ws.close()
+
+        async with self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth) as ws:
+            async for response in ws:
+                if response.type == aiohttp.WSMsgType.TEXT and response.data:
+                    msg = json.loads(response.data)
+                    action = msg.pop("action")
+                    event = msg.pop("event")
+                    if action == "ping":
+                        self._cpu_usage_percent = event["cpu_usage_percent"]
+                        self._memory_usage_percent = event["memory_usage_percent"]
+                        self._controller.notification.controller_emit("compute.updated", self.__json__())
+                    else:
+                        await self._controller.notification.dispatch(action, event, compute_id=self.id)
+                elif response.type == aiohttp.WSMsgType.CLOSED or response.type == aiohttp.WSMsgType.ERROR or response.data is None:
+                    self._connected = False
+                    break
 
         # Try to reconnect after 1 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
             asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
-        self._ws = None
+
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
         self._controller.notification.controller_emit("compute.updated", self.__json__())
@@ -527,7 +498,7 @@ class Compute:
         return self._getUrl(path)
 
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
-        with Timeout(timeout):
+        with async_timeout.timeout(timeout):
             url = self._getUrl(path)
             headers = {}
             headers['content-type'] = 'application/json'

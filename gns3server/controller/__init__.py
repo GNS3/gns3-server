@@ -67,50 +67,46 @@ class Controller:
     @locking
     async def download_appliance_templates(self):
 
-        session = aiohttp.ClientSession()
         try:
             headers = {}
             if self._appliance_templates_etag:
                 log.info("Checking if appliance templates are up-to-date (ETag {})".format(self._appliance_templates_etag))
                 headers["If-None-Match"] = self._appliance_templates_etag
-            response = await session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers)
-            if response.status == 304:
-                log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
-                return
-            elif response.status != 200:
-                raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub due to HTTP error code {}".format(response.status))
-            etag = response.headers.get("ETag")
-            if etag:
-                self._appliance_templates_etag = etag
-                self.save()
-            json_data = await response.json()
-            response.close()
-            appliances_dir = get_resource('appliances')
-            for appliance in json_data:
-                if appliance["type"] == "file":
-                    appliance_name = appliance["name"]
-                    log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
-                    response = await session.get(appliance["download_url"])
-                    if response.status != 200:
-                        log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
-                        continue
-                    try:
-                        appliance_data = await response.read()
-                    except asyncio.TimeoutError:
-                        log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
-                        continue
-                    path = os.path.join(appliances_dir, appliance_name)
-
-                    try:
-                        log.info("Saving {} file to {}".format(appliance_name, path))
-                        with open(path, 'wb') as f:
-                            f.write(appliance_data)
-                    except OSError as e:
-                        raise aiohttp.web.HTTPConflict(text="Could not write appliance template file '{}': {}".format(path, e))
+            async with aiohttp.ClientSession() as session:
+                async with session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
+                    if response.status == 304:
+                        log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
+                        return
+                    elif response.status != 200:
+                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub due to HTTP error code {}".format(response.status))
+                    etag = response.headers.get("ETag")
+                    if etag:
+                        self._appliance_templates_etag = etag
+                        self.save()
+                    json_data = await response.json()
+                appliances_dir = get_resource('appliances')
+                for appliance in json_data:
+                    if appliance["type"] == "file":
+                        appliance_name = appliance["name"]
+                        log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
+                        async with session.get(appliance["download_url"]) as response:
+                            if response.status != 200:
+                                log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
+                                continue
+                            try:
+                                appliance_data = await response.read()
+                            except asyncio.TimeoutError:
+                                log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
+                                continue
+                            path = os.path.join(appliances_dir, appliance_name)
+                            try:
+                                log.info("Saving {} file to {}".format(appliance_name, path))
+                                with open(path, 'wb') as f:
+                                    f.write(appliance_data)
+                            except OSError as e:
+                                raise aiohttp.web.HTTPConflict(text="Could not write appliance template file '{}': {}".format(path, e))
         except ValueError as e:
             raise aiohttp.web.HTTPConflict(text="Could not read appliance templates information from GitHub: {}".format(e))
-        finally:
-            session.close()
 
     def load_appliance_templates(self):
 

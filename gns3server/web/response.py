@@ -51,6 +51,7 @@ class Response(aiohttp.web.Response):
         super().enable_chunked_encoding()
 
     async def prepare(self, request):
+
         if log.getEffectiveLevel() == logging.DEBUG:
             log.info("%s %s", request.method, request.path_qs)
             log.debug("%s", dict(request.headers))

@@ -28,6 +28,7 @@ import aiohttp_cors
 import functools
 import time
 import atexit
+import weakref
 
 # Import encoding now, to avoid implicit import later.
 # Implicit import within threads may cause LookupError when standard library is in a ZIP
@@ -48,8 +49,8 @@ import gns3server.handlers
 import logging
 log = logging.getLogger(__name__)
 
-if not (aiohttp.__version__.startswith("2.2") or aiohttp.__version__.startswith("2.3")):
-    raise RuntimeError("aiohttp 2.2.x or 2.3.x is required to run the GNS3 server")
+if not (aiohttp.__version__.startswith("3.")):
+    raise RuntimeError("aiohttp 3.x is required to run the GNS3 server")
 
 
 class WebServer:
@@ -100,18 +101,17 @@ class WebServer:
             log.warning("Close is already in progress")
             return
 
+        # close websocket connections
+        for ws in set(self._app['websockets']):
+            await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY, message='Server shutdown')
+
         if self._server:
             self._server.close()
             await self._server.wait_closed()
         if self._app:
             await self._app.shutdown()
         if self._handler:
-            try:
-                # aiohttp < 2.3
-                await self._handler.finish_connections(2)  # Parameter is timeout
-            except AttributeError:
-                # aiohttp >= 2.3
-                await self._handler.shutdown(2)  # Parameter is timeout
+            await self._handler.shutdown(2)  # Parameter is timeout
         if self._app:
             await self._app.cleanup()
 
@@ -254,6 +254,10 @@ class WebServer:
             log.debug("ENV %s=%s", key, val)
 
         self._app = aiohttp.web.Application()
+
+        # Keep a list of active websocket connections
+        self._app['websockets'] = weakref.WeakSet()
+
         # Background task started with the server
         self._app.on_startup.append(self._on_startup)
 

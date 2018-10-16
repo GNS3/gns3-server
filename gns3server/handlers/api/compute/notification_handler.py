@@ -42,15 +42,17 @@ class NotificationHandler:
         ws = WebSocketResponse()
         await ws.prepare(request)
 
+        request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
-
         with notifications.queue() as queue:
             while True:
                 try:
                     notification = await queue.get_json(1)
+                    if ws.closed:
+                        break
+                    await ws.send_str(notification)
                 except asyncio.futures.CancelledError:
                     break
-                if ws.closed:
-                    break
-                ws.send_str(notification)
+                finally:
+                    request.app['websockets'].discard(ws)
         return ws

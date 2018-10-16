@@ -261,29 +261,22 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         """
         remaining_try = 300
         while remaining_try > 0:
-            json_data = None
-            session = aiohttp.ClientSession()
-            try:
-                resp = None
-                resp = await session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port))
-            except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
-                pass
-
-            if resp:
-                if resp.status < 300:
-                    try:
-                        json_data = await resp.json()
-                    except ValueError:
-                        pass
-                resp.close()
-
-            session.close()
-
-            if json_data:
-                for interface in json_data:
-                    if "name" in interface and interface["name"] == "eth{}".format(hostonly_interface_number - 1):
-                        if "ip_address" in interface and len(interface["ip_address"]) > 0:
-                            return interface["ip_address"]
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port)) as resp:
+                        if resp.status < 300:
+                            try:
+                                json_data = await resp.json()
+                                if json_data:
+                                    for interface in json_data:
+                                        if "name" in interface and interface["name"] == "eth{}".format(
+                                                hostonly_interface_number - 1):
+                                            if "ip_address" in interface and len(interface["ip_address"]) > 0:
+                                                return interface["ip_address"]
+                            except ValueError:
+                                pass
+                except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
+                    pass
             remaining_try -= 1
             await asyncio.sleep(1)
         raise GNS3VMError("Could not get the GNS3 VM ip make sure the VM receive an IP from VirtualBox")

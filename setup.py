@@ -19,9 +19,9 @@ import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-# we only support Python 3 version >= 3.4
-if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 4):
-    raise SystemExit("Python 3.4 or higher is required")
+# we only support Python 3 version >= 3.5.3
+if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 5, 3):
+    raise SystemExit("Python 3.5.3 or higher is required")
 
 
 class PyTest(TestCommand):
