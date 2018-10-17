@@ -150,7 +150,7 @@ def test_stop(loop, vm, running_subprocess_mock):
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             nio = Qemu.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            vm.adapter_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(0, nio)))
             loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.is_running()
             loop.run_until_complete(asyncio.ensure_future(vm.stop()))

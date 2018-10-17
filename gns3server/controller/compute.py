@@ -96,9 +96,9 @@ class Compute:
         return self._http_session
 
     #def __del__(self):
-    #    pass
-    #    if self._http_session:
-    #        self._http_session.close()
+    #
+    #   if self._http_session:
+    #       self._http_session.close()
 
     def _set_auth(self, user, password):
         """
@@ -415,7 +415,7 @@ class Compute:
             if "version" not in response.json:
                 msg = "The server {} is not a GNS3 server".format(self._id)
                 log.error(msg)
-                self._http_session.close()
+                await self._http_session.close()
                 raise aiohttp.web.HTTPConflict(text=msg)
             self._capabilities = response.json
 
@@ -430,13 +430,13 @@ class Compute:
                 if __version_info__[3] == 0:
                     # Stable release
                     log.error(msg)
-                    self._http_session.close()
+                    await self._http_session.close()
                     self._last_error = msg
                     raise aiohttp.web.HTTPConflict(text=msg)
                 elif parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
                     # We don't allow different major version to interact even with dev build
                     log.error(msg)
-                    self._http_session.close()
+                    await self._http_session.close()
                     self._last_error = msg
                     raise aiohttp.web.HTTPConflict(text=msg)
                 else:

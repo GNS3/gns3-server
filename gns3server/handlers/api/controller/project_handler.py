@@ -231,10 +231,9 @@ class ProjectHandler:
             while True:
                 try:
                     msg = await queue.get_json(5)
-                    response.write(("{}\n".format(msg)).encode("utf-8"))
+                    await response.write(("{}\n".format(msg)).encode("utf-8"))
                 except asyncio.futures.CancelledError as e:
                     break
-                await response.drain()
 
         if project.auto_close:
             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
@@ -313,10 +312,9 @@ class ProjectHandler:
                 await response.prepare(request)
 
                 for data in stream:
-                    response.write(data)
-                    await response.drain()
+                    await response.write(data)
 
-                await response.write_eof()
+                #await response.write_eof() #FIXME: shound't be needed anymore
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
         except (ValueError, OSError, RuntimeError) as e:

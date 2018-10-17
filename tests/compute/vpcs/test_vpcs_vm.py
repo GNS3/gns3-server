@@ -70,7 +70,7 @@ def test_vm_invalid_vpcs_version(loop, manager, vm):
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.subprocess_check_output", return_value="Welcome to Virtual PC Simulator, version 0.1"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1", "filters": {}})
-            vm.port_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
             loop.run_until_complete(asyncio.ensure_future(vm._check_vpcs_version()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
@@ -80,7 +80,7 @@ def test_vm_invalid_vpcs_path(vm, manager, loop):
     with patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._vpcs_path", return_value="/tmp/fake/path/vpcs"):
         with pytest.raises(VPCSError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            vm.port_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
             loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
@@ -220,17 +220,17 @@ def test_add_nio_binding_udp(vm, async_run):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-def test_add_nio_binding_tap(vm, ethernet_device):
+def test_add_nio_binding_tap(vm, ethernet_device, loop):
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
         nio = VPCS.instance().create_nio({"type": "nio_tap", "tap_device": ethernet_device})
-        vm.port_add_nio_binding(0, nio)
+        loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
         assert nio.tap_device == ethernet_device
 
 
-def test_port_remove_nio_binding(vm):
+def test_port_remove_nio_binding(vm, loop):
     nio = VPCS.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-    vm.port_add_nio_binding(0, nio)
-    vm.port_remove_nio_binding(0)
+    loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.ensure_future(vm.port_remove_nio_binding(0)))
     assert vm._ethernet_adapter.ports[0] is None
 
 
@@ -297,8 +297,10 @@ def test_change_name(vm, tmpdir):
 
 
 def test_close(vm, port_manager, loop):
+
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            vm.start()
-            loop.run_until_complete(asyncio.ensure_future(vm.close()))
-            assert vm.is_running() is False
+            with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start_wrap_console"):
+                loop.run_until_complete(asyncio.ensure_future(vm.start()))
+                loop.run_until_complete(asyncio.ensure_future(vm.close()))
+                assert vm.is_running() is False

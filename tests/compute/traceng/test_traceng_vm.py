@@ -55,7 +55,7 @@ def test_vm_invalid_traceng_path(vm, manager, loop):
     with patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._traceng_path", return_value="/tmp/fake/path/traceng"):
         with pytest.raises(TraceNGError):
             nio = manager.create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-            vm.port_add_nio_binding(0, nio)
+            loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
             loop.run_until_complete(asyncio.ensure_future(vm.start()))
             assert vm.name == "test"
             assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0e"
@@ -164,16 +164,18 @@ def test_add_nio_binding_udp(vm, async_run):
     assert nio.lport == 4242
 
 
-def test_port_remove_nio_binding(vm):
+def test_port_remove_nio_binding(loop, vm):
     nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-    vm.port_add_nio_binding(0, nio)
-    vm.port_remove_nio_binding(0)
+    loop.run_until_complete(asyncio.ensure_future(vm.port_add_nio_binding(0, nio)))
+    loop.run_until_complete(asyncio.ensure_future(vm.port_remove_nio_binding(0)))
     assert vm._ethernet_adapter.ports[0] is None
 
 
 def test_close(vm, port_manager, loop):
-    with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            vm.start()
-            loop.run_until_complete(asyncio.ensure_future(vm.close()))
-            assert vm.is_running() is False
+    vm.ip_address = "192.168.1.1"
+    with patch("sys.platform", return_value="win"):
+        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM._check_requirements", return_value=True):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+                loop.run_until_complete(asyncio.ensure_future(vm.start("192.168.1.2")))
+                loop.run_until_complete(asyncio.ensure_future(vm.close()))
+                assert vm.is_running() is False

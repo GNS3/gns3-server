@@ -373,12 +373,14 @@ def test_export_images_from_vm(tmpdir, project, async_run, controller):
     mock_response.status = 200
     compute.download_file = AsyncioMagicMock(return_value=mock_response)
 
+
     mock_response = AsyncioMagicMock()
     mock_response.content = AsyncioBytesIO()
     async_run(mock_response.content.write(b"IMAGE"))
     mock_response.content.seek(0)
     mock_response.status = 200
     compute.download_image = AsyncioMagicMock(return_value=mock_response)
+
 
     project._project_created_on_compute.add(compute)
 

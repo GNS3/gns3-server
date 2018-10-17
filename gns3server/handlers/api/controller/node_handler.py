@@ -420,9 +420,8 @@ class NodeHandler:
         response.content_type = "application/octet-stream"
         response.enable_chunked_encoding()
         await response.prepare(request)
-
-        response.write(res.body)
-        await response.write_eof()
+        await response.write(res.body)
+        # await response.write_eof() #FIXME: shound't be needed anymore
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",

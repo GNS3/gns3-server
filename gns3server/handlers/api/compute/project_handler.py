@@ -181,7 +181,7 @@ class ProjectHandler:
         queue = project.get_listen_queue()
         ProjectHandler._notifications_listening.setdefault(project.id, 0)
         ProjectHandler._notifications_listening[project.id] += 1
-        response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
+        await response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         while True:
             try:
                 (action, msg) = await asyncio.wait_for(queue.get(), 5)
@@ -190,11 +190,11 @@ class ProjectHandler:
                 else:
                     msg = json.dumps({"action": action, "event": msg}, sort_keys=True)
                 log.debug("Send notification: %s", msg)
-                response.write(("{}\n".format(msg)).encode("utf-8"))
+                await response.write(("{}\n".format(msg)).encode("utf-8"))
             except asyncio.futures.CancelledError as e:
                 break
             except asyncio.futures.TimeoutError:
-                response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
+                await response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         project.stop_listen_queue(queue)
         if project.id in ProjectHandler._notifications_listening:
             ProjectHandler._notifications_listening[project.id] -= 1
@@ -374,10 +374,9 @@ class ProjectHandler:
 
         include_images = bool(int(request.json.get("include_images", "0")))
         for data in project.export(include_images=include_images):
-            response.write(data)
-            await response.drain()
+            await response.write(data)
 
-        await response.write_eof()
+        #await response.write_eof() #FIXME: shound't be needed anymore
 
     @Route.post(
         r"/projects/{project_id}/import",

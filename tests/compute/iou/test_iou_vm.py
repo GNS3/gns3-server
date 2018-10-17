@@ -200,9 +200,11 @@ def test_reload(loop, vm, fake_iou_bin):
 
 
 def test_close(vm, port_manager, loop):
+    vm._start_ubridge = AsyncioMagicMock(return_value=True)
+    vm._ubridge_send = AsyncioMagicMock()
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
-            vm.start()
+            loop.run_until_complete(asyncio.ensure_future(vm.start()))
             port = vm.console
             loop.run_until_complete(asyncio.ensure_future(vm.close()))
             # Raise an exception if the port is not free

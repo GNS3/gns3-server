@@ -144,7 +144,7 @@ class Response(aiohttp.web.Response):
                     if not data:
                         break
                     await self.write(data)
-                    await self.drain()
+                    # await self.drain()
 
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()

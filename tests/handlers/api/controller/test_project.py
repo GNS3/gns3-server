@@ -172,12 +172,11 @@ def test_notification(http_controller, project, controller, loop, async_run):
 
     async def go():
         connector = aiohttp.TCPConnector()
-        response = await aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
-        response.body = await response.content.read(200)
-        controller.notification.project_emit("node.created", {"a": "b"})
-        response.body += await response.content.readany()
-        response.close()
-        return response
+        async with aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector) as response:
+            response.body = await response.content.read(200)
+            controller.notification.project_emit("node.created", {"a": "b"})
+            response.body += await response.content.readany()
+            return response
 
     response = async_run(asyncio.ensure_future(go()))
     assert response.status == 200
@@ -205,7 +204,7 @@ def test_notification_ws(http_controller, controller, project, async_run):
     assert answer["action"] == "test"
 
     async_run(http_controller.close())
-    ws.close()
+    async_run(ws.close())
     assert project.status == "opened"
 
 

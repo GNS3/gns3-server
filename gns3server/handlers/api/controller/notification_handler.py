@@ -52,10 +52,9 @@ class NotificationHandler:
             while True:
                 try:
                     msg = await queue.get_json(5)
-                    response.write(("{}\n".format(msg)).encode("utf-8"))
+                    await response.write(("{}\n".format(msg)).encode("utf-8"))
                 except asyncio.futures.CancelledError:
                     break
-                await response.drain()
 
     @Route.get(
         r"/notifications/ws",

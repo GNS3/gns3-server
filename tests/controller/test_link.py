@@ -298,7 +298,7 @@ def test_start_streaming_pcap(link, async_run, tmpdir, project):
     with open(os.path.join(project.captures_directory, "test.pcap"), "rb") as f:
         c = f.read()
         assert c == b"hello"
-
+    async_run(link.read_pcap_from_source.close())
 
 def test_default_capture_file_name(project, compute, async_run):
     node1 = Node(project, compute, "Hello@", node_type="qemu")

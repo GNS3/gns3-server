@@ -66,9 +66,9 @@ class Query:
         """
         Return a websocket connected to the path
         """
-        self._session = aiohttp.ClientSession()
 
         async def go_request(future):
+            self._session = aiohttp.ClientSession()
             response = await self._session.ws_connect(self.get_url(path))
             future.set_result(response)
         future = asyncio.Future()
@@ -90,30 +90,31 @@ class Query:
             body = json.dumps(body)
 
         connector = aiohttp.TCPConnector()
-        response = await aiohttp.request(method, self.get_url(path), data=body, loop=self._loop, connector=connector)
-        response.body = await response.read()
-        x_route = response.headers.get('X-Route', None)
-        if x_route is not None:
-            response.route = x_route.replace("/v{}".format(self._api_version), "")
-            response.route = response.route .replace(self._prefix, "")
+        async with aiohttp.request(method, self.get_url(path), data=body, loop=self._loop, connector=connector) as response:
+            response.body = await response.read()
+            x_route = response.headers.get('X-Route', None)
+            if x_route is not None:
+                response.route = x_route.replace("/v{}".format(self._api_version), "")
+                response.route = response.route .replace(self._prefix, "")
 
-        response.json = {}
-        response.html = ""
-        if response.body is not None:
-            if response.headers.get("CONTENT-TYPE", "") == "application/json":
-                try:
-                    response.json = json.loads(response.body.decode("utf-8"))
-                except ValueError:
-                    response.json = None
-            else:
-                try:
-                    response.html = response.body.decode("utf-8")
-                except UnicodeDecodeError:
-                    response.html = None
+            response.json = {}
+            response.html = ""
+            if response.body is not None:
+                if response.headers.get("CONTENT-TYPE", "") == "application/json":
+                    try:
+                        response.json = json.loads(response.body.decode("utf-8"))
+                    except ValueError:
+                        response.json = None
+                else:
+                    try:
+                        response.html = response.body.decode("utf-8")
+                    except UnicodeDecodeError:
+                        response.html = None
 
-        if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-            self._dump_example(method, response.route, path, body, response)
-        return response
+            if kwargs.get('example') and os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+                self._dump_example(method, response.route, path, body, response)
+            return response
+        return None
 
     def _dump_example(self, method, route, path, body, response):
         """Dump the request for the documentation"""
