@@ -277,6 +277,7 @@ class WebServer:
         for method, route, handler in Route.get_routes():
             log.debug("Adding route: {} {}".format(method, route))
             cors.add(self._app.router.add_route(method, route, handler))
+
         for module in MODULES:
             log.debug("Loading module {}".format(module.__name__))
             m = module.instance()

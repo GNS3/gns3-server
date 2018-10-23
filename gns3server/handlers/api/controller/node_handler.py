@@ -56,6 +56,20 @@ class NodeHandler:
         response.json(node)
 
     @Route.get(
+        r"/projects/{project_id}/nodes",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            200: "List of nodes returned",
+        },
+        description="List nodes of a project")
+    async def list_nodes(request, response):
+
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        response.json([v for v in project.nodes.values()])
+        
+    @Route.get(
         r"/projects/{project_id}/nodes/{node_id}",
         status_codes={
             200: "Node found",
@@ -70,19 +84,6 @@ class NodeHandler:
         response.set_status(200)
         response.json(node)
 
-    @Route.get(
-        r"/projects/{project_id}/nodes",
-        parameters={
-            "project_id": "Project UUID"
-        },
-        status_codes={
-            200: "List of nodes returned",
-        },
-        description="List nodes of a project")
-    async def list_nodes(request, response):
-
-        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        response.json([v for v in project.nodes.values()])
 
     @Route.put(
         r"/projects/{project_id}/nodes/{node_id}",
