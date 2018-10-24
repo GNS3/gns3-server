@@ -283,13 +283,6 @@ class WebServer:
             m = module.instance()
             m.port_manager = PortManager.instance()
 
-        # adding static route
-        #self._app.router.add_static(
-        #    '/static/',
-        #    path=get_static_dir(),
-        #    name='static'
-        #)
-
         log.info("Starting server on {}:{}".format(self._host, self._port))
 
         self._handler = self._app.make_handler()
