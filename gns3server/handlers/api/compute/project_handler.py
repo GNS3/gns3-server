@@ -295,6 +295,7 @@ class ProjectHandler:
         response.set_status(200)
         response.enable_chunked_encoding()
 
+        # FIXME: file streaming is never stopped
         try:
             with open(path, "rb") as f:
                 await response.prepare(request)
@@ -303,7 +304,6 @@ class ProjectHandler:
                     if not data:
                         await asyncio.sleep(0.1)
                     await response.write(data)
-
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

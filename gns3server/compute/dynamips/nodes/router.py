@@ -1264,7 +1264,7 @@ class Router(BaseNode):
             raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         try:
@@ -1299,6 +1299,7 @@ class Router(BaseNode):
         :param port_number: port number
         :param nio: NIO instance to add to the slot/port
         """
+
         await nio.update()
 
     async def slot_remove_nio_binding(self, slot_number, port_number):
@@ -1321,7 +1322,7 @@ class Router(BaseNode):
             raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         await self.slot_disable_nio(slot_number, port_number)
@@ -1361,6 +1362,32 @@ class Router(BaseNode):
                                                                                                       id=self._id,
                                                                                                       slot_number=slot_number,
                                                                                                       port_number=port_number))
+
+    def get_nio(self, slot_number, port_number):
+        """
+        Gets an slot NIO binding.
+
+        :param slot_number: slot number
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._slots[slot_number]
+        except IndexError:
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
+
+        nio = adapter.get_nio(port_number)
+
+        if not nio:
+            raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
+                                                                                           port_number=port_number))
+        return nio
 
     async def slot_disable_nio(self, slot_number, port_number):
         """
@@ -1402,7 +1429,7 @@ class Router(BaseNode):
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         data_link_type = data_link_type.lower()
@@ -1442,7 +1469,7 @@ class Router(BaseNode):
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         nio = adapter.get_nio(port_number)

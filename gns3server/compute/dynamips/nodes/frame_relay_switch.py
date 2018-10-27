@@ -209,6 +209,25 @@ class FrameRelaySwitch(Device):
         del self._nios[port_number]
         return nio
 
+    def get_nio(self, port_number):
+        """
+        Gets a port NIO binding.
+
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        nio = self._nios[port_number]
+
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
+        return nio
+
     async def set_mappings(self, mappings):
         """
         Applies VC mappings
@@ -309,10 +328,7 @@ class FrameRelaySwitch(Device):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_FRELAY
         """
 
-        if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._nios[port_number]
+        nio = self.get_nio(port_number)
 
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
@@ -335,10 +351,7 @@ class FrameRelaySwitch(Device):
         :param port_number: allocated port number
         """
 
-        if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._nios[port_number]
+        nio = self.get_nio(port_number)
         await nio.unbind_filter("both")
         log.info('Frame relay switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                      id=self._id,

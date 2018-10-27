@@ -15,9 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import asyncio
 import aiohttp
+import multidict
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -160,7 +159,8 @@ class LinkHandler:
 
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
-        await link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
+        await link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"),
+                                 capture_file_name=request.json.get("capture_file_name"))
         response.set_status(201)
         response.json(link)
 
@@ -206,7 +206,7 @@ class LinkHandler:
             "project_id": "Project UUID",
             "link_id": "Link UUID"
         },
-        description="Stream the pcap capture file",
+        description="Stream the PCAP capture file from compute",
         status_codes={
             200: "File returned",
             403: "Permission denied",
@@ -216,25 +216,25 @@ class LinkHandler:
 
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
+        if not link.capturing:
+            raise aiohttp.web.HTTPConflict(text="This link has no active packet capture")
 
-        while link.capture_file_path is None:
-            raise aiohttp.web.HTTPNotFound(text="pcap file not found")
+        compute = link.compute
+        pcap_streaming_url = link.pcap_streaming_url()
+        headers = multidict.MultiDict(request.headers)
+        headers['Host'] = compute.host
+        headers['Router-Host'] = request.host
+        body = await request.read()
 
-        while not os.path.isfile(link.capture_file_path):
-            await asyncio.sleep(0.5)
+        connector = aiohttp.TCPConnector(limit=None, force_close=True)
+        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+            async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
+                proxied_response = aiohttp.web.Response(headers=response.headers, status=response.status)
+                if response.headers.get('Transfer-Encoding', '').lower() == 'chunked':
+                    proxied_response.enable_chunked_encoding()
 
-        try:
-            with open(link.capture_file_path, "rb") as f:
-
-                response.content_type = "application/vnd.tcpdump.pcap"
-                response.set_status(200)
-                response.enable_chunked_encoding()
-                await response.prepare(request)
-
-                while True:
-                    chunk = f.read(4096)
-                    if not chunk:
-                        await asyncio.sleep(0.1)
-                    await response.write(chunk)
-        except OSError:
-            raise aiohttp.web.HTTPNotFound(text="pcap file {} not found or not accessible".format(link.capture_file_path))
+                await proxied_response.prepare(request)
+                async for data in response.content.iter_any():
+                    if not data:
+                        break
+                    await proxied_response.write(data)

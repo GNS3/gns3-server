@@ -1014,10 +1014,10 @@ class VirtualBoxVM(BaseNode):
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
-        Update a port NIO binding.
+        Update an adapter NIO binding.
 
         :param adapter_number: adapter number
-        :param nio: NIO instance to add to the adapter
+        :param nio: NIO instance to update on the adapter
         """
 
         if self.is_running():
@@ -1030,10 +1030,8 @@ class VirtualBoxVM(BaseNode):
                 else:
                     await self._control_vm("setlinkstate{} on".format(adapter_number + 1))
             except IndexError:
-                raise VirtualBoxError('Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(
-                    name=self._name,
-                    adapter_number=adapter_number
-                ))
+                raise VirtualBoxError('Adapter {adapter_number} does not exist on VirtualBox VM "{name}"'.format(name=self._name,
+                                                                                                                 adapter_number=adapter_number))
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -1067,6 +1065,28 @@ class VirtualBoxVM(BaseNode):
                                                                                                      adapter_number=adapter_number))
         return nio
 
+    def get_nio(self, adapter_number):
+        """
+        Gets an adapter NIO binding.
+
+        :param adapter_number: adapter number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self.ethernet_adapters[adapter_number]
+        except KeyError:
+            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
+                                                                                                            adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
+
+        return nio
+
     def is_running(self):
         """
         :returns: True if the vm is not stopped
@@ -1081,17 +1101,7 @@ class VirtualBoxVM(BaseNode):
         :param output_file: PCAP destination file for the capture
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                            adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -1112,17 +1122,7 @@ class VirtualBoxVM(BaseNode):
         :param adapter_number: adapter number
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
-                                                                                                            adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise VirtualBoxError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         nio.stopPacketCapture()
 
         if self.ubridge:

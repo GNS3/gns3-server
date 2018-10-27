@@ -108,3 +108,29 @@ def test_cloud_update(http_compute, vm, tmpdir):
         example=True)
     assert response.status == 200
     assert response.json["name"] == "test"
+
+
+def test_cloud_start_capture(http_compute, vm):
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.start_capture") as start_capture:
+        params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+        response = http_compute.post("/projects/{project_id}/cloud/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
+        assert response.status == 200
+        assert start_capture.called
+        assert "test.pcap" in response.json["pcap_file_path"]
+
+
+def test_cloud_stop_capture(http_compute, vm):
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.stop_capture") as stop_capture:
+        response = http_compute.post("/projects/{project_id}/cloud/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+        assert response.status == 204
+        assert stop_capture.called
+
+
+def test_cloud_pcap(http_compute, vm, project):
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.get_nio"):
+        with asyncio_patch("gns3server.compute.builtin.Builtin.stream_pcap_file"):
+            response = http_compute.get("/projects/{project_id}/cloud/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=project.id, node_id=vm["node_id"]), raw=True)
+            assert response.status == 200

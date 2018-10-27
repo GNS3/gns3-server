@@ -840,7 +840,7 @@ class IOUVM(BaseNode):
 
     async def adapter_add_nio_binding(self, adapter_number, port_number, nio):
         """
-        Adds a adapter NIO binding.
+        Adds an adapter NIO binding.
 
         :param adapter_number: adapter number
         :param port_number: port number
@@ -854,7 +854,7 @@ class IOUVM(BaseNode):
                                                                                              adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                            port_number=port_number))
 
         adapter.add_nio(port_number, nio)
@@ -877,7 +877,7 @@ class IOUVM(BaseNode):
 
     async def adapter_update_nio_binding(self, adapter_number, port_number, nio):
         """
-        Update a port NIO binding.
+        Updates an adapter NIO binding.
 
         :param adapter_number: adapter number
         :param port_number: port number
@@ -913,6 +913,7 @@ class IOUVM(BaseNode):
 
         :param adapter_number: adapter number
         :param port_number: port number
+
         :returns: NIO instance
         """
 
@@ -923,7 +924,7 @@ class IOUVM(BaseNode):
                                                                                             adapter_number=adapter_number))
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                            port_number=port_number))
 
         nio = adapter.get_nio(port_number)
@@ -942,6 +943,33 @@ class IOUVM(BaseNode):
                                                                                                  bay=adapter_number,
                                                                                                  unit=port_number))
 
+        return nio
+
+    def get_nio(self, adapter_number, port_number):
+        """
+        Gets an adapter NIO binding.
+
+        :param adapter_number: adapter number
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._adapters[adapter_number]
+        except IndexError:
+            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
+                                                                                            adapter_number=adapter_number))
+
+        if not adapter.port_exists(port_number):
+            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
+                                                                                           port_number=port_number))
+
+        nio = adapter.get_nio(port_number)
+
+        if not nio:
+            raise IOUError("NIO {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
+                                                                                          port_number=port_number))
         return nio
 
     @property
@@ -1221,21 +1249,7 @@ class IOUVM(BaseNode):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        try:
-            adapter = self._adapters[adapter_number]
-        except IndexError:
-            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
-                                                                                            adapter_number=adapter_number))
-
-        if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
-                                                                                           port_number=port_number))
-
-        nio = adapter.get_nio(port_number)
-        if not nio:
-            raise IOUError("NIO {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
-
+        nio = self.get_nio(adapter_number, port_number)
         if nio.capturing:
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
@@ -1263,21 +1277,7 @@ class IOUVM(BaseNode):
         :param port_number: port number
         """
 
-        try:
-            adapter = self._adapters[adapter_number]
-        except IndexError:
-            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
-                                                                                            adapter_number=adapter_number))
-
-        if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
-                                                                                           port_number=port_number))
-
-        nio = adapter.get_nio(port_number)
-        if not nio:
-            raise IOUError("NIO {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
-
+        nio = self.get_nio(adapter_number, port_number)
         nio.stopPacketCapture()
         log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
                                                                                                          id=self._id,

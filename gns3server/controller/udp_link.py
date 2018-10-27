@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+
 import aiohttp
 
 
@@ -26,7 +26,6 @@ class UDPLink(Link):
 
     def __init__(self, project, link_id=None):
         super().__init__(project, link_id=link_id)
-        self._capture_node = None
         self._created = False
         self._link_data = []
 
@@ -164,10 +163,8 @@ class UDPLink(Link):
         if not capture_file_name:
             capture_file_name = self.default_capture_file_name()
         self._capture_node = self._choose_capture_side()
-        data = {
-            "capture_file_name": capture_file_name,
-            "data_link_type": data_link_type
-        }
+        data = {"capture_file_name": capture_file_name,
+                "data_link_type": data_link_type}
         await self._capture_node["node"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]), data=data)
         await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
 
@@ -209,14 +206,6 @@ class UDPLink(Link):
                 return node
 
         raise aiohttp.web.HTTPConflict(text="Cannot capture because there is no running device on this link")
-
-    async def read_pcap_from_source(self):
-        """
-        Return a FileStream of the Pcap from the compute node
-        """
-        if self._capture_node:
-            compute = self._capture_node["node"].compute
-            return compute.stream_file(self._project, "tmp/captures/" + self._capture_file_name)
 
     async def node_updated(self, node):
         """

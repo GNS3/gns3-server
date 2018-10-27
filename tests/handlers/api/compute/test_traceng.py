@@ -60,6 +60,13 @@ def test_traceng_nio_create_udp(http_compute, vm):
 
 
 def test_traceng_nio_update_udp(http_compute, vm):
+
+    with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.add_ubridge_udp_connection"):
+        response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                                       "lport": 4242,
+                                                                                                                                                                       "rport": 4343,
+                                                                                                                                                                       "rhost": "127.0.0.1"})
+    assert response.status == 201
     response = http_compute.put("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
                                 {
                                     "type": "nio_udp",
@@ -136,3 +143,31 @@ def test_traceng_update(http_compute, vm, tmpdir, free_console_port):
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["ip_address"] == "192.168.1.1"
+
+
+def test_traceng_start_capture(http_compute, vm):
+
+    with patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.is_running", return_value=True):
+        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.start_capture") as start_capture:
+            params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+            response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
+            assert response.status == 200
+            assert start_capture.called
+            assert "test.pcap" in response.json["pcap_file_path"]
+
+
+def test_traceng_stop_capture(http_compute, vm):
+
+    with patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.is_running", return_value=True):
+        with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.stop_capture") as stop_capture:
+            response = http_compute.post("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+            assert response.status == 204
+            assert stop_capture.called
+
+
+def test_traceng_pcap(http_compute, vm, project):
+
+    with asyncio_patch("gns3server.compute.traceng.traceng_vm.TraceNGVM.get_nio"):
+        with asyncio_patch("gns3server.compute.traceng.TraceNG.stream_pcap_file"):
+            response = http_compute.get("/projects/{project_id}/traceng/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=project.id, node_id=vm["node_id"]), raw=True)
+            assert response.status == 200

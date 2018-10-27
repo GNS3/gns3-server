@@ -19,7 +19,6 @@ import os
 import re
 import uuid
 import html
-import asyncio
 import aiohttp
 
 import logging
@@ -118,6 +117,7 @@ class Link:
         self._nodes = []
         self._project = project
         self._capturing = False
+        self._capture_node = None
         self._capture_file_name = None
         self._streaming_pcap = None
         self._created = False
@@ -138,6 +138,34 @@ class Link:
         Get the current nodes attached to this link
         """
         return self._nodes
+
+    @property
+    def project(self):
+        """
+        Get the project this link belongs to.
+
+        :return: Project instance.
+        """
+        return self._project
+
+    @property
+    def capture_node(self):
+        """
+        Get the capturing node
+
+        :return: Node instance.
+        """
+        return self._capture_node
+
+    @property
+    def compute(self):
+        """
+        Get the capturing node
+
+        :return: Node instance.
+        """
+        assert self.capture_node
+        return self.capture_node["node"].compute
 
     def get_active_filters(self):
         """
@@ -289,43 +317,7 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._streaming_pcap = asyncio.ensure_future(self._start_streaming_pcap())
         self._project.controller.notification.project_emit("link.updated", self.__json__())
-
-    async def _start_streaming_pcap(self):
-        """
-        Dump a pcap file on disk
-        """
-
-        if os.path.exists(self.capture_file_path):
-            try:
-                os.remove(self.capture_file_path)
-            except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Could not delete old capture file '{}': {}".format(self.capture_file_path, e))
-
-        try:
-            stream_content = await self.read_pcap_from_source()
-        except aiohttp.web.HTTPException as e:
-            error_msg = "Could not stream PCAP file: error {}: {}".format(e.status, e.text)
-            log.error(error_msg)
-            self._capturing = False
-            self._project.notification.project_emit("log.error", {"message": error_msg})
-            self._project.controller.notification.project_emit("link.updated", self.__json__())
-
-        with stream_content as stream:
-            try:
-                with open(self.capture_file_path, "wb") as f:
-                    while self._capturing:
-                        # We read 1 bytes by 1 otherwise the remaining data is not read if the traffic stops
-                        data = await stream.read(1)
-                        if data:
-                            f.write(data)
-                            # Flush to disk otherwise the live is not really live
-                            f.flush()
-                        else:
-                            break
-            except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Could not write capture file '{}': {}".format(self.capture_file_path, e))
 
     async def stop_capture(self):
         """
@@ -335,12 +327,26 @@ class Link:
         self._capturing = False
         self._project.controller.notification.project_emit("link.updated", self.__json__())
 
-    async def _read_pcap_from_source(self):
+    def pcap_streaming_url(self):
         """
-        Return a FileStream of the Pcap from the compute server
+        Get the PCAP streaming URL on compute
+
+        :returns: URL
         """
 
-        raise NotImplementedError
+        assert self.capture_node
+        compute = self.capture_node["node"].compute
+        node_type = self.capture_node["node"].node_type
+        node_id = self.capture_node["node"].id
+        adapter_number = self.capture_node["adapter_number"]
+        port_number = self.capture_node["port_number"]
+        url = "/projects/{project_id}/{node_type}/nodes/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap".format(project_id=self.project.id,
+                                                                                                                             node_type=node_type,
+                                                                                                                             node_id=node_id,
+                                                                                                                             adapter_number=adapter_number,
+                                                                                                                             port_number=port_number)
+
+        return compute._getUrl(url)
 
     async def node_updated(self, node):
         """

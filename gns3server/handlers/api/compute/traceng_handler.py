@@ -261,15 +261,16 @@ class TraceNGHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a TraceNG instance")
+        description="Update a NIO on a TraceNG instance")
     async def update_nio(request, response):
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = vm.ethernet_adapter.get_nio(int(request.match_info["port_number"]))
-        if "filters" in request.json and nio:
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        await vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_update_nio_binding(port_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -291,7 +292,8 @@ class TraceNGHandler:
 
         traceng_manager = TraceNG.instance()
         vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        await vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        port_number = int(request.match_info["port_number"])
+        await vm.port_remove_nio_binding(port_number)
         response.set_status(204)
 
     @Route.post(
@@ -339,3 +341,25 @@ class TraceNGHandler:
         port_number = int(request.match_info["port_number"])
         await vm.stop_capture(port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/traceng/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        traceng_manager = TraceNG.instance()
+        vm = traceng_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(port_number)
+        await traceng_manager.stream_pcap_file(nio, vm.project.id, request, response)

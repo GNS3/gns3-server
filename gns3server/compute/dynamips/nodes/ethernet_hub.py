@@ -19,8 +19,6 @@
 Hub object that uses the Bridge interface to create a hub with ports.
 """
 
-import asyncio
-
 from .bridge import Bridge
 from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
@@ -177,6 +175,25 @@ class EthernetHub(Bridge):
         del self._mappings[port_number]
         return nio
 
+    def get_nio(self, port_number):
+        """
+        Gets a port NIO binding.
+
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        if port_number not in self._mappings:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        nio = self._mappings[port_number]
+
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
+        return nio
+
     async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
@@ -186,11 +203,7 @@ class EthernetHub(Bridge):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._mappings[port_number]
-
+        nio = self.get_nio(port_number)
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
@@ -212,10 +225,7 @@ class EthernetHub(Bridge):
         :param port_number: allocated port number
         """
 
-        if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._mappings[port_number]
+        nio = self.get_nio(port_number)
         await nio.unbind_filter("both")
         log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,

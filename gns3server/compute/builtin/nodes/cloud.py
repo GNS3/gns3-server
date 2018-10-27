@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import asyncio
 import subprocess
 
 from ...error import NodeError
@@ -461,13 +460,13 @@ class Cloud(BaseNode):
         await self.start()
         return nio
 
-    async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
+    def get_nio(self, port_number):
         """
-        Starts a packet capture.
+        Gets a port NIO binding.
 
-        :param port_number: allocated port number
-        :param output_file: PCAP destination file for the capture
-        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        :param port_number: port number
+
+        :returns: NIO instance
         """
 
         if not [port["port_number"] for port in self._ports_mapping if port_number == port["port_number"]]:
@@ -479,6 +478,18 @@ class Cloud(BaseNode):
 
         nio = self._nios[port_number]
 
+        return nio
+
+    async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param port_number: allocated port number
+        :param output_file: PCAP destination file for the capture
+        :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        nio = self.get_nio(port_number)
         if nio.capturing:
             raise NodeError("Packet capture is already activated on port {port_number}".format(port_number=port_number))
         nio.startPacketCapture(output_file)
@@ -496,14 +507,7 @@ class Cloud(BaseNode):
         :param port_number: allocated port number
         """
 
-        if not [port["port_number"] for port in self._ports_mapping if port_number == port["port_number"]]:
-            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
-                                                                                        port_number=port_number))
-
-        if port_number not in self._nios:
-            raise NodeError("Port {} is not connected".format(port_number))
-
-        nio = self._nios[port_number]
+        nio = self.get_nio(port_number)
         nio.stopPacketCapture()
         bridge_name = "{}-{}".format(self._id, port_number)
         await self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))

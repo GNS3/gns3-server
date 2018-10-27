@@ -282,23 +282,6 @@ def test_json_serial_link(async_run, project, compute, link):
     async_run(link.add_node(node2, 1, 3))
     assert link.__json__()["link_type"] == "serial"
 
-
-def test_start_streaming_pcap(link, async_run, tmpdir, project):
-
-    async def fake_reader():
-        output = AsyncioBytesIO()
-        await output.write(b"hello")
-        output.seek(0)
-        return output
-
-    link._capture_file_name = "test.pcap"
-    link._capturing = True
-    link.read_pcap_from_source = fake_reader
-    async_run(link._start_streaming_pcap())
-    with open(os.path.join(project.captures_directory, "test.pcap"), "rb") as f:
-        c = f.read()
-        assert c == b"hello"
-
 def test_default_capture_file_name(project, compute, async_run):
     node1 = Node(project, compute, "Hello@", node_type="qemu")
     node1._ports = [EthernetPort("E0", 0, 0, 4)]

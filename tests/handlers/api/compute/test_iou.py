@@ -290,6 +290,14 @@ def test_iou_stop_capture(http_compute, vm, tmpdir, project):
             assert stop_capture.called
 
 
+def test_iou_pcap(http_compute, vm, project):
+
+    with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.get_nio"):
+        with asyncio_patch("gns3server.compute.iou.IOU.stream_pcap_file"):
+            response = http_compute.get("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=project.id, node_id=vm["node_id"]), raw=True)
+            assert response.status == 200
+
+
 def test_images(http_compute, fake_iou_bin):
 
     response = http_compute.get("/iou/images", example=True)

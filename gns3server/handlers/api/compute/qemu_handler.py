@@ -334,17 +334,18 @@ class QEMUHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Qemu instance")
+        description="Update a NIO on a Qemu instance")
     async def update_nio(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
-        if "filters" in request.json and nio:
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = vm.get_nio(adapter_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        if "suspend" in request.json and nio:
+        if "suspend" in request.json:
             nio.suspend = request.json["suspend"]
-        await vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await vm.adapter_update_nio_binding(adapter_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -366,7 +367,8 @@ class QEMUHandler:
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        await vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        adapter_number = int(request.match_info["adapter_number"])
+        await vm.adapter_remove_nio_binding(adapter_number)
         response.set_status(204)
 
     @Route.post(
@@ -414,6 +416,28 @@ class QEMUHandler:
         adapter_number = int(request.match_info["adapter_number"])
         await vm.stop_capture(adapter_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = vm.get_nio(adapter_number)
+        await qemu_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.get(
         r"/qemu/binaries",

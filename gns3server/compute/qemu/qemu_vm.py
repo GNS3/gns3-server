@@ -1209,7 +1209,7 @@ class QemuVM(BaseNode):
 
     async def adapter_add_nio_binding(self, adapter_number, nio):
         """
-        Adds a port NIO binding.
+        Adds an adapter NIO binding.
 
         :param adapter_number: adapter number
         :param nio: NIO instance to add to the adapter
@@ -1239,10 +1239,10 @@ class QemuVM(BaseNode):
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
-        Update a port NIO binding.
+        Update an adapter NIO binding.
 
         :param adapter_number: adapter number
-        :param nio: NIO instance to add to the adapter
+        :param nio: NIO instance to update the adapter
         """
 
         if self.is_running():
@@ -1260,7 +1260,7 @@ class QemuVM(BaseNode):
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
-        Removes a port NIO binding.
+        Removes an adapter NIO binding.
 
         :param adapter_number: adapter number
 
@@ -1288,12 +1288,13 @@ class QemuVM(BaseNode):
                                                                                                adapter_number=adapter_number))
         return nio
 
-    async def start_capture(self, adapter_number, output_file):
+    def get_nio(self, adapter_number):
         """
-        Starts a packet capture.
+        Gets an adapter NIO binding.
 
         :param adapter_number: adapter number
-        :param output_file: PCAP destination file for the capture
+
+        :returns: NIO instance
         """
 
         try:
@@ -1307,6 +1308,17 @@ class QemuVM(BaseNode):
         if not nio:
             raise QemuError("Adapter {} is not connected".format(adapter_number))
 
+        return nio
+
+    async def start_capture(self, adapter_number, output_file):
+        """
+        Starts a packet capture.
+
+        :param adapter_number: adapter number
+        :param output_file: PCAP destination file for the capture
+        """
+
+        nio = self.get_nio(adapter_number)
         if nio.capturing:
             raise QemuError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -1327,16 +1339,7 @@ class QemuVM(BaseNode):
         :param adapter_number: adapter number
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except IndexError:
-            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                 adapter_number=adapter_number))
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise QemuError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         nio.stopPacketCapture()
 
         if self.ubridge:

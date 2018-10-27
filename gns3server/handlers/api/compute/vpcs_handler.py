@@ -239,8 +239,9 @@ class VPCSHandler:
         nio_type = request.json["type"]
         if nio_type not in ("nio_udp", "nio_tap"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+        port_number = int(request.match_info["port_number"])
         nio = vpcs_manager.create_nio(request.json)
-        await vm.port_add_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_add_nio_binding(port_number, nio)
         response.set_status(201)
         response.json(nio)
 
@@ -259,15 +260,16 @@ class VPCSHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a VPCS instance")
+        description="Update a NIO on a VPCS instance")
     async def update_nio(request, response):
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = vm.ethernet_adapter.get_nio(int(request.match_info["port_number"]))
-        if "filters" in request.json and nio:
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        await vm.port_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await vm.port_update_nio_binding(port_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -289,7 +291,8 @@ class VPCSHandler:
 
         vpcs_manager = VPCS.instance()
         vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        await vm.port_remove_nio_binding(int(request.match_info["port_number"]))
+        port_number = int(request.match_info["port_number"])
+        await vm.port_remove_nio_binding(port_number)
         response.set_status(204)
 
     @Route.post(
@@ -337,3 +340,25 @@ class VPCSHandler:
         port_number = int(request.match_info["port_number"])
         await vm.stop_capture(port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(port_number)
+        await vpcs_manager.stream_pcap_file(nio, vm.project.id, request, response)

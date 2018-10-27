@@ -300,6 +300,25 @@ class EthernetSwitch(Device):
 
         return nio
 
+    def get_nio(self, port_number):
+        """
+        Gets a port NIO binding.
+
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        if port_number not in self._nios:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        nio = self._nios[port_number]
+
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
+        return nio
+
     async def set_port_settings(self, port_number, settings):
         """
         Applies port settings to a specific port.
@@ -413,14 +432,7 @@ class EthernetSwitch(Device):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._nios[port_number]
-
-        if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
-
+        nio = self.get_nio(port_number)
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
@@ -442,14 +454,7 @@ class EthernetSwitch(Device):
         :param port_number: allocated port number
         """
 
-        if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._nios[port_number]
-
-        if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
-
+        nio = self.get_nio(port_number)
         await nio.unbind_filter("both")
         log.info('Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                   id=self._id,

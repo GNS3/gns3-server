@@ -238,8 +238,9 @@ class DockerHandler:
         nio_type = request.json["type"]
         if nio_type != "nio_udp":
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
+        adapter_number = int(request.match_info["adapter_number"])
         nio = docker_manager.create_nio(request.json)
-        await container.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await container.adapter_add_nio_binding(adapter_number, nio)
         response.set_status(201)
         response.json(nio)
 
@@ -249,7 +250,7 @@ class DockerHandler:
             "project_id": "Project UUID",
             "node_id": "Node UUID",
             "adapter_number": "Network adapter where the nio is located",
-            "port_number": "Port from where the nio should be updated"
+            "port_number": "Port from where the nio should be updated (always 0)"
         },
         status_codes={
             201: "NIO updated",
@@ -258,15 +259,16 @@ class DockerHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Docker instance")
+        description="Update a NIO on a Docker instance")
     async def update_nio(request, response):
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = container.ethernet_adapters[int(request.match_info["adapter_number"])].get_nio(0)
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = container.get_nio(adapter_number)
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        await container.adapter_update_nio_binding(int(request.match_info["port_number"]), nio)
+        await container.adapter_update_nio_binding(adapter_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -276,7 +278,7 @@ class DockerHandler:
             "project_id": "Project UUID",
             "node_id": "Node UUID",
             "adapter_number": "Adapter where the nio should be added",
-            "port_number": "Port on the adapter"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             204: "NIO deleted",
@@ -287,7 +289,8 @@ class DockerHandler:
     async def delete_nio(request, response):
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        await container.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        adapter_number = int(request.match_info["adapter_number"])
+        await container.adapter_remove_nio_binding(adapter_number)
         response.set_status(204)
 
     @Route.put(
@@ -333,7 +336,7 @@ class DockerHandler:
             "project_id": "Project UUID",
             "node_id": "Node UUID",
             "adapter_number": "Adapter to start a packet capture",
-            "port_number": "Port on the adapter"
+            "port_number": "Port on the adapter (always 0)"
         },
         status_codes={
             200: "Capture started",
@@ -349,7 +352,6 @@ class DockerHandler:
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(container.project.capture_working_directory(), request.json["capture_file_name"])
-
         await container.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": str(pcap_file_path)})
 
@@ -372,10 +374,31 @@ class DockerHandler:
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
         adapter_number = int(request.match_info["adapter_number"])
         await container.stop_capture(adapter_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        docker_manager = Docker.instance()
+        container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = container.get_nio(adapter_number)
+        await docker_manager.stream_pcap_file(nio, container.project.id, request, response)
 
     @Route.get(
         r"/docker/images",

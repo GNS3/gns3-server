@@ -367,7 +367,7 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
         if self.is_running():
@@ -382,8 +382,15 @@ class VPCSVM(BaseNode):
         return nio
 
     async def port_update_nio_binding(self, port_number, nio):
+        """
+        Updates a port NIO binding.
+
+        :param port_number: port number
+        :param nio: NIO instance to update on the slot/port
+        """
+
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
         if self.is_running():
             await self.update_ubridge_udp_connection("VPCS-{}".format(self._id), self._local_udp_tunnel[1], nio)
@@ -398,7 +405,7 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
+            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
         if self.is_running():
@@ -415,6 +422,23 @@ class VPCSVM(BaseNode):
                                                                                       port_number=port_number))
         return nio
 
+    def get_nio(self, port_number):
+        """
+        Gets a port NIO binding.
+
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        if not self._ethernet_adapter.port_exists(port_number):
+            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
+                                                                                           port_number=port_number))
+        nio = self._ethernet_adapter.get_nio(port_number)
+        if not nio:
+            raise VPCSError("Port {} is not connected".format(port_number))
+        return nio
+
     async def start_capture(self, port_number, output_file):
         """
         Starts a packet capture.
@@ -423,17 +447,9 @@ class VPCSVM(BaseNode):
         :param output_file: PCAP destination file for the capture
         """
 
-        if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
-
-        nio = self._ethernet_adapter.get_nio(0)
-
-        if not nio:
-            raise VPCSError("Port {} is not connected".format(port_number))
-
+        nio = self.get_nio(port_number)
         if nio.capturing:
-            raise VPCSError("Packet capture is already activated on port {port_number}".format(port_number=port_number))
+            raise VPCSError("Packet capture is already active on port {port_number}".format(port_number=port_number))
 
         nio.startPacketCapture(output_file)
 
@@ -452,15 +468,7 @@ class VPCSVM(BaseNode):
         :param port_number: port number
         """
 
-        if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
-
-        nio = self._ethernet_adapter.get_nio(0)
-
-        if not nio:
-            raise VPCSError("Port {} is not connected".format(port_number))
-
+        nio = self.get_nio(port_number)
         nio.stopPacketCapture()
 
         if self.ubridge:

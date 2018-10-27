@@ -853,10 +853,10 @@ class DockerVM(BaseNode):
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
-        Update a port NIO binding.
+        Update an adapter NIO binding.
 
         :param adapter_number: adapter number
-        :param nio: NIO instance to add to the adapter
+        :param nio: NIO instance to update the adapter
         """
 
         if self.ubridge:
@@ -894,6 +894,28 @@ class DockerVM(BaseNode):
                                                                                                  id=self.id,
                                                                                                  nio=adapter.host_ifc,
                                                                                                  adapter_number=adapter_number))
+
+    def get_nio(self, adapter_number):
+        """
+        Gets an adapter NIO binding.
+
+        :param adapter_number: adapter number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._ethernet_adapters[adapter_number]
+        except KeyError:
+            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+
+        if not nio:
+            raise DockerError("Adapter {} is not connected".format(adapter_number))
+
+        return nio
 
     @property
     def adapters(self):
@@ -967,17 +989,7 @@ class DockerVM(BaseNode):
         :param output_file: PCAP destination file for the capture
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise DockerError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         if nio.capturing:
             raise DockerError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -997,19 +1009,8 @@ class DockerVM(BaseNode):
         :param adapter_number: adapter number
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise DockerError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         nio.stopPacketCapture()
-
         if self.status == "started" and self.ubridge:
             await self._stop_ubridge_capture(adapter_number)
 

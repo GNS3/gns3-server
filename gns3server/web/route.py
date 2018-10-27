@@ -248,9 +248,10 @@ class Route(object):
                 """
                 To avoid strange effect we prevent concurrency
                 between the same instance of the node
+                (excepting when streaming a PCAP file).
                 """
 
-                if "node_id" in request.match_info:
+                if "node_id" in request.match_info and not "pcap" in request.path:
                     node_id = request.match_info.get("node_id")
 
                     if "compute" in request.path:

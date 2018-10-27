@@ -239,12 +239,12 @@ class Project:
 
     def capture_working_directory(self):
         """
-        Returns a working directory where to temporary store packet capture files.
+        Returns a working directory where to store packet capture files.
 
         :returns: path to the directory
         """
 
-        workdir = os.path.join(self._path, "tmp", "captures")
+        workdir = os.path.join(self._path, "project-files", "captures")
         if not self._deleted:
             try:
                 os.makedirs(workdir, exist_ok=True)

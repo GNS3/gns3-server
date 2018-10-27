@@ -428,6 +428,47 @@ class BaseManager:
         assert nio is not None
         return nio
 
+    async def stream_pcap_file(self, nio, project_id, request, response):
+        """
+        Streams a PCAP file.
+
+        :param nio: NIO object
+        :param project_id: Project identifier
+        :param request: request object
+        :param response: response object
+        """
+
+        if not nio.capturing:
+            raise aiohttp.web.HTTPConflict(text="Nothing to stream because there is no packet capture active")
+
+        project = ProjectManager.instance().get_project(project_id)
+        path = os.path.normpath(os.path.join(project.capture_working_directory(), nio.pcap_output_file))
+        # Raise an error if user try to escape
+        #if path[0] == ".":
+        #    raise aiohttp.web.HTTPForbidden()
+        #path = os.path.join(project.path, path)
+
+        response.content_type = "application/vnd.tcpdump.pcap"
+        response.set_status(200)
+        response.enable_chunked_encoding()
+
+        try:
+            with open(path, "rb") as f:
+                await response.prepare(request)
+                while nio.capturing:
+                    data = f.read(4096)
+                    if not data:
+                        await asyncio.sleep(0.1)
+                        continue
+                    try:
+                        await response.write(data)
+                    except ConnectionError:
+                        break
+        except FileNotFoundError:
+            raise aiohttp.web.HTTPNotFound()
+        except PermissionError:
+            raise aiohttp.web.HTTPForbidden()
+
     def get_abs_image_path(self, path):
         """
         Get the absolute path of an image

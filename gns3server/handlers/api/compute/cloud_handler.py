@@ -222,21 +222,16 @@ class CloudHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Cloud instance")
+        description="Update a NIO on a Cloud instance")
     async def update_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        adapter_number = int(request.match_info["adapter_number"])
-
-        try:
-            nio = node.nios[adapter_number]
-        except KeyError:
-            raise HTTPConflict(text="NIO `{}` doesn't exist".format(adapter_number))
-
-        if "filters" in request.json and nio:
+        port_number = int(request.match_info["port_number"])
+        nio = node.get_nio(port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        await node.update_nio(int(request.match_info["port_number"]), nio)
+        await node.update_nio(port_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -307,3 +302,25 @@ class CloudHandler:
         port_number = int(request.match_info["port_number"])
         await node.stop_capture(port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/cloud/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture (always 0)",
+            "port_number": "Port on the cloud"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        builtin_manager = Builtin.instance()
+        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        nio = node.get_nio(port_number)
+        await builtin_manager.stream_pcap_file(nio, node.project.id, request, response)

@@ -290,7 +290,7 @@ class IOUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Update a NIO from a IOU instance",
+        description="Update a NIO on an IOU instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
     async def update_nio(request, response):
@@ -299,13 +299,10 @@ class IOUHandler:
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        nio = vm.adapters[adapter_number].get_nio(port_number)
-        if "filters" in request.json and nio:
+        nio = vm.get_nio(adapter_number, port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        await vm.adapter_update_nio_binding(
-            adapter_number,
-            port_number,
-            nio)
+        await vm.adapter_update_nio_binding(adapter_number, port_number, nio)
         response.set_status(201)
         response.json(nio)
 
@@ -375,11 +372,33 @@ class IOUHandler:
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
         await vm.stop_capture(adapter_number, port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(adapter_number, port_number)
+        await iou_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.get(
         r"/iou/images",

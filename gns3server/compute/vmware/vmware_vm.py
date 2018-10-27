@@ -750,20 +750,18 @@ class VMwareVM(BaseNode):
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
-        Update a port NIO binding.
+        Updates an adapter NIO binding.
 
         :param adapter_number: adapter number
-        :param nio: NIO instance to add to the adapter
+        :param nio: NIO instance to update on the adapter
         """
 
         if self._ubridge_hypervisor:
             try:
                 await self._update_ubridge_connection(adapter_number, nio)
             except IndexError:
-                raise VMwareError('Adapter {adapter_number} does not exist on VMware VM "{name}"'.format(
-                    name=self._name,
-                    adapter_number=adapter_number
-                ))
+                raise VMwareError('Adapter {adapter_number} does not exist on VMware VM "{name}"'.format(name=self._name,
+                                                                                                         adapter_number=adapter_number))
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -791,6 +789,27 @@ class VMwareVM(BaseNode):
                                                                                                  id=self.id,
                                                                                                  nio=nio,
                                                                                                  adapter_number=adapter_number))
+
+        return nio
+
+    def get_nio(self, adapter_number):
+        """
+        Gets an adapter NIO binding.
+
+        :param adapter_number: adapter number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self.ethernet_adapters[adapter_number]
+        except KeyError:
+            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
+                                                                                                    adapter_number=adapter_number))
+
+        nio = adapter.get_nio(0)
+        if not nio:
+            raise VMwareError("Adapter {} is not connected".format(adapter_number))
 
         return nio
 
@@ -875,17 +894,7 @@ class VMwareVM(BaseNode):
         :param output_file: PCAP destination file for the capture
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise VMwareError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         if nio.capturing:
             raise VMwareError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
@@ -905,17 +914,7 @@ class VMwareVM(BaseNode):
         :param adapter_number: adapter number
         """
 
-        try:
-            adapter = self._ethernet_adapters[adapter_number]
-        except KeyError:
-            raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
-
-        nio = adapter.get_nio(0)
-
-        if not nio:
-            raise VMwareError("Adapter {} is not connected".format(adapter_number))
-
+        nio = self.get_nio(adapter_number)
         nio.stopPacketCapture()
 
         if self._started:

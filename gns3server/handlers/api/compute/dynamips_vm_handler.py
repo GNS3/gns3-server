@@ -285,15 +285,15 @@ class DynamipsVMHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Dynamips instance")
+        description="Update a NIO on a Dynamips instance")
     async def update_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        nio = vm.slots[slot_number].get_nio(port_number)
-        if "filters" in request.json and nio:
+        nio = vm.get_nio(slot_number, port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
         await vm.slot_update_nio_binding(slot_number, port_number, nio)
         response.set_status(201)
@@ -378,6 +378,29 @@ class DynamipsVMHandler:
         port_number = int(request.match_info["port_number"])
         await vm.stop_capture(slot_number, port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        slot_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(slot_number, port_number)
+        await dynamips_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/idlepc_proposals",
@@ -485,10 +508,8 @@ class DynamipsVMHandler:
         description="Duplicate a dynamips instance")
     async def duplicate(request, response):
 
-        new_node = await Dynamips.instance().duplicate_node(
-            request.match_info["node_id"],
-            request.json["destination_node_id"]
-        )
+        new_node = await Dynamips.instance().duplicate_node(request.match_info["node_id"],
+                                                            request.json["destination_node_id"])
         response.set_status(201)
         response.json(new_node)
 
