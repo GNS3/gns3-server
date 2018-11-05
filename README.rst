@@ -84,7 +84,7 @@ For development you can run the GNS3 server in a container
 Run as daemon (Unix only)
 **************************
 
-You will found init sample script for various systems
+You will find init sample scripts for various systems
 inside the init directory.
 
 Usefull options:
@@ -93,7 +93,7 @@ Usefull options:
 * --log logfile: store output in a logfile
 * --pid pidfile: store the pid of the running process in a file and prevent double execution
 
-All the init script require the creation of a GNS3 user. You can change it to another user.
+All init scripts require the creation of a GNS3 user. You can change it to another user.
 
 .. code:: bash
 
@@ -163,9 +163,8 @@ Mac OS X
 
 Please use our DMG package for a simple installation.
 
-If you want to test the current git version or contribute to the project.
-
-You can follow this instructions with virtualenwrapper: http://virtualenvwrapper.readthedocs.org/
+If you want to test the current git version or contribute to the project, 
+you can follow these instructions with virtualenwrapper: http://virtualenvwrapper.readthedocs.org/
 and homebrew: http://brew.sh/.
 
 .. code:: bash
@@ -219,5 +218,5 @@ If you want test coverage:
 
 Security issues
 ----------------
-Please contact us using contact informations available here:
+Please contact us using contact information available here:
 http://docs.gns3.com/1ON9JBXSeR7Nt2-Qum2o3ZX0GU86BZwlmNSUgvmqNWGY/index.html
