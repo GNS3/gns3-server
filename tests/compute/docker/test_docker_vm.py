@@ -975,12 +975,11 @@ def test_start_vnc(vm, loop):
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
                 loop.run_until_complete(asyncio.ensure_future(vm._start_vnc()))
     assert vm._display is not None
-    mock_exec.assert_any_call("Xvfb", "-nolisten", "tcp", ":{}".format(vm._display), "-screen", "0", "1280x1024x16")
-    mock_exec.assert_any_call("x11vnc", "-forever", "-nopw", "-shared", "-geometry", "1280x1024", "-display", "WAIT:{}".format(vm._display), "-rfbport", str(vm.console), "-rfbportv6", str(vm.console), "-noncache", "-listen", "127.0.0.1")
+    assert mock_exec.call_args[0] == ("Xtigervnc", "-geometry", vm.console_resolution, "-depth", "16", "-interface", "127.0.0.1", "-rfbport", str(vm.console), "-AlwaysShared", "-SecurityTypes", "None", ":{}".format(vm._display))
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 
-def test_start_vnc_xvfb_missing(vm, loop):
+def test_start_vnc_missing(vm, loop):
     with pytest.raises(DockerError):
         loop.run_until_complete(asyncio.ensure_future(vm._start_vnc()))
 
