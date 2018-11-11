@@ -271,9 +271,8 @@ class Node:
         if self._label is None:
             # Apply to label user style or default
             try:
-                style = qt_font_to_style(
-                    self._project.controller.settings["GraphicsView"]["default_label_font"],
-                    self._project.controller.settings["GraphicsView"]["default_label_color"])
+                style = qt_font_to_style(self._project.controller.settings["GraphicsView"]["default_label_font"],
+                                         self._project.controller.settings["GraphicsView"]["default_label_color"])
             except KeyError:
                 style = "font-size: 10;font-familly: Verdana"
 

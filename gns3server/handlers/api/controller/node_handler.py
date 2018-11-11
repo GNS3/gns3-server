@@ -76,14 +76,13 @@ class NodeHandler:
             400: "Invalid request",
             404: "Node doesn't exist"
         },
-        description="Update a node instance",
+        description="Get a node",
         output=NODE_OBJECT_SCHEMA)
     def get_node(request, response):
         project = Controller.instance().get_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         response.set_status(200)
         response.json(node)
-
 
     @Route.put(
         r"/projects/{project_id}/nodes/{node_id}",

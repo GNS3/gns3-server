@@ -465,7 +465,7 @@ class Project:
         Create a node from an appliance
         """
         try:
-            template = self.controller.appliances[appliance_id].data
+            template = self.controller.appliances[appliance_id].settings
         except KeyError:
             msg = "Appliance {} doesn't exist".format(appliance_id)
             log.error(msg)
@@ -473,12 +473,13 @@ class Project:
         template["x"] = x
         template["y"] = y
         node_type = template.pop("node_type")
-        compute = self.controller.get_compute(template.pop("server", compute_id))
+        compute = self.controller.get_compute(template.pop("compute_id", compute_id))
         name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)
         node_id = str(uuid.uuid4())
-        node = await self.add_node(compute, name, node_id, node_type=node_type, appliance_id=appliance_id, **template)
+        template.pop("builtin") # not needed to add a node
+        node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
     @open_required
