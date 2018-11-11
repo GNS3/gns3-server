@@ -92,21 +92,6 @@ class ProjectHandler:
         project = controller.get_project(request.match_info["project_id"])
         response.json(project)
 
-    @Route.get(
-        r"/projects/{project_id}/stats",
-        description="Get a project statistics",
-        parameters={
-            "project_id": "Project UUID",
-        },
-        status_codes={
-            200: "Project statistics returned",
-            404: "The project doesn't exist"
-        })
-    def get(request, response):
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
-        response.json(project.stats())
-
     @Route.put(
         r"/projects/{project_id}",
         status_codes={
@@ -126,6 +111,39 @@ class ProjectHandler:
         await project.update(**request.json)
         response.set_status(200)
         response.json(project)
+
+    @Route.delete(
+        r"/projects/{project_id}",
+        description="Delete a project from disk",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            204: "Changes have been written on disk",
+            404: "The project doesn't exist"
+        })
+    async def delete(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        await project.delete()
+        controller.remove_project(project)
+        response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/stats",
+        description="Get a project statistics",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            200: "Project statistics returned",
+            404: "The project doesn't exist"
+        })
+    def get(request, response):
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        response.json(project.stats())
 
     @Route.post(
         r"/projects/{project_id}/close",
@@ -188,24 +206,6 @@ class ProjectHandler:
         project = await controller.load_project(request.json.get("path"),)
         response.set_status(201)
         response.json(project)
-
-    @Route.delete(
-        r"/projects/{project_id}",
-        description="Delete a project from disk",
-        parameters={
-            "project_id": "Project UUID",
-        },
-        status_codes={
-            204: "Changes have been written on disk",
-            404: "The project doesn't exist"
-        })
-    async def delete(request, response):
-
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
-        await project.delete()
-        controller.remove_project(project)
-        response.set_status(204)
 
     @Route.get(
         r"/projects/{project_id}/notifications",
