@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "BIGIP-14.0.0.3-0.0.4.qcow2",
+            "version": "14.0.0 HF3",
+            "md5sum": "dc80a7e436ff93e2f4092eece18d369b",
+            "filesize": 4550164480,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v14.x/14.0.0/english/14.0.0.3_virtual-edition/&sw=BIG-IP&pro=big-ip_v14.x&ver=14.0.0&container=14.0.0.3_Virtual-Edition&file=BIGIP-14.0.0.3-0.0.4.ALL.qcow2.zip"
+        },
+        {
             "filename": "BIGIP-13.1.0.5-0.0.5.qcow2",
             "version": "13.1.0 HF5",
             "md5sum": "567b70fe36af0f5364883e97e2c08807",
@@ -135,6 +142,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "14.0.0 HF3",
+            "images": {
+                "hda_disk_image": "BIGIP-14.0.0.3-0.0.4.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "13.1.0 HF5",
             "images": {

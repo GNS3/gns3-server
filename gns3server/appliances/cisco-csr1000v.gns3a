@@ -23,6 +23,13 @@
     },
     "images": [
         {
+            "filename": "csr1000v-universalk9.16.09.01-serial.qcow2",
+            "version": "16.9.1",
+            "md5sum": "d7e1c83b6f513beb4200c7691d119086",
+            "filesize": 917897216,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Fuji-16.9.1"
+        },
+        {
             "filename": "csr1000v-universalk9.16.08.01a-serial.qcow2",
             "version": "16.8.1a",
             "md5sum": "91e2572f20c77606d710223511cd279a",
@@ -101,6 +108,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "16.9.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.09.01-serial.qcow2"
+            }
+        },
         {
             "name": "16.8.1a",
             "images": {

@@ -25,6 +25,15 @@
     },
     "images": [
         {
+            "filename": "ipfire-2.21.2gb-ext4.x86_64-full-core124.img",
+            "version": "2.21.124",
+            "md5sum": "970a5cafaa0cb4cfbf42772f41d24932",
+            "filesize": 1541160960,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.21-core124/ipfire-2.21.2gb-ext4.x86_64-full-core124.img.xz",
+            "compression": "xz"
+        },
+        {
             "filename": "ipfire-2.19.1gb-ext4-scon.x86_64-full-core119.img",
             "version": "2.19.119",
             "md5sum": "b57be976ff54569b71eae4ee66634b0d",
@@ -80,6 +89,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.21.124",
+            "images": {
+                "hda_disk_image": "ipfire-2.21.2gb-ext4.x86_64-full-core124.img"
+            }
+        },
         {
             "name": "2.19.119",
             "images": {

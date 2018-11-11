@@ -25,8 +25,16 @@
     },
     "images": [
         {
+            "filename": "FreeNAS-11.1-U6.iso",
+            "version": "11.1 U6",
+            "md5sum": "633d6444cad903c707983b54e04fc053",
+            "filesize": 636065792,
+            "download_url": "http://www.freenas.org/download/",
+            "direct_download_url": "https://download.freenas.org/11/11.1-U4/x64/FreeNAS-11.1-U4.iso"
+        },
+        {
             "filename": "FreeNAS-11.1-U4.iso",
-            "version": "11.1 U1",
+            "version": "11.1 U4",
             "md5sum": "d75623e5671dbc82f32f4b4f8d46092f",
             "filesize": 633833472,
             "download_url": "http://www.freenas.org/download/",
@@ -74,6 +82,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "11.1 U6",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FreeNAS-11.1-U6.iso"
+            }
+        },
         {
             "name": "11.1 U4",
             "images": {

@@ -23,29 +23,36 @@
         "console_type": "vnc",
         "boot_priority": "cd",
         "kvm": "require",
-        "options": "-smp 2"
+        "options": "-smp 2 -smbios type=1,product=KVM"
     },
     "images": [
+        {
+            "filename": "ise-2.2.0.470.SPA.x86_64.iso",
+            "version": "2.2.0.470",
+            "md5sum": "7fe5e730d0a51ef66e69d1463717ff3f",
+            "filesize": 8044992512,
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.2.0"
+        },
         {
             "filename": "ise-2.1.0.474.SPA.x86_64.iso",
             "version": "2.1.0.474",
             "md5sum": "8dc844696790f2f5f37054899fab3e2a",
             "filesize": 6161475584,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.1.0"
         },
         {
             "filename": "ise-2.0.1.130.SPA.x86_64.iso",
             "version": "2.0.1.130",
             "md5sum": "25ac842fdbb61f6e75f2f8b26beea28e",
             "filesize": 5129990144,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.1.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.0.1"
         },
         {
             "filename": "ise-2.0.0.306.SPA.x86_64.iso",
             "version": "2.0.0.306",
             "md5sum": "b7a454ee235db29b5c208b19bfd1fbd1",
             "filesize": 5088827392,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=283801620&flowid=&softwareid=283802505&release=2.0.0&relind=AVAILABLE&rellifecycle=&reltype=latest"
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.0"
         },
         {
             "filename": "empty200G.qcow2",
@@ -57,6 +64,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.2.0.470",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.2.0.470.SPA.x86_64.iso"
+            }
+        },
         {
             "name": "2.1.0.474",
             "images": {
@@ -78,6 +92,5 @@
                 "cdrom_image": "ise-2.0.0.306.SPA.x86_64.iso"
             }
         }
-      
     ]
 }
