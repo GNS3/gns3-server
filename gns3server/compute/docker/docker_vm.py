@@ -519,7 +519,7 @@ class DockerVM(BaseNode):
         """
 
         self._display = self._get_free_display_port()
-        if shutil.which("Xtigervnc") is None or shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
+        if not (shutil.which("Xtigervnc") or shutil.which("Xvfb") and shutil.which("x11vnc")):
             raise DockerError("Please install tigervnc-standalone-server (recommended) or Xvfb + x11vnc before using VNC support")
 
         if shutil.which("Xtigervnc"):
