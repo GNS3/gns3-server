@@ -18,6 +18,7 @@
 import copy
 from .node import NODE_TYPE_SCHEMA
 
+APPLIANCE_TYPE_SCHEMA = NODE_TYPE_SCHEMA
 
 APPLIANCE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -35,7 +36,7 @@ APPLIANCE_OBJECT_SCHEMA = {
             "description": "Compute identifier",
             "type": "string"
         },
-        "node_type": NODE_TYPE_SCHEMA,
+        "appliance_type": APPLIANCE_TYPE_SCHEMA,
         "name": {
             "description": "Appliance name",
             "type": "string",
@@ -53,7 +54,7 @@ APPLIANCE_OBJECT_SCHEMA = {
         },
     },
     "additionalProperties": True,  #TODO: validate all properties
-    "required": ["appliance_id", "compute_id", "node_type", "name", "default_name_format", "symbol"]
+    "required": ["appliance_id", "compute_id", "appliance_type", "name", "default_name_format", "symbol"]
 }
 
 APPLIANCE_CREATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
@@ -62,7 +63,9 @@ APPLIANCE_CREATE_SCHEMA["required"].remove("appliance_id")
 APPLIANCE_CREATE_SCHEMA["required"].remove("compute_id")
 APPLIANCE_CREATE_SCHEMA["required"].remove("default_name_format")
 APPLIANCE_CREATE_SCHEMA["required"].remove("symbol")
-APPLIANCE_UPDATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
+APPLIANCE_UPDATE_SCHEMA = copy.deepcopy(APPLIANCE_CREATE_SCHEMA)
+#APPLIANCE_UPDATE_SCHEMA["additionalProperties"] = False
+del APPLIANCE_UPDATE_SCHEMA["required"]
 
 APPLIANCE_USAGE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

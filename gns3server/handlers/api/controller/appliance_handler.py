@@ -20,6 +20,9 @@ from gns3server.controller import Controller
 from gns3server.schemas.node import NODE_OBJECT_SCHEMA
 from gns3server.schemas.appliance import APPLIANCE_USAGE_SCHEMA
 
+import hashlib
+import json
+
 from gns3server.schemas.appliance import (
     APPLIANCE_OBJECT_SCHEMA,
     APPLIANCE_UPDATE_SCHEMA,
@@ -74,10 +77,17 @@ class ApplianceHandler:
         output=APPLIANCE_OBJECT_SCHEMA)
     def get(request, response):
 
+        request_etag = request.headers.get("If-None-Match", "")
         controller = Controller.instance()
         appliance = controller.get_appliance(request.match_info["appliance_id"])
-        response.set_status(200)
-        response.json(appliance)
+        data = json.dumps(appliance.__json__())
+        appliance_etag = '"' + hashlib.md5(data.encode()).hexdigest() + '"'
+        if appliance_etag == request_etag:
+            response.set_status(304)
+        else:
+            response.headers["ETag"] = appliance_etag
+            response.set_status(200)
+            response.json(appliance)
 
     @Route.put(
         r"/appliances/{appliance_id}",
@@ -93,8 +103,7 @@ class ApplianceHandler:
 
         controller = Controller.instance()
         appliance = controller.get_appliance(request.match_info["appliance_id"])
-        #TODO: update appliance!
-        #appliance.settings = request.json
+        appliance.update(**request.json)
         response.set_status(200)
         response.json(appliance)
 
@@ -123,8 +132,6 @@ class ApplianceHandler:
         })
     def list(request, response):
 
-        #old_etag = request.headers.get('If-None-Match', '')
-        #print("ETAG => ", old_etag)
         controller = Controller.instance()
         response.json([c for c in controller.appliances.values()])
 

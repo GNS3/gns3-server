@@ -465,14 +465,14 @@ class Project:
         Create a node from an appliance
         """
         try:
-            template = self.controller.appliances[appliance_id].settings
+            template = copy.deepcopy(self.controller.appliances[appliance_id].settings)
         except KeyError:
             msg = "Appliance {} doesn't exist".format(appliance_id)
             log.error(msg)
             raise aiohttp.web.HTTPNotFound(text=msg)
         template["x"] = x
         template["y"] = y
-        node_type = template.pop("node_type")
+        node_type = template.pop("appliance_type")
         compute = self.controller.get_compute(template.pop("compute_id", compute_id))
         name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")

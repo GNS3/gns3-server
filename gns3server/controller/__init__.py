@@ -174,9 +174,12 @@ class Controller:
         """
 
         appliance = self._appliances.get(appliance_id)
+        if not appliance:
+            raise aiohttp.web.HTTPNotFound(text="Appliance ID {} doesn't exist".format(appliance_id))
         if appliance.builtin:
-            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be deleted because it is builtin".format(appliance_id))
+            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be deleted because it is a builtin".format(appliance_id))
         self._appliances.pop(appliance_id)
+        self.save()
 
     def load_appliances(self):
 
@@ -184,17 +187,17 @@ class Controller:
 
         # Add builtins
         builtins = []
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"node_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"node_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"appliance_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"appliance_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"appliance_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"appliance_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"appliance_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"appliance_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"appliance_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
 
         #FIXME: disable TraceNG
         #if sys.platform.startswith("win"):
-        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"node_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
+        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"appliance_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
         for b in builtins:
             self._appliances[b.id] = b
 
@@ -464,37 +467,37 @@ class Controller:
 
                 vms = []
                 for vm in settings.get("Qemu", {}).get("vms", []):
-                    vm["node_type"] = "qemu"
+                    vm["appliance_type"] = "qemu"
                     vms.append(vm)
                 for vm in settings.get("IOU", {}).get("devices", []):
-                    vm["node_type"] = "iou"
+                    vm["appliance_type"] = "iou"
                     vms.append(vm)
                 for vm in settings.get("Docker", {}).get("containers", []):
-                    vm["node_type"] = "docker"
+                    vm["appliance_type"] = "docker"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("cloud_nodes", []):
-                    vm["node_type"] = "cloud"
+                    vm["appliance_type"] = "cloud"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("ethernet_switches", []):
-                    vm["node_type"] = "ethernet_switch"
+                    vm["appliance_type"] = "ethernet_switch"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("ethernet_hubs", []):
-                    vm["node_type"] = "ethernet_hub"
+                    vm["appliance_type"] = "ethernet_hub"
                     vms.append(vm)
                 for vm in settings.get("Dynamips", {}).get("routers", []):
-                    vm["node_type"] = "dynamips"
+                    vm["appliance_type"] = "dynamips"
                     vms.append(vm)
                 for vm in settings.get("VMware", {}).get("vms", []):
-                    vm["node_type"] = "vmware"
+                    vm["appliance_type"] = "vmware"
                     vms.append(vm)
                 for vm in settings.get("VirtualBox", {}).get("vms", []):
-                    vm["node_type"] = "virtualbox"
+                    vm["appliance_type"] = "virtualbox"
                     vms.append(vm)
                 for vm in settings.get("VPCS", {}).get("nodes", []):
-                    vm["node_type"] = "vpcs"
+                    vm["appliance_type"] = "vpcs"
                     vms.append(vm)
                 for vm in settings.get("TraceNG", {}).get("nodes", []):
-                    vm["node_type"] = "traceng"
+                    vm["appliance_type"] = "traceng"
                     vms.append(vm)
 
                 for vm in vms:

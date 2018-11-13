@@ -56,8 +56,12 @@ class Appliance:
         if "server" in self._settings:
             self._settings["compute_id"] = self._settings.pop("server")
 
+        # The "node_type" setting has been replaced by "appliance_type" setting in version 2.2
+        if "node_type" in self._settings:
+            self._settings["appliance_type"] = self._settings.pop("node_type")
+
         # Remove an old IOU setting
-        if settings["node_type"] == "iou" and "image" in settings:
+        if self._settings["appliance_type"] == "iou" and "image" in self._settings:
             del self._settings["image"]
 
         self._builtin = builtin
@@ -72,7 +76,6 @@ class Appliance:
 
     @settings.setter
     def settings(self, settings):
-
         self._settings.update(settings)
 
     @property
@@ -84,17 +87,21 @@ class Appliance:
         return self._settings["compute_id"]
 
     @property
-    def node_type(self):
-        return self._settings["node_type"]
+    def appliance_type(self):
+        return self._settings["appliance_type"]
 
     @property
     def builtin(self):
         return self._builtin
 
+    def update(self, **kwargs):
+        self._settings.update(kwargs)
+
     def __json__(self):
         """
         Appliance settings.
         """
+
         settings = self._settings
         settings.update({"appliance_id": self._id,
                          "default_name_format": settings.get("default_name_format", "{name}-{0}"),
