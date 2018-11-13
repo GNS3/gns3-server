@@ -506,25 +506,15 @@ def test_appliance_templates(controller, async_run, tmpdir):
 
 
 def test_load_appliances(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router"
-                }
-            ]
-        }
-    }
+    controller._settings = {}
     controller.load_appliances()
-    assert "Test" in [appliance.name for appliance in controller.appliances.values()]
+
     assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
     assert "VPCS" in [appliance.name for appliance in controller.appliances.values()]
 
     for appliance in controller.appliances.values():
         if appliance.name == "VPCS":
-            assert appliance._data["properties"] == {"base_script_file": "vpcs_base_config.txt"}
+            assert appliance._settings["properties"] == {"base_script_file": "vpcs_base_config.txt"}
 
     # UUID should not change when you run again the function
     for appliance in controller.appliances.values():
@@ -538,52 +528,6 @@ def test_load_appliances(controller):
             assert qemu_uuid == appliance.id
         elif appliance.name == "Cloud":
             assert cloud_uuid == appliance.id
-
-
-def test_load_appliances_deprecated_features_default_symbol(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router",
-                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
-                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
-                }
-            ]
-        }
-    }
-    controller.load_appliances()
-    appliances = dict([(a.name, a) for a in controller.appliances.values()])
-
-    assert appliances["Test"].__json__()["symbol"] == ":/symbols/computer.svg"
-    assert "default_symbol" not in appliances["Test"].data.keys()
-    assert "hover_symbol" not in appliances["Test"].data.keys()
-
-
-def test_load_appliances_deprecated_features_default_symbol_with_symbol(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router",
-                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
-                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
-                    "symbol": ":/symbols/my-symbol.svg"
-
-                }
-            ]
-        }
-    }
-    controller.load_appliances()
-    appliances = dict([(a.name, a) for a in controller.appliances.values()])
-
-    assert appliances["Test"].__json__()["symbol"] == ":/symbols/my-symbol.svg"
-    assert "default_symbol" not in appliances["Test"].data.keys()
-    assert "hover_symbol" not in appliances["Test"].data.keys()
 
 
 def test_autoidlepc(controller, async_run):

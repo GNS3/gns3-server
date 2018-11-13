@@ -95,6 +95,8 @@ class Appliance:
         return self._builtin
 
     def update(self, **kwargs):
+
+        #TODO: do not update appliance_id, builtin or appliance_type
         self._settings.update(kwargs)
 
     def __json__(self):
