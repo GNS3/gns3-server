@@ -201,7 +201,7 @@ def controller(tmpdir, controller_config_path):
     Controller._instance = None
     controller = Controller.instance()
     controller._config_file = controller_config_path
-    controller._settings = {}
+    controller._config_loaded = True
     return controller
 
 

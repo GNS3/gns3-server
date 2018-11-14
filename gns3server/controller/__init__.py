@@ -54,9 +54,9 @@ class Controller:
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
-
-        # FIXME: store settings shared by the different GUI will be replace by dedicated API later
-        self._settings = None
+        self._iou_license_settings = {"iourc_content": "",
+                                      "license_check": True}
+        self._config_loaded = False
         self._appliances = {}
         self._appliance_templates = {}
         self._appliance_templates_etag = None
@@ -150,6 +150,7 @@ class Controller:
             raise aiohttp.web.HTTPConflict(text="Cannot create new appliance: key '{}' is missing for appliance ID '{}'".format(e, appliance_id))
         self._appliances[appliance.id] = appliance
         self.save()
+        self.notification.controller_emit("appliance.created", appliance.__json__())
         return appliance
 
     def get_appliance(self, appliance_id):
@@ -173,13 +174,12 @@ class Controller:
         :param appliance_id: appliance identifier
         """
 
-        appliance = self._appliances.get(appliance_id)
-        if not appliance:
-            raise aiohttp.web.HTTPNotFound(text="Appliance ID {} doesn't exist".format(appliance_id))
+        appliance = self.get_appliance(appliance_id)
         if appliance.builtin:
             raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be deleted because it is a builtin".format(appliance_id))
         self._appliances.pop(appliance_id)
         self.save()
+        self.notification.controller_emit("appliance.deleted", appliance.__json__())
 
     def load_appliances(self):
 
@@ -231,7 +231,7 @@ class Controller:
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
                                                         force=True)
-        except aiohttp.web.HTTPConflict as e:
+        except aiohttp.web.HTTPConflict:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
@@ -276,14 +276,13 @@ class Controller:
         Save the controller configuration on disk
         """
 
-        # We don't save during the loading otherwise we could lost stuff
-        if self._settings is None:
+        if self._config_loaded is False:
             return
 
         controller_settings = {"computes": [],
-                               "settings": self._settings,
                                "appliances": [],
                                "gns3vm": self.gns3vm.__json__(),
+                               "iou_license": self._iou_license_settings,
                                "appliance_templates_etag": self._appliance_templates_etag,
                                "version": __version__}
 
@@ -321,13 +320,7 @@ class Controller:
                 controller_settings = json.load(f)
         except (OSError, ValueError) as e:
             log.critical("Cannot load configuration file '{}': {}".format(self._config_file, e))
-            self._settings = {}
             return []
-
-        if "settings" in controller_settings and controller_settings["settings"] is not None:
-            self._settings = controller_settings["settings"]
-        else:
-            self._settings = {}
 
         # load the appliances
         if "appliances" in controller_settings:
@@ -345,9 +338,14 @@ class Controller:
         if "gns3vm" in controller_settings:
             self.gns3vm.settings = controller_settings["gns3vm"]
 
+        # load the IOU license settings
+        if "iou_license" in controller_settings:
+            self._iou_license_settings = controller_settings["iou_license"]
+
         self._appliance_templates_etag = controller_settings.get("appliance_templates_etag")
         self.load_appliance_templates()
         self.load_appliances()
+        self._config_loaded = True
         return controller_settings.get("computes", [])
 
     async def load_projects(self):
@@ -527,26 +525,6 @@ class Controller:
                         # appliance data is not complete (missing name or type)
                         log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
                         continue
-
-                self._settings = {}
-
-    @property
-    def settings(self):
-        """
-        Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
-        """
-
-        return self._settings
-
-    @settings.setter
-    def settings(self, val):
-
-        self._settings = val
-        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings to help the gui to detect changes
-        self.save()
-        self.load_appliance_templates()
-        self.load_appliances()
-        self.notification.controller_emit("settings.updated", val)
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
@@ -782,6 +760,14 @@ class Controller:
         """
 
         return self._appliances
+
+    @property
+    def iou_license(self):
+        """
+        :returns: The dictionary of IOU license settings
+        """
+
+        return self._iou_license_settings
 
     def projects_directory(self):
 

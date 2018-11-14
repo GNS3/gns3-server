@@ -35,7 +35,7 @@ def test_save(controller, controller_config_path):
         data = json.load(f)
         assert data["computes"] == []
         assert data["version"] == __version__
-        assert data["settings"] == {}
+        assert data["iou_license"] == controller.iou_license
         assert data["gns3vm"] == controller.gns3vm.__json__()
 
 
@@ -53,12 +53,10 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
             "compute_id": "test1"
         }
     ]
-    data["settings"] = {"IOU": {"test": True}}
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
     assert len(async_run(controller._load_controller_settings())) == 1
-    assert controller.settings["IOU"]
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
@@ -197,13 +195,6 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
         async_run(controller._load_controller_settings())
     assert controller.gns3vm.settings["engine"] == "remote"
     assert controller.gns3vm.settings["vmname"] == "http://127.0.0.1:3081"
-
-
-def test_settings(controller):
-    controller._notification = MagicMock()
-    controller.settings = {"a": 1}
-    controller._notification.controller_emit.assert_called_with("settings.updated", controller.settings)
-    assert controller.settings["modification_uuid"] is not None
 
 
 def test_load_projects(controller, projects_dir, async_run):

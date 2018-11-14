@@ -103,6 +103,11 @@ class ApplianceHandler:
 
         controller = Controller.instance()
         appliance = controller.get_appliance(request.match_info["appliance_id"])
+        # Ignore these because we only use them when creating a appliance
+        request.json.pop("appliance_id", None)
+        request.json.pop("appliance_type", None)
+        request.json.pop("compute_id", None)
+        request.json.pop("builtin", None)
         appliance.update(**request.json)
         response.set_status(200)
         response.json(appliance)

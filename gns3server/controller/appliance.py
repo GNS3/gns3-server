@@ -96,8 +96,11 @@ class Appliance:
 
     def update(self, **kwargs):
 
-        #TODO: do not update appliance_id, builtin or appliance_type
         self._settings.update(kwargs)
+        from gns3server.controller import Controller
+        controller = Controller.instance()
+        controller.notification.controller_emit("appliance.updated", self.__json__())
+        controller.save()
 
     def __json__(self):
         """

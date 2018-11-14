@@ -104,6 +104,10 @@ IOU_START_SCHEMA = {
         "iourc_content": {
             "description": "Content of the iourc file. Ignored if Null",
             "type": ["string", "null"]
+        },
+        "license_check": {
+            "description": "Whether the license should be checked",
+            "type": "boolean"
         }
     }
 }

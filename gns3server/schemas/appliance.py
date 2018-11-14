@@ -58,13 +58,16 @@ APPLIANCE_OBJECT_SCHEMA = {
 }
 
 APPLIANCE_CREATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
+
+# create schema
 # these properties are not required to create an appliance
 APPLIANCE_CREATE_SCHEMA["required"].remove("appliance_id")
 APPLIANCE_CREATE_SCHEMA["required"].remove("compute_id")
 APPLIANCE_CREATE_SCHEMA["required"].remove("default_name_format")
 APPLIANCE_CREATE_SCHEMA["required"].remove("symbol")
-APPLIANCE_UPDATE_SCHEMA = copy.deepcopy(APPLIANCE_CREATE_SCHEMA)
-#APPLIANCE_UPDATE_SCHEMA["additionalProperties"] = False
+
+# update schema
+APPLIANCE_UPDATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
 del APPLIANCE_UPDATE_SCHEMA["required"]
 
 APPLIANCE_USAGE_SCHEMA = {
