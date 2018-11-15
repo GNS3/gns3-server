@@ -765,7 +765,7 @@ APPLIANCE_OBJECT_SCHEMA = {
         "Dynamips": {
             "description": "Dynamips appliance",
             "properties": DYNAMIPS_APPLIANCE_PROPERTIES,
-            #"additionalProperties": False,
+            "additionalProperties": False,
             "required": ["platform", "image", "ram"]
         },
         "IOU": {
