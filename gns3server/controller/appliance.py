@@ -18,8 +18,6 @@
 import copy
 import uuid
 
-
-# Convert old GUI category to text category
 ID_TO_CATEGORY = {
     3: "firewall",
     2: "guest",
@@ -30,7 +28,7 @@ ID_TO_CATEGORY = {
 
 class Appliance:
 
-    def __init__(self, appliance_id, data, builtin=False):
+    def __init__(self, appliance_id, settings, builtin=False):
 
         if appliance_id is None:
             self._id = str(uuid.uuid4())
@@ -38,18 +36,34 @@ class Appliance:
             self._id = str(appliance_id)
         else:
             self._id = appliance_id
-        self._data = data.copy()
-        if "appliance_id" in self._data:
-            del self._data["appliance_id"]
+
+        self._settings = copy.deepcopy(settings)
 
         # Version of the gui before 2.1 use linked_base
         # and the server linked_clone
-        if "linked_base" in self._data:
-            linked_base = self._data.pop("linked_base")
-            if "linked_clone" not in self._data:
-                self._data["linked_clone"] = linked_base
-        if data["node_type"] == "iou" and "image" in data:
-            del self._data["image"]
+        if "linked_base" in self.settings:
+            linked_base = self._settings.pop("linked_base")
+            if "linked_clone" not in self._settings:
+                self._settings["linked_clone"] = linked_base
+
+        # Convert old GUI category to text category
+        try:
+            self._settings["category"] = ID_TO_CATEGORY[self._settings["category"]]
+        except KeyError:
+            pass
+
+        # The "server" setting has been replaced by "compute_id" setting in version 2.2
+        if "server" in self._settings:
+            self._settings["compute_id"] = self._settings.pop("server")
+
+        # The "node_type" setting has been replaced by "appliance_type" setting in version 2.2
+        if "node_type" in self._settings:
+            self._settings["appliance_type"] = self._settings.pop("node_type")
+
+        # Remove an old IOU setting
+        if self._settings["appliance_type"] == "iou" and "image" in self._settings:
+            del self._settings["image"]
+
         self._builtin = builtin
 
     @property
@@ -57,38 +71,49 @@ class Appliance:
         return self._id
 
     @property
-    def data(self):
-        return copy.deepcopy(self._data)
+    def settings(self):
+        return self._settings
+
+    @settings.setter
+    def settings(self, settings):
+        self._settings.update(settings)
 
     @property
     def name(self):
-        return self._data["name"]
+        return self._settings["name"]
 
     @property
     def compute_id(self):
-        return self._data.get("server")
+        return self._settings["compute_id"]
+
+    @property
+    def appliance_type(self):
+        return self._settings["appliance_type"]
 
     @property
     def builtin(self):
         return self._builtin
 
+    def update(self, **kwargs):
+
+        self._settings.update(kwargs)
+        from gns3server.controller import Controller
+        controller = Controller.instance()
+        controller.notification.controller_emit("appliance.updated", self.__json__())
+        controller.save()
+
     def __json__(self):
         """
-        Appliance data (a hash)
+        Appliance settings.
         """
-        try:
-            category = ID_TO_CATEGORY[self._data["category"]]
-        except KeyError:
-            category = self._data["category"]
 
-        return {
-            "appliance_id": self._id,
-            "node_type": self._data["node_type"],
-            "name": self._data["name"],
-            "default_name_format": self._data.get("default_name_format", "{name}-{0}"),
-            "category": category,
-            "symbol": self._data.get("symbol", ":/symbols/computer.svg"),
-            "compute_id": self.compute_id,
-            "builtin": self._builtin,
-            "platform": self._data.get("platform", None)
-        }
+        settings = self._settings
+        settings.update({"appliance_id": self._id,
+                         "default_name_format": settings.get("default_name_format", "{name}-{0}"),
+                         "symbol": settings.get("symbol", ":/symbols/computer.svg"),
+                         "builtin": self.builtin})
+
+        if not self.builtin:
+            settings["compute_id"] = self.compute_id
+
+        return settings

@@ -45,12 +45,12 @@ def test_appliance_list(http_controller, controller):
     id = str(uuid.uuid4())
     controller.load_appliances()
     controller._appliances[id] = Appliance(id, {
-        "node_type": "qemu",
+        "appliance_type": "qemu",
         "category": 0,
         "name": "test",
         "symbol": "guest.svg",
         "default_name_format": "{name}-{0}",
-        "server": "local"
+        "compute_id": "local"
     })
     response = http_controller.get("/appliances", example=True)
     assert response.status == 200
@@ -66,16 +66,142 @@ def test_appliance_templates_list(http_controller, controller, async_run):
     assert len(response.json) > 0
 
 
+def test_cr(http_controller, controller, async_run):
+
+    controller.load_appliance_templates()
+    response = http_controller.get("/appliances/templates", example=True)
+    assert response.status == 200
+    assert len(response.json) > 0
+
+
+def test_appliance_create_without_id(http_controller, controller):
+
+    params = {"base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params, example=True)
+    assert response.status == 201
+    assert response.route == "/appliances"
+    assert response.json["appliance_id"] is not None
+    assert len(controller.appliances) == 1
+
+
+def test_appliance_create_with_id(http_controller, controller):
+
+    params = {"appliance_id": str(uuid.uuid4()),
+              "base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params, example=True)
+    assert response.status == 201
+    assert response.route == "/appliances"
+    assert response.json["appliance_id"] is not None
+    assert len(controller.appliances) == 1
+
+
+def test_appliance_get(http_controller, controller):
+
+    appliance_id = str(uuid.uuid4())
+    params = {"appliance_id": appliance_id,
+              "base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params)
+    assert response.status == 201
+
+    response = http_controller.get("/appliances/{}".format(appliance_id), example=True)
+    assert response.status == 200
+    assert response.json["appliance_id"] == appliance_id
+
+
+def test_appliance_update(http_controller, controller):
+
+    appliance_id = str(uuid.uuid4())
+    params = {"appliance_id": appliance_id,
+              "base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params)
+    assert response.status == 201
+
+    response = http_controller.get("/appliances/{}".format(appliance_id))
+    assert response.status == 200
+    assert response.json["appliance_id"] == appliance_id
+
+    params["name"] = "VPCS_TEST_RENAMED"
+    response = http_controller.put("/appliances/{}".format(appliance_id), params, example=True)
+
+    assert response.status == 200
+    assert response.json["name"] == "VPCS_TEST_RENAMED"
+
+
+def test_appliance_delete(http_controller, controller):
+
+    appliance_id = str(uuid.uuid4())
+    params = {"appliance_id": appliance_id,
+              "base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params)
+    assert response.status == 201
+
+    response = http_controller.get("/appliances")
+    assert len(response.json) == 1
+    assert len(controller.appliances) == 1
+
+    response = http_controller.delete("/appliances/{}".format(appliance_id), example=True)
+    assert response.status == 204
+
+    response = http_controller.get("/appliances")
+    assert len(response.json) == 0
+    assert len(controller.appliances) == 0
+
+
 def test_create_node_from_appliance(http_controller, controller, project, compute):
 
     id = str(uuid.uuid4())
     controller._appliances = {id: Appliance(id, {
-        "node_type": "qemu",
+        "appliance_type": "qemu",
         "category": 0,
         "name": "test",
         "symbol": "guest.svg",
         "default_name_format": "{name}-{0}",
-        "server": "example.com"
+        "compute_id": "example.com"
     })}
     with asyncio_patch("gns3server.controller.project.Project.add_node_from_appliance") as mock:
         response = http_controller.post("/projects/{}/appliances/{}".format(project.id, id), {

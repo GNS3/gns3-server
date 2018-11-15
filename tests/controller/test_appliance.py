@@ -30,7 +30,7 @@ def test_appliance_json():
     })
     assert a.__json__() == {
         "appliance_id": a.id,
-        "node_type": "qemu",
+        "appliance_type": "qemu",
         "builtin": False,
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -53,7 +53,7 @@ def test_appliance_json_with_not_known_category():
     })
     assert a.__json__() == {
         "appliance_id": a.id,
-        "node_type": "qemu",
+        "appliance_type": "qemu",
         "builtin": False,
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -76,7 +76,7 @@ def test_appliance_json_with_platform():
     })
     assert a.__json__() == {
         "appliance_id": a.id,
-        "node_type": "dynamips",
+        "appliance_type": "dynamips",
         "builtin": False,
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -101,5 +101,5 @@ def test_appliance_fix_linked_base():
         "server": "local",
         "linked_base": True
     })
-    assert a.data["linked_clone"]
-    assert "linked_base" not in a.data
+    assert a.settings["linked_clone"]
+    assert "linked_base" not in a.settings

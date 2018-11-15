@@ -188,10 +188,10 @@ class VMwareVM(BaseNode):
             # create the linked clone based on the base snapshot
             new_vmx_path = os.path.join(self.working_dir, self.name + ".vmx")
             await self._control_vm("clone",
-                                        new_vmx_path,
-                                        "linked",
-                                        "-snapshot={}".format(base_snapshot_name),
-                                        "-cloneName={}".format(self.name))
+                                   new_vmx_path,
+                                   "linked",
+                                   "-snapshot={}".format(base_snapshot_name),
+                                   "-cloneName={}".format(self.name))
 
             try:
                 vmsd_pairs = self.manager.parse_vmware_file(vmsd_path)

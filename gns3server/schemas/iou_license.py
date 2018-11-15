@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2018 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,19 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /version endpoint
-It's also used for unittest the HTTP implementation.
-"""
-
-from gns3server.config import Config
-
-
-def test_settings(http_controller):
-    query = {"test": True}
-    response = http_controller.post('/settings', query, example=True)
-    assert response.status == 201
-    response = http_controller.get('/settings', example=True)
-    assert response.status == 200
-    assert response.json["test"] is True
-    assert response.json["modification_uuid"] is not None
+IOU_LICENSE_SETTINGS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "IOU license",
+    "type": "object",
+    "properties": {
+        "iourc_content": {
+            "type": "string",
+            "description": "Content of iourc file"
+        },
+        "license_check": {
+            "type": "boolean",
+            "description": "Whether the license must be checked or not",
+        },
+    },
+    "additionalProperties": False
+}

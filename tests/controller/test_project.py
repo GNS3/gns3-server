@@ -216,7 +216,8 @@ def test_add_node_from_appliance(async_run, controller):
         "server": "local",
         "name": "Test",
         "default_name_format": "{name}-{0}",
-        "node_type": "vpcs",
+        "appliance_type": "vpcs",
+        "builtin": False,
         "properties": {
             "a": 1
         }

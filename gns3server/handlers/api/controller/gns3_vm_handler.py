@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from aiohttp.web import HTTPConflict
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.schemas.gns3vm import GNS3VM_SETTINGS_SCHEMA
-
 
 import logging
 log = logging.getLogger(__name__)

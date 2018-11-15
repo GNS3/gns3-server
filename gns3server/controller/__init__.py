@@ -54,9 +54,9 @@ class Controller:
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
-
-        # FIXME: store settings shared by the different GUI will be replace by dedicated API later
-        self._settings = None
+        self._iou_license_settings = {"iourc_content": "",
+                                      "license_check": True}
+        self._config_loaded = False
         self._appliances = {}
         self._appliance_templates = {}
         self._appliance_templates_etag = None
@@ -128,85 +128,76 @@ class Controller:
                         log.warning("Cannot load appliance template file '%s': %s", path, str(e))
                         continue
 
+    def add_appliance(self, settings):
+        """
+        Adds a new appliance.
+
+        :param settings: appliance settings
+
+        :returns: Appliance object
+        """
+
+        appliance_id = settings.get("appliance_id", "")
+        if appliance_id in self._appliances:
+            raise aiohttp.web.HTTPConflict(text="Appliance ID '{}' already exists".format(appliance_id))
+        else:
+            appliance_id = settings.setdefault("appliance_id", str(uuid.uuid4()))
+        try:
+            appliance = Appliance(appliance_id, settings)
+            appliance.__json__()  # Check if loaded without error
+        except KeyError as e:
+            # appliance settings is not complete
+            raise aiohttp.web.HTTPConflict(text="Cannot create new appliance: key '{}' is missing for appliance ID '{}'".format(e, appliance_id))
+        self._appliances[appliance.id] = appliance
+        self.save()
+        self.notification.controller_emit("appliance.created", appliance.__json__())
+        return appliance
+
+    def get_appliance(self, appliance_id):
+        """
+        Gets an appliance.
+
+        :param appliance_id: appliance identifier
+
+        :returns: Appliance object
+        """
+
+        appliance = self._appliances.get(appliance_id)
+        if not appliance:
+            raise aiohttp.web.HTTPNotFound(text="Appliance ID {} doesn't exist".format(appliance_id))
+        return appliance
+
+    def delete_appliance(self, appliance_id):
+        """
+        Deletes an appliance.
+
+        :param appliance_id: appliance identifier
+        """
+
+        appliance = self.get_appliance(appliance_id)
+        if appliance.builtin:
+            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be deleted because it is a builtin".format(appliance_id))
+        self._appliances.pop(appliance_id)
+        self.save()
+        self.notification.controller_emit("appliance.deleted", appliance.__json__())
+
     def load_appliances(self):
 
-        self._appliances = {}
-        vms = []
-        for vm in self._settings.get("Qemu", {}).get("vms", []):
-            vm["node_type"] = "qemu"
-            vms.append(vm)
-        for vm in self._settings.get("IOU", {}).get("devices", []):
-            vm["node_type"] = "iou"
-            vms.append(vm)
-        for vm in self._settings.get("Docker", {}).get("containers", []):
-            vm["node_type"] = "docker"
-            vms.append(vm)
-        for vm in self._settings.get("Builtin", {}).get("cloud_nodes", []):
-            vm["node_type"] = "cloud"
-            vms.append(vm)
-        for vm in self._settings.get("Builtin", {}).get("ethernet_switches", []):
-            vm["node_type"] = "ethernet_switch"
-            vms.append(vm)
-        for vm in self._settings.get("Builtin", {}).get("ethernet_hubs", []):
-            vm["node_type"] = "ethernet_hub"
-            vms.append(vm)
-        for vm in self._settings.get("Dynamips", {}).get("routers", []):
-            vm["node_type"] = "dynamips"
-            vms.append(vm)
-        for vm in self._settings.get("VMware", {}).get("vms", []):
-            vm["node_type"] = "vmware"
-            vms.append(vm)
-        for vm in self._settings.get("VirtualBox", {}).get("vms", []):
-            vm["node_type"] = "virtualbox"
-            vms.append(vm)
-        for vm in self._settings.get("VPCS", {}).get("nodes", []):
-            vm["node_type"] = "vpcs"
-            vms.append(vm)
-        for vm in self._settings.get("TraceNG", {}).get("nodes", []):
-            vm["node_type"] = "traceng"
-            vms.append(vm)
-
-        for vm in vms:
-            # remove deprecated properties
-            for prop in vm.copy():
-                if prop in ["enable_remote_console", "use_ubridge", "acpi_shutdown"]:
-                    del vm[prop]
-
-            # remove deprecated default_symbol and hover_symbol
-            # and set symbol if not present
-            deprecated = ["default_symbol", "hover_symbol"]
-            if len([prop for prop in vm.keys() if prop in deprecated]) > 0:
-                if "default_symbol" in vm.keys():
-                    del vm["default_symbol"]
-                if "hover_symbol" in vm.keys():
-                    del vm["hover_symbol"]
-
-                if "symbol" not in vm.keys():
-                    vm["symbol"] = ":/symbols/computer.svg"
-
-            vm.setdefault("appliance_id", str(uuid.uuid4()))
-            try:
-                appliance = Appliance(vm["appliance_id"], vm)
-                appliance.__json__()  # Check if loaded without error
-                self._appliances[appliance.id] = appliance
-            except KeyError as e:
-                # appliance data is not complete (missing name or type)
-                log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
-                continue
+        #self._appliances = {}
 
         # Add builtins
         builtins = []
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"node_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"node_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"node_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"node_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"node_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"node_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"node_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"appliance_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"appliance_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"appliance_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"appliance_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"appliance_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"appliance_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"appliance_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
 
         #FIXME: disable TraceNG
         #if sys.platform.startswith("win"):
-        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"node_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
+        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"appliance_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
         for b in builtins:
             self._appliances[b.id] = b
 
@@ -232,15 +223,15 @@ class Controller:
         computes = await self._load_controller_settings()
         try:
             self._local_server = await self.add_compute(compute_id="local",
-                                                             name=name,
-                                                             protocol=server_config.get("protocol", "http"),
-                                                             host=host,
-                                                             console_host=console_host,
-                                                             port=port,
-                                                             user=server_config.get("user", ""),
-                                                             password=server_config.get("password", ""),
-                                                             force=True)
-        except aiohttp.web.HTTPConflict as e:
+                                                        name=name,
+                                                        protocol=server_config.get("protocol", "http"),
+                                                        host=host,
+                                                        console_host=console_host,
+                                                        port=port,
+                                                        user=server_config.get("user", ""),
+                                                        password=server_config.get("password", ""),
+                                                        force=True)
+        except aiohttp.web.HTTPConflict:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
@@ -285,34 +276,36 @@ class Controller:
         Save the controller configuration on disk
         """
 
-        # We don't save during the loading otherwise we could lost stuff
-        if self._settings is None:
+        if self._config_loaded is False:
             return
-        data = {
-            "computes": [],
-            "settings": self._settings,
-            "gns3vm": self.gns3vm.__json__(),
-            "appliance_templates_etag": self._appliance_templates_etag,
-            "version": __version__
-        }
 
-        for c in self._computes.values():
-            if c.id != "local" and c.id != "vm":
-                data["computes"].append({
-                    "host": c.host,
-                    "name": c.name,
-                    "port": c.port,
-                    "protocol": c.protocol,
-                    "user": c.user,
-                    "password": c.password,
-                    "compute_id": c.id
-                })
+        controller_settings = {"computes": [],
+                               "appliances": [],
+                               "gns3vm": self.gns3vm.__json__(),
+                               "iou_license": self._iou_license_settings,
+                               "appliance_templates_etag": self._appliance_templates_etag,
+                               "version": __version__}
+
+        for appliance in self._appliances.values():
+            if not appliance.builtin:
+                controller_settings["appliances"].append(appliance.__json__())
+
+        for compute in self._computes.values():
+            if compute.id != "local" and compute.id != "vm":
+                controller_settings["computes"].append({"host": compute.host,
+                                                        "name": compute.name,
+                                                        "port": compute.port,
+                                                        "protocol": compute.protocol,
+                                                        "user": compute.user,
+                                                        "password": compute.password,
+                                                        "compute_id": compute.id})
+
         try:
             os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
             with open(self._config_file, 'w+') as f:
-                json.dump(data, f, indent=4)
+                json.dump(controller_settings, f, indent=4)
         except OSError as e:
-            log.error("Cannnot write configuration file '{}': {}".format(self._config_file, e))
+            log.error("Cannot write controller configuration file '{}': {}".format(self._config_file, e))
 
     async def _load_controller_settings(self):
         """
@@ -324,23 +317,36 @@ class Controller:
                 await self._import_gns3_gui_conf()
                 self.save()
             with open(self._config_file) as f:
-                data = json.load(f)
+                controller_settings = json.load(f)
         except (OSError, ValueError) as e:
             log.critical("Cannot load configuration file '{}': {}".format(self._config_file, e))
-            self._settings = {}
             return []
 
-        if "settings" in data and data["settings"] is not None:
-            self._settings = data["settings"]
-        else:
-            self._settings = {}
-        if "gns3vm" in data:
-            self.gns3vm.settings = data["gns3vm"]
+        # load the appliances
+        if "appliances" in controller_settings:
+            for appliance_settings in controller_settings["appliances"]:
+                try:
+                    appliance = Appliance(appliance_settings["appliance_id"], appliance_settings)
+                    appliance.__json__()  # Check if loaded without error
+                    self._appliances[appliance.id] = appliance
+                except KeyError as e:
+                    # appliance data is not complete (missing name or type)
+                    log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(appliance_settings["appliance_id"], appliance_settings.get("name", "unknown"), e))
+                    continue
 
-        self._appliance_templates_etag = data.get("appliance_templates_etag")
+        # load GNS3 VM settings
+        if "gns3vm" in controller_settings:
+            self.gns3vm.settings = controller_settings["gns3vm"]
+
+        # load the IOU license settings
+        if "iou_license" in controller_settings:
+            self._iou_license_settings = controller_settings["iou_license"]
+
+        self._appliance_templates_etag = controller_settings.get("appliance_templates_etag")
         self.load_appliance_templates()
         self.load_appliances()
-        return data.get("computes", [])
+        self._config_loaded = True
+        return controller_settings.get("computes", [])
 
     async def load_projects(self):
         """
@@ -416,18 +422,16 @@ class Controller:
         config_file = os.path.join(os.path.dirname(self._config_file), "gns3_gui.conf")
         if os.path.exists(config_file):
             with open(config_file) as f:
-                data = json.load(f)
-                server_settings = data.get("Servers", {})
+                settings = json.load(f)
+                server_settings = settings.get("Servers", {})
                 for remote in server_settings.get("remote_servers", []):
                     try:
-                        await self.add_compute(
-                            host=remote.get("host", "localhost"),
-                            port=remote.get("port", 3080),
-                            protocol=remote.get("protocol", "http"),
-                            name=remote.get("url"),
-                            user=remote.get("user"),
-                            password=remote.get("password")
-                        )
+                        await self.add_compute(host=remote.get("host", "localhost"),
+                                               port=remote.get("port", 3080),
+                                               protocol=remote.get("protocol", "http"),
+                                               name=remote.get("url"),
+                                               user=remote.get("user"),
+                                               password=remote.get("password"))
                     except aiohttp.web.HTTPConflict:
                         pass  # if the server is broken we skip it
                 if "vm" in server_settings:
@@ -458,25 +462,69 @@ class Controller:
                         "headless": vm_settings.get("headless", False),
                         "vmname": vmname
                     }
-                self._settings = {}
 
-    @property
-    def settings(self):
-        """
-        Store settings shared by the different GUI will be replace by dedicated API later. Dictionnary
-        """
+                vms = []
+                for vm in settings.get("Qemu", {}).get("vms", []):
+                    vm["appliance_type"] = "qemu"
+                    vms.append(vm)
+                for vm in settings.get("IOU", {}).get("devices", []):
+                    vm["appliance_type"] = "iou"
+                    vms.append(vm)
+                for vm in settings.get("Docker", {}).get("containers", []):
+                    vm["appliance_type"] = "docker"
+                    vms.append(vm)
+                for vm in settings.get("Builtin", {}).get("cloud_nodes", []):
+                    vm["appliance_type"] = "cloud"
+                    vms.append(vm)
+                for vm in settings.get("Builtin", {}).get("ethernet_switches", []):
+                    vm["appliance_type"] = "ethernet_switch"
+                    vms.append(vm)
+                for vm in settings.get("Builtin", {}).get("ethernet_hubs", []):
+                    vm["appliance_type"] = "ethernet_hub"
+                    vms.append(vm)
+                for vm in settings.get("Dynamips", {}).get("routers", []):
+                    vm["appliance_type"] = "dynamips"
+                    vms.append(vm)
+                for vm in settings.get("VMware", {}).get("vms", []):
+                    vm["appliance_type"] = "vmware"
+                    vms.append(vm)
+                for vm in settings.get("VirtualBox", {}).get("vms", []):
+                    vm["appliance_type"] = "virtualbox"
+                    vms.append(vm)
+                for vm in settings.get("VPCS", {}).get("nodes", []):
+                    vm["appliance_type"] = "vpcs"
+                    vms.append(vm)
+                for vm in settings.get("TraceNG", {}).get("nodes", []):
+                    vm["appliance_type"] = "traceng"
+                    vms.append(vm)
 
-        return self._settings
+                for vm in vms:
+                    # remove deprecated properties
+                    for prop in vm.copy():
+                        if prop in ["enable_remote_console", "use_ubridge", "acpi_shutdown"]:
+                            del vm[prop]
 
-    @settings.setter
-    def settings(self, val):
+                    # remove deprecated default_symbol and hover_symbol
+                    # and set symbol if not present
+                    deprecated = ["default_symbol", "hover_symbol"]
+                    if len([prop for prop in vm.keys() if prop in deprecated]) > 0:
+                        if "default_symbol" in vm.keys():
+                            del vm["default_symbol"]
+                        if "hover_symbol" in vm.keys():
+                            del vm["hover_symbol"]
 
-        self._settings = val
-        self._settings["modification_uuid"] = str(uuid.uuid4())  # We add a modification id to the settings to help the gui to detect changes
-        self.save()
-        self.load_appliance_templates()
-        self.load_appliances()
-        self.notification.controller_emit("settings.updated", val)
+                        if "symbol" not in vm.keys():
+                            vm["symbol"] = ":/symbols/computer.svg"
+
+                    vm.setdefault("appliance_id", str(uuid.uuid4()))
+                    try:
+                        appliance = Appliance(vm["appliance_id"], vm)
+                        appliance.__json__()  # Check if loaded without error
+                        self._appliances[appliance.id] = appliance
+                    except KeyError as e:
+                        # appliance data is not complete (missing name or type)
+                        log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                        continue
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
@@ -712,6 +760,14 @@ class Controller:
         """
 
         return self._appliances
+
+    @property
+    def iou_license(self):
+        """
+        :returns: The dictionary of IOU license settings
+        """
+
+        return self._iou_license_settings
 
     def projects_directory(self):
 

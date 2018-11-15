@@ -269,7 +269,7 @@ def test_symbol(node, symbols_dir):
     assert node.height == 71
     assert node.label["x"] is None
     assert node.label["y"] == -40
-    assert node.label["style"] == "font-size: 10;font-familly: Verdana"
+    assert node.label["style"] == None#"font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
 
     shutil.copy(os.path.join("gns3server", "symbols", "cloud.svg"), os.path.join(symbols_dir, "cloud2.svg"))
     node.symbol = "cloud2.svg"
@@ -298,7 +298,7 @@ def test_label_with_default_label_font(node):
 
     node._label = None
     node.symbol = ":/symbols/dslam.svg"
-    assert node.label["style"] == "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #ff0000;fill-opacity: 1.0;"
+    assert node.label["style"] == None #"font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #ff0000;fill-opacity: 1.0;"
 
 
 def test_update(node, compute, project, async_run, controller):
@@ -405,9 +405,9 @@ def test_start_iou(compute, project, async_run, controller):
     with pytest.raises(aiohttp.web.HTTPConflict):
         async_run(node.start())
 
-    controller.settings["IOU"] = {"iourc_content": "aa"}
+    controller._iou_license_settings = {"license_check": True, "iourc_content": "aa"}
     async_run(node.start())
-    compute.post.assert_called_with("/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id), timeout=240, data={"iourc_content": "aa"})
+    compute.post.assert_called_with("/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id), timeout=240, data={"license_check": True, "iourc_content": "aa"})
 
 
 def test_stop(node, compute, project, async_run):
