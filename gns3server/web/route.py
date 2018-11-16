@@ -23,7 +23,7 @@ import aiohttp
 import logging
 import traceback
 import jsonschema
-
+import jsonschema.exceptions
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,30 @@ from ..crash_report import CrashReport
 from ..config import Config
 
 
-async def parse_request(request, input_schema, raw):
+# Add default values for missing entries in a request, largely taken from jsonschema documentation example
+# https://python-jsonschema.readthedocs.io/en/latest/faq/#why-doesn-t-my-schema-s-default-property-set-the-default-on-my-instance
+def extend_with_default(validator_class):
+
+    validate_properties = validator_class.VALIDATORS["properties"]
+    def set_defaults(validator, properties, instance, schema):
+        if jsonschema.Draft4Validator(schema).is_valid(instance):
+            # only add default for the matching sub-schema (e.g. when using 'oneOf')
+            for property, subschema in properties.items():
+                if "default" in subschema:
+                    instance.setdefault(property, subschema["default"])
+
+        for error in validate_properties(validator, properties, instance, schema,):
+            yield error
+
+    return jsonschema.validators.extend(
+        validator_class, {"properties" : set_defaults},
+    )
+
+
+ValidatorWithDefaults = extend_with_default(jsonschema.Draft4Validator)
+
+
+async def parse_request(request, input_schema, raw, set_input_schema_defaults=False):
     """Parse body of request and raise HTTP errors in case of problems"""
 
     request.json = {}
@@ -55,15 +78,34 @@ async def parse_request(request, input_schema, raw):
             request.json[k] = v[0]
 
     if input_schema:
+
+        if set_input_schema_defaults:
+            validator = ValidatorWithDefaults(input_schema)
+        else:
+            validator = jsonschema.Draft4Validator(input_schema)
         try:
-            jsonschema.validate(request.json, input_schema)
+            validator.validate(request.json)
         except jsonschema.ValidationError as e:
-            log.error("Invalid input query. JSON schema error: {}".format(e.message))
-            raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
-                e.message,
-                json.dumps(e.schema)))
+            best_match = jsonschema.exceptions.best_match(validator.iter_errors(request.json))
+            message = "JSON schema error with API request '{}': {} (best matched error: {})".format(request.path_qs, e.message, best_match.message)
+            log.error(message)
+            log.debug("Input schema: {}".format(json.dumps(input_schema)))
+            raise aiohttp.web.HTTPBadRequest(text=message)
 
     return request
+
+    #     if set_input_schema_defaults:
+    #         validator = ValidatorWithDefaults(input_schema)
+    #     else:
+    #         validator = jsonschema.Draft4Validator(input_schema)
+    #     error = jsonschema.exceptions.best_match(validator.iter_errors(request.json))
+    #     if error:
+    #         message = "JSON schema error with API request '{}' while validating JSON data '{}': {}".format(request.path_qs, request.json, error.message)
+    #         log.error(message)
+    #         log.debug("Input schema: {}".format(json.dumps(input_schema)))
+    #         raise aiohttp.web.HTTPBadRequest(text=message)
+    #
+    # return request
 
 
 class Route(object):
@@ -132,6 +174,7 @@ class Route(object):
         input_schema = kw.get("input", {})
         api_version = kw.get("api_version", 2)
         raw = kw.get("raw", False)
+        set_input_schema_defaults = kw.get("set_input_schema_defaults", False)
 
         def register(func):
             # Add the type of server to the route
@@ -180,7 +223,7 @@ class Route(object):
                         return response
 
                     # API call
-                    request = await parse_request(request, input_schema, raw)
+                    request = await parse_request(request, input_schema, raw, set_input_schema_defaults)
                     record_file = server_config.get("record")
                     if record_file:
                         try:

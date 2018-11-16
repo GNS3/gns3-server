@@ -58,7 +58,8 @@ class ApplianceHandler:
             400: "Invalid request"
         },
         input=APPLIANCE_CREATE_SCHEMA,
-        output=APPLIANCE_OBJECT_SCHEMA)
+        output=APPLIANCE_OBJECT_SCHEMA,
+        set_input_schema_defaults=True)
     def create(request, response):
 
         controller = Controller.instance()

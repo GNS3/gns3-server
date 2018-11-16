@@ -30,9 +30,24 @@ BASE_APPLIANCE_PROPERTIES = {
         "maxLength": 36,
         "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
     },
+    "name": {
+        "description": "Appliance name",
+        "type": "string",
+        "minLength": 1,
+    },
     "compute_id": {
         "description": "Compute identifier",
         "type": "string"
+    },
+    "default_name_format": {
+        "description": "Default name format",
+        "type": "string",
+        "minLength": 1
+    },
+    "symbol": {
+        "description": "Symbol of the appliance",
+        "type": "string",
+        "minLength": 1
     },
     "category": {
         "description": "Appliance category",
@@ -41,28 +56,12 @@ BASE_APPLIANCE_PROPERTIES = {
             {"enum": ["router", "switch", "guest", "firewall"]}
         ]
     },
-    "name": {
-        "description": "Appliance name",
-        "type": "string",
-        "minLength": 1,
-    },
-    "default_name_format": {
-        "description": "Default name format",
-        "type": "string",
-        "minLength": 1,
-    },
-    "symbol": {
-        "description": "Symbol of the appliance",
-        "type": "string",
-        "minLength": 1
-    },
     "builtin": {
         "description": "Appliance is builtin",
         "type": "boolean"
     },
 }
 
-#TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowd only for c7200)
 DYNAMIPS_APPLIANCE_PROPERTIES = {
     "appliance_type": {
         "enum": ["dynamips"]
@@ -72,42 +71,15 @@ DYNAMIPS_APPLIANCE_PROPERTIES = {
         "type": "string",
         "minLength": 1
     },
-    "chassis": {
-        "description": "Chassis type",
-        "enum": ["1720","1721", "1750", "1751", "1760", "2610", "2620", "2610XM", "2620XM", "2650XM", "2621", "2611XM",
-                 "2621XM", "2651XM", "3620", "3640", "3660", ""]
-    },
-    "platform": {
-        "description": "Platform type",
-        "enum": ["c1700", "c2600", "c2691", "c3725", "c3745", "c3600", "c7200"]
-    },
-    "ram": {
-        "description": "Amount of RAM in MB",
-        "type": "integer"
-    },
-    "nvram": {
-        "description": "Amount of NVRAM in KB",
-        "type": "integer"
-    },
     "mmap": {
         "description": "MMAP feature",
-        "type": "boolean"
-    },
-    "sparsemem": {
-        "description": "Sparse memory feature",
-        "type": "boolean"
+        "type": "boolean",
+        "default": True
     },
     "exec_area": {
         "description": "Exec area value",
         "type": "integer",
-    },
-    "disk0": {
-        "description": "Disk0 size in MB",
-        "type": "integer"
-    },
-    "disk1": {
-        "description": "Disk1 size in MB",
-        "type": "integer"
+        "default": 64
     },
     "mac_addr": {
         "description": "Base MAC address",
@@ -115,58 +87,55 @@ DYNAMIPS_APPLIANCE_PROPERTIES = {
         "anyOf": [
             {"pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"},
             {"pattern": "^$"}
-        ]
+        ],
+        "default": ""
     },
     "system_id": {
         "description": "System ID",
         "type": "string",
         "minLength": 1,
+        "default": "FTX0945W0MY"
     },
     "startup_config": {
         "description": "IOS startup configuration file",
-        "type": "string"
+        "type": "string",
+        "default": "ios_base_startup-config.txt"
     },
     "private_config": {
         "description": "IOS private configuration file",
-        "type": "string"
+        "type": "string",
+        "default": ""
     },
     "idlepc": {
         "description": "Idle-PC value",
         "type": "string",
-        "pattern": "^(0x[0-9a-fA-F]+)?$"
+        "pattern": "^(0x[0-9a-fA-F]+)?$",
+        "default": ""
     },
     "idlemax": {
         "description": "Idlemax value",
         "type": "integer",
+        "default": 500
     },
     "idlesleep": {
         "description": "Idlesleep value",
         "type": "integer",
+        "default": 30
     },
-    "iomem": {
-        "description": "I/O memory percentage",
+    "disk0": {
+        "description": "Disk0 size in MB",
         "type": "integer",
-        "minimum": 0,
-        "maximum": 100
+        "default": 0
     },
-    "npe": {
-        "description": "NPE model",
-        "enum": ["npe-100",
-                 "npe-150",
-                 "npe-175",
-                 "npe-200",
-                 "npe-225",
-                 "npe-300",
-                 "npe-400",
-                 "npe-g2"]
-    },
-    "midplane": {
-        "description": "Midplane model",
-        "enum": ["std", "vxr"]
+    "disk1": {
+        "description": "Disk1 size in MB",
+        "type": "integer",
+        "default": 0
     },
     "auto_delete_disks": {
         "description": "Automatically delete nvram and disk files",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "wic0": DYNAMIPS_WICS,
     "wic1": DYNAMIPS_WICS,
@@ -180,15 +149,280 @@ DYNAMIPS_APPLIANCE_PROPERTIES = {
     "slot6": DYNAMIPS_ADAPTERS,
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "telnet"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     }
 }
 
-DYNAMIPS_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+DYNAMIPS_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+DYNAMIPS_APPLIANCE_PROPERTIES["category"]["default"] = "router"
+DYNAMIPS_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "R{0}"
+DYNAMIPS_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/router.svg"
+
+C7200_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c7200"]
+    },
+    # "chassis": {
+    #     "description": "Chassis type",
+    #     "type": ["string", "null"],
+    #     "maxLength": 0,
+    #     "default": None
+    # },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 512
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 512
+    },
+    "npe": {
+        "description": "NPE model",
+        "enum": ["npe-100", "npe-150", "npe-175", "npe-200", "npe-225", "npe-300", "npe-400", "npe-g2"],
+        "default": "npe-400"
+    },
+    "midplane": {
+        "description": "Midplane model",
+        "enum": ["std", "vxr"],
+        "default": "vxr"
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C7200_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C3745_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c3745"]
+    },
+    # "chassis": {
+    #     "description": "Chassis type",
+    #     "type": ["string", "null"],
+    #     "maxLength": 0,
+    #     "default": None
+    # },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 256
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 256
+    },
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 5
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C3745_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C3725_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c3725"]
+    },
+    # "chassis": {
+    #     "description": "Chassis type",
+    #     "type": ["string", "null"],
+    #     "maxLength": 0,
+    #     "default": None
+    # },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 128
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 256
+    },
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 5
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C3725_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C3600_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c3600"]
+    },
+    "chassis": {
+        "description": "Chassis type",
+        "enum": ["3620", "3640", "3660"],
+        "default": "3660"
+    },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 192
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 128
+    },
+
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 5
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C3600_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C2691_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c2691"]
+    },
+    # "chassis": {
+    #     "description": "Chassis type",
+    #     "type": ["string", "null"],
+    #     "maxLength": 0,
+    #     "default": None
+    # },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 192
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 256
+    },
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 5
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C2691_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C2600_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c2600"]
+    },
+    "chassis": {
+        "description": "Chassis type",
+        "enum": ["2610", "2620", "2610XM", "2620XM", "2650XM", "2621", "2611XM", "2621XM", "2651XM"],
+        "default": "2651XM"
+    },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 160
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 128
+    },
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 15
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": True
+    }
+}
+
+C2600_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+
+C1700_DYNAMIPS_APPLIANCE_PROPERTIES = {
+    "platform": {
+        "description": "Platform type",
+        "enum": ["c1700"]
+    },
+    "chassis": {
+        "description": "Chassis type",
+        "enum": ["1720", "1721", "1750", "1751", "1760"],
+        "default": "1760"
+    },
+    "ram": {
+        "description": "Amount of RAM in MB",
+        "type": "integer",
+        "default": 160
+    },
+    "nvram": {
+        "description": "Amount of NVRAM in KB",
+        "type": "integer",
+        "default": 128
+    },
+    "iomem": {
+        "description": "I/O memory percentage",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "default": 15
+    },
+    "sparsemem": {
+        "description": "Sparse memory feature",
+        "type": "boolean",
+        "default": False
+    }
+}
+
+C1700_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
 
 IOU_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -202,42 +436,54 @@ IOU_APPLIANCE_PROPERTIES = {
     "ethernet_adapters": {
         "description": "Number of ethernet adapters",
         "type": "integer",
+        "default": 2
     },
     "serial_adapters": {
         "description": "Number of serial adapters",
-        "type": "integer"
+        "type": "integer",
+        "default": 2
     },
     "ram": {
         "description": "RAM in MB",
-        "type": "integer"
+        "type": "integer",
+        "default": 256
     },
     "nvram": {
         "description": "NVRAM in KB",
-        "type": "integer"
+        "type": "integer",
+        "default": 128
     },
     "use_default_iou_values": {
         "description": "Use default IOU values",
-        "type": "boolean"
+        "type": "boolean",
+        "default": True
     },
     "startup_config": {
         "description": "Startup-config of IOU",
-        "type": "string"
+        "type": "string",
+        "default": "iou_l2_base_startup-config.txt"
     },
     "private_config": {
         "description": "Private-config of IOU",
-        "type": "string"
+        "type": "string",
+        "default": ""
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "telnet"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
 }
 
-IOU_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+IOU_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+IOU_APPLIANCE_PROPERTIES["category"]["default"] = "router"
+IOU_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "IOU{0}"
+IOU_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/multilayer_switch.svg"
 
 DOCKER_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -252,51 +498,63 @@ DOCKER_APPLIANCE_PROPERTIES = {
         "description": "Number of adapters",
         "type": "integer",
         "minimum": 0,
-        "maximum": 99
+        "maximum": 99,
+        "default": 1
     },
     "start_command": {
         "description": "Docker CMD entry",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "environment": {
         "description": "Docker environment variables",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "vnc", "http", "https", "none"]
+        "enum": ["telnet", "vnc", "http", "https", "none"],
+        "default": "telnet"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False,
     },
     "console_http_port": {
         "description": "Internal port in the container for the HTTP server",
         "type": "integer",
         "minimum": 1,
-        "maximum": 65535
+        "maximum": 65535,
+        "default": 80
     },
     "console_http_path": {
         "description": "Path of the web interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "/"
     },
     "console_resolution": {
         "description": "Console resolution for VNC",
         "type": "string",
-        "pattern": "^[0-9]+x[0-9]+$"
+        "pattern": "^[0-9]+x[0-9]+$",
+        "default": "1024x768"
     },
     "extra_hosts": {
         "description": "Docker extra hosts (added to /etc/hosts)",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "",
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-DOCKER_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+DOCKER_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+DOCKER_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+DOCKER_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+DOCKER_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/docker_guest.svg"
 
 QEMU_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -305,166 +563,213 @@ QEMU_APPLIANCE_PROPERTIES = {
     "usage": {
         "description": "How to use the Qemu VM",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "qemu_path": {
         "description": "Path to QEMU",
-        "type": ["string", "null"],
+        "type": "string",
         "minLength": 1,
+        "default": ""
     },
     "platform": {
         "description": "Platform to emulate",
-        "enum": QEMU_PLATFORMS
+        "enum": QEMU_PLATFORMS,
+        "default": "i386"
     },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
-        "type": "boolean"
+        "type": "boolean",
+        "default": True
     },
     "ram": {
         "description": "Amount of RAM in MB",
-        "type": "integer"
+        "type": "integer",
+        "default": 256
     },
     "cpus": {
         "description": "Number of vCPUs",
         "type": "integer",
         "minimum": 1,
-        "maximum": 255
+        "maximum": 255,
+        "default": 1
     },
     "adapters": {
         "description": "Number of adapters",
         "type": "integer",
         "minimum": 0,
-        "maximum": 275
+        "maximum": 275,
+        "default": 1
     },
     "adapter_type": {
         "description": "QEMU adapter type",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "e1000"
     },
     "mac_address": {
         "description": "QEMU MAC address",
         "type": "string",
         "minLength": 1,
-        "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+        "anyOf": [
+            {"pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"},
+            {"pattern": "^$"}
+        ],
+        "default": "",
     },
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "Ethernet{0}"
     },
     "port_segment_size": {
         "description": "Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2",
-        "type": "integer"
+        "type": "integer",
+        "default": 0
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
+        "enum": ["telnet", "vnc", "spice", "spice+agent", "none"],
+        "default": "telnet"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "boot_priority": {
         "description": "QEMU boot priority",
-        "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"]
+        "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"],
+        "default": "c"
     },
     "hda_disk_image": {
         "description": "QEMU hda disk image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "hda_disk_interface": {
         "description": "QEMU hda interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "ide"
     },
     "hdb_disk_image": {
         "description": "QEMU hdb disk image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "hdb_disk_interface": {
         "description": "QEMU hdb interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "ide"
     },
     "hdc_disk_image": {
         "description": "QEMU hdc disk image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "hdc_disk_interface": {
         "description": "QEMU hdc interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "ide"
     },
     "hdd_disk_image": {
         "description": "QEMU hdd disk image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "hdd_disk_interface": {
         "description": "QEMU hdd interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "ide"
     },
     "cdrom_image": {
         "description": "QEMU cdrom image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "initrd": {
         "description": "QEMU initrd path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "kernel_image": {
         "description": "QEMU kernel image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "bios_image": {
         "description": "QEMU bios image path",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "kernel_command_line": {
         "description": "QEMU kernel command line",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "legacy_networking": {
         "description": "Use QEMU legagy networking commands (-net syntax)",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "on_close": {
         "description": "Action to execute on the VM is closed",
         "enum": ["power_off", "shutdown_signal", "save_vm_state"],
+        "default": "power_off"
     },
     "cpu_throttling": {
         "description": "Percentage of CPU allowed for QEMU",
         "minimum": 0,
         "maximum": 800,
-        "type": "integer"
+        "type": "integer",
+        "default": 0
     },
     "process_priority": {
         "description": "Process priority for QEMU",
-        "enum": ["realtime", "very high", "high", "normal", "low", "very low"]
+        "enum": ["realtime", "very high", "high", "normal", "low", "very low"],
+        "default": "normal"
     },
     "options": {
         "description": "Additional QEMU options",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-QEMU_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+QEMU_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+QEMU_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+QEMU_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+QEMU_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/qemu_guest.svg"
+
+VMWARE_VM_SETTINGS = {
+    "vmx_path": "",
+
+
+    "console_type": "none",
+    "console_auto_start": False,
+}
 
 VMWARE_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -477,57 +782,71 @@ VMWARE_APPLIANCE_PROPERTIES = {
     },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "Ethernet{0}"
     },
     "port_segment_size": {
         "description": "Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2",
-        "type": "integer"
+        "type": "integer",
+        "default": 0
     },
     "adapters": {
         "description": "Number of adapters",
         "type": "integer",
         "minimum": 0,
-        "maximum": 10,  # maximum adapters support by VMware VMs
+        "maximum": 10,  # maximum adapters support by VMware VMs,
+        "default": 1
     },
     "adapter_type": {
         "description": "VMware adapter type",
         "type": "string",
         "minLength": 1,
+        "default": "e1000"
     },
     "use_any_adapter": {
         "description": "Allow GNS3 to use any VMware adapter",
         "type": "boolean",
+        "default": False
     },
     "headless": {
         "description": "Headless mode",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "on_close": {
         "description": "Action to execute on the VM is closed",
         "enum": ["power_off", "shutdown_signal", "save_vm_state"],
+        "default": "power_off"
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "none"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-VMWARE_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+VMWARE_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+VMWARE_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+VMWARE_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+VMWARE_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/vmware_guest.svg"
 
 VIRTUALBOX_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -542,61 +861,76 @@ VIRTUALBOX_APPLIANCE_PROPERTIES = {
         "description": "Amount of RAM",
         "minimum": 0,
         "maximum": 65535,
-        "type": "integer"
+        "type": "integer",
+        "default": 256
     },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "adapters": {
         "description": "Number of adapters",
         "type": "integer",
         "minimum": 0,
         "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
+        "default": 1
     },
     "use_any_adapter": {
         "description": "Allow GNS3 to use any VirtualBox adapter",
         "type": "boolean",
+        "default": False
     },
     "adapter_type": {
         "description": "VirtualBox adapter type",
         "type": "string",
         "minLength": 1,
+        "default": "Intel PRO/1000 MT Desktop (82540EM)"
     },
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "Ethernet{0}"
     },
     "port_segment_size": {
         "description": "Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2",
-        "type": "integer"
+        "type": "integer",
+        "default": 0
     },
     "headless": {
         "description": "Headless mode",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "on_close": {
         "description": "Action to execute on the VM is closed",
         "enum": ["power_off", "shutdown_signal", "save_vm_state"],
+        "default": "power_off"
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "none"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-VIRTUALBOX_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+VIRTUALBOX_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+VIRTUALBOX_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+VIRTUALBOX_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+VIRTUALBOX_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/vbox_guest.svg"
 
 TRACENG_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -614,11 +948,15 @@ TRACENG_APPLIANCE_PROPERTIES = {
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["none"]
+        "enum": ["none"],
+        "default": "none"
     },
 }
 
-TRACENG_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+TRACENG_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+TRACENG_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+TRACENG_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "TraceNG{0}"
+TRACENG_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/traceng.svg"
 
 VPCS_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -628,18 +966,24 @@ VPCS_APPLIANCE_PROPERTIES = {
         "description": "Script file",
         "type": "string",
         "minLength": 1,
+        "default": "vpcs_base_config.txt"
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "telnet"
     },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
-        "type": "boolean"
+        "type": "boolean",
+        "default": False
     },
 }
 
-VPCS_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+VPCS_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+VPCS_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+VPCS_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "PC{0}"
+VPCS_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/vpcs_guest.svg"
 
 ETHERNET_SWITCH_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -684,11 +1028,15 @@ ETHERNET_SWITCH_APPLIANCE_PROPERTIES = {
     },
     "console_type": {
         "description": "Console type",
-        "enum": ["telnet", "none"]
+        "enum": ["telnet", "none"],
+        "default": "telnet"
     },
 }
 
-ETHERNET_SWITCH_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+ETHERNET_SWITCH_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+ETHERNET_SWITCH_APPLIANCE_PROPERTIES["category"]["default"] = "switch"
+ETHERNET_SWITCH_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "Switch{0}"
+ETHERNET_SWITCH_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/ethernet_switch.svg"
 
 ETHERNET_HUB_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -721,7 +1069,10 @@ ETHERNET_HUB_APPLIANCE_PROPERTIES = {
     }
 }
 
-ETHERNET_HUB_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+ETHERNET_HUB_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+ETHERNET_HUB_APPLIANCE_PROPERTIES["category"]["default"] = "switch"
+ETHERNET_HUB_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "Hub{0}"
+ETHERNET_HUB_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/hub.svg"
 
 CLOUD_APPLIANCE_PROPERTIES = {
     "appliance_type": {
@@ -755,18 +1106,57 @@ CLOUD_APPLIANCE_PROPERTIES = {
     },
 }
 
-CLOUD_APPLIANCE_PROPERTIES.update(BASE_APPLIANCE_PROPERTIES)
+CLOUD_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
+CLOUD_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
+CLOUD_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "Cloud{0}"
+CLOUD_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/cloud.svg"
 
 APPLIANCE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A template object",
     "type": "object",
     "definitions": {
-        "Dynamips": {
-            "description": "Dynamips appliance",
-            "properties": DYNAMIPS_APPLIANCE_PROPERTIES,
+        "c7200": {
+            "description": "c7200 appliance",
+            "properties": C7200_DYNAMIPS_APPLIANCE_PROPERTIES,
             "additionalProperties": False,
-            "required": ["platform", "image", "ram"]
+            "required": ["platform", "image"]
+        },
+        "c3745": {
+            "description": "c3745 appliance",
+            "properties": C3745_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image"]
+        },
+        "c3725": {
+            "description": "c3725 appliance",
+            "properties": C3725_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image"]
+        },
+        "c3600": {
+            "description": "c3600 appliance",
+            "properties": C3600_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image", "chassis"]
+        },
+        "c2691": {
+            "description": "c2691 appliance",
+            "properties": C2691_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image"]
+        },
+        "c2600": {
+            "description": "c2600 appliance",
+            "properties": C2600_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image", "chassis"]
+        },
+        "c1700": {
+            "description": "c1700 appliance",
+            "properties": C1700_DYNAMIPS_APPLIANCE_PROPERTIES,
+            "additionalProperties": False,
+            "required": ["platform", "image", "chassis"]
         },
         "IOU": {
             "description": "IOU appliance",
@@ -789,7 +1179,7 @@ APPLIANCE_OBJECT_SCHEMA = {
             "description": "VMware appliance",
             "properties": VMWARE_APPLIANCE_PROPERTIES,
             "additionalProperties": False,
-            "required": ["vmx_path", "linked_clone"]
+            "required": ["vmx_path"]
         },
         "VirtualBox": {
             "description": "VirtualBox appliance",
@@ -824,7 +1214,13 @@ APPLIANCE_OBJECT_SCHEMA = {
         },
     },
     "oneOf": [
-        {"$ref": "#/definitions/Dynamips"},
+        {"$ref": "#/definitions/c7200"},
+        {"$ref": "#/definitions/c3745"},
+        {"$ref": "#/definitions/c3725"},
+        {"$ref": "#/definitions/c3600"},
+        {"$ref": "#/definitions/c2691"},
+        {"$ref": "#/definitions/c2600"},
+        {"$ref": "#/definitions/c1700"},
         {"$ref": "#/definitions/IOU"},
         {"$ref": "#/definitions/Docker"},
         {"$ref": "#/definitions/Qemu"},
@@ -836,7 +1232,7 @@ APPLIANCE_OBJECT_SCHEMA = {
         {"$ref": "#/definitions/EthernetHub"},
         {"$ref": "#/definitions/Cloud"},
     ],
-    "required": ["name", "appliance_id", "appliance_type", "category", "compute_id", "default_name_format", "symbol"]
+    "required": ["name", "appliance_type", "appliance_id", "category", "compute_id", "default_name_format", "symbol"]
 }
 
 APPLIANCE_CREATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
@@ -844,7 +1240,7 @@ APPLIANCE_CREATE_SCHEMA = copy.deepcopy(APPLIANCE_OBJECT_SCHEMA)
 # create schema
 # these properties are not required to create an appliance
 APPLIANCE_CREATE_SCHEMA["required"].remove("appliance_id")
-APPLIANCE_CREATE_SCHEMA["required"].remove("compute_id")
+APPLIANCE_CREATE_SCHEMA["required"].remove("category")
 APPLIANCE_CREATE_SCHEMA["required"].remove("default_name_format")
 APPLIANCE_CREATE_SCHEMA["required"].remove("symbol")
 
