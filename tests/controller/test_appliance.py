@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+import jsonschema
+
 from gns3server.controller.appliance import Appliance
 
 
@@ -26,42 +29,25 @@ def test_appliance_json():
         "category": 0,
         "symbol": "qemu.svg",
         "server": "local",
-        "platform": None
+        "platform": "i386"
     })
-    assert a.__json__() == {
-        "appliance_id": a.id,
-        "appliance_type": "qemu",
-        "builtin": False,
-        "name": "Test",
-        "default_name_format": "{name}-{0}",
-        "category": "router",
-        "symbol": "qemu.svg",
-        "compute_id": "local",
-        "platform": None
-    }
+    settings = a.__json__()
+    assert settings["appliance_id"] == a.id
+    assert settings["appliance_type"] == "qemu"
+    assert settings["builtin"] == False
 
 
 def test_appliance_json_with_not_known_category():
-    a = Appliance(None, {
-        "node_type": "qemu",
-        "name": "Test",
-        "default_name_format": "{name}-{0}",
-        "category": 'Not known',
-        "symbol": "qemu.svg",
-        "server": "local",
-        "platform": None
-    })
-    assert a.__json__() == {
-        "appliance_id": a.id,
-        "appliance_type": "qemu",
-        "builtin": False,
-        "name": "Test",
-        "default_name_format": "{name}-{0}",
-        "category": "Not known",
-        "symbol": "qemu.svg",
-        "compute_id": "local",
-        "platform": None
-    }
+    with pytest.raises(jsonschema.ValidationError):
+        a = Appliance(None, {
+            "node_type": "qemu",
+            "name": "Test",
+            "default_name_format": "{name}-{0}",
+            "category": 'Not known',
+            "symbol": "qemu.svg",
+            "server": "local",
+            "platform": "i386"
+        })
 
 
 def test_appliance_json_with_platform():
@@ -71,20 +57,15 @@ def test_appliance_json_with_platform():
         "default_name_format": "{name}-{0}",
         "category": 0,
         "symbol": "dynamips.svg",
+        "image": "IOS_image.bin",
         "server": "local",
         "platform": "c3725"
     })
-    assert a.__json__() == {
-        "appliance_id": a.id,
-        "appliance_type": "dynamips",
-        "builtin": False,
-        "name": "Test",
-        "default_name_format": "{name}-{0}",
-        "category": "router",
-        "symbol": "dynamips.svg",
-        "compute_id": "local",
-        "platform": "c3725"
-    }
+    settings = a.__json__()
+    assert settings["appliance_id"] == a.id
+    assert settings["appliance_type"] == "dynamips"
+    assert settings["builtin"] == False
+    assert settings["platform"] == "c3725"
 
 
 def test_appliance_fix_linked_base():

@@ -23,6 +23,7 @@ import socket
 import shutil
 import asyncio
 import aiohttp
+import jsonschema
 
 from ..config import Config
 from .project import Project
@@ -144,10 +145,9 @@ class Controller:
             appliance_id = settings.setdefault("appliance_id", str(uuid.uuid4()))
         try:
             appliance = Appliance(appliance_id, settings)
-            appliance.__json__()  # Check if loaded without error
-        except KeyError as e:
-            # appliance settings is not complete
-            raise aiohttp.web.HTTPConflict(text="Cannot create new appliance: key '{}' is missing for appliance ID '{}'".format(e, appliance_id))
+        except jsonschema.ValidationError as e:
+            message = "JSON schema error adding appliance with JSON data '{}': {}".format(settings, e.message)
+            raise aiohttp.web.HTTPBadRequest(text=message)
         self._appliances[appliance.id] = appliance
         self.save()
         self.notification.controller_emit("appliance.created", appliance.__json__())
@@ -327,11 +327,10 @@ class Controller:
             for appliance_settings in controller_settings["appliances"]:
                 try:
                     appliance = Appliance(appliance_settings["appliance_id"], appliance_settings)
-                    appliance.__json__()  # Check if loaded without error
                     self._appliances[appliance.id] = appliance
-                except KeyError as e:
-                    # appliance data is not complete (missing name or type)
-                    log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(appliance_settings["appliance_id"], appliance_settings.get("name", "unknown"), e))
+                except jsonschema.ValidationError as e:
+                    message = "Cannot load appliance with JSON data '{}': {}".format(appliance_settings, e.message)
+                    log.warning(message)
                     continue
 
         # load GNS3 VM settings
