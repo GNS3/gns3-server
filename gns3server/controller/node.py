@@ -636,7 +636,7 @@ class Node:
                         break
                 port_name = "eth{}".format(adapter_number)
                 port_name = custom_adapter_settings.get("port_name", port_name)
-                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name="eth{}".format(adapter_number)))
+                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name))
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0

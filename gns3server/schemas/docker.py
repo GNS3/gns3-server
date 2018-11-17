@@ -102,7 +102,7 @@ DOCKER_CREATE_SCHEMA = {
             "maxLength": 64,
             "pattern": "^[a-f0-9]+$"
         },
-        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA  # not used at this time
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name", "image"]
@@ -206,7 +206,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "VM status Read only",
             "enum": ["started", "stopped", "suspended"]
         },
-        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA  # not used at this time
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
 }

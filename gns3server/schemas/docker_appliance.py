@@ -17,6 +17,7 @@
 
 import copy
 from .appliance import BASE_APPLIANCE_PROPERTIES
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
 
 
 DOCKER_APPLIANCE_PROPERTIES = {
@@ -75,7 +76,8 @@ DOCKER_APPLIANCE_PROPERTIES = {
         "description": "Docker extra hosts (added to /etc/hosts)",
         "type": "string",
         "default": "",
-    }
+    },
+    "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
 DOCKER_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))

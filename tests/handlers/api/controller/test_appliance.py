@@ -636,7 +636,8 @@ def test_docker_appliance_create(http_controller):
                          "image": "gns3/endhost:latest",
                          "name": "Docker appliance",
                          "start_command": "",
-                         "symbol": ":/symbols/docker_guest.svg"}
+                         "symbol": ":/symbols/docker_guest.svg",
+                         "custom_adapters": []}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value
