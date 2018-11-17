@@ -694,7 +694,8 @@ def test_qemu_appliance_create(http_controller):
                          "qemu_path": "",
                          "ram": 512,
                          "symbol": ":/symbols/qemu_guest.svg",
-                         "usage": ""}
+                         "usage": "",
+                         "custom_adapters": []}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value
@@ -729,7 +730,8 @@ def test_vmware_appliance_create(http_controller):
                          "port_segment_size": 0,
                          "symbol": ":/symbols/vmware_guest.svg",
                          "use_any_adapter": False,
-                         "vmx_path": "/path/to/vm.vmx"}
+                         "vmx_path": "/path/to/vm.vmx",
+                         "custom_adapters": []}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value
@@ -765,7 +767,8 @@ def test_virtualbox_appliance_create(http_controller):
                          "ram": 256,
                          "symbol": ":/symbols/vbox_guest.svg",
                          "use_any_adapter": False,
-                         "vmname": "My VirtualBox VM"}
+                         "vmname": "My VirtualBox VM",
+                         "custom_adapters": []}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value
