@@ -400,7 +400,6 @@ def test_c3600_dynamips_appliance_create_wrong_chassis(http_controller):
 
     response = http_controller.post("/appliances", params)
     assert response.status == 400
-    assert "is not valid under any of the given schemas" in response.json["message"]
 
 
 def test_c2691_dynamips_appliance_create(http_controller):
@@ -504,7 +503,6 @@ def test_c2600_dynamips_appliance_create_wrong_chassis(http_controller):
 
     response = http_controller.post("/appliances", params)
     assert response.status == 400
-    assert "is not valid under any of the given schemas" in response.json["message"]
 
 
 def test_c1700_dynamips_appliance_create(http_controller):
@@ -564,7 +562,6 @@ def test_c1700_dynamips_appliance_create_wrong_chassis(http_controller):
 
     response = http_controller.post("/appliances", params)
     assert response.status == 400
-    assert "is not valid under any of the given schemas" in response.json["message"]
 
 
 def test_dynamips_appliance_create_wrong_platform(http_controller):
@@ -577,7 +574,6 @@ def test_dynamips_appliance_create_wrong_platform(http_controller):
 
     response = http_controller.post("/appliances", params)
     assert response.status == 400
-    assert "is not valid under any of the given schemas" in response.json["message"]
 
 
 def test_iou_appliance_create(http_controller):
