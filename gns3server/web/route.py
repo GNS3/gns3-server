@@ -86,8 +86,10 @@ async def parse_request(request, input_schema, raw, set_input_schema_defaults=Fa
         try:
             validator.validate(request.json)
         except jsonschema.ValidationError as e:
-            best_match = jsonschema.exceptions.best_match(validator.iter_errors(request.json))
-            message = "JSON schema error with API request '{}': {} (best matched error: {})".format(request.path_qs, e.message, best_match.message)
+            message = "JSON schema error with API request '{}': {}".format(request.path_qs, e.message)
+            if "is not valid under any of the given schemas" not in message:
+                best_match = jsonschema.exceptions.best_match(validator.iter_errors(request.json))
+                message += " (best matched error: {})".format(best_match.message)
             log.error(message)
             log.debug("Input schema: {}".format(json.dumps(input_schema)))
             raise aiohttp.web.HTTPBadRequest(text=message)

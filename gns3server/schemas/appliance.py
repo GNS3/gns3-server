@@ -169,12 +169,6 @@ C7200_DYNAMIPS_APPLIANCE_PROPERTIES = {
         "description": "Platform type",
         "enum": ["c7200"]
     },
-    # "chassis": {
-    #     "description": "Chassis type",
-    #     "type": ["string", "null"],
-    #     "maxLength": 0,
-    #     "default": None
-    # },
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -209,12 +203,6 @@ C3745_DYNAMIPS_APPLIANCE_PROPERTIES = {
         "description": "Platform type",
         "enum": ["c3745"]
     },
-    # "chassis": {
-    #     "description": "Chassis type",
-    #     "type": ["string", "null"],
-    #     "maxLength": 0,
-    #     "default": None
-    # },
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -246,12 +234,6 @@ C3725_DYNAMIPS_APPLIANCE_PROPERTIES = {
         "description": "Platform type",
         "enum": ["c3725"]
     },
-    # "chassis": {
-    #     "description": "Chassis type",
-    #     "type": ["string", "null"],
-    #     "maxLength": 0,
-    #     "default": None
-    # },
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -320,12 +302,6 @@ C2691_DYNAMIPS_APPLIANCE_PROPERTIES = {
         "description": "Platform type",
         "enum": ["c2691"]
     },
-    # "chassis": {
-    #     "description": "Chassis type",
-    #     "type": ["string", "null"],
-    #     "maxLength": 0,
-    #     "default": None
-    # },
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -461,7 +437,7 @@ IOU_APPLIANCE_PROPERTIES = {
     "startup_config": {
         "description": "Startup-config of IOU",
         "type": "string",
-        "default": "iou_l2_base_startup-config.txt"
+        "default": "iou_l3_base_startup-config.txt"
     },
     "private_config": {
         "description": "Private-config of IOU",
@@ -504,13 +480,11 @@ DOCKER_APPLIANCE_PROPERTIES = {
     "start_command": {
         "description": "Docker CMD entry",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "environment": {
         "description": "Docker environment variables",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "console_type": {
@@ -545,7 +519,6 @@ DOCKER_APPLIANCE_PROPERTIES = {
     "extra_hosts": {
         "description": "Docker extra hosts (added to /etc/hosts)",
         "type": "string",
-        "minLength": 1,
         "default": "",
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
@@ -563,13 +536,11 @@ QEMU_APPLIANCE_PROPERTIES = {
     "usage": {
         "description": "How to use the Qemu VM",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "qemu_path": {
         "description": "Path to QEMU",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "platform": {
@@ -604,13 +575,14 @@ QEMU_APPLIANCE_PROPERTIES = {
     "adapter_type": {
         "description": "QEMU adapter type",
         "type": "string",
-        "minLength": 1,
+        "enum": ["e1000", "i82550", "i82551", "i82557a", "i82557b", "i82557c", "i82558a","i82558b", "i82559a",
+                 "i82559b", "i82559c", "i82559er", "i82562", "i82801", "ne2k_pci", "pcnet", "rtl8139", "virtio",
+                 "virtio-net-pci", "vmxnet3"],
         "default": "e1000"
     },
     "mac_address": {
         "description": "QEMU MAC address",
         "type": "string",
-        "minLength": 1,
         "anyOf": [
             {"pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"},
             {"pattern": "^$"}
@@ -620,13 +592,11 @@ QEMU_APPLIANCE_PROPERTIES = {
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1,
         "default": "Ethernet{0}"
     },
     "port_segment_size": {
@@ -652,79 +622,66 @@ QEMU_APPLIANCE_PROPERTIES = {
     "hda_disk_image": {
         "description": "QEMU hda disk image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "hda_disk_interface": {
         "description": "QEMU hda interface",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdb_disk_image": {
         "description": "QEMU hdb disk image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "hdb_disk_interface": {
         "description": "QEMU hdb interface",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdc_disk_image": {
         "description": "QEMU hdc disk image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "hdc_disk_interface": {
         "description": "QEMU hdc interface",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdd_disk_image": {
         "description": "QEMU hdd disk image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "hdd_disk_interface": {
         "description": "QEMU hdd interface",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "cdrom_image": {
         "description": "QEMU cdrom image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "initrd": {
         "description": "QEMU initrd path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "kernel_image": {
         "description": "QEMU kernel image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "bios_image": {
         "description": "QEMU bios image path",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "kernel_command_line": {
         "description": "QEMU kernel command line",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "legacy_networking": {
@@ -752,7 +709,6 @@ QEMU_APPLIANCE_PROPERTIES = {
     "options": {
         "description": "Additional QEMU options",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
@@ -788,13 +744,11 @@ VMWARE_APPLIANCE_PROPERTIES = {
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1,
         "default": "Ethernet{0}"
     },
     "port_segment_size": {
@@ -811,8 +765,7 @@ VMWARE_APPLIANCE_PROPERTIES = {
     },
     "adapter_type": {
         "description": "VMware adapter type",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["default", "e1000", "e1000e", "flexible", "vlance", "vmxnet", "vmxnet2", "vmxnet3"],
         "default": "e1000"
     },
     "use_any_adapter": {
@@ -883,20 +836,22 @@ VIRTUALBOX_APPLIANCE_PROPERTIES = {
     },
     "adapter_type": {
         "description": "VirtualBox adapter type",
-        "type": "string",
-        "minLength": 1,
+        "enum": ["PCnet-PCI II (Am79C970A)",
+                 "PCNet-FAST III (Am79C973)",
+                 "Intel PRO/1000 MT Desktop (82540EM)",
+                 "Intel PRO/1000 T Server (82543GC)",
+                 "Intel PRO/1000 MT Server (82545EM)",
+                 "Paravirtualized Network (virtio-net)"],
         "default": "Intel PRO/1000 MT Desktop (82540EM)"
     },
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
         "type": "string",
-        "minLength": 1,
         "default": ""
     },
     "port_name_format": {
         "description": "Optional formatting of the networking port example: eth{0}",
         "type": "string",
-        "minLength": 1,
         "default": "Ethernet{0}"
     },
     "port_segment_size": {
@@ -991,6 +946,55 @@ ETHERNET_SWITCH_APPLIANCE_PROPERTIES = {
     },
     "ports_mapping": {
         "type": "array",
+        "default": [{"ethertype": "",
+                     "name": "Ethernet0",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 0
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet1",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 1
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet2",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 2
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet3",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 3
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet4",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 4
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet5",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 5
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet6",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 6
+                     },
+                    {"ethertype": "",
+                     "name": "Ethernet7",
+                     "vlan": 1,
+                     "type": "access",
+                     "port_number": 7
+                     }
+                    ],
         "items": [
             {"type": "object",
              "oneOf": [
@@ -1044,27 +1048,46 @@ ETHERNET_HUB_APPLIANCE_PROPERTIES = {
     },
     "ports_mapping": {
         "type": "array",
+        "default": [{"port_number": 0,
+                     "name": "Ethernet0"
+                     },
+                    {"port_number": 1,
+                     "name": "Ethernet1"
+                     },
+                    {"port_number": 2,
+                     "name": "Ethernet2"
+                     },
+                    {"port_number": 3,
+                     "name": "Ethernet3"
+                     },
+                    {"port_number": 4,
+                     "name": "Ethernet4"
+                     },
+                    {"port_number": 5,
+                     "name": "Ethernet5"
+                     },
+                    {"port_number": 6,
+                     "name": "Ethernet6"
+                     },
+                    {"port_number": 7,
+                     "name": "Ethernet7"
+                     }
+        ],
         "items": [
             {"type": "object",
-             "oneOf": [
-                 {
-                     "description": "Ethernet port",
-                     "properties": {
-                         "name": {
-                             "description": "Port name",
-                             "type": "string",
-                             "minLength": 1
-                         },
-                         "port_number": {
-                             "description": "Port number",
-                             "type": "integer",
-                             "minimum": 0
-                         },
-                     },
-                     "required": ["name", "port_number"],
-                     "additionalProperties": False
-                 },
-             ]},
+             "oneOf": [{"description": "Ethernet port",
+                        "properties": {"name": {"description": "Port name",
+                                                "type": "string",
+                                                "minLength": 1},
+                                       "port_number": {
+                                           "description": "Port number",
+                                           "type": "integer",
+                                           "minimum": 0}
+                                       },
+                        "required": ["name", "port_number"],
+                        "additionalProperties": False}
+                       ],
+             }
         ]
     }
 }
