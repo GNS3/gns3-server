@@ -115,7 +115,7 @@ class ApplianceHandler:
     @Route.delete(
         r"/appliances/{appliance_id}",
         parameters={
-            "appliance_id": "Node UUID"
+            "appliance_id": "appliance UUID"
         },
         status_codes={
             204: "Appliance deleted",
@@ -139,6 +139,25 @@ class ApplianceHandler:
 
         controller = Controller.instance()
         response.json([c for c in controller.appliances.values()])
+
+    @Route.post(
+        r"/appliances/{appliance_id}/duplicate",
+        parameters={
+            "appliance_id": "Appliance UUID"
+        },
+        status_codes={
+            201: "Appliance duplicated",
+            400: "Invalid request",
+            404: "Appliance doesn't exist"
+        },
+        description="Duplicate an appliance",
+        output=APPLIANCE_OBJECT_SCHEMA)
+    async def duplicate(request, response):
+
+        controller = Controller.instance()
+        appliance = controller.duplicate_appliance(request.match_info["appliance_id"])
+        response.set_status(201)
+        response.json(appliance)
 
     @Route.post(
         r"/projects/{project_id}/appliances/{appliance_id}",
