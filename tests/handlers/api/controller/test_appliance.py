@@ -603,7 +603,8 @@ def test_iou_appliance_create(http_controller):
                          "serial_adapters": 2,
                          "startup_config": "iou_l3_base_startup-config.txt",
                          "symbol": ":/symbols/multilayer_switch.svg",
-                         "use_default_iou_values": True}
+                         "use_default_iou_values": True,
+                         "l1_keepalives": False}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value

@@ -60,6 +60,11 @@ IOU_APPLIANCE_PROPERTIES = {
         "type": "string",
         "default": ""
     },
+    "l1_keepalives": {
+        "description": "Always keep up Ethernet interface (does not always work)",
+        "type": "boolean",
+        "default": False
+    },
     "console_type": {
         "description": "Console type",
         "enum": ["telnet", "none"],
