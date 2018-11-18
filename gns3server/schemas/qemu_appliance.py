@@ -71,7 +71,7 @@ QEMU_APPLIANCE_PROPERTIES = {
     },
     "mac_address": {
         "description": "QEMU MAC address",
-        "type": "string",
+        "type": ["string", "null"],
         "anyOf": [
             {"pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"},
             {"pattern": "^$"}
