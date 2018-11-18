@@ -210,6 +210,35 @@ def test_appliance_delete(http_controller, controller):
     assert len(controller.appliances) == 0
 
 
+def test_appliance_duplicate(http_controller, controller):
+
+    appliance_id = str(uuid.uuid4())
+    params = {"appliance_id": appliance_id,
+              "base_script_file": "vpcs_base_config.txt",
+              "category": "guest",
+              "console_auto_start": False,
+              "console_type": "telnet",
+              "default_name_format": "PC{0}",
+              "name": "VPCS_TEST",
+              "compute_id": "local",
+              "symbol": ":/symbols/vpcs_guest.svg",
+              "appliance_type": "vpcs"}
+
+    response = http_controller.post("/appliances", params)
+    assert response.status == 201
+
+    response = http_controller.post("/appliances/{}/duplicate".format(appliance_id), example=True)
+    assert response.status == 201
+    assert response.json["appliance_id"] != appliance_id
+    params.pop("appliance_id")
+    for param, value in params.items():
+        assert response.json[param] == value
+
+    response = http_controller.get("/appliances")
+    assert len(response.json) == 2
+    assert len(controller.appliances) == 2
+
+
 def test_c7200_dynamips_appliance_create(http_controller):
 
     params = {"name": "Cisco c7200 appliance",

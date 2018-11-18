@@ -24,6 +24,7 @@ import shutil
 import asyncio
 import aiohttp
 import jsonschema
+import copy
 
 from ..config import Config
 from .project import Project
@@ -180,6 +181,20 @@ class Controller:
         self._appliances.pop(appliance_id)
         self.save()
         self.notification.controller_emit("appliance.deleted", appliance.__json__())
+
+    def duplicate_appliance(self, appliance_id):
+        """
+        Duplicates an appliance.
+
+        :param appliance_id: appliance identifier
+        """
+
+        appliance = self.get_appliance(appliance_id)
+        if appliance.builtin:
+            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be duplicated because it is a builtin".format(appliance_id))
+        appliance_settings = copy.deepcopy(appliance.settings)
+        del appliance_settings["appliance_id"]
+        return self.add_appliance(appliance_settings)
 
     def load_appliances(self):
 
