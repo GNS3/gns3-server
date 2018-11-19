@@ -101,6 +101,7 @@ def test_qemu_create_with_params(http_compute, project, base_params, fake_qemu_v
     assert response.json["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_qemu_create_with_project_file(http_compute, project, base_params, fake_qemu_vm):
     response = http_compute.post("/projects/{project_id}/files/hello.img".format(project_id=project.id), body="world", raw=True)
     assert response.status == 200
