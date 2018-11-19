@@ -432,7 +432,7 @@ class VMwareVM(BaseNode):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        await self._start_ubridge()
+        await self._start_ubridge(require_privileged_access=True)
         self._read_vmx_file()
         # check if there is enough RAM to run
         if "memsize" in self._vmx_pairs:

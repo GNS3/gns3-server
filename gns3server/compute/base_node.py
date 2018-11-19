@@ -78,6 +78,7 @@ class BaseNode:
         self._wrapper_telnet_server = None
         self._internal_console_port = None
         self._custom_adapters = []
+        self._ubridge_require_privileged_access = False
 
         if self._console is not None:
             if console_type == "vnc":
@@ -533,7 +534,7 @@ class BaseNode:
         """
 
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
-            await self._start_ubridge()
+            await self._start_ubridge(self._ubridge_require_privileged_access)
         if not self._ubridge_hypervisor or not self._ubridge_hypervisor.is_running():
             raise NodeError("Cannot send command '{}': uBridge is not running".format(command))
         try:
@@ -542,7 +543,7 @@ class BaseNode:
             raise UbridgeError("Error while sending command '{}': {}: {}".format(command, e, self._ubridge_hypervisor.read_stdout()))
 
     @locking
-    async def _start_ubridge(self):
+    async def _start_ubridge(self, require_privileged_access=False):
         """
         Starts uBridge (handles connections to and from this node).
         """
@@ -554,8 +555,8 @@ class BaseNode:
         if self.ubridge_path is None:
             raise NodeError("uBridge is not available, path doesn't exist, or you just installed GNS3 and need to restart your user session to refresh user permissions.")
 
-        #if not self._manager.has_privileged_access(self.ubridge_path):
-        #    raise NodeError("uBridge requires root access or the capability to interact with network adapters")
+        if require_privileged_access and not self._manager.has_privileged_access(self.ubridge_path):
+            raise NodeError("uBridge requires root access or the capability to interact with network adapters")
 
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
@@ -566,6 +567,8 @@ class BaseNode:
         if self._ubridge_hypervisor:
             log.info("Hypervisor {}:{} has successfully started".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))
             await self._ubridge_hypervisor.connect()
+        # save if privileged are required in case uBridge needs to be restarted in self._ubridge_send()
+        self._ubridge_require_privileged_access = require_privileged_access
 
     async def _stop_ubridge(self):
         """

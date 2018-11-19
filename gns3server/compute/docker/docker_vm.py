@@ -434,7 +434,7 @@ class DockerVM(BaseNode):
             await self.manager.query("POST", "containers/{}/start".format(self._cid))
             self._namespace = await self._get_namespace()
 
-            await self._start_ubridge()
+            await self._start_ubridge(require_privileged_access=True)
 
             for adapter_number in range(0, self.adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
