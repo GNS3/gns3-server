@@ -469,12 +469,14 @@ class BaseManager:
         except PermissionError:
             raise aiohttp.web.HTTPForbidden()
 
-    def get_abs_image_path(self, path):
+    def get_abs_image_path(self, path, extra_dir=None):
         """
         Get the absolute path of an image
 
         :param path: file path
-        :return: file path
+        :param extra_dir: an additional directory to be added to the search path
+
+        :returns: file path
         """
 
         if not path:
@@ -483,6 +485,9 @@ class BaseManager:
 
         server_config = self.config.get_section_config("Server")
         img_directory = self.get_images_directory()
+        valid_directory_prefices = images_directories(self._NODE_TYPE)
+        if extra_dir:
+            valid_directory_prefices.append(extra_dir)
 
         # Windows path should not be send to a unix server
         if not sys.platform.startswith("win"):
@@ -490,7 +495,7 @@ class BaseManager:
                 raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
 
         if not os.path.isabs(path):
-            for directory in images_directories(self._NODE_TYPE):
+            for directory in valid_directory_prefices:
                 path = self._recursive_search_file_in_directory(directory, orig_path)
                 if path:
                     return force_unix_path(path)
@@ -502,15 +507,16 @@ class BaseManager:
                 return path
             raise ImageMissingError(orig_path)
 
-        # For non local server we disallow using absolute path outside image directory
+        # For local server we allow using absolute path outside image directory
         if server_config.getboolean("local", False) is True:
             path = force_unix_path(path)
             if os.path.exists(path):
                 return path
             raise ImageMissingError(orig_path)
 
+        # Check to see if path is an absolute path to a valid directory
         path = force_unix_path(path)
-        for directory in images_directories(self._NODE_TYPE):
+        for directory in valid_directory_prefices:
             if os.path.commonprefix([directory, path]) == directory:
                 if os.path.exists(path):
                     return path
@@ -534,23 +540,29 @@ class BaseManager:
                         return path
         return None
 
-    def get_relative_image_path(self, path):
+    def get_relative_image_path(self, path, extra_dir=None):
         """
         Get a path relative to images directory path
         or an abspath if the path is not located inside
         image directory
 
         :param path: file path
-        :return: file path
+        :param extra_dir: an additional directory to be added to the search path
+
+        :returns: file path
         """
 
         if not path:
             return ""
-        path = force_unix_path(self.get_abs_image_path(path))
 
+        path = force_unix_path(self.get_abs_image_path(path, extra_dir))
         img_directory = self.get_images_directory()
 
-        for directory in images_directories(self._NODE_TYPE):
+        valid_directory_prefices = images_directories(self._NODE_TYPE)
+        if extra_dir:
+            valid_directory_prefices.append(extra_dir)
+
+        for directory in valid_directory_prefices:
             if os.path.commonprefix([directory, path]) == directory:
                 relpath = os.path.relpath(path, directory)
                 # We don't allow to recurse search from the top image directory just for image type directory (compatibility with old releases)
