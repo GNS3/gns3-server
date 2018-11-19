@@ -299,11 +299,13 @@ class Cloud(BaseNode):
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         if port_info["type"] in ("ethernet", "tap"):
 
+            if not self.manager.has_privileged_access(self.ubridge_path):
+                raise NodeError("uBridge requires root access or the capability to interact with Ethernet and TAP adapters")
+
             if sys.platform.startswith("win"):
                 await self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"])
 
             else:
-
                 if port_info["type"] == "ethernet":
                     network_interfaces = [interface["name"] for interface in self._interfaces()]
                     if not port_info["interface"] in network_interfaces:

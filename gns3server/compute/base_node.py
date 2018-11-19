@@ -554,8 +554,8 @@ class BaseNode:
         if self.ubridge_path is None:
             raise NodeError("uBridge is not available, path doesn't exist, or you just installed GNS3 and need to restart your user session to refresh user permissions.")
 
-        if not self._manager.has_privileged_access(self.ubridge_path):
-            raise NodeError("uBridge requires root access or the capability to interact with network adapters")
+        #if not self._manager.has_privileged_access(self.ubridge_path):
+        #    raise NodeError("uBridge requires root access or the capability to interact with network adapters")
 
         server_config = self._manager.config.get_section_config("Server")
         server_host = server_config.get("host")
