@@ -169,8 +169,7 @@ class Router(BaseNode):
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
 
-        # return the relative path if the IOS image is in the images_path directory
-        router_info["image"] = self.manager.get_relative_image_path(self._image)
+        router_info["image"] = self.manager.get_relative_image_path(self._image, self.project.path)
 
         # add the slots
         slot_number = 0
@@ -484,7 +483,7 @@ class Router(BaseNode):
         :param image: path to IOS image file
         """
 
-        image = self.manager.get_abs_image_path(image)
+        image = self.manager.get_abs_image_path(image, self.project.path)
 
         await self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
