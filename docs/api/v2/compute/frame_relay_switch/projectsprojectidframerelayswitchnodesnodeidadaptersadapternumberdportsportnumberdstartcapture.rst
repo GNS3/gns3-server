@@ -9,9 +9,9 @@ Start a packet capture on a Frame Relay switch instance
 
 Parameters
 **********
-- **adapter_number**: Adapter on the switch (always 0)
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the switch (always 0)
 - **port_number**: Port on the switch
 
 Response status codes

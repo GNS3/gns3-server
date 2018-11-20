@@ -14,7 +14,7 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Disk image resized
+- **400**: Invalid request
 - **404**: Instance doesn't exist
 

@@ -8,15 +8,15 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 2297
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:22:49 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 06:00:01 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/compute/network/interfaces
 
 [
     {
         "id": "docker0",
         "ip_address": "172.17.0.1",
-        "mac_address": "02:42:3d:0c:1b:8e",
+        "mac_address": "02:42:1b:5e:24:0d",
         "name": "docker0",
         "netmask": "255.255.0.0",
         "special": true,

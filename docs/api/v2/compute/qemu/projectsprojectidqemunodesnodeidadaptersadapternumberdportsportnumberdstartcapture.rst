@@ -9,9 +9,9 @@ Start a packet capture on a Qemu VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter to start a packet capture
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter to start a packet capture
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
@@ -29,4 +29,10 @@ Input
     <tr><td>capture_file_name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Capture file name</td>                     </tr>
     <tr><td>data_link_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: DLT_ATM_RFC1483, DLT_EN10MB, DLT_FRELAY, DLT_C_HDLC, DLT_PPP_SERIAL</td>                     </tr>
     </table>
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidqemunodesnodeidadaptersadapternumberdportsportnumberdstartcapture.txt
 

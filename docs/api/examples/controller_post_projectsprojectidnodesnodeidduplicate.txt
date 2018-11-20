@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db/nodes/d1efeae0-0cc6-49b9-8ea1-c0bbb5d07c00/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
+curl -i -X POST 'http://localhost:3080/v2/projects/592d493e-cf38-4001-b67d-6887a9607662/nodes/0e78091b-11c1-4643-94e3-9749c03b6178/duplicate' -d '{"x": 10, "y": 5, "z": 0}'
 
-POST /v2/projects/67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db/nodes/d1efeae0-0cc6-49b9-8ea1-c0bbb5d07c00/duplicate HTTP/1.1
+POST /v2/projects/592d493e-cf38-4001-b67d-6887a9607662/nodes/0e78091b-11c1-4643-94e3-9749c03b6178/duplicate HTTP/1.1
 {
     "x": 10,
     "y": 5,
@@ -10,10 +10,10 @@ POST /v2/projects/67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db/nodes/d1efeae0-0cc6-49b9-
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1174
+Content-Length: 1141
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:23:23 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 06:01:09 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
 
 {
@@ -22,21 +22,21 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='139653921622168'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140112562184264'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
-        "style": "font-size: 10;font-familly: Verdana",
+        "style": null,
         "text": "test1",
         "x": null,
         "y": -40
     },
     "name": "test1",
     "node_directory": null,
-    "node_id": "2e525f2d-7a23-4d51-8438-8c7cb7d05e8f",
+    "node_id": "58ea897a-be75-412a-9b51-0c8f3571416d",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -52,7 +52,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/duplicate
             "short_name": "e0"
         }
     ],
-    "project_id": "67fa68f1-a9a2-4b3e-80bb-d16b5c4be3db",
+    "project_id": "592d493e-cf38-4001-b67d-6887a9607662",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",

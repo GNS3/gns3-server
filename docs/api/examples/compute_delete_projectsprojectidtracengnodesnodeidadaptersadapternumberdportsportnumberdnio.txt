@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/3472e2d0-b2a9-4e37-9bd0-263df285b533/adapters/0/ports/0/nio'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/bdbe10b4-3e29-4245-85ed-5dd8951eb759/adapters/0/ports/0/nio'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/3472e2d0-b2a9-4e37-9bd0-263df285b533/adapters/0/ports/0/nio HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/bdbe10b4-3e29-4245-85ed-5dd8951eb759/adapters/0/ports/0/nio HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Thu, 16 Aug 2018 14:23:05 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 06:00:38 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

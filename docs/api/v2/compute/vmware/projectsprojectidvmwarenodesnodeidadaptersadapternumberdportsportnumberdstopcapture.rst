@@ -9,14 +9,20 @@ Stop a packet capture on a VMware VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter to stop a packet capture
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter to stop a packet capture
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
+- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Capture stopped
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidvmwarenodesnodeidadaptersadapternumberdportsportnumberdstopcapture.txt
 

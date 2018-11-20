@@ -10,12 +10,12 @@ Create a node from an appliance
 Parameters
 **********
 - **project_id**: Project UUID
-- **appliance_id**: Appliance template UUID
+- **appliance_id**: Appliance UUID
 
 Response status codes
 **********************
 - **201**: Node created
-- **404**: The project or template doesn't exist
+- **404**: The project or appliance doesn't exist
 
 Input
 *******

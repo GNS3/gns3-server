@@ -9,14 +9,20 @@ Stop a packet capture on a cloud instance
 
 Parameters
 **********
-- **adapter_number**: Adapter on the cloud (always 0)
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter on the cloud (always 0)
 - **port_number**: Port on the cloud
 
 Response status codes
 **********************
+- **204**: Capture stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Capture stopped
+
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidcloudnodesnodeidadaptersadapternumberdportsportnumberdstopcapture.txt
 

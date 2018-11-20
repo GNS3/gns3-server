@@ -7,6 +7,7 @@
     "connected": false,
     "cpu_usage_percent": null,
     "host": "localhost",
+    "last_error": null,
     "memory_usage_percent": null,
     "name": "http://julien@localhost:84",
     "port": 84,

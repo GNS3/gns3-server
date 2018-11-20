@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/c0d19569-119e-4c7a-ad7d-d51eb91c2825/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X POST 'http://localhost:3080/v2/projects/29f32450-5e3a-4dac-84ff-d1e6da6aef2d/nodes' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-POST /v2/projects/c0d19569-119e-4c7a-ad7d-d51eb91c2825/nodes HTTP/1.1
+POST /v2/projects/29f32450-5e3a-4dac-84ff-d1e6da6aef2d/nodes HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -13,10 +13,10 @@ POST /v2/projects/c0d19569-119e-4c7a-ad7d-d51eb91c2825/nodes HTTP/1.1
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1214
+Content-Length: 1181
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:23:22 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 06:01:08 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/projects/{project_id}/nodes
 
 {
@@ -25,21 +25,21 @@ X-Route: /v2/projects/{project_id}/nodes
     "compute_id": "example.com",
     "console": 2048,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='139653923995488'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140112574284016'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
-        "style": "font-size: 10;font-familly: Verdana",
+        "style": null,
         "text": "test",
         "x": null,
         "y": -40
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "52503539-e057-4f90-84d9-ff392bdb43ec",
+    "node_id": "e9621527-1a07-44d9-8695-781fc5c49341",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -55,7 +55,7 @@ X-Route: /v2/projects/{project_id}/nodes
             "short_name": "e0"
         }
     ],
-    "project_id": "c0d19569-119e-4c7a-ad7d-d51eb91c2825",
+    "project_id": "29f32450-5e3a-4dac-84ff-d1e6da6aef2d",
     "properties": {
         "startup_script": "echo test"
     },

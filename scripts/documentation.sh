@@ -28,7 +28,7 @@ export PYTEST_BUILD_DOCUMENTATION=1
 rm -Rf docs/api/
 mkdir -p docs/api/examples
 
-py.test-3 -v tests
+python3 -m pytest -v tests
 
 export PYTHONPATH=.
 python3 gns3server/web/documentation.py

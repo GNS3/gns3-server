@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/19e61671-f1eb-4d3c-a36a-de70fb85f0a5'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/d9e63280-0f98-4299-9d23-537e6deda69f'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/19e61671-f1eb-4d3c-a36a-de70fb85f0a5 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/d9e63280-0f98-4299-9d23-537e6deda69f HTTP/1.1
 
 
 
@@ -8,13 +8,13 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 335
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:22:48 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 05:59:59 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}
 
 {
     "name": "Nat 1",
-    "node_id": "19e61671-f1eb-4d3c-a36a-de70fb85f0a5",
+    "node_id": "d9e63280-0f98-4299-9d23-537e6deda69f",
     "ports_mapping": [
         {
             "interface": "virbr0",

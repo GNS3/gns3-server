@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/16891deb-e0f0-4d26-a78e-510cda7a405e/nodes/7506ebd8-933f-485c-8d12-ba414d5dce50' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/f1f42bfb-0d7c-4580-bb5d-4a074d4564ab/nodes/9f025caf-ae0f-49b0-a1b0-9cb5ec190eab' -d '{"compute_id": "example.com", "name": "test", "node_type": "vpcs", "properties": {"startup_script": "echo test"}}'
 
-PUT /v2/projects/16891deb-e0f0-4d26-a78e-510cda7a405e/nodes/7506ebd8-933f-485c-8d12-ba414d5dce50 HTTP/1.1
+PUT /v2/projects/f1f42bfb-0d7c-4580-bb5d-4a074d4564ab/nodes/9f025caf-ae0f-49b0-a1b0-9cb5ec190eab HTTP/1.1
 {
     "compute_id": "example.com",
     "name": "test",
@@ -13,10 +13,10 @@ PUT /v2/projects/16891deb-e0f0-4d26-a78e-510cda7a405e/nodes/7506ebd8-933f-485c-8
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1171
+Content-Length: 1138
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:23:22 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 06:01:08 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
 X-Route: /v2/projects/{project_id}/nodes/{node_id}
 
 {
@@ -25,21 +25,21 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
     "compute_id": "example.com",
     "console": 2048,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='139653923661752'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140112570865480'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
-        "style": "font-size: 10;font-familly: Verdana",
+        "style": null,
         "text": "test",
         "x": null,
         "y": -40
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "7506ebd8-933f-485c-8d12-ba414d5dce50",
+    "node_id": "9f025caf-ae0f-49b0-a1b0-9cb5ec190eab",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -55,7 +55,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
             "short_name": "e0"
         }
     ],
-    "project_id": "16891deb-e0f0-4d26-a78e-510cda7a405e",
+    "project_id": "f1f42bfb-0d7c-4580-bb5d-4a074d4564ab",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
