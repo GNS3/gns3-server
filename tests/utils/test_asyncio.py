@@ -45,6 +45,15 @@ def test_exception_wait_run_in_executor(loop):
         result = loop.run_until_complete(asyncio.ensure_future(exec))
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+def test_subprocess_check_output(loop, tmpdir, restore_original_path):
+
+    path = str(tmpdir / "test")
+    exec = subprocess_check_output("echo", "-n", path)
+    result = loop.run_until_complete(asyncio.ensure_future(exec))
+    assert result == path
+
+
 def test_wait_for_process_termination(loop):
 
     if sys.version_info >= (3, 5):
