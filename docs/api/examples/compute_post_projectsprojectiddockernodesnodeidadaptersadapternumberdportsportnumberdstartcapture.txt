@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/b4e63539-a7f4-4cc5-a7b4-9d1a44fc9a0c/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/799ef06f-46b5-47af-9682-6c2de6edc566/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/b4e63539-a7f4-4cc5-a7b4-9d1a44fc9a0c/adapters/0/ports/0/start_capture HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/799ef06f-46b5-47af-9682-6c2de6edc566/adapters/0/ports/0/start_capture HTTP/1.1
 {
     "capture_file_name": "test.pcap",
     "data_link_type": "DLT_EN10MB"
@@ -11,10 +11,10 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 104
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 05:59:54 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:46:44 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
 
 {
-    "pcap_file_path": "/tmp/pytest-of-grossmj/pytest-36/test_json4/project-files/captures/test.pcap"
+    "pcap_file_path": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/captures/test.pcap"
 }

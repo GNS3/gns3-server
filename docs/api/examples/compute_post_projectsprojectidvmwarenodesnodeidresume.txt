@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/32bec5f3-c1ef-4845-abc7-976a9f743801/resume' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/4804f7b0-a18b-4aec-86d4-2a3434a8740d/resume' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/32bec5f3-c1ef-4845-abc7-976a9f743801/resume HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/4804f7b0-a18b-4aec-86d4-2a3434a8740d/resume HTTP/1.1
 {}
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 06:00:45 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:48:03 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}/resume
 

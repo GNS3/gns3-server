@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 3209
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 06:00:59 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:48:14 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/appliances
 
 [
@@ -77,7 +77,7 @@ X-Route: /v2/appliances
     {
         "adapter_type": "e1000",
         "adapters": 1,
-        "appliance_id": "605ad672-73a7-4861-b082-b642d51ffe73",
+        "appliance_id": "6ee64943-98aa-40ba-bc10-978d8063e80a",
         "appliance_type": "qemu",
         "bios_image": "",
         "boot_priority": "c",

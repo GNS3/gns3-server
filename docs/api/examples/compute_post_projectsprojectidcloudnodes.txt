@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 1742
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 05:59:50 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:46:34 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes
 
 {
@@ -68,8 +68,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-36/test_json4/project-files/builtin/524975d2-49e3-4a05-9a8f-746ba557ced6",
-    "node_id": "524975d2-49e3-4a05-9a8f-746ba557ced6",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/builtin/35762d2a-60d6-4d32-a333-0cbc6b555fad",
+    "node_id": "35762d2a-60d6-4d32-a333-0cbc6b555fad",
     "ports_mapping": [
         {
             "interface": "wlp58s0",

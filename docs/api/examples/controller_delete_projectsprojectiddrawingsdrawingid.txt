@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/3993dfb6-2aa7-4511-8a40-51938283126a/drawings/ed1a39d3-0452-4589-aa6e-92b38f0865c6'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/6a27e9d1-dc12-4217-a534-7afd47b41bba/drawings/01160a0a-5fa2-41fc-a4b3-6a38c8e7c571'
 
-DELETE /v2/projects/3993dfb6-2aa7-4511-8a40-51938283126a/drawings/ed1a39d3-0452-4589-aa6e-92b38f0865c6 HTTP/1.1
+DELETE /v2/projects/6a27e9d1-dc12-4217-a534-7afd47b41bba/drawings/01160a0a-5fa2-41fc-a4b3-6a38c8e7c571 HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 06:01:06 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:48:31 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/drawings/{drawing_id}
 

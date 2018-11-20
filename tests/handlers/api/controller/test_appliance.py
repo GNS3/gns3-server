@@ -247,7 +247,7 @@ def test_c7200_dynamips_appliance_create(http_controller):
               "image": "c7200-adventerprisek9-mz.124-24.T5.image",
               "appliance_type": "dynamips"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -292,7 +292,7 @@ def test_c3745_dynamips_appliance_create(http_controller):
               "image": "c3745-adventerprisek9-mz.124-25d.image",
               "appliance_type": "dynamips"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -381,7 +381,7 @@ def test_c3600_dynamips_appliance_create(http_controller):
               "image": "c3660-a3jk9s-mz.124-25d.image",
               "appliance_type": "dynamips"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -484,7 +484,7 @@ def test_c2600_dynamips_appliance_create(http_controller):
               "image": "c2600-adventerprisek9-mz.124-25d.image",
               "appliance_type": "dynamips"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -543,7 +543,7 @@ def test_c1700_dynamips_appliance_create(http_controller):
               "image": "c1700-adventerprisek9-mz.124-25d.image",
               "appliance_type": "dynamips"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -646,7 +646,7 @@ def test_docker_appliance_create(http_controller):
               "image": "gns3/endhost:latest",
               "appliance_type": "docker"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -739,7 +739,7 @@ def test_vmware_appliance_create(http_controller):
               "appliance_type": "vmware",
               "vmx_path": "/path/to/vm.vmx"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -775,7 +775,7 @@ def test_virtualbox_appliance_create(http_controller):
               "appliance_type": "virtualbox",
               "vmname": "My VirtualBox VM"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -810,7 +810,7 @@ def test_vpcs_appliance_create(http_controller):
               "compute_id": "local",
               "appliance_type": "vpcs"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -834,7 +834,7 @@ def test_ethernet_switch_appliance_create(http_controller):
               "compute_id": "local",
               "appliance_type": "ethernet_switch"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -905,7 +905,7 @@ def test_cloud_appliance_create(http_controller):
               "compute_id": "local",
               "appliance_type": "cloud"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 
@@ -927,7 +927,7 @@ def test_ethernet_hub_appliance_create(http_controller):
               "compute_id": "local",
               "appliance_type": "ethernet_hub"}
 
-    response = http_controller.post("/appliances", params, example=True)
+    response = http_controller.post("/appliances", params)
     assert response.status == 201
     assert response.json["appliance_id"] is not None
 

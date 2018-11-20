@@ -1,8 +1,8 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/20929ed1-6f2f-4a85-bc5d-ddbb9ad3a47e/duplicate' -d '{"destination_node_id": "051bd795-8ef1-44e8-9a23-cc0c127227ed"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/424f05ae-0104-457c-88c5-a7985adeebc3/duplicate' -d '{"destination_node_id": "b7048067-799a-4bc5-9857-180c4a8b6ee3"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/20929ed1-6f2f-4a85-bc5d-ddbb9ad3a47e/duplicate HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/424f05ae-0104-457c-88c5-a7985adeebc3/duplicate HTTP/1.1
 {
-    "destination_node_id": "051bd795-8ef1-44e8-9a23-cc0c127227ed"
+    "destination_node_id": "b7048067-799a-4bc5-9857-180c4a8b6ee3"
 }
 
 
@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 4
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 05:59:54 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:46:44 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}/duplicate
 
 true

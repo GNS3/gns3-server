@@ -233,6 +233,13 @@ Packet filters allow to filter packet on a given link. Here to drop a packet eve
 .. code-block:: shell-session
     curl -X PUT "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/links/007f2177-6790-4e1b-ac28-41fa226b2a06" -d '{"filters": {"frequency_drop": [5]}}'
 
+Appliance creation
+###################
+
+An appliance contains all the required settings to create a new node. This is useful to create many nodes with the same settings.
+
+.. code-block:: shell-session
+    curl -X POST "http://localhost:3080/v2/appliances" -d '{"name": "Qemu appliance", "compute_id": "local", "platform": "i386", "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2", "ram": 512, "appliance_type": "qemu"}'
 
 Node creation
 ##############
@@ -240,10 +247,10 @@ Node creation
 There are two ways to add nodes.
 
 1. Manually by passing all the information required to create a new node.
-2. Using an appliance template stored on your server.
+2. Using an appliance stored on your server.
 
-Using an appliance template
----------------------------
+Using an appliance
+------------------
 
 List all the available appliance templates:
 
@@ -253,30 +260,77 @@ List all the available appliance templates:
 
     [
         {
-            "appliance_id": "5fa8a8ca-0f80-4ac4-8104-2b32c7755443",
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "appliance_id": "70c79a82-5ef6-4911-8284-f6f31eb0ebf2",
+            "appliance_type": "qemu",
+            "bios_image": "",
+            "boot_priority": "c",
+            "builtin": false,
             "category": "guest",
-            "compute_id": "vm",
+            "cdrom_image": "",
+            "compute_id": "local",
+            "console_auto_start": false,
+            "console_type": "telnet",
+            "cpu_throttling": 0,
+            "cpus": 1,
+            "custom_adapters": [],
             "default_name_format": "{name}-{0}",
-            "name": "MicroCore",
-            "node_type": "qemu",
-            "symbol": ":/symbols/qemu_guest.svg"
-        },
-        {
-            "appliance_id": "9cd59d5a-c70f-4454-8313-6a9e81a8278f",
-            "category": "guest",
-            "compute_id": "vm",
-            "default_name_format": "{name}-{0}",
-            "name": "Chromium",
-            "node_type": "docker",
-            "symbol": ":/symbols/docker_guest.svg"
+            "first_port_name": "",
+            "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2",
+            "hda_disk_interface": "ide",
+            "hdb_disk_image": "",
+            "hdb_disk_interface": "ide",
+            "hdc_disk_image": "",
+            "hdc_disk_interface": "ide",
+            "hdd_disk_image": "",
+            "hdd_disk_interface": "ide",
+            "initrd": "",
+            "kernel_command_line": "",
+            "kernel_image": "",
+            "legacy_networking": false,
+            "linked_clone": true,
+            "mac_address": "",
+            "name": "Qemu appliance",
+            "on_close": "power_off",
+            "options": "",
+            "platform": "i386",
+            "port_name_format": "Ethernet{0}",
+            "port_segment_size": 0,
+            "process_priority": "normal",
+            "qemu_path": "",
+            "ram": 512,
+            "symbol": ":/symbols/qemu_guest.svg",
+            "usage": ""
         }
+        {
+            "adapters": 1,
+            "appliance_id": "888984a8-c802-427b-97a7-ee097ee63faf",
+            "appliance_type": "docker",
+            "builtin": false,
+            "category": "guest",
+            "compute_id": "local",
+            "console_auto_start": false,
+            "console_http_path": "/",
+            "console_http_port": 80,
+            "console_resolution": "1024x768",
+            "console_type": "telnet",
+            "custom_adapters": [],
+            "default_name_format": "{name}-{0}",
+            "environment": "",
+            "extra_hosts": "",
+            "image": "debian:latest",
+            "name": "Debian",
+            "start_command": "",
+            "symbol": ":/symbols/docker_guest.svg"
+        },
     ]
 
-Use the appliance template and add coordinates to select where the node will be put on the canvas:
+Use the appliance and add coordinates to select where the node will be put on the canvas:
 
 .. code-block:: shell-session
 
- # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/appliances/9cd59d5a-c70f-4454-8313-6a9e81a8278f -d '{"x": 12, "y": 42}'
+ # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/appliances/888984a8-c802-427b-97a7-ee097ee63faf -d '{"x": 12, "y": 42}'
 
 
 Manual creation of a Qemu node
@@ -487,20 +541,36 @@ Manual creation of a Dynamips node
         "z": 0
     }
 
-Notifications
-#############
+Controller notifications
+########################
 
-Notifications can be seen by connection to the notification feed:
+Controller notifications can be seen by connecting to the notification feed:
+
+.. code-block:: shell-session
+
+    # curl "http://localhost:3080/v2/notifications"
+    {"action": "ping", "event": {"compute_id": "local", "cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}
+    {"action": "compute.updated", "event": {"capabilities": {"node_types": ["cloud", "ethernet_hub", "ethernet_switch", "nat", "vpcs", "virtualbox", "dynamips", "frame_relay_switch", "atm_switch", "qemu", "vmware", "traceng", "docker", "iou"], "platform": "linux", "version": "2.2.0dev5-68ecbff"}, "compute_id": "local", "connected": true, "cpu_usage_percent": 12.0, "host": "127.0.0.1", "last_error": null, "memory_usage_percent": 45.7, "name": "coruscant", "port": 3080, "protocol": "http", "user": "admin"}}
+    {"action": "appliance.created", "event": {"appliance_id": "384f9b02-6451-4b27-8d29-76623b5d9e79", "appliance_type": "dynamips", "auto_delete_disks": false, "builtin": false, "category": "router", "compute_id": "local", "console_auto_start": false, "console_type": "telnet", "default_name_format": "R{0}", "disk0": 0, "disk1": 0, "exec_area": 64, "idlemax": 500, "idlepc": "", "idlesleep": 30, "image": "c3725-adventerprisek9-mz.124-15.T14.image", "iomem": 5, "mac_addr": "", "mmap": true, "name": "My c3725", "nvram": 256, "platform": "c3725", "private_config": "", "ram": 128, "sparsemem": true, "startup_config": "ios_base_startup-config.txt", "symbol": ":/symbols/router.svg", "system_id": "FTX0945W0MY"}}
+
+A Websocket notification stream is also available on http://localhost:3080/v2/notifications/ws
+
+Read :doc:`controller_notifications` for more information.
+
+
+Project notifications
+#####################
+
+Project notifications can be seen by connecting to the notification feed:
 
 .. code-block:: shell-session
 
     # curl "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications"
-    {"action": "ping", "event": {"compute_id": "local", "cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}
     {"action": "node.updated", "event": {"command_line": "/usr/local/bin/vpcs -p 5001 -m 1 -i 1 -F -R -s 10001 -c 10000 -t 127.0.0.1", "compute_id": "local", "console": 5001, "console_host": "127.0.0.1", "console_type": "telnet", "name": "VPCS 2", "node_id": "83892a4d-aea0-4350-8b3e-d0af3713da74", "node_type": "vpcs", "project_id": "b8c070f7-f34c-4b7b-ba6f-be3d26ed073f", "properties": {"startup_script": null, "startup_script_path": null}, "status": "started"}}
 
 A Websocket notification stream is also available on http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/notifications/ws
 
-Read :doc:`notifications` for more information.
+Read :doc:`project_notifications` for more information.
 
 
 Where to find the endpoints?

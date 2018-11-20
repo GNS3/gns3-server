@@ -2,7 +2,7 @@ Controller notifications
 ========================
 
 Controller notifications can be received from the controller, they can be used to get information
-about computes and appliance templates.
+about computes and appliance.
 
 Notification endpoints
 **********************

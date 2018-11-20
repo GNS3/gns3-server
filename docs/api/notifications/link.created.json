@@ -10,7 +10,7 @@
             10
         ]
     },
-    "link_id": "43f9af37-d478-4727-8aef-c761aa24e680",
+    "link_id": "e4ce29c1-33f8-434c-87ba-6aa85b2dd089",
     "link_type": "ethernet",
     "nodes": [
         {
@@ -22,7 +22,7 @@
                 "x": -10,
                 "y": -10
             },
-            "node_id": "35c89170-3bd9-44db-8287-95a653af80e4",
+            "node_id": "6df6e46d-66d9-4856-bf59-6d603a8b9e64",
             "port_number": 3
         },
         {
@@ -34,10 +34,10 @@
                 "x": -10,
                 "y": -10
             },
-            "node_id": "655110f6-65e2-4d19-9962-182264b6d653",
+            "node_id": "6d1f08eb-7197-4b4f-9024-819ff2114498",
             "port_number": 4
         }
     ],
-    "project_id": "ea40035b-2c6b-4e64-ad82-fa07698c3840",
+    "project_id": "f4e51aa4-8b8e-4166-a03d-4c4dcad6076e",
     "suspend": false
 }

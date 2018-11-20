@@ -8,13 +8,13 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 1238
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 06:01:06 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:48:31 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/gns3vm/engines
 
 [
     {
-        "description": "VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.2.0dev4/GNS3.VM.VMware.Workstation.2.2.0dev4.zip\">downloaded here</a>.",
+        "description": "VMware is the recommended choice for best performances.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.2.0dev5/GNS3.VM.VMware.Workstation.2.2.0dev5.zip\">downloaded here</a>.",
         "engine_id": "vmware",
         "name": "VMware Workstation / Player (recommended)",
         "support_headless": true,
@@ -22,7 +22,7 @@ X-Route: /v2/gns3vm/engines
         "support_when_exit": true
     },
     {
-        "description": "VirtualBox doesn't support nested virtualization, this means Qemu based VMs will run extremely slowly. This feature is marked as deprecated and support may be removed from future GNS3 releases.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.2.0dev4/GNS3.VM.VirtualBox.2.2.0dev4.zip\">downloaded here</a>",
+        "description": "VirtualBox doesn't support nested virtualization, this means Qemu based VMs will run extremely slowly. This feature is marked as deprecated and support may be removed from future GNS3 releases.<br>The GNS3 VM can be <a href=\"https://github.com/GNS3/gns3-gui/releases/download/v2.2.0dev5/GNS3.VM.VirtualBox.2.2.0dev5.zip\">downloaded here</a>",
         "engine_id": "virtualbox",
         "name": "VirtualBox (deprecated)",
         "support_headless": true,

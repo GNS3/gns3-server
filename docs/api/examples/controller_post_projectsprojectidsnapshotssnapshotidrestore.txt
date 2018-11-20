@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/013b03b4-61a7-4d6f-9c89-720c7c2be558/snapshots/128894a2-3948-440a-a3b4-e9f6a943599d/restore' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/d9370dc6-7c83-4c84-bf99-9d85c3f4f95d/snapshots/ea494cf7-a3cb-4a1e-89db-ab3f3a298f22/restore' -d '{}'
 
-POST /v2/projects/013b03b4-61a7-4d6f-9c89-720c7c2be558/snapshots/128894a2-3948-440a-a3b4-e9f6a943599d/restore HTTP/1.1
+POST /v2/projects/d9370dc6-7c83-4c84-bf99-9d85c3f4f95d/snapshots/ea494cf7-a3cb-4a1e-89db-ab3f3a298f22/restore HTTP/1.1
 {}
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 530
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 06:01:23 GMT
-Server: Python/3.6 GNS3/2.2.0dev4
+Date: Tue, 20 Nov 2018 08:48:47 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/snapshots/{snapshot_id}/restore
 
 {
@@ -19,8 +19,8 @@ X-Route: /v2/projects/{project_id}/snapshots/{snapshot_id}/restore
     "filename": "test.gns3",
     "grid_size": 0,
     "name": "test",
-    "path": "/tmp/tmpm6aoic2c/projects/013b03b4-61a7-4d6f-9c89-720c7c2be558",
-    "project_id": "013b03b4-61a7-4d6f-9c89-720c7c2be558",
+    "path": "/tmp/tmperg890gj/projects/d9370dc6-7c83-4c84-bf99-9d85c3f4f95d",
+    "project_id": "d9370dc6-7c83-4c84-bf99-9d85c3f4f95d",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,

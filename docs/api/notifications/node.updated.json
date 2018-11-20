@@ -17,7 +17,7 @@
         "y": -25
     },
     "name": "PC2",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-36/test_load_project0/project-files/vpcs/748bcd89-624a-40eb-a8d3-1d2e85c99b51",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_load_project0/project-files/vpcs/748bcd89-624a-40eb-a8d3-1d2e85c99b51",
     "node_id": "748bcd89-624a-40eb-a8d3-1d2e85c99b51",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
