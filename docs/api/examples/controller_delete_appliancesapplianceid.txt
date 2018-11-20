@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/appliances/259b41b8-d70a-4882-8ba3-017ee11ecd99'
+
+DELETE /v2/appliances/259b41b8-d70a-4882-8ba3-017ee11ecd99 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Tue, 20 Nov 2018 06:01:00 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/appliances/{appliance_id}
+

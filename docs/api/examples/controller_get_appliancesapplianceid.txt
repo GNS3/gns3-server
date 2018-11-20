@@ -1,0 +1,28 @@
+curl -i -X GET 'http://localhost:3080/v2/appliances/0579a18f-77c6-4da6-b410-a9a1ab790606'
+
+GET /v2/appliances/0579a18f-77c6-4da6-b410-a9a1ab790606 HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 380
+Content-Type: application/json
+Date: Tue, 20 Nov 2018 06:01:00 GMT
+ETag: "80cc9ad2c2b83a9f439433f47ad78f62"
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/appliances/{appliance_id}
+
+{
+    "appliance_id": "0579a18f-77c6-4da6-b410-a9a1ab790606",
+    "appliance_type": "vpcs",
+    "base_script_file": "vpcs_base_config.txt",
+    "builtin": false,
+    "category": "guest",
+    "compute_id": "local",
+    "console_auto_start": false,
+    "console_type": "telnet",
+    "default_name_format": "PC{0}",
+    "name": "VPCS_TEST",
+    "symbol": ":/symbols/vpcs_guest.svg"
+}
