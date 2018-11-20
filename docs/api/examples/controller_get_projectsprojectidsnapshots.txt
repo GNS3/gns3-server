@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/c0e03ceb-f437-4661-ab07-06505b600540/snapshots'
+curl -i -X GET 'http://localhost:3080/v2/projects/e2f01239-8d66-4953-832d-4a858fa31187/snapshots'
 
-GET /v2/projects/c0e03ceb-f437-4661-ab07-06505b600540/snapshots HTTP/1.1
+GET /v2/projects/e2f01239-8d66-4953-832d-4a858fa31187/snapshots HTTP/1.1
 
 
 
@@ -8,15 +8,15 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 197
 Content-Type: application/json
-Date: Thu, 16 Aug 2018 14:23:27 GMT
-Server: Python/3.5 GNS3/2.2.0dev2
+Date: Tue, 20 Nov 2018 08:48:42 GMT
+Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/snapshots
 
 [
     {
-        "created_at": 1534429407,
+        "created_at": 1542703721,
         "name": "test",
-        "project_id": "c0e03ceb-f437-4661-ab07-06505b600540",
-        "snapshot_id": "a7da0f6b-f266-48b3-bbef-09a004d9287d"
+        "project_id": "e2f01239-8d66-4953-832d-4a858fa31187",
+        "snapshot_id": "dae76de9-664f-43ee-ab44-5d845e2e091d"
     }
 ]

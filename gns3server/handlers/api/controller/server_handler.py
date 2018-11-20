@@ -19,6 +19,7 @@ from gns3server.web.route import Route
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.schemas.version import VERSION_SCHEMA
+from gns3server.schemas.iou_license import IOU_LICENSE_SETTINGS_SCHEMA
 from gns3server.version import __version__
 
 from aiohttp.web import HTTPConflict, HTTPForbidden
@@ -102,37 +103,31 @@ class ServerHandler:
         response.json({"version": __version__})
 
     @Route.get(
-        r"/settings",
-        description="Retrieve gui settings from the server. Temporary will we removed in later release")
-    async def read_settings(request, response):
-
-        settings = None
-        while True:
-            # The init of the server could take some times
-            # we ensure settings are loaded before returning them
-            settings = Controller.instance().settings
-
-            if settings is not None:
-                break
-            await asyncio.sleep(0.5)
-        response.json(settings)
-
-    @Route.post(
-        r"/settings",
-        description="Write gui settings on the server. Temporary will we removed in later releases",
+        r"/iou_license",
+        description="Get the IOU license settings",
         status_codes={
-            201: "Settings saved"
+            200: "IOU license settings returned"
+        },
+        output_schema=IOU_LICENSE_SETTINGS_SCHEMA)
+    def show(request, response):
+
+        response.json(Controller.instance().iou_license)
+
+    @Route.put(
+        r"/iou_license",
+        description="Update the IOU license settings",
+        input_schema=IOU_LICENSE_SETTINGS_SCHEMA,
+        output_schema=IOU_LICENSE_SETTINGS_SCHEMA,
+        status_codes={
+            201: "IOU license settings updated"
         })
-    def write_settings(request, response):
-        controller = Controller.instance()
-        if controller.settings is None:  # Server is not loaded ignore settings update to prevent buggy client sync issue
-            return
-        try:
-            controller.settings = request.json
-            #controller.save()
-        except (OSError, PermissionError) as e:
-            raise HTTPConflict(text="Can't save the settings {}".format(str(e)))
-        response.json(controller.settings)
+    async def update(request, response):
+
+        controller = Controller().instance()
+        iou_license = controller.iou_license
+        iou_license.update(request.json)
+        controller.save()
+        response.json(iou_license)
         response.set_status(201)
 
     @Route.post(

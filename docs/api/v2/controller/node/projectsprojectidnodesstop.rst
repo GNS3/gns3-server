@@ -13,9 +13,9 @@ Parameters
 
 Response status codes
 **********************
+- **204**: All nodes successfully stopped
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: All nodes successfully stopped
 
 Output
 *******

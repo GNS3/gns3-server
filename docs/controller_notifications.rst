@@ -2,7 +2,7 @@ Controller notifications
 ========================
 
 Controller notifications can be received from the controller, they can be used to get information
-about computes and appliance templates.
+about computes and appliance.
 
 Notification endpoints
 **********************
@@ -28,15 +28,14 @@ Keep-alive between client and controller. Also used to receive the current CPU a
 
 
 compute.created
-----------------
+---------------
 
 A compute has been created.
 
 .. literalinclude:: api/notifications/compute.created.json
 
-
 compute.updated
-----------------
+---------------
 
 A compute has been updated.
 
@@ -49,6 +48,31 @@ compute.deleted
 A compute has been deleted.
 
 .. literalinclude:: api/notifications/compute.deleted.json
+
+
+appliance.created
+-----------------
+
+An appliance has been created.
+
+.. literalinclude:: api/notifications/appliance.created.json
+
+
+appliance.updated
+-----------------
+
+An appliance has been updated.
+
+.. literalinclude:: api/notifications/appliance.updated.json
+
+
+appliance.deleted
+-----------------
+
+An appliance has been deleted.
+
+.. literalinclude:: api/notifications/appliance.deleted.json
+
 
 log.error
 ---------
@@ -72,11 +96,3 @@ log.info
 Sends an information
 
 .. literalinclude:: api/notifications/log.info.json
-
-
-settings.updated
------------------
-
-GUI settings have been updated. Will be removed in a later release.
-
-.. literalinclude:: api/notifications/settings.updated.json

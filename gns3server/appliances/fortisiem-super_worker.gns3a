@@ -11,7 +11,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.",
+    "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.\n\nMake sure that Super, Worker(s), Collector(s) and Report Server can connect to FortiSIEM hosted CentOS repo on https port 443 under the URLs below. Otherwise, some packages may not install and 5.0.0 binaries will not run.\n- https://os-pkgs-cdn.fortisiem.fortinet.com/centos6/\n- https://os-pkgs.fortisiem.fortinet.com/centos6/",
     "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
     "qemu": {
@@ -29,25 +29,46 @@
     },
     "images": [
         {
+            "filename": "FortiSIEM-VA-5.1.0.1336.qcow2",
+            "version": "5.1.0",
+            "md5sum": "753685ee68287c7a56f9da53566ac522",
+            "filesize": 10376904704,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-5.1.0.1336-1.qcow2",
+            "version": "5.1.0",
+            "md5sum": "6ffb7e16d89a6731fc077982cb012ee2",
+            "filesize": 46858240,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html"
+        },
+        {
+            "filename": "FortiSIEM-VA-5.1.0.1336-2.qcow2",
+            "version": "5.1.0",
+            "md5sum": "8185e537ce222c2e8407e9bf08e604bb",
+            "filesize": 46858240,
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html"
+        },
+        {
             "filename": "FortiSIEM-VA-5.0.0.1201.qcow2",
             "version": "5.0.0",
             "md5sum": "1f2f0b1d84e89495fc5b5ca722cb5710",
             "filesize": 10029432832,
-            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release500.html"
         },
         {
             "filename": "FortiSIEM-VA-5.0.0.1201-1.qcow2",
             "version": "5.0.0",
             "md5sum": "88e96259f44a82b7c545b82925880513",
             "filesize": 46858240,
-            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release500.html"
         },
         {
             "filename": "FortiSIEM-VA-5.0.0.1201-2.qcow2",
             "version": "5.0.0",
             "md5sum": "58d61498e1adc1df062fc12113d42d86",
             "filesize": 46858240,
-            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/latestrelease.html"
+            "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release500.html"
         },
         {
             "filename": "FortiSIEM-VA-KVM-4.10.0.1102.qcow2",
@@ -93,6 +114,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.1.0",
+            "images": {
+                "hda_disk_image": "FortiSIEM-VA-5.1.0.1336.qcow2",
+                "hdb_disk_image": "FortiSIEM-VA-5.1.0.1336-1.qcow2",
+                "hdc_disk_image": "FortiSIEM-VA-5.1.0.1336-2.qcow2"
+            }
+        },
         {
             "name": "5.0.0",
             "images": {

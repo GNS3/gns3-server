@@ -1,34 +1,22 @@
-/v2/settings
+/v2/iou_license
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/settings
+GET /v2/iou_license
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Retrieve gui settings from the server. Temporary will we removed in later release
+Get the IOU license settings
 
 Response status codes
 **********************
-- **200**: OK
-
-Sample session
-***************
+- **200**: IOU license settings returned
 
 
-.. literalinclude:: ../../../examples/controller_get_settings.txt
-
-
-POST /v2/settings
+PUT /v2/iou_license
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Write gui settings on the server. Temporary will we removed in later releases
+Update the IOU license settings
 
 Response status codes
 **********************
-- **201**: Settings saved
-
-Sample session
-***************
-
-
-.. literalinclude:: ../../../examples/controller_post_settings.txt
+- **201**: IOU license settings updated
 

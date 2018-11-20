@@ -25,6 +25,14 @@
     },
     "images": [
         {
+            "filename": "proxmox-mailgateway_5.1-1.iso",
+            "version": "5.1-1",
+            "md5sum": "e629d5ff3213ff3ffbe5a8ab8ef87489",
+            "filesize": 724660224,
+            "download_url": "http://www.proxmox.com/en/downloads",
+            "direct_download_url": "https://www.proxmox.com/en/downloads?task=callelement&format=raw&item_id=415&element=f85c494b-2b32-4109-b8c1-083cca2b7db6&method=download&args[0]=7348486df9daacc8bd891a1d7ef1e5cb"
+        },
+        {
             "filename": "proxmox-mailgateway_4.1-5.iso",
             "version": "4.1-5",
             "md5sum": "f0b90f525b6f0fd51889ee48e44980b7",
@@ -42,6 +50,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.1-1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "proxmox-mailgateway_5.1-1.iso"
+            }
+        },
         {
             "name": "4.1-5",
             "images": {

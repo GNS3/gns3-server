@@ -20,11 +20,11 @@ LABEL_OBJECT_SCHEMA = {
     "properties": {
         "text": {"type": "string"},
         "style": {
-            "description": "SVG style attribute",
-            "type": "string"
+            "description": "SVG style attribute. Apply default style if null",
+            "type": ["string", "null"]
         },
         "x": {
-            "description": "Relative X position of the label. If null center it",
+            "description": "Relative X position of the label. Center it if null",
             "type": ["integer", "null"]
         },
         "y": {

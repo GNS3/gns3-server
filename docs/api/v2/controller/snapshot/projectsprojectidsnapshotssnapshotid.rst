@@ -14,8 +14,8 @@ Parameters
 
 Response status codes
 **********************
-- **404**: The project or snapshot doesn't exist
 - **204**: Changes have been written on disk
+- **404**: The project or snapshot doesn't exist
 
 Sample session
 ***************

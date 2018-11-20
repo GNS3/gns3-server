@@ -32,8 +32,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Link created
+- **400**: Invalid request
 
 Input
 *******

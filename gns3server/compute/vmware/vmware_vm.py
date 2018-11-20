@@ -188,10 +188,10 @@ class VMwareVM(BaseNode):
             # create the linked clone based on the base snapshot
             new_vmx_path = os.path.join(self.working_dir, self.name + ".vmx")
             await self._control_vm("clone",
-                                        new_vmx_path,
-                                        "linked",
-                                        "-snapshot={}".format(base_snapshot_name),
-                                        "-cloneName={}".format(self.name))
+                                   new_vmx_path,
+                                   "linked",
+                                   "-snapshot={}".format(base_snapshot_name),
+                                   "-cloneName={}".format(self.name))
 
             try:
                 vmsd_pairs = self.manager.parse_vmware_file(vmsd_path)
@@ -432,7 +432,7 @@ class VMwareVM(BaseNode):
         if not ubridge_path or not os.path.isfile(ubridge_path):
             raise VMwareError("ubridge is necessary to start a VMware VM")
 
-        await self._start_ubridge()
+        await self._start_ubridge(require_privileged_access=True)
         self._read_vmx_file()
         # check if there is enough RAM to run
         if "memsize" in self._vmx_pairs:

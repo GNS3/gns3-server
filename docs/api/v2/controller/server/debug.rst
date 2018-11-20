@@ -9,5 +9,5 @@ Dump debug information to disk (debug directory in config directory). Work only 
 
 Response status codes
 **********************
-- **201**: Writed
+- **201**: Written
 

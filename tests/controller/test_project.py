@@ -213,13 +213,10 @@ def test_add_node_from_appliance(async_run, controller):
     project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
     appliance = Appliance(str(uuid.uuid4()), {
-        "server": "local",
+        "compute_id": "local",
         "name": "Test",
-        "default_name_format": "{name}-{0}",
-        "node_type": "vpcs",
-        "properties": {
-            "a": 1
-        }
+        "appliance_type": "vpcs",
+        "builtin": False,
     })
     controller._appliances[appliance.id] = appliance
     controller._computes["local"] = compute
@@ -229,29 +226,14 @@ def test_add_node_from_appliance(async_run, controller):
     compute.post = AsyncioMagicMock(return_value=response)
 
     node = async_run(project.add_node_from_appliance(appliance.id, x=23, y=12))
-
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,
         "path": project._path
     })
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
-                                 data={'node_id': node.id,
-                                       'name': 'Test-1',
-                                       'a': 1,
-                                       },
-                                 timeout=1200)
+
     assert compute in project._project_created_on_compute
     controller.notification.project_emit.assert_any_call("node.created", node.__json__())
-
-    # Make sure we can call twice the node creation
-    node = async_run(project.add_node_from_appliance(appliance.id, x=13, y=12))
-    compute.post.assert_any_call('/projects/{}/vpcs/nodes'.format(project.id),
-                                 data={'node_id': node.id,
-                                       'name': 'Test-2',
-                                       'a': 1
-                                       },
-                                 timeout=1200)
 
 
 def test_delete_node(async_run, controller):

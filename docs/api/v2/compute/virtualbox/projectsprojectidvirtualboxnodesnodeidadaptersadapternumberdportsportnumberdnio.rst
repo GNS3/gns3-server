@@ -9,15 +9,15 @@ Add a NIO to a VirtualBox VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter where the nio should be added
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter where the nio should be added
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: NIO created
+- **400**: Invalid request
 - **404**: Instance doesn't exist
 
 Sample session
@@ -29,19 +29,19 @@ Sample session
 
 PUT /v2/compute/projects/**{project_id}**/virtualbox/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Update a NIO from a Virtualbox instance
+Update a NIO on a Virtualbox instance
 
 Parameters
 **********
-- **adapter_number**: Network adapter where the nio is located
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Network adapter where the nio is located
 - **port_number**: Port from where the nio should be updated
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: NIO updated
+- **400**: Invalid request
 - **404**: Instance doesn't exist
 
 Sample session
@@ -57,16 +57,16 @@ Remove a NIO from a VirtualBox VM instance
 
 Parameters
 **********
-- **adapter_number**: Adapter from where the nio should be removed
 - **project_id**: Project UUID
 - **node_id**: Node UUID
+- **adapter_number**: Adapter from where the nio should be removed
 - **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
+- **204**: NIO deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: NIO deleted
 
 Sample session
 ***************

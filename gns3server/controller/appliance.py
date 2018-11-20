@@ -17,9 +17,57 @@
 
 import copy
 import uuid
+import json
+import jsonschema
+
+from gns3server.schemas.cloud_appliance import CLOUD_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.ethernet_switch_appliance import ETHERNET_SWITCH_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.ethernet_hub_appliance import ETHERNET_HUB_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.docker_appliance import DOCKER_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.vpcs_appliance import VPCS_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.traceng_appliance import TRACENG_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.virtualbox_appliance import VIRTUALBOX_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.vmware_appliance import VMWARE_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.iou_appliance import IOU_APPLIANCE_OBJECT_SCHEMA
+from gns3server.schemas.qemu_appliance import QEMU_APPLIANCE_OBJECT_SCHEMA
+
+from gns3server.schemas.dynamips_appliance import (
+    DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C7200_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C3745_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C3725_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C3600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C2691_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C2600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    C1700_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA
+)
+
+import logging
+log = logging.getLogger(__name__)
 
 
-# Convert old GUI category to text category
+# Add default values for missing entries in a request, largely taken from jsonschema documentation example
+# https://python-jsonschema.readthedocs.io/en/latest/faq/#why-doesn-t-my-schema-s-default-property-set-the-default-on-my-instance
+def extend_with_default(validator_class):
+
+    validate_properties = validator_class.VALIDATORS["properties"]
+    def set_defaults(validator, properties, instance, schema):
+        if jsonschema.Draft4Validator(schema).is_valid(instance):
+            # only add default for the matching sub-schema (e.g. when using 'oneOf')
+            for property, subschema in properties.items():
+                if "default" in subschema:
+                    instance.setdefault(property, subschema["default"])
+
+        for error in validate_properties(validator, properties, instance, schema,):
+            yield error
+
+    return jsonschema.validators.extend(
+        validator_class, {"properties" : set_defaults},
+    )
+
+
+ValidatorWithDefaults = extend_with_default(jsonschema.Draft4Validator)
+
 ID_TO_CATEGORY = {
     3: "firewall",
     2: "guest",
@@ -27,10 +75,34 @@ ID_TO_CATEGORY = {
     0: "router"
 }
 
+APPLIANCE_TYPE_TO_SHEMA = {
+    "cloud": CLOUD_APPLIANCE_OBJECT_SCHEMA,
+    "ethernet_hub": ETHERNET_HUB_APPLIANCE_OBJECT_SCHEMA,
+    "ethernet_switch": ETHERNET_SWITCH_APPLIANCE_OBJECT_SCHEMA,
+    "docker": DOCKER_APPLIANCE_OBJECT_SCHEMA,
+    "dynamips": DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "vpcs": VPCS_APPLIANCE_OBJECT_SCHEMA,
+    "traceng": TRACENG_APPLIANCE_OBJECT_SCHEMA,
+    "virtualbox": VIRTUALBOX_APPLIANCE_OBJECT_SCHEMA,
+    "vmware": VMWARE_APPLIANCE_OBJECT_SCHEMA,
+    "iou": IOU_APPLIANCE_OBJECT_SCHEMA,
+    "qemu": QEMU_APPLIANCE_OBJECT_SCHEMA
+}
+
+DYNAMIPS_PLATFORM_TO_SHEMA = {
+    "c7200": C7200_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c3745": C3745_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c3725": C3725_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c3600": C3600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c2691": C2691_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c2600": C2600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA,
+    "c1700": C1700_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA
+}
+
 
 class Appliance:
 
-    def __init__(self, appliance_id, data, builtin=False):
+    def __init__(self, appliance_id, settings, builtin=False):
 
         if appliance_id is None:
             self._id = str(uuid.uuid4())
@@ -38,57 +110,100 @@ class Appliance:
             self._id = str(appliance_id)
         else:
             self._id = appliance_id
-        self._data = data.copy()
-        if "appliance_id" in self._data:
-            del self._data["appliance_id"]
+
+        self._settings = copy.deepcopy(settings)
 
         # Version of the gui before 2.1 use linked_base
         # and the server linked_clone
-        if "linked_base" in self._data:
-            linked_base = self._data.pop("linked_base")
-            if "linked_clone" not in self._data:
-                self._data["linked_clone"] = linked_base
-        if data["node_type"] == "iou" and "image" in data:
-            del self._data["image"]
+        if "linked_base" in self.settings:
+            linked_base = self._settings.pop("linked_base")
+            if "linked_clone" not in self._settings:
+                self._settings["linked_clone"] = linked_base
+
+        # Convert old GUI category to text category
+        try:
+            self._settings["category"] = ID_TO_CATEGORY[self._settings["category"]]
+        except KeyError:
+            pass
+
+        # The "server" setting has been replaced by "compute_id" setting in version 2.2
+        if "server" in self._settings:
+            self._settings["compute_id"] = self._settings.pop("server")
+
+        # The "node_type" setting has been replaced by "appliance_type" setting in version 2.2
+        if "node_type" in self._settings:
+            self._settings["appliance_type"] = self._settings.pop("node_type")
+
+        # Remove an old IOU setting
+        if self._settings["appliance_type"] == "iou" and "image" in self._settings:
+            del self._settings["image"]
+
         self._builtin = builtin
+
+        if builtin is False:
+            self.validate_and_apply_defaults(APPLIANCE_TYPE_TO_SHEMA[self.appliance_type])
+
+            if self.appliance_type == "dynamips":
+                # special case for Dynamips to cover all platform types that contain specific settings
+                self.validate_and_apply_defaults(DYNAMIPS_PLATFORM_TO_SHEMA[self._settings["platform"]])
 
     @property
     def id(self):
         return self._id
 
     @property
-    def data(self):
-        return copy.deepcopy(self._data)
+    def settings(self):
+        return self._settings
+
+    @settings.setter
+    def settings(self, settings):
+        self._settings.update(settings)
 
     @property
     def name(self):
-        return self._data["name"]
+        return self._settings["name"]
 
     @property
     def compute_id(self):
-        return self._data.get("server")
+        return self._settings["compute_id"]
+
+    @property
+    def appliance_type(self):
+        return self._settings["appliance_type"]
 
     @property
     def builtin(self):
         return self._builtin
 
+    def update(self, **kwargs):
+
+        self._settings.update(kwargs)
+        from gns3server.controller import Controller
+        controller = Controller.instance()
+        controller.notification.controller_emit("appliance.updated", self.__json__())
+        controller.save()
+
+    def validate_and_apply_defaults(self, schema):
+
+        validator = ValidatorWithDefaults(schema)
+        try:
+            validator.validate(self.__json__())
+        except jsonschema.ValidationError as e:
+            message = "JSON schema error {}".format(e.message)
+            log.error(message)
+            log.debug("Input schema: {}".format(json.dumps(schema)))
+            raise
+
     def __json__(self):
         """
-        Appliance data (a hash)
+        Appliance settings.
         """
-        try:
-            category = ID_TO_CATEGORY[self._data["category"]]
-        except KeyError:
-            category = self._data["category"]
 
-        return {
-            "appliance_id": self._id,
-            "node_type": self._data["node_type"],
-            "name": self._data["name"],
-            "default_name_format": self._data.get("default_name_format", "{name}-{0}"),
-            "category": category,
-            "symbol": self._data.get("symbol", ":/symbols/computer.svg"),
-            "compute_id": self.compute_id,
-            "builtin": self._builtin,
-            "platform": self._data.get("platform", None)
-        }
+        settings = self._settings
+        settings.update({"appliance_id": self._id,
+                         "builtin": self.builtin})
+
+        if not self.builtin:
+            settings["compute_id"] = self.compute_id
+
+        return settings

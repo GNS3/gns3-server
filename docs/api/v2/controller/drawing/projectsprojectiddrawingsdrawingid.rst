@@ -51,8 +51,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Drawing updated
+- **400**: Invalid request
 
 Input
 *******
@@ -102,8 +102,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **204**: Drawing deleted
+- **400**: Invalid request
 
 Sample session
 ***************

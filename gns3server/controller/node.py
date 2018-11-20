@@ -271,17 +271,17 @@ class Node:
         if self._label is None:
             # Apply to label user style or default
             try:
-                style = qt_font_to_style(
-                    self._project.controller.settings["GraphicsView"]["default_label_font"],
-                    self._project.controller.settings["GraphicsView"]["default_label_color"])
+                style = None  # FIXME: allow configuration of default label font & color on controller
+                #style = qt_font_to_style(self._project.controller.settings["GraphicsView"]["default_label_font"],
+                #                         self._project.controller.settings["GraphicsView"]["default_label_color"])
             except KeyError:
-                style = "font-size: 10;font-familly: Verdana"
+                style = "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
 
             self._label = {
                 "y": round(self._height / 2 + 10) * -1,
                 "text": html.escape(self._name),
-                "style": style,
-                "x": None,  # None: mean the client should center it
+                "style": style,  # None: means the client will apply its default style
+                "x": None,  # None: means the client should center it
                 "rotation": 0
             }
 
@@ -484,11 +484,11 @@ class Node:
         try:
             # For IOU we need to send the licence everytime
             if self.node_type == "iou":
-                try:
-                    licence = self._project.controller.settings["IOU"]["iourc_content"]
-                except KeyError:
+                license_check = self._project.controller.iou_license.get("license_check", True)
+                iourc_content = self._project.controller.iou_license.get("iourc_content", None)
+                if license_check and not iourc_content:
                     raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
-                await self.post("/start", timeout=240, data={"iourc_content": licence})
+                await self.post("/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content})
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
@@ -636,7 +636,7 @@ class Node:
                         break
                 port_name = "eth{}".format(adapter_number)
                 port_name = custom_adapter_settings.get("port_name", port_name)
-                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name="eth{}".format(adapter_number)))
+                self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name))
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0

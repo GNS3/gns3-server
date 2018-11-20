@@ -14,8 +14,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Capture stopped
+- **400**: Invalid request
 
 Sample session
 ***************

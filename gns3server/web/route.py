@@ -23,7 +23,7 @@ import aiohttp
 import logging
 import traceback
 import jsonschema
-
+import jsonschema.exceptions
 
 log = logging.getLogger(__name__)
 
@@ -58,10 +58,12 @@ async def parse_request(request, input_schema, raw):
         try:
             jsonschema.validate(request.json, input_schema)
         except jsonschema.ValidationError as e:
-            log.error("Invalid input query. JSON schema error: {}".format(e.message))
-            raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
-                e.message,
-                json.dumps(e.schema)))
+            message = "JSON schema error with API request '{}' and JSON data '{}': {}".format(request.path_qs,
+                                                                                              request.json,
+                                                                                              e.message)
+            log.error(message)
+            log.debug("Input schema: {}".format(json.dumps(input_schema)))
+            raise aiohttp.web.HTTPBadRequest(text=message)
 
     return request
 

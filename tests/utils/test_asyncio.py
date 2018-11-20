@@ -49,11 +49,9 @@ def test_exception_wait_run_in_executor(loop):
 def test_subprocess_check_output(loop, tmpdir, restore_original_path):
 
     path = str(tmpdir / "test")
-    with open(path, "w+") as f:
-        f.write("TEST")
-    exec = subprocess_check_output("cat", path)
+    exec = subprocess_check_output("echo", "-n", path)
     result = loop.run_until_complete(asyncio.ensure_future(exec))
-    assert result == "TEST"
+    assert result == path
 
 
 def test_wait_for_process_termination(loop):

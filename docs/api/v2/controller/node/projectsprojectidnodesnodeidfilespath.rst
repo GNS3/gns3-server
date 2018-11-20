@@ -14,9 +14,9 @@ Parameters
 
 Response status codes
 **********************
+- **204**: Instance reloaded
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance reloaded
 
 
 POST /v2/projects/**{project_id}**/nodes/**{node_id}**/files/**{path:.+}**
@@ -30,7 +30,7 @@ Parameters
 
 Response status codes
 **********************
+- **204**: Instance reloaded
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance reloaded
 

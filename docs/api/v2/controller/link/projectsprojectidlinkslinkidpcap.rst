@@ -5,7 +5,7 @@
 
 GET /v2/projects/**{project_id}**/links/**{link_id}**/pcap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Stream the pcap capture file
+Stream the PCAP capture file from compute
 
 Parameters
 **********

@@ -24,6 +24,7 @@ import shutil
 import psutil
 import shlex
 import aiohttp
+import subprocess
 import os
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
@@ -82,7 +83,7 @@ class DockerVM(BaseNode):
         self._temporary_directory = None
         self._telnet_servers = []
         self._xvfb_process = None
-        self._x11vnc_process = None
+        self._vnc_process = None
         self._console_resolution = console_resolution
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
@@ -423,16 +424,17 @@ class DockerVM(BaseNode):
             return
         else:
 
-            if self._console_type == "vnc" and not self._x11vnc_process:
-                # start the x11vnc process in case it had previously crashed
-                self._x11vnc_process = await asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+            if self._console_type == "vnc" and not self._vnc_process:
+                # restart the vnc process in case it had previously crashed
+                await self._start_vnc_process(restart=True)
+                monitor_process(self._vnc_process, self._vnc_callback)
 
             await self._clean_servers()
 
             await self.manager.query("POST", "containers/{}/start".format(self._cid))
             self._namespace = await self._get_namespace()
 
-            await self._start_ubridge()
+            await self._start_ubridge(require_privileged_access=True)
 
             for adapter_number in range(0, self.adapters):
                 nio = self._ethernet_adapters[adapter_number].get_nio(0)
@@ -520,24 +522,60 @@ class DockerVM(BaseNode):
                 raise DockerError("Could not fix permissions for {}: {}".format(volume, e))
             await process.wait()
 
+    async def _start_vnc_process(self, restart=False):
+        """
+        Starts the VNC process.
+        """
+
+        if shutil.which("Xtigervnc"):
+            with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
+                self._vnc_process = await asyncio.create_subprocess_exec("Xtigervnc",
+                                                                         "-geometry", self._console_resolution,
+                                                                         "-depth", "16",
+                                                                         "-interface", self._manager.port_manager.console_host,
+                                                                         "-rfbport", str(self.console),
+                                                                         "-AlwaysShared",
+                                                                         "-SecurityTypes", "None",
+                                                                         ":{}".format(self._display),
+                                                                         stdout=fd, stderr=subprocess.STDOUT)
+        else:
+            if restart is False:
+                self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
+                                                                          "-nolisten",
+                                                                          "tcp", ":{}".format(self._display),
+                                                                          "-screen", "0",
+                                                                          self._console_resolution + "x16")
+
+            # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
+            with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
+                self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
+                                                                         "-forever",
+                                                                         "-nopw"
+                                                                         "-shared",
+                                                                         "-geometry", self._console_resolution,
+                                                                         "-display", "WAIT:{}".format(self._display),
+                                                                         "-rfbport", str(self.console),
+                                                                         "-rfbportv6", str(self.console),
+                                                                         "-noncache",
+                                                                         "-listen", self._manager.port_manager.console_host,
+                                                                         stdout=fd, stderr=subprocess.STDOUT)
+
     async def _start_vnc(self):
         """
         Starts a VNC server for this container
         """
 
         self._display = self._get_free_display_port()
-        if shutil.which("Xvfb") is None or shutil.which("x11vnc") is None:
-            raise DockerError("Please install Xvfb and x11vnc before using VNC support")
-        self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb", "-nolisten", "tcp", ":{}".format(self._display), "-screen", "0", self._console_resolution + "x16")
-        # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
-        self._x11vnc_process = await asyncio.create_subprocess_exec("x11vnc", "-forever", "-nopw", "-shared", "-geometry", self._console_resolution, "-display", "WAIT:{}".format(self._display), "-rfbport", str(self.console), "-rfbportv6", str(self.console), "-noncache", "-listen", self._manager.port_manager.console_host)
+        if not (shutil.which("Xtigervnc") or shutil.which("Xvfb") and shutil.which("x11vnc")):
+            raise DockerError("Please install tigervnc-standalone-server (recommended) or Xvfb + x11vnc before using VNC support")
+        await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         await wait_for_file_creation(x11_socket)
 
-        # sometimes the x11vnc process can crash
-        monitor_process(self._x11vnc_process, self._x11vnc_callback)
+        # sometimes the VNC process can crash
+        monitor_process(self._vnc_process, self._vnc_callback)
 
-    def _x11vnc_callback(self, returncode):
+    def _vnc_callback(self, returncode):
         """
         Called when the process has stopped.
 
@@ -545,8 +583,8 @@ class DockerVM(BaseNode):
         """
 
         if returncode != 0 and self._closing is False:
-            self.project.emit("log.error", {"message": "The x11vnc process has stopped with return code {} for node '{}'. Please restart this node.".format(returncode, self.name)})
-            self._x11vnc_process = None
+            self.project.emit("log.error", {"message": "The vnc process has stopped with return code {} for node '{}'. Please restart this node.".format(returncode, self.name)})
+            self._vnc_process = None
 
     async def _start_http(self):
         """
@@ -731,10 +769,10 @@ class DockerVM(BaseNode):
                 await self.stop()
 
             if self.console_type == "vnc":
-                if self._x11vnc_process:
+                if self._vnc_process:
                     try:
-                        self._x11vnc_process.terminate()
-                        await self._x11vnc_process.wait()
+                        self._vnc_process.terminate()
+                        await self._vnc_process.wait()
                     except ProcessLookupError:
                         pass
                 if self._xvfb_process:

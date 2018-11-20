@@ -14,9 +14,9 @@ Parameters
 
 Response status codes
 **********************
+- **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
-- **204**: Instance deleted
 
 
 PUT /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**

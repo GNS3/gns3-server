@@ -14,8 +14,8 @@ Parameters
 
 Response status codes
 **********************
-- **400**: Invalid request
 - **201**: Instance duplicated
+- **400**: Invalid request
 - **404**: Instance doesn't exist
 
 Input

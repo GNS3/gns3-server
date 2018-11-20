@@ -17,6 +17,7 @@
 
 CUSTOM_ADAPTERS_ARRAY_SCHEMA = {
     "type": "array",
+    "default": [],
     "items": {
         "type": "object",
         "description": "Custom properties",
@@ -46,4 +47,3 @@ CUSTOM_ADAPTERS_ARRAY_SCHEMA = {
         "required": ["adapter_number"]
     },
 }
-

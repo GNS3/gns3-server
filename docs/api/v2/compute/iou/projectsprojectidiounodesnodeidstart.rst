@@ -25,6 +25,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>iourc_content</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Content of the iourc file. Ignored if Null</td>                     </tr>
+    <tr><td>license_check</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the license should be checked</td>                     </tr>
     </table>
 
 Output
