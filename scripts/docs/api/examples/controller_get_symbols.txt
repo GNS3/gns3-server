@@ -1,0 +1,1576 @@
+curl -i -X GET 'http://localhost:3080/v2/symbols'
+
+GET /v2/symbols HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 51384
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:29 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/symbols
+
+[
+    {
+        "builtin": true,
+        "filename": "PBX.svg",
+        "symbol_id": ":/symbols/PBX.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "PIX_firewall.svg",
+        "symbol_id": ":/symbols/PIX_firewall.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "access_point.svg",
+        "symbol_id": ":/symbols/access_point.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "access_server.svg",
+        "symbol_id": ":/symbols/access_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_camera_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_camera_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_camera_dome_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_camera_dome_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_client_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_client_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_client_vm_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_client_vm_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_cloud_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_cloud_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_cog_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_cog_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_communications_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_communications_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_conversation_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_conversation_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_dslam_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_dslam_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_fingerprint_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_fingerprint_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_firewall3_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_firewall3_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_firewall_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_firewall_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_grid2_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_grid2_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_grid_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_grid_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_hub_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_hub_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_inspect3_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_inspect3_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_inspect_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_inspect_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_interconnect_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_interconnect_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_isdn_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_isdn_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_ldap_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_ldap_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_light_bulb_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_light_bulb_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_link_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_link_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_loadbalancer_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_loadbalancer_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_nas_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_nas_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_pinpoint_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_pinpoint_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_printer_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_printer_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_rj45_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_rj45_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_router_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_router_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_router_cloud_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_router_cloud_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_satellite_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_satellite_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_satellite_dish_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_satellite_dish_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_scull_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_scull_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_server-cluster_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_server-cluster_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_server_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_server_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_statistics_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_statistics_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_storage_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_storage_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_switch_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_switch_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_switch_multilayer_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_switch_multilayer_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_tablet_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_tablet_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_tree_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_tree_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_user_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_user_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_vm_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_vm_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_wifi_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_wifi_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_wlc_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_wlc_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/blue/c_xml_blue.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/c_xml_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_camera.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_camera.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_camera_dome.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_client.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_client.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_client_vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_client_vm.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_cloud.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_cog.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_cog.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_communications.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_communications.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_conversation.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_conversation.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_dslam.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_dslam.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_fingerprint.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_firewall.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_firewall.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_firewall3.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_firewall3.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_grid.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_grid.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_grid2.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_grid2.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_hub.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_hub.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_inspect.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_inspect.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_inspect3.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_inspect3.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_interconnect.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_interconnect.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_isdn.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_isdn.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_ldap.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_ldap.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_light_bulb.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_link.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_link.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_loadbalancer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_loadbalancer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_nas.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_nas.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_pinpoint.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_printer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_printer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_rj45.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_rj45.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_router.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_router_cloud.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_satellite.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_satellite.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_satellite_dish.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_scull.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_scull.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_server-cluster.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_server.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_statistics.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_statistics.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_storage.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_storage.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_switch.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_switch_multilayer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_tablet.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_tablet.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_tree.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_tree.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_user.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_user.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_vm.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_wifi.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_wifi.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_wlc.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_wlc.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/gray/c_xml.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/c_xml.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_camera_dome_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_camera_dome_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_camera_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_camera_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_client_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_client_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_client_vm_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_client_vm_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_cloud_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_cloud_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_cog_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_cog_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_communications_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_communications_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_conversation_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_conversation_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_dslam_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_dslam_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_fingerprint_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_fingerprint_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_firewall3_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_firewall3_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_firewall_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_firewall_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_grid2_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_grid2_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_grid_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_grid_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_hub_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_hub_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_inspect3_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_inspect3_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_inspect_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_inspect_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_interconnect_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_interconnect_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_isdn_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_isdn_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_ldap_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_ldap_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_light_bulb_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_light_bulb_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_link_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_link_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_loadbalancer_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_loadbalancer_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_nas_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_nas_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_pinpoint_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_pinpoint_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_printer_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_printer_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_rj45_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_rj45_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_router_cloud_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_router_cloud_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_router_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_router_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_satellite_dish_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_satellite_dish_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_satellite_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_satellite_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_scull_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_scull_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_server-cluster_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_server-cluster_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_server_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_server_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_statistics_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_statistics_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_storage_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_storage_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_switch_multilayer_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_switch_multilayer_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_switch_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_switch_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_tablet_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_tablet_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_tree_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_tree_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_user_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_user_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_vm_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_vm_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_wifi_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_wifi_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_wlc_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_wlc_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/circle/red/c_xml_red.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/c_xml_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_camera_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_camera_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_camera_dome_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_camera_dome_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_client_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_client_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_client_vm_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_client_vm_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_cloud_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_cloud_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_cog_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_cog_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_communications_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_communications_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_conversation_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_conversation_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_dslam_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_dslam_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_fingerprint_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_fingerprint_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_firewall3_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_firewall3_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_firewall_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_firewall_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_grid2_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_grid2_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_grid_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_grid_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_hub_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_hub_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_inspect2_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_inspect2_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_inspect3_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_inspect3_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_interconnect_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_interconnect_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_isdn_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_isdn_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_ldap_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_ldap_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_light_bulb_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_light_bulb_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_link_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_link_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_nas_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_nas_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_pinpoint_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_pinpoint_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_printer_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_printer_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_rj45_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_rj45_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_router_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_router_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_router_cloud_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_router_cloud_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_satellite_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_satellite_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_satellite_dish_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_satellite_dish_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_scull_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_scull_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_server-cluster_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_server-cluster_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_server_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_server_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_square_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_square_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_statistics_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_statistics_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_storage_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_storage_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_switch_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_switch_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_switch_multilayer_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_switch_multilayer_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_tablet_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_tablet_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_tree_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_tree_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_user_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_user_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_vm_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_vm_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_wifi_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_wifi_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_wlc_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_wlc_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/blue/sq_xml_blue.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/sq_xml_blue.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_camera.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_camera.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_camera_dome.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_client.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_client.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_client_vm.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_client_vm.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_cloud.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_cog.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_cog.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_communications.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_communications.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_conversation.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_conversation.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_dslam.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_dslam.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_fingerprint.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_firewall.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_firewall.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_firewall3.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_firewall3.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_grid.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_grid.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_grid2.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_grid2.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_hub.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_hub.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_inspect2.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_inspect2.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_inspect3.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_inspect3.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_interconnect.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_interconnect.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_isdn.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_isdn.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_ldap.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_ldap.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_light_bulb.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_link.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_link.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_nas.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_nas.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_pinpoint.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_printer.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_printer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_rj45.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_rj45.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_router.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_router_cloud.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_satellite.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_satellite.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_satellite_dish.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_scull.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_scull.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_server-cluster.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_server.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_square.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_square.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_statistics.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_statistics.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_storage.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_storage.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_switch.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_switch_multilayer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_tablet.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_tablet.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_tree.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_tree.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_user.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_user.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_vm.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_vm.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_wifi.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_wifi.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_wlc.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_wlc.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/gray/sq_xml.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/sq_xml.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_camera_dome_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_camera_dome_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_camera_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_camera_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_client_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_client_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_client_vm_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_client_vm_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_cloud_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_cloud_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_cog_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_cog_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_communications_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_communications_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_conversation_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_conversation_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_dslam_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_dslam_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_fingerprint_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_fingerprint_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_firewall3_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_firewall3_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_firewall_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_firewall_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_grid2_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_grid2_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_grid_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_grid_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_hub_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_hub_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_inspect2_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_inspect2_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_inspect3_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_inspect3_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_interconnect_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_interconnect_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_isdn_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_isdn_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_ldap_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_ldap_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_light_bulb_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_light_bulb_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_link_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_link_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_nas_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_nas_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_pinpoint_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_pinpoint_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_printer_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_printer_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_rj45_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_rj45_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_router_cloud_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_router_cloud_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_router_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_router_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_satellite_dish_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_satellite_dish_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_satellite_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_satellite_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_scull_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_scull_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_server-cluster_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_server-cluster_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_server_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_server_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_square_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_square_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_statistics_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_statistics_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_storage_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_storage_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_switch_multilayer_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_switch_multilayer_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_switch_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_switch_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_tablet_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_tablet_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_tree_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_tree_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_user_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_user_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_vm_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_vm_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_wifi_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_wifi_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_wlc_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_wlc_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "affinity/square/red/sq_xml_red.svg",
+        "symbol_id": ":/symbols/affinity/square/red/sq_xml_red.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "asa.svg",
+        "symbol_id": ":/symbols/asa.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "atm_bridge.svg",
+        "symbol_id": ":/symbols/atm_bridge.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "atm_switch.svg",
+        "symbol_id": ":/symbols/atm_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "call_manager.svg",
+        "symbol_id": ":/symbols/call_manager.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/cloud.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "computer.svg",
+        "symbol_id": ":/symbols/computer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "docker_guest.svg",
+        "symbol_id": ":/symbols/docker_guest.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/dslam.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "edge_label_switch_router.svg",
+        "symbol_id": ":/symbols/edge_label_switch_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "ethernet_switch.svg",
+        "symbol_id": ":/symbols/ethernet_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/firewall.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "frame_relay_switch.svg",
+        "symbol_id": ":/symbols/frame_relay_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "gateway.svg",
+        "symbol_id": ":/symbols/gateway.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/hub.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "ids.svg",
+        "symbol_id": ":/symbols/ids.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "iosv_l2_virl.svg",
+        "symbol_id": ":/symbols/iosv_l2_virl.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "iosv_virl.svg",
+        "symbol_id": ":/symbols/iosv_virl.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "ip_phone.svg",
+        "symbol_id": ":/symbols/ip_phone.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "label_switch_router.svg",
+        "symbol_id": ":/symbols/label_switch_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "lightweight_ap.svg",
+        "symbol_id": ":/symbols/lightweight_ap.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "multilayer_switch.svg",
+        "symbol_id": ":/symbols/multilayer_switch.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "optical_router.svg",
+        "symbol_id": ":/symbols/optical_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/printer.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "qemu_guest.svg",
+        "symbol_id": ":/symbols/qemu_guest.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "route_switch_processor.svg",
+        "symbol_id": ":/symbols/route_switch_processor.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "router.awp.svg",
+        "symbol_id": ":/symbols/router.awp.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "router_firewall.svg",
+        "symbol_id": ":/symbols/router_firewall.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "router_netflow.svg",
+        "symbol_id": ":/symbols/router_netflow.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "sip_server.svg",
+        "symbol_id": ":/symbols/sip_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "traceng.svg",
+        "symbol_id": ":/symbols/traceng.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "vbox_guest.svg",
+        "symbol_id": ":/symbols/vbox_guest.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "vmware_guest.svg",
+        "symbol_id": ":/symbols/vmware_guest.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "voice_access_server.svg",
+        "symbol_id": ":/symbols/voice_access_server.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "voice_router.svg",
+        "symbol_id": ":/symbols/voice_router.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "vpcs_guest.svg",
+        "symbol_id": ":/symbols/vpcs_guest.svg"
+    },
+    {
+        "builtin": true,
+        "filename": "wlan_controller.svg",
+        "symbol_id": ":/symbols/wlan_controller.svg"
+    }
+]

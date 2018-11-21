@@ -1,0 +1,27 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/265d8630-f2ff-40a2-895b-007262e09f2c' -d '{"console": 5006, "name": "test"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/265d8630-f2ff-40a2-895b-007262e09f2c HTTP/1.1
+{
+    "console": 5006,
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 379
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:33:52 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}
+
+{
+    "command_line": "",
+    "console": 5006,
+    "console_type": "telnet",
+    "name": "test",
+    "node_directory": "/tmp/tmphp7izuu5/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/265d8630-f2ff-40a2-895b-007262e09f2c",
+    "node_id": "265d8630-f2ff-40a2-895b-007262e09f2c",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped"
+}

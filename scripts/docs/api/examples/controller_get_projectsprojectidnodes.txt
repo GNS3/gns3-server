@@ -1,0 +1,63 @@
+curl -i -X GET 'http://localhost:3080/v2/projects/1fac8f3a-e1b1-420c-8b2c-ac398847c450/nodes'
+
+GET /v2/projects/1fac8f3a-e1b1-420c-8b2c-ac398847c450/nodes HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 1373
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:05 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/{project_id}/nodes
+
+[
+    {
+        "appliance_id": null,
+        "command_line": null,
+        "compute_id": "example.com",
+        "console": 2048,
+        "console_auto_start": false,
+        "console_host": "<MagicMock name='mock.console_host' id='140007464639456'>",
+        "console_type": null,
+        "custom_adapters": [],
+        "first_port_name": null,
+        "height": 59,
+        "label": {
+            "rotation": 0,
+            "style": null,
+            "text": "test",
+            "x": null,
+            "y": -40
+        },
+        "name": "test",
+        "node_directory": null,
+        "node_id": "41b3bf30-78b8-48ab-bf4a-defb3dba90c5",
+        "node_type": "vpcs",
+        "port_name_format": "Ethernet{0}",
+        "port_segment_size": 0,
+        "ports": [
+            {
+                "adapter_number": 0,
+                "data_link_types": {
+                    "Ethernet": "DLT_EN10MB"
+                },
+                "link_type": "ethernet",
+                "name": "Ethernet0",
+                "port_number": 0,
+                "short_name": "e0"
+            }
+        ],
+        "project_id": "1fac8f3a-e1b1-420c-8b2c-ac398847c450",
+        "properties": {
+            "startup_script": "echo test"
+        },
+        "status": "stopped",
+        "symbol": ":/symbols/computer.svg",
+        "width": 65,
+        "x": 0,
+        "y": 0,
+        "z": 1
+    }
+]

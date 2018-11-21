@@ -1,0 +1,13 @@
+{
+    "appliance_id": "906fbbbf-30f2-4f01-9c68-bdd804f91359",
+    "appliance_type": "vpcs",
+    "base_script_file": "vpcs_base_config.txt",
+    "builtin": false,
+    "category": "guest",
+    "compute_id": "local",
+    "console_auto_start": false,
+    "console_type": "telnet",
+    "default_name_format": "PC{0}",
+    "name": "VPCS_TEST_RENAMED",
+    "symbol": ":/symbols/vpcs_guest.svg"
+}

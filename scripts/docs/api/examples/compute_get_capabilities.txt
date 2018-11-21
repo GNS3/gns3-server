@@ -1,0 +1,34 @@
+curl -i -X GET 'http://localhost:3080/v2/compute/capabilities'
+
+GET /v2/compute/capabilities HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 366
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:32:30 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/capabilities
+
+{
+    "node_types": [
+        "cloud",
+        "ethernet_hub",
+        "ethernet_switch",
+        "nat",
+        "vpcs",
+        "virtualbox",
+        "dynamips",
+        "frame_relay_switch",
+        "atm_switch",
+        "qemu",
+        "vmware",
+        "traceng",
+        "docker",
+        "iou"
+    ],
+    "platform": "linuxdebian",
+    "version": "2.2.0dev4"
+}

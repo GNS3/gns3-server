@@ -1,0 +1,33 @@
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/83a5dfb2-2274-470b-ad35-f4f534921091' -d '{"console": 5005, "name": "test"}'
+
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/83a5dfb2-2274-470b-ad35-f4f534921091 HTTP/1.1
+{
+    "console": 5005,
+    "name": "test"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 595
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:33:47 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
+
+{
+    "adapter_type": "e1000",
+    "adapters": 0,
+    "console": 5005,
+    "console_type": "telnet",
+    "headless": false,
+    "linked_clone": false,
+    "name": "test",
+    "node_directory": "/tmp/tmphp7izuu5/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/83a5dfb2-2274-470b-ad35-f4f534921091",
+    "node_id": "83a5dfb2-2274-470b-ad35-f4f534921091",
+    "on_close": "power_off",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped",
+    "use_any_adapter": false,
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-31/test_vmware_update0/test.vmx"
+}

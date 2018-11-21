@@ -1,0 +1,26 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes' -d '{"name": "PC TEST 1"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes HTTP/1.1
+{
+    "name": "PC TEST 1"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 384
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:33:51 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/vpcs/nodes
+
+{
+    "command_line": "",
+    "console": 5004,
+    "console_type": "telnet",
+    "name": "PC TEST 1",
+    "node_directory": "/tmp/tmphp7izuu5/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/5d54e9a0-f6d2-466c-b969-ec4f73ff95a2",
+    "node_id": "5d54e9a0-f6d2-466c-b969-ec4f73ff95a2",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped"
+}

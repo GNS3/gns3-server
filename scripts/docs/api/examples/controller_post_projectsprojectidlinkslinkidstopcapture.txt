@@ -1,0 +1,25 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/ec73bba9-86de-4a9f-a525-6e036cf4920b/links/1c0354ec-6d11-476b-b911-ab6879090109/stop_capture' -d '{}'
+
+POST /v2/projects/ec73bba9-86de-4a9f-a525-6e036cf4920b/links/1c0354ec-6d11-476b-b911-ab6879090109/stop_capture HTTP/1.1
+{}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 288
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:05 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/{project_id}/links/{link_id}/stop_capture
+
+{
+    "capture_file_name": null,
+    "capture_file_path": null,
+    "capturing": false,
+    "filters": {},
+    "link_id": "1c0354ec-6d11-476b-b911-ab6879090109",
+    "link_type": "ethernet",
+    "nodes": [],
+    "project_id": "ec73bba9-86de-4a9f-a525-6e036cf4920b",
+    "suspend": false
+}

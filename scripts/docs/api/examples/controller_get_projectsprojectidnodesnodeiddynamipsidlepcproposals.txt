@@ -1,0 +1,18 @@
+curl -i -X GET 'http://localhost:3080/v2/projects/0de3dbe0-aa2f-474f-a0dd-b78a7ec5c01d/nodes/46191bbe-b7ca-4bc3-9860-b4a10a8eb4bc/dynamips/idlepc_proposals'
+
+GET /v2/projects/0de3dbe0-aa2f-474f-a0dd-b78a7ec5c01d/nodes/46191bbe-b7ca-4bc3-9860-b4a10a8eb4bc/dynamips/idlepc_proposals HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 38
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:06 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/{project_id}/nodes/{node_id}/dynamips/idlepc_proposals
+
+[
+    "0x60606f54",
+    "0x33805a22"
+]

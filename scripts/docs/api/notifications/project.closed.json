@@ -1,0 +1,20 @@
+{
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
+    "filename": "test.gns3",
+    "grid_size": 0,
+    "name": "test",
+    "path": "/tmp/tmp_ggmpdp2/projects/1e691837-c37c-48f6-9854-ea16eb4010e4",
+    "project_id": "1e691837-c37c-48f6-9854-ea16eb4010e4",
+    "scene_height": 1000,
+    "scene_width": 2000,
+    "show_grid": false,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": false,
+    "status": "closed",
+    "supplier": null,
+    "variables": null,
+    "zoom": 100
+}
