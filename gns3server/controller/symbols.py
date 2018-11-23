@@ -17,7 +17,7 @@
 
 import os
 
-
+from .symbol_themes import BUILTIN_SYMBOL_THEMES
 from ..utils.get_resource import get_resource
 from ..utils.picture import get_size
 from ..config import Config
@@ -32,14 +32,32 @@ class Symbols:
     """
 
     def __init__(self):
+
         try:
             self.list()
-        except OSError:  # The error will be raised and forward later
+        except OSError:  # The error will be raised and forwarded later
             pass
+
         # Keep a cache of symbols size
         self._symbol_size_cache = {}
+        self._current_theme = "Infinity-square-gray"
+        self._themes = BUILTIN_SYMBOL_THEMES
+
+    @property
+    def theme(self):
+
+        return self._current_theme
+
+    @theme.setter
+    def theme(self, theme):
+
+        if not self._themes.get(theme):
+            log.error("Could not find symbol theme '{}'".format(theme))
+            return
+        self._current_theme = theme
 
     def list(self):
+
         self._symbols_path = {}
         symbols = []
         if get_resource("symbols"):
@@ -49,11 +67,9 @@ class Symbols:
                         continue
                     symbol_file = os.path.relpath(os.path.join(root, filename), get_resource("symbols"))
                     symbol_id = ':/symbols/' + symbol_file
-                    symbols.append({
-                        'symbol_id': symbol_id,
-                        'filename': symbol_file,
-                        'builtin': True,
-                    })
+                    symbols.append({'symbol_id': symbol_id,
+                                    'filename': symbol_file,
+                                    'builtin': True})
                     self._symbols_path[symbol_id] = os.path.join(root, filename)
 
         directory = self.symbols_path()
@@ -63,11 +79,9 @@ class Symbols:
                     if filename.startswith('.'):
                         continue
                     symbol_file = os.path.relpath(os.path.join(root, filename), directory)
-                    symbols.append({
-                        'symbol_id': symbol_file,
-                        'filename': symbol_file,
-                        'builtin': False,
-                    })
+                    symbols.append({'symbol_id': symbol_file,
+                                    'filename': symbol_file,
+                                    'builtin': False,})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])
@@ -84,17 +98,21 @@ class Symbols:
         return directory
 
     def get_path(self, symbol_id):
+        symbol_filename = os.path.splitext(os.path.basename(symbol_id))[0]
+        theme = self._themes.get(self._current_theme, {})
+        if not theme:
+            log.error("Could not find symbol theme '{}'".format(self._current_theme))
         try:
-            return self._symbols_path[symbol_id]
-        # Symbol not found, let's refresh the cache
+            return self._symbols_path[theme.get(symbol_filename, symbol_id)]
         except KeyError:
+            # Symbol not found, let's refresh the cache
             try:
                 self.list()
                 return self._symbols_path[symbol_id]
             except (OSError, KeyError):
                 log.warning("Could not retrieve symbol '{}'".format(symbol_id))
                 symbols_path = self._symbols_path
-                return symbols_path[":/symbols/computer.svg"]
+                return symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)), symbols_path[":/symbols/classic/computer.svg"])
 
     def get_size(self, symbol_id):
         try:

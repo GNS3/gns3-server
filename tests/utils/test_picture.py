@@ -32,11 +32,11 @@ def test_get_size():
     with open("tests/resources/gns3_icon_128x64.png", "rb") as f:
         res = get_size(f.read())
         assert res == (128, 64, "png")
-    with open("gns3server/symbols/dslam.svg", "rb") as f:
+    with open("gns3server/symbols/classic/dslam.svg", "rb") as f:
         res = get_size(f.read())
         assert res == (50, 53, "svg")
     # Symbol using size with cm
-    with open("gns3server/symbols/cloud.svg", "rb") as f:
+    with open("gns3server/symbols/classic/cloud.svg", "rb") as f:
         res = get_size(f.read())
         assert res == (159, 71, "svg")
     # Size with px
