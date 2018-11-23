@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import posixpath
 
 from .symbol_themes import BUILTIN_SYMBOL_THEMES
 from ..utils.get_resource import get_resource
@@ -65,7 +66,7 @@ class Symbols:
                 for filename in files:
                     if filename.startswith('.'):
                         continue
-                    symbol_file = os.path.relpath(os.path.join(root, filename), get_resource("symbols"))
+                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), get_resource("symbols")))
                     symbol_id = ':/symbols/' + symbol_file
                     symbols.append({'symbol_id': symbol_id,
                                     'filename': symbol_file,
@@ -78,7 +79,7 @@ class Symbols:
                 for filename in files:
                     if filename.startswith('.'):
                         continue
-                    symbol_file = os.path.relpath(os.path.join(root, filename), directory)
+                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory))
                     symbols.append({'symbol_id': symbol_file,
                                     'filename': symbol_file,
                                     'builtin': False,})
