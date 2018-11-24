@@ -537,7 +537,7 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
