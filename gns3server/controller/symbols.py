@@ -113,7 +113,6 @@ class Symbols:
             except (OSError, KeyError):
                 log.warning("Could not retrieve symbol '{}'".format(symbol_id))
                 symbols_path = self._symbols_path
-                log.warning(symbols_path)
                 return symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)), symbols_path[":/symbols/classic/computer.svg"])
 
     def get_size(self, symbol_id):
