@@ -70,7 +70,7 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
                  scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
-                 grid_size=0, show_interface_labels=False, variables=None, supplier=None):
+                 grid_size=75, drawing_grid_size=25, show_interface_labels=False, variables=None, supplier=None):
 
         self._controller = controller
         assert name is not None
@@ -86,6 +86,7 @@ class Project:
         self._snap_to_grid = snap_to_grid
         self._show_grid = show_grid
         self._grid_size = grid_size
+        self._drawing_grid_size = drawing_grid_size
         self._show_interface_labels = show_interface_labels
         self._variables = variables
         self._supplier = supplier
@@ -264,6 +265,21 @@ class Project:
         Setter for grid size
         """
         self._grid_size = grid_size
+
+    @property
+    def drawing_grid_size(self):
+        """
+        Grid size
+        :return: integer
+        """
+        return self._drawing_grid_size
+
+    @drawing_grid_size.setter
+    def drawing_grid_size(self, grid_size):
+        """
+        Setter for grid size
+        """
+        self._drawing_grid_size = grid_size
 
     @property
     def show_interface_labels(self):
@@ -820,6 +836,7 @@ class Project:
                 "snap_to_grid",
                 "show_grid",
                 "grid_size",
+                "drawing_grid_size",
                 "show_interface_labels"
             ]
 
@@ -1063,6 +1080,7 @@ class Project:
             "snap_to_grid": self._snap_to_grid,
             "show_grid": self._show_grid,
             "grid_size": self._grid_size,
+            "drawing_grid_size": self._drawing_grid_size,
             "show_interface_labels": self._show_interface_labels,
             "supplier": self._supplier,
             "variables": self._variables

@@ -84,6 +84,7 @@ def project_to_topology(project):
         "snap_to_grid": project.snap_to_grid,
         "show_grid": project.show_grid,
         "grid_size": project.grid_size,
+        "drawing_grid_size": project.drawing_grid_size,
         "show_interface_labels": project.show_interface_labels,
         "variables": project.variables,
         "supplier": project.supplier,
