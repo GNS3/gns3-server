@@ -462,11 +462,10 @@ class DockerVM(BaseNode):
         # We can not use the API because docker doesn't expose a websocket api for exec
         # https://github.com/GNS3/gns3-gui/issues/1039
         try:
-            process = yield from asyncio.subprocess.create_subprocess_exec(
-                "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                stdin=asyncio.subprocess.PIPE)
+            process = yield from asyncio.subprocess.create_subprocess_exec("docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
+                                                                           stdout=asyncio.subprocess.PIPE,
+                                                                           stderr=asyncio.subprocess.STDOUT,
+                                                                           stdin=asyncio.subprocess.PIPE)
         except OSError as e:
             raise DockerError("Could not start auxiliary console process: {}".format(e))
         server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
@@ -474,7 +473,7 @@ class DockerVM(BaseNode):
             self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         except OSError as e:
             raise DockerError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.aux, e))
-        log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
+        log.debug("Docker container '%s' started listen for auxiliary telnet on %d", self.name, self.aux)
 
     @asyncio.coroutine
     def _fix_permissions(self):
@@ -484,6 +483,7 @@ class DockerVM(BaseNode):
         """
 
         state = yield from self._get_container_state()
+        log.info("Docker container '{name}' fix ownership, state = {state}".format(name=self._name, state=state))
         if state == "stopped" or state == "exited":
             # We need to restart it to fix permissions
             yield from self.manager.query("POST", "containers/{}/start".format(self._cid))
@@ -697,14 +697,15 @@ class DockerVM(BaseNode):
             if state == "paused":
                 yield from self.unpause()
 
-            yield from self._fix_permissions()
+            if state == "running":
+                yield from self._fix_permissions()
+
             state = yield from self._get_container_state()
             if state != "stopped" or state != "exited":
                 # t=5 number of seconds to wait before killing the container
                 try:
                     yield from self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-                    log.info("Docker container '{name}' [{image}] stopped".format(
-                        name=self._name, image=self._image))
+                    log.info("Docker container '{name}' [{image}] stopped".format(name=self._name, image=self._image))
                 except DockerHttp304Error:
                     # Container is already stopped
                     pass
