@@ -90,6 +90,7 @@ class DockerVM(BaseNode):
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._extra_hosts = extra_hosts
+        self._permissions_fixed = False
 
         self._volumes = []
         # Keep a list of created bridge
@@ -447,6 +448,7 @@ class DockerVM(BaseNode):
             if self.allocate_aux:
                 yield from self._start_aux()
 
+        self._permissions_fixed = False
         self.status = "started"
         log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(name=self._name,
                                                                                                              image=self._image,
@@ -511,6 +513,7 @@ class DockerVM(BaseNode):
             except OSError as e:
                 raise DockerError("Could not fix permissions for {}: {}".format(volume, e))
             yield from process.wait()
+            self._permissions_fixed = True
 
     @asyncio.coroutine
     def _start_vnc(self):
@@ -697,7 +700,7 @@ class DockerVM(BaseNode):
             if state == "paused":
                 yield from self.unpause()
 
-            if state == "running":
+            if not self._permissions_fixed:
                 yield from self._fix_permissions()
 
             state = yield from self._get_container_state()
