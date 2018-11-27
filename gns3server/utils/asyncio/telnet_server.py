@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+
 import asyncio
 import asyncio.subprocess
 import struct
@@ -62,10 +62,11 @@ READ_SIZE = 1024
 
 class TelnetConnection(object):
     """Default implementation of telnet connection which may but may not be used."""
-    def __init__(self, reader, writer):
+    def __init__(self, reader, writer, window_size_changed_callback=None):
         self.is_closing = False
         self._reader = reader
         self._writer = writer
+        self._window_size_changed_callback = window_size_changed_callback
 
     @property
     def reader(self):
@@ -85,10 +86,13 @@ class TelnetConnection(object):
         """Method called when client is disconnecting"""
         pass
 
+    @asyncio.coroutine
     def window_size_changed(self, columns, rows):
         """Method called when window size changed, only can occur when
          `naws` flag is enable in server configuration."""
-        pass
+
+        if self._window_size_changed_callback:
+            yield from self._window_size_changed_callback(columns, rows)
 
     @asyncio.coroutine
     def feed(self, data):
@@ -116,7 +120,7 @@ class TelnetConnection(object):
 class AsyncioTelnetServer:
     MAX_NEGOTIATION_READ = 10
 
-    def __init__(self, reader=None, writer=None, binary=True, echo=False, naws=False, connection_factory=None):
+    def __init__(self, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None):
         """
         Initializes telnet server
         :param naws when True make a window size negotiation
@@ -131,6 +135,7 @@ class AsyncioTelnetServer:
         self._lock = asyncio.Lock()
         self._reader_process = None
         self._current_read = None
+        self._window_size_changed_callback = window_size_changed_callback
 
         self._binary = binary
         # If echo is true when the client send data
@@ -139,8 +144,8 @@ class AsyncioTelnetServer:
         self._echo = echo
         self._naws = naws
 
-        def default_connection_factory(reader, writer):
-            return TelnetConnection(reader, writer)
+        def default_connection_factory(reader, writer, window_size_changed_callback):
+            return TelnetConnection(reader, writer, window_size_changed_callback)
 
         if connection_factory is None:
             connection_factory = default_connection_factory
@@ -190,7 +195,7 @@ class AsyncioTelnetServer:
     @asyncio.coroutine
     def run(self, network_reader, network_writer):
         # Keep track of connected clients
-        connection = self._connection_factory(network_reader, network_writer)
+        connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
         self._connections[network_writer] = connection
 
         try:
@@ -307,6 +312,7 @@ class AsyncioTelnetServer:
             cmd.append(buffer[location])
             return op
 
+    @asyncio.coroutine
     def _negotiate(self, data, connection):
         """ Performs negotiation commands"""
 
@@ -314,7 +320,7 @@ class AsyncioTelnetServer:
         if command == NAWS:
             if len(payload) == 4:
                 columns, rows = struct.unpack(str('!HH'), bytes(payload))
-                connection.window_size_changed(columns, rows)
+                yield from connection.window_size_changed(columns, rows)
             else:
                 log.warning('Wrong number of NAWS bytes')
         else:
@@ -373,7 +379,7 @@ class AsyncioTelnetServer:
                         break
 
                 # SE command is followed by IAC, remove the last two operations from stack
-                self._negotiate(negotiation[0:-2], connection)
+                yield from self._negotiate(negotiation[0:-2], connection)
 
             # This must be a 3-byte TELNET command
             else:
