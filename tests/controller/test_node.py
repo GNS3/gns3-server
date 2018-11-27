@@ -252,10 +252,12 @@ def test_create_base_script(node, config, compute, tmpdir, async_run):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
 
 
-def test_symbol(node, symbols_dir):
+def test_symbol(node, symbols_dir, controller):
     """
     Change symbol should change the node size
     """
+
+    controller.symbols.theme = "Classic"
     node.symbol = ":/symbols/dslam.svg"
     assert node.symbol == ":/symbols/dslam.svg"
     assert node.width == 50
@@ -271,7 +273,7 @@ def test_symbol(node, symbols_dir):
     assert node.label["y"] == -40
     assert node.label["style"] == None#"font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
 
-    shutil.copy(os.path.join("gns3server", "symbols", "cloud.svg"), os.path.join(symbols_dir, "cloud2.svg"))
+    shutil.copy(os.path.join("gns3server", "symbols", "classic", "cloud.svg"), os.path.join(symbols_dir, "cloud2.svg"))
     node.symbol = "cloud2.svg"
     assert node.symbol == "cloud2.svg"
     assert node.width == 159

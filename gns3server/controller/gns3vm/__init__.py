@@ -312,10 +312,10 @@ class GNS3VM:
             engine.vcpus = self._settings["vcpus"]
             engine.headless = self._settings["headless"]
             compute = await self._controller.add_compute(compute_id="vm",
-                                                              name="GNS3 VM is starting ({})".format(engine.vmname),
-                                                              host=None,
-                                                              force=True,
-                                                              connect=False)
+                                                         name="GNS3 VM is starting ({})".format(engine.vmname),
+                                                         host=None,
+                                                         force=True,
+                                                         connect=False)
 
             try:
                 await engine.start()
@@ -363,8 +363,11 @@ class GNS3VM:
                         if netmask:
                             compute_network = ipaddress.ip_interface("{}/{}".format(compute.host_ip, netmask)).network
                             if vm_network.compare_networks(compute_network) != 0:
-                                msg = "The GNS3 VM ({}) is not on the same network as the {} server ({}), please make sure the local server binding is in the same network as the GNS3 VM".format(
-                                    vm_network, compute_id, compute_network)
+                                msg = "The GNS3 VM (IP={}, NETWORK={}) is not on the same network as the {} server (IP={}, NETWORK={}), please make sure the local server binding is in the same network as the GNS3 VM".format(self.ip_address,
+                                                                                                                                                                                                                                vm_network,
+                                                                                                                                                                                                                                compute_id,
+                                                                                                                                                                                                                                compute.host_ip,
+                                                                                                                                                                                                                                compute_network)
                                 self._controller.notification.controller_emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))

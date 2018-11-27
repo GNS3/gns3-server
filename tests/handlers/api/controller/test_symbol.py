@@ -26,14 +26,15 @@ def test_symbols(http_controller):
     response = http_controller.get('/symbols', example=True)
     assert response.status == 200
     assert {
-        'symbol_id': ':/symbols/firewall.svg',
-        'filename': 'firewall.svg',
+        'symbol_id': ':/symbols/classic/firewall.svg',
+        'filename': 'classic/firewall.svg',
         'builtin': True
     } in response.json
 
 
-def test_get(http_controller):
-    response = http_controller.get('/symbols/' + urllib.parse.quote(':/symbols/firewall.svg') + '/raw')
+def test_get(http_controller, controller):
+    controller.symbols.theme = "Classic"
+    response = http_controller.get('/symbols/' + urllib.parse.quote(':/symbols/classic/firewall.svg') + '/raw')
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
     assert response.headers['CONTENT-LENGTH'] == '9381'

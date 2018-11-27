@@ -28,7 +28,9 @@ log = logging.getLogger(__name__)
 
 
 class SymbolHandler:
-    """API entry points for symbols management."""
+    """
+    API entry points for symbols management.
+    """
 
     @Route.get(
         r"/symbols",
@@ -81,3 +83,19 @@ class SymbolHandler:
         # Reset the symbol list
         controller.symbols.list()
         response.set_status(204)
+
+    # @Route.post(
+    #     r"/symbol_theme",
+    #     description="Create a new symbol theme",
+    #     status_codes={
+    #         201: "Appliance created",
+    #         400: "Invalid request"
+    #     },
+    #     input=APPLIANCE_CREATE_SCHEMA,
+    #     output=APPLIANCE_OBJECT_SCHEMA)
+    # def create(request, response):
+    #
+    #     controller = Controller.instance()
+    #     appliance = controller.add_appliance(request.json)
+    #     response.set_status(201)
+    #     response.json(appliance)
