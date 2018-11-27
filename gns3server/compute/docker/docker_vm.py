@@ -442,6 +442,7 @@ class DockerVM(BaseNode):
 
             if self.console_type == "telnet":
                 yield from self._start_console()
+
             elif self.console_type == "http" or self.console_type == "https":
                 yield from self._start_http()
 
@@ -593,6 +594,19 @@ class DockerVM(BaseNode):
         self._telnet_servers.append((yield from asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))
 
     @asyncio.coroutine
+    def _window_size_changed_callback(self, columns, rows):
+        """
+        Called when the console window size has been changed.
+        (when naws is enabled in the Telnet server)
+
+        :param columns: number of columns
+        :param rows: number of rows
+        """
+
+        # resize the container TTY.
+        yield from self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+
+    @asyncio.coroutine
     def _start_console(self):
         """
         Start streaming the console via telnet
@@ -614,8 +628,7 @@ class DockerVM(BaseNode):
 
         output_stream = asyncio.StreamReader()
         input_stream = InputStream()
-
-        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
+        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True, naws=True, window_size_changed_callback=self._window_size_changed_callback)
         try:
             self._telnet_servers.append((yield from asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
         except OSError as e:
@@ -625,7 +638,6 @@ class DockerVM(BaseNode):
         input_stream.ws = self._console_websocket
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
-
         asyncio_ensure_future(self._read_console_output(self._console_websocket, output_stream))
 
     @asyncio.coroutine
