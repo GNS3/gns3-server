@@ -102,11 +102,11 @@ PROJECT_CREATE_SCHEMA = {
         },
         "grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for appliances"
+            "description": "Grid size for the drawing area for nodes"
         },
         "drawing_grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for labels"
+            "description": "Grid size for the drawing area for drawings"
         },
         "show_interface_labels": {
             "type": "boolean",
@@ -171,11 +171,11 @@ PROJECT_UPDATE_SCHEMA = {
         },
         "grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for appliances"
+            "description": "Grid size for the drawing area for nodes"
         },
         "drawing_grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for labels"
+            "description": "Grid size for the drawing area for drawings"
         },
         "show_interface_labels": {
             "type": "boolean",
@@ -256,11 +256,11 @@ PROJECT_OBJECT_SCHEMA = {
         },
         "grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for appliances"
+            "description": "Grid size for the drawing area for nodes"
         },
         "drawing_grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area for labels"
+            "description": "Grid size for the drawing area for drawings"
         },
         "show_interface_labels": {
             "type": "boolean",
