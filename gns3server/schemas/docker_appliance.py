@@ -26,6 +26,11 @@ DOCKER_APPLIANCE_PROPERTIES = {
         "type": "string",
         "minLength": 1
     },
+    "usage": {
+        "description": "How to use the Docker container",
+        "type": "string",
+        "default": ""
+    },
     "adapters": {
         "description": "Number of adapters",
         "type": "integer",
