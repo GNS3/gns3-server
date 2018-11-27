@@ -1,10 +1,15 @@
 Glossary
 ========
 
+Project
+--------
+
+A project contains everything that is needed to save and restore a virtual network in GNS3 (the topology, virtual disks, settings etc.)
+
 Topology
 --------
 
-Contains everything to represent a virtual network (nodes, visual elements, links...)
+A topology represents a virtual network (nodes, visual elements, links...). A topology is often used to refer to a project.
 
 Node
 ----
