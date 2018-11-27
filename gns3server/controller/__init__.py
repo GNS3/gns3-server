@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 
 class Controller:
     """
-    The controller is responsible to manage one or more compute servers.
+    The controller is responsible to manage one or more computes.
     """
 
     def __init__(self):
@@ -542,9 +542,9 @@ class Controller:
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
-        Add a server to the dictionary of compute servers controlled by this controller
+        Add a server to the dictionary of computes controlled by this controller
 
-        :param compute_id: Compute server identifier
+        :param compute_id: Compute identifier
         :param name: Compute name
         :param force: True skip security check
         :param connect: True connect to the compute immediately
@@ -604,7 +604,7 @@ class Controller:
         """
         Delete a compute node. Project using this compute will be close
 
-        :param compute_id: Compute server identifier
+        :param compute_id: Compute identifier
         """
 
         try:
@@ -628,14 +628,14 @@ class Controller:
     @property
     def computes(self):
         """
-        :returns: The dictionary of compute server managed by this controller
+        :returns: The dictionary of computes managed by this controller
         """
 
         return self._computes
 
     def get_compute(self, compute_id):
         """
-        Returns a compute server or raise a 404 error.
+        Returns a compute or raise a 404 error.
         """
 
         try:

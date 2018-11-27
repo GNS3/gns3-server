@@ -31,13 +31,13 @@ log = logging.getLogger(__name__)
 
 
 class ComputeHandler:
-    """API entry points for compute server management."""
+    """API entry points for compute management."""
 
     @Route.post(
         r"/computes",
-        description="Register a compute server",
+        description="Register a compute",
         status_codes={
-            201: "Compute server added"
+            201: "Compute added"
         },
         input=COMPUTE_CREATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
@@ -49,9 +49,9 @@ class ComputeHandler:
 
     @Route.get(
         r"/computes",
-        description="List of compute servers",
+        description="List of computes",
         status_codes={
-            200: "Compute servers list returned"
+            200: "Computes list returned"
         })
     def list(request, response):
 
@@ -60,9 +60,9 @@ class ComputeHandler:
 
     @Route.put(
         r"/computes/{compute_id}",
-        description="Update a compute server",
+        description="Update a compute",
         status_codes={
-            200: "Compute server updated",
+            200: "Compute updated",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
@@ -175,9 +175,9 @@ class ComputeHandler:
 
     @Route.get(
         r"/computes/{compute_id}",
-        description="Get a compute server information",
+        description="Get a compute information",
         status_codes={
-            200: "Compute server information returned"
+            200: "Compute information returned"
         },
         output=COMPUTE_OBJECT_SCHEMA)
     def get(request, response):

@@ -28,7 +28,7 @@ Check the server version with a simple curl command:
 List computes
 ##############
 
-List all the compute servers:
+List all the computes:
 
 .. code-block:: shell-session
 
@@ -45,7 +45,7 @@ List all the compute servers:
         }
     ]
 
-There is only one compute server where nodes can be run in this example.
+There is only one compute where nodes can be run in this example.
 This compute as a special id: local, this is the local server which is embedded in the GNS3 controller.
 
 Create a project

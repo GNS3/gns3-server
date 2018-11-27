@@ -41,7 +41,7 @@ class Node:
     def __init__(self, project, compute, name, node_id=None, node_type=None, appliance_id=None, **kwargs):
         """
         :param project: Project of the node
-        :param compute: Compute server where the server will run
+        :param compute: Compute where the server will run
         :param name: Node name
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
@@ -345,7 +345,7 @@ class Node:
 
     async def create(self):
         """
-        Create the node on the compute server
+        Create the node on the compute
         """
         data = self._node_data()
         data["node_id"] = self._id
@@ -372,7 +372,7 @@ class Node:
 
     async def update(self, **kwargs):
         """
-        Update the node on the compute server
+        Update the node on the compute
 
         :param kwargs: Node properties
         """

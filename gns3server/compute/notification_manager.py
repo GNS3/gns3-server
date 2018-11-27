@@ -23,7 +23,7 @@ from ..notification_queue import NotificationQueue
 class NotificationManager:
     """
     Manage the notification queue where the controller
-    will connect to get notifications from compute servers
+    will connect to get notifications from computes
     """
 
     def __init__(self):
