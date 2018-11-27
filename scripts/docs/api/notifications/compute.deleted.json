@@ -1,0 +1,16 @@
+{
+    "capabilities": {
+        "node_types": [],
+        "version": null
+    },
+    "compute_id": "my_compute_id",
+    "connected": false,
+    "cpu_usage_percent": null,
+    "host": "localhost",
+    "last_error": null,
+    "memory_usage_percent": null,
+    "name": "http://julien@localhost:84",
+    "port": 84,
+    "protocol": "http",
+    "user": "julien"
+}

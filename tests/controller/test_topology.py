@@ -45,7 +45,8 @@ def test_project_to_topology_empty(tmpdir):
         "show_interface_labels": False,
         "show_layers": False,
         "snap_to_grid": False,
-        "grid_size": 0,
+        "grid_size": 75,
+        "drawing_grid_size": 25,
         "topology": {
             "nodes": [],
             "links": [],

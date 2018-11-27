@@ -1,0 +1,24 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/f9bc266b-4a07-49ae-b6c0-d632ce2250fa/start' -d '{}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vpcs/nodes/f9bc266b-4a07-49ae-b6c0-d632ce2250fa/start HTTP/1.1
+{}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 384
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:33:51 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/vpcs/nodes/{node_id}/start
+
+{
+    "command_line": "",
+    "console": 5004,
+    "console_type": "telnet",
+    "name": "PC TEST 1",
+    "node_directory": "/tmp/tmphp7izuu5/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vpcs/f9bc266b-4a07-49ae-b6c0-d632ce2250fa",
+    "node_id": "f9bc266b-4a07-49ae-b6c0-d632ce2250fa",
+    "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "status": "stopped"
+}

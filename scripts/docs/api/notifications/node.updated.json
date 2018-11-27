@@ -1,0 +1,45 @@
+{
+    "appliance_id": null,
+    "command_line": "",
+    "compute_id": "local",
+    "console": 5004,
+    "console_auto_start": false,
+    "console_host": "127.0.0.1",
+    "console_type": "telnet",
+    "custom_adapters": [],
+    "first_port_name": null,
+    "height": 59,
+    "label": {
+        "rotation": 0,
+        "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+        "text": "PC1",
+        "x": 18,
+        "y": -25
+    },
+    "name": "PC1",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-31/test_load_project0/project-files/vpcs/64ba8408-afbf-4b66-9cdd-1fd854427478",
+    "node_id": "64ba8408-afbf-4b66-9cdd-1fd854427478",
+    "node_type": "vpcs",
+    "port_name_format": "Ethernet{0}",
+    "port_segment_size": 0,
+    "ports": [
+        {
+            "adapter_number": 0,
+            "data_link_types": {
+                "Ethernet": "DLT_EN10MB"
+            },
+            "link_type": "ethernet",
+            "name": "Ethernet0",
+            "port_number": 0,
+            "short_name": "e0"
+        }
+    ],
+    "project_id": "3c1be6f9-b4ba-4737-b209-63c47c23359f",
+    "properties": {},
+    "status": "stopped",
+    "symbol": ":/symbols/computer.svg",
+    "width": 65,
+    "x": -300,
+    "y": -118,
+    "z": 1
+}

@@ -1,0 +1,14 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/a2e4a995-c059-4484-934a-48c04c9e2f86/start' -d '{}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/a2e4a995-c059-4484-934a-48c04c9e2f86/start HTTP/1.1
+{}
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Mon, 19 Nov 2018 18:33:32 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}/start
+

@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/projects/b18e7ab5-2917-4721-8cf9-e926345a7c60'
+
+DELETE /v2/projects/b18e7ab5-2917-4721-8cf9-e926345a7c60 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Mon, 19 Nov 2018 18:34:07 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/{project_id}
+

@@ -1,0 +1,62 @@
+curl -i -X POST 'http://localhost:3080/v2/appliances' -d '{"appliance_type": "ethernet_hub", "compute_id": "local", "name": "Ethernet hub appliance"}'
+
+POST /v2/appliances HTTP/1.1
+{
+    "appliance_type": "ethernet_hub",
+    "compute_id": "local",
+    "name": "Ethernet hub appliance"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 978
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:33:54 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/appliances
+
+{
+    "appliance_id": "ba68ae02-c575-4aff-b9ed-c290bb3e8e58",
+    "appliance_type": "ethernet_hub",
+    "builtin": false,
+    "category": "switch",
+    "compute_id": "local",
+    "default_name_format": "Hub{0}",
+    "name": "Ethernet hub appliance",
+    "ports_mapping": [
+        {
+            "name": "Ethernet0",
+            "port_number": 0
+        },
+        {
+            "name": "Ethernet1",
+            "port_number": 1
+        },
+        {
+            "name": "Ethernet2",
+            "port_number": 2
+        },
+        {
+            "name": "Ethernet3",
+            "port_number": 3
+        },
+        {
+            "name": "Ethernet4",
+            "port_number": 4
+        },
+        {
+            "name": "Ethernet5",
+            "port_number": 5
+        },
+        {
+            "name": "Ethernet6",
+            "port_number": 6
+        },
+        {
+            "name": "Ethernet7",
+            "port_number": 7
+        }
+    ],
+    "symbol": ":/symbols/hub.svg"
+}

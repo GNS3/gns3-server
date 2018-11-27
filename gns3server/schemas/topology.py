@@ -93,7 +93,11 @@ TOPOLOGY_SCHEMA = {
         },
         "grid_size": {
             "type": "integer",
-            "description": "Grid size for the drawing area"
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
         },
         "show_interface_labels": {
             "type": "boolean",

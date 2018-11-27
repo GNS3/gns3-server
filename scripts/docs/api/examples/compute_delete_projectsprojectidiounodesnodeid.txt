@@ -1,0 +1,14 @@
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c5cdd89b-c981-4597-8e6b-351e2666f8a2'
+
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/c5cdd89b-c981-4597-8e6b-351e2666f8a2 HTTP/1.1
+
+
+
+HTTP/1.1 204
+Connection: close
+Content-Length: 0
+Content-Type: application/octet-stream
+Date: Mon, 19 Nov 2018 18:32:37 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
+

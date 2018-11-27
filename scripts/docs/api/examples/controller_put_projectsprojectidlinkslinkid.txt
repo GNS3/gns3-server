@@ -1,0 +1,81 @@
+curl -i -X PUT 'http://localhost:3080/v2/projects/2d1b9ba1-c737-46b1-934a-dd7d963e95de/links/13a4a34b-2dd3-4f78-bced-e72d68e4969d' -d '{"filters": {"frequency_drop": [50], "latency": [10]}, "nodes": [{"adapter_number": 0, "label": {"text": "Hello", "x": 64, "y": 0}, "node_id": "412664a9-b819-44b0-8f70-d0b9cd99efe2", "port_number": 3}, {"adapter_number": 2, "node_id": "1e14f8f6-b4bb-4321-a58e-1e56e5ded54d", "port_number": 4}]}'
+
+PUT /v2/projects/2d1b9ba1-c737-46b1-934a-dd7d963e95de/links/13a4a34b-2dd3-4f78-bced-e72d68e4969d HTTP/1.1
+{
+    "filters": {
+        "frequency_drop": [
+            50
+        ],
+        "latency": [
+            10
+        ]
+    },
+    "nodes": [
+        {
+            "adapter_number": 0,
+            "label": {
+                "text": "Hello",
+                "x": 64,
+                "y": 0
+            },
+            "node_id": "412664a9-b819-44b0-8f70-d0b9cd99efe2",
+            "port_number": 3
+        },
+        {
+            "adapter_number": 2,
+            "node_id": "1e14f8f6-b4bb-4321-a58e-1e56e5ded54d",
+            "port_number": 4
+        }
+    ]
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 1022
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:04 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/{project_id}/links/{link_id}
+
+{
+    "capture_file_name": null,
+    "capture_file_path": null,
+    "capturing": false,
+    "filters": {
+        "frequency_drop": [
+            50
+        ],
+        "latency": [
+            10
+        ]
+    },
+    "link_id": "13a4a34b-2dd3-4f78-bced-e72d68e4969d",
+    "link_type": "ethernet",
+    "nodes": [
+        {
+            "adapter_number": 0,
+            "label": {
+                "text": "Hello",
+                "x": 64,
+                "y": 0
+            },
+            "node_id": "412664a9-b819-44b0-8f70-d0b9cd99efe2",
+            "port_number": 3
+        },
+        {
+            "adapter_number": 2,
+            "label": {
+                "rotation": 0,
+                "style": "font-size: 10; font-style: Verdana",
+                "text": "2/4",
+                "x": -10,
+                "y": -10
+            },
+            "node_id": "1e14f8f6-b4bb-4321-a58e-1e56e5ded54d",
+            "port_number": 4
+        }
+    ],
+    "project_id": "2d1b9ba1-c737-46b1-934a-dd7d963e95de",
+    "suspend": false
+}

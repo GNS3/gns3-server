@@ -1,0 +1,36 @@
+curl -i -X POST 'http://localhost:3080/v2/projects/load' -d '{"path": "/tmp/test.gns3"}'
+
+POST /v2/projects/load HTTP/1.1
+{
+    "path": "/tmp/test.gns3"
+}
+
+
+HTTP/1.1 201
+Connection: close
+Content-Length: 530
+Content-Type: application/json
+Date: Mon, 19 Nov 2018 18:34:07 GMT
+Server: Python/3.6 GNS3/2.2.0dev4
+X-Route: /v2/projects/load
+
+{
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
+    "filename": "test.gns3",
+    "grid_size": 0,
+    "name": "test",
+    "path": "/tmp/tmpsok5h115/projects/0302f5ef-4001-42c4-a9d6-404633047097",
+    "project_id": "0302f5ef-4001-42c4-a9d6-404633047097",
+    "scene_height": 1000,
+    "scene_width": 2000,
+    "show_grid": false,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": false,
+    "status": "opened",
+    "supplier": null,
+    "variables": null,
+    "zoom": 100
+}
