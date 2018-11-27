@@ -341,7 +341,7 @@ class Controller:
         if "appliances" in controller_settings:
             for appliance_settings in controller_settings["appliances"]:
                 try:
-                    appliance = Appliance(appliance_settings["appliance_id"], appliance_settings)
+                    appliance = Appliance(appliance_settings.get("appliance_id"), appliance_settings)
                     self._appliances[appliance.id] = appliance
                 except jsonschema.ValidationError as e:
                     message = "Cannot load appliance with JSON data '{}': {}".format(appliance_settings, e.message)
