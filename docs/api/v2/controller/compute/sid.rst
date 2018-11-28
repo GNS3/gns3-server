@@ -9,7 +9,7 @@ Update a compute
 
 Response status codes
 **********************
-- **200**: Compute
+- **200**: Compute updated
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 

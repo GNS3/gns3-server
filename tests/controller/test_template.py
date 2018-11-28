@@ -18,11 +18,11 @@
 import pytest
 import jsonschema
 
-from gns3server.controller.appliance import Appliance
+from gns3server.controller.template import Template
 
 
-def test_appliance_json():
-    a = Appliance(None, {
+def test_template_json():
+    a = Template(None, {
         "node_type": "qemu",
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -32,14 +32,14 @@ def test_appliance_json():
         "platform": "i386"
     })
     settings = a.__json__()
-    assert settings["appliance_id"] == a.id
-    assert settings["appliance_type"] == "qemu"
+    assert settings["template_id"] == a.id
+    assert settings["template_type"] == "qemu"
     assert settings["builtin"] == False
 
 
-def test_appliance_json_with_not_known_category():
+def test_template_json_with_not_known_category():
     with pytest.raises(jsonschema.ValidationError):
-        a = Appliance(None, {
+        a = Template(None, {
             "node_type": "qemu",
             "name": "Test",
             "default_name_format": "{name}-{0}",
@@ -50,8 +50,8 @@ def test_appliance_json_with_not_known_category():
         })
 
 
-def test_appliance_json_with_platform():
-    a = Appliance(None, {
+def test_template_json_with_platform():
+    a = Template(None, {
         "node_type": "dynamips",
         "name": "Test",
         "default_name_format": "{name}-{0}",
@@ -62,18 +62,18 @@ def test_appliance_json_with_platform():
         "platform": "c3725"
     })
     settings = a.__json__()
-    assert settings["appliance_id"] == a.id
-    assert settings["appliance_type"] == "dynamips"
+    assert settings["template_id"] == a.id
+    assert settings["template_type"] == "dynamips"
     assert settings["builtin"] == False
     assert settings["platform"] == "c3725"
 
 
-def test_appliance_fix_linked_base():
+def test_template_fix_linked_base():
     """
     Version of the gui before 2.1 use linked_base and the server
     linked_clone
     """
-    a = Appliance(None, {
+    a = Template(None, {
         "node_type": "qemu",
         "name": "Test",
         "default_name_format": "{name}-{0}",

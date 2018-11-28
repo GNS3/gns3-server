@@ -1,28 +1,27 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/c895fa5d-6ad9-4f61-89a3-f725ca3b1bd7/nodes/e5092e98-e512-4d9a-b7ca-4a3e08555a68/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/57b6192b-0dc5-40af-b927-2a45fa7aa053/nodes/58151bb0-676e-4747-877e-577ff3321a1a/reload' -d '{}'
 
-POST /v2/projects/c895fa5d-6ad9-4f61-89a3-f725ca3b1bd7/nodes/e5092e98-e512-4d9a-b7ca-4a3e08555a68/reload HTTP/1.1
+POST /v2/projects/57b6192b-0dc5-40af-b927-2a45fa7aa053/nodes/58151bb0-676e-4747-877e-577ff3321a1a/reload HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1138
+Content-Length: 1137
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:33 GMT
+Date: Tue, 27 Nov 2018 15:09:40 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
 
 {
-    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140362492115320'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140023799336352'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 59,
+    "height": 60,
     "label": {
         "rotation": 0,
         "style": null,
@@ -32,7 +31,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "e5092e98-e512-4d9a-b7ca-4a3e08555a68",
+    "node_id": "58151bb0-676e-4747-877e-577ff3321a1a",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -48,11 +47,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
             "short_name": "e0"
         }
     ],
-    "project_id": "c895fa5d-6ad9-4f61-89a3-f725ca3b1bd7",
+    "project_id": "57b6192b-0dc5-40af-b927-2a45fa7aa053",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 65,
+    "template_id": null,
+    "width": 60,
     "x": 0,
     "y": 0,
     "z": 1

@@ -8,9 +8,9 @@ PUT /v2/projects/10010203-0405-0607-0809-0a0b0c0d0e0f HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 662
+Content-Length: 692
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:34 GMT
+Date: Tue, 27 Nov 2018 15:09:41 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}
 
@@ -18,10 +18,11 @@ X-Route: /v2/projects/{project_id}
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
-    "grid_size": 0,
+    "grid_size": 75,
     "name": "test2",
-    "path": "/tmp/tmpghp7ta5o/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/tmp/tmpzpa4l8l1/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
     "scene_height": 1000,
     "scene_width": 2000,

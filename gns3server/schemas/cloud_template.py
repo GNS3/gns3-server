@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 from .port import PORT_OBJECT_SCHEMA
 
 
-CLOUD_APPLIANCE_PROPERTIES = {
+CLOUD_TEMPLATE_PROPERTIES = {
     "ports_mapping": {
         "type": "array",
         "items": [PORT_OBJECT_SCHEMA]
@@ -47,15 +47,15 @@ CLOUD_APPLIANCE_PROPERTIES = {
     },
 }
 
-CLOUD_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-CLOUD_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
-CLOUD_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "Cloud{0}"
-CLOUD_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/cloud.svg"
+CLOUD_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+CLOUD_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
+CLOUD_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Cloud{0}"
+CLOUD_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/cloud.svg"
 
-CLOUD_APPLIANCE_OBJECT_SCHEMA = {
+CLOUD_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A cloud template object",
     "type": "object",
-    "properties": CLOUD_APPLIANCE_PROPERTIES,
+    "properties": CLOUD_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }

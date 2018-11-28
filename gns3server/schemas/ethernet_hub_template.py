@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 
 
-ETHERNET_HUB_APPLIANCE_PROPERTIES = {
+ETHERNET_HUB_TEMPLATE_PROPERTIES = {
     "ports_mapping": {
         "type": "array",
         "default": [{"port_number": 0,
@@ -66,15 +66,15 @@ ETHERNET_HUB_APPLIANCE_PROPERTIES = {
     }
 }
 
-ETHERNET_HUB_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-ETHERNET_HUB_APPLIANCE_PROPERTIES["category"]["default"] = "switch"
-ETHERNET_HUB_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "Hub{0}"
-ETHERNET_HUB_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/hub.svg"
+ETHERNET_HUB_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+ETHERNET_HUB_TEMPLATE_PROPERTIES["category"]["default"] = "switch"
+ETHERNET_HUB_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Hub{0}"
+ETHERNET_HUB_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/hub.svg"
 
-ETHERNET_HUB_APPLIANCE_OBJECT_SCHEMA = {
+ETHERNET_HUB_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "An Ethernet hub template object",
     "type": "object",
-    "properties": ETHERNET_HUB_APPLIANCE_PROPERTIES,
+    "properties": ETHERNET_HUB_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }

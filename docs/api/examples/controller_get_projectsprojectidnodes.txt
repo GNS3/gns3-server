@@ -1,29 +1,28 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/84c2c596-d344-4130-8898-b5aed556ece6/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/f49189fa-ad6e-4757-b3b3-e955f9ff7ef3/nodes'
 
-GET /v2/projects/84c2c596-d344-4130-8898-b5aed556ece6/nodes HTTP/1.1
+GET /v2/projects/f49189fa-ad6e-4757-b3b3-e955f9ff7ef3/nodes HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1373
+Content-Length: 1372
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:32 GMT
+Date: Tue, 27 Nov 2018 15:09:39 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes
 
 [
     {
-        "appliance_id": null,
         "command_line": null,
         "compute_id": "example.com",
         "console": 2048,
         "console_auto_start": false,
-        "console_host": "<MagicMock name='mock.console_host' id='140362500629896'>",
+        "console_host": "<MagicMock name='mock.console_host' id='140023809783288'>",
         "console_type": null,
         "custom_adapters": [],
         "first_port_name": null,
-        "height": 59,
+        "height": 60,
         "label": {
             "rotation": 0,
             "style": null,
@@ -33,7 +32,7 @@ X-Route: /v2/projects/{project_id}/nodes
         },
         "name": "test",
         "node_directory": null,
-        "node_id": "09cc854d-01ec-40d7-9d13-e67dca2ed489",
+        "node_id": "21d4dc65-52cd-4276-a34d-f3bdebef0804",
         "node_type": "vpcs",
         "port_name_format": "Ethernet{0}",
         "port_segment_size": 0,
@@ -49,13 +48,14 @@ X-Route: /v2/projects/{project_id}/nodes
                 "short_name": "e0"
             }
         ],
-        "project_id": "84c2c596-d344-4130-8898-b5aed556ece6",
+        "project_id": "f49189fa-ad6e-4757-b3b3-e955f9ff7ef3",
         "properties": {
             "startup_script": "echo test"
         },
         "status": "stopped",
         "symbol": ":/symbols/computer.svg",
-        "width": 65,
+        "template_id": null,
+        "width": 60,
         "x": 0,
         "y": 0,
         "z": 1

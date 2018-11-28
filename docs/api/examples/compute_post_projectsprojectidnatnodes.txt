@@ -10,13 +10,13 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 335
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:48 GMT
+Date: Tue, 27 Nov 2018 15:08:25 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/nat/nodes
 
 {
     "name": "Nat 1",
-    "node_id": "1d65eae5-1965-4e51-a804-45e7cf49e598",
+    "node_id": "27f88559-160a-4b95-9598-18885ed04611",
     "ports_mapping": [
         {
             "interface": "virbr0",

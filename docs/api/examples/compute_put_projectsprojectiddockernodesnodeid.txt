@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/aedead4b-36c7-4aed-a94c-9e2fc0eedaea' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "extra_hosts": "test:127.0.0.1", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/d28ce239-2f29-4de9-9da1-e6596da37a85' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "extra_hosts": "test:127.0.0.1", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/aedead4b-36c7-4aed-a94c-9e2fc0eedaea HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/d28ce239-2f29-4de9-9da1-e6596da37a85 HTTP/1.1
 {
     "console": 5006,
     "environment": "GNS3=1\nGNS4=0",
@@ -12,9 +12,9 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/aedea
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 639
+Content-Length: 638
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:44 GMT
+Date: Tue, 27 Nov 2018 15:08:21 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
 
@@ -31,8 +31,8 @@ X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "extra_hosts": "test:127.0.0.1",
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/docker/aedead4b-36c7-4aed-a94c-9e2fc0eedaea",
-    "node_id": "aedead4b-36c7-4aed-a94c-9e2fc0eedaea",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-4/test_json4/project-files/docker/d28ce239-2f29-4de9-9da1-e6596da37a85",
+    "node_id": "d28ce239-2f29-4de9-9da1-e6596da37a85",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped"

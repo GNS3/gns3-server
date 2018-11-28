@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 
 
-IOU_APPLIANCE_PROPERTIES = {
+IOU_TEMPLATE_PROPERTIES = {
     "path": {
         "description": "Path of IOU executable",
         "type": "string",
@@ -77,16 +77,16 @@ IOU_APPLIANCE_PROPERTIES = {
     },
 }
 
-IOU_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-IOU_APPLIANCE_PROPERTIES["category"]["default"] = "router"
-IOU_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "IOU{0}"
-IOU_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/multilayer_switch.svg"
+IOU_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+IOU_TEMPLATE_PROPERTIES["category"]["default"] = "router"
+IOU_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "IOU{0}"
+IOU_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/multilayer_switch.svg"
 
-IOU_APPLIANCE_OBJECT_SCHEMA = {
+IOU_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A IOU template object",
     "type": "object",
-    "properties": IOU_APPLIANCE_PROPERTIES,
+    "properties": IOU_TEMPLATE_PROPERTIES,
     "required": ["path"],
     "additionalProperties": False
 }

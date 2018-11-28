@@ -30,7 +30,7 @@
             "md5sum": "633d6444cad903c707983b54e04fc053",
             "filesize": 636065792,
             "download_url": "http://www.freenas.org/download/",
-            "direct_download_url": "https://download.freenas.org/11/11.1-U4/x64/FreeNAS-11.1-U4.iso"
+            "direct_download_url": "https://download.freenas.org/11/11.1-U6/x64/FreeNAS-11.1-U6.iso"
         },
         {
             "filename": "FreeNAS-11.1-U4.iso",

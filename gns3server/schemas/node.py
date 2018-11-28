@@ -119,8 +119,8 @@ NODE_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
-        "appliance_id": {
-            "description": "Appliance UUID from which the node has been created. Read only",
+        "template_id": {
+            "description": "Template UUID from which the node has been created. Read only",
             "type": ["null", "string"],
             "minLength": 36,
             "maxLength": 36,

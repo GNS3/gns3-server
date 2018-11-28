@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/8605e0f2-189c-43c8-8be1-ea69c42398bd/drawings/d4c961cb-c23b-4d71-a345-14672ec4287f'
+curl -i -X GET 'http://localhost:3080/v2/projects/31e6876d-2352-4448-a503-4025a93dc98d/drawings/f762c942-f431-44f0-97d8-a2a75952b4d4'
 
-GET /v2/projects/8605e0f2-189c-43c8-8be1-ea69c42398bd/drawings/d4c961cb-c23b-4d71-a345-14672ec4287f HTTP/1.1
+GET /v2/projects/31e6876d-2352-4448-a503-4025a93dc98d/drawings/f762c942-f431-44f0-97d8-a2a75952b4d4 HTTP/1.1
 
 
 
@@ -8,13 +8,13 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 323
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:31 GMT
+Date: Tue, 27 Nov 2018 15:09:38 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/drawings/{drawing_id}
 
 {
-    "drawing_id": "d4c961cb-c23b-4d71-a345-14672ec4287f",
-    "project_id": "8605e0f2-189c-43c8-8be1-ea69c42398bd",
+    "drawing_id": "f762c942-f431-44f0-97d8-a2a75952b4d4",
+    "project_id": "31e6876d-2352-4448-a503-4025a93dc98d",
     "rotation": 0,
     "svg": "<svg height=\"210\" width=\"500\"><line x1=\"0\" y1=\"0\" x2=\"200\" y2=\"200\" style=\"stroke:rgb(255,0,0);stroke-width:2\" /></svg>",
     "x": 10,

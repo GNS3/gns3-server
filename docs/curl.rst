@@ -234,14 +234,14 @@ Packet filters allow to filter packet on a given link. Here to drop a packet eve
 
     # curl -X PUT "http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/links/007f2177-6790-4e1b-ac28-41fa226b2a06" -d '{"filters": {"frequency_drop": [5]}}'
 
-Appliance creation
+Template creation
 ###################
 
-An appliance contains all the required settings to create a new node. This is useful to create many nodes with the same settings.
+A template contains all the required settings to create a new node. This is useful to create many nodes with the same settings.
 
 .. code-block:: shell-session
 
-    # curl -X POST "http://localhost:3080/v2/appliances" -d '{"name": "Qemu appliance", "compute_id": "local", "platform": "i386", "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2", "ram": 512, "appliance_type": "qemu"}'
+    # curl -X POST "http://localhost:3080/v2/templates" -d '{"name": "Qemu template", "compute_id": "local", "platform": "i386", "hda_disk_image": "IOSvL2-15.2.4.0.55E.qcow2", "ram": 512, "template_type": "qemu"}'
 
 Node creation
 ##############
@@ -249,23 +249,23 @@ Node creation
 There are two ways to add nodes.
 
 1. Manually by passing all the information required to create a new node.
-2. Using an appliance stored on your server.
+2. Using a template stored on your server.
 
-Using an appliance
-------------------
+Using a template
+-----------------
 
-List all the available appliance templates:
+List all the available templates:
 
 .. code-block:: shell-session
 
-    # curl "http://localhost:3080/v2/appliances"
+    # curl "http://localhost:3080/v2/templates"
 
     [
         {
             "adapter_type": "e1000",
             "adapters": 1,
-            "appliance_id": "70c79a82-5ef6-4911-8284-f6f31eb0ebf2",
-            "appliance_type": "qemu",
+            "template_id": "70c79a82-5ef6-4911-8284-f6f31eb0ebf2",
+            "template_type": "qemu",
             "bios_image": "",
             "boot_priority": "c",
             "builtin": false,
@@ -293,7 +293,7 @@ List all the available appliance templates:
             "legacy_networking": false,
             "linked_clone": true,
             "mac_address": "",
-            "name": "Qemu appliance",
+            "name": "Qemu template",
             "on_close": "power_off",
             "options": "",
             "platform": "i386",
@@ -307,8 +307,8 @@ List all the available appliance templates:
         }
         {
             "adapters": 1,
-            "appliance_id": "888984a8-c802-427b-97a7-ee097ee63faf",
-            "appliance_type": "docker",
+            "template_id": "888984a8-c802-427b-97a7-ee097ee63faf",
+            "template_type": "docker",
             "builtin": false,
             "category": "guest",
             "compute_id": "local",
@@ -328,11 +328,11 @@ List all the available appliance templates:
         },
     ]
 
-Use the appliance and add coordinates to select where the node will be put on the canvas:
+Use the template and add coordinates to select where the node will be put on the canvas:
 
 .. code-block:: shell-session
 
- # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/appliances/888984a8-c802-427b-97a7-ee097ee63faf -d '{"x": 12, "y": 42}'
+ # curl -X POST http://localhost:3080/v2/projects/b8c070f7-f34c-4b7b-ba6f-be3d26ed073f/templates/888984a8-c802-427b-97a7-ee097ee63faf -d '{"x": 12, "y": 42}'
 
 
 Manual creation of a Qemu node
@@ -553,7 +553,7 @@ Controller notifications can be seen by connecting to the notification feed:
     # curl "http://localhost:3080/v2/notifications"
     {"action": "ping", "event": {"compute_id": "local", "cpu_usage_percent": 35.7, "memory_usage_percent": 80.7}}
     {"action": "compute.updated", "event": {"capabilities": {"node_types": ["cloud", "ethernet_hub", "ethernet_switch", "nat", "vpcs", "virtualbox", "dynamips", "frame_relay_switch", "atm_switch", "qemu", "vmware", "traceng", "docker", "iou"], "platform": "linux", "version": "2.2.0dev5-68ecbff"}, "compute_id": "local", "connected": true, "cpu_usage_percent": 12.0, "host": "127.0.0.1", "last_error": null, "memory_usage_percent": 45.7, "name": "coruscant", "port": 3080, "protocol": "http", "user": "admin"}}
-    {"action": "appliance.created", "event": {"appliance_id": "384f9b02-6451-4b27-8d29-76623b5d9e79", "appliance_type": "dynamips", "auto_delete_disks": false, "builtin": false, "category": "router", "compute_id": "local", "console_auto_start": false, "console_type": "telnet", "default_name_format": "R{0}", "disk0": 0, "disk1": 0, "exec_area": 64, "idlemax": 500, "idlepc": "", "idlesleep": 30, "image": "c3725-adventerprisek9-mz.124-15.T14.image", "iomem": 5, "mac_addr": "", "mmap": true, "name": "My c3725", "nvram": 256, "platform": "c3725", "private_config": "", "ram": 128, "sparsemem": true, "startup_config": "ios_base_startup-config.txt", "symbol": ":/symbols/router.svg", "system_id": "FTX0945W0MY"}}
+    {"action": "template.created", "event": {"template_id": "384f9b02-6451-4b27-8d29-76623b5d9e79", "template_type": "dynamips", "auto_delete_disks": false, "builtin": false, "category": "router", "compute_id": "local", "console_auto_start": false, "console_type": "telnet", "default_name_format": "R{0}", "disk0": 0, "disk1": 0, "exec_area": 64, "idlemax": 500, "idlepc": "", "idlesleep": 30, "image": "c3725-adventerprisek9-mz.124-15.T14.image", "iomem": 5, "mac_addr": "", "mmap": true, "name": "My c3725", "nvram": 256, "platform": "c3725", "private_config": "", "ram": 128, "sparsemem": true, "startup_config": "ios_base_startup-config.txt", "symbol": ":/symbols/router.svg", "system_id": "FTX0945W0MY"}}
 
 A Websocket notification stream is also available on http://localhost:3080/v2/notifications/ws
 

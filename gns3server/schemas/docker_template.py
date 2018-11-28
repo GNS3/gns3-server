@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
 
 
-DOCKER_APPLIANCE_PROPERTIES = {
+DOCKER_TEMPLATE_PROPERTIES = {
     "image": {
         "description": "Docker image name",
         "type": "string",
@@ -85,16 +85,16 @@ DOCKER_APPLIANCE_PROPERTIES = {
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-DOCKER_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-DOCKER_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
-DOCKER_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
-DOCKER_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/docker_guest.svg"
+DOCKER_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+DOCKER_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
+DOCKER_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+DOCKER_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/docker_guest.svg"
 
-DOCKER_APPLIANCE_OBJECT_SCHEMA = {
+DOCKER_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A Docker template object",
     "type": "object",
-    "properties": DOCKER_APPLIANCE_PROPERTIES,
+    "properties": DOCKER_TEMPLATE_PROPERTIES,
     "required": ["image"],
     "additionalProperties": False
 }

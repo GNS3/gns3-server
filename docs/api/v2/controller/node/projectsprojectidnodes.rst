@@ -22,7 +22,6 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>appliance_id</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Appliance UUID from which the node has been created. Read only</td>                     </tr>
     <tr><td>command_line</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Command line use to start the node</td>                     </tr>
     <tr><td>compute_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Compute identifier</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
@@ -44,6 +43,7 @@ Input
     <tr><td>properties</td>                    <td> </td>                     <td>object</td>                     <td>Properties specific to an emulator</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: stopped, started, suspended</td>                     </tr>
     <tr><td>symbol</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Symbol of the node</td>                     </tr>
+    <tr><td>template_id</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Template UUID from which the node has been created. Read only</td>                     </tr>
     <tr><td>width</td>                    <td> </td>                     <td>integer</td>                     <td>Width of the node (Read only)</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X position of the node</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y position of the node</td>                     </tr>
@@ -56,7 +56,6 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>appliance_id</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Appliance UUID from which the node has been created. Read only</td>                     </tr>
     <tr><td>command_line</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Command line use to start the node</td>                     </tr>
     <tr><td>compute_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Compute identifier</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
@@ -78,6 +77,7 @@ Output
     <tr><td>properties</td>                    <td> </td>                     <td>object</td>                     <td>Properties specific to an emulator</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: stopped, started, suspended</td>                     </tr>
     <tr><td>symbol</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Symbol of the node</td>                     </tr>
+    <tr><td>template_id</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Template UUID from which the node has been created. Read only</td>                     </tr>
     <tr><td>width</td>                    <td> </td>                     <td>integer</td>                     <td>Width of the node (Read only)</td>                     </tr>
     <tr><td>x</td>                    <td> </td>                     <td>integer</td>                     <td>X position of the node</td>                     </tr>
     <tr><td>y</td>                    <td> </td>                     <td>integer</td>                     <td>Y position of the node</td>                     </tr>

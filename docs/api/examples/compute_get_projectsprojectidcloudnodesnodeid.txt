@@ -1,14 +1,14 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/237fd74b-5555-4c82-84c7-db749d868cc8'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2961f72c-eb53-4208-849f-5e7e00940507'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/237fd74b-5555-4c82-84c7-db749d868cc8 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2961f72c-eb53-4208-849f-5e7e00940507 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1742
+Content-Length: 2080
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:34 GMT
+Date: Tue, 27 Nov 2018 15:08:18 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
@@ -21,6 +21,21 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         },
         {
             "name": "lo",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet0",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet1",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet2",
             "special": true,
             "type": "ethernet"
         },
@@ -66,8 +81,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/builtin/237fd74b-5555-4c82-84c7-db749d868cc8",
-    "node_id": "237fd74b-5555-4c82-84c7-db749d868cc8",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-4/test_json4/project-files/builtin/2961f72c-eb53-4208-849f-5e7e00940507",
+    "node_id": "2961f72c-eb53-4208-849f-5e7e00940507",
     "ports_mapping": [
         {
             "interface": "wlp58s0",

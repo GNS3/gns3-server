@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/c058d260-bf03-4672-a380-b18fb0058727/adapters/0/ports/0/nio'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/75595095-e77d-499a-a819-53181ffcd424/adapters/0/ports/0/nio'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/c058d260-bf03-4672-a380-b18fb0058727/adapters/0/ports/0/nio HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/75595095-e77d-499a-a819-53181ffcd424/adapters/0/ports/0/nio HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 08:46:44 GMT
+Date: Tue, 27 Nov 2018 15:08:21 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

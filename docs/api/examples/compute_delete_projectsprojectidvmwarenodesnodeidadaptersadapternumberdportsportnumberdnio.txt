@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/d4618803-39d1-4dda-8299-11d12f72077f/adapters/0/ports/0/nio'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/6c1f9d23-6382-4f65-ab55-c2a0fdb435d9/adapters/0/ports/0/nio'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/d4618803-39d1-4dda-8299-11d12f72077f/adapters/0/ports/0/nio HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/6c1f9d23-6382-4f65-ab55-c2a0fdb435d9/adapters/0/ports/0/nio HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 08:48:07 GMT
+Date: Tue, 27 Nov 2018 15:09:24 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

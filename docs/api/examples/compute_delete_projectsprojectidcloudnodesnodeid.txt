@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/19e91d19-71a9-4bf5-8eb2-c2a2bea2f35b'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/3360e11c-26d3-451e-816c-3b9795eb06d3'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/19e91d19-71a9-4bf5-8eb2-c2a2bea2f35b HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/3360e11c-26d3-451e-816c-3b9795eb06d3 HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 08:46:40 GMT
+Date: Tue, 27 Nov 2018 15:08:20 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 

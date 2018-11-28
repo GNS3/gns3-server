@@ -52,5 +52,5 @@ List of computes
 
 Response status codes
 **********************
-- **200**: Compute list returned
+- **200**: Computes list returned
 

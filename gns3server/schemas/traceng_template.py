@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 
 
-TRACENG_APPLIANCE_PROPERTIES = {
+TRACENG_TEMPLATE_PROPERTIES = {
     "ip_address": {
         "description": "Source IP address for tracing",
         "type": ["string"],
@@ -37,15 +37,15 @@ TRACENG_APPLIANCE_PROPERTIES = {
     },
 }
 
-TRACENG_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-TRACENG_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
-TRACENG_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "TraceNG{0}"
-TRACENG_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/traceng.svg"
+TRACENG_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+TRACENG_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
+TRACENG_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "TraceNG{0}"
+TRACENG_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/traceng.svg"
 
-TRACENG_APPLIANCE_OBJECT_SCHEMA = {
+TRACENG_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A TraceNG template object",
     "type": "object",
-    "properties": TRACENG_APPLIANCE_PROPERTIES,
+    "properties": TRACENG_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }

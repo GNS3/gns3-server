@@ -16,16 +16,15 @@ Node
 
 A Virtual Machine (Dynamips, IOU, Qemu, VPCS...) or builtin node (cloud, switch, hub...) that run on a compute.
 
+Template
+---------
+
+A template used to create a new node. A node is created when dragging a template to a topology.
+
 Appliance
 ---------
 
-A model for a node used to create a node. When you drag an appliance to the topology a node is created.
-
-Appliance template
-------------------
-
-A file (.gns3a) used to create a new node.
-
+A file (.gns3a or .gns3appliance) used to create a new template with predefined settings.
 
 Drawing
 -------

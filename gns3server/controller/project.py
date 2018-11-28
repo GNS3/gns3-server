@@ -476,19 +476,19 @@ class Project:
         return new_name
 
     @open_required
-    async def add_node_from_appliance(self, appliance_id, x=0, y=0, compute_id=None):
+    async def add_node_from_template(self, template_id, x=0, y=0, compute_id=None):
         """
-        Create a node from an appliance
+        Create a node from a template.
         """
         try:
-            template = copy.deepcopy(self.controller.appliances[appliance_id].settings)
+            template = copy.deepcopy(self.controller.templates[template_id].settings)
         except KeyError:
-            msg = "Appliance {} doesn't exist".format(appliance_id)
+            msg = "Template {} doesn't exist".format(template_id)
             log.error(msg)
             raise aiohttp.web.HTTPNotFound(text=msg)
         template["x"] = x
         template["y"] = y
-        node_type = template.pop("appliance_type")
+        node_type = template.pop("template_type")
         compute = self.controller.get_compute(template.pop("compute_id", compute_id))
         name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
