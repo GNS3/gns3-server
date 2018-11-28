@@ -1,28 +1,27 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/689bc9ac-a342-4024-8ce1-7b45f7ad25ed/nodes/64b8e6c2-7c6f-4ca6-9521-51d8b724e5a1'
+curl -i -X GET 'http://localhost:3080/v2/projects/33f04f5b-f3fd-4758-85b1-ba3090dc677b/nodes/e6277f54-0562-4905-9d0f-ba70f0963a53'
 
-GET /v2/projects/689bc9ac-a342-4024-8ce1-7b45f7ad25ed/nodes/64b8e6c2-7c6f-4ca6-9521-51d8b724e5a1 HTTP/1.1
+GET /v2/projects/33f04f5b-f3fd-4758-85b1-ba3090dc677b/nodes/e6277f54-0562-4905-9d0f-ba70f0963a53 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1181
+Content-Length: 1180
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:32 GMT
+Date: Tue, 27 Nov 2018 15:09:39 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes/{node_id}
 
 {
-    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": 2048,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140362497556264'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140023807858728'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 59,
+    "height": 60,
     "label": {
         "rotation": 0,
         "style": null,
@@ -32,7 +31,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "64b8e6c2-7c6f-4ca6-9521-51d8b724e5a1",
+    "node_id": "e6277f54-0562-4905-9d0f-ba70f0963a53",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -48,13 +47,14 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}
             "short_name": "e0"
         }
     ],
-    "project_id": "689bc9ac-a342-4024-8ce1-7b45f7ad25ed",
+    "project_id": "33f04f5b-f3fd-4758-85b1-ba3090dc677b",
     "properties": {
         "startup_script": "echo test"
     },
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 65,
+    "template_id": null,
+    "width": 60,
     "x": 0,
     "y": 0,
     "z": 1

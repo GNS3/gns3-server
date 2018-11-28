@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/f4e51aa4-8b8e-4166-a03d-4c4dcad6076e/links'
+curl -i -X GET 'http://localhost:3080/v2/projects/b82e9467-a4f0-4668-8ef4-49078d628aa2/links'
 
-GET /v2/projects/f4e51aa4-8b8e-4166-a03d-4c4dcad6076e/links HTTP/1.1
+GET /v2/projects/b82e9467-a4f0-4668-8ef4-49078d628aa2/links HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 1293
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:32 GMT
+Date: Tue, 27 Nov 2018 15:09:39 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/links
 
@@ -25,7 +25,7 @@ X-Route: /v2/projects/{project_id}/links
                 10
             ]
         },
-        "link_id": "e4ce29c1-33f8-434c-87ba-6aa85b2dd089",
+        "link_id": "f6347019-741f-4569-98e7-0f58f2225d9b",
         "link_type": "ethernet",
         "nodes": [
             {
@@ -37,7 +37,7 @@ X-Route: /v2/projects/{project_id}/links
                     "x": -10,
                     "y": -10
                 },
-                "node_id": "6df6e46d-66d9-4856-bf59-6d603a8b9e64",
+                "node_id": "2688dd1a-6002-4ab5-b134-7a51794cef25",
                 "port_number": 3
             },
             {
@@ -49,11 +49,11 @@ X-Route: /v2/projects/{project_id}/links
                     "x": -10,
                     "y": -10
                 },
-                "node_id": "6d1f08eb-7197-4b4f-9024-819ff2114498",
+                "node_id": "09440c34-f5de-402e-b8b6-beda818ebef4",
                 "port_number": 4
             }
         ],
-        "project_id": "f4e51aa4-8b8e-4166-a03d-4c4dcad6076e",
+        "project_id": "b82e9467-a4f0-4668-8ef4-49078d628aa2",
         "suspend": false
     }
 ]

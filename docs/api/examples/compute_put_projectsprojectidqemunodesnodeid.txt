@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/03816f4e-afad-4716-a6c5-75c29f4f7898' -d '{"console": 5006, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/efc707f0-8d3c-4013-abea-3ce2c005943f' -d '{"console": 5006, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/03816f4e-afad-4716-a6c5-75c29f4f7898 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/efc707f0-8d3c-4013-abea-3ce2c005943f HTTP/1.1
 {
     "console": 5006,
     "hdb_disk_image": "linux\u8f7d.img",
@@ -13,7 +13,7 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 1422
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:47:08 GMT
+Date: Tue, 27 Nov 2018 15:08:49 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
 
@@ -48,16 +48,16 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "0c:dd:80:78:98:00",
+    "mac_address": "0c:dd:80:94:3f:00",
     "name": "test",
-    "node_directory": "/tmp/tmp0a7ifw_u/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/03816f4e-afad-4716-a6c5-75c29f4f7898",
-    "node_id": "03816f4e-afad-4716-a6c5-75c29f4f7898",
+    "node_directory": "/tmp/tmpa0evf8l1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/efc707f0-8d3c-4013-abea-3ce2c005943f",
+    "node_id": "efc707f0-8d3c-4013-abea-3ce2c005943f",
     "on_close": "power_off",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/tmp/tmp9gfhmaev/qemu-system-x86_64",
+    "qemu_path": "/tmp/tmpxi6put1f/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

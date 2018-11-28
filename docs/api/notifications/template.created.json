@@ -1,11 +1,9 @@
 {
-    "appliance_id": "5c30e03e-f47d-4f29-b42a-1cfa03f4a9b0",
-    "appliance_type": "ethernet_hub",
     "builtin": false,
     "category": "switch",
     "compute_id": "local",
     "default_name_format": "Hub{0}",
-    "name": "Ethernet hub appliance",
+    "name": "Ethernet hub template",
     "ports_mapping": [
         {
             "name": "Ethernet0",
@@ -40,5 +38,7 @@
             "port_number": 7
         }
     ],
-    "symbol": ":/symbols/hub.svg"
+    "symbol": ":/symbols/hub.svg",
+    "template_id": "1d5944b4-09a8-4efd-a2dc-cc8a42ea8f20",
+    "template_type": "ethernet_hub"
 }

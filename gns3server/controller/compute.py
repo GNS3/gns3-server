@@ -410,9 +410,9 @@ class Compute:
                     msg = "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(__version__,
                                                                                                                           response.json["version"])
                 else:
-                    msg = "GNS3 controller version {} is not the same as compute server {} version {}".format(__version__,
-                                                                                                              self._name,
-                                                                                                              response.json["version"])
+                    msg = "GNS3 controller version {} is not the same as compute {} version {}".format(__version__,
+                                                                                                       self._name,
+                                                                                                       response.json["version"])
                 if __version_info__[3] == 0:
                     # Stable release
                     log.error(msg)

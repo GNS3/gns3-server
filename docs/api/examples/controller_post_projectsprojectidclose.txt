@@ -1,14 +1,14 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/9b492192-1a5d-4ff5-913c-030d2fc89e42/close' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/e0811b81-e85f-4db8-a0ae-a4db02d93c2c/close' -d '{}'
 
-POST /v2/projects/9b492192-1a5d-4ff5-913c-030d2fc89e42/close HTTP/1.1
+POST /v2/projects/e0811b81-e85f-4db8-a0ae-a4db02d93c2c/close HTTP/1.1
 {}
 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 530
+Content-Length: 560
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:34 GMT
+Date: Tue, 27 Nov 2018 15:09:41 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/close
 
@@ -16,11 +16,12 @@ X-Route: /v2/projects/{project_id}/close
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
-    "grid_size": 0,
+    "grid_size": 75,
     "name": "test",
-    "path": "/tmp/tmpxz3qdg0p/projects/9b492192-1a5d-4ff5-913c-030d2fc89e42",
-    "project_id": "9b492192-1a5d-4ff5-913c-030d2fc89e42",
+    "path": "/tmp/tmph5i9twcu/projects/e0811b81-e85f-4db8-a0ae-a4db02d93c2c",
+    "project_id": "e0811b81-e85f-4db8-a0ae-a4db02d93c2c",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,

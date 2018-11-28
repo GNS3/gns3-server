@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/b0dd1781-edea-429e-b673-8ba18c8e2936/links/61d830b5-d991-479d-a5a9-d6e950c9c87c/stop_capture' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/66e04f8d-baf4-42f7-a2aa-0f017e53a74e/links/ecf5e646-5822-4631-bef4-6b50746a84a5/stop_capture' -d '{}'
 
-POST /v2/projects/b0dd1781-edea-429e-b673-8ba18c8e2936/links/61d830b5-d991-479d-a5a9-d6e950c9c87c/stop_capture HTTP/1.1
+POST /v2/projects/66e04f8d-baf4-42f7-a2aa-0f017e53a74e/links/ecf5e646-5822-4631-bef4-6b50746a84a5/stop_capture HTTP/1.1
 {}
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 288
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:32 GMT
+Date: Tue, 27 Nov 2018 15:09:39 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/links/{link_id}/stop_capture
 
@@ -17,9 +17,9 @@ X-Route: /v2/projects/{project_id}/links/{link_id}/stop_capture
     "capture_file_path": null,
     "capturing": false,
     "filters": {},
-    "link_id": "61d830b5-d991-479d-a5a9-d6e950c9c87c",
+    "link_id": "ecf5e646-5822-4631-bef4-6b50746a84a5",
     "link_type": "ethernet",
     "nodes": [],
-    "project_id": "b0dd1781-edea-429e-b673-8ba18c8e2936",
+    "project_id": "66e04f8d-baf4-42f7-a2aa-0f017e53a74e",
     "suspend": false
 }

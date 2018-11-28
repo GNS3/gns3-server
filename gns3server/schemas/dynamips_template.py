@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 from .dynamips_vm import DYNAMIPS_ADAPTERS, DYNAMIPS_WICS
 
 
-DYNAMIPS_APPLIANCE_PROPERTIES = {
+DYNAMIPS_TEMPLATE_PROPERTIES = {
     "platform": {
         "description": "Platform type",
         "enum": ["c7200", "c3745", "c3725", "c3600", "c2691", "c2600", "c1700"]
@@ -118,20 +118,20 @@ DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-DYNAMIPS_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-DYNAMIPS_APPLIANCE_PROPERTIES["category"]["default"] = "router"
-DYNAMIPS_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "R{0}"
-DYNAMIPS_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/router.svg"
+DYNAMIPS_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+DYNAMIPS_TEMPLATE_PROPERTIES["category"]["default"] = "router"
+DYNAMIPS_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "R{0}"
+DYNAMIPS_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/router.svg"
 
-DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A Dynamips template object",
     "type": "object",
-    "properties": DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": DYNAMIPS_TEMPLATE_PROPERTIES,
     "required": ["platform", "image"],
 }
 
-C7200_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C7200_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -159,17 +159,17 @@ C7200_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C7200_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C7200_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C7200_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C7200_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c7200 Dynamips template object",
     "type": "object",
-    "properties": C7200_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C7200_DYNAMIPS_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }
 
-C3745_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C3745_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -194,17 +194,17 @@ C3745_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C3745_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C3745_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C3745_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C3745_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c3745 Dynamips template object",
     "type": "object",
-    "properties": C3745_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C3745_DYNAMIPS_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }
 
-C3725_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C3725_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -229,17 +229,17 @@ C3725_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C3725_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C3725_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C3725_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C3725_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c3725 Dynamips template object",
     "type": "object",
-    "properties": C3725_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C3725_DYNAMIPS_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }
 
-C3600_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C3600_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "chassis": {
         "description": "Chassis type",
         "enum": ["3620", "3640", "3660"],
@@ -270,18 +270,18 @@ C3600_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C3600_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C3600_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C3600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C3600_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c3600 Dynamips template object",
     "type": "object",
-    "properties": C3600_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C3600_DYNAMIPS_TEMPLATE_PROPERTIES,
     "required": ["chassis"],
     "additionalProperties": False
 }
 
-C2691_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C2691_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "ram": {
         "description": "Amount of RAM in MB",
         "type": "integer",
@@ -306,17 +306,17 @@ C2691_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C2691_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C2691_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C2691_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C2691_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c2691 Dynamips template object",
     "type": "object",
-    "properties": C2691_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C2691_DYNAMIPS_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }
 
-C2600_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C2600_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "chassis": {
         "description": "Chassis type",
         "enum": ["2610", "2620", "2610XM", "2620XM", "2650XM", "2621", "2611XM", "2621XM", "2651XM"],
@@ -346,18 +346,18 @@ C2600_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C2600_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C2600_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C2600_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C2600_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c2600 Dynamips template object",
     "type": "object",
-    "properties": C2600_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C2600_DYNAMIPS_TEMPLATE_PROPERTIES,
     "required": ["chassis"],
     "additionalProperties": False
 }
 
-C1700_DYNAMIPS_APPLIANCE_PROPERTIES = {
+C1700_DYNAMIPS_TEMPLATE_PROPERTIES = {
     "chassis": {
         "description": "Chassis type",
         "enum": ["1720", "1721", "1750", "1751", "1760"],
@@ -387,13 +387,13 @@ C1700_DYNAMIPS_APPLIANCE_PROPERTIES = {
     }
 }
 
-C1700_DYNAMIPS_APPLIANCE_PROPERTIES.update(DYNAMIPS_APPLIANCE_PROPERTIES)
+C1700_DYNAMIPS_TEMPLATE_PROPERTIES.update(DYNAMIPS_TEMPLATE_PROPERTIES)
 
-C1700_DYNAMIPS_APPLIANCE_OBJECT_SCHEMA = {
+C1700_DYNAMIPS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A c1700 Dynamips template object",
     "type": "object",
-    "properties": C1700_DYNAMIPS_APPLIANCE_PROPERTIES,
+    "properties": C1700_DYNAMIPS_TEMPLATE_PROPERTIES,
     "required": ["chassis"],
     "additionalProperties": False
 }

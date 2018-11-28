@@ -1,14 +1,14 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/dc2c441a-3e84-4b87-9e87-10cb2c98fa03'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/f3e6c8bb-24ad-4fae-9801-3ddcaac30766'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/dc2c441a-3e84-4b87-9e87-10cb2c98fa03 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/f3e6c8bb-24ad-4fae-9801-3ddcaac30766 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 614
+Content-Length: 613
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:46 GMT
+Date: Tue, 27 Nov 2018 15:08:22 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
@@ -21,8 +21,8 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": false,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "PC TEST 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/iou/dc2c441a-3e84-4b87-9e87-10cb2c98fa03",
-    "node_id": "dc2c441a-3e84-4b87-9e87-10cb2c98fa03",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-4/test_json4/project-files/iou/f3e6c8bb-24ad-4fae-9801-3ddcaac30766",
+    "node_id": "f3e6c8bb-24ad-4fae-9801-3ddcaac30766",
     "nvram": 128,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",

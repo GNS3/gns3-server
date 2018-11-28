@@ -16,49 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
 
 
-VIRTUALBOX_APPLIANCE_PROPERTIES = {
-    "vmname": {
-        "description": "VirtualBox VM name (in VirtualBox itself)",
+VMWARE_TEMPLATE_PROPERTIES = {
+    "vmx_path": {
+        "description": "Path to the vmx file",
         "type": "string",
         "minLength": 1,
-    },
-    "ram": {
-        "description": "Amount of RAM",
-        "minimum": 0,
-        "maximum": 65535,
-        "type": "integer",
-        "default": 256
     },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
         "type": "boolean",
         "default": False
-    },
-    "adapters": {
-        "description": "Number of adapters",
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 36,  # maximum given by the ICH9 chipset in VirtualBox
-        "default": 1
-    },
-    "use_any_adapter": {
-        "description": "Allow GNS3 to use any VirtualBox adapter",
-        "type": "boolean",
-        "default": False
-    },
-    "adapter_type": {
-        "description": "VirtualBox adapter type",
-        "enum": ["PCnet-PCI II (Am79C970A)",
-                 "PCNet-FAST III (Am79C973)",
-                 "Intel PRO/1000 MT Desktop (82540EM)",
-                 "Intel PRO/1000 T Server (82543GC)",
-                 "Intel PRO/1000 MT Server (82545EM)",
-                 "Paravirtualized Network (virtio-net)"],
-        "default": "Intel PRO/1000 MT Desktop (82540EM)"
     },
     "first_port_name": {
         "description": "Optional name of the first networking port example: eth0",
@@ -74,6 +45,23 @@ VIRTUALBOX_APPLIANCE_PROPERTIES = {
         "description": "Optional port segment size. A port segment is a block of port. For example Ethernet0/0 Ethernet0/1 is the module 0 with a port segment size of 2",
         "type": "integer",
         "default": 0
+    },
+    "adapters": {
+        "description": "Number of adapters",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10,  # maximum adapters support by VMware VMs,
+        "default": 1
+    },
+    "adapter_type": {
+        "description": "VMware adapter type",
+        "enum": ["default", "e1000", "e1000e", "flexible", "vlance", "vmxnet", "vmxnet2", "vmxnet3"],
+        "default": "e1000"
+    },
+    "use_any_adapter": {
+        "description": "Allow GNS3 to use any VMware adapter",
+        "type": "boolean",
+        "default": False
     },
     "headless": {
         "description": "Headless mode",
@@ -98,16 +86,16 @@ VIRTUALBOX_APPLIANCE_PROPERTIES = {
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
-VIRTUALBOX_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-VIRTUALBOX_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
-VIRTUALBOX_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
-VIRTUALBOX_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/vbox_guest.svg"
+VMWARE_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+VMWARE_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
+VMWARE_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "{name}-{0}"
+VMWARE_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/vmware_guest.svg"
 
-VIRTUALBOX_APPLIANCE_OBJECT_SCHEMA = {
+VMWARE_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "A VirtualBox template object",
+    "description": "A VMware template object",
     "type": "object",
-    "properties": VIRTUALBOX_APPLIANCE_PROPERTIES,
-    "required": ["vmname"],
+    "properties": VMWARE_TEMPLATE_PROPERTIES,
+    "required": ["vmx_path"],
     "additionalProperties": False
 }

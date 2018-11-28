@@ -50,28 +50,28 @@ A compute has been deleted.
 .. literalinclude:: api/notifications/compute.deleted.json
 
 
-appliance.created
+template.created
 -----------------
 
-An appliance has been created.
+A template has been created.
 
-.. literalinclude:: api/notifications/appliance.created.json
+.. literalinclude:: api/notifications/template.created.json
 
 
-appliance.updated
+template.updated
 -----------------
 
-An appliance has been updated.
+A template has been updated.
 
-.. literalinclude:: api/notifications/appliance.updated.json
+.. literalinclude:: api/notifications/template.updated.json
 
 
-appliance.deleted
+template.deleted
 -----------------
 
-An appliance has been deleted.
+A template has been deleted.
 
-.. literalinclude:: api/notifications/appliance.deleted.json
+.. literalinclude:: api/notifications/template.deleted.json
 
 
 log.error

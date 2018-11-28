@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/projects/ba3da993-b138-46dc-9ae4-65ffac127327/snapshots/4907259c-0d44-42d1-b20f-a7f50ac156b5'
+curl -i -X DELETE 'http://localhost:3080/v2/projects/b6ba5999-cb3b-4d19-909d-bb83c6fcda74/snapshots/1234c8cc-bacf-4e5d-9a87-b048344257b5'
 
-DELETE /v2/projects/ba3da993-b138-46dc-9ae4-65ffac127327/snapshots/4907259c-0d44-42d1-b20f-a7f50ac156b5 HTTP/1.1
+DELETE /v2/projects/b6ba5999-cb3b-4d19-909d-bb83c6fcda74/snapshots/1234c8cc-bacf-4e5d-9a87-b048344257b5 HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 20 Nov 2018 08:48:43 GMT
+Date: Tue, 27 Nov 2018 15:09:46 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/snapshots/{snapshot_id}
 

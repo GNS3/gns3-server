@@ -22,7 +22,7 @@
 * Add missing coroutine decorator Ref https://github.com/GNS3/gns3-gui/issues/2566
 * Refactor asyncio locking system for Python 3.7 support. Ref https://github.com/GNS3/gns3-gui/issues/2566 Ref https://github.com/GNS3/gns3-gui/issues/2568
 * Use asyncio.ensure_future() instead of asyncio.async() with conservative approach to support Python < 3.4.4. Fixes https://github.com/GNS3/gns3-gui/issues/2566
-* Forbid controller and compute servers to be different versions. Report last compute server error to clients and display in the server summary.
+* Forbid controller and computes to be different versions. Report last compute error to clients and display in the server summary.
 * Fix exception with short names for Dynamips interfaces. Fixes #1386.
 * Add missing Qemu boot priority values. Fixes https://github.com/GNS3/gns3-server/issues/1385
 
@@ -553,7 +553,7 @@
 * Trust user for host binding of link adress
 * Code cleanup for docker interface creation
 * Fix a rare crash when writing a file on a remote server
-* Fix delete project on remote compute server
+* Fix delete project on remote compute
 * Fix trouble with builtin devices when we free ports
 * When a dynamips command failed display the full command to the user
 * Raise error when we can't found VboxManage at GNS3 VM startup

@@ -122,7 +122,7 @@ def test_json(node, compute):
         "compute_id": str(compute.id),
         "project_id": node.project.id,
         "node_id": node.id,
-        "appliance_id": None,
+        "template_id": None,
         "node_type": node.node_type,
         "name": "demo",
         "console": node.console,
@@ -158,7 +158,7 @@ def test_json(node, compute):
     assert node.__json__(topology_dump=True) == {
         "compute_id": str(compute.id),
         "node_id": node.id,
-        "appliance_id": None,
+        "template_id": None,
         "node_type": node.node_type,
         "name": "demo",
         "console": node.console,

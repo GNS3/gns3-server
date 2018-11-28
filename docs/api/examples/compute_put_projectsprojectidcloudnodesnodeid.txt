@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/7d6b1ed8-1270-45d0-8359-7be6c841be0a' -d '{"name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/33cb8c3e-2e58-4015-a58f-78521e832953' -d '{"name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/7d6b1ed8-1270-45d0-8359-7be6c841be0a HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/33cb8c3e-2e58-4015-a58f-78521e832953 HTTP/1.1
 {
     "name": "test"
 }
@@ -8,9 +8,9 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/7d6b1e
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1739
+Content-Length: 2077
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:40 GMT
+Date: Tue, 27 Nov 2018 15:08:20 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
@@ -23,6 +23,21 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         },
         {
             "name": "lo",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet0",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet1",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet2",
             "special": true,
             "type": "ethernet"
         },
@@ -68,8 +83,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         }
     ],
     "name": "test",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-48/test_json4/project-files/builtin/7d6b1ed8-1270-45d0-8359-7be6c841be0a",
-    "node_id": "7d6b1ed8-1270-45d0-8359-7be6c841be0a",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-4/test_json4/project-files/builtin/33cb8c3e-2e58-4015-a58f-78521e832953",
+    "node_id": "33cb8c3e-2e58-4015-a58f-78521e832953",
     "ports_mapping": [
         {
             "interface": "wlp58s0",

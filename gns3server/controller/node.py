@@ -38,14 +38,14 @@ class Node:
                                   "port_name_format", "first_port_name", "port_segment_size", "ports",
                                   "category", "console_auto_start"]
 
-    def __init__(self, project, compute, name, node_id=None, node_type=None, appliance_id=None, **kwargs):
+    def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
         """
         :param project: Project of the node
-        :param compute: Compute server where the server will run
+        :param compute: Compute where the server will run
         :param name: Node name
         :param node_id: UUID of the node (integer)
         :param node_type: Type of emulator
-        :param appliance_id: Appliance ID used to create this node
+        :param template_id: Template ID used to create this node
         :param kwargs: Node properties
         """
 
@@ -70,7 +70,7 @@ class Node:
         self._command_line = None
         self._node_directory = None
         self._status = "stopped"
-        self._appliance_id = appliance_id
+        self._template_id = template_id
         self._x = 0
         self._y = 0
         self._z = 1  # default z value is 1
@@ -345,7 +345,7 @@ class Node:
 
     async def create(self):
         """
-        Create the node on the compute server
+        Create the node on the compute
         """
         data = self._node_data()
         data["node_id"] = self._id
@@ -372,7 +372,7 @@ class Node:
 
     async def update(self, **kwargs):
         """
-        Update the node on the compute server
+        Update the node on the compute
 
         :param kwargs: Node properties
         """
@@ -671,7 +671,7 @@ class Node:
                 "compute_id": str(self._compute.id),
                 "node_id": self._id,
                 "node_type": self._node_type,
-                "appliance_id": self._appliance_id,
+                "template_id": self._template_id,
                 "name": self._name,
                 "console": self._console,
                 "console_type": self._console_type,
@@ -693,7 +693,7 @@ class Node:
             "compute_id": str(self._compute.id),
             "project_id": self._project.id,
             "node_id": self._id,
-            "appliance_id": self._appliance_id,
+            "template_id": self._template_id,
             "node_type": self._node_type,
             "node_directory": self._node_directory,
             "name": self._name,

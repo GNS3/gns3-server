@@ -1,28 +1,27 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/0dd0a027-b381-40a7-ad36-fcce13669ef8/nodes/d1e79a2f-24c6-4748-9edb-96a3c6920833/suspend' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/edba8241-c123-45ac-af51-c9f2d864be6b/nodes/895516e0-6a2f-4e39-9564-22fdd921be2e/suspend' -d '{}'
 
-POST /v2/projects/0dd0a027-b381-40a7-ad36-fcce13669ef8/nodes/d1e79a2f-24c6-4748-9edb-96a3c6920833/suspend HTTP/1.1
+POST /v2/projects/edba8241-c123-45ac-af51-c9f2d864be6b/nodes/895516e0-6a2f-4e39-9564-22fdd921be2e/suspend HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1138
+Content-Length: 1137
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:33 GMT
+Date: Tue, 27 Nov 2018 15:09:40 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/suspend
 
 {
-    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140362491834944'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140023797636064'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 59,
+    "height": 60,
     "label": {
         "rotation": 0,
         "style": null,
@@ -32,7 +31,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/suspend
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "d1e79a2f-24c6-4748-9edb-96a3c6920833",
+    "node_id": "895516e0-6a2f-4e39-9564-22fdd921be2e",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -48,11 +47,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/suspend
             "short_name": "e0"
         }
     ],
-    "project_id": "0dd0a027-b381-40a7-ad36-fcce13669ef8",
+    "project_id": "edba8241-c123-45ac-af51-c9f2d864be6b",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 65,
+    "template_id": null,
+    "width": 60,
     "x": 0,
     "y": 0,
     "z": 1

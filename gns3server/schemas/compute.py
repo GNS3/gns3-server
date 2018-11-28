@@ -89,7 +89,7 @@ COMPUTE_OBJECT_SCHEMA = {
             "type": ["string", "null"]
         },
         "connected": {
-            "description": "Whether the controller is connected to the compute server or not",
+            "description": "Whether the controller is connected to the compute or not",
             "type": "boolean"
         },
         "cpu_usage_percent": {

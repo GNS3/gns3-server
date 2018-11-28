@@ -1,28 +1,27 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/84a7435e-9dbd-4740-8a0d-0ed5dc1b8e52/nodes/49d82a5c-0f5b-408d-828c-041a57e8e437/stop' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/a238b9e0-ad04-4a7f-a348-22b3afb2a901/nodes/dd1bcde9-9f8f-470f-b3d5-4c6118ea7018/stop' -d '{}'
 
-POST /v2/projects/84a7435e-9dbd-4740-8a0d-0ed5dc1b8e52/nodes/49d82a5c-0f5b-408d-828c-041a57e8e437/stop HTTP/1.1
+POST /v2/projects/a238b9e0-ad04-4a7f-a348-22b3afb2a901/nodes/dd1bcde9-9f8f-470f-b3d5-4c6118ea7018/stop HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1138
+Content-Length: 1137
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:33 GMT
+Date: Tue, 27 Nov 2018 15:09:40 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
 
 {
-    "appliance_id": null,
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140362504292392'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140023798661016'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 59,
+    "height": 60,
     "label": {
         "rotation": 0,
         "style": null,
@@ -32,7 +31,7 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
     },
     "name": "test",
     "node_directory": null,
-    "node_id": "49d82a5c-0f5b-408d-828c-041a57e8e437",
+    "node_id": "dd1bcde9-9f8f-470f-b3d5-4c6118ea7018",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -48,11 +47,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
             "short_name": "e0"
         }
     ],
-    "project_id": "84a7435e-9dbd-4740-8a0d-0ed5dc1b8e52",
+    "project_id": "a238b9e0-ad04-4a7f-a348-22b3afb2a901",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
-    "width": 65,
+    "template_id": null,
+    "width": 60,
     "x": 0,
     "y": 0,
     "z": 1

@@ -24,5 +24,6 @@ from .drawing_handler import DrawingHandler
 from .symbol_handler import SymbolHandler
 from .snapshot_handler import SnapshotHandler
 from .appliance_handler import ApplianceHandler
+from .template_handler import TemplateHandler
 from .gns3_vm_handler import GNS3VMHandler
 from .notification_handler import NotificationHandler

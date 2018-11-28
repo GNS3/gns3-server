@@ -28,7 +28,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from gns3server.controller.project import Project
-from gns3server.controller.appliance import Appliance
+from gns3server.controller.template import Template
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.config import Config
 
@@ -205,7 +205,7 @@ def test_add_node_non_local(async_run, controller):
     controller.notification.project_emit.assert_any_call("node.created", node.__json__())
 
 
-def test_add_node_from_appliance(async_run, controller):
+def test_add_node_from_template(async_run, controller):
     """
     For a local server we send the project path
     """
@@ -213,20 +213,20 @@ def test_add_node_from_appliance(async_run, controller):
     compute.id = "local"
     project = Project(controller=controller, name="Test")
     controller._notification = MagicMock()
-    appliance = Appliance(str(uuid.uuid4()), {
+    template = Template(str(uuid.uuid4()), {
         "compute_id": "local",
         "name": "Test",
-        "appliance_type": "vpcs",
+        "template_type": "vpcs",
         "builtin": False,
     })
-    controller._appliances[appliance.id] = appliance
+    controller._templates[template.id] = template
     controller._computes["local"] = compute
 
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node_from_appliance(appliance.id, x=23, y=12))
+    node = async_run(project.add_node_from_template(template.id, x=23, y=12))
     compute.post.assert_any_call('/projects', data={
         "name": project._name,
         "project_id": project._id,

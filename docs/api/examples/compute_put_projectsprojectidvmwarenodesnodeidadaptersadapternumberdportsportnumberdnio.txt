@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/ec7ea0f5-b4b9-4889-8107-602ee94e2baf/adapters/0/ports/0/nio' -d '{"filters": {}, "lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/adbe46f2-bcc1-401e-8e19-858fd88a8a48/adapters/0/ports/0/nio' -d '{"filters": {}, "lport": 4242, "rhost": "127.0.0.1", "rport": 4343, "type": "nio_udp"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/ec7ea0f5-b4b9-4889-8107-602ee94e2baf/adapters/0/ports/0/nio HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/adbe46f2-bcc1-401e-8e19-858fd88a8a48/adapters/0/ports/0/nio HTTP/1.1
 {
     "filters": {},
     "lport": 4242,
@@ -14,7 +14,7 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 108
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:06 GMT
+Date: Tue, 27 Nov 2018 15:09:23 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio
 

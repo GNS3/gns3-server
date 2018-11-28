@@ -159,6 +159,14 @@ def load_topology(path):
     if topo["revision"] < 9:
         topo = _convert_2_1_0(topo, path)
 
+    # Version GNS3 2.2 dev (for project created with 2.2dev).
+    # Appliance ID has been repleace by Template ID
+    if topo["revision"] == 9:
+        for node in topo.get("topology", {}).get("nodes", []):
+            if "appliance_id" in node:
+                node["template_id"] = node["appliance_id"]
+                del node["appliance_id"]
+
     try:
         _check_topology_schema(topo)
     except aiohttp.web.HTTPConflict as e:

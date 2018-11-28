@@ -15,7 +15,7 @@
     "first_port_name": "Management",
     "port_name_format": "Port{port1}",
     "qemu": {
-        "adapter_type": "e1000",
+        "adapter_type": "rtl8139",
         "adapters": 13,
         "ram": 256,
         "hda_disk_interface": "ide",

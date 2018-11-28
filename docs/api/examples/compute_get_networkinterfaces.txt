@@ -6,9 +6,9 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2294
+Content-Length: 2933
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:46:49 GMT
+Date: Tue, 27 Nov 2018 15:08:27 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/compute/network/interfaces
 
@@ -16,7 +16,7 @@ X-Route: /v2/compute/network/interfaces
     {
         "id": "docker0",
         "ip_address": "172.17.0.1",
-        "mac_address": "02:42:1b:5e:24:0d",
+        "mac_address": "02:42:c8:f1:08:fb",
         "name": "docker0",
         "netmask": "255.255.0.0",
         "special": true,
@@ -28,6 +28,33 @@ X-Route: /v2/compute/network/interfaces
         "mac_address": "00:00:00:00:00:00",
         "name": "lo",
         "netmask": "255.0.0.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet0",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:00",
+        "name": "vboxnet0",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet1",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:01",
+        "name": "vboxnet1",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet2",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:02",
+        "name": "vboxnet2",
+        "netmask": "",
         "special": true,
         "type": "ethernet"
     },
@@ -96,7 +123,7 @@ X-Route: /v2/compute/network/interfaces
     },
     {
         "id": "wlp58s0",
-        "ip_address": "10.77.2.57",
+        "ip_address": "192.168.0.110",
         "mac_address": "9c:b6:d0:dc:20:29",
         "name": "wlp58s0",
         "netmask": "255.255.255.0",

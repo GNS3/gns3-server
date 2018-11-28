@@ -466,7 +466,7 @@ def test_load_base_files(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
-def test_appliance_templates(controller, async_run, tmpdir):
+def test_appliances(controller, async_run, tmpdir):
     my_appliance = {
         "name": "My Appliance",
         "status": "stable"
@@ -481,14 +481,14 @@ def test_appliance_templates(controller, async_run, tmpdir):
         json.dump(my_appliance, f)
 
     with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
-        controller.load_appliance_templates()
-    assert len(controller.appliance_templates) > 0
-    for appliance in controller.appliance_templates.values():
+        controller.load_appliances()
+    assert len(controller.appliances) > 0
+    for appliance in controller.appliances.values():
         assert appliance.__json__()["status"] != "broken"
-    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
-    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
+    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliances.values()]
+    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliances.values()]
 
-    for c in controller.appliance_templates.values():
+    for c in controller.appliances.values():
         j = c.__json__()
         if j["name"] == "Alpine Linux":
             assert j["builtin"]
@@ -496,29 +496,29 @@ def test_appliance_templates(controller, async_run, tmpdir):
             assert not j["builtin"]
 
 
-def test_load_appliances(controller):
+def test_load_templates(controller):
     controller._settings = {}
-    controller.load_appliances()
+    controller.load_templates()
 
-    assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
-    assert "VPCS" in [appliance.name for appliance in controller.appliances.values()]
+    assert "Cloud" in [template.name for template in controller.templates.values()]
+    assert "VPCS" in [template.name for template in controller.templates.values()]
 
-    for appliance in controller.appliances.values():
-        if appliance.name == "VPCS":
-            assert appliance._settings["properties"] == {"base_script_file": "vpcs_base_config.txt"}
+    for template in controller.templates.values():
+        if template.name == "VPCS":
+            assert template._settings["properties"] == {"base_script_file": "vpcs_base_config.txt"}
 
     # UUID should not change when you run again the function
-    for appliance in controller.appliances.values():
-        if appliance.name == "Test":
-            qemu_uuid = appliance.id
-        elif appliance.name == "Cloud":
-            cloud_uuid = appliance.id
-    controller.load_appliances()
-    for appliance in controller.appliances.values():
-        if appliance.name == "Test":
-            assert qemu_uuid == appliance.id
-        elif appliance.name == "Cloud":
-            assert cloud_uuid == appliance.id
+    for template in controller.templates.values():
+        if template.name == "Test":
+            qemu_uuid = template.id
+        elif template.name == "Cloud":
+            cloud_uuid = template.id
+    controller.load_templates()
+    for template in controller.templates.values():
+        if template.name == "Test":
+            assert qemu_uuid == template.id
+        elif template.name == "Cloud":
+            assert cloud_uuid == template.id
 
 
 def test_autoidlepc(controller, async_run):

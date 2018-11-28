@@ -1,6 +1,4 @@
 {
-    "appliance_id": "0f861b63-ccad-435d-88d1-354ad9f3d77a",
-    "appliance_type": "vpcs",
     "base_script_file": "vpcs_base_config.txt",
     "builtin": false,
     "category": "guest",
@@ -8,6 +6,8 @@
     "console_auto_start": false,
     "console_type": "telnet",
     "default_name_format": "PC{0}",
-    "name": "VPCS_TEST_RENAMED",
-    "symbol": ":/symbols/vpcs_guest.svg"
+    "name": "VPCS_TEST",
+    "symbol": ":/symbols/vpcs_guest.svg",
+    "template_id": "f25c50bb-c5fa-4194-b657-9246908d573e",
+    "template_type": "vpcs"
 }

@@ -28,8 +28,8 @@ import copy
 
 from ..config import Config
 from .project import Project
+from .template import Template
 from .appliance import Appliance
-from .appliance_template import ApplianceTemplate
 from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 
 class Controller:
     """
-    The controller is responsible to manage one or more compute servers.
+    The controller is responsible to manage one or more computes.
     """
 
     def __init__(self):
@@ -59,38 +59,38 @@ class Controller:
         self._iou_license_settings = {"iourc_content": "",
                                       "license_check": True}
         self._config_loaded = False
+        self._templates = {}
         self._appliances = {}
-        self._appliance_templates = {}
-        self._appliance_templates_etag = None
+        self._appliances_etag = None
 
         self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
         log.info("Load controller configuration file {}".format(self._config_file))
 
     @locking
-    async def download_appliance_templates(self):
+    async def download_appliances(self):
 
         try:
             headers = {}
-            if self._appliance_templates_etag:
-                log.info("Checking if appliance templates are up-to-date (ETag {})".format(self._appliance_templates_etag))
-                headers["If-None-Match"] = self._appliance_templates_etag
+            if self._appliances_etag:
+                log.info("Checking if appliances are up-to-date (ETag {})".format(self._appliances_etag))
+                headers["If-None-Match"] = self._appliances_etag
             async with aiohttp.ClientSession() as session:
                 async with session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
                     if response.status == 304:
-                        log.info("Appliance templates are already up-to-date (ETag {})".format(self._appliance_templates_etag))
+                        log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return
                     elif response.status != 200:
-                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliance templates on GitHub due to HTTP error code {}".format(response.status))
+                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances on GitHub due to HTTP error code {}".format(response.status))
                     etag = response.headers.get("ETag")
                     if etag:
-                        self._appliance_templates_etag = etag
+                        self._appliances_etag = etag
                         self.save()
                     json_data = await response.json()
                 appliances_dir = get_resource('appliances')
                 for appliance in json_data:
                     if appliance["type"] == "file":
                         appliance_name = appliance["name"]
-                        log.info("Download appliance template file from '{}'".format(appliance["download_url"]))
+                        log.info("Download appliance file from '{}'".format(appliance["download_url"]))
                         async with session.get(appliance["download_url"]) as response:
                             if response.status != 200:
                                 log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
@@ -106,13 +106,13 @@ class Controller:
                                 with open(path, 'wb') as f:
                                     f.write(appliance_data)
                             except OSError as e:
-                                raise aiohttp.web.HTTPConflict(text="Could not write appliance template file '{}': {}".format(path, e))
+                                raise aiohttp.web.HTTPConflict(text="Could not write appliance file '{}': {}".format(path, e))
         except ValueError as e:
-            raise aiohttp.web.HTTPConflict(text="Could not read appliance templates information from GitHub: {}".format(e))
+            raise aiohttp.web.HTTPConflict(text="Could not read appliances information from GitHub: {}".format(e))
 
-    def load_appliance_templates(self):
+    def load_appliances(self):
 
-        self._appliance_templates = {}
+        self._appliances = {}
         for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
             if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
@@ -122,99 +122,97 @@ class Controller:
                     appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate UUID from path to avoid change between reboots
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
-                            appliance = ApplianceTemplate(appliance_id, json.load(f), builtin=builtin)
+                            appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
                             appliance.__json__()  # Check if loaded without error
                         if appliance.status != 'broken':
-                            self._appliance_templates[appliance.id] = appliance
+                            self._appliances[appliance.id] = appliance
                     except (ValueError, OSError, KeyError) as e:
-                        log.warning("Cannot load appliance template file '%s': %s", path, str(e))
+                        log.warning("Cannot load appliance file '%s': %s", path, str(e))
                         continue
 
-    def add_appliance(self, settings):
+    def add_template(self, settings):
         """
-        Adds a new appliance.
+        Adds a new template.
 
-        :param settings: appliance settings
+        :param settings: template settings
 
-        :returns: Appliance object
+        :returns: Template object
         """
 
-        appliance_id = settings.get("appliance_id", "")
-        if appliance_id in self._appliances:
-            raise aiohttp.web.HTTPConflict(text="Appliance ID '{}' already exists".format(appliance_id))
+        template_id = settings.get("template_id", "")
+        if template_id in self._templates:
+            raise aiohttp.web.HTTPConflict(text="Template ID '{}' already exists".format(template_id))
         else:
-            appliance_id = settings.setdefault("appliance_id", str(uuid.uuid4()))
+            template_id = settings.setdefault("template_id", str(uuid.uuid4()))
         try:
-            appliance = Appliance(appliance_id, settings)
+            template = Template(template_id, settings)
         except jsonschema.ValidationError as e:
-            message = "JSON schema error adding appliance with JSON data '{}': {}".format(settings, e.message)
+            message = "JSON schema error adding template with JSON data '{}': {}".format(settings, e.message)
             raise aiohttp.web.HTTPBadRequest(text=message)
-        self._appliances[appliance.id] = appliance
+        self._templates[template.id] = template
         self.save()
-        self.notification.controller_emit("appliance.created", appliance.__json__())
-        return appliance
+        self.notification.controller_emit("template.created", template.__json__())
+        return template
 
-    def get_appliance(self, appliance_id):
+    def get_template(self, template_id):
         """
-        Gets an appliance.
+        Gets a template.
 
-        :param appliance_id: appliance identifier
+        :param template_id: template identifier
 
-        :returns: Appliance object
-        """
-
-        appliance = self._appliances.get(appliance_id)
-        if not appliance:
-            raise aiohttp.web.HTTPNotFound(text="Appliance ID {} doesn't exist".format(appliance_id))
-        return appliance
-
-    def delete_appliance(self, appliance_id):
-        """
-        Deletes an appliance.
-
-        :param appliance_id: appliance identifier
+        :returns: Template object
         """
 
-        appliance = self.get_appliance(appliance_id)
-        if appliance.builtin:
-            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be deleted because it is a builtin".format(appliance_id))
-        self._appliances.pop(appliance_id)
+        template = self._templates.get(template_id)
+        if not template:
+            raise aiohttp.web.HTTPNotFound(text="Template ID {} doesn't exist".format(template_id))
+        return template
+
+    def delete_template(self, template_id):
+        """
+        Deletes a template.
+
+        :param template_id: template identifier
+        """
+
+        template = self.get_template(template_id)
+        if template.builtin:
+            raise aiohttp.web.HTTPConflict(text="Template ID {} cannot be deleted because it is a builtin".format(template_id))
+        self._templates.pop(template_id)
         self.save()
-        self.notification.controller_emit("appliance.deleted", appliance.__json__())
+        self.notification.controller_emit("template.deleted", template.__json__())
 
-    def duplicate_appliance(self, appliance_id):
+    def duplicate_template(self, template_id):
         """
-        Duplicates an appliance.
+        Duplicates a template.
 
-        :param appliance_id: appliance identifier
+        :param template_id: template identifier
         """
 
-        appliance = self.get_appliance(appliance_id)
-        if appliance.builtin:
-            raise aiohttp.web.HTTPConflict(text="Appliance ID {} cannot be duplicated because it is a builtin".format(appliance_id))
-        appliance_settings = copy.deepcopy(appliance.settings)
-        del appliance_settings["appliance_id"]
-        return self.add_appliance(appliance_settings)
+        template = self.get_template(template_id)
+        if template.builtin:
+            raise aiohttp.web.HTTPConflict(text="Template ID {} cannot be duplicated because it is a builtin".format(template_id))
+        template_settings = copy.deepcopy(template.settings)
+        del template_settings["template_id"]
+        return self.add_template(template_settings)
 
-    def load_appliances(self):
-
-        #self._appliances = {}
+    def load_templates(self):
 
         # Add builtins
         builtins = []
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"appliance_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"appliance_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"appliance_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"appliance_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"appliance_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"appliance_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
-        builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"appliance_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"template_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"template_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"template_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"template_type": "ethernet_switch", "console_type": "telnet", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"template_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"template_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"template_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
 
         #FIXME: disable TraceNG
         #if sys.platform.startswith("win"):
-        #    builtins.append(Appliance(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"appliance_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
+        #    builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "traceng"), {"template_type": "traceng", "name": "TraceNG", "default_name_format": "TraceNG-{0}", "category": 2, "symbol": ":/symbols/traceng.svg", "properties": {}}, builtin=True))
         for b in builtins:
-            self._appliances[b.id] = b
+            self._templates[b.id] = b
 
     async def start(self):
 
@@ -295,15 +293,15 @@ class Controller:
             return
 
         controller_settings = {"computes": [],
-                               "appliances": [],
+                               "templates": [],
                                "gns3vm": self.gns3vm.__json__(),
                                "iou_license": self._iou_license_settings,
-                               "appliance_templates_etag": self._appliance_templates_etag,
+                               "appliances_etag": self._appliances_etag,
                                "version": __version__}
 
-        for appliance in self._appliances.values():
-            if not appliance.builtin:
-                controller_settings["appliances"].append(appliance.__json__())
+        for template in self._templates.values():
+            if not template.builtin:
+                controller_settings["templates"].append(template.__json__())
 
         for compute in self._computes.values():
             if compute.id != "local" and compute.id != "vm":
@@ -337,14 +335,14 @@ class Controller:
             log.critical("Cannot load configuration file '{}': {}".format(self._config_file, e))
             return []
 
-        # load the appliances
-        if "appliances" in controller_settings:
-            for appliance_settings in controller_settings["appliances"]:
+        # load the templates
+        if "templates" in controller_settings:
+            for template_settings in controller_settings["templates"]:
                 try:
-                    appliance = Appliance(appliance_settings.get("appliance_id"), appliance_settings)
-                    self._appliances[appliance.id] = appliance
+                    template = Template(template_settings.get("template_id"), template_settings)
+                    self._templates[template.id] = template
                 except jsonschema.ValidationError as e:
-                    message = "Cannot load appliance with JSON data '{}': {}".format(appliance_settings, e.message)
+                    message = "Cannot load template with JSON data '{}': {}".format(template_settings, e.message)
                     log.warning(message)
                     continue
 
@@ -356,9 +354,9 @@ class Controller:
         if "iou_license" in controller_settings:
             self._iou_license_settings = controller_settings["iou_license"]
 
-        self._appliance_templates_etag = controller_settings.get("appliance_templates_etag")
-        self.load_appliance_templates()
+        self._appliances_etag = controller_settings.get("appliances_etag")
         self.load_appliances()
+        self.load_templates()
         self._config_loaded = True
         return controller_settings.get("computes", [])
 
@@ -479,37 +477,37 @@ class Controller:
 
                 vms = []
                 for vm in settings.get("Qemu", {}).get("vms", []):
-                    vm["appliance_type"] = "qemu"
+                    vm["template_type"] = "qemu"
                     vms.append(vm)
                 for vm in settings.get("IOU", {}).get("devices", []):
-                    vm["appliance_type"] = "iou"
+                    vm["template_type"] = "iou"
                     vms.append(vm)
                 for vm in settings.get("Docker", {}).get("containers", []):
-                    vm["appliance_type"] = "docker"
+                    vm["template_type"] = "docker"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("cloud_nodes", []):
-                    vm["appliance_type"] = "cloud"
+                    vm["template_type"] = "cloud"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("ethernet_switches", []):
-                    vm["appliance_type"] = "ethernet_switch"
+                    vm["template_type"] = "ethernet_switch"
                     vms.append(vm)
                 for vm in settings.get("Builtin", {}).get("ethernet_hubs", []):
-                    vm["appliance_type"] = "ethernet_hub"
+                    vm["template_type"] = "ethernet_hub"
                     vms.append(vm)
                 for vm in settings.get("Dynamips", {}).get("routers", []):
-                    vm["appliance_type"] = "dynamips"
+                    vm["template_type"] = "dynamips"
                     vms.append(vm)
                 for vm in settings.get("VMware", {}).get("vms", []):
-                    vm["appliance_type"] = "vmware"
+                    vm["template_type"] = "vmware"
                     vms.append(vm)
                 for vm in settings.get("VirtualBox", {}).get("vms", []):
-                    vm["appliance_type"] = "virtualbox"
+                    vm["template_type"] = "virtualbox"
                     vms.append(vm)
                 for vm in settings.get("VPCS", {}).get("nodes", []):
-                    vm["appliance_type"] = "vpcs"
+                    vm["template_type"] = "vpcs"
                     vms.append(vm)
                 for vm in settings.get("TraceNG", {}).get("nodes", []):
-                    vm["appliance_type"] = "traceng"
+                    vm["template_type"] = "traceng"
                     vms.append(vm)
 
                 for vm in vms:
@@ -530,21 +528,21 @@ class Controller:
                         if "symbol" not in vm.keys():
                             vm["symbol"] = ":/symbols/computer.svg"
 
-                    vm.setdefault("appliance_id", str(uuid.uuid4()))
+                    vm.setdefault("template_id", str(uuid.uuid4()))
                     try:
-                        appliance = Appliance(vm["appliance_id"], vm)
-                        appliance.__json__()  # Check if loaded without error
-                        self._appliances[appliance.id] = appliance
+                        template = Template(vm["template_id"], vm)
+                        template.__json__()  # Check if loaded without error
+                        self._templates[template.id] = template
                     except KeyError as e:
-                        # appliance data is not complete (missing name or type)
-                        log.warning("Cannot load appliance template {} ('{}'): missing key {}".format(vm["appliance_id"], vm.get("name", "unknown"), e))
+                        # template data is not complete (missing name or type)
+                        log.warning("Cannot load template {} ('{}'): missing key {}".format(vm["template_id"], vm.get("name", "unknown"), e))
                         continue
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """
-        Add a server to the dictionary of compute servers controlled by this controller
+        Add a server to the dictionary of computes controlled by this controller
 
-        :param compute_id: Compute server identifier
+        :param compute_id: Compute identifier
         :param name: Compute name
         :param force: True skip security check
         :param connect: True connect to the compute immediately
@@ -604,7 +602,7 @@ class Controller:
         """
         Delete a compute node. Project using this compute will be close
 
-        :param compute_id: Compute server identifier
+        :param compute_id: Compute identifier
         """
 
         try:
@@ -628,14 +626,14 @@ class Controller:
     @property
     def computes(self):
         """
-        :returns: The dictionary of compute server managed by this controller
+        :returns: The dictionary of computes managed by this controller
         """
 
         return self._computes
 
     def get_compute(self, compute_id):
         """
-        Returns a compute server or raise a 404 error.
+        Returns a compute or raise a 404 error.
         """
 
         try:
@@ -760,20 +758,20 @@ class Controller:
         return self._projects
 
     @property
-    def appliance_templates(self):
-        """
-        :returns: The dictionary of appliances templates managed by GNS3
-        """
-
-        return self._appliance_templates
-
-    @property
     def appliances(self):
         """
         :returns: The dictionary of appliances managed by GNS3
         """
 
         return self._appliances
+
+    @property
+    def templates(self):
+        """
+        :returns: The dictionary of templates managed by GNS3
+        """
+
+        return self._templates
 
     @property
     def iou_license(self):

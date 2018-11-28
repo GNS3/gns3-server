@@ -95,7 +95,7 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
                         try:
                             data = await response.content.read(1024)
                         except asyncio.TimeoutError:
-                            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute server {}:{}".format(compute_file["path"], compute.host, compute.port))
+                            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
                         if not data:
                             break
                         f.write(data)
@@ -256,7 +256,7 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
     Export specific image from remote compute.
     """
 
-    log.info("Downloading image '{}' from compute server '{}'".format(image, compute_id))
+    log.info("Downloading image '{}' from compute '{}'".format(image, compute_id))
 
     try:
         compute = [compute for compute in project.computes if compute.id == compute_id][0]
@@ -274,7 +274,7 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
         try:
             data = await response.content.read(1024)
         except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute server {}:{}".format(image, compute.host, compute.port))
+            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
         if not data:
             break
         f.write(data)

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/52de2978-6e0a-41e3-9b3a-3913d8f1695b/nodes/362a930a-1282-4d4c-83cb-7e42093ed70b/dynamips/auto_idlepc'
+curl -i -X GET 'http://localhost:3080/v2/projects/7047e0e9-94d3-46e9-a1ad-68d094a3170f/nodes/f1726a0f-6f6f-45bc-a452-e5ec4944c587/dynamips/auto_idlepc'
 
-GET /v2/projects/52de2978-6e0a-41e3-9b3a-3913d8f1695b/nodes/362a930a-1282-4d4c-83cb-7e42093ed70b/dynamips/auto_idlepc HTTP/1.1
+GET /v2/projects/7047e0e9-94d3-46e9-a1ad-68d094a3170f/nodes/f1726a0f-6f6f-45bc-a452-e5ec4944c587/dynamips/auto_idlepc HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 30
 Content-Type: application/json
-Date: Tue, 20 Nov 2018 08:48:33 GMT
+Date: Tue, 27 Nov 2018 15:09:40 GMT
 Server: Python/3.6 GNS3/2.2.0dev5
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc
 

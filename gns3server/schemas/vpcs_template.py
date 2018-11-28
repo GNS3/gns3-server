@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from .appliance import BASE_APPLIANCE_PROPERTIES
+from .template import BASE_TEMPLATE_PROPERTIES
 
 
-VPCS_APPLIANCE_PROPERTIES = {
+VPCS_TEMPLATE_PROPERTIES = {
     "base_script_file": {
         "description": "Script file",
         "type": "string",
@@ -38,15 +38,15 @@ VPCS_APPLIANCE_PROPERTIES = {
     },
 }
 
-VPCS_APPLIANCE_PROPERTIES.update(copy.deepcopy(BASE_APPLIANCE_PROPERTIES))
-VPCS_APPLIANCE_PROPERTIES["category"]["default"] = "guest"
-VPCS_APPLIANCE_PROPERTIES["default_name_format"]["default"] = "PC{0}"
-VPCS_APPLIANCE_PROPERTIES["symbol"]["default"] = ":/symbols/vpcs_guest.svg"
+VPCS_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
+VPCS_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
+VPCS_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "PC{0}"
+VPCS_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/vpcs_guest.svg"
 
-VPCS_APPLIANCE_OBJECT_SCHEMA = {
+VPCS_TEMPLATE_OBJECT_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "A VPCS template object",
     "type": "object",
-    "properties": VPCS_APPLIANCE_PROPERTIES,
+    "properties": VPCS_TEMPLATE_PROPERTIES,
     "additionalProperties": False
 }
