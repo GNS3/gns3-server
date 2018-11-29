@@ -41,7 +41,7 @@ class Symbols:
 
         # Keep a cache of symbols size
         self._symbol_size_cache = {}
-        self._current_theme = "Infinity-square-gray"
+        self._current_theme = "Classic"
         self._themes = BUILTIN_SYMBOL_THEMES
 
     @property
