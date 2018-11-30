@@ -328,6 +328,7 @@ class Controller:
         try:
             if not os.path.exists(self._config_file):
                 await self._import_gns3_gui_conf()
+                self._config_loaded = True
                 self.save()
             with open(self._config_file) as f:
                 controller_settings = json.load(f)
