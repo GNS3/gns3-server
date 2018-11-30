@@ -643,7 +643,7 @@ class DockerVM(BaseNode):
 
             async def drain(self):
                 if not self.ws.closed:
-                    self.ws.send_bytes(self._data)
+                    await self.ws.send_bytes(self._data)
                 self._data = b""
 
         output_stream = asyncio.StreamReader()
@@ -671,15 +671,15 @@ class DockerVM(BaseNode):
 
         while True:
             msg = await ws.receive()
-            if msg.tp == aiohttp.WSMsgType.text:
+            if msg.type == aiohttp.WSMsgType.text:
                 out.feed_data(msg.data.encode())
-            elif msg.tp == aiohttp.WSMsgType.BINARY:
+            elif msg.type == aiohttp.WSMsgType.BINARY:
                 out.feed_data(msg.data)
-            elif msg.tp == aiohttp.WSMsgType.ERROR:
-                log.critical("Docker WebSocket Error: {}".format(msg.data))
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                log.critical("Docker WebSocket Error: {}".format(ws.exception()))
             else:
                 out.feed_eof()
-                ws.close()
+                await ws.close()
                 break
         await self.stop()
 
