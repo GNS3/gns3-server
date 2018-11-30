@@ -89,6 +89,7 @@ class DockerVM(BaseNode):
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._extra_hosts = extra_hosts
+        self._permissions_fixed = False
         self._display = None
         self._closing = False
 
@@ -459,6 +460,7 @@ class DockerVM(BaseNode):
             if self.allocate_aux:
                 await self._start_aux()
 
+        self._permissions_fixed = False
         self.status = "started"
         log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(name=self._name,
                                                                                                              image=self._image,
@@ -485,7 +487,7 @@ class DockerVM(BaseNode):
             self._telnet_servers.append((await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         except OSError as e:
             raise DockerError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.aux, e))
-        log.debug("Docker container '%s' started listen for auxilary telnet on %d", self.name, self.aux)
+        log.debug("Docker container '%s' started listen for auxiliary telnet on %d", self.name, self.aux)
 
     async def _fix_permissions(self):
         """
@@ -494,6 +496,7 @@ class DockerVM(BaseNode):
         """
 
         state = await self._get_container_state()
+        log.info("Docker container '{name}' fix ownership, state = {state}".format(name=self._name, state=state))
         if state == "stopped" or state == "exited":
             # We need to restart it to fix permissions
             await self.manager.query("POST", "containers/{}/start".format(self._cid))
@@ -521,11 +524,16 @@ class DockerVM(BaseNode):
             except OSError as e:
                 raise DockerError("Could not fix permissions for {}: {}".format(volume, e))
             await process.wait()
+            self._permissions_fixed = True
 
     async def _start_vnc_process(self, restart=False):
         """
         Starts the VNC process.
         """
+
+        self._display = self._get_free_display_port()
+        if not (shutil.which("Xtigervnc") or shutil.which("Xvfb") and shutil.which("x11vnc")):
+            raise DockerError("Please install tigervnc-standalone-server (recommended) or Xvfb + x11vnc before using VNC support")
 
         if shutil.which("Xtigervnc"):
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
@@ -607,6 +615,19 @@ class DockerVM(BaseNode):
         ])
         self._telnet_servers.append((await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)))
 
+    async def _window_size_changed_callback(self, columns, rows):
+        """
+        Called when the console window size has been changed.
+        (when naws is enabled in the Telnet server)
+
+        :param columns: number of columns
+        :param rows: number of rows
+        """
+
+        # resize the container TTY.
+        await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
+
+
     async def _start_console(self):
         """
         Starts streaming the console via telnet
@@ -627,8 +648,7 @@ class DockerVM(BaseNode):
 
         output_stream = asyncio.StreamReader()
         input_stream = InputStream()
-
-        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True)
+        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True, naws=True, window_size_changed_callback=self._window_size_changed_callback)
         try:
             self._telnet_servers.append((await asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)))
         except OSError as e:
@@ -716,14 +736,15 @@ class DockerVM(BaseNode):
             if state == "paused":
                 await self.unpause()
 
-            await self._fix_permissions()
+            if not self._permissions_fixed:
+                await self._fix_permissions()
+
             state = await self._get_container_state()
             if state != "stopped" or state != "exited":
                 # t=5 number of seconds to wait before killing the container
                 try:
                     await self.manager.query("POST", "containers/{}/stop".format(self._cid), params={"t": 5})
-                    log.info("Docker container '{name}' [{image}] stopped".format(
-                        name=self._name, image=self._image))
+                    log.info("Docker container '{name}' [{image}] stopped".format(name=self._name, image=self._image))
                 except DockerHttp304Error:
                     # Container is already stopped
                     pass

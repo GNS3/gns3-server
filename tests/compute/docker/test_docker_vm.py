@@ -970,7 +970,7 @@ def test_mount_binds(vm, tmpdir):
 
 def test_start_vnc(vm, loop):
     vm.console_resolution = "1280x1024"
-    with patch("shutil.which", return_value="/bin/x"):
+    with patch("shutil.which", return_value="/bin/Xtigervnc"):
         with asyncio_patch("gns3server.compute.docker.docker_vm.wait_for_file_creation") as mock_wait:
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
                 loop.run_until_complete(asyncio.ensure_future(vm._start_vnc()))
