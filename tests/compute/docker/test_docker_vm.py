@@ -1037,11 +1037,11 @@ def test_read_console_output_with_binary_mode(vm, loop):
         async def receive(self):
             if not self.sent:
                 self.sent = True
-                return MagicMock(tp=aiohttp.WSMsgType.BINARY, data=b"test")
+                return MagicMock(type=aiohttp.WSMsgType.BINARY, data=b"test")
             else:
-                return MagicMock(tp=aiohttp.WSMsgType.CLOSE)
+                return MagicMock(type=aiohttp.WSMsgType.CLOSE)
 
-        def close(self):
+        async def close(self):
             pass
 
     input_stream = InputStreamMock()

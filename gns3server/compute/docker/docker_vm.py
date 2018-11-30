@@ -671,7 +671,7 @@ class DockerVM(BaseNode):
 
         while True:
             msg = await ws.receive()
-            if msg.type == aiohttp.WSMsgType.text:
+            if msg.type == aiohttp.WSMsgType.TEXT:
                 out.feed_data(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.BINARY:
                 out.feed_data(msg.data)
