@@ -102,7 +102,10 @@ class WebServer:
             return
 
         # close websocket connections
-        for ws in set(self._app['websockets']):
+        websocket_connections = set(self._app['websockets'])
+        if websocket_connections:
+            log.info("Closing {} websocket connections...".format(len(websocket_connections)))
+        for ws in websocket_connections:
             await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY, message='Server shutdown')
 
         if self._server:

@@ -229,11 +229,8 @@ class ProjectHandler:
         await response.prepare(request)
         with controller.notification.project_queue(project) as queue:
             while True:
-                try:
-                    msg = await queue.get_json(5)
-                    await response.write(("{}\n".format(msg)).encode("utf-8"))
-                except asyncio.futures.CancelledError as e:
-                    break
+                msg = await queue.get_json(5)
+                await response.write(("{}\n".format(msg)).encode("utf-8"))
 
         if project.auto_close:
             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
@@ -263,16 +260,16 @@ class ProjectHandler:
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
         with controller.notification.project_queue(project) as queue:
-            while True:
-                try:
+            try:
+                while True:
                     notification = await queue.get_json(5)
                     if ws.closed:
                         break
                     await ws.send_str(notification)
-                except asyncio.futures.CancelledError:
-                    break
-                finally:
-                    request.app['websockets'].discard(ws)
+            finally:
+                if not ws.closed:
+                    await ws.close()
+                request.app['websockets'].discard(ws)
 
         if project.auto_close:
             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking

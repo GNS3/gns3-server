@@ -50,11 +50,8 @@ class NotificationHandler:
         await response.prepare(request)
         with controller.notification.controller_queue() as queue:
             while True:
-                try:
-                    msg = await queue.get_json(5)
-                    await response.write(("{}\n".format(msg)).encode("utf-8"))
-                except asyncio.futures.CancelledError:
-                    break
+                msg = await queue.get_json(5)
+                await response.write(("{}\n".format(msg)).encode("utf-8"))
 
     @Route.get(
         r"/notifications/ws",
@@ -71,14 +68,15 @@ class NotificationHandler:
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
         with controller.notification.controller_queue() as queue:
-            while True:
-                try:
+            try:
+                while True:
                     notification = await queue.get_json(5)
                     if ws.closed:
                         break
                     await ws.send_str(notification)
-                except asyncio.futures.CancelledError:
-                    break
-                finally:
-                    request.app['websockets'].discard(ws)
+            finally:
+                if not ws.closed:
+                    await ws.close()
+                request.app['websockets'].discard(ws)
+
         return ws

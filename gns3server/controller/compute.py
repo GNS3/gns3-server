@@ -449,6 +449,7 @@ class Compute:
                     if action == "ping":
                         self._cpu_usage_percent = event["cpu_usage_percent"]
                         self._memory_usage_percent = event["memory_usage_percent"]
+                        #FIXME: slow down number of compute events
                         self._controller.notification.controller_emit("compute.updated", self.__json__())
                     else:
                         await self._controller.notification.dispatch(action, event, compute_id=self.id)
