@@ -104,20 +104,21 @@ class Route(object):
 
         :returns: Response if you need to auth the user otherwise None
         """
+
         if not server_config.getboolean("auth", False):
-            return
+            return None
 
         user = server_config.get("user", "").strip()
         password = server_config.get("password", "").strip()
 
-        if len(user) == 0:
+        if not user:
             return
 
         if "AUTHORIZATION" in request.headers:
             if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password, "utf-8").encode():
-                return
+                return None
 
-        log.error("Invalid auth. Username should %s", user)
+        log.error("Invalid authentication. Username should be {}".format(user))
 
         response = Response(request=request, route=route)
         response.set_status(401)
@@ -169,7 +170,7 @@ class Route(object):
 
                 # Authenticate
                 response = cls.authenticate(request, route, server_config)
-                if response:
+                if response is not None:
                     return response
 
                 try:
