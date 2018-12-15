@@ -279,12 +279,13 @@ class VMwareHandler:
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = vm.ethernet_adapters[adapter_number]
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-            yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
-            response.set_status(201)
-            response.json(request.json)
+        yield from vm.adapter_update_nio_binding(adapter_number, nio)
+        response.set_status(201)
+        response.json(request.json)
 
     @Route.delete(
         r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",

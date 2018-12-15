@@ -301,12 +301,9 @@ class IOUHandler:
         nio = vm.adapters[adapter_number].get_nio(port_number)
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from vm.adapter_update_nio_binding(
-            adapter_number,
-            port_number,
-            nio)
+        yield from vm.adapter_update_nio_binding(adapter_number, port_number, nio)
         response.set_status(201)
-        response.json(nio)
+        response.json(request.json)
 
     @Route.delete(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",

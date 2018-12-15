@@ -263,10 +263,11 @@ class DockerHandler:
 
         docker_manager = Docker.instance()
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = container.ethernet_adapters[int(request.match_info["adapter_number"])].get_nio(0)
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = container.ethernet_adapters[adapter_number].get_nio(0)
         if "filters" in request.json and nio:
             nio.filters = request.json["filters"]
-        yield from container.adapter_update_nio_binding(int(request.match_info["port_number"]), nio)
+        yield from container.adapter_update_nio_binding(adapter_number, nio)
         response.set_status(201)
         response.json(request.json)
 
