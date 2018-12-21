@@ -36,6 +36,10 @@ IOU_CREATE_SCHEMA = {
                 {"type": "integer"}  # for legacy projects
             ]
         },
+        "usage": {
+            "description": "How to use the IOU VM",
+            "type": "string",
+        },
         "console": {
             "description": "Console TCP port",
             "minimum": 1,
@@ -129,6 +133,10 @@ IOU_OBJECT_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "usage": {
+            "description": "How to use the IOU VM",
+            "type": "string",
         },
         "node_directory": {
             "description": "Path to the node working directory",

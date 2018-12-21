@@ -41,7 +41,7 @@ QEMU_CREATE_SCHEMA = {
             "minLength": 1,
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the Qemu VM",
             "type": "string",
         },
         "linked_clone": {

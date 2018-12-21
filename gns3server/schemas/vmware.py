@@ -39,6 +39,10 @@ VMWARE_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the VMware VM",
+            "type": "string",
+        },
         "vmx_path": {
             "description": "Path to the vmx file",
             "type": "string",
@@ -93,6 +97,10 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "VMware VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the VMware VM",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

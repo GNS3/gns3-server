@@ -66,7 +66,7 @@ DOCKER_CREATE_SCHEMA = {
             "type": ["integer", "null"]
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the Docker container",
             "type": "string",
         },
         "start_command": {
@@ -180,7 +180,7 @@ DOCKER_OBJECT_SCHEMA = {
             "maximum": 99,
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the Docker container",
             "type": "string",
         },
         "start_command": {

@@ -43,6 +43,10 @@ VBOX_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the VirtualBox VM",
+            "type": "string",
+        },
         "vmname": {
             "description": "VirtualBox VM name (in VirtualBox itself)",
             "type": "string",
@@ -117,6 +121,10 @@ VBOX_OBJECT_SCHEMA = {
             "minLength": 36,
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "usage": {
+            "description": "How to use the VirtualBox VM",
+            "type": "string",
         },
         "vmname": {
             "description": "VirtualBox VM name (in VirtualBox itself)",

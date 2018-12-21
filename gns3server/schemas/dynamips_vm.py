@@ -79,6 +79,10 @@ VM_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
+        },
         "platform": {
             "description": "Cisco router platform",
             "type": "string",
@@ -300,6 +304,10 @@ VM_UPDATE_SCHEMA = {
             "description": "Dynamips VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
         },
         "platform": {
             "description": "Cisco router platform",
@@ -540,6 +548,10 @@ VM_OBJECT_SCHEMA = {
             "description": "Dynamips VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
         },
         "status": {
             "description": "VM status",
