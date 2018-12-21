@@ -558,7 +558,7 @@ class DockerVM(BaseNode):
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
                 self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
                                                                          "-forever",
-                                                                         "-nopw"
+                                                                         "-nopw",
                                                                          "-shared",
                                                                          "-geometry", self._console_resolution,
                                                                          "-display", "WAIT:{}".format(self._display),

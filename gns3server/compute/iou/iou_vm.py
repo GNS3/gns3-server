@@ -529,6 +529,16 @@ class IOUVM(BaseNode):
 
             if "IOURC" not in os.environ:
                 env["IOURC"] = iourc_path
+
+            # create a symbolic link to the image to avoid IOU error "failed code signing checks"
+            # on newer images, see https://github.com/GNS3/gns3-server/issues/1484
+            try:
+                symlink = os.path.join(self.working_dir, os.path.basename(self.path))
+                if not os.path.islink(symlink):
+                    os.symlink(self.path, symlink)
+            except OSError as e:
+                raise IOUError("Could not create symbolic link: {}".format(e))
+
             command = await self._build_command()
             try:
                 log.info("Starting IOU: {}".format(command))
