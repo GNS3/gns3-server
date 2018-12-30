@@ -66,7 +66,8 @@ def test_json(vm, project):
         'start_command': vm.start_command,
         'environment': vm.environment,
         'node_directory': vm.working_dir,
-        'status': 'stopped'
+        'status': 'stopped',
+        'usage': ''
     }
 
 
