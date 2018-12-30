@@ -26,6 +26,11 @@ VIRTUALBOX_TEMPLATE_PROPERTIES = {
         "type": "string",
         "minLength": 1,
     },
+    "usage": {
+        "description": "How to use the VirtualBox VM",
+        "type": "string",
+        "default": ""
+    },
     "ram": {
         "description": "Amount of RAM",
         "minimum": 0,

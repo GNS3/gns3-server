@@ -143,6 +143,7 @@ class Router(BaseNode):
     def __json__(self):
 
         router_info = {"name": self.name,
+                       "usage": self.usage,
                        "node_id": self.id,
                        "node_directory": os.path.join(self._working_directory),
                        "project_id": self.project.id,

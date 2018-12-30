@@ -26,6 +26,11 @@ VMWARE_TEMPLATE_PROPERTIES = {
         "type": "string",
         "minLength": 1,
     },
+    "usage": {
+        "description": "How to use the VMware VM",
+        "type": "string",
+        "default": ""
+    },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
         "type": "boolean",

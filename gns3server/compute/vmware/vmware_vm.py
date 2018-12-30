@@ -74,6 +74,7 @@ class VMwareVM(BaseNode):
     def __json__(self):
 
         json = {"name": self.name,
+                "usage": self.usage,
                 "node_id": self.id,
                 "console": self.console,
                 "console_type": self.console_type,

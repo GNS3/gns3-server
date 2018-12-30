@@ -22,13 +22,13 @@ from .qemu import QEMU_PLATFORMS
 
 
 QEMU_TEMPLATE_PROPERTIES = {
-    "usage": {
-        "description": "How to use the Qemu VM",
+    "qemu_path": {
+        "description": "Path to QEMU",
         "type": "string",
         "default": ""
     },
-    "qemu_path": {
-        "description": "Path to QEMU",
+    "usage": {
+        "description": "How to use the Qemu VM",
         "type": "string",
         "default": ""
     },

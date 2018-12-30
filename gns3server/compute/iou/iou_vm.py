@@ -215,6 +215,7 @@ class IOUVM(BaseNode):
     def __json__(self):
 
         iou_vm_info = {"name": self.name,
+                       "usage": self.usage,
                        "node_id": self.id,
                        "node_directory": self.working_path,
                        "console": self._console,

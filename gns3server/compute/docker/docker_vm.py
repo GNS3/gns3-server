@@ -109,6 +109,7 @@ class DockerVM(BaseNode):
     def __json__(self):
         return {
             "name": self._name,
+            "usage": self.usage,
             "node_id": self._id,
             "container_id": self._cid,
             "project_id": self._project.id,
