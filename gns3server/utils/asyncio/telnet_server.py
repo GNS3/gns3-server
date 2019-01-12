@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import socket
 import asyncio
 import asyncio.subprocess
 import struct
@@ -184,6 +185,12 @@ class AsyncioTelnetServer:
         await writer.drain()
 
     async def run(self, network_reader, network_writer):
+
+        sock = network_writer.get_extra_info("socket")
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        #log.debug("New connection from {}".format(sock.getpeername()))
+
         # Keep track of connected clients
         connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
         self._connections[network_writer] = connection
