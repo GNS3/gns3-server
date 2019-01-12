@@ -1832,13 +1832,19 @@ class QemuVM(BaseNode):
                     disk = disk_image
                 if not os.path.exists(disk):
                     continue
-                command = [qemu_img_path, "snapshot", "-d", snapshot_name, disk]
-                retcode = await self._qemu_img_exec(command)
-                if retcode:
-                    stdout = self.read_qemu_img_stdout()
-                    log.warning("Could not delete saved VM state from disk {}: {}".format(disk, stdout))
-                else:
-                    log.info("Deleted saved VM state from disk {}".format(disk))
+                output = await subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
+                json_data = json.loads(output)
+                if "snapshots" in json_data:
+                    for snapshot in json_data["snapshots"]:
+                        if snapshot["name"] == snapshot_name:
+                            # delete the snapshot
+                            command = [qemu_img_path, "snapshot", "-d", snapshot_name, disk]
+                            retcode = await self._qemu_img_exec(command)
+                            if retcode:
+                                stdout = self.read_qemu_img_stdout()
+                                log.warning("Could not delete saved VM state from disk {}: {}".format(disk, stdout))
+                            else:
+                                log.info("Deleted saved VM state from disk {}".format(disk))
             except subprocess.SubprocessError as e:
                 raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
 
