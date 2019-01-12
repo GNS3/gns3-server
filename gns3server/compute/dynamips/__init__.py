@@ -492,6 +492,10 @@ class Dynamips(BaseManager):
         if sparse_memory_support is False:
             await vm.set_sparsemem(False)
 
+        usage = settings.get("usage")
+        if usage and usage != vm.usage:
+            vm.usage = usage
+
         # update the configs if needed
         await self.set_vm_configs(vm, settings)
 

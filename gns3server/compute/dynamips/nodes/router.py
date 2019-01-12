@@ -188,7 +188,6 @@ class Router(BaseNode):
                 else:
                     router_info["wic" + str(wic_slot_number)] = None
 
-
         return router_info
 
     def _memory_changed(self, path):
