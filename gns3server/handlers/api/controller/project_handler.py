@@ -259,24 +259,24 @@ class ProjectHandler:
 
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
-        with controller.notification.project_queue(project) as queue:
-            try:
+        try:
+            with controller.notification.project_queue(project) as queue:
                 while True:
                     notification = await queue.get_json(5)
                     if ws.closed:
                         break
                     await ws.send_str(notification)
-            finally:
-                if not ws.closed:
-                    await ws.close()
-                request.app['websockets'].discard(ws)
+        finally:
+            if not ws.closed:
+                await ws.close()
+            request.app['websockets'].discard(ws)
 
-        if project.auto_close:
-            # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-            # if someone else is not connected
-            await asyncio.sleep(5)
-            if not controller.notification.project_has_listeners(project):
-                await project.close()
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project):
+                    await project.close()
 
         return ws
 

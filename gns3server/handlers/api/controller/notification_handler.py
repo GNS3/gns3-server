@@ -67,16 +67,16 @@ class NotificationHandler:
 
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
-        with controller.notification.controller_queue() as queue:
-            try:
+        try:
+            with controller.notification.controller_queue() as queue:
                 while True:
                     notification = await queue.get_json(5)
                     if ws.closed:
                         break
                     await ws.send_str(notification)
-            finally:
-                if not ws.closed:
-                    await ws.close()
-                request.app['websockets'].discard(ws)
+        finally:
+            if not ws.closed:
+                await ws.close()
+            request.app['websockets'].discard(ws)
 
         return ws

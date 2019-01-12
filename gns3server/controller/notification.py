@@ -17,7 +17,6 @@
 
 import os
 import aiohttp
-import asyncio
 from contextlib import contextmanager
 
 from ..notification_queue import NotificationQueue
@@ -43,8 +42,10 @@ class Notification:
         queue = NotificationQueue()
         self._project_listeners.setdefault(project.id, set())
         self._project_listeners[project.id].add(queue)
-        yield queue
-        self._project_listeners[project.id].remove(queue)
+        try:
+            yield queue
+        finally:
+            self._project_listeners[project.id].remove(queue)
 
     @contextmanager
     def controller_queue(self):
@@ -55,8 +56,10 @@ class Notification:
         """
         queue = NotificationQueue()
         self._controller_listeners.append(queue)
-        yield queue
-        self._controller_listeners.remove(queue)
+        try:
+            yield queue
+        finally:
+            self._controller_listeners.remove(queue)
 
     def controller_emit(self, action, event):
         """
