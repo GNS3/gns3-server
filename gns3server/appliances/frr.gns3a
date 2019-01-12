@@ -21,6 +21,15 @@
     },
     "images": [
         {
+            "filename": "frr6.0-vm0.2.qcow2",
+            "version": "FRR6.0 - VM0.2",
+            "md5sum": "bf5aebd98352716bfabb119abb2ba19a",
+            "filesize": 1762066432,
+            "download_url": "https://sourceforge.net/projects/frr/files/",
+            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr6.0-vm0.2.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
             "filename": "frr4.0-vm0.1.qcow2",
             "version": "FRR4.0 - VM0.1",
             "md5sum": "e1dc58cbb2b71c58051538c07d412493",
@@ -31,6 +40,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "FRR6.0 - VM0.2",
+            "images": {
+                "hda_disk_image": "frr6.0-vm0.2.qcow2"
+            }
+        },
         {
             "name": "FRR4.0 - VM0.1",
             "images": {

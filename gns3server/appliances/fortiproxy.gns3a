@@ -1,0 +1,54 @@
+{
+    "name": "FortiProxy",
+    "category": "firewall",
+    "description": "FortiProxy is a secure web proxy that protects employees against internet-borne attacks by incorporating multiple detection techniques such as web filtering, DNS filtering, data loss prevention, antivirus, intrusion prevention and advanced threat protection. It helps enterprises enforce internet compliance using granular application control.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "https://docs.fortinet.com/fortiproxy/",
+    "product_name": "FortiProxy",
+    "product_url": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/FortiProxy.pdf",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "The system reboots twice during the initial setup; this is normal.\nDefault username is admin, no password is set.",
+    "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "FPX_KVM-v100-build0147-FORTINET.out.kvm.qcow2",
+            "version": "1.1.0",
+            "md5sum": "d7c60693bfa58246e5063304cd450c89",
+            "filesize": 42668032,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "1.1.0",
+            "images": {
+                "hda_disk_image": "FPX_KVM-v100-build0147-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        }
+    ]
+}

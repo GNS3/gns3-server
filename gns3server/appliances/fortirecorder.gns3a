@@ -1,0 +1,54 @@
+{
+    "name": "FortiRecorder",
+    "category": "guest",
+    "description": "Surveillance systems can be complicated, expensive, and unreliable. But FortiCamera and FortiRecorder simplify IP video surveillance and there are no license fees. With FortiCams, you can see everything: doors, POS terminals, public areas--whatever you need to keep an eye on. FortiRecorder captures the images for easy monitoring, storage, and retrieval. Just plug in your cameras, connect the FortiRecorder, open a web browser or client application, and you're ready to go. It's easy to navigate and configure with event timelines and profile-driven configuration.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "https://docs.fortinet.com/fortirecorder/",
+    "product_name": "FortiRecorder",
+    "product_url": "https://www.fortinet.com/products/network-based-video-security/forticam-fortirecorder.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Use HTTPS when connecting to the WebUI.\nDefault username is admin, no password is set.",
+    "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "fortirecorder-FRC_VMKV-64-v26-build0607-FORTINET.out.kvm.qcow2",
+            "version": "2.6.3",
+            "md5sum": "ffa5d42119de576631673516f60e028b",
+            "filesize": 63569920,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.6.3",
+            "images": {
+                "hda_disk_image": "fortirecorder-FRC_VMKV-64-v26-build0607-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        }
+    ]
+}

@@ -11,31 +11,61 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link.",
+    "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link, Ethernet2 and Ethernet3 are optional links.",
     "qemu": {
         "adapter_type": "virtio-net-pci",
-        "adapters": 2,
+        "adapters": 4,
         "ram": 64,
-        "arch": "i386",
+        "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "allow"
     },
     "images": [
         {
-            "filename": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img",
+            "filename": "openwrt-18.06.1-x86-64-combined-ext4.img",
+            "version": "18.06.1",
+            "md5sum": "3e2da47c5c2496b6df364a60ded8f40a",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.1/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.1/targets/x86/64/openwrt-18.06.1-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "lede-17.01.6-x86-64-combined-ext4.img",
+            "version": "17.01.6",
+            "md5sum": "015c0d5038ddd469fbdabce7eb5265dc",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/17.01.6/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/17.01.6/targets/x86/64/lede-17.01.6-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-15.05.1-x86-64-combined-ext4.img",
             "version": "15.05.1",
-            "md5sum": "d02f5224b7fbe929efa4d3f10f4dc996",
+            "md5sum": "307d8cdb11faeb1b5e27fe55078bd152",
             "filesize": 55050240,
-            "download_url": "http://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/",
-            "direct_download_url": "https://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/openwrt-15.05.1-x86-kvm_guest-combined-ext4.img.gz",
+            "download_url": "http://archive.openwrt.org/chaos_calmer/15.05.1/x86/64/",
+            "direct_download_url": "http://archive.openwrt.org/chaos_calmer/15.05.1/x86/64/openwrt-15.05.1-x86-64-combined-ext4.img.gz",
             "compression": "gzip"
         }
     ],
     "versions": [
         {
-            "name": "Chaos Calmer 15.05.1",
+            "name": "openwrt 18.06.1",
             "images": {
-                "hda_disk_image": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img"
+                "hda_disk_image": "openwrt-18.06.1-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "openwrt/lede 17.01.6",
+            "images": {
+                "hda_disk_image": "lede-17.01.6-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "openwrt 15.05.1",
+            "images": {
+                "hda_disk_image": "openwrt-15.05.1-x86-64-combined-ext4.img"
             }
         }
     ]

@@ -13,7 +13,7 @@
     "usage": "For security reasons there are no default passwords. All passwords are set at system initialization time.",
     "docker": {
         "adapters": 1,
-        "image": "turnkeylinux/wordpress-14.2:latest",
+        "image": "turnkeylinux/wordpress:latest",
         "console_type": "telnet"
     }
 }

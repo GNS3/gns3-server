@@ -21,12 +21,20 @@
     },
     "images": [
         {
-            "filename": "kali-linux-2018.3-amd64.iso",
-            "version": "2018.3",
-            "md5sum": "6dc3e57177249f73492b9edb95d082d1",
-            "filesize": 3188391936,
+            "filename": "kali-linux-2018.4-amd64.iso",
+            "version": "2018.4",
+            "md5sum": "1b2d598bb8d2003e6207c119c0ba42fe",
+            "filesize": 3139436544,
             "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2018.3/kali-linux-2018.3-amd64.iso"
+            "direct_download_url": "http://cdimage.kali.org/kali-2018.4/kali-linux-2018.4-amd64.iso"
+        },
+        {
+            "filename": "kali-linux-2018.3a-amd64.iso",
+            "version": "2018.3a",
+            "md5sum": "2da675d016bd690c05e180e33aa98b94",
+            "filesize": 3192651776,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2018.3a/kali-linux-2018.3a-amd64.iso"
         },
         {
             "filename": "kali-linux-2018.1-amd64.iso",
@@ -87,11 +95,18 @@
     ],
     "versions": [
         {
-            "name": "2018.3",
+            "name": "2018.4",
             "images": {
-                "cdrom_image": "kali-linux-2018.3-amd64.iso"
+                "cdrom_image": "kali-linux-2018.4-amd64.iso"
             }
-        },        {
+        },
+        {
+            "name": "2018.3a",
+            "images": {
+                "cdrom_image": "kali-linux-2018.3a-amd64.iso"
+            }
+        },
+        {
             "name": "2018.1",
             "images": {
                 "cdrom_image": "kali-linux-2018.1-amd64.iso"

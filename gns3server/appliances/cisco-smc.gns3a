@@ -1,0 +1,70 @@
+{
+    "name": "Cisco Stealthwatch Management Console",
+    "category": "firewall",
+    "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you’ll always know who is on your network and what they are doing.\n\nAs the control center for the Stealthwatch System, the SMC manages, coordinates, configures, and organizes all of the different components of the system. The SMC client software allows you to access the SMC’s user-friendly graphical user interface from any local computer with access to a Web browser. Through the client interface, you can easily access real-time security and network information about critical segments throughout your enterprise. ",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+    "product_name": "Stealthwatch Management Console",
+    "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Starting Stealthwatch Management Console will start an installation of SMC onto a blank 200GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+    "symbol": "cisco-fmcv.svg",
+    "first_port_name": "eth0",
+	"port_name_format": "eth{port1}",
+    "qemu": {
+        "cpus": 3,
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 8192,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": ""
+    },
+    "images": [
+        {
+            "filename": "SMC-6.10.4-2018.11.14.1757-0.iso",
+            "version": "6.10.4-2018.11.14.1757-0",
+            "md5sum": "1de82eddf5303012aa8701144a7d4c7b",
+            "filesize": 2518747136,
+            "download_url": "https://stealthwatch.flexnetoperations.com/control/lncp/product?child_plneID=786407"
+        },
+        {
+            "filename": "SMC-6.10.2-2018.03.19.2228-0.iso",
+            "version": "6.10.2-2018.03.19.2228-0",
+            "md5sum": "e4e31ea6eb5c17c12769724f0c70b452",
+            "filesize": 2311847936,
+            "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2"
+        },
+        {
+            "filename": "empty200G.qcow2",
+            "version": "1.0",
+            "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+            "filesize": 200192,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.10.4-2018.11.14.1757-0",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "SMC-6.10.4-2018.11.14.1757-0.iso"
+            }
+        },
+        {
+            "name": "6.10.2-2018.03.19.2228-0",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "SMC-6.10.2-2018.03.19.2228-0.iso"
+            }
+        }
+    ]
+}

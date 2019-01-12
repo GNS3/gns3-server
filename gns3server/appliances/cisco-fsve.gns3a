@@ -1,0 +1,56 @@
+{
+    "name": "Cisco Flow Sensor",
+    "category": "firewall",
+    "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you’ll always know who is on your network and what they are doing.\n\nUsing the same technology as the Stealthwatch Flow Sensor appliance, the Flow Sensor VE is a virtual appliance that provides visibility into virtual environments, generating flow data for areas that are not flow-enabled. ",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+    "product_name": "Flow Sensor VE",
+    "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Starting Flow Sensor will start an installation of FSVE onto a blank 100GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+    "symbol": ":/symbols/asa.svg",
+    "first_port_name": "eth0",
+	"port_name_format": "eth{port1}",
+    "qemu": {
+        "cpus": 1,
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 8192,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": ""
+    },
+    "images": [
+        {
+            "filename": "FlowSensor-AE-6.10.2-2018.03.19.2224-0.iso",
+            "version": "6.10.2-2018.03.19.2224-0",
+            "md5sum": "ef8712e655fcbc92dc1a1551ee2e4a80",
+            "filesize": 1287245824,
+            "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.10.2-2018.03.19.2224-0",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "FlowSensor-AE-6.10.2-2018.03.19.2224-0.iso"
+            }
+        }
+    ]
+}

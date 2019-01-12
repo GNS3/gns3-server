@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "FSA_KVM-v300-build0049-FORTINET.out.kvm.qcow2",
+            "version": "3.0.3",
+            "md5sum": "3ef1f05124d13e23332b8b90f8f71c2c",
+            "filesize": 156828160,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FSA_KVM-v300-build0029-FORTINET.out.kvm.qcow2",
             "version": "3.0.1",
             "md5sum": "a2f6c5297a722c5dba40327734a6e0ac",
@@ -92,6 +99,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.0.3",
+            "images": {
+                "hda_disk_image": "FSA_KVM-v300-build0049-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "FSA-datadrive.qcow2"
+            }
+        },
         {
             "name": "3.0.1",
             "images": {

@@ -11,9 +11,9 @@
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present. Interfaces may take several minutes to be usable after appliance boot.",
+    "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present. Interfaces may take several minutes to be usable after appliance boot.\n\nThe interfaces are mapped the following way:\n- NIC0: unused\n- NIC1: unused\n- NIC2: Gi0/0/0/0\n- NIC3: Gi0/0/0/1\n- NICn: Gi0/0/0/(n-2)",
     "first_port_name": "MgmtEth0/0/CPU0/0",
-    "port_name_format": "GigabitEthernet0/0/0/{0}",
+    "port_name_format": "NIC{0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
