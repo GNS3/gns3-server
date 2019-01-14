@@ -118,7 +118,8 @@ class ApplianceManager:
                     etag = response.headers.get("ETag")
                     if etag:
                         self._appliances_etag = etag
-                        self.save()
+                        from . import Controller
+                        Controller.instance().save()
                     json_data = await response.json()
                 appliances_dir = get_resource('appliances')
                 for appliance in json_data:
