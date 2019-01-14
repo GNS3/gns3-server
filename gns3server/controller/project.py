@@ -481,7 +481,7 @@ class Project:
         Create a node from a template.
         """
         try:
-            template = copy.deepcopy(self.controller.templates[template_id].settings)
+            template = copy.deepcopy(self.controller.template_manager.templates[template_id].settings)
         except KeyError:
             msg = "Template {} doesn't exist".format(template_id)
             log.error(msg)

@@ -219,7 +219,7 @@ def test_add_node_from_template(async_run, controller):
         "template_type": "vpcs",
         "builtin": False,
     })
-    controller._templates[template.id] = template
+    controller.template_manager.templates[template.id] = template
     controller._computes["local"] = compute
 
     response = MagicMock()

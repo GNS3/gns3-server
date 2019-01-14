@@ -37,6 +37,6 @@ class ApplianceHandler:
 
         controller = Controller.instance()
         if request.query.get("update", "no") == "yes":
-            await controller.download_appliances()
-        controller.load_appliances()
-        response.json([c for c in controller.appliances.values()])
+            await controller.appliance_manager.download_appliances()
+        controller.appliance_manager.load_appliances()
+        response.json([c for c in controller.appliance_manager.appliances.values()])

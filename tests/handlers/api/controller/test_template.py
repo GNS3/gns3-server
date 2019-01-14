@@ -28,8 +28,8 @@ from gns3server.controller.template import Template
 def test_template_list(http_controller, controller):
 
     id = str(uuid.uuid4())
-    controller.load_templates()
-    controller._templates[id] = Template(id, {
+    controller.template_manager.load_templates()
+    controller.template_manager._templates[id] = Template(id, {
         "template_type": "qemu",
         "category": 0,
         "name": "test",
@@ -59,7 +59,7 @@ def test_template_create_without_id(http_controller, controller):
     assert response.status == 201
     assert response.route == "/templates"
     assert response.json["template_id"] is not None
-    assert len(controller.templates) == 1
+    assert len(controller.template_manager._templates) == 1
 
 
 def test_template_create_with_id(http_controller, controller):
@@ -79,7 +79,7 @@ def test_template_create_with_id(http_controller, controller):
     assert response.status == 201
     assert response.route == "/templates"
     assert response.json["template_id"] is not None
-    assert len(controller.templates) == 1
+    assert len(controller.template_manager._templates) == 1
 
 
 def test_template_create_wrong_type(http_controller, controller):
@@ -97,7 +97,7 @@ def test_template_create_wrong_type(http_controller, controller):
 
     response = http_controller.post("/templates", params)
     assert response.status == 400
-    assert len(controller.templates) == 0
+    assert len(controller.template_manager._templates) == 0
 
 
 def test_template_get(http_controller, controller):
@@ -169,14 +169,14 @@ def test_template_delete(http_controller, controller):
 
     response = http_controller.get("/templates")
     assert len(response.json) == 1
-    assert len(controller.templates) == 1
+    assert len(controller.template_manager._templates) == 1
 
     response = http_controller.delete("/templates/{}".format(template_id), example=True)
     assert response.status == 204
 
     response = http_controller.get("/templates")
     assert len(response.json) == 0
-    assert len(controller.templates) == 0
+    assert len(controller.template_manager._templates) == 0
 
 
 def test_template_duplicate(http_controller, controller):
@@ -205,7 +205,7 @@ def test_template_duplicate(http_controller, controller):
 
     response = http_controller.get("/templates")
     assert len(response.json) == 2
-    assert len(controller.templates) == 2
+    assert len(controller.template_manager._templates) == 2
 
 
 def test_c7200_dynamips_template_create(http_controller):
@@ -953,7 +953,7 @@ def project(http_controller, async_run):
 def test_create_node_from_template(http_controller, controller, project, compute):
 
     id = str(uuid.uuid4())
-    controller._templates = {id: Template(id, {
+    controller.template_manager._templates = {id: Template(id, {
         "template_type": "qemu",
         "category": 0,
         "name": "test",

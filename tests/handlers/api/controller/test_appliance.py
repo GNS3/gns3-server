@@ -18,7 +18,7 @@
 
 def test_appliances_list(http_controller, controller, async_run):
 
-    controller.load_appliances()
+    controller.appliance_manager.load_appliances()
     response = http_controller.get("/appliances", example=True)
     assert response.status == 200
     assert len(response.json) > 0

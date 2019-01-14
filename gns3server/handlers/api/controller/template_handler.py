@@ -50,7 +50,7 @@ class TemplateHandler:
     def create(request, response):
 
         controller = Controller.instance()
-        template = controller.add_template(request.json)
+        template = controller.template_manager.add_template(request.json)
         response.set_status(201)
         response.json(template)
 
@@ -67,7 +67,7 @@ class TemplateHandler:
 
         request_etag = request.headers.get("If-None-Match", "")
         controller = Controller.instance()
-        template = controller.get_template(request.match_info["template_id"])
+        template = controller.template_manager.get_template(request.match_info["template_id"])
         data = json.dumps(template.__json__())
         template_etag = '"' + hashlib.md5(data.encode()).hexdigest() + '"'
         if template_etag == request_etag:
@@ -90,7 +90,7 @@ class TemplateHandler:
     def update(request, response):
 
         controller = Controller.instance()
-        template = controller.get_template(request.match_info["template_id"])
+        template = controller.template_manager.get_template(request.match_info["template_id"])
         # Ignore these because we only use them when creating a template
         request.json.pop("template_id", None)
         request.json.pop("template_type", None)
@@ -114,7 +114,7 @@ class TemplateHandler:
     def delete(request, response):
 
         controller = Controller.instance()
-        controller.delete_template(request.match_info["template_id"])
+        controller.template_manager.delete_template(request.match_info["template_id"])
         response.set_status(204)
 
     @Route.get(
@@ -126,7 +126,7 @@ class TemplateHandler:
     def list(request, response):
 
         controller = Controller.instance()
-        response.json([c for c in controller.templates.values()])
+        response.json([c for c in controller.template_manager.templates.values()])
 
     @Route.post(
         r"/templates/{template_id}/duplicate",
@@ -143,7 +143,7 @@ class TemplateHandler:
     async def duplicate(request, response):
 
         controller = Controller.instance()
-        template = controller.duplicate_template(request.match_info["template_id"])
+        template = controller.template_manager.duplicate_template(request.match_info["template_id"])
         response.set_status(201)
         response.json(template)
 
