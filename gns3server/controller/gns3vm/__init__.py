@@ -84,8 +84,8 @@ class GNS3VM:
         download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.VirtualBox.{version}.zip".format(version=__version__)
         virtualbox_info = {
             "engine_id": "virtualbox",
-            "name": "VirtualBox (deprecated)",
-            "description": 'VirtualBox doesn\'t support nested virtualization, this means Qemu based VMs will run extremely slowly. This feature is marked as deprecated and support may be removed from future GNS3 releases.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
+            "name": "VirtualBox",
+            "description": 'VirtualBox doesn\'t support nested virtualization, this means Qemu based VMs will run extremely slowly.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
             "support_when_exit": True,
             "support_headless": True,
             "support_ram": True
