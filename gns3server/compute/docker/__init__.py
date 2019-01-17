@@ -92,7 +92,7 @@ class Docker(BaseManager):
         await super().unload()
         if self._connected:
             if self._connector and not self._connector.closed:
-                self._connector.close()
+                await self._connector.close()
         if self._session and not self._session.closed:
             await self._session.close()
 
