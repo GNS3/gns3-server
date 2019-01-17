@@ -221,7 +221,7 @@ class VirtualBoxVM(BaseNode):
                 for image in tree.getroot().findall("{http://www.virtualbox.org/}Image"):
                     currentSnapshot = machine.get("currentSnapshot")
                     if currentSnapshot:
-                        newSnapshot = re.sub("\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
+                        newSnapshot = re.sub(r"\{.*\}", "{" + str(uuid.uuid4()) + "}", currentSnapshot)
                     shutil.move(os.path.join(self.working_dir, self._vmname, "Snapshots", currentSnapshot) + ".vdi",
                                 os.path.join(self.working_dir, self._vmname, "Snapshots", newSnapshot) + ".vdi")
                     image.set("uuid", newSnapshot)
@@ -443,7 +443,7 @@ class VirtualBoxVM(BaseNode):
                 hdd_files = await self._get_all_hdd_files()
                 vm_info = await self._get_vm_info()
                 for entry, value in vm_info.items():
-                    match = re.search("^([\s\w]+)\-(\d)\-(\d)$", entry)  # match Controller-PortNumber-DeviceNumber entry
+                    match = re.search(r"^([\s\w]+)\-(\d)\-(\d)$", entry)  # match Controller-PortNumber-DeviceNumber entry
                     if match:
                         controller = match.group(1)
                         port = match.group(2)

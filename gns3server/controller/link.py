@@ -365,7 +365,7 @@ class Link:
                                                           self._nodes[1]["node"].name,
                                                           self._nodes[1]["adapter_number"],
                                                           self._nodes[1]["port_number"])
-        return re.sub("[^0-9A-Za-z_-]", "", capture_file_name) + ".pcap"
+        return re.sub(r"[^0-9A-Za-z_-]", "", capture_file_name) + ".pcap"
 
     @property
     def id(self):

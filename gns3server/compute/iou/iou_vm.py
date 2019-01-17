@@ -171,10 +171,10 @@ class IOUVM(BaseNode):
 
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, stderr=True)
-            match = re.search("-n <n>\s+Size of nvram in Kb \(default ([0-9]+)KB\)", output)
+            match = re.search(r"-n <n>\s+Size of nvram in Kb \(default ([0-9]+)KB\)", output)
             if match:
                 self.nvram = int(match.group(1))
-            match = re.search("-m <n>\s+Megabytes of router memory \(default ([0-9]+)MB\)", output)
+            match = re.search(r"-m <n>\s+Megabytes of router memory \(default ([0-9]+)MB\)", output)
             if match:
                 self.ram = int(match.group(1))
         except (ValueError, OSError, subprocess.SubprocessError) as e:
@@ -380,7 +380,7 @@ class IOUVM(BaseNode):
             log.warning("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
             return
 
-        p = re.compile("([\.\w]+)\s=>\s+not found")
+        p = re.compile(r"([\.\w]+)\s=>\s+not found")
         missing_libs = p.findall(output)
         if missing_libs:
             raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
@@ -604,7 +604,7 @@ class IOUVM(BaseNode):
                     if nio.capturing:
                         await self._ubridge_send('iol_bridge start_capture {name} "{output_file}" {data_link_type}'.format(name=bridge_name,
                                                                                                                                 output_file=nio.pcap_output_file,
-                                                                                                                                data_link_type=re.sub("^DLT_", "", nio.pcap_data_link_type)))
+                                                                                                                                data_link_type=re.sub(r"^DLT_", "", nio.pcap_data_link_type)))
 
                     await self._ubridge_apply_filters(bay_id, unit_id, nio.filters)
                 unit_id += 1
@@ -1036,7 +1036,7 @@ class IOUVM(BaseNode):
             env["IOURC"] = self.iourc_path
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env, stderr=True)
-            if re.search("-l\s+Enable Layer 1 keepalive messages", output):
+            if re.search(r"-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])
             else:
                 raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
@@ -1295,7 +1295,7 @@ class IOUVM(BaseNode):
                                                                                                                                  bay=adapter_number,
                                                                                                                                  unit=port_number,
                                                                                                                                  output_file=output_file,
-                                                                                                                                 data_link_type=re.sub("^DLT_", "", data_link_type)))
+                                                                                                                                 data_link_type=re.sub(r"^DLT_", "", data_link_type)))
 
     async def stop_capture(self, adapter_number, port_number):
         """

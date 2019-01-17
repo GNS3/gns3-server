@@ -637,7 +637,7 @@ class BaseNode:
             try:
                 await self._ubridge_send(cmd)
             except UbridgeError as e:
-                match = re.search("Cannot compile filter '(.*)': syntax error", str(e))
+                match = re.search(r"Cannot compile filter '(.*)': syntax error", str(e))
                 if match:
                     message = "Warning: ignoring BPF packet filter '{}' due to syntax error".format(self.name, match.group(1))
                     log.warning(message)

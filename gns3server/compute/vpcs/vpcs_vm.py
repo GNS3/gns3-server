@@ -204,7 +204,7 @@ class VPCSVM(BaseNode):
         """
         try:
             output = await subprocess_check_output(self._vpcs_path(), "-v", cwd=self.working_dir)
-            match = re.search("Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
+            match = re.search(r"Welcome to Virtual PC Simulator, version ([0-9a-z\.]+)", output)
             if match:
                 version = match.group(1)
                 self._vpcs_version = parse_version(version)

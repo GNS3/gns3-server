@@ -135,7 +135,7 @@ class Hypervisor(UBridgeHypervisor):
         """
         try:
             output = await subprocess_check_output(self._path, "-v", cwd=self._working_dir, env=env)
-            match = re.search("ubridge version ([0-9a-z\.]+)", output)
+            match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
                 if sys.platform.startswith("win") or sys.platform.startswith("darwin"):

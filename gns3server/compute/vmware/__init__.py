@@ -135,7 +135,7 @@ class VMware(BaseManager):
         except OSError:
             pass
         if version is not None:
-            match = re.search("([0-9]+)\.", version)
+            match = re.search(r"([0-9]+)\.", version)
             if match:
                 version = match.group(1)
         return version
@@ -222,14 +222,14 @@ class VMware(BaseManager):
 
             try:
                 output = await subprocess_check_output(vmware_path, "-v")
-                match = re.search("VMware Workstation ([0-9]+)\.", output)
+                match = re.search(r"VMware Workstation ([0-9]+)\.", output)
                 version = None
                 if match:
                     # VMware Workstation has been detected
                     version = match.group(1)
                     log.debug("VMware Workstation version {} detected".format(version))
                     await self._check_vmware_workstation_requirements(version)
-                match = re.search("VMware Player ([0-9]+)\.", output)
+                match = re.search(r"VMware Player ([0-9]+)\.", output)
                 if match:
                     # VMware Player has been detected
                     version = match.group(1)
@@ -278,7 +278,7 @@ class VMware(BaseManager):
         try:
             with open(vmware_networking_file, "r", encoding="utf-8") as f:
                 for line in f.read().splitlines():
-                    match = re.search("VNET_([0-9]+)_VIRTUAL_ADAPTER", line)
+                    match = re.search(r"VNET_([0-9]+)_VIRTUAL_ADAPTER", line)
                     if match:
                         vmnet = "vmnet{}".format(match.group(1))
                         if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
@@ -297,7 +297,7 @@ class VMware(BaseManager):
                     windows_name = interface["netcard"]
                 else:
                     windows_name = interface["name"]
-                match = re.search("(VMnet[0-9]+)", windows_name)
+                match = re.search(r"(VMnet[0-9]+)", windows_name)
                 if match:
                     vmnet = match.group(1)
                     if vmnet not in ("VMnet0", "VMnet1", "VMnet8"):
@@ -312,7 +312,7 @@ class VMware(BaseManager):
 
         self._vmnet_start_range = self.config.get_section_config("VMware").getint("vmnet_start_range", self._vmnet_start_range)
         self._vmnet_end_range = self.config.get_section_config("VMware").getint("vmnet_end_range", self._vmnet_end_range)
-        match = re.search("vmnet([0-9]+)$", vmnet, re.IGNORECASE)
+        match = re.search(r"vmnet([0-9]+)$", vmnet, re.IGNORECASE)
         if match:
             vmnet_number = match.group(1)
             if self._vmnet_start_range <= int(vmnet_number) <= self._vmnet_end_range:
@@ -424,7 +424,7 @@ class VMware(BaseManager):
 
         try:
             output = await subprocess_check_output(vmrun_path)
-            match = re.search("vmrun version ([0-9\.]+)", output)
+            match = re.search(r"vmrun version ([0-9\.]+)", output)
             version = None
             if match:
                 version = match.group(1)

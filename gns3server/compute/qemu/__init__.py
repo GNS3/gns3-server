@@ -177,7 +177,7 @@ class Qemu(BaseManager):
                 try:
                     with open(version_file, "rb") as file:
                         version = file.read().decode("utf-8").strip()
-                        match = re.search("[0-9\.]+", version)
+                        match = re.search(r"[0-9\.]+", version)
                         if match:
                             return version
                 except (UnicodeDecodeError, OSError) as e:
@@ -186,7 +186,7 @@ class Qemu(BaseManager):
         else:
             try:
                 output = await subprocess_check_output(qemu_path, "-version")
-                match = re.search("version\s+([0-9a-z\-\.]+)", output)
+                match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
                 if match:
                     version = match.group(1)
                     return version
@@ -205,7 +205,7 @@ class Qemu(BaseManager):
 
         try:
             output = await subprocess_check_output(qemu_img_path, "--version")
-            match = re.search("version\s+([0-9a-z\-\.]+)", output)
+            match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
             if match:
                 version = match.group(1)
                 return version

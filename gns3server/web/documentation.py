@@ -129,7 +129,7 @@ class Documentation:
     def _file_path(self, path):
         path = path.replace("compute", "")
         path = path.replace("controller", "")
-        return re.sub("^v2", "", re.sub("[^a-z0-9]", "", path))
+        return re.sub("^v2", "", re.sub(r"[^a-z0-9]", "", path))
 
     def _write_definitions(self, f, schema):
         if "definitions" in schema:
