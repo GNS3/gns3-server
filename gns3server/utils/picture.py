@@ -112,14 +112,14 @@ def get_size(data, default_width=0, default_height=0):
                 if not viewbox:
                     raise ValueError("Invalid SVG file: missing viewBox attribute")
                 _, _, viewbox_width, viewbox_height = re.split(r'[\s,]+', viewbox)
-                if width_attr.endswith("%"):
-                    width = _svg_convert_size(viewbox_width, width_attr)
-                else:
-                    width = _svg_convert_size(width_attr)
-                if height_attr.endswith("%"):
-                    height = _svg_convert_size(viewbox_height, height_attr)
-                else:
-                    height = _svg_convert_size(height_attr)
+            if width_attr.endswith("%"):
+                width = _svg_convert_size(viewbox_width, width_attr)
+            else:
+                width = _svg_convert_size(width_attr)
+            if height_attr.endswith("%"):
+                height = _svg_convert_size(viewbox_height, height_attr)
+            else:
+                height = _svg_convert_size(height_attr)
         except (AttributeError, IndexError) as e:
             raise ValueError("Invalid SVG file: {}".format(e))
 
