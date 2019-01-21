@@ -62,7 +62,7 @@ class SymbolHandler:
         r"/symbols/{symbol_id:.+}/raw",
         description="Write the symbol file",
         status_codes={
-            200: "Symbol returned"
+            200: "Symbol written"
         },
         raw=True)
     async def upload(request, response):
@@ -80,6 +80,7 @@ class SymbolHandler:
                     f.write(chunk)
         except (UnicodeEncodeError, OSError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not write symbol file '{}': {}".format(path, e))
+
         # Reset the symbol list
         controller.symbols.list()
         response.set_status(204)
