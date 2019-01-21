@@ -254,7 +254,7 @@ class Node:
         try:
             self._width, self._height, filetype = self._project.controller.symbols.get_size(val)
         except (ValueError, OSError) as e:
-            log.error("Could not write symbol: {}".format(e))
+            log.error("Could not set symbol: {}".format(e))
             # If symbol is invalid we replace it by the default
             self.symbol = ":/symbols/computer.svg"
         if self._label is None:
