@@ -303,7 +303,7 @@ class NodeHandler:
 
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
-        #await node.reload()
+        await node.reload()
         response.json(node)
         response.set_status(200)
 
