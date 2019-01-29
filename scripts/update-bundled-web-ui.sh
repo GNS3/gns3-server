@@ -26,7 +26,7 @@
 # $ sh update-bundled-web-ui.sh ../my-custom-web-ui-repo/
 #
 
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 GNS3SERVER_DIR=$(realpath "$CURRENT_DIR/..")
 REPO_DIR="/tmp/gns3-web-ui"
 CUSTOM_REPO=false
@@ -49,6 +49,10 @@ mkdir -p "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 if [ "$CUSTOM_REPO" = false ] ; then
     if [ ! -d /tmp/gns3-web-ui ]; then
         git clone https://github.com/GNS3/gns3-web-ui.git "$REPO_DIR"
+    else
+      cd "$REPO_DIR"
+      git pull
+      cd "$CURRENT_DIR"
     fi
 fi
 
@@ -57,7 +61,7 @@ echo "Current working dir $REPO_DIR"
 cd "$REPO_DIR"
 
 yarn install
-yarn ng build -e prod --base-href /static/web-ui/
+yarn ng build --configuration=production --base-href /static/web-ui/
 
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
