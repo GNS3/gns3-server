@@ -116,6 +116,7 @@ def test_is_running(vm, running_subprocess_mock):
 
 
 def test_start(loop, vm, running_subprocess_mock):
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
             loop.run_until_complete(asyncio.ensure_future(vm.start()))
@@ -130,6 +131,7 @@ def test_stop(loop, vm, running_subprocess_mock):
     future = asyncio.Future()
     future.set_result(True)
     process.wait.return_value = future
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
 
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
@@ -213,6 +215,7 @@ def test_port_remove_nio_binding(vm, loop):
 
 
 def test_close(vm, port_manager, loop):
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             loop.run_until_complete(asyncio.ensure_future(vm.start()))
@@ -338,6 +341,7 @@ def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
 
 def test_cdrom_option(vm, tmpdir, loop, fake_qemu_img_binary):
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._cdrom_image = str(tmpdir / "test.iso")
     open(vm._cdrom_image, "w+").close()
 
@@ -348,6 +352,7 @@ def test_cdrom_option(vm, tmpdir, loop, fake_qemu_img_binary):
 
 def test_bios_option(vm, tmpdir, loop, fake_qemu_img_binary):
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._bios_image = str(tmpdir / "test.img")
     open(vm._bios_image, "w+").close()
 
@@ -454,6 +459,7 @@ def test_control_vm_expect_text(vm, loop, running_subprocess_mock):
 
 def test_build_command(vm, loop, fake_qemu_binary, port_manager):
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.ensure_future(vm._build_command()))
@@ -477,7 +483,9 @@ def test_build_command(vm, loop, fake_qemu_binary, port_manager):
             "-device",
             "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            "-display",
+            "none"
         ]
 
 
@@ -486,6 +494,7 @@ def test_build_command_manual_uuid(vm, loop, fake_qemu_binary, port_manager):
     If user has set a uuid we keep it
     """
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm.options = "-uuid e1c307a4-896f-11e6-81a5-3c07547807cc"
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
@@ -524,7 +533,8 @@ def test_build_command_kvm(linux_platform, vm, loop, fake_qemu_binary, port_mana
             "-device",
             "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            "-nographic"
         ]
 
 
@@ -560,13 +570,52 @@ def test_build_command_kvm_2_4(linux_platform, vm, loop, fake_qemu_binary, port_
             "-device",
             "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
             "-netdev",
-            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport)
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            "-nographic"
         ]
 
+
+def test_build_command_kvm_3_1(linux_platform, vm, loop, fake_qemu_binary, port_manager):
+    """
+    Qemu 2.4 introduce an issue with KVM
+    """
+    vm._run_with_kvm = MagicMock(return_value=True)
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
+    os.environ["DISPLAY"] = "0:0"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
+        cmd = loop.run_until_complete(asyncio.ensure_future(vm._build_command()))
+        nio = vm._local_udp_tunnels[0][0]
+        assert cmd == [
+            fake_qemu_binary,
+            "-name",
+            "test",
+            "-m",
+            "256M",
+            "-smp",
+            "cpus=1",
+            "-enable-kvm",
+            "-machine",
+            "smm=off",
+            "-boot",
+            "order=c",
+            "-uuid",
+            vm.id,
+            "-serial",
+            "telnet:127.0.0.1:{},server,nowait".format(vm._internal_console_port),
+            "-net",
+            "none",
+            "-device",
+            "e1000,mac={},netdev=gns3-0".format(vm._mac_address),
+            "-netdev",
+            "socket,id=gns3-0,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio.rport, nio.lport),
+            "-display",
+            "none"
+        ]
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_build_command_without_display(vm, loop, fake_qemu_binary):
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
     os.environ["DISPLAY"] = ""
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         cmd = loop.run_until_complete(asyncio.ensure_future(vm._build_command()))
@@ -575,6 +624,7 @@ def test_build_command_without_display(vm, loop, fake_qemu_binary):
 
 def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
     os.environ["DISPLAY"] = "0:0"
     vm.adapters = 2
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
@@ -604,7 +654,8 @@ def test_build_command_two_adapters(vm, loop, fake_qemu_binary, port_manager):
             "-device",
             "e1000,mac={},netdev=gns3-1".format(int_to_macaddress(macaddress_to_int(vm._mac_address) + 1)),
             "-netdev",
-            "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport)
+            "socket,id=gns3-1,udp=127.0.0.1:{},localaddr=127.0.0.1:{}".format(nio2.rport, nio2.lport),
+            "-nographic"
         ]
 
 
@@ -613,6 +664,7 @@ def test_build_command_two_adapters_mac_address(vm, loop, fake_qemu_binary, port
     Should support multiple base vmac address
     """
 
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
     vm.adapters = 2
     vm.mac_address = "00:00:ab:0e:0f:09"
     mac_0 = vm._mac_address
