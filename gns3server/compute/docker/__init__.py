@@ -200,7 +200,10 @@ class Docker(BaseManager):
 
         if progress_callback:
             progress_callback("Pulling '{}' from docker hub".format(image))
-        response = yield from self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
+        try:
+            response = yield from self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
+        except DockerError as e:
+            raise DockerError("Could not pull the '{}' image from Docker Hub, please check your Internet connection (original error: {})".format(image, e))
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
