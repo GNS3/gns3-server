@@ -76,9 +76,11 @@ class VMwareGNS3VM(BaseGNS3VM):
         if vcpus > available_vcpus:
             raise GNS3VMError("You have allocated too many vCPUs for the GNS3 VM! (max available is {} vCPUs)".format(available_vcpus))
 
+        cores_per_sockets = int(available_vcpus / psutil.cpu_count(logical=False))
         try:
             pairs = VMware.parse_vmware_file(self._vmx_path)
             pairs["numvcpus"] = str(vcpus)
+            pairs["cpuid.coresPerSocket"] = str(cores_per_sockets)
             pairs["memsize"] = str(ram)
             VMware.write_vmx_file(self._vmx_path, pairs)
             log.info("GNS3 VM vCPU count set to {} and RAM amount set to {}".format(vcpus, ram))
