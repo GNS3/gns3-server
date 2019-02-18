@@ -276,7 +276,7 @@ class BaseManager:
         destination_dir = destination_node.working_dir
         try:
             shutil.rmtree(destination_dir)
-            shutil.copytree(source_node.working_dir, destination_dir)
+            shutil.copytree(source_node.working_dir, destination_dir, symlinks=True, ignore_dangling_symlinks=True)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can't duplicate node data: {}".format(e))
 

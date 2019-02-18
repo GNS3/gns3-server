@@ -522,8 +522,9 @@ class IOUVM(BaseNode):
             # on newer images, see https://github.com/GNS3/gns3-server/issues/1484
             try:
                 symlink = os.path.join(self.working_dir, os.path.basename(self.path))
-                if not os.path.islink(symlink):
-                    os.symlink(self.path, symlink)
+                if os.path.islink(symlink):
+                    os.unlink(symlink)
+                os.symlink(self.path, symlink)
             except OSError as e:
                 raise IOUError("Could not create symbolic link: {}".format(e))
 
