@@ -347,6 +347,9 @@ class DockerVM(BaseNode):
         if self._environment:
             for e in self._environment.strip().split("\n"):
                 e = e.strip()
+                if e.split("=")[0] == "":
+                    self.project.emit("log.warning", {"message": "{} has invalid environment variable: {}".format(self.name, e)})
+                    continue
                 if not e.startswith("GNS3_"):
                     formatted = self._format_env(variables, e)
                     params["Env"].append(formatted)
