@@ -64,7 +64,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
             yield from _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir)
 
     # Export the local files
-    for root, dirs, files in os.walk(project._path, topdown=True):
+    for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
         files = [f for f in files if _is_exportable(os.path.join(root, f))]
         for file in files:
             path = os.path.join(root, file)
@@ -125,6 +125,7 @@ def _patch_mtime(path):
         new_mtime = file_date.replace(year=1980).timestamp()
         os.utime(path, (st.st_atime, new_mtime))
 
+
 def _is_exportable(path):
     """
     :returns: True if file should not be included in the final archive
@@ -132,6 +133,10 @@ def _is_exportable(path):
 
     # do not export snapshots
     if path.endswith("snapshots"):
+        return False
+
+    # do not export symlinks
+    if os.path.islink(path):
         return False
 
     # do not export directories of snapshots

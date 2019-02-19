@@ -184,9 +184,11 @@ def _move_files_to_compute(compute, project_id, directory, files_path):
 
     location = os.path.join(directory, files_path)
     if os.path.exists(location):
-        for (dirpath, dirnames, filenames) in os.walk(location):
+        for (dirpath, dirnames, filenames) in os.walk(location, followlinks=False):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
+                if os.path.islink(path):
+                    continue
                 dst = os.path.relpath(path, directory)
                 yield from _upload_file(compute, project_id, path, dst)
         yield from wait_run_in_executor(shutil.rmtree, os.path.join(directory, files_path))
@@ -213,9 +215,11 @@ def _import_images(controller, path):
 
     image_dir = controller.images_path()
     root = os.path.join(path, "images")
-    for (dirpath, dirnames, filenames) in os.walk(root):
+    for (dirpath, dirnames, filenames) in os.walk(root, followlinks=False):
         for filename in filenames:
             path = os.path.join(dirpath, filename)
+            if os.path.islink(path):
+                continue
             dst = os.path.join(image_dir, os.path.relpath(path, root))
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.move(path, dst)
