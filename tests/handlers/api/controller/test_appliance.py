@@ -75,14 +75,13 @@ def test_create_node_from_appliance(http_controller, controller, project, comput
         "name": "test",
         "symbol": "guest.svg",
         "default_name_format": "{name}-{0}",
-        "server": "example.com"
+        "compute_id": "example.com"
     })}
-    with asyncio_patch("gns3server.controller.project.Project.add_node_from_appliance") as mock:
+    with asyncio_patch("gns3server.controller.project.Project.add_node_from_appliance", return_value={"name": "test", "node_type": "qemu", "compute_id": "example.com"}) as mock:
         response = http_controller.post("/projects/{}/appliances/{}".format(project.id, id), {
             "x": 42,
             "y": 12
         })
     mock.assert_called_with(id, x=42, y=12, compute_id=None)
-    print(response.body)
     assert response.route == "/projects/{project_id}/appliances/{appliance_id}"
     assert response.status == 201
