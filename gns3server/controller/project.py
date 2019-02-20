@@ -929,7 +929,7 @@ class Project:
         self.dump()
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
                 project_path = os.path.join(tmpdir, "project.gns3p")
                 yield from wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
                 with open(project_path, "rb") as f:

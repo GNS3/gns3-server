@@ -137,7 +137,7 @@ VM_CREATE_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"],
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
@@ -355,7 +355,7 @@ VM_UPDATE_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"],
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
@@ -595,7 +595,7 @@ VM_OBJECT_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"]
             #"minLength": 1,
             #"pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },

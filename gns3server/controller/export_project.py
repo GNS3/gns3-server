@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 
 @asyncio.coroutine
-def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
+def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
     """
     Export a project to a zip file.
 
@@ -42,6 +42,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     :param include images: save OS images to the zip file
     :param keep_compute_id: If false replace all compute id by local (standard behavior for .gns3project to make it portable)
     :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable
+    :param reset_mac_addresses: Reset MAC addresses for every nodes.
 
     :returns: ZipStream object
     """
@@ -61,7 +62,7 @@ def export_project(project, temporary_dir, include_images=False, keep_compute_id
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
-            yield from _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir)
+            yield from _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses)
 
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
@@ -160,7 +161,7 @@ def _is_exportable(path):
 
 
 @asyncio.coroutine
-def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir):
+def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses):
     """
     Patch a project file (.gns3) to export a project.
     The .gns3 file is renamed to project.gns3
@@ -192,6 +193,10 @@ def _patch_project_file(project, path, zstream, include_images, keep_compute_id,
 
                 if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
+
+                        # reset the MAC address
+                        if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
+                            node["properties"][prop] = None
 
                         if node["node_type"] == "iou":
                             if not prop == "path":
