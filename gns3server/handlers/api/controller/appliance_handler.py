@@ -67,8 +67,9 @@ class ApplianceHandler:
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.add_node_from_appliance(request.match_info["appliance_id"],
-                                                   x=request.json["x"],
-                                                   y=request.json["y"],
-                                                   compute_id=request.json.get("compute_id"))
+        node = yield from project.add_node_from_appliance(request.match_info["appliance_id"],
+                                                          x=request.json["x"],
+                                                          y=request.json["y"],
+                                                          compute_id=request.json.get("compute_id"))
         response.set_status(201)
+        response.json(node)
