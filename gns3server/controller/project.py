@@ -146,7 +146,6 @@ class Project:
                     }
                 )
 
-
     def reset(self):
         """
         Called when open/close a project. Cleanup internal stuff
@@ -704,24 +703,26 @@ class Project:
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
-        self._cleanPictures()
+        self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
             self.controller.notification.emit("project.closed", self.__json__())
 
-    def _cleanPictures(self):
+    def _clean_pictures(self):
         """
-        Delete unused images
+        Delete unused pictures.
         """
 
-        # Project have been deleted
-        if not os.path.exists(self.path):
+        # Project have been deleted or is loading or is not opened
+        if not os.path.exists(self.path) or self._loading or self._status != "opened":
             return
         try:
             pictures = set(os.listdir(self.pictures_directory))
             for drawing in self._drawings.values():
                 try:
-                    pictures.remove(drawing.ressource_filename)
+                    resource_filename = drawing.resource_filename
+                    if resource_filename:
+                        pictures.remove(resource_filename)
                 except KeyError:
                     pass
 
@@ -733,11 +734,12 @@ class Project:
                 except KeyError:
                     pass
 
-
-            for pict in pictures:
-                os.remove(os.path.join(self.pictures_directory, pict))
+            for pic_filename in pictures:
+                path = os.path.join(self.pictures_directory, pic_filename)
+                log.info("Deleting unused picture '{}'".format(path))
+                os.remove(path)
         except OSError as e:
-            log.warning(str(e))
+            log.warning("Could not delete unused pictures: {}".format(e))
 
     @asyncio.coroutine
     def delete(self):

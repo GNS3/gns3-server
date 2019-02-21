@@ -55,7 +55,7 @@ class Drawing:
         return self._id
 
     @property
-    def ressource_filename(self):
+    def resource_filename(self):
         """
         If the svg content has been dump to an external file return is name otherwise None
         """
