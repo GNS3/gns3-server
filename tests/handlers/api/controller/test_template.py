@@ -961,7 +961,7 @@ def test_create_node_from_template(http_controller, controller, project, compute
         "default_name_format": "{name}-{0}",
         "compute_id": "example.com"
     })}
-    with asyncio_patch("gns3server.controller.project.Project.add_node_from_template") as mock:
+    with asyncio_patch("gns3server.controller.project.Project.add_node_from_template", return_value={"name": "test", "node_type": "qemu", "compute_id": "example.com"}) as mock:
         response = http_controller.post("/projects/{}/templates/{}".format(project.id, id), {
             "x": 42,
             "y": 12
