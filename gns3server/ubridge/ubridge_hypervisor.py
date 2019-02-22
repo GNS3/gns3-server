@@ -69,7 +69,7 @@ class UBridgeHypervisor:
         connection_success = False
         last_exception = None
         while time.time() - begin < timeout:
-            yield from asyncio.sleep(0.01)
+            yield from asyncio.sleep(0.1)
             try:
                 self._reader, self._writer = yield from asyncio.open_connection(host, self._port)
             except OSError as e:
@@ -84,6 +84,7 @@ class UBridgeHypervisor:
             log.info("Connected to uBridge hypervisor after {:.4f} seconds".format(time.time() - begin))
 
         try:
+            yield from asyncio.sleep(0.1)
             version = yield from self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
         except IndexError:
@@ -237,7 +238,7 @@ class UBridgeHypervisor:
                                             .format(host=self._host, port=self._port, command=command, run=self.is_running()))
                     else:
                         retries += 1
-                        yield from asyncio.sleep(0.1)
+                        yield from asyncio.sleep(0.5)
                         continue
                 retries = 0
                 buf += chunk.decode("utf-8")
