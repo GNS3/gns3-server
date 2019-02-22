@@ -1736,18 +1736,18 @@ class QemuVM(BaseNode):
 
         return network_options
 
-    def _graphic(self):
+    async def _disable_graphics(self):
         """
-        Adds the correct graphic options depending of the OS
+        Disable graphics depending of the QEMU version
         """
 
-        if sys.platform.startswith("win"):
+        if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl" "-spice", "-vnc"]):
             return []
-        if len(os.environ.get("DISPLAY", "")) > 0:
-            return []
-        if "-nographic" not in self._options:
+        version = await self.manager.get_qemu_version(self.qemu_path)
+        if version and parse_version(version) >= parse_version("3.0"):
+            return ["-display", "none"]
+        else:
             return ["-nographic"]
-        return []
 
     async def _run_with_hardware_acceleration(self, qemu_path, options):
         """
@@ -1920,12 +1920,12 @@ class QemuVM(BaseNode):
             raise QemuError("Console type {} is unknown".format(self._console_type))
         command.extend(self._monitor_options())
         command.extend((await self._network_options()))
-        command.extend(self._graphic())
         if self.on_close != "save_vm_state":
             await self._clear_save_vm_stated()
         else:
             command.extend((await self._saved_state_option()))
-
+        if self._console_type == "telnet":
+            command.extend((await self._disable_graphics()))
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))

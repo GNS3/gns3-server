@@ -164,8 +164,9 @@ class TemplateHandler:
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        await project.add_node_from_template(request.match_info["template_id"],
-                                             x=request.json["x"],
-                                             y=request.json["y"],
-                                             compute_id=request.json.get("compute_id"))
+        node = await project.add_node_from_template(request.match_info["template_id"],
+                                                    x=request.json["x"],
+                                                    y=request.json["y"],
+                                                    compute_id=request.json.get("compute_id"))
         response.set_status(201)
+        response.json(node)

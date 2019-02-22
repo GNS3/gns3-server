@@ -185,8 +185,8 @@ class Qemu(BaseManager):
             return ""
         else:
             try:
-                output = await subprocess_check_output(qemu_path, "-version")
-                match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
+                output = await subprocess_check_output(qemu_path, "-version", "-nographic")
+                match = re.search("version\s+([0-9a-z\-\.]+)", output)
                 if match:
                     version = match.group(1)
                     return version

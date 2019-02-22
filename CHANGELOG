@@ -140,6 +140,18 @@
 * Implement #1153 into 2.2 branch.
 * Pin prompt-toolkit to latest version 1.0.15
 
+## 2.1.12 23/01/2019
+
+* Tune how to get the size of SVG images. Ref https://github.com/GNS3/gns3-gui/issues/2674.
+* Automatically create a symbolic link to the IOU image in the IOU working directory. Fixes #1484
+* Fix link pause/filters only work for the first interface of Docker containers. Fixes #1482
+* Telnet console resize support for Docker VM.
+* Fix _fix_permissions() garbles permissions in Docker VM. Ref #1428
+* Fix "None is not of type 'integer'" when opening project containing a Qemu VM. Fixes #2610.
+* Only require Xtigervnc or Xvfb+x11vnc for Docker with vnc console. Ref #1438
+* Support tigervnc in Docker VM. Ref #1438
+* Update minimum VIX version requirements for VMware. Ref #1415.
+
 ## 2.1.11 28/09/2018
 
 * Catch some exceptions.

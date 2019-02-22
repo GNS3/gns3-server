@@ -740,25 +740,27 @@ class Project:
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
-        self._cleanPictures()
+        self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
             self.controller.notification.project_emit("project.closed", self.__json__())
         self.reset()
 
-    def _cleanPictures(self):
+    def _clean_pictures(self):
         """
-        Delete unused images
+        Delete unused pictures.
         """
 
-        # Project have been deleted
-        if not os.path.exists(self.path):
+        # Project have been deleted or is loading or is not opened
+        if not os.path.exists(self.path) or self._loading or self._status != "opened":
             return
         try:
             pictures = set(os.listdir(self.pictures_directory))
             for drawing in self._drawings.values():
                 try:
-                    pictures.remove(drawing.ressource_filename)
+                    resource_filename = drawing.resource_filename
+                    if resource_filename:
+                        pictures.remove(resource_filename)
                 except KeyError:
                     pass
 
@@ -770,10 +772,12 @@ class Project:
                 except KeyError:
                     pass
 
-            for pict in pictures:
-                os.remove(os.path.join(self.pictures_directory, pict))
+            for pic_filename in pictures:
+                path = os.path.join(self.pictures_directory, pic_filename)
+                log.info("Deleting unused picture '{}'".format(path))
+                os.remove(path)
         except OSError as e:
-            log.warning(str(e))
+            log.warning("Could not delete unused pictures: {}".format(e))
 
     async def delete(self):
 
@@ -962,7 +966,7 @@ class Project:
         assert self._status != "closed"
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = await export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                zipstream = await export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
                 project_path = os.path.join(tmpdir, "project.gns3p")
                 await wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
                 with open(project_path, "rb") as f:

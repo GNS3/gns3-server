@@ -30,7 +30,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-async def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False):
+async def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
     """
     Export a project to a zip file.
 
@@ -41,6 +41,7 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
     :param include images: save OS images to the zip file
     :param keep_compute_id: If false replace all compute id by local (standard behavior for .gns3project to make it portable)
     :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable
+    :param reset_mac_addresses: Reset MAC addresses for every nodes.
 
     :returns: ZipStream object
     """
@@ -60,10 +61,10 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
-            await _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir)
+            await _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses)
 
     # Export the local files
-    for root, dirs, files in os.walk(project._path, topdown=True):
+    for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
         files = [f for f in files if _is_exportable(os.path.join(root, f))]
         for file in files:
             path = os.path.join(root, file)
@@ -124,6 +125,7 @@ def _patch_mtime(path):
         new_mtime = file_date.replace(year=1980).timestamp()
         os.utime(path, (st.st_atime, new_mtime))
 
+
 def _is_exportable(path):
     """
     :returns: True if file should not be included in the final archive
@@ -131,6 +133,10 @@ def _is_exportable(path):
 
     # do not export snapshots
     if path.endswith("snapshots"):
+        return False
+
+    # do not export symlinks
+    if os.path.islink(path):
         return False
 
     # do not export directories of snapshots
@@ -153,7 +159,7 @@ def _is_exportable(path):
     return True
 
 
-async def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir):
+async def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses):
     """
     Patch a project file (.gns3) to export a project.
     The .gns3 file is renamed to project.gns3
@@ -185,6 +191,10 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
 
                 if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
+
+                        # reset the MAC address
+                        if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
+                            node["properties"][prop] = None
 
                         if node["node_type"] == "iou":
                             if not prop == "path":
