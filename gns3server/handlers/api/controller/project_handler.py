@@ -220,31 +220,28 @@ class ProjectHandler:
     async def notification(request, response):
 
         controller = Controller.instance()
-        project_id = request.match_info["project_id"]
+        project = controller.get_project(request.match_info["project_id"])
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
         await response.prepare(request)
-        log.info("New client has connected to the notification stream for project ID '{}' (HTTP long-polling method)".format(project_id))
+        log.info("New client has connected to the notification stream for project ID '{}' (HTTP long-polling method)".format(project.id))
 
         try:
-            with controller.notification.project_queue(project_id) as queue:
+            with controller.notification.project_queue(project.id) as queue:
                 while True:
                     msg = await queue.get_json(5)
                     await response.write(("{}\n".format(msg)).encode("utf-8"))
         finally:
-            log.info("Client has disconnected from notification for project ID '{}' (HTTP long-polling method)".format(project_id))
-            try:
-                project = controller.get_project(project_id)
-                if project.auto_close:
-                    # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-                    # if someone else is not connected
-                    await asyncio.sleep(5)
-                    if not controller.notification.project_has_listeners(project.id):
-                        log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
-                        await project.close()
-            except aiohttp.web.HTTPNotFound:
-                pass
+            log.info("Client has disconnected from notification for project ID '{}' (HTTP long-polling method)".format(project.id))
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project.id):
+                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    await project.close()
+
 
     @Route.get(
         r"/projects/{project_id}/notifications/ws",
@@ -259,36 +256,32 @@ class ProjectHandler:
     async def notification_ws(request, response):
 
         controller = Controller.instance()
-        project_id = request.match_info["project_id"]
+        project = controller.get_project(request.match_info["project_id"])
         ws = aiohttp.web.WebSocketResponse()
         await ws.prepare(request)
 
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
-        log.info("New client has connected to the notification stream for project ID '{}' (WebSocket method)".format(project_id))
+        log.info("New client has connected to the notification stream for project ID '{}' (WebSocket method)".format(project.id))
         try:
-            with controller.notification.project_queue(project_id) as queue:
+            with controller.notification.project_queue(project.id) as queue:
                 while True:
                     notification = await queue.get_json(5)
                     if ws.closed:
                         break
                     await ws.send_str(notification)
         finally:
-            log.info("Client has disconnected from notification stream for project ID '{}' (WebSocket method)".format(project_id))
+            log.info("Client has disconnected from notification stream for project ID '{}' (WebSocket method)".format(project.id))
             if not ws.closed:
                 await ws.close()
             request.app['websockets'].discard(ws)
-            try:
-                project = controller.get_project(project_id)
-                if project.auto_close:
-                    # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-                    # if someone else is not connected
-                    await asyncio.sleep(5)
-                    if not controller.notification.project_has_listeners(project_id):
-                        log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
-                        await project.close()
-            except aiohttp.web.HTTPNotFound:
-                pass
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project.id):
+                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    await project.close()
 
         return ws
 

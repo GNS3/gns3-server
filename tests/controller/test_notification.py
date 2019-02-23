@@ -45,7 +45,7 @@ def test_emit_to_all(async_run, controller, project):
     Send an event to all if we don't have a project id in the event
     """
     notif = controller.notification
-    with notif.project_queue(project) as queue:
+    with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         notif.project_emit('test', {})
@@ -60,7 +60,7 @@ def test_emit_to_project(async_run, controller, project):
     Send an event to a project listeners
     """
     notif = controller.notification
-    with notif.project_queue(project) as queue:
+    with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         # This event has not listener
@@ -74,20 +74,20 @@ def test_emit_to_project(async_run, controller, project):
 
 def test_dispatch(async_run, controller, project):
     notif = controller.notification
-    with notif.project_queue(project) as queue:
+    with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        async_run(notif.dispatch("test", {}, compute_id=1))
+        async_run(notif.dispatch("test", {}, project_id=project.id, compute_id=1))
         msg = async_run(queue.get(5))
         assert msg == ('test', {}, {})
 
 
 def test_dispatch_ping(async_run, controller, project):
     notif = controller.notification
-    with notif.project_queue(project) as queue:
+    with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
-        async_run(notif.dispatch("ping", {}, compute_id=12))
+        async_run(notif.dispatch("ping", {}, project_id=project.id, compute_id=12))
         msg = async_run(queue.get(5))
         assert msg == ('ping', {'compute_id': 12}, {})
 
@@ -99,7 +99,7 @@ def test_dispatch_node_updated(async_run, controller, node, project):
     """
 
     notif = controller.notification
-    with notif.project_queue(project) as queue:
+    with notif.project_queue(project.id) as queue:
         assert len(notif._project_listeners[project.id]) == 1
         async_run(queue.get(0.1))  # ping
         async_run(notif.dispatch("node.updated", {
@@ -108,6 +108,7 @@ def test_dispatch_node_updated(async_run, controller, node, project):
             "name": "hello",
             "startup_config": "ip 192"
         },
+            project_id=project.id,
             compute_id=1))
         assert node.name == "hello"
         action, event, _ = async_run(queue.get(5))

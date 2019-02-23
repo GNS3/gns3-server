@@ -86,11 +86,11 @@ def test_json(tmpdir):
 
 def test_update(controller, async_run):
     project = Project(controller=controller, name="Hello")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     assert project.name == "Hello"
     async_run(project.update(name="World"))
     assert project.name == "World"
-    controller.notification.project_emit.assert_any_call("project.updated", project.__json__())
+    project.emit_notification.assert_any_call("project.updated", project.__json__())
 
 
 def test_update_on_compute(controller, async_run):
@@ -99,7 +99,7 @@ def test_update_on_compute(controller, async_run):
     compute.id = "local"
     project = Project(controller=controller, name="Test")
     project._project_created_on_compute = [compute]
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
 
     async_run(project.update(variables=variables))
 
@@ -154,7 +154,7 @@ def test_add_node_local(async_run, controller):
     compute = MagicMock()
     compute.id = "local"
     project = Project(controller=controller, name="Test")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -174,7 +174,7 @@ def test_add_node_local(async_run, controller):
                                        'name': 'test'},
                                  timeout=1200)
     assert compute in project._project_created_on_compute
-    controller.notification.project_emit.assert_any_call("node.created", node.__json__())
+    project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
 def test_add_node_non_local(async_run, controller):
@@ -184,7 +184,7 @@ def test_add_node_non_local(async_run, controller):
     compute = MagicMock()
     compute.id = "remote"
     project = Project(controller=controller, name="Test")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -202,7 +202,7 @@ def test_add_node_non_local(async_run, controller):
                                        'name': 'test'},
                                  timeout=1200)
     assert compute in project._project_created_on_compute
-    controller.notification.project_emit.assert_any_call("node.created", node.__json__())
+    project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
 def test_add_node_from_template(async_run, controller):
@@ -212,7 +212,7 @@ def test_add_node_from_template(async_run, controller):
     compute = MagicMock()
     compute.id = "local"
     project = Project(controller=controller, name="Test")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     template = Template(str(uuid.uuid4()), {
         "compute_id": "local",
         "name": "Test",
@@ -234,7 +234,7 @@ def test_add_node_from_template(async_run, controller):
     })
 
     assert compute in project._project_created_on_compute
-    controller.notification.project_emit.assert_any_call("node.created", node.__json__())
+    project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
 def test_delete_node(async_run, controller):
@@ -243,7 +243,7 @@ def test_delete_node(async_run, controller):
     """
     compute = MagicMock()
     project = Project(controller=controller, name="Test")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -255,7 +255,7 @@ def test_delete_node(async_run, controller):
     assert node.id not in project._nodes
 
     compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
-    controller.notification.project_emit.assert_any_call("node.deleted", node.__json__())
+    project.emit_notification.assert_any_call("node.deleted", node.__json__())
 
 
 def test_delete_node_delete_link(async_run, controller):
@@ -264,7 +264,7 @@ def test_delete_node_delete_link(async_run, controller):
     """
     compute = MagicMock()
     project = Project(controller=controller, name="Test")
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -280,8 +280,8 @@ def test_delete_node_delete_link(async_run, controller):
     assert link.id not in project._links
 
     compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
-    controller.notification.project_emit.assert_any_call("node.deleted", node.__json__())
-    controller.notification.project_emit.assert_any_call("link.deleted", link.__json__())
+    project.emit_notification.assert_any_call("node.deleted", node.__json__())
+    project.emit_notification.assert_any_call("link.deleted", link.__json__())
 
 
 def test_get_node(async_run, controller):
@@ -331,14 +331,14 @@ def test_add_link(async_run, project, controller):
     vm1._ports = [EthernetPort("E0", 0, 3, 1)]
     vm2 = async_run(project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
     vm2._ports = [EthernetPort("E0", 0, 4, 2)]
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     link = async_run(project.add_link())
     async_run(link.add_node(vm1, 3, 1))
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock_udp_create:
         async_run(link.add_node(vm2, 4, 2))
     assert mock_udp_create.called
     assert len(link._nodes) == 2
-    controller.notification.project_emit.assert_any_call("link.created", link.__json__())
+    project.emit_notification.assert_any_call("link.created", link.__json__())
 
 
 def test_list_links(async_run, project):
@@ -379,18 +379,18 @@ def test_delete_link(async_run, project, controller):
     assert len(project._links) == 0
     link = async_run(project.add_link())
     assert len(project._links) == 1
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     async_run(project.delete_link(link.id))
-    controller.notification.project_emit.assert_any_call("link.deleted", link.__json__())
+    project.emit_notification.assert_any_call("link.deleted", link.__json__())
     assert len(project._links) == 0
 
 
 def test_add_drawing(async_run, project, controller):
-    controller.notification.project_emit = MagicMock()
+    project.emit_notification = MagicMock()
 
     drawing = async_run(project.add_drawing(None, svg="<svg></svg>"))
     assert len(project._drawings) == 1
-    controller.notification.project_emit.assert_any_call("drawing.created", drawing.__json__())
+    project.emit_notification.assert_any_call("drawing.created", drawing.__json__())
 
 
 def test_get_drawing(async_run, project):
@@ -413,9 +413,9 @@ def test_delete_drawing(async_run, project, controller):
     assert len(project._drawings) == 0
     drawing = async_run(project.add_drawing())
     assert len(project._drawings) == 1
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     async_run(project.delete_drawing(drawing.id))
-    controller.notification.project_emit.assert_any_call("drawing.deleted", drawing.__json__())
+    project.emit_notification.assert_any_call("drawing.deleted", drawing.__json__())
     assert len(project._drawings) == 0
 
 
@@ -478,10 +478,10 @@ def test_open_close(async_run, controller):
     async_run(project.open())
     assert not project.start_all.called
     assert project.status == "opened"
-    controller._notification = MagicMock()
+    project.emit_notification = MagicMock()
     async_run(project.close())
     assert project.status == "closed"
-    controller.notification.project_emit.assert_any_call("project.closed", project.__json__())
+    project.emit_notification.assert_any_call("project.closed", project.__json__())
 
 
 def test_open_auto_start(async_run, controller):

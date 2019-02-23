@@ -353,23 +353,23 @@ def test_update_properties(node, compute, project, async_run, controller):
     #controller._notification.emit.assert_called_with("node.updated", node_notif)
 
 
-def test_update_only_controller(node, controller, compute, project, async_run):
+def test_update_only_controller(node, controller, compute, async_run):
     """
     When updating property used only on controller we don't need to
     call the compute
     """
     compute.put = AsyncioMagicMock()
-    controller._notification = AsyncioMagicMock()
+    node._project.emit_notification = AsyncioMagicMock()
 
     async_run(node.update(x=42))
     assert not compute.put.called
     assert node.x == 42
-    controller._notification.project_emit.assert_called_with("node.updated", node.__json__())
+    node._project.emit_notification.assert_called_with("node.updated", node.__json__())
 
     # If nothing change a second notif should not be send
-    controller._notification = AsyncioMagicMock()
+    node._project.emit_notification = AsyncioMagicMock()
     async_run(node.update(x=42))
-    assert not controller._notification.project_emit.called
+    assert not node._project.emit_notification.called
 
 
 def test_update_no_changes(node, compute, project, async_run):
