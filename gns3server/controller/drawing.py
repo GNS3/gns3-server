@@ -185,7 +185,7 @@ class Drawing:
         data = self.__json__()
         if not svg_changed:
             del data["svg"]
-        self._project.controller.notification.project_emit("drawing.updated", data)
+        self._project.emit_notification("drawing.updated", data)
         self._project.dump()
 
     def __json__(self, topology_dump=False):

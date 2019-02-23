@@ -199,14 +199,14 @@ class Link:
             self._filters = new_filters
             if self._created:
                 await self.update()
-                self._project.controller.notification.project_emit("link.updated", self.__json__())
+                self._project.emit_notification("link.updated", self.__json__())
                 self._project.dump()
 
     async def update_suspend(self, value):
         if value != self._suspended:
             self._suspended = value
             await self.update()
-            self._project.controller.notification.project_emit("link.updated", self.__json__())
+            self._project.emit_notification("link.updated", self.__json__())
             self._project.dump()
 
     @property
@@ -269,7 +269,7 @@ class Link:
                 n["node"].add_link(self)
                 n["port"].link = self
             self._created = True
-            self._project.controller.notification.project_emit("link.created", self.__json__())
+            self._project.emit_notification("link.created", self.__json__())
 
         if dump:
             self._project.dump()
@@ -282,7 +282,7 @@ class Link:
                     label = node_data.get("label")
                     if label:
                         port["label"] = label
-        self._project.controller.notification.project_emit("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.__json__())
         self._project.dump()
 
     async def create(self):
@@ -317,7 +317,7 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._project.controller.notification.project_emit("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.__json__())
 
     async def stop_capture(self):
         """
@@ -325,7 +325,7 @@ class Link:
         """
 
         self._capturing = False
-        self._project.controller.notification.project_emit("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.__json__())
 
     def pcap_streaming_url(self):
         """

@@ -460,10 +460,7 @@ class BaseManager:
                     if not data:
                         await asyncio.sleep(0.1)
                         continue
-                    try:
-                        await response.write(data)
-                    except ConnectionError:
-                        break
+                    await response.write(data)
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

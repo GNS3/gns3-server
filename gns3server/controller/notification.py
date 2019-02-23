@@ -33,19 +33,19 @@ class Notification:
         self._controller_listeners = []
 
     @contextmanager
-    def project_queue(self, project):
+    def project_queue(self, project_id):
         """
         Get a queue of notifications
 
         Use it with Python with
         """
         queue = NotificationQueue()
-        self._project_listeners.setdefault(project.id, set())
-        self._project_listeners[project.id].add(queue)
+        self._project_listeners.setdefault(project_id, set())
+        self._project_listeners[project_id].add(queue)
         try:
             yield queue
         finally:
-            self._project_listeners[project.id].remove(queue)
+            self._project_listeners[project_id].remove(queue)
 
     @contextmanager
     def controller_queue(self):
@@ -84,14 +84,14 @@ class Notification:
         for controller_listener in self._controller_listeners:
             controller_listener.put_nowait((action, event, {}))
 
-    def project_has_listeners(self, project):
+    def project_has_listeners(self, project_id):
         """
         :param project_id: Project object
         :returns: True if client listen this project
         """
-        return project.id in self._project_listeners and len(self._project_listeners[project.id]) > 0
+        return project_id in self._project_listeners and len(self._project_listeners[project_id]) > 0
 
-    async def dispatch(self, action, event, compute_id):
+    async def dispatch(self, action, event, project_id, compute_id):
         """
         Notification received from compute node. Send it directly
         to clients or process it
@@ -110,13 +110,13 @@ class Notification:
                 self.project_emit("node.updated", node.__json__())
             except (aiohttp.web.HTTPNotFound, aiohttp.web.HTTPForbidden):  # Project closing
                 return
-        elif action == "ping":
-            event["compute_id"] = compute_id
-            self.project_emit(action, event)
+        # elif action == "ping":
+        #     event["compute_id"] = compute_id
+        #     self.project_emit(action, event)
         else:
-            self.project_emit(action, event)
+            self.project_emit(action, event, project_id)
 
-    def project_emit(self, action, event):
+    def project_emit(self, action, event, project_id=None):
         """
         Send a notification to clients scoped by projects
 
@@ -136,8 +136,8 @@ class Notification:
             except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
                 pass
 
-        if "project_id" in event:
-            self._send_event_to_project(event["project_id"], action, event)
+        if "project_id" in event or project_id:
+            self._send_event_to_project(event.get("project_id", project_id), action, event)
         else:
             self._send_event_to_all_projects(action, event)
 

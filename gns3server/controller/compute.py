@@ -446,13 +446,14 @@ class Compute:
                     msg = json.loads(response.data)
                     action = msg.pop("action")
                     event = msg.pop("event")
+                    project_id = msg.pop("project_id", None)
                     if action == "ping":
                         self._cpu_usage_percent = event["cpu_usage_percent"]
                         self._memory_usage_percent = event["memory_usage_percent"]
                         #FIXME: slow down number of compute events
                         self._controller.notification.controller_emit("compute.updated", self.__json__())
                     else:
-                        await self._controller.notification.dispatch(action, event, compute_id=self.id)
+                        await self._controller.notification.dispatch(action, event, project_id=project_id, compute_id=self.id)
                 elif response.type == aiohttp.WSMsgType.CLOSED or response.type == aiohttp.WSMsgType.ERROR or response.data is None:
                     self._connected = False
                     break
