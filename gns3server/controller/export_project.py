@@ -183,7 +183,7 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
 
                 if node["node_type"] == "virtualbox" and node.get("properties", {}).get("linked_clone"):
                     raise aiohttp.web.HTTPConflict(text="Projects with a linked {} clone node cannot not be exported. Please use Qemu instead.".format(node["node_type"]))
-                if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware", "cloud"]:
+                if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware"]:
                     raise aiohttp.web.HTTPConflict(text="Projects with a {} node cannot be exported".format(node["node_type"]))
 
                 if not keep_compute_id:

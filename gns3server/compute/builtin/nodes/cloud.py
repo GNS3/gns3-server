@@ -292,9 +292,9 @@ class Cloud(BaseNode):
         if not isinstance(nio, NIOUDP):
             raise NodeError("Source NIO is not UDP")
         await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                                 lport=nio.lport,
-                                                                                                 rhost=nio.rhost,
-                                                                                                 rport=nio.rport))
+                                                                                            lport=nio.lport,
+                                                                                            rhost=nio.rhost,
+                                                                                            rport=nio.rport))
 
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         if port_info["type"] in ("ethernet", "tap"):
@@ -309,7 +309,7 @@ class Cloud(BaseNode):
                 if port_info["type"] == "ethernet":
                     network_interfaces = [interface["name"] for interface in self._interfaces()]
                     if not port_info["interface"] in network_interfaces:
-                        raise NodeError("Interface '{}' could not be found on this system".format(port_info["interface"]))
+                        raise NodeError("Interface '{}' could not be found on this system, please update '{}'".format(port_info["interface"], self.name))
 
                     if sys.platform.startswith("linux"):
                         await self._add_linux_ethernet(port_info, bridge_name)
@@ -401,17 +401,11 @@ class Cloud(BaseNode):
             await self.start()
             await self._add_ubridge_connection(nio, port_number)
             self._nios[port_number] = nio
-        except NodeError as e:
-            self.project.emit("log.error", {"message": str(e)})
+        except (NodeError, UbridgeError) as e:
             await self._stop_ubridge()
             self.status = "stopped"
             self._nios[port_number] = nio
-        # Cleanup stuff
-        except UbridgeError as e:
             self.project.emit("log.error", {"message": str(e)})
-            await self._stop_ubridge()
-            self.status = "stopped"
-            self._nios[port_number] = nio
 
     async def update_nio(self, port_number, nio):
         """
