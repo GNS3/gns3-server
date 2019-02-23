@@ -203,7 +203,7 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
         "topology": {
             "nodes": [
                 {
-                    "node_type": "cloud"
+                    "node_type": "vmware"
                 }
             ]
         }
