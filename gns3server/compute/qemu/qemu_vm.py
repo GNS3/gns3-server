@@ -974,7 +974,7 @@ class QemuVM(BaseNode):
                 try:
                     if self.acpi_shutdown:
                         yield from self._control_vm("system_powerdown")
-                        yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
+                        yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
                     else:
                         self._process.terminate()
                         yield from gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
