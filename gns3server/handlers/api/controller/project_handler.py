@@ -20,11 +20,14 @@ import sys
 import aiohttp
 import asyncio
 import tempfile
+import zipfile
+import time
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
+from gns3server.utils.asyncio import aiozipstream
 from gns3server.config import Config
 
 
@@ -301,19 +304,24 @@ class ProjectHandler:
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
 
+
         try:
+            begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
-                stream = await export_project(project, tmp_dir, include_images=bool(int(request.query.get("include_images", "0"))))
-                # We need to do that now because export could failed and raise an HTTP error
-                # that why response start need to be the later possible
-                response.content_type = 'application/gns3project'
-                response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
-                response.enable_chunked_encoding()
-                await response.prepare(request)
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_DEFLATED) as zstream:
+                    await export_project(zstream, project, tmp_dir, include_images=bool(int(request.query.get("include_images", "0"))))
 
-                for data in stream:
-                    await response.write(data)
+                    # We need to do that now because export could failed and raise an HTTP error
+                    # that why response start need to be the later possible
+                    response.content_type = 'application/octet-stream'
+                    response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
+                    response.enable_chunked_encoding()
+                    await response.prepare(request)
 
+                    async for chunk in zstream:
+                        await response.write(chunk)
+
+            log.info("Project '{}' exported in {:.4f} seconds".format(project.id, time.time() - begin))
                 #await response.write_eof() #FIXME: shound't be needed anymore
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process

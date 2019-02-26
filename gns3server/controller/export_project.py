@@ -22,7 +22,6 @@ import asyncio
 import aiohttp
 import zipfile
 import tempfile
-import zipstream
 
 from datetime import datetime
 
@@ -30,7 +29,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-async def export_project(project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
+async def export_project(zstream, project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
     """
     Export a project to a zip file.
 
@@ -52,8 +51,6 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
 
     # Make sure we save the project
     project.dump()
-
-    zstream = zipstream.ZipFile(allowZip64=True)
 
     if not os.path.exists(project._path):
         raise aiohttp.web.HTTPNotFound(text="Project could not be found at '{}'".format(project._path))
@@ -80,7 +77,7 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
             if file.endswith(".gns3"):
                 continue
             _patch_mtime(path)
-            zstream.write(path, os.path.relpath(path, project._path), compress_type=zipfile.ZIP_DEFLATED)
+            zstream.write(path, os.path.relpath(path, project._path))
 
     # Export files from remote computes
     downloaded_files = set()
@@ -103,10 +100,8 @@ async def export_project(project, temporary_dir, include_images=False, keep_comp
                     response.close()
                     f.close()
                     _patch_mtime(temp_path)
-                    zstream.write(temp_path, arcname=compute_file["path"], compress_type=zipfile.ZIP_DEFLATED)
+                    zstream.write(temp_path, arcname=compute_file["path"])
                     downloaded_files.add(compute_file['path'])
-
-    return zstream
 
 
 def _patch_mtime(path):
@@ -231,6 +226,7 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
 
     zstream.writestr("project.gns3", json.dumps(topology).encode())
     return images
+
 
 def _export_local_image(image, zstream):
     """

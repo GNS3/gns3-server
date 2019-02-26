@@ -24,6 +24,7 @@ import shutil
 import asyncio
 import aiohttp
 import tempfile
+import zipfile
 
 from uuid import UUID, uuid4
 
@@ -38,6 +39,7 @@ from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
 
@@ -976,9 +978,10 @@ class Project:
         assert self._status != "closed"
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = await export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
-                project_path = os.path.join(tmpdir, "project.gns3p")
-                await wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                    zipstream = await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
+                    project_path = os.path.join(tmpdir, "project.gns3p")
+                    await wait_run_in_executor(self._create_duplicate_project_file, project_path, zipstream)
                 with open(project_path, "rb") as f:
                     project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
         except (ValueError, OSError, UnicodeEncodeError) as e:
