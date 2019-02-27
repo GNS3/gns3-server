@@ -300,7 +300,7 @@ class ZipFile(zipfile.ZipFile):
                 if cmpr:
                     buf = await self._run_in_executor(cmpr.compress, buf)
                     compress_size = compress_size + len(buf)
-                    await yield_(self.fp.write(buf))
+                await yield_(self.fp.write(buf))
 
         if cmpr:
             buf = cmpr.flush()
