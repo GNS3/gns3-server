@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.1.14 27/02/2019
+
+* Fix issue when setting cpuid.corespersocket for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2723
+* Bump ACPI Shutdown Timeout to 120 seconds. Ref #1536
+
 ## 2.1.13 26/02/2019
 
 * Force jsonschema dependency to 2.6.0
