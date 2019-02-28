@@ -313,7 +313,7 @@ class ProjectHandler:
 
                     # We need to do that now because export could failed and raise an HTTP error
                     # that why response start need to be the later possible
-                    response.content_type = 'application/octet-stream'
+                    response.content_type = 'application/gns3project'
                     response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
                     response.enable_chunked_encoding()
                     await response.prepare(request)

@@ -116,7 +116,7 @@ def test_vmware_nio_create_udp(http_compute, vm):
         assert args[0] == 0
 
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -135,7 +135,7 @@ def test_vmware_nio_update_udp(http_compute, vm):
                         "filters": {}},
                     example=True)
                 assert response.status == 201, response.body.decode()
-                assert response.route == "/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+                assert response.route == r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
                 assert response.json["type"] == "nio_udp"
 
 
@@ -149,7 +149,7 @@ def test_vmware_delete_nio(http_compute, vm):
         assert args[0] == 0
 
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_vmware_update(http_compute, vm, free_console_port):

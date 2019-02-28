@@ -201,7 +201,7 @@ def test_iou_nio_create_udp(http_compute, vm):
                                                                                                                                                                   "rhost": "127.0.0.1"},
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -219,7 +219,7 @@ def test_iou_nio_update_udp(http_compute, vm):
                                     "filters": {}},
                                 example=True)
     assert response.status == 201, response.body.decode()
-    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -229,7 +229,7 @@ def test_iou_nio_create_ethernet(http_compute, vm, ethernet_device):
                                                                                                                                                                   },
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
@@ -240,7 +240,7 @@ def test_iou_nio_create_ethernet_different_port(http_compute, vm, ethernet_devic
                                                                                                                                                                   },
                                  example=False)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_ethernet"
     assert response.json["ethernet_device"] == ethernet_device
 
@@ -250,7 +250,7 @@ def test_iou_nio_create_tap(http_compute, vm, ethernet_device):
         response = http_compute.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_tap",
                                                                                                                                                                       "tap_device": ethernet_device})
         assert response.status == 201
-        assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+        assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
         assert response.json["type"] == "nio_tap"
 
 
@@ -261,7 +261,7 @@ def test_iou_delete_nio(http_compute, vm):
                                                                                                                                                        "rhost": "127.0.0.1"})
     response = http_compute.delete("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_iou_start_capture(http_compute, vm, tmpdir, project):

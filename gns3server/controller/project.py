@@ -40,7 +40,6 @@ from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
-from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
