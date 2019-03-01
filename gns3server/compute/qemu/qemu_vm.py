@@ -984,7 +984,7 @@ class QemuVM(BaseNode):
             log.info("QEMU process has stopped, return code: %d", returncode)
             await self.stop()
             # A return code of 1 seem fine on Windows
-            if returncode != 0 and (returncode != 1 or not sys.platform.startswith("win")):
+            if returncode != 0 and (not sys.platform.startswith("win") or returncode != 1):
                 self.project.emit("log.error", {"message": "QEMU process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
 
     async def stop(self):
