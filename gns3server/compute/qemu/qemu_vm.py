@@ -1013,7 +1013,7 @@ class QemuVM(BaseNode):
 
                     if self.on_close == "shutdown_signal":
                         await self._control_vm("system_powerdown")
-                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=30)
+                        await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=120)
                     else:
                         self._process.terminate()
                         await gns3server.utils.asyncio.wait_for_process_termination(self._process, timeout=3)
