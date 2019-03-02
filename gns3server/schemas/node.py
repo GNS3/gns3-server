@@ -284,10 +284,6 @@ NODE_DUPLICATE_SCHEMA = {
         "z": {
             "description": "Z position of the node",
             "type": "integer"
-        },
-        "locked": {
-            "description": "Whether the element locked or not",
-            "type": "boolean"
         }
     },
     "additionalProperties": False,
