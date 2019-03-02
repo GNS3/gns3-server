@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 class Node:
     # This properties are used only on controller and are not forwarded to the compute
-    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "width", "height", "symbol", "label", "console_host",
+    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "locked", "width", "height", "symbol", "label", "console_host",
                                   "port_name_format", "first_port_name", "port_segment_size", "ports",
                                   "category", "console_auto_start"]
 
@@ -74,6 +74,7 @@ class Node:
         self._x = 0
         self._y = 0
         self._z = 1  # default z value is 1
+        self._locked = False
         self._ports = None
         self._symbol = None
         self._custom_adapters = []
@@ -235,6 +236,14 @@ class Node:
     @z.setter
     def z(self, val):
         self._z = val
+
+    @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, val):
+        self._locked = val
 
     @property
     def width(self):
@@ -681,6 +690,7 @@ class Node:
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
+                "locked": self._locked,
                 "width": self._width,
                 "height": self._height,
                 "symbol": self._symbol,
@@ -708,6 +718,7 @@ class Node:
             "x": self._x,
             "y": self._y,
             "z": self._z,
+            "locked": self._locked,
             "width": self._width,
             "height": self._height,
             "symbol": self._symbol,
