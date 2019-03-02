@@ -56,6 +56,7 @@ def test_json(project):
         "x": i.x,
         "y": i.y,
         "z": i.z,
+        "locked": i.locked,
         "svg": i.svg,
         "rotation": i.rotation
     }
@@ -65,6 +66,7 @@ def test_json(project):
         "y": i.y,
         "z": i.z,
         "rotation": i.rotation,
+        "locked": i.locked,
         "svg": i.svg
     }
 
