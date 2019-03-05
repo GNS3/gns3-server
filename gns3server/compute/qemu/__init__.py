@@ -100,10 +100,10 @@ class Qemu(BaseManager):
                 paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
                 try:
                     exec_dir = os.path.dirname(os.path.abspath(sys.executable))
-                    paths.add(os.path.abspath(os.path.join(exec_dir, "../Resources/qemu/bin/")))
+                    paths.add(os.path.abspath(os.path.join(exec_dir, "qemu/bin")))
                 # If the user run the server by hand from outside
                 except FileNotFoundError:
-                    paths.add("/Applications/GNS3.app/Contents/Resources/qemu/bin")
+                    paths.add("/Applications/GNS3.app/Contents/MacOS/qemu/bin")
         return paths
 
     @staticmethod

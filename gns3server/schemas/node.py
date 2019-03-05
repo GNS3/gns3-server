@@ -193,6 +193,10 @@ NODE_OBJECT_SCHEMA = {
             "description": "Z position of the node",
             "type": "integer"
         },
+        "locked": {
+            "description": "Whether the element locked or not",
+            "type": "boolean"
+        },
         "port_name_format": {
             "description": "Formating for port name {0} will be replace by port number",
             "type": "string"

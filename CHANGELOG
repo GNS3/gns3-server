@@ -140,6 +140,26 @@
 * Implement #1153 into 2.2 branch.
 * Pin prompt-toolkit to latest version 1.0.15
 
+## 2.1.14 27/02/2019
+
+* Fix issue when setting cpuid.corespersocket for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2723
+* Bump ACPI Shutdown Timeout to 120 seconds. Ref #1536
+
+## 2.1.13 26/02/2019
+
+* Force jsonschema dependency to 2.6.0
+* Less aggressive connections to uBridge. Ref #1289
+* Fix topology images (Pictures) disappearing from projects. Fixes #1514.
+* Reset MAC addresses when duplicating a project. Fixes #1522
+* Fix API call to create a node from an appliance doesn't return the new node data. Fixes #1527
+* Detect invalid environment variable and send a warning when creating a Docker node. Ref #2683
+* Do not export/import symlinks for projects. Fixes #2699
+* Fix symlink not being created for duplicated IOU devices. Fixes https://github.com/GNS3/gns3-gui/issues/2699
+* Configure coresPerSocket value in VMX file for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2688
+* Count logical CPUs to detect if the number of vCPUs is too high when configuring the GNS3 VM. Fixes #2688.
+* Add explicit error when trying to pull a Docker image from Docker Hub without Internet access. Fixes #1506.
+* Fixes double display output in GRUB in QEMU v3.1. Fixes #1516.
+
 ## 2.1.12 23/01/2019
 
 * Tune how to get the size of SVG images. Ref https://github.com/GNS3/gns3-gui/issues/2674.

@@ -160,7 +160,7 @@ def load_topology(path):
         topo = _convert_2_1_0(topo, path)
 
     # Version GNS3 2.2 dev (for project created with 2.2dev).
-    # Appliance ID has been repleace by Template ID
+    # Appliance ID has been replaced by Template ID
     if topo["revision"] == 9:
         for node in topo.get("topology", {}).get("nodes", []):
             if "appliance_id" in node:
@@ -177,7 +177,7 @@ def load_topology(path):
         try:
             with open(path, "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
-        except (OSError) as e:
+        except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
     return topo
 

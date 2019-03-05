@@ -1075,6 +1075,7 @@ class Project:
         data['x'] = x
         data['y'] = y
         data['z'] = z
+        data['locked'] = False  # duplicated node must not be locked
         new_node_uuid = str(uuid.uuid4())
         new_node = await self.add_node(
             node.compute,

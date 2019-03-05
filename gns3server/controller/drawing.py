@@ -37,7 +37,7 @@ class Drawing:
     text, images, rectangle... They are pure SVG elements.
     """
 
-    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=2, rotation=0):
+    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=2, locked=False, rotation=0):
         self._project = project
         if drawing_id is None:
             self._id = str(uuid.uuid4())
@@ -49,6 +49,7 @@ class Drawing:
         self._y = y
         self._z = z
         self._rotation = rotation
+        self._locked = locked
 
     @property
     def id(self):
@@ -158,6 +159,14 @@ class Drawing:
         self._z = val
 
     @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, val):
+        self._locked = val
+
+    @property
     def rotation(self):
         return self._rotation
 
@@ -198,6 +207,7 @@ class Drawing:
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
+                "locked": self._locked,
                 "rotation": self._rotation,
                 "svg": self._svg
             }
@@ -207,6 +217,7 @@ class Drawing:
             "x": self._x,
             "y": self._y,
             "z": self._z,
+            "locked": self._locked,
             "rotation": self._rotation,
             "svg": self.svg
         }

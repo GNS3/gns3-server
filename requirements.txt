@@ -1,4 +1,4 @@
-jsonschema>=2.4.0
+jsonschema==2.6.0  # pyup: ignore
 aiohttp==3.5.4
 aiohttp-cors==0.7.0
 aiofiles==0.4.0
