@@ -37,7 +37,6 @@ from gns3server.utils import parse_version
 from .vpcs_error import VPCSError
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
-from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
 
 
@@ -139,12 +138,10 @@ class VPCSVM(BaseNode):
         :returns: path to VPCS
         """
 
-        search_path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
-        path = shutil.which(search_path)
-        # shutil.which return None if the path doesn't exists
-        if not path:
-            return search_path
-        return path
+        vpcs_path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
+        if not os.path.isabs(vpcs_path):
+            vpcs_path = shutil.which(vpcs_path)
+        return vpcs_path
 
     @BaseNode.name.setter
     def name(self, new_name):
