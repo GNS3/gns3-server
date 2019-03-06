@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import aiohttp
 import asyncio
 import tempfile
 import zipfile
+import aiofiles
 import time
 
 from gns3server.web.route import Route
@@ -50,6 +50,8 @@ async def process_websocket(ws):
         await ws.receive()
     except aiohttp.WSServerHandshakeError:
         pass
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class ProjectHandler:
@@ -304,7 +306,6 @@ class ProjectHandler:
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
 
-
         try:
             begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
@@ -321,8 +322,8 @@ class ProjectHandler:
                     async for chunk in zstream:
                         await response.write(chunk)
 
-            log.info("Project '{}' exported in {:.4f} seconds".format(project.id, time.time() - begin))
-                #await response.write_eof() #FIXME: shound't be needed anymore
+            log.info("Project '{}' exported in {:.4f} seconds".format(project.name, time.time() - begin))
+
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
         except (ValueError, OSError, RuntimeError) as e:
@@ -354,29 +355,23 @@ class ProjectHandler:
 
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
-        # Spooled means the file is temporary kept in memory until max_size is reached
-        # Cannot use tempfile.SpooledTemporaryFile(max_size=10000) in Python 3.7 due
-        # to a bug https://bugs.python.org/issue26175
         try:
-            if sys.version_info >= (3, 7) and sys.version_info < (3, 8):
-                with tempfile.TemporaryFile() as temp:
+            begin = time.time()
+            with tempfile.TemporaryDirectory() as tmpdir:
+                temp_project_path = os.path.join(tmpdir, "project.zip")
+                async with aiofiles.open(temp_project_path, 'wb') as f:
                     while True:
-                        chunk = await request.content.read(1024)
+                        chunk = await request.content.read(CHUNK_SIZE)
                         if not chunk:
                             break
-                        temp.write(chunk)
-                    project = await import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
-            else:
-                with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
-                    while True:
-                        chunk = await request.content.read(1024)
-                        if not chunk:
-                            break
-                        temp.write(chunk)
-                    project = await import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+                        await f.write(chunk)
+
+                with open(temp_project_path, "rb") as f:
+                    project = await import_project(controller, request.match_info["project_id"], f, location=path, name=name)
+
+            log.info("Project '{}' imported in {:.4f} seconds".format(project.name, time.time() - begin))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
-
         response.json(project)
         response.set_status(201)
 
@@ -443,7 +438,7 @@ class ProjectHandler:
             with open(path, "rb") as f:
                 await response.prepare(request)
                 while True:
-                    data = f.read(4096)
+                    data = f.read(CHUNK_SIZE)
                     if not data:
                         break
                     await response.write(data)
@@ -483,7 +478,7 @@ class ProjectHandler:
             with open(path, 'wb+') as f:
                 while True:
                     try:
-                        chunk = await request.content.read(1024)
+                        chunk = await request.content.read(CHUNK_SIZE)
                     except asyncio.TimeoutError:
                         raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
                     if not chunk:

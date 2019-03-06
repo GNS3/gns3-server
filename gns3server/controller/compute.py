@@ -320,28 +320,6 @@ class Compute:
             raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
         return response
 
-    async def stream_file(self, project, path, timeout=None):
-        """
-        Read file of a project and stream it
-
-        :param project: A project object
-        :param path: The path of the file in the project
-        :param timeout: timeout
-        :returns: A file stream
-        """
-
-        url = self._getUrl("/projects/{}/stream/{}".format(project.id, path))
-        response = await self._session().request("GET", url, auth=self._auth, timeout=timeout)
-        if response.status == 404:
-            raise aiohttp.web.HTTPNotFound(text="file '{}' not found on compute".format(path))
-        elif response.status == 403:
-            raise aiohttp.web.HTTPForbidden(text="forbidden to open '{}' on compute".format(path))
-        elif response.status != 200:
-            raise aiohttp.web.HTTPInternalServerError(text="Unexpected error {}: {}: while opening {} on compute".format(response.status,
-                                                                                                                         response.reason,
-                                                                                                                         path))
-        return response
-
     async def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
         """
         :param dont_connect: If true do not reconnect if not connected

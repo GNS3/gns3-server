@@ -493,7 +493,7 @@ class DynamipsVMHandler:
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        await response.file(image_path)
+        await response.stream_file(image_path)
 
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/duplicate",

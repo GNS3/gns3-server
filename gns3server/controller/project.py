@@ -971,7 +971,8 @@ class Project:
         try:
             begin = time.time()
             with tempfile.TemporaryDirectory() as tmpdir:
-                with aiozipstream.ZipFile(compression=zipfile.ZIP_DEFLATED) as zstream:
+                # Do not compress the exported project when duplicating
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
                     await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
 
                     # export the project to a temporary location
@@ -985,7 +986,7 @@ class Project:
                     with open(project_path, "rb") as f:
                         project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
 
-            log.info("Project '{}' duplicated in {:.4f} seconds".format(project.id, time.time() - begin))
+            log.info("Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - begin))
         except (ValueError, OSError, UnicodeEncodeError) as e:
             raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
 

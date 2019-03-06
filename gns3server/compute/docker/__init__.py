@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 DOCKER_MINIMUM_API_VERSION = "1.25"
 DOCKER_MINIMUM_VERSION = "1.13"
 DOCKER_PREFERRED_API_VERSION = "1.30"
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class Docker(BaseManager):
@@ -206,7 +207,7 @@ class Docker(BaseManager):
         content = ""
         while True:
             try:
-                chunk = await response.content.read(1024)
+                chunk = await response.content.read(CHUNK_SIZE)
             except aiohttp.ServerDisconnectedError:
                 log.error("Disconnected from server while pulling Docker image '{}' from docker hub".format(image))
                 break

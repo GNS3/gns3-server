@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import asyncio
+import aiofiles
 import aiohttp
 import zipfile
 import tempfile
@@ -28,6 +29,8 @@ from datetime import datetime
 import logging
 log = logging.getLogger(__name__)
 
+CHUNK_SIZE = 1024 * 8  # 8KB
+
 
 async def export_project(zstream, project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
     """
@@ -36,13 +39,13 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
     The file will be read chunk by chunk when you iterate over the zip stream.
     Some files like snapshots and packet captures are ignored.
 
+    :param zstream: ZipStream object
+    :param project: Project instance
     :param temporary_dir: A temporary dir where to store intermediate data
     :param include images: save OS images to the zip file
     :param keep_compute_id: If false replace all compute id by local (standard behavior for .gns3project to make it portable)
     :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable
     :param reset_mac_addresses: Reset MAC addresses for every nodes.
-
-    :returns: ZipStream object
     """
 
     # To avoid issue with data not saved we disallow the export of a running project
@@ -80,28 +83,28 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
             zstream.write(path, os.path.relpath(path, project._path))
 
     # Export files from remote computes
-    downloaded_files = set()
     for compute in project.computes:
         if compute.id != "local":
             compute_files = await compute.list_files(project)
             for compute_file in compute_files:
                 if _is_exportable(compute_file["path"]):
-                    (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
-                    f = open(fd, "wb", closefd=True)
+                    log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
-                    while True:
-                        try:
-                            data = await response.content.read(1024)
-                        except asyncio.TimeoutError:
-                            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
-                        if not data:
-                            break
-                        f.write(data)
+                    #if response.status != 200:
+                    #    raise aiohttp.web.HTTPConflict(text="Cannot export file from compute '{}'. Compute returned status code {}.".format(compute.id, response.status))
+                    (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
+                    async with aiofiles.open(fd, 'wb') as f:
+                        while True:
+                            try:
+                                data = await response.content.read(CHUNK_SIZE)
+                            except asyncio.TimeoutError:
+                                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
+                            if not data:
+                                break
+                            await f.write(data)
                     response.close()
-                    f.close()
                     _patch_mtime(temp_path)
                     zstream.write(temp_path, arcname=compute_file["path"])
-                    downloaded_files.add(compute_file['path'])
 
 
 def _patch_mtime(path):
@@ -262,30 +265,26 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
     Export specific image from remote compute.
     """
 
-    log.info("Downloading image '{}' from compute '{}'".format(image, compute_id))
-
+    log.debug("Downloading image '{}' from compute '{}'".format(image, compute_id))
     try:
         compute = [compute for compute in project.computes if compute.id == compute_id][0]
     except IndexError:
         raise aiohttp.web.HTTPConflict(text="Cannot export image from '{}' compute. Compute doesn't exist.".format(compute_id))
 
-    (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
-    f = open(fd, "wb", closefd=True)
     response = await compute.download_image(image_type, image)
-
     if response.status != 200:
-        raise aiohttp.web.HTTPConflict(text="Cannot export image from '{}' compute. Compute returned status code {}.".format(compute_id, response.status))
+        raise aiohttp.web.HTTPConflict(text="Cannot export image from compute '{}'. Compute returned status code {}.".format(compute_id, response.status))
 
-    while True:
-        try:
-            data = await response.content.read(1024)
-        except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
-        if not data:
-            break
-        f.write(data)
+    (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
+    async with aiofiles.open(fd, 'wb') as f:
+        while True:
+            try:
+                data = await response.content.read(CHUNK_SIZE)
+            except asyncio.TimeoutError:
+                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
+            if not data:
+                break
+            await f.write(data)
     response.close()
-    f.close()
     arcname = os.path.join("images", image_type, image)
-    log.info("Saved {}".format(arcname))
     project_zipfile.write(temp_path, arcname=arcname, compress_type=zipfile.ZIP_DEFLATED)

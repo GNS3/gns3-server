@@ -101,7 +101,7 @@ class Snapshot:
                     async with aiofiles.open(self.path, 'wb') as f:
                         async for chunk in zstream:
                             await f.write(chunk)
-            log.info("Snapshot '{}' created in {:.4f} seconds".format(self.path, time.time() - begin))
+            log.info("Snapshot '{}' created in {:.4f} seconds".format(self.name, time.time() - begin))
         except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
 
