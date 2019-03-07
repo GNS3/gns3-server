@@ -305,12 +305,25 @@ class ProjectHandler:
 
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
+        if request.query.get("include_images", "no").lower() == "yes":
+            include_images = True
+        else:
+            include_images = False
+        compression_query = request.query.get("compression", "zip").lower()
+        if compression_query == "zip":
+            compression = zipfile.ZIP_DEFLATED
+        elif compression_query == "none":
+            compression = zipfile.ZIP_STORED
+        elif compression_query == "bzip2":
+            compression = zipfile.ZIP_BZIP2
+        elif compression_query == "lzma":
+            compression = zipfile.ZIP_LZMA
 
         try:
             begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
-                with aiozipstream.ZipFile(compression=zipfile.ZIP_DEFLATED) as zstream:
-                    await export_project(zstream, project, tmp_dir, include_images=bool(int(request.query.get("include_images", "0"))))
+                with aiozipstream.ZipFile(compression=compression) as zstream:
+                    await export_project(zstream, project, tmp_dir, include_images=include_images)
 
                     # We need to do that now because export could failed and raise an HTTP error
                     # that why response start need to be the later possible
@@ -430,23 +443,7 @@ class ProjectHandler:
             raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
 
-        response.content_type = "application/octet-stream"
-        response.set_status(200)
-        response.enable_chunked_encoding()
-
-        try:
-            with open(path, "rb") as f:
-                await response.prepare(request)
-                while True:
-                    data = f.read(CHUNK_SIZE)
-                    if not data:
-                        break
-                    await response.write(data)
-
-        except FileNotFoundError:
-            raise aiohttp.web.HTTPNotFound()
-        except PermissionError:
-            raise aiohttp.web.HTTPForbidden()
+        await response.stream_file(path)
 
     @Route.post(
         r"/projects/{project_id}/files/{path:.+}",
@@ -475,7 +472,7 @@ class ProjectHandler:
         response.set_status(200)
 
         try:
-            with open(path, 'wb+') as f:
+            async with aiofiles.open(path, 'wb+') as f:
                 while True:
                     try:
                         chunk = await request.content.read(CHUNK_SIZE)
@@ -483,7 +480,7 @@ class ProjectHandler:
                         raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
                     if not chunk:
                         break
-                    f.write(chunk)
+                    await f.write(chunk)
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:
