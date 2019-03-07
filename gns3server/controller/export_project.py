@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 CHUNK_SIZE = 1024 * 8  # 8KB
 
 
-async def export_project(zstream, project, temporary_dir, include_images=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
+async def export_project(zstream, project, temporary_dir, include_images=False, include_snapshots=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
     """
     Export a project to a zip file.
 
@@ -42,7 +42,8 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
     :param zstream: ZipStream object
     :param project: Project instance
     :param temporary_dir: A temporary dir where to store intermediate data
-    :param include images: save OS images to the zip file
+    :param include_images: save OS images to the zip file
+    :param include_snapshots: save snapshots to the zip file
     :param keep_compute_id: If false replace all compute id by local (standard behavior for .gns3project to make it portable)
     :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable
     :param reset_mac_addresses: Reset MAC addresses for every nodes.
@@ -65,7 +66,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
 
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
-        files = [f for f in files if _is_exportable(os.path.join(root, f))]
+        files = [f for f in files if _is_exportable(os.path.join(root, f), include_snapshots)]
         for file in files:
             path = os.path.join(root, file)
             # check if we can export the file
@@ -87,7 +88,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
         if compute.id != "local":
             compute_files = await compute.list_files(project)
             for compute_file in compute_files:
-                if _is_exportable(compute_file["path"]):
+                if _is_exportable(compute_file["path"], include_snapshots):
                     log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
                     #if response.status != 200:
@@ -124,13 +125,13 @@ def _patch_mtime(path):
         os.utime(path, (st.st_atime, new_mtime))
 
 
-def _is_exportable(path):
+def _is_exportable(path, include_snapshots=False):
     """
     :returns: True if file should not be included in the final archive
     """
 
-    # do not export snapshots
-    if path.endswith("snapshots"):
+    # do not export snapshots by default
+    if include_snapshots is False and path.endswith("snapshots"):
         return False
 
     # do not export symlinks
@@ -138,14 +139,16 @@ def _is_exportable(path):
         return False
 
     # do not export directories of snapshots
-    if "{sep}snapshots{sep}".format(sep=os.path.sep) in path:
+    if include_snapshots is False and "{sep}snapshots{sep}".format(sep=os.path.sep) in path:
         return False
 
     try:
         # do not export captures and other temporary directory
         s = os.path.normpath(path).split(os.path.sep)
         i = s.index("project-files")
-        if s[i + 1] in ("tmp", "captures", "snapshots"):
+        if include_snapshots is False and s[i + 1] == "snapshots":
+            return False
+        if s[i + 1] in ("tmp", "captures"):
             return False
     except (ValueError, IndexError):
         pass
