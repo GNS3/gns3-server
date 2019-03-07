@@ -20,7 +20,7 @@ import jsonschema
 import aiohttp
 import aiohttp.web
 import mimetypes
-import asyncio
+import aiofiles
 import logging
 import jinja2
 import sys
@@ -31,6 +31,8 @@ from ..version import __version__
 
 log = logging.getLogger(__name__)
 renderer = jinja2.Environment(loader=jinja2.FileSystemLoader(get_resource('templates')))
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class Response(aiohttp.web.Response):
@@ -112,16 +114,21 @@ class Response(aiohttp.web.Response):
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
 
-    async def file(self, path, status=200, set_content_length=True):
+    async def stream_file(self, path, status=200, set_content_type=None, set_content_length=True):
         """
-        Return a file as a response
+        Stream a file as a response
         """
+
         if not os.path.exists(path):
             raise aiohttp.web.HTTPNotFound()
 
-        ct, encoding = mimetypes.guess_type(path)
-        if not ct:
-            ct = 'application/octet-stream'
+        if not set_content_type:
+            ct, encoding = mimetypes.guess_type(path)
+            if not ct:
+                ct = 'application/octet-stream'
+        else:
+            ct = set_content_type
+
         if encoding:
             self.headers[aiohttp.hdrs.CONTENT_ENCODING] = encoding
         self.content_type = ct
@@ -136,16 +143,13 @@ class Response(aiohttp.web.Response):
         self.set_status(status)
 
         try:
-            with open(path, 'rb') as fobj:
+            async with aiofiles.open(path, 'rb') as f:
                 await self.prepare(self._request)
-
                 while True:
-                    data = fobj.read(4096)
+                    data = await f.read(CHUNK_SIZE)
                     if not data:
                         break
                     await self.write(data)
-                    # await self.drain()
-
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

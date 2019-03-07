@@ -20,6 +20,7 @@ import os
 import struct
 import stat
 import asyncio
+import aiofiles
 
 import aiohttp
 import socket
@@ -45,6 +46,8 @@ from .nios.nio_tap import NIOTAP
 from .nios.nio_ethernet import NIOEthernet
 from ..utils.images import md5sum, remove_checksum, images_directories, default_images_directory, list_images
 from .error import NodeError, ImageMissingError
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class BaseManager:
@@ -456,7 +459,7 @@ class BaseManager:
             with open(path, "rb") as f:
                 await response.prepare(request)
                 while nio.capturing:
-                    data = f.read(4096)
+                    data = f.read(CHUNK_SIZE)
                     if not data:
                         await asyncio.sleep(0.1)
                         continue
@@ -594,18 +597,18 @@ class BaseManager:
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
         if os.path.commonprefix([directory, path]) != directory:
             raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbidden".format(filename, path))
-        log.info("Writing image file %s", path)
+        log.info("Writing image file to '{}'".format(path))
         try:
             remove_checksum(path)
             # We store the file under his final name only when the upload is finished
             tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(tmp_path, 'wb') as f:
+            async with aiofiles.open(tmp_path, 'wb') as f:
                 while True:
-                    packet = await stream.read(4096)
-                    if not packet:
+                    chunk = await stream.read(CHUNK_SIZE)
+                    if not chunk:
                         break
-                    f.write(packet)
+                    await f.write(chunk)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             shutil.move(tmp_path, path)
             await cancellable_wait_run_in_executor(md5sum, path)

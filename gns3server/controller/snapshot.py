@@ -20,13 +20,19 @@ import os
 import uuid
 import shutil
 import tempfile
-import asyncio
+import aiofiles
+import zipfile
+import time
 import aiohttp.web
 from datetime import datetime, timezone
 
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
+
+import logging
+log = logging.getLogger(__name__)
 
 
 # The string use to extract the date from the filename
@@ -73,15 +79,6 @@ class Snapshot:
     def created_at(self):
         return int(self._created_at)
 
-    def _create_snapshot_file(self, zipstream):
-        """
-        Creates the snapshot file (to be run in its own thread)
-        """
-
-        with open(self.path, "wb") as f:
-            for data in zipstream:
-                f.write(data)
-
     async def create(self):
         """
         Create the snapshot
@@ -97,9 +94,15 @@ class Snapshot:
             raise aiohttp.web.HTTPInternalServerError(text="Could not create the snapshot directory '{}': {}".format(snapshot_directory, e))
 
         try:
+            begin = time.time()
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = await export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                await wait_run_in_executor(self._create_snapshot_file, zipstream)
+                # Do not compress the snapshots
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                    await export_project(zstream, self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                    async with aiofiles.open(self.path, 'wb') as f:
+                        async for chunk in zstream:
+                            await f.write(chunk)
+            log.info("Snapshot '{}' created in {:.4f} seconds".format(self.name, time.time() - begin))
         except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
 

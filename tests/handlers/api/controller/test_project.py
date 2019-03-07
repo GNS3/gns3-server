@@ -235,7 +235,7 @@ def test_export_with_images(http_controller, tmpdir, loop, project):
         json.dump(topology, f)
 
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-        response = http_controller.get("/projects/{project_id}/export?include_images=1".format(project_id=project.id), raw=True)
+        response = http_controller.get("/projects/{project_id}/export?include_images=yes".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
     assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)

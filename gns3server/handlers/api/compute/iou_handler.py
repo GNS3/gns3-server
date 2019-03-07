@@ -451,4 +451,4 @@ class IOUHandler:
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        await response.file(image_path)
+        await response.stream_file(image_path)

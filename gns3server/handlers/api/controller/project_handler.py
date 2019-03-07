@@ -16,15 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import aiohttp
 import asyncio
 import tempfile
+import zipfile
+import aiofiles
+import time
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
+from gns3server.utils.asyncio import aiozipstream
 from gns3server.config import Config
 
 
@@ -47,6 +50,8 @@ async def process_websocket(ws):
         await ws.receive()
     except aiohttp.WSServerHandshakeError:
         pass
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class ProjectHandler:
@@ -300,21 +305,38 @@ class ProjectHandler:
 
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
+        if request.query.get("include_images", "no").lower() == "yes":
+            include_images = True
+        else:
+            include_images = False
+        compression_query = request.query.get("compression", "zip").lower()
+        if compression_query == "zip":
+            compression = zipfile.ZIP_DEFLATED
+        elif compression_query == "none":
+            compression = zipfile.ZIP_STORED
+        elif compression_query == "bzip2":
+            compression = zipfile.ZIP_BZIP2
+        elif compression_query == "lzma":
+            compression = zipfile.ZIP_LZMA
 
         try:
+            begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
-                stream = await export_project(project, tmp_dir, include_images=bool(int(request.query.get("include_images", "0"))))
-                # We need to do that now because export could failed and raise an HTTP error
-                # that why response start need to be the later possible
-                response.content_type = 'application/gns3project'
-                response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
-                response.enable_chunked_encoding()
-                await response.prepare(request)
+                with aiozipstream.ZipFile(compression=compression) as zstream:
+                    await export_project(zstream, project, tmp_dir, include_images=include_images)
 
-                for data in stream:
-                    await response.write(data)
+                    # We need to do that now because export could failed and raise an HTTP error
+                    # that why response start need to be the later possible
+                    response.content_type = 'application/gns3project'
+                    response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
+                    response.enable_chunked_encoding()
+                    await response.prepare(request)
 
-                #await response.write_eof() #FIXME: shound't be needed anymore
+                    async for chunk in zstream:
+                        await response.write(chunk)
+
+            log.info("Project '{}' exported in {:.4f} seconds".format(project.name, time.time() - begin))
+
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
         except (ValueError, OSError, RuntimeError) as e:
@@ -346,29 +368,23 @@ class ProjectHandler:
 
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
-        # Spooled means the file is temporary kept in memory until max_size is reached
-        # Cannot use tempfile.SpooledTemporaryFile(max_size=10000) in Python 3.7 due
-        # to a bug https://bugs.python.org/issue26175
         try:
-            if sys.version_info >= (3, 7) and sys.version_info < (3, 8):
-                with tempfile.TemporaryFile() as temp:
+            begin = time.time()
+            with tempfile.TemporaryDirectory() as tmpdir:
+                temp_project_path = os.path.join(tmpdir, "project.zip")
+                async with aiofiles.open(temp_project_path, 'wb') as f:
                     while True:
-                        chunk = await request.content.read(1024)
+                        chunk = await request.content.read(CHUNK_SIZE)
                         if not chunk:
                             break
-                        temp.write(chunk)
-                    project = await import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
-            else:
-                with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
-                    while True:
-                        chunk = await request.content.read(1024)
-                        if not chunk:
-                            break
-                        temp.write(chunk)
-                    project = await import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+                        await f.write(chunk)
+
+                with open(temp_project_path, "rb") as f:
+                    project = await import_project(controller, request.match_info["project_id"], f, location=path, name=name)
+
+            log.info("Project '{}' imported in {:.4f} seconds".format(project.name, time.time() - begin))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
-
         response.json(project)
         response.set_status(201)
 
@@ -427,23 +443,7 @@ class ProjectHandler:
             raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
 
-        response.content_type = "application/octet-stream"
-        response.set_status(200)
-        response.enable_chunked_encoding()
-
-        try:
-            with open(path, "rb") as f:
-                await response.prepare(request)
-                while True:
-                    data = f.read(4096)
-                    if not data:
-                        break
-                    await response.write(data)
-
-        except FileNotFoundError:
-            raise aiohttp.web.HTTPNotFound()
-        except PermissionError:
-            raise aiohttp.web.HTTPForbidden()
+        await response.stream_file(path)
 
     @Route.post(
         r"/projects/{project_id}/files/{path:.+}",
@@ -472,15 +472,15 @@ class ProjectHandler:
         response.set_status(200)
 
         try:
-            with open(path, 'wb+') as f:
+            async with aiofiles.open(path, 'wb+') as f:
                 while True:
                     try:
-                        chunk = await request.content.read(1024)
+                        chunk = await request.content.read(CHUNK_SIZE)
                     except asyncio.TimeoutError:
                         raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
                     if not chunk:
                         break
-                    f.write(chunk)
+                    await f.write(chunk)
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

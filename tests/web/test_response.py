@@ -34,11 +34,11 @@ def test_response_file(async_run, tmpdir, response):
     with open(filename, 'w+') as f:
         f.write('world')
 
-    async_run(response.file(filename))
+    async_run(response.stream_file(filename))
     assert response.status == 200
 
 
 def test_response_file_not_found(async_run, tmpdir, response):
     filename = str(tmpdir / 'hello-not-found')
 
-    pytest.raises(HTTPNotFound, lambda: async_run(response.file(filename)))
+    pytest.raises(HTTPNotFound, lambda: async_run(response.stream_file(filename)))

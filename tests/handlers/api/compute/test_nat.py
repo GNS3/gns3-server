@@ -65,7 +65,7 @@ def test_nat_nio_create_udp(http_compute, vm):
                                                                                                                                                                       "rhost": "127.0.0.1"},
                                      example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -83,7 +83,7 @@ def test_nat_nio_update_udp(http_compute, vm):
                                     "filters": {}},
                                 example=True)
     assert response.status == 201, response.body.decode()
-    assert response.route == "/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -97,7 +97,7 @@ def test_nat_delete_nio(http_compute, vm):
         response = http_compute.delete("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
         assert mock_remove_nio.called
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_nat_delete(http_compute, vm):

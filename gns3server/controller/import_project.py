@@ -20,7 +20,6 @@ import sys
 import json
 import uuid
 import shutil
-import asyncio
 import zipfile
 import aiohttp
 import itertools

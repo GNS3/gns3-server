@@ -36,7 +36,7 @@ class ApplianceHandler:
     async def list_appliances(request, response):
 
         controller = Controller.instance()
-        if request.query.get("update", "no") == "yes":
+        if request.query.get("update", "no").lower() == "yes":
             await controller.appliance_manager.download_appliances()
         controller.appliance_manager.load_appliances()
         response.json([c for c in controller.appliance_manager.appliances.values()])

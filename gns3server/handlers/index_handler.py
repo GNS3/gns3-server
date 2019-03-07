@@ -92,7 +92,7 @@ class IndexHandler:
         if not os.path.exists(static):
             static = get_static_path(os.path.join('web-ui', 'index.html'))
 
-        await response.file(static)
+        await response.stream_file(static)
 
     @Route.get(
         r"/v1/version",

@@ -53,7 +53,7 @@ class SymbolHandler:
 
         controller = Controller.instance()
         try:
-            await response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
+            await response.stream_file(controller.symbols.get_path(request.match_info["symbol_id"]))
         except (KeyError, OSError) as e:
             log.warning("Could not get symbol file: {}".format(e))
             response.set_status(404)
