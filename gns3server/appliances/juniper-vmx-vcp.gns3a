@@ -26,6 +26,78 @@
     },
     "images": [
         {
+            "filename": "vcp_18.4R1.8-disk1.vmdk",
+            "version": "18.4R1.8-ESXi",
+            "md5sum": "82a02f8b8e3181a409f44e96270dbb80",
+            "filesize": 1145199104
+        },
+        {
+            "filename": "vcp_18.4R1.8-disk2.vmdk",
+            "version": "18.4R1.8-ESXi",
+            "md5sum": "338c7235d448067437d5f5bc0a4db2ed",
+            "filesize": 68608
+        },
+        {
+            "filename": "vcp_18.4R1.8-disk3.vmdk",
+            "version": "18.4R1.8-ESXi",
+            "md5sum": "e10c48024289ba81a375383ea2196f9f",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-18.4R1.8.qcow2",
+            "version": "18.4R1.8-KVM",
+            "md5sum": "7e3cb628f67d31aad5bcd6b54fbb6052",
+            "filesize": 1419378688
+        },
+        {
+            "filename": "vmxhdd-18.4R1.8.img",
+            "version": "18.4R1.8-KVM",
+            "md5sum": "ae26e0f32605a53a5c85342bad677c9f",
+            "filesize": 197120
+        },
+        {
+            "filename": "metadata-usb-re-18.4R1.8.img",
+            "version": "18.4R1.8-KVM",
+            "md5sum": "b79bcce958cb3af6a7a048ae5d278960",
+            "filesize": 10485760
+        },
+        {
+            "filename": "vcp_17.4R1.16-disk1.vmdk",
+            "version": "17.4R1.16-ESXi",
+            "md5sum": "69450d850b76dbd0387dd8bb854c6229",
+            "filesize": 1196968960
+        },
+        {
+            "filename": "vcp_17.4R1.16-disk2.vmdk",
+            "version": "17.4R1.16-ESXi",
+            "md5sum": "0acfb272e7420de0ab8ddd80ac321b57",
+            "filesize": 5928960
+        },
+        {
+            "filename": "vcp_17.4R1.16-disk3.vmdk",
+            "version": "17.4R1.16-ESXi",
+            "md5sum": "a07f81beeaad964d70df55a653abb14d",
+            "filesize": 71680
+        },
+        {
+            "filename": "junos-vmx-x86-64-17.4R1.16.qcow2",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "85239193e852d643dfd9d5c257240bdf",
+            "filesize": 1325400064
+        },
+        {
+            "filename": "vmxhdd-17.4R1.16.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "69e9821ebc59367527336d8bcecd171c",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-17.4R1.16.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "a5b125822b798c7167c35966ea00229a",
+            "filesize": 16777216
+        },
+        {
             "filename": "vcp_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
             "md5sum": "2dba6dff363c0619903f85c3dedce8d8",
@@ -264,6 +336,38 @@
         }
     ],
     "versions": [
+        {
+            "name": "18.4R1.8-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_18.4R1.8-disk1.vmdk",
+                "hdb_disk_image": "vcp_18.4R1.8-disk2.vmdk",
+                "hdc_disk_image": "vcp_18.4R1.8-disk3.vmdk"
+            }
+        },
+        {
+            "name": "18.4R1.8-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-18.4R1.8.qcow2",
+                "hdb_disk_image": "vmxhdd-18.4R1.8.img",
+                "hdc_disk_image": "metadata-usb-re-18.4R1.8.img"
+            }
+        },
+        {
+            "name": "17.4R1.16-ESXi",
+            "images": {
+                "hda_disk_image": "vcp_17.4R1.16-disk1.vmdk",
+                "hdb_disk_image": "vcp_17.4R1.16-disk2.vmdk",
+                "hdc_disk_image": "vcp_17.4R1.16-disk3.vmdk"
+            }
+        },
+        {
+            "name": "17.4R1.16-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-17.4R1.16.qcow2",
+                "hdb_disk_image": "vmxhdd-17.4R1.16.img",
+                "hdc_disk_image": "metadata-usb-re-17.4R1.16.img"
+            }
+        },
         {
             "name": "17.1R1.8-ESXi",
             "images": {
