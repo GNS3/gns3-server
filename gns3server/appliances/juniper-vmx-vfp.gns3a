@@ -26,6 +26,34 @@
     },
     "images": [
         {
+            "filename": "vfpc_18.4R1.8-disk1.vmdk",
+            "version": "18.4R1.8-ESXi",
+            "md5sum": "d3c3002be95b7835607a3a1ce5fb241e",
+            "filesize": 133520384,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        }, 
+        {
+            "filename": "vFPC-20181130.img",
+            "version": "18.4R1.8-KVM",
+            "md5sum": "08451e026235084aa2e6b4fccadf7227",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vfpc_17.4R1.16-disk1.vmdk",
+            "version": "17.4R1.16-ESXi",
+            "md5sum": "6292a758821ac823c3a6b6d2f7cc599a",
+            "filesize": 108361216,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        }, 
+        {
+            "filename": "vFPC-20171213.img",
+            "version": "17.4R1.16-KVM",
+            "md5sum": "848a6256da7296e8fede368a258c68e4",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
             "filename": "vfpc_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
             "md5sum": "169dd487b8547d58b12b2918a5667360",
@@ -119,6 +147,30 @@
     ],
 
     "versions": [
+        {
+            "name": "18.4R1.8-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_18.4R1.8-disk1.vmdk"
+            }
+        },
+        {
+            "name": "18.4R1.8-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20181130.img"
+            }
+        },
+        {
+            "name": "17.4R1.16-ESXi",
+            "images": {
+                "hda_disk_image": "vfpc_17.4R1.16-disk1.vmdk"
+            }
+        },
+        {
+            "name": "17.4R1.16-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20171213.img"
+            }
+        },
         {
             "name": "17.1R1.8-ESXi",
             "images": {
