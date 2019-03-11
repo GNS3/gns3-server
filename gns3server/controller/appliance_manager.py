@@ -91,11 +91,50 @@ class ApplianceManager:
                         with open(path, 'r', encoding='utf-8') as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
                             appliance.__json__()  # Check if loaded without error
-                        if appliance.status != 'broken':
-                            self._appliances[appliance.id] = appliance
+                            if appliance.status != 'broken':
+                                self._appliances[appliance.id] = appliance
                     except (ValueError, OSError, KeyError) as e:
                         log.warning("Cannot load appliance file '%s': %s", path, str(e))
                         continue
+
+    async def download_custom_symbols(self):
+        """
+        Download custom appliance symbols from our GitHub registry repository.
+        """
+
+        from . import Controller
+        symbol_dir = Controller.instance().symbols.symbols_path()
+        self.load_appliances()
+        for appliance in self._appliances.values():
+            symbol = appliance.symbol
+            if symbol and not symbol.startswith(":/symbols/"):
+                destination_path = os.path.join(symbol_dir, symbol)
+                if not os.path.exists(destination_path):
+                    await self._download_symbol(symbol, destination_path)
+
+        # refresh the symbol cache
+        Controller.instance().symbols.list()
+
+    async def _download_symbol(self, symbol, destination_path):
+        """
+        Download a custom appliance symbol from our GitHub registry repository.
+        """
+
+        symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(symbol_url) as response:
+                if response.status != 200:
+                    log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
+                else:
+                    try:
+                        symbol_data = await response.read()
+                        log.info("Saving {} symbol to {}".format(symbol, destination_path))
+                        with open(destination_path, 'wb') as f:
+                            f.write(symbol_data)
+                    except asyncio.TimeoutError:
+                        log.warning("Timeout while downloading '{}'".format(symbol_url))
+                    except OSError as e:
+                        log.warning("Could not write appliance symbol '{}': {}".format(destination_path, e))
 
     @locking
     async def download_appliances(self):
@@ -114,7 +153,7 @@ class ApplianceManager:
                         log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return
                     elif response.status != 200:
-                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances on GitHub due to HTTP error code {}".format(response.status))
+                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
                     etag = response.headers.get("ETag")
                     if etag:
                         self._appliances_etag = etag
@@ -144,3 +183,6 @@ class ApplianceManager:
                                 raise aiohttp.web.HTTPConflict(text="Could not write appliance file '{}': {}".format(path, e))
         except ValueError as e:
             raise aiohttp.web.HTTPConflict(text="Could not read appliances information from GitHub: {}".format(e))
+
+        # download the custom symbols
+        await self.download_custom_symbols()

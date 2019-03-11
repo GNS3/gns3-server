@@ -67,9 +67,11 @@ class Symbols:
                     if filename.startswith('.'):
                         continue
                     symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), get_resource("symbols"))).replace('\\', '/')
+                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
                     symbol_id = ':/symbols/' + symbol_file
                     symbols.append({'symbol_id': symbol_id,
-                                    'filename': symbol_file,
+                                    'filename': filename,
+                                    'theme': theme,
                                     'builtin': True})
                     self._symbols_path[symbol_id] = os.path.join(root, filename)
 
@@ -81,8 +83,9 @@ class Symbols:
                         continue
                     symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace('\\', '/')
                     symbols.append({'symbol_id': symbol_file,
-                                    'filename': symbol_file,
-                                    'builtin': False,})
+                                    'filename': filename,
+                                    'builtin': False,
+                                    'theme': "Custom symbols"})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])
@@ -99,21 +102,26 @@ class Symbols:
         return directory
 
     def get_path(self, symbol_id):
-        symbol_filename = os.path.splitext(os.path.basename(symbol_id))[0]
-        theme = self._themes.get(self._current_theme, {})
-        if not theme:
-            log.error("Could not find symbol theme '{}'".format(self._current_theme))
+        #symbol_filename = os.path.splitext(os.path.basename(symbol_id))[0]
+        #theme = self._themes.get(self._current_theme, {})
+        #if not theme:
+        #    log.error("Could not find symbol theme '{}'".format(self._current_theme))
         try:
-            return self._symbols_path[theme.get(symbol_filename, symbol_id)]
+            return self._symbols_path[symbol_id]
+            #return self._symbols_path[theme.get(symbol_filename, symbol_id)]
         except KeyError:
-            # Symbol not found, let's refresh the cache
             try:
                 self.list()
                 return self._symbols_path[symbol_id]
             except (OSError, KeyError):
-                log.warning("Could not retrieve symbol '{}'".format(symbol_id))
-                symbols_path = self._symbols_path
-                return symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)), symbols_path[":/symbols/classic/computer.svg"])
+                # try to return a symbol with the same name from the classic theme
+                symbol = self._symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)))
+                if symbol:
+                    return symbol
+                else:
+                    # return the default computer symbol
+                    log.warning("Could not retrieve symbol '{}'".format(symbol_id))
+                    return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):
         try:
