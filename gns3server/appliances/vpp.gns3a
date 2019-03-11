@@ -1,0 +1,46 @@
+{
+    "name": "VPP",
+    "category": "router",
+    "description": "Vector Packet Processing (VPP) platform",
+    "vendor_name": "FD.IO VPP router",
+    "vendor_url": "https://fd.io/",
+    "documentation_url": "https://fd.io/resources/",
+    "product_name": "VPP",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "Virginijus Magelinskas",
+    "maintainer_email": "virginijus.m@gmail.com",
+    "usage": "Login: root , pass: vpp. This appliance requires >2 vCPUs and 4GB of RAM to run",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 5,
+        "ram": 4096,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic -cpu host -smp 2"
+    },
+    "images": [
+        {
+            "filename": "vpp_public-18.10-07.qcow2",
+            "version": "0.7",
+            "md5sum": "3e962985e5bbda0de4dc7893e60f6366",
+            "filesize": 2065825792,
+            "direct_download_url": "https://sigaba.net/vpp/vpp_public-18.10-07.qcow2"
+        }
+    ],
+    "versions": [
+
+        {
+            "name": "18.10-07",
+            "images": {
+                "hda_disk_image": "vpp_public-18.10-07.qcow2"
+            }
+        }
+    ]
+}
+

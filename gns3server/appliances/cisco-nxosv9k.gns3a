@@ -26,11 +26,32 @@
     },
     "images": [
         {
+            "filename": "nxosv-final.9.2.3.qcow2",
+            "version": "9.2.3",
+            "md5sum": "74bd9a5b4970e868685f753e48979194",
+            "filesize": 1357643776,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25283%2529"
+        },
+        {
+            "filename": "nxosv-final.9.2.2.qcow2",
+            "version": "9.2.2",
+            "md5sum": "2119702c488552fc4d1b4210a04d4f64",
+            "filesize": 1344077824,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529"
+        },
+        {
             "filename": "nxosv-final.9.2.1.qcow2",
             "version": "9.2.1",
             "md5sum": "1d7fa4654602d7ffbf62544edfe71986",
             "filesize": 1330315264,
             "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529"
+        },
+        {
+            "filename": "nxosv-final.7.0.3.I7.6.qcow2",
+            "version": "7.0.3.I7.6",
+            "md5sum": "a122ee954b4c11761abd99291b70544e",
+            "filesize": 1031995392,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/7.0%25283%2529I7%25286%2529"
         },
         {
             "filename": "nxosv-final.7.0.3.I7.5.qcow2",
@@ -100,10 +121,31 @@
     ],
     "versions": [
         {
+            "name": "9.2.3",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.9.2.3.qcow2"
+            }
+        },
+        {
+            "name": "9.2.2",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.9.2.2.qcow2"
+            }
+        },
+        {
             "name": "9.2.1",
             "images": {
                 "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nxosv-final.9.2.1.qcow2"
+            }
+        },
+        {
+            "name": "7.0.3.I7.6",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.7.0.3.I7.6.qcow2"
             }
         },
         {

@@ -2,51 +2,50 @@
     "name": "pfSense",
     "category": "firewall",
     "description": "The pfSense project is a free network firewall distribution, based on the FreeBSD operating system with a custom kernel and including third party free software packages for additional functionality. pfSense software, with the help of the package system, is able to provide the same functionality or more of common commercial firewalls, without any of the artificial limitations. It has successfully replaced every big name commercial firewall you can imagine in numerous installations around the world, including Check Point, Cisco PIX, Cisco ASA, Juniper, Sonicwall, Netgear, Watchguard, Astaro, and more.",
-    "vendor_name": "Electric Sheep Fencing LLC",
+    "vendor_name": "Rubicon Communications, LLC (Netgate)",
     "vendor_url": "https://www.pfsense.org",
     "documentation_url": "https://doc.pfsense.org/index.php/Main_Page",
     "product_name": "pfSense",
     "registry_version": 3,
     "status": "stable",
-    "maintainer": "GNS3 Team",
-    "maintainer_email": "developers@gns3.net",
+    "maintainer": "Jose Phillips",
+    "maintainer_email": "jose@latinol.com",
+    "usage": "Credentials: admin / pfsense\nTo install pfSense use all the defaults settings.\n\nNote:The default LAN port is em1.",
     "port_name_format": "em{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 6,
         "ram": 2048,
         "arch": "x86_64",
-        "console_type": "telnet",
+        "console_type": "vnc",
+        "hda_disk_interface": "virtio",
         "kvm": "allow",
         "process_priority": "normal"
     },
     "images": [
         {
-            "filename": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img",
-            "version": "2.4.3",
-            "md5sum": "b754d7e75dece5e756b6539c95714a74",
-            "filesize": 650392576,
+            "filename": "pfSense-CE-2.4.4-RELEASE-amd64.iso",
+            "version": "2.4.4",
+            "md5sum": "71386433238f96fc167d14cec9c708c6",
+            "filesize": 685557760,
             "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
         },
         {
-            "filename": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img",
-            "version": "2.3.5",
-            "md5sum": "b6cb76adba3e1113892f84ea01894228",
-            "filesize": 1989969408,
-            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
+
     ],
     "versions": [
         {
-            "name": "2.4.3",
+            "name": "2.4.4",
             "images": {
-                "hda_disk_image": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img"
-            }
-        },
-        {
-            "name": "2.3.5",
-            "images": {
-                "hda_disk_image": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img"
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "pfSense-CE-2.4.4-RELEASE-amd64.iso"
             }
         }
     ]
