@@ -68,61 +68,6 @@ class NodeHandler:
 
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.nodes.values()])
-        
-    @Route.get(
-        r"/projects/{project_id}/nodes/{node_id}",
-        status_codes={
-            200: "Node found",
-            400: "Invalid request",
-            404: "Node doesn't exist"
-        },
-        description="Get a node",
-        output=NODE_OBJECT_SCHEMA)
-    def get_node(request, response):
-        project = Controller.instance().get_project(request.match_info["project_id"])
-        node = project.get_node(request.match_info["node_id"])
-        response.set_status(200)
-        response.json(node)
-
-    @Route.put(
-        r"/projects/{project_id}/nodes/{node_id}",
-        status_codes={
-            200: "Instance updated",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        description="Update a node instance",
-        input=NODE_UPDATE_SCHEMA,
-        output=NODE_OBJECT_SCHEMA)
-    async def update(request, response):
-        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        node = project.get_node(request.match_info["node_id"])
-
-        # Ignore these because we only use them when creating a node
-        request.json.pop("node_id", None)
-        request.json.pop("node_type", None)
-        request.json.pop("compute_id", None)
-
-        await node.update(**request.json)
-        response.set_status(200)
-        response.json(node)
-
-    @Route.delete(
-        r"/projects/{project_id}/nodes/{node_id}",
-        parameters={
-            "project_id": "Project UUID",
-            "node_id": "Node UUID"
-        },
-        status_codes={
-            204: "Instance deleted",
-            400: "Invalid request",
-            404: "Instance doesn't exist"
-        },
-        description="Delete a node instance")
-    async def delete(request, response):
-        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        await project.delete_node(request.match_info["node_id"])
-        response.set_status(204)
 
     @Route.post(
         r"/projects/{project_id}/nodes/start",
@@ -195,6 +140,61 @@ class NodeHandler:
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         await project.stop_all()
         await project.start_all()
+        response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}",
+        status_codes={
+            200: "Node found",
+            400: "Invalid request",
+            404: "Node doesn't exist"
+        },
+        description="Get a node",
+        output=NODE_OBJECT_SCHEMA)
+    def get_node(request, response):
+        project = Controller.instance().get_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        response.set_status(200)
+        response.json(node)
+
+    @Route.put(
+        r"/projects/{project_id}/nodes/{node_id}",
+        status_codes={
+            200: "Instance updated",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Update a node instance",
+        input=NODE_UPDATE_SCHEMA,
+        output=NODE_OBJECT_SCHEMA)
+    async def update(request, response):
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+
+        # Ignore these because we only use them when creating a node
+        request.json.pop("node_id", None)
+        request.json.pop("node_type", None)
+        request.json.pop("compute_id", None)
+
+        await node.update(**request.json)
+        response.set_status(200)
+        response.json(node)
+
+    @Route.delete(
+        r"/projects/{project_id}/nodes/{node_id}",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Instance deleted",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Delete a node instance")
+    async def delete(request, response):
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
