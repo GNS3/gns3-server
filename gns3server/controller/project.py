@@ -744,7 +744,8 @@ class Project:
         os.remove(snapshot.path)
 
     async def close(self, ignore_notification=False):
-        if self._status == "closed":
+        if self._status == "closed" or self._loading:
+            log.debug("Closing project '{}' ignored because it is already closed or being loaded".format(self.name))
             return
         await self.stop_all()
         for compute in list(self._project_created_on_compute):
