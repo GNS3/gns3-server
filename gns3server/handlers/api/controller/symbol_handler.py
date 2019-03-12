@@ -85,6 +85,17 @@ class SymbolHandler:
         controller.symbols.list()
         response.set_status(204)
 
+    @Route.get(
+        r"/default_symbols",
+        description="List of default symbols",
+        status_codes={
+            200: "Default symbols list returned"
+        })
+    def list_default_symbols(request, response):
+
+        controller = Controller.instance()
+        response.json(controller.symbols.default_symbols())
+
     # @Route.post(
     #     r"/symbol_theme",
     #     description="Create a new symbol theme",

@@ -31,13 +31,15 @@ def test_list(symbols_dir):
     symbols = Symbols()
     assert {
         'symbol_id': ':/symbols/classic/firewall.svg',
-        'filename': 'classic/firewall.svg',
-        'builtin': True
+        'filename': 'firewall.svg',
+        'builtin': True,
+        'theme': 'Classic'
     } in symbols.list()
     assert {
         'symbol_id': 'linux.svg',
         'filename': 'linux.svg',
-        'builtin': False
+        'builtin': False,
+        'theme': 'Custom symbols'
     } in symbols.list()
 
 

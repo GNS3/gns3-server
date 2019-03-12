@@ -51,6 +51,8 @@ class TemplateHandler:
 
         controller = Controller.instance()
         template = controller.template_manager.add_template(request.json)
+        # Reset the symbol list
+        controller.symbols.list()
         response.set_status(201)
         response.json(template)
 

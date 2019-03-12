@@ -27,8 +27,9 @@ def test_symbols(http_controller):
     assert response.status == 200
     assert {
         'symbol_id': ':/symbols/classic/firewall.svg',
-        'filename': 'classic/firewall.svg',
-        'builtin': True
+        'filename': 'firewall.svg',
+        'builtin': True,
+        'theme': 'Classic'
     } in response.json
 
 

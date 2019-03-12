@@ -259,16 +259,15 @@ def test_symbol(node, symbols_dir, controller):
     Change symbol should change the node size
     """
 
-    controller.symbols.theme = "Classic"
-    node.symbol = ":/symbols/dslam.svg"
-    assert node.symbol == ":/symbols/dslam.svg"
+    node.symbol = ":/symbols/classic/dslam.svg"
+    assert node.symbol == ":/symbols/classic/dslam.svg"
     assert node.width == 50
     assert node.height == 53
     assert node.label["x"] is None
     assert node.label["y"] == -40
 
-    node.symbol = ":/symbols/cloud.svg"
-    assert node.symbol == ":/symbols/cloud.svg"
+    node.symbol = ":/symbols/classic/cloud.svg"
+    assert node.symbol == ":/symbols/classic/cloud.svg"
     assert node.width == 159
     assert node.height == 71
     assert node.label["x"] is None

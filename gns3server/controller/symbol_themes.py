@@ -31,13 +31,13 @@ CLASSIC_SYMBOL_THEME = {"cloud": ":/symbols/classic/cloud.svg",
                         "vmware_guest": ":/symbols/classic/vmware_guest.svg",
                         "docker_guest": ":/symbols/classic/docker_guest.svg"}
 
-INFINITY_SQUARE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/blue/cloud.svg",
+AFFINITY_SQUARE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/blue/cloud.svg",
                                      "ethernet_switch": ":/symbols/affinity/square/blue/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/square/blue/hub.svg",
                                      "frame_relay_switch.svg": ":/symbols/affinity/square/blue/isdn.svg",
                                      "atm_switch": ":/symbols/affinity/square/blue/atm.svg",
                                      "router": ":/symbols/affinity/square/blue/router.svg",
-                                     "multilayer_switch": ":/symbols/affinity/square/blue/multilayer_switch.svg",
+                                     "multilayer_switch": ":/symbols/affinity/square/blue/switch_multilayer.svg",
                                      "firewall": ":/symbols/affinity/square/blue/firewall3.svg",
                                      "computer": ":/symbols/affinity/square/blue/client.svg",
                                      "vpcs_guest": ":/symbols/affinity/square/blue/client.svg",
@@ -46,13 +46,13 @@ INFINITY_SQUARE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/blue/cl
                                      "vmware_guest": ":/symbols/affinity/square/blue/vmware.svg",
                                      "docker_guest": ":/symbols/affinity/square/blue/docker.svg"}
 
-INFINITY_SQUARE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/red/cloud.svg",
+AFFINITY_SQUARE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/red/cloud.svg",
                                     "ethernet_switch": ":/symbols/affinity/square/red/switch.svg",
                                     "ethernet_hub": ":/symbols/affinity/square/red/hub.svg",
                                     "frame_relay_switch": ":/symbols/affinity/square/red/isdn.svg",
                                     "atm_switch": ":/symbols/affinity/square/red/atm.svg",
                                     "router": ":/symbols/affinity/square/red/router.svg",
-                                    "multilayer_switch": ":/symbols/affinity/square/red/multilayer_switch.svg",
+                                    "multilayer_switch": ":/symbols/affinity/square/red/switch_multilayer.svg",
                                     "firewall": ":/symbols/affinity/square/red/firewall3.svg",
                                     "computer": ":/symbols/affinity/square/red/client.svg",
                                     "vpcs_guest": ":/symbols/affinity/square/red/client.svg",
@@ -61,13 +61,13 @@ INFINITY_SQUARE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/red/clou
                                     "vmware_guest": ":/symbols/affinity/square/red/vmware.svg",
                                     "docker_guest": ":/symbols/affinity/square/red/docker.svg"}
 
-INFINITY_SQUARE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/gray/cloud.svg",
+AFFINITY_SQUARE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/gray/cloud.svg",
                                      "ethernet_switch": ":/symbols/affinity/square/gray/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/square/gray/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/square/gray/isdn.svg",
                                      "atm_switch": ":/symbols/affinity/square/gray/atm.svg",
                                      "router": ":/symbols/affinity/square/gray/router.svg",
-                                     "multilayer_switch": ":/symbols/affinity/square/gray/multilayer_switch.svg",
+                                     "multilayer_switch": ":/symbols/affinity/square/gray/switch_multilayer.svg",
                                      "firewall": ":/symbols/affinity/square/gray/firewall3.svg",
                                      "computer": ":/symbols/affinity/square/gray/client.svg",
                                      "vpcs_guest": ":/symbols/affinity/square/gray/client.svg",
@@ -76,13 +76,13 @@ INFINITY_SQUARE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/gray/cl
                                      "vmware_guest": ":/symbols/affinity/square/gray/vmware.svg",
                                      "docker_guest": ":/symbols/affinity/square/gray/docker.svg"}
 
-INFINITY_CIRCLE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/blue/cloud.svg",
+AFFINITY_CIRCLE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/blue/cloud.svg",
                                      "ethernet_switch": ":/symbols/affinity/circle/blue/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/circle/blue/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/circle/blue/isdn.svg",
                                      "atm_switch": ":/symbols/affinity/circle/blue/atm.svg",
                                      "router": ":/symbols/affinity/circle/blue/router.svg",
-                                     "multilayer_switch": ":/symbols/affinity/circle/blue/multilayer_switch.svg",
+                                     "multilayer_switch": ":/symbols/affinity/circle/blue/switch_multilayer.svg",
                                      "firewall": ":/symbols/affinity/circle/blue/firewall3.svg",
                                      "computer": ":/symbols/affinity/circle/blue/client.svg",
                                      "vpcs_guest": ":/symbols/affinity/circle/blue/client.svg",
@@ -91,13 +91,13 @@ INFINITY_CIRCLE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/blue/cl
                                      "vmware_guest": ":/symbols/affinity/circle/blue/vmware.svg",
                                      "docker_guest": ":/symbols/affinity/circle/blue/docker.svg"}
 
-INFINITY_CIRCLE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/red/cloud.svg",
+AFFINITY_CIRCLE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/red/cloud.svg",
                                     "ethernet_switch": ":/symbols/affinity/circle/red/switch.svg",
                                     "ethernet_hub": ":/symbols/affinity/circle/red/hub.svg",
                                     "frame_relay_switch": ":/symbols/affinity/circle/red/isdn.svg",
                                     "atm_switch": ":/symbols/affinity/circle/red/atm.svg",
                                     "router": ":/symbols/affinity/circle/red/router.svg",
-                                    "multilayer_switch": ":/symbols/affinity/circle/red/multilayer_switch.svg",
+                                    "multilayer_switch": ":/symbols/affinity/circle/red/switch_multilayer.svg",
                                     "firewall": ":/symbols/affinity/circle/red/firewall3.svg",
                                     "computer": ":/symbols/affinity/circle/red/client.svg",
                                     "vpcs_guest": ":/symbols/affinity/circle/red/client.svg",
@@ -106,13 +106,13 @@ INFINITY_CIRCLE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/red/clou
                                     "vmware_guest": ":/symbols/affinity/circle/red/vmware.svg",
                                     "docker_guest": ":/symbols/affinity/circle/red/docker.svg"}
 
-INFINITY_CIRCLE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/gray/cloud.svg",
+AFFINITY_CIRCLE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/gray/cloud.svg",
                                      "ethernet_switch": ":/symbols/affinity/circle/gray/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/circle/gray/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/circle/gray/isdn.svg",
                                      "atm_switch": ":/symbols/affinity/circle/gray/atm.svg",
                                      "router": ":/symbols/affinity/circle/gray/router.svg",
-                                     "multilayer_switch": ":/symbols/affinity/circle/gray/multilayer_switch.svg",
+                                     "multilayer_switch": ":/symbols/affinity/circle/gray/switch_multilayer.svg",
                                      "firewall": ":/symbols/affinity/circle/gray/firewall3.svg",
                                      "computer": ":/symbols/affinity/circle/gray/client.svg",
                                      "vpcs_guest": ":/symbols/affinity/circle/gray/client.svg",
@@ -122,9 +122,9 @@ INFINITY_CIRCLE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/gray/cl
                                      "docker_guest": ":/symbols/affinity/circle/gray/docker.svg"}
 
 BUILTIN_SYMBOL_THEMES = {"Classic": CLASSIC_SYMBOL_THEME,
-                         "Infinity-square-blue": INFINITY_SQUARE_BLUE_SYMBOL_THEME,
-                         "Infinity-square-red": INFINITY_SQUARE_RED_SYMBOL_THEME,
-                         "Infinity-square-gray": INFINITY_SQUARE_GRAY_SYMBOL_THEME,
-                         "Infinity-circle-blue": INFINITY_CIRCLE_BLUE_SYMBOL_THEME,
-                         "Infinity-circle-red": INFINITY_CIRCLE_RED_SYMBOL_THEME,
-                         "Infinity-circle-gray": INFINITY_CIRCLE_GRAY_SYMBOL_THEME}
+                         "Affinity-square-blue": AFFINITY_SQUARE_BLUE_SYMBOL_THEME,
+                         "Affinity-square-red": AFFINITY_SQUARE_RED_SYMBOL_THEME,
+                         "Affinity-square-gray": AFFINITY_SQUARE_GRAY_SYMBOL_THEME,
+                         "Affinity-circle-blue": AFFINITY_CIRCLE_BLUE_SYMBOL_THEME,
+                         "Affinity-circle-red": AFFINITY_CIRCLE_RED_SYMBOL_THEME,
+                         "Affinity-circle-gray": AFFINITY_CIRCLE_GRAY_SYMBOL_THEME}

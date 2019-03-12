@@ -74,7 +74,7 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def load_appliances(self):
+    def load_appliances(self, symbol_theme="Classic"):
         """
         Loads appliance files from disk.
         """
@@ -90,12 +90,71 @@ class ApplianceManager:
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
-                            appliance.__json__()  # Check if loaded without error
-                        if appliance.status != 'broken':
-                            self._appliances[appliance.id] = appliance
+                            json_data = appliance.__json__()  # Check if loaded without error
+                            if appliance.status != 'broken':
+                                self._appliances[appliance.id] = appliance
+                            if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
+                                # apply a default symbol if the appliance has none or a default symbol
+                                default_symbol = self._get_default_symbol(json_data, symbol_theme)
+                                if default_symbol:
+                                    appliance.symbol = default_symbol
                     except (ValueError, OSError, KeyError) as e:
                         log.warning("Cannot load appliance file '%s': %s", path, str(e))
                         continue
+
+    def _get_default_symbol(self, appliance, symbol_theme):
+        """
+        Returns the default symbol for a given appliance.
+        """
+
+        from . import Controller
+        controller = Controller.instance()
+        category = appliance["category"]
+        if category == "guest":
+            if "docker" in appliance:
+                return controller.symbols.get_default_symbol("docker_guest", symbol_theme)
+            elif "qemu" in appliance:
+                return controller.symbols.get_default_symbol("qemu_guest", symbol_theme)
+        return controller.symbols.get_default_symbol(category, symbol_theme)
+
+    async def download_custom_symbols(self):
+        """
+        Download custom appliance symbols from our GitHub registry repository.
+        """
+
+        from . import Controller
+        symbol_dir = Controller.instance().symbols.symbols_path()
+        self.load_appliances()
+        for appliance in self._appliances.values():
+            symbol = appliance.symbol
+            if symbol and not symbol.startswith(":/symbols/"):
+                destination_path = os.path.join(symbol_dir, symbol)
+                if not os.path.exists(destination_path):
+                    await self._download_symbol(symbol, destination_path)
+
+        # refresh the symbol cache
+        Controller.instance().symbols.list()
+
+    async def _download_symbol(self, symbol, destination_path):
+        """
+        Download a custom appliance symbol from our GitHub registry repository.
+        """
+
+        symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(symbol_url) as response:
+                if response.status != 200:
+                    log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
+                else:
+                    try:
+                        symbol_data = await response.read()
+                        log.info("Saving {} symbol to {}".format(symbol, destination_path))
+                        with open(destination_path, 'wb') as f:
+                            f.write(symbol_data)
+                    except asyncio.TimeoutError:
+                        log.warning("Timeout while downloading '{}'".format(symbol_url))
+                    except OSError as e:
+                        log.warning("Could not write appliance symbol '{}': {}".format(destination_path, e))
 
     @locking
     async def download_appliances(self):
@@ -114,7 +173,7 @@ class ApplianceManager:
                         log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return
                     elif response.status != 200:
-                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances on GitHub due to HTTP error code {}".format(response.status))
+                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
                     etag = response.headers.get("ETag")
                     if etag:
                         self._appliances_etag = etag
@@ -144,3 +203,6 @@ class ApplianceManager:
                                 raise aiohttp.web.HTTPConflict(text="Could not write appliance file '{}': {}".format(path, e))
         except ValueError as e:
             raise aiohttp.web.HTTPConflict(text="Could not read appliances information from GitHub: {}".format(e))
+
+        # download the custom symbols
+        await self.download_custom_symbols()

@@ -38,5 +38,6 @@ class ApplianceHandler:
         controller = Controller.instance()
         if request.query.get("update", "no").lower() == "yes":
             await controller.appliance_manager.download_appliances()
-        controller.appliance_manager.load_appliances()
+        symbol_theme = request.query.get("symbol_theme", "Classic")
+        controller.appliance_manager.load_appliances(symbol_theme=symbol_theme)
         response.json([c for c in controller.appliance_manager.appliances.values()])
