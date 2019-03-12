@@ -45,6 +45,10 @@ class Appliance:
     def symbol(self):
         return self._data.get("symbol")
 
+    @symbol.setter
+    def symbol(self, new_symbol):
+        self._data["symbol"] = new_symbol
+
     def __json__(self):
         """
         Appliance data (a hash)

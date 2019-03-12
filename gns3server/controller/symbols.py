@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import aiohttp
 import posixpath
 
 from .symbol_themes import BUILTIN_SYMBOL_THEMES
@@ -53,9 +54,23 @@ class Symbols:
     def theme(self, theme):
 
         if not self._themes.get(theme):
-            log.error("Could not find symbol theme '{}'".format(theme))
-            return
+            raise aiohttp.web.HTTPNotFound(text="Could not find symbol theme '{}'".format(theme))
         self._current_theme = theme
+
+    def default_symbols(self):
+
+        return BUILTIN_SYMBOL_THEMES
+
+    def get_default_symbol(self, symbol, symbol_theme):
+
+        theme = self._themes.get(symbol_theme, None)
+        if not theme:
+            raise aiohttp.web.HTTPNotFound(text="Could not find symbol theme '{}'".format(symbol_theme))
+        symbol_path = theme.get(symbol)
+        if symbol_path not in self._symbols_path:
+            log.warning("Default symbol {} was not found".format(symbol_path))
+            return None
+        return symbol_path
 
     def list(self):
 
@@ -102,13 +117,8 @@ class Symbols:
         return directory
 
     def get_path(self, symbol_id):
-        #symbol_filename = os.path.splitext(os.path.basename(symbol_id))[0]
-        #theme = self._themes.get(self._current_theme, {})
-        #if not theme:
-        #    log.error("Could not find symbol theme '{}'".format(self._current_theme))
         try:
             return self._symbols_path[symbol_id]
-            #return self._symbols_path[theme.get(symbol_filename, symbol_id)]
         except KeyError:
             try:
                 self.list()

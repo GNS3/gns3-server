@@ -74,7 +74,7 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def load_appliances(self):
+    def load_appliances(self, symbol_theme="Classic"):
         """
         Loads appliance files from disk.
         """
@@ -90,12 +90,32 @@ class ApplianceManager:
                     try:
                         with open(path, 'r', encoding='utf-8') as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
-                            appliance.__json__()  # Check if loaded without error
+                            json_data = appliance.__json__()  # Check if loaded without error
                             if appliance.status != 'broken':
                                 self._appliances[appliance.id] = appliance
+                            if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
+                                # apply a default symbol if the appliance has none or a default symbol
+                                default_symbol = self._get_default_symbol(json_data, symbol_theme)
+                                if default_symbol:
+                                    appliance.symbol = default_symbol
                     except (ValueError, OSError, KeyError) as e:
                         log.warning("Cannot load appliance file '%s': %s", path, str(e))
                         continue
+
+    def _get_default_symbol(self, appliance, symbol_theme):
+        """
+        Returns the default symbol for a given appliance.
+        """
+
+        from . import Controller
+        controller = Controller.instance()
+        category = appliance["category"]
+        if category == "guest":
+            if "docker" in appliance:
+                return controller.symbols.get_default_symbol("docker_guest", symbol_theme)
+            elif "qemu" in appliance:
+                return controller.symbols.get_default_symbol("qemu_guest", symbol_theme)
+        return controller.symbols.get_default_symbol(category, symbol_theme)
 
     async def download_custom_symbols(self):
         """
