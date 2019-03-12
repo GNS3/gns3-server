@@ -53,19 +53,22 @@ class HyperVGNS3VM(BaseGNS3VM):
         Checks if the GNS3 VM can run on Hyper-V.
         """
 
-        if not sys.platform.startswith("win") or sys.getwindowsversion().major < 10:# or sys.getwindowsversion().build < 14393:
-            raise GNS3VMError("Hyper-V nested virtualization is only supported on Windows 10 and Windows Server 2016 or later")
+        if not sys.platform.startswith("win"):
+            raise GNS3VMError("Hyper-V is only supported on Windows")
+
+        if sys.getwindowsversion().major < 10:# or sys.getwindowsversion().build < 14393:
+            raise GNS3VMError("Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled")
 
         try:
             conn = wmi.WMI()
         except wmi.x_wmi as e:
             raise GNS3VMError("Could not connect to WMI: {}".format(e))
 
+        if not conn.Win32_ComputerSystem()[0].HypervisorPresent:
+            raise GNS3VMError("Hyper-V is not installed or activated")
+
         if conn.Win32_Processor()[0].Manufacturer != "GenuineIntel":
             raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization")
-
-        if not conn.Win32_ComputerSystem()[0].HypervisorPresent:
-            raise GNS3VMError("Hyper-V is not installed")
 
         if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
             raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
