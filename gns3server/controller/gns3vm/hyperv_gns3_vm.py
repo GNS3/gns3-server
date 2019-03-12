@@ -56,8 +56,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         if not sys.platform.startswith("win"):
             raise GNS3VMError("Hyper-V is only supported on Windows")
 
-        if sys.getwindowsversion().major < 10:# or sys.getwindowsversion().build < 14393:
-            raise GNS3VMError("Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {} detected)".format(sys.getwindowsversion().major))
+        if sys.getwindowsversion().platform_version[0] < 10:# or sys.getwindowsversion().build < 14393:
+            raise GNS3VMError("Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {} detected)".format(sys.getwindowsversion().platform_version[0]))
 
         try:
             conn = wmi.WMI()
