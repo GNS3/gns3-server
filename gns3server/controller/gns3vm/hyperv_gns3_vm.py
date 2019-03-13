@@ -60,7 +60,7 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {} detected)".format(sys.getwindowsversion().platform_version[0]))
 
         if sys.getwindowsversion().platform_version[0] == 10 and sys.getwindowsversion().platform_version[1] == 0:
-            if sys.getwindowsversion().platform_version[1] < 14393:
+            if sys.getwindowsversion().platform_version[2] < 14393:
                 raise GNS3VMError("Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later")
 
         try:
