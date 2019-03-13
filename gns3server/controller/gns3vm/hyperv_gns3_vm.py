@@ -74,8 +74,9 @@ class HyperVGNS3VM(BaseGNS3VM):
         if conn.Win32_Processor()[0].Manufacturer != "GenuineIntel":
             raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization")
 
-        if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
-            raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
+        # This is not reliable
+        #if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
+        #    raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
 
     def _connect(self):
         """
