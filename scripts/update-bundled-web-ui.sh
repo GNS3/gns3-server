@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #
 # Copyright (C) 2018 GNS3 Technologies Inc.
@@ -20,13 +20,13 @@
 # Syncs WebUI with gns3server
 #
 # For updating with fresh latest repo just type (latest, development version):
-# $ sh update-bundled-web-ui.sh
+# $ ./scripts/update-bundled-web-ui.sh
 #
 # It's also possible to update with custom repo:
-# $ sh update-bundled-web-ui.sh --repository ../my-custom-web-ui-repo/
+# $ ./scripts/update-bundled-web-ui.sh --repository ../my-custom-web-ui-repo/
 # 
 # And for proper tag:
-# $ sh update-bundled-web-ui.sh --tag 2019.1.0-alpha.0
+# $ ./scripts/update-bundled-web-ui.sh --tag=v2019.1.0-alpha.1
 #
 set -e
 
@@ -71,6 +71,8 @@ if [ "$CUSTOM_REPO" = false ] ; then
         git clone https://github.com/GNS3/gns3-web-ui.git "$REPO_DIR"
     else
       cd "$REPO_DIR"
+
+      git checkout master
       git pull
 
       if [[ ! -z "$TAG" ]] 
@@ -93,6 +95,3 @@ yarn ng build --configuration=production --base-href /static/web-ui/
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 cd "$GNS3SERVER_DIR"
-
-#git add .
-#git commit -m "Sync WebUI"
