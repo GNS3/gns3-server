@@ -1,5 +1,27 @@
 # Change Log
 
+## 2.2.0a2 14/03/2019
+
+* Web-UI v2019.1.0-alpha.1
+* Update docs for update-bundled-web-ui.sh
+* Fix issue when loading and quickly closing a project and opening it again. Fixes #1501.
+* Disable unreliable nested virtualization check.
+* Fix issue not checking build number on Windows.
+* Change Hyper-V requirement checks.
+* Early support for symbol themes.
+* Re-order handlers in order to prevent CORS
+* Download custom appliance symbols from GitHub Fix symbol cache issue. Ref https://github.com/GNS3/gns3-gui/issues/2671 Fix temporary directory for symbols was not deleted Fix temporary appliance file was not deleted
+* Option to export snapshots.
+* Support tags versioned WebUI when bundling
+* Support selecting a compression type when exporting a project.
+* Change how VPCS executable is searched.
+* Use aiofiles where relevant.
+* Update paths for binaries moved to the MacOS directory in GNS3.app
+* Locked state should not be used when duplicating a node.
+* Handle locking/unlocking items independently from the layer position.
+* Use aiozipstream for snapshots. Fix tests.
+* Project duplication support.
+
 ## 2.2.0a1 29/01/2019
 
 * Restore reload support for nodes.
