@@ -94,6 +94,7 @@ class Project:
         self._supplier = supplier
 
         self._loading = False
+        self._closing = False
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -743,12 +744,14 @@ class Project:
         del self._snapshots[snapshot.id]
         os.remove(snapshot.path)
 
+    @locking
     async def close(self, ignore_notification=False):
-        if self._status == "closed":
+        if self._status == "closed" or self._closing:
             return
         if self._loading:
             log.warning("Closing project '{}' ignored because it is being loaded".format(self.name))
             return
+        self._closing = True
         await self.stop_all()
         for compute in list(self._project_created_on_compute):
             try:
@@ -761,6 +764,7 @@ class Project:
         if not ignore_notification:
             self.emit_notification("project.closed", self.__json__())
         self.reset()
+        self._closing = False
 
     def _clean_pictures(self):
         """
@@ -843,6 +847,10 @@ class Project:
         """
         Load topology elements
         """
+
+        if self._closing is True:
+            raise aiohttp.web.HTTPConflict(text="Project is closing, please try again in a few seconds...")
+
         if self._status == "opened":
             return
 
