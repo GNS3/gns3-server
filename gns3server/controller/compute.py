@@ -405,7 +405,7 @@ class Compute:
                     raise aiohttp.web.HTTPConflict(text=msg)
                 else:
                     msg = "{}\nUsing different versions may result in unexpected problems. Please use at your own risk.".format(msg)
-                    self._controller.notification.emit("log.warning", {"message": msg})
+                    self._controller.notification.controller_emit("log.warning", {"message": msg})
 
             self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
