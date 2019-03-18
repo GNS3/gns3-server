@@ -239,6 +239,8 @@ class HyperVGNS3VM(BaseGNS3VM):
             log.info("GNS3 VM has been started")
 
         # Get the guest IP address
+        # LIS (Linux Integration Services) must be installed on the guest
+        # See https://oitibs.com/hyper-v-lis-on-ubuntu-18-04/ for details.
         trial = 120
         guest_ip_address = ""
         log.info("Waiting for GNS3 VM IP")
