@@ -72,18 +72,19 @@ class VMwareGNS3VM(BaseGNS3VM):
         if ram % 4 != 0:
             raise GNS3VMError("Allocated memory {} for the GNS3 VM must be a multiple of 4".format(ram))
 
-        available_vcpus = psutil.cpu_count()
+        available_vcpus = psutil.cpu_count(logical=True)
         if vcpus > available_vcpus:
             raise GNS3VMError("You have allocated too many vCPUs for the GNS3 VM! (max available is {} vCPUs)".format(available_vcpus))
 
         try:
             pairs = VMware.parse_vmware_file(self._vmx_path)
-            pairs["numvcpus"] = str(vcpus)
-            cores_per_sockets = int(available_vcpus / psutil.cpu_count(logical=False))
-            if cores_per_sockets >= 1:
-                pairs["cpuid.corespersocket"] = str(cores_per_sockets)
-            pairs["memsize"] = str(ram)
-            VMware.write_vmx_file(self._vmx_path, pairs)
+            if vcpus > 1:
+                pairs["numvcpus"] = str(vcpus)
+                cores_per_sockets = int(vcpus / psutil.cpu_count(logical=False))
+                if cores_per_sockets > 1:
+                    pairs["cpuid.corespersocket"] = str(cores_per_sockets)
+                pairs["memsize"] = str(ram)
+                VMware.write_vmx_file(self._vmx_path, pairs)
             log.info("GNS3 VM vCPU count set to {} and RAM amount set to {}".format(vcpus, ram))
         except OSError as e:
             raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
