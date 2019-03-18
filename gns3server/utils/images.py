@@ -139,7 +139,7 @@ def images_directories(type):
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
     paths.append(img_dir)
-    # Return only the existings paths
+    # Return only the existing paths
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
