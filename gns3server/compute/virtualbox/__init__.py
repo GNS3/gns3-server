@@ -20,6 +20,7 @@ VirtualBox server module.
 """
 
 import os
+import re
 import sys
 import shutil
 import asyncio
@@ -177,14 +178,17 @@ class VirtualBox(BaseManager):
         for line in result:
             if len(line) == 0 or line[0] != '"' or line[-1:] != "}":
                 continue  # Broken output (perhaps a carriage return in VM name)
-            vmname, _ = line.rsplit(' ', 1)
-            vmname = vmname.strip('"')
+            match = re.search(r"\"(.*)\"\ {(.*)}", line)
+            if not match:
+                continue
+            vmname = match.group(1)
+            uuid = match.group(2)
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs
-            extra_data = await self.execute("getextradata", [vmname, "GNS3/Clone"])
+            extra_data = await self.execute("getextradata", [uuid, "GNS3/Clone"])
             if allow_clone or len(extra_data) == 0 or not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
-                info_results = await self.execute("showvminfo", [vmname, "--machinereadable"])
+                info_results = await self.execute("showvminfo", [uuid, "--machinereadable"])
                 ram = 0
                 for info in info_results:
                     try:
