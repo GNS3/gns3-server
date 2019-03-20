@@ -181,6 +181,9 @@ class WebServer:
         return ssl_context
 
     async def start_shell(self):
+
+        log.error("The embedded shell has been deactivated in this version of GNS3")
+        return
         try:
             from ptpython.repl import embed
         except ImportError:

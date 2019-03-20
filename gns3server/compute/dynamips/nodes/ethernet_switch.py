@@ -22,7 +22,7 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 
 import asyncio
 from gns3server.utils import parse_version
-from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
+#from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
 
 
 from .device import Device
@@ -34,36 +34,36 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class EthernetSwitchConsole(EmbedShell):
-    """
-    Console for the ethernet switch
-    """
-
-    def __init__(self, node):
-        super().__init__(welcome_message="Welcome to GNS3 builtin Ethernet switch.\n\nType help for available commands\n")
-        self._node = node
-
-    async def mac(self):
-        """
-        Show MAC address table
-        """
-        res = 'Port       Mac                VLAN\n'
-        result = (await self._node._hypervisor.send('ethsw show_mac_addr_table {}'.format(self._node.name)))
-        for line in result:
-            mac, vlan, nio = line.replace('  ', ' ').split(' ')
-            mac = mac.replace('.', '')
-            mac = "{}:{}:{}:{}:{}:{}".format(
-                mac[0:2],
-                mac[2:4],
-                mac[4:6],
-                mac[6:8],
-                mac[8:10],
-                mac[10:12])
-            for port_number, switch_nio in self._node.nios.items():
-                if switch_nio.name == nio:
-                    res += 'Ethernet' + str(port_number) + '  ' + mac + '  ' + vlan + '\n'
-                    break
-        return res
+# class EthernetSwitchConsole(EmbedShell):
+#     """
+#     Console for the ethernet switch
+#     """
+#
+#     def __init__(self, node):
+#         super().__init__(welcome_message="Welcome to GNS3 builtin Ethernet switch.\n\nType help for available commands\n")
+#         self._node = node
+#
+#     async def mac(self):
+#         """
+#         Show MAC address table
+#         """
+#         res = 'Port       Mac                VLAN\n'
+#         result = (await self._node._hypervisor.send('ethsw show_mac_addr_table {}'.format(self._node.name)))
+#         for line in result:
+#             mac, vlan, nio = line.replace('  ', ' ').split(' ')
+#             mac = mac.replace('.', '')
+#             mac = "{}:{}:{}:{}:{}:{}".format(
+#                 mac[0:2],
+#                 mac[2:4],
+#                 mac[4:6],
+#                 mac[6:8],
+#                 mac[8:10],
+#                 mac[10:12])
+#             for port_number, switch_nio in self._node.nios.items():
+#                 if switch_nio.name == nio:
+#                     res += 'Ethernet' + str(port_number) + '  ' + mac + '  ' + vlan + '\n'
+#                     break
+#         return res
 
 
 class EthernetSwitch(Device):
@@ -85,8 +85,8 @@ class EthernetSwitch(Device):
         self._nios = {}
         self._mappings = {}
         self._telnet_console = None
-        self._telnet_shell = None
-        self._telnet_server = None
+        #self._telnet_shell = None
+        #self._telnet_server = None
         self._console = console
         self._console_type = console_type
 
@@ -177,13 +177,13 @@ class EthernetSwitch(Device):
         await self._hypervisor.send('ethsw create "{}"'.format(self._name))
         log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
-        self._telnet_shell = EthernetSwitchConsole(self)
-        self._telnet_shell.prompt = self._name + '> '
-        self._telnet = create_telnet_shell(self._telnet_shell)
-        try:
-            self._telnet_server = (await asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
-        except OSError as e:
-            self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
+        #self._telnet_shell = EthernetSwitchConsole(self)
+        #self._telnet_shell.prompt = self._name + '> '
+        #self._telnet = create_telnet_shell(self._telnet_shell)
+        #try:
+        #    self._telnet_server = (await asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
+        #except OSError as e:
+        #    self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
@@ -227,9 +227,9 @@ class EthernetSwitch(Device):
         Deletes this Ethernet switch.
         """
 
-        await self._telnet.close()
-        if self._telnet_server:
-            self._telnet_server.close()
+        #await self._telnet.close()
+        #if self._telnet_server:
+        #    self._telnet_server.close()
 
         for nio in self._nios.values():
             if nio:
