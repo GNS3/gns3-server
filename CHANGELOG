@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.1.15 21/03/2019
+
+* Fix IOU symlink issue on remote servers.
+* Fix vcpus configuration for GNS3 VM on VMware. Ref #2738.
+
 ## 2.1.14 27/02/2019
 
 * Fix issue when setting cpuid.corespersocket for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2723
