@@ -41,8 +41,6 @@ from ..compute.port_manager import PortManager
 from ..compute.qemu import Qemu
 from ..controller import Controller
 
-from gns3server.utils.static import get_static_dir
-
 # do not delete this import
 import gns3server.handlers
 

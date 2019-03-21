@@ -22,7 +22,7 @@ from gns3server.controller import Controller
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.version import __version__
-from gns3server.utils.static import get_static_path
+from gns3server.utils.get_resource import get_resource 
 
 
 class IndexHandler:
@@ -81,16 +81,16 @@ class IndexHandler:
     async def webui(request, response):
         filename = request.match_info["filename"]
         filename = os.path.normpath(filename).strip("/")
-        filename = os.path.join('web-ui', filename)
+        filename = os.path.join('static', 'web-ui', filename)
 
         # Raise error if user try to escape
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        static = get_static_path(filename)
+        static = get_resource(filename)
 
-        if not os.path.exists(static):
-            static = get_static_path(os.path.join('web-ui', 'index.html'))
+        if static is None or not os.path.exists(static):
+            static = get_resource(os.path.join('static', 'web-ui', 'index.html'))
 
         await response.stream_file(static)
 

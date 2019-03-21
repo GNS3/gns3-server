@@ -21,7 +21,12 @@ from unittest.mock import patch
 
 from gns3server.version import __version__
 from gns3server.controller import Controller
-from gns3server.utils import static
+from gns3server.utils.get_resource import get_resource
+
+
+def get_static(filename):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(os.path.abspath(os.path.join(current_dir, '..', '..', 'gns3server', 'static')), filename)
 
 
 def test_index(http_root):
@@ -51,23 +56,20 @@ def test_project(http_root, async_run):
 
 
 def test_web_ui(http_root, tmpdir):
-    with patch('gns3server.utils.static.get_static_dir') as mock:
+    with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
         os.makedirs(str(tmpdir / 'web-ui'))
-        tmpfile = static.get_static_path('web-ui/testing.txt')
+        tmpfile = get_static('web-ui/testing.txt')
         with open(tmpfile, 'w+') as f:
             f.write('world')
         response = http_root.get('/static/web-ui/testing.txt')
         assert response.status == 200
+    os.remove(get_static('web-ui/testing.txt'))
 
 
 def test_web_ui_not_found(http_root, tmpdir):
-    with patch('gns3server.utils.static.get_static_dir') as mock:
+    with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
-        os.makedirs(str(tmpdir / 'web-ui'))
-        tmpfile = static.get_static_path('web-ui/index.html')
-        with open(tmpfile, 'w+') as f:
-            f.write('world')
 
         response = http_root.get('/static/web-ui/not-found.txt')
         # should serve web-ui/index.html
