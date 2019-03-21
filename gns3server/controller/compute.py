@@ -27,7 +27,6 @@ import io
 from operator import itemgetter
 
 from ..utils import parse_version
-from ..utils.images import list_images
 from ..utils.asyncio import locking
 from ..controller.controller_error import ControllerError
 from ..version import __version__, __version_info__
@@ -405,7 +404,7 @@ class Compute:
                     raise aiohttp.web.HTTPConflict(text=msg)
                 else:
                     msg = "{}\nUsing different versions may result in unexpected problems. Please use at your own risk.".format(msg)
-                    self._controller.notification.emit("log.warning", {"message": msg})
+                    self._controller.notification.controller_emit("log.warning", {"message": msg})
 
             self._notifications = asyncio.gather(self._connect_notification())
             self._connected = True
@@ -571,8 +570,7 @@ class Compute:
 
     async def images(self, type):
         """
-        Return the list of images available for this type on controller
-        and on the compute node.
+        Return the list of images available for this type on the compute node.
         """
         images = []
 
@@ -581,9 +579,9 @@ class Compute:
 
         try:
             if type in ["qemu", "dynamips", "iou"]:
-                for local_image in list_images(type):
-                    if local_image['filename'] not in [i['filename'] for i in images]:
-                        images.append(local_image)
+                #for local_image in list_images(type):
+                #    if local_image['filename'] not in [i['filename'] for i in images]:
+                #        images.append(local_image)
                 images = sorted(images, key=itemgetter('filename'))
             else:
                 images = sorted(images, key=itemgetter('image'))

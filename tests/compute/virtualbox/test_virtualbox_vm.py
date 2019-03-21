@@ -75,6 +75,7 @@ def test_rename_vmname(project, manager, async_run):
 def test_vm_valid_virtualbox_api_version(loop, project, manager):
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
         vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, "test", False)
+        vm._uuid = "00010203-0405-0607-0809-0a0b0c0d0e0f"
         loop.run_until_complete(asyncio.ensure_future(vm.create()))
 
 

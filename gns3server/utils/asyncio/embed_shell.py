@@ -32,8 +32,8 @@ from prompt_toolkit.shortcuts import create_prompt_application, create_asyncio_e
 from prompt_toolkit.terminal.vt100_output import Vt100_Output
 from prompt_toolkit.input import StdinInput
 
-from .telnet_server import AsyncioTelnetServer, TelnetConnection
-from .input_stream import InputStream
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
+from gns3server.utils.asyncio.input_stream import InputStream
 
 
 class EmbedShell:
@@ -344,7 +344,7 @@ if __name__ == '__main__':
                 else:
                     return 'world\n'
 
-            return (await world())
+            return await world()
 
     # Demo using telnet
     shell = Demo(welcome_message="Welcome!\n")

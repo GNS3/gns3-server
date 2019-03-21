@@ -82,13 +82,14 @@ class ComputeHandler:
     @Route.get(
         r"/computes/{compute_id}/{emulator}/images",
         parameters={
-            "compute_id": "Compute UUID"
+            "compute_id": "Compute UUID",
+            "emulator": "Emulator type"
         },
         status_codes={
             200: "OK",
             404: "Instance doesn't exist"
         },
-        description="Return the list of images available on compute and controller for this emulator type")
+        description="Return the list of images available on compute for this emulator type")
     async def images(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])

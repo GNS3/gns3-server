@@ -212,9 +212,11 @@ class GNS3VM:
         new_settings = copy.copy(self._settings)
         new_settings.update(settings)
         if self.settings != new_settings:
-            await self._stop()
-            self._settings = settings
-            self._controller.save()
+            try:
+                await self._stop()
+            finally:
+                self._settings = settings
+                self._controller.save()
             if self.enable:
                 await self.start()
         else:

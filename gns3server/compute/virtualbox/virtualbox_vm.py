@@ -57,6 +57,7 @@ class VirtualBoxVM(BaseNode):
 
         super().__init__(name, node_id, project, manager, console=console, linked_clone=linked_clone, console_type=console_type)
 
+        self._uuid = None  # UUID in VirtualBox
         self._maximum_adapters = 8
         self._system_properties = {}
         self._telnet_server = None
@@ -116,7 +117,7 @@ class VirtualBoxVM(BaseNode):
         :returns: state (string)
         """
 
-        results = await self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = await self.manager.execute("showvminfo", [self._uuid, "--machinereadable"])
         for info in results:
             if '=' in info:
                 name, value = info.split('=', 1)
@@ -134,7 +135,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        result = await self.manager.execute("controlvm", [self._vmname] + args)
+        result = await self.manager.execute("controlvm", [self._uuid] + args)
         return result
 
     async def _modify_vm(self, params):
@@ -145,7 +146,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        await self.manager.execute("modifyvm", [self._vmname] + args)
+        await self.manager.execute("modifyvm", [self._uuid] + args)
 
     async def _check_duplicate_linked_clone(self):
         """
@@ -174,6 +175,7 @@ class VirtualBoxVM(BaseNode):
             await asyncio.sleep(1)
 
     async def create(self):
+
         if not self.linked_clone:
             await self._check_duplicate_linked_clone()
 
@@ -184,20 +186,28 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
 
+        vm_info = await self._get_vm_info()
+        if "memory" in vm_info:
+            self._ram = int(vm_info["memory"])
+        if "UUID" in vm_info:
+            self._uuid = vm_info["UUID"]
+        if not self._uuid:
+            raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
+
         if self.linked_clone:
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 self._patch_vm_uuid()
                 await self.manager.execute("registervm", [self._linked_vbox_file()])
                 await self._reattach_linked_hdds()
+                vm_info = await self._get_vm_info()
+                self._uuid = vm_info.get("UUID")
+                if not self._uuid:
+                    raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
             else:
                 await self._create_linked_clone()
 
         if self._adapters:
             await self.set_adapters(self._adapters)
-
-        vm_info = await self._get_vm_info()
-        if "memory" in vm_info:
-            self._ram = int(vm_info["memory"])
 
     def _linked_vbox_file(self):
         return os.path.join(self.working_dir, self._vmname, self._vmname + ".vbox")
@@ -266,7 +276,7 @@ class VirtualBoxVM(BaseNode):
         # check if there is enough RAM to run
         self.check_available_ram(self.ram)
 
-        args = [self._vmname]
+        args = [self._uuid]
         if self._headless:
             args.extend(["--type", "headless"])
         result = await self.manager.execute("startvm", args)
@@ -275,9 +285,9 @@ class VirtualBoxVM(BaseNode):
         log.debug("Start result: {}".format(result))
 
         # add a guest property to let the VM know about the GNS3 name
-        await self.manager.execute("guestproperty", ["set", self._vmname, "NameInGNS3", self.name])
+        await self.manager.execute("guestproperty", ["set", self._uuid, "NameInGNS3", self.name])
         # add a guest property to let the VM know about the GNS3 project directory
-        await self.manager.execute("guestproperty", ["set", self._vmname, "ProjectDirInGNS3", self.working_dir])
+        await self.manager.execute("guestproperty", ["set", self._uuid, "ProjectDirInGNS3", self.working_dir])
 
         await self._start_ubridge()
         for adapter_number in range(0, self._adapters):
@@ -739,7 +749,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         vm_info = {}
-        results = await self.manager.execute("showvminfo", [self._vmname, "--machinereadable"])
+        results = await self.manager.execute("showvminfo", ["--machinereadable", "--", self._vmname])  # "--" is to protect against vm names containing the "-" character
         for info in results:
             try:
                 name, value = info.split('=', 1)
@@ -775,7 +785,7 @@ class VirtualBoxVM(BaseNode):
 
         # set server mode with a pipe on the first serial port
         pipe_name = self._get_pipe_name()
-        args = [self._vmname, "--uartmode1", "server", pipe_name]
+        args = [self._uuid, "--uartmode1", "server", pipe_name]
         await self.manager.execute("modifyvm", args)
 
     async def _storage_attach(self, params):
@@ -786,7 +796,7 @@ class VirtualBoxVM(BaseNode):
         """
 
         args = shlex.split(params)
-        await self.manager.execute("storageattach", [self._vmname] + args)
+        await self.manager.execute("storageattach", [self._uuid] + args)
 
     async def _get_nic_attachements(self, maximum_adapters):
         """
@@ -850,7 +860,7 @@ class VirtualBoxVM(BaseNode):
                     vbox_adapter_type = "82545EM"
                 if adapter_type == "Paravirtualized Network (virtio-net)":
                     vbox_adapter_type = "virtio"
-                args = [self._vmname, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
+                args = [self._uuid, "--nictype{}".format(adapter_number + 1), vbox_adapter_type]
                 await self.manager.execute("modifyvm", args)
 
                 if isinstance(nio, NIOUDP):
@@ -888,10 +898,10 @@ class VirtualBoxVM(BaseNode):
                 gns3_snapshot_exists = True
 
         if not gns3_snapshot_exists:
-            result = await self.manager.execute("snapshot", [self._vmname, "take", "GNS3 Linked Base for clones"])
+            result = await self.manager.execute("snapshot", [self._uuid, "take", "GNS3 Linked Base for clones"])
             log.debug("GNS3 snapshot created: {}".format(result))
 
-        args = [self._vmname,
+        args = [self._uuid,
                 "--snapshot",
                 "GNS3 Linked Base for clones",
                 "--options",
@@ -906,12 +916,12 @@ class VirtualBoxVM(BaseNode):
         log.debug("VirtualBox VM: {} cloned".format(result))
 
         self._vmname = self._name
-        await self.manager.execute("setextradata", [self._vmname, "GNS3/Clone", "yes"])
+        await self.manager.execute("setextradata", [self._uuid, "GNS3/Clone", "yes"])
 
         # We create a reset snapshot in order to simplify life of user who want to rollback their VM
         # Warning: Do not document this it's seem buggy we keep it because Raizo students use it.
         try:
-            args = [self._vmname, "take", "reset"]
+            args = [self._uuid, "take", "reset"]
             result = await self.manager.execute("snapshot", args)
             log.debug("Snapshot 'reset' created: {}".format(result))
         # It seem sometimes this failed due to internal race condition of Vbox

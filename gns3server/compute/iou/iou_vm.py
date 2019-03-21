@@ -674,6 +674,13 @@ class IOUVM(BaseNode):
                             pass
             self._iou_process = None
 
+        try:
+            symlink = os.path.join(self.working_dir, os.path.basename(self.path))
+            if os.path.islink(symlink):
+                os.unlink(symlink)
+        except OSError as e:
+            log.warning("Could not delete symbolic link: {}".format(e))
+
         self._started = False
         self.save_configs()
 

@@ -348,7 +348,7 @@ def test_forward_post(compute, async_run):
 
 def test_images(compute, async_run, images_dir):
     """
-    Will return image on compute and on controller
+    Will return image on compute
     """
     response = MagicMock()
     response.status = 200
@@ -357,14 +357,12 @@ def test_images(compute, async_run, images_dir):
         "path": "linux.qcow2",
         "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
         "filesize": 0}]).encode())
-    open(os.path.join(images_dir, "QEMU", "asa.qcow2"), "w+").close()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         images = async_run(compute.images("qemu"))
         mock.assert_called_with("GET", "https://example.com:84/v2/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=None, timeout=None)
         async_run(compute.close())
 
     assert images == [
-        {"filename": "asa.qcow2", "path": "asa.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0},
         {"filename": "linux.qcow2", "path": "linux.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0}
     ]
 
