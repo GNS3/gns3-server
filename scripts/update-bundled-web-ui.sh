@@ -73,6 +73,7 @@ if [ "$CUSTOM_REPO" = false ] ; then
       cd "$REPO_DIR"
 
       git checkout master
+      git fetch --tags
       git pull
 
       if [[ ! -z "$TAG" ]] 
