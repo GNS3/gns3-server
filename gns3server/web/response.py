@@ -118,6 +118,7 @@ class Response(aiohttp.web.Response):
         """
         Stream a file as a response
         """
+        encoding = None
 
         if not os.path.exists(path):
             raise aiohttp.web.HTTPNotFound()

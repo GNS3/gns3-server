@@ -92,7 +92,13 @@ class IndexHandler:
         if static is None or not os.path.exists(static):
             static = get_resource(os.path.join('static', 'web-ui', 'index.html'))
 
-        await response.stream_file(static)
+        # guesstype prefers to have text/html type than application/javascript
+        # which results with warnings in Firefox 66 on Windows
+        # Ref. gns3-server#1559
+        _, ext = os.path.splitext(static)
+        mimetype = ext == '.js' and 'application/javascript' or None
+
+        await response.stream_file(static, status=200, set_content_type=mimetype)
 
     @Route.get(
         r"/v1/version",
