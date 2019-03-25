@@ -338,4 +338,4 @@ class EthernetSwitchHandler:
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         nio = node.get_nio(port_number)
-        await node.stream_pcap_file(nio, node.project.id, request, response)
+        await dynamips_manager.stream_pcap_file(nio, node.project.id, request, response)

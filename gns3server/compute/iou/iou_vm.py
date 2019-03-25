@@ -406,6 +406,7 @@ class IOUVM(BaseNode):
 
         config = configparser.ConfigParser()
         try:
+            log.info("Checking IOU license in '{}'".format(self.iourc_path))
             with open(self.iourc_path, encoding="utf-8") as f:
                 config.read_file(f)
         except OSError as e:
