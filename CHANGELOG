@@ -1,5 +1,21 @@
 # Change Log
 
+## 2.2.0a3 25/03/2019
+
+* Fix traceback when starting packet capture on builtin nodes. Fixes https://github.com/GNS3/gns3-gui/issues/2743
+* Load v2019.1.0-alpha.2 of WebUI
+* Fetch tags for update-bundled-web-ui.sh
+* Fix mimetype for javascript, #1559
+* Serve WebUI via get_resource for freezed app
+* Deactivate the embedded shell for Ethernet switch. Ref #1424 #1556
+* Fix VBoxManage fails if VM has specific special characters in name. Fixes #2739
+* Fix IOU symlink issue on remote servers.
+* Fix vcpus configuration for GNS3 VM on VMware. Ref #2738.
+* Fix issue when images are not uploaded from appliance wizard. Ref https://github.com/GNS3/gns3-gui/issues/2738
+* Save the GNS3 VM settings even if the GNS3 VM cannot be stopped.
+* Fix exception when emitting event from controller. Ref https://github.com/GNS3/gns3-gui/issues/2737
+
+
 ## 2.2.0a2 14/03/2019
 
 * Web-UI v2019.1.0-alpha.1
