@@ -91,7 +91,7 @@ echo "Current working dir $REPO_DIR"
 cd "$REPO_DIR"
 
 yarn install
-yarn ng build --configuration=production --base-href /static/web-ui/
+yarn ng build --source-map=false --configuration=production --base-href /static/web-ui/
 
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
