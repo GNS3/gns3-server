@@ -83,6 +83,8 @@ class Symbols:
                         continue
                     symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), get_resource("symbols"))).replace('\\', '/')
                     theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    if not theme:
+                        continue
                     symbol_id = ':/symbols/' + symbol_file
                     symbols.append({'symbol_id': symbol_id,
                                     'filename': filename,
