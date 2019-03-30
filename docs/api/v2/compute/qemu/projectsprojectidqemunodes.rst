@@ -63,7 +63,7 @@ Input
     <tr><td>process_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low, null</td>                     </tr>
     <tr><td>qemu_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Amount of RAM in MB</td>                     </tr>
-    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the qemu VM</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the Qemu VM</td>                     </tr>
     </table>
 
 Output

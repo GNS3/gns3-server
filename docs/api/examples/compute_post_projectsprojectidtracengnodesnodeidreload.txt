@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/5c90a6b7-2d18-4695-92d3-0e2e80b39d44/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/43adaa30-d077-4fcb-9219-450d5f96521b/reload' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/5c90a6b7-2d18-4695-92d3-0e2e80b39d44/reload HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/43adaa30-d077-4fcb-9219-450d5f96521b/reload HTTP/1.1
 {}
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 27 Nov 2018 15:09:11 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:48:51 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}/reload
 

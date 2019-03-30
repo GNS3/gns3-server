@@ -32,6 +32,7 @@ Input
     <tr><td>first_port_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Name of the first port</td>                     </tr>
     <tr><td>height</td>                    <td> </td>                     <td>integer</td>                     <td>Height of the node (Read only)</td>                     </tr>
     <tr><td>label</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
+    <tr><td>locked</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the element locked or not</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Working directory of the node. Read only</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>
@@ -66,6 +67,7 @@ Output
     <tr><td>first_port_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Name of the first port</td>                     </tr>
     <tr><td>height</td>                    <td> </td>                     <td>integer</td>                     <td>Height of the node (Read only)</td>                     </tr>
     <tr><td>label</td>                    <td> </td>                     <td>object</td>                     <td></td>                     </tr>
+    <tr><td>locked</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the element locked or not</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Node name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Working directory of the node. Read only</td>                     </tr>
     <tr><td>node_id</td>                    <td> </td>                     <td>string</td>                     <td>Node UUID</td>                     </tr>

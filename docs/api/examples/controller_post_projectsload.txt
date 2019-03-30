@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 560
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:41 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:01 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/load
 
 {
@@ -22,8 +22,8 @@ X-Route: /v2/projects/load
     "filename": "test.gns3",
     "grid_size": 75,
     "name": "test",
-    "path": "/tmp/tmpzklyatzu/projects/891bfaff-d08e-4027-a6d7-2803ea3b7cde",
-    "project_id": "891bfaff-d08e-4027-a6d7-2803ea3b7cde",
+    "path": "/tmp/tmpy8wy3fkc/projects/207d76b1-f1c6-4885-a95c-e3a0d21d22ab",
+    "project_id": "207d76b1-f1c6-4885-a95c-e3a0d21d22ab",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,

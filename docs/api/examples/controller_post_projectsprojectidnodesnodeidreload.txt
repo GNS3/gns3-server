@@ -1,15 +1,15 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/57b6192b-0dc5-40af-b927-2a45fa7aa053/nodes/58151bb0-676e-4747-877e-577ff3321a1a/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/12755712-2549-49c3-adea-bb31849a5704/nodes/d7ff2caa-80ab-47e6-9684-acbb8cb2eb02/reload' -d '{}'
 
-POST /v2/projects/57b6192b-0dc5-40af-b927-2a45fa7aa053/nodes/58151bb0-676e-4747-877e-577ff3321a1a/reload HTTP/1.1
+POST /v2/projects/12755712-2549-49c3-adea-bb31849a5704/nodes/d7ff2caa-80ab-47e6-9684-acbb8cb2eb02/reload HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1137
+Content-Length: 1158
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:40 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:49:55 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
 
 {
@@ -17,11 +17,11 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140023799336352'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140436286388432'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 60,
+    "height": 59,
     "label": {
         "rotation": 0,
         "style": null,
@@ -29,9 +29,10 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
         "x": null,
         "y": -40
     },
+    "locked": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "58151bb0-676e-4747-877e-577ff3321a1a",
+    "node_id": "d7ff2caa-80ab-47e6-9684-acbb8cb2eb02",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -47,12 +48,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
             "short_name": "e0"
         }
     ],
-    "project_id": "57b6192b-0dc5-40af-b927-2a45fa7aa053",
+    "project_id": "12755712-2549-49c3-adea-bb31849a5704",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
     "template_id": null,
-    "width": 60,
+    "width": 65,
     "x": 0,
     "y": 0,
     "z": 1

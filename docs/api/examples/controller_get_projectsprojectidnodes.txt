@@ -1,15 +1,15 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/f49189fa-ad6e-4757-b3b3-e955f9ff7ef3/nodes'
+curl -i -X GET 'http://localhost:3080/v2/projects/08c7f9e8-6ef5-4793-8edc-0898d49c25f9/nodes'
 
-GET /v2/projects/f49189fa-ad6e-4757-b3b3-e955f9ff7ef3/nodes HTTP/1.1
+GET /v2/projects/08c7f9e8-6ef5-4793-8edc-0898d49c25f9/nodes HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1372
+Content-Length: 1397
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:39 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:49:52 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/nodes
 
 [
@@ -18,11 +18,11 @@ X-Route: /v2/projects/{project_id}/nodes
         "compute_id": "example.com",
         "console": 2048,
         "console_auto_start": false,
-        "console_host": "<MagicMock name='mock.console_host' id='140023809783288'>",
+        "console_host": "<MagicMock name='mock.console_host' id='140436303710136'>",
         "console_type": null,
         "custom_adapters": [],
         "first_port_name": null,
-        "height": 60,
+        "height": 59,
         "label": {
             "rotation": 0,
             "style": null,
@@ -30,9 +30,10 @@ X-Route: /v2/projects/{project_id}/nodes
             "x": null,
             "y": -40
         },
+        "locked": false,
         "name": "test",
         "node_directory": null,
-        "node_id": "21d4dc65-52cd-4276-a34d-f3bdebef0804",
+        "node_id": "76bc2602-3c9c-42ac-9384-36d7777da1e8",
         "node_type": "vpcs",
         "port_name_format": "Ethernet{0}",
         "port_segment_size": 0,
@@ -48,14 +49,14 @@ X-Route: /v2/projects/{project_id}/nodes
                 "short_name": "e0"
             }
         ],
-        "project_id": "f49189fa-ad6e-4757-b3b3-e955f9ff7ef3",
+        "project_id": "08c7f9e8-6ef5-4793-8edc-0898d49c25f9",
         "properties": {
             "startup_script": "echo test"
         },
         "status": "stopped",
         "symbol": ":/symbols/computer.svg",
         "template_id": null,
-        "width": 60,
+        "width": 65,
         "x": 0,
         "y": 0,
         "z": 1

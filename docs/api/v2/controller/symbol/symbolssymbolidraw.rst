@@ -18,5 +18,5 @@ Write the symbol file
 
 Response status codes
 **********************
-- **200**: Symbol returned
+- **200**: Symbol written
 

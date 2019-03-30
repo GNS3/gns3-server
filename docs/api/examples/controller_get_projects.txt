@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 637
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:41 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:00 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects
 
 [
@@ -21,7 +21,7 @@ X-Route: /v2/projects
         "filename": "test.gns3",
         "grid_size": 75,
         "name": "test",
-        "path": "/tmp/pytest-of-grossmj/pytest-4/test_list_projects1",
+        "path": "/tmp/pytest-of-grossmj/pytest-0/test_list_projects1",
         "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
         "scene_height": 1000,
         "scene_width": 2000,

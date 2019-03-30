@@ -6,1706 +6,2045 @@ GET /v2/symbols HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 53346
+Content-Length: 60126
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:54 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:11 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/symbols
 
 [
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/atm.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/atm.svg"
+        "filename": "PBX.svg",
+        "symbol_id": ":/symbols/classic/PBX.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/camera.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/camera.svg"
+        "filename": "PIX_firewall.svg",
+        "symbol_id": ":/symbols/classic/PIX_firewall.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/camera_dome.svg"
+        "filename": "access_point.svg",
+        "symbol_id": ":/symbols/classic/access_point.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/circle.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/circle.svg"
+        "filename": "access_server.svg",
+        "symbol_id": ":/symbols/classic/access_server.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/client.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/client.svg"
+        "filename": "asa.svg",
+        "symbol_id": ":/symbols/classic/asa.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/client_vm.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/square/red/atm.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/cloud.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/atm.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/cog.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/cog.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/atm.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/communications.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/communications.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/atm.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/conversation.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/conversation.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/atm.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/docker.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/docker.svg"
+        "filename": "atm.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/atm.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/dslam.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/dslam.svg"
+        "filename": "atm_bridge.svg",
+        "symbol_id": ":/symbols/classic/atm_bridge.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/fingerprint.svg"
+        "filename": "atm_switch.svg",
+        "symbol_id": ":/symbols/classic/atm_switch.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/firewall.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/firewall.svg"
+        "filename": "call_manager.svg",
+        "symbol_id": ":/symbols/classic/call_manager.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/firewall3.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/square/red/camera.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/grid.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/grid.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/camera.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/grid2.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/grid2.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/camera.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/hub.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/hub.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/camera.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/inspect.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/inspect.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/camera.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/inspect3.svg"
+        "filename": "camera.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/camera.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/interconnect.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/square/red/camera_dome.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/isdn.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/isdn.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/camera_dome.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/ldap.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/ldap.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/camera_dome.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/light_bulb.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/camera_dome.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/link.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/link.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/camera_dome.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/loadbalancer.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/loadbalancer.svg"
+        "filename": "camera_dome.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/camera_dome.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/multilayer_switch.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/multilayer_switch.svg"
+        "filename": "circle.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/circle.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/nas.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/nas.svg"
+        "filename": "circle.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/circle.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/pinpoint.svg"
+        "filename": "circle.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/circle.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/printer.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/printer.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/square/red/client.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/rj45.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/rj45.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/client.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/router.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/router.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/client.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/router_cloud.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/client.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/satellite.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/satellite.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/client.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/satellite_dish.svg"
+        "filename": "client.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/client.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/scull.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/scull.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/square/red/client_vm.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/server-cluster.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/client_vm.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/server.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/server.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/client_vm.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/statistics.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/statistics.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/client_vm.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/storage.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/storage.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/client_vm.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/switch.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/switch.svg"
+        "filename": "client_vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/client_vm.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/tablet.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/tablet.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/red/cloud.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/tree.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/tree.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/cloud.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/user.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/user.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/cloud.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/virtualbox.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/cloud.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/vm.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/cloud.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/vmware.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/vmware.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/cloud.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/wifi.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/wifi.svg"
+        "filename": "cloud.svg",
+        "symbol_id": ":/symbols/classic/cloud.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/wlc.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/wlc.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/square/red/cog.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/blue/xml.svg",
-        "symbol_id": ":/symbols/affinity/circle/blue/xml.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/cog.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/atm.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/atm.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/cog.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/camera.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/camera.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/cog.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/camera_dome.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/cog.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/circle.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/circle.svg"
+        "filename": "cog.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/cog.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/client.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/client.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/square/red/communications.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/client_vm.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/communications.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/cloud.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/communications.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/cog.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/cog.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/communications.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/communications.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/communications.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/communications.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/conversation.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/conversation.svg"
+        "filename": "communications.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/communications.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/docker.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/docker.svg"
+        "filename": "computer.svg",
+        "symbol_id": ":/symbols/classic/computer.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/dslam.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/dslam.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/square/red/conversation.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/fingerprint.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/conversation.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/firewall.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/firewall.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/conversation.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/firewall3.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/conversation.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/grid.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/grid.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/conversation.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/grid2.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/grid2.svg"
+        "filename": "conversation.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/conversation.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/hub.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/hub.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/square/red/docker.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/inspect.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/inspect.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/docker.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/inspect3.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/docker.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/interconnect.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/docker.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/isdn.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/isdn.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/docker.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/ldap.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/ldap.svg"
+        "filename": "docker.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/docker.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/light_bulb.svg"
+        "filename": "docker_guest.svg",
+        "symbol_id": ":/symbols/classic/docker_guest.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/link.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/link.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/square/red/dslam.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/loadbalancer.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/loadbalancer.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/dslam.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/nas.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/nas.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/dslam.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/pinpoint.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/dslam.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/printer.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/printer.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/dslam.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/rj45.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/rj45.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/dslam.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/router.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/router.svg"
+        "filename": "dslam.svg",
+        "symbol_id": ":/symbols/classic/dslam.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/router_cloud.svg"
+        "filename": "edge_label_switch_router.svg",
+        "symbol_id": ":/symbols/classic/edge_label_switch_router.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/satellite.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/satellite.svg"
+        "filename": "ethernet_switch.svg",
+        "symbol_id": ":/symbols/classic/ethernet_switch.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/satellite_dish.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/square/red/fingerprint.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/scull.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/scull.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/fingerprint.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/server-cluster.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/fingerprint.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/server.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/server.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/fingerprint.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/statistics.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/statistics.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/fingerprint.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/storage.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/storage.svg"
+        "filename": "fingerprint.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/fingerprint.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/switch.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/switch.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/square/red/firewall.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/switch_multilayer.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/switch_multilayer.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/firewall.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/tablet.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/tablet.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/firewall.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/tree.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/tree.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/firewall.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/user.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/user.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/firewall.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/virtualbox.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/firewall.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/vm.svg"
+        "filename": "firewall.svg",
+        "symbol_id": ":/symbols/classic/firewall.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/vmware.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/vmware.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/square/red/firewall3.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/wifi.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/wifi.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/firewall3.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/wlc.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/wlc.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/firewall3.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/gray/xml.svg",
-        "symbol_id": ":/symbols/affinity/circle/gray/xml.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/firewall3.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/atm.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/atm.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/firewall3.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/camera.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/camera.svg"
+        "filename": "firewall3.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/firewall3.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/camera_dome.svg"
+        "filename": "frame_relay_switch.svg",
+        "symbol_id": ":/symbols/classic/frame_relay_switch.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/circle.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/circle.svg"
+        "filename": "gateway.svg",
+        "symbol_id": ":/symbols/classic/gateway.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/client.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/client.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/square/red/grid.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/client_vm.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/grid.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/cloud.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/grid.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/cog.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/cog.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/grid.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/communications.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/communications.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/grid.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/conversation.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/conversation.svg"
+        "filename": "grid.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/grid.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/docker.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/docker.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/square/red/grid2.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/dslam.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/dslam.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/grid2.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/fingerprint.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/grid2.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/firewall.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/firewall.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/grid2.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/firewall3.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/grid2.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/grid.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/grid.svg"
+        "filename": "grid2.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/grid2.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/grid2.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/grid2.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/square/red/hub.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/hub.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/hub.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/hub.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/inspect.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/inspect.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/hub.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/inspect3.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/hub.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/interconnect.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/hub.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/isdn.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/isdn.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/hub.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/ldap.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/ldap.svg"
+        "filename": "hub.svg",
+        "symbol_id": ":/symbols/classic/hub.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/light_bulb.svg"
+        "filename": "ids.svg",
+        "symbol_id": ":/symbols/classic/ids.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/link.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/link.svg"
+        "filename": "inspect.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/inspect.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/loadbalancer.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/loadbalancer.svg"
+        "filename": "inspect.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/inspect.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/nas.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/nas.svg"
+        "filename": "inspect.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/inspect.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/pinpoint.svg"
+        "filename": "inspect2.svg",
+        "symbol_id": ":/symbols/affinity/square/red/inspect2.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/printer.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/printer.svg"
+        "filename": "inspect2.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/inspect2.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/rj45.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/rj45.svg"
+        "filename": "inspect2.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/inspect2.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/router.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/router.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/square/red/inspect3.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/router_cloud.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/inspect3.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/satellite.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/satellite.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/inspect3.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/satellite_dish.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/inspect3.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/scull.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/scull.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/inspect3.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/server-cluster.svg"
+        "filename": "inspect3.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/inspect3.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/server.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/server.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/square/red/interconnect.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/statistics.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/statistics.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/interconnect.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/storage.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/storage.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/interconnect.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/switch.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/switch.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/interconnect.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/switch_multilayer.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/switch_multilayer.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/interconnect.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/tablet.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/tablet.svg"
+        "filename": "interconnect.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/interconnect.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/tree.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/tree.svg"
+        "filename": "iosv_l2_virl.svg",
+        "symbol_id": ":/symbols/classic/iosv_l2_virl.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/user.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/user.svg"
+        "filename": "iosv_virl.svg",
+        "symbol_id": ":/symbols/classic/iosv_virl.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/virtualbox.svg"
+        "filename": "ip_phone.svg",
+        "symbol_id": ":/symbols/classic/ip_phone.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/vm.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/vm.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/square/red/isdn.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/vmware.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/vmware.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/isdn.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/wifi.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/wifi.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/isdn.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/wlc.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/wlc.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/isdn.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/circle/red/xml.svg",
-        "symbol_id": ":/symbols/affinity/circle/red/xml.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/isdn.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/atm.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/atm.svg"
+        "filename": "isdn.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/isdn.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/camera.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/camera.svg"
+        "filename": "label_switch_router.svg",
+        "symbol_id": ":/symbols/classic/label_switch_router.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/camera_dome.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/square/red/ldap.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/client.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/client.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/ldap.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/client_vm.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/ldap.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/cloud.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/ldap.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/cog.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/cog.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/ldap.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/communications.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/communications.svg"
+        "filename": "ldap.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/ldap.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/conversation.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/conversation.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/square/red/light_bulb.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/docker.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/docker.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/light_bulb.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/dslam.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/dslam.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/light_bulb.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/fingerprint.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/light_bulb.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/firewall.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/firewall.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/light_bulb.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/firewall3.svg"
+        "filename": "light_bulb.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/light_bulb.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/grid.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/grid.svg"
+        "filename": "lightweight_ap.svg",
+        "symbol_id": ":/symbols/classic/lightweight_ap.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/grid2.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/grid2.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/square/red/link.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/hub.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/hub.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/link.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/inspect2.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/inspect2.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/link.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/inspect3.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/link.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/interconnect.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/link.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/isdn.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/isdn.svg"
+        "filename": "link.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/link.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/ldap.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/ldap.svg"
+        "filename": "loadbalancer.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/loadbalancer.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/light_bulb.svg"
+        "filename": "loadbalancer.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/loadbalancer.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/link.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/link.svg"
+        "filename": "loadbalancer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/loadbalancer.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/nas.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/nas.svg"
+        "filename": "multilayer_switch.svg",
+        "symbol_id": ":/symbols/classic/multilayer_switch.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/pinpoint.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/square/red/nas.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/printer.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/printer.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/nas.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/rj45.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/rj45.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/nas.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/router.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/router.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/nas.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/router_cloud.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/nas.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/satellite.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/satellite.svg"
+        "filename": "nas.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/nas.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/satellite_dish.svg"
+        "filename": "optical_router.svg",
+        "symbol_id": ":/symbols/classic/optical_router.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/scull.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/scull.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/square/red/pinpoint.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/server-cluster.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/pinpoint.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/server.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/server.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/pinpoint.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/square.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/square.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/pinpoint.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/statistics.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/statistics.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/pinpoint.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/storage.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/storage.svg"
+        "filename": "pinpoint.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/pinpoint.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/switch.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/switch.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/square/red/printer.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/switch_multilayer.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/switch_multilayer.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/printer.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/tablet.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/tablet.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/printer.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/tree.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/tree.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/printer.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/user.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/user.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/printer.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/virtualbox.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/printer.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/vm.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/vm.svg"
+        "filename": "printer.svg",
+        "symbol_id": ":/symbols/classic/printer.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/vmware.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/vmware.svg"
+        "filename": "qemu_guest.svg",
+        "symbol_id": ":/symbols/classic/qemu_guest.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/wifi.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/wifi.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/square/red/rj45.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/wlc.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/wlc.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/rj45.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/blue/xml.svg",
-        "symbol_id": ":/symbols/affinity/square/blue/xml.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/rj45.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/atm.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/atm.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/rj45.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/camera.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/camera.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/rj45.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/camera_dome.svg"
+        "filename": "rj45.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/rj45.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/client.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/client.svg"
+        "filename": "route_switch_processor.svg",
+        "symbol_id": ":/symbols/classic/route_switch_processor.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/client_vm.svg"
+        "filename": "router.awp.svg",
+        "symbol_id": ":/symbols/classic/router.awp.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/cloud.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/square/red/router.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/cog.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/cog.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/router.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/communications.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/communications.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/router.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/conversation.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/conversation.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/router.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/docker.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/docker.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/router.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/dslam.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/dslam.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/router.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/fingerprint.svg"
+        "filename": "router.svg",
+        "symbol_id": ":/symbols/classic/router.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/firewall.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/firewall.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/red/router_cloud.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/firewall3.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/router_cloud.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/grid.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/grid.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/router_cloud.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/grid2.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/grid2.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/router_cloud.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/hub.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/hub.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/router_cloud.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/inspect2.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/inspect2.svg"
+        "filename": "router_cloud.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/router_cloud.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/inspect3.svg"
+        "filename": "router_firewall.svg",
+        "symbol_id": ":/symbols/classic/router_firewall.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/interconnect.svg"
+        "filename": "router_netflow.svg",
+        "symbol_id": ":/symbols/classic/router_netflow.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/isdn.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/isdn.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/square/red/satellite.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/ldap.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/ldap.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/satellite.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/light_bulb.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/satellite.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/link.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/link.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/satellite.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/nas.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/nas.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/satellite.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/pinpoint.svg"
+        "filename": "satellite.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/satellite.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/printer.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/printer.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/square/red/satellite_dish.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/rj45.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/rj45.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/satellite_dish.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/router.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/router.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/satellite_dish.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/router_cloud.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/satellite_dish.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/satellite.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/satellite.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/satellite_dish.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/satellite_dish.svg"
+        "filename": "satellite_dish.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/satellite_dish.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/scull.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/scull.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/square/red/scull.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/server-cluster.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/scull.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/server.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/server.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/scull.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/square.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/square.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/scull.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/statistics.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/statistics.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/scull.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/storage.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/storage.svg"
+        "filename": "scull.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/scull.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/switch.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/switch.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/square/red/server-cluster.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/switch_multilayer.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/switch_multilayer.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/server-cluster.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/tablet.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/tablet.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/server-cluster.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/tree.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/tree.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/server-cluster.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/user.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/user.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/server-cluster.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/virtualbox.svg"
+        "filename": "server-cluster.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/server-cluster.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/vm.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/vm.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/square/red/server.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/vmware.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/vmware.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/server.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/wifi.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/wifi.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/server.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/wlc.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/wlc.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/server.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/gray/xml.svg",
-        "symbol_id": ":/symbols/affinity/square/gray/xml.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/server.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/atm.svg",
-        "symbol_id": ":/symbols/affinity/square/red/atm.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/server.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/camera.svg",
-        "symbol_id": ":/symbols/affinity/square/red/camera.svg"
+        "filename": "server.svg",
+        "symbol_id": ":/symbols/classic/server.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/camera_dome.svg",
-        "symbol_id": ":/symbols/affinity/square/red/camera_dome.svg"
+        "filename": "sip_server.svg",
+        "symbol_id": ":/symbols/classic/sip_server.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/client.svg",
-        "symbol_id": ":/symbols/affinity/square/red/client.svg"
+        "filename": "square.svg",
+        "symbol_id": ":/symbols/affinity/square/red/square.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/client_vm.svg",
-        "symbol_id": ":/symbols/affinity/square/red/client_vm.svg"
+        "filename": "square.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/square.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/red/cloud.svg"
+        "filename": "square.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/square.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/cog.svg",
-        "symbol_id": ":/symbols/affinity/square/red/cog.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/square/red/statistics.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/communications.svg",
-        "symbol_id": ":/symbols/affinity/square/red/communications.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/statistics.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/conversation.svg",
-        "symbol_id": ":/symbols/affinity/square/red/conversation.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/statistics.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/docker.svg",
-        "symbol_id": ":/symbols/affinity/square/red/docker.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/statistics.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/dslam.svg",
-        "symbol_id": ":/symbols/affinity/square/red/dslam.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/statistics.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/fingerprint.svg",
-        "symbol_id": ":/symbols/affinity/square/red/fingerprint.svg"
+        "filename": "statistics.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/statistics.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/firewall.svg",
-        "symbol_id": ":/symbols/affinity/square/red/firewall.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/square/red/storage.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/firewall3.svg",
-        "symbol_id": ":/symbols/affinity/square/red/firewall3.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/storage.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/grid.svg",
-        "symbol_id": ":/symbols/affinity/square/red/grid.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/storage.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/grid2.svg",
-        "symbol_id": ":/symbols/affinity/square/red/grid2.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/storage.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/hub.svg",
-        "symbol_id": ":/symbols/affinity/square/red/hub.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/storage.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/inspect2.svg",
-        "symbol_id": ":/symbols/affinity/square/red/inspect2.svg"
+        "filename": "storage.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/storage.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/inspect3.svg",
-        "symbol_id": ":/symbols/affinity/square/red/inspect3.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/square/red/switch.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/interconnect.svg",
-        "symbol_id": ":/symbols/affinity/square/red/interconnect.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/switch.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/isdn.svg",
-        "symbol_id": ":/symbols/affinity/square/red/isdn.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/switch.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/ldap.svg",
-        "symbol_id": ":/symbols/affinity/square/red/ldap.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/switch.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/light_bulb.svg",
-        "symbol_id": ":/symbols/affinity/square/red/light_bulb.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/switch.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/link.svg",
-        "symbol_id": ":/symbols/affinity/square/red/link.svg"
+        "filename": "switch.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/switch.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/nas.svg",
-        "symbol_id": ":/symbols/affinity/square/red/nas.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/square/red/switch_multilayer.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/pinpoint.svg",
-        "symbol_id": ":/symbols/affinity/square/red/pinpoint.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/switch_multilayer.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/printer.svg",
-        "symbol_id": ":/symbols/affinity/square/red/printer.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/switch_multilayer.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/rj45.svg",
-        "symbol_id": ":/symbols/affinity/square/red/rj45.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/switch_multilayer.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/router.svg",
-        "symbol_id": ":/symbols/affinity/square/red/router.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/switch_multilayer.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/router_cloud.svg",
-        "symbol_id": ":/symbols/affinity/square/red/router_cloud.svg"
+        "filename": "switch_multilayer.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/switch_multilayer.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/satellite.svg",
-        "symbol_id": ":/symbols/affinity/square/red/satellite.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/square/red/tablet.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/satellite_dish.svg",
-        "symbol_id": ":/symbols/affinity/square/red/satellite_dish.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/tablet.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/scull.svg",
-        "symbol_id": ":/symbols/affinity/square/red/scull.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/tablet.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/server-cluster.svg",
-        "symbol_id": ":/symbols/affinity/square/red/server-cluster.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/tablet.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/server.svg",
-        "symbol_id": ":/symbols/affinity/square/red/server.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/tablet.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/square.svg",
-        "symbol_id": ":/symbols/affinity/square/red/square.svg"
+        "filename": "tablet.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/tablet.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/statistics.svg",
-        "symbol_id": ":/symbols/affinity/square/red/statistics.svg"
+        "filename": "traceng.svg",
+        "symbol_id": ":/symbols/classic/traceng.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/storage.svg",
-        "symbol_id": ":/symbols/affinity/square/red/storage.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/square/red/tree.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/switch.svg",
-        "symbol_id": ":/symbols/affinity/square/red/switch.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/tree.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/switch_multilayer.svg",
-        "symbol_id": ":/symbols/affinity/square/red/switch_multilayer.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/tree.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/tablet.svg",
-        "symbol_id": ":/symbols/affinity/square/red/tablet.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/tree.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/tree.svg",
-        "symbol_id": ":/symbols/affinity/square/red/tree.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/tree.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/user.svg",
-        "symbol_id": ":/symbols/affinity/square/red/user.svg"
+        "filename": "tree.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/tree.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/virtualbox.svg",
-        "symbol_id": ":/symbols/affinity/square/red/virtualbox.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/square/red/user.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/vm.svg",
-        "symbol_id": ":/symbols/affinity/square/red/vm.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/user.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/vmware.svg",
-        "symbol_id": ":/symbols/affinity/square/red/vmware.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/user.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/wifi.svg",
-        "symbol_id": ":/symbols/affinity/square/red/wifi.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/user.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/wlc.svg",
-        "symbol_id": ":/symbols/affinity/square/red/wlc.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/user.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "affinity/square/red/xml.svg",
-        "symbol_id": ":/symbols/affinity/square/red/xml.svg"
+        "filename": "user.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/user.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/PBX.svg",
-        "symbol_id": ":/symbols/classic/PBX.svg"
+        "filename": "vbox_guest.svg",
+        "symbol_id": ":/symbols/classic/vbox_guest.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/PIX_firewall.svg",
-        "symbol_id": ":/symbols/classic/PIX_firewall.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/square/red/virtualbox.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/access_point.svg",
-        "symbol_id": ":/symbols/classic/access_point.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/virtualbox.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/access_server.svg",
-        "symbol_id": ":/symbols/classic/access_server.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/virtualbox.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/asa.svg",
-        "symbol_id": ":/symbols/classic/asa.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/virtualbox.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/atm_bridge.svg",
-        "symbol_id": ":/symbols/classic/atm_bridge.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/virtualbox.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/atm_switch.svg",
-        "symbol_id": ":/symbols/classic/atm_switch.svg"
+        "filename": "virtualbox.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/virtualbox.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/call_manager.svg",
-        "symbol_id": ":/symbols/classic/call_manager.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/square/red/vm.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/cloud.svg",
-        "symbol_id": ":/symbols/classic/cloud.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/vm.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/computer.svg",
-        "symbol_id": ":/symbols/classic/computer.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/vm.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/docker_guest.svg",
-        "symbol_id": ":/symbols/classic/docker_guest.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/vm.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/dslam.svg",
-        "symbol_id": ":/symbols/classic/dslam.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/vm.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/edge_label_switch_router.svg",
-        "symbol_id": ":/symbols/classic/edge_label_switch_router.svg"
+        "filename": "vm.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/vm.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/ethernet_switch.svg",
-        "symbol_id": ":/symbols/classic/ethernet_switch.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/square/red/vmware.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/firewall.svg",
-        "symbol_id": ":/symbols/classic/firewall.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/vmware.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/frame_relay_switch.svg",
-        "symbol_id": ":/symbols/classic/frame_relay_switch.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/vmware.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/gateway.svg",
-        "symbol_id": ":/symbols/classic/gateway.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/vmware.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/hub.svg",
-        "symbol_id": ":/symbols/classic/hub.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/vmware.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/ids.svg",
-        "symbol_id": ":/symbols/classic/ids.svg"
+        "filename": "vmware.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/vmware.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/iosv_l2_virl.svg",
-        "symbol_id": ":/symbols/classic/iosv_l2_virl.svg"
+        "filename": "vmware_guest.svg",
+        "symbol_id": ":/symbols/classic/vmware_guest.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/iosv_virl.svg",
-        "symbol_id": ":/symbols/classic/iosv_virl.svg"
+        "filename": "voice_access_server.svg",
+        "symbol_id": ":/symbols/classic/voice_access_server.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/ip_phone.svg",
-        "symbol_id": ":/symbols/classic/ip_phone.svg"
+        "filename": "voice_router.svg",
+        "symbol_id": ":/symbols/classic/voice_router.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/label_switch_router.svg",
-        "symbol_id": ":/symbols/classic/label_switch_router.svg"
+        "filename": "vpcs_guest.svg",
+        "symbol_id": ":/symbols/classic/vpcs_guest.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/lightweight_ap.svg",
-        "symbol_id": ":/symbols/classic/lightweight_ap.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/square/red/wifi.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/multilayer_switch.svg",
-        "symbol_id": ":/symbols/classic/multilayer_switch.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/wifi.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/optical_router.svg",
-        "symbol_id": ":/symbols/classic/optical_router.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/wifi.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/printer.svg",
-        "symbol_id": ":/symbols/classic/printer.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/wifi.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/qemu_guest.svg",
-        "symbol_id": ":/symbols/classic/qemu_guest.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/wifi.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/route_switch_processor.svg",
-        "symbol_id": ":/symbols/classic/route_switch_processor.svg"
+        "filename": "wifi.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/wifi.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/router.awp.svg",
-        "symbol_id": ":/symbols/classic/router.awp.svg"
+        "filename": "wlan_controller.svg",
+        "symbol_id": ":/symbols/classic/wlan_controller.svg",
+        "theme": "Classic"
     },
     {
         "builtin": true,
-        "filename": "classic/router.svg",
-        "symbol_id": ":/symbols/classic/router.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/square/red/wlc.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/router_firewall.svg",
-        "symbol_id": ":/symbols/classic/router_firewall.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/wlc.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/router_netflow.svg",
-        "symbol_id": ":/symbols/classic/router_netflow.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/wlc.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/server.svg",
-        "symbol_id": ":/symbols/classic/server.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/wlc.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/sip_server.svg",
-        "symbol_id": ":/symbols/classic/sip_server.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/wlc.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/traceng.svg",
-        "symbol_id": ":/symbols/classic/traceng.svg"
+        "filename": "wlc.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/wlc.svg",
+        "theme": "Affinity-circle-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/vbox_guest.svg",
-        "symbol_id": ":/symbols/classic/vbox_guest.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/square/red/xml.svg",
+        "theme": "Affinity-square-red"
     },
     {
         "builtin": true,
-        "filename": "classic/vmware_guest.svg",
-        "symbol_id": ":/symbols/classic/vmware_guest.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/square/blue/xml.svg",
+        "theme": "Affinity-square-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/voice_access_server.svg",
-        "symbol_id": ":/symbols/classic/voice_access_server.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/square/gray/xml.svg",
+        "theme": "Affinity-square-gray"
     },
     {
         "builtin": true,
-        "filename": "classic/voice_router.svg",
-        "symbol_id": ":/symbols/classic/voice_router.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/circle/red/xml.svg",
+        "theme": "Affinity-circle-red"
     },
     {
         "builtin": true,
-        "filename": "classic/vpcs_guest.svg",
-        "symbol_id": ":/symbols/classic/vpcs_guest.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/circle/blue/xml.svg",
+        "theme": "Affinity-circle-blue"
     },
     {
         "builtin": true,
-        "filename": "classic/wlan_controller.svg",
-        "symbol_id": ":/symbols/classic/wlan_controller.svg"
+        "filename": "xml.svg",
+        "symbol_id": ":/symbols/affinity/circle/gray/xml.svg",
+        "theme": "Affinity-circle-gray"
     }
 ]

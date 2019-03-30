@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/templates/05abf56b-649b-4ce6-b943-9af1d1f5d9c5'
+curl -i -X GET 'http://localhost:3080/v2/templates/c0c6bb37-68d5-4900-bb18-ee69a524593f'
 
-GET /v2/templates/05abf56b-649b-4ce6-b943-9af1d1f5d9c5 HTTP/1.1
+GET /v2/templates/c0c6bb37-68d5-4900-bb18-ee69a524593f HTTP/1.1
 
 
 
@@ -8,9 +8,9 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 378
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:55 GMT
-ETag: "dd3b80f43881170e23c78623f6dfa96c"
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:14 GMT
+Etag: "01987f11368dfc5e0c95ee6cb5cf059c"
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/templates/{template_id}
 
 {
@@ -23,6 +23,6 @@ X-Route: /v2/templates/{template_id}
     "default_name_format": "PC{0}",
     "name": "VPCS_TEST",
     "symbol": ":/symbols/vpcs_guest.svg",
-    "template_id": "05abf56b-649b-4ce6-b943-9af1d1f5d9c5",
+    "template_id": "c0c6bb37-68d5-4900-bb18-ee69a524593f",
     "template_type": "vpcs"
 }

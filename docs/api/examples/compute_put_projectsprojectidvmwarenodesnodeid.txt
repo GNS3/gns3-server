@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/ffae8f66-f959-4576-a7ef-bf4be43f86ee' -d '{"console": 5005, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/01e4a958-04bd-4431-a924-af4ae2b77e8a' -d '{"console": 5005, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/ffae8f66-f959-4576-a7ef-bf4be43f86ee HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/01e4a958-04bd-4431-a924-af4ae2b77e8a HTTP/1.1
 {
     "console": 5005,
     "name": "test"
@@ -9,10 +9,10 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/ffae8
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 594
+Content-Length: 611
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:25 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:49:07 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
 
 {
@@ -23,11 +23,12 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
     "headless": false,
     "linked_clone": false,
     "name": "test",
-    "node_directory": "/tmp/tmpa0evf8l1/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/ffae8f66-f959-4576-a7ef-bf4be43f86ee",
-    "node_id": "ffae8f66-f959-4576-a7ef-bf4be43f86ee",
+    "node_directory": "/tmp/tmp2a2tb7g2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/01e4a958-04bd-4431-a924-af4ae2b77e8a",
+    "node_id": "01e4a958-04bd-4431-a924-af4ae2b77e8a",
     "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
+    "usage": "",
     "use_any_adapter": false,
-    "vmx_path": "/tmp/pytest-of-grossmj/pytest-4/test_vmware_update0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-0/test_vmware_update0/test.vmx"
 }

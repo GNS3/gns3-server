@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/templates/275526cf-5ae0-4f98-abca-d480b2d4e1f0/duplicate' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/templates/657d7329-4c78-4bfa-ad38-809e4b7e7f17/duplicate' -d '{}'
 
-POST /v2/templates/275526cf-5ae0-4f98-abca-d480b2d4e1f0/duplicate HTTP/1.1
+POST /v2/templates/657d7329-4c78-4bfa-ad38-809e4b7e7f17/duplicate HTTP/1.1
 {}
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 378
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:55 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:14 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/templates/{template_id}/duplicate
 
 {
@@ -22,6 +22,6 @@ X-Route: /v2/templates/{template_id}/duplicate
     "default_name_format": "PC{0}",
     "name": "VPCS_TEST",
     "symbol": ":/symbols/vpcs_guest.svg",
-    "template_id": "7f121fee-44da-4842-8faf-adf17159ffbd",
+    "template_id": "da9c4c24-be5f-44ff-b053-169bf92f92a3",
     "template_type": "vpcs"
 }

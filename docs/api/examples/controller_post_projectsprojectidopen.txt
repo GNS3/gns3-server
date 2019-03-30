@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/a389a588-724a-4002-8735-be3d41ca7cd7/open' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/2d710039-622b-4539-b96d-124c2f106730/open' -d '{}'
 
-POST /v2/projects/a389a588-724a-4002-8735-be3d41ca7cd7/open HTTP/1.1
+POST /v2/projects/2d710039-622b-4539-b96d-124c2f106730/open HTTP/1.1
 {}
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 560
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:41 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:01 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/open
 
 {
@@ -20,8 +20,8 @@ X-Route: /v2/projects/{project_id}/open
     "filename": "test.gns3",
     "grid_size": 75,
     "name": "test",
-    "path": "/tmp/tmpkex3ytmn/projects/a389a588-724a-4002-8735-be3d41ca7cd7",
-    "project_id": "a389a588-724a-4002-8735-be3d41ca7cd7",
+    "path": "/tmp/tmpl5wx5e9z/projects/2d710039-622b-4539-b96d-124c2f106730",
+    "project_id": "2d710039-622b-4539-b96d-124c2f106730",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,

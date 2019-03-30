@@ -15,8 +15,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 1194
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:10:09 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:15 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/templates
 
 {
@@ -59,7 +59,7 @@ X-Route: /v2/templates
     "qemu_path": "",
     "ram": 512,
     "symbol": ":/symbols/qemu_guest.svg",
-    "template_id": "882c13d9-3bf4-428b-9cb4-3989b01d0524",
+    "template_id": "fd090867-490f-4310-b903-df7821da6943",
     "template_type": "qemu",
     "usage": ""
 }

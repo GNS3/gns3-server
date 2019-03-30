@@ -6,10 +6,10 @@ GET /v2/appliances HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 586420
+Content-Length: 632570
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:30 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:49:45 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/appliances
 
 [
@@ -102,6 +102,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "HPE",
         "vendor_url": "http://www.hpe.com",
         "versions": [
@@ -207,6 +208,7 @@ X-Route: /v2/appliances
         "product_name": "3725",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -268,6 +270,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "User: root\nPassword: admin",
         "vendor_name": "Proxmox Server Solutions GmbH",
         "vendor_url": "http://www.proxmox.com/en/",
@@ -285,6 +288,77 @@ X-Route: /v2/appliances
                     "hda_disk_image": "empty30G.qcow2"
                 },
                 "name": "4.1-5"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "firewall",
+        "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you\u2019ll always know who is on your network and what they are doing.\n\nAs the control center for the Stealthwatch System, the SMC manages, coordinates, configures, and organizes all of the different components of the system. The SMC client software allows you to access the SMC\u2019s user-friendly graphical user interface from any local computer with access to a Web browser. Through the client interface, you can easily access real-time security and network information about critical segments throughout your enterprise. ",
+        "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+        "first_port_name": "eth0",
+        "images": [
+            {
+                "download_url": "https://stealthwatch.flexnetoperations.com/control/lncp/product?child_plneID=786407",
+                "filename": "SMC-6.10.4-2018.11.14.1757-0.iso",
+                "filesize": 2518747136,
+                "md5sum": "1de82eddf5303012aa8701144a7d4c7b",
+                "version": "6.10.4-2018.11.14.1757-0"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2",
+                "filename": "SMC-6.10.2-2018.03.19.2228-0.iso",
+                "filesize": 2311847936,
+                "md5sum": "e4e31ea6eb5c17c12769724f0c70b452",
+                "version": "6.10.2-2018.03.19.2228-0"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty200G.qcow2",
+                "filesize": 200192,
+                "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Cisco Stealthwatch Management Console",
+        "port_name_format": "eth{port1}",
+        "product_name": "Stealthwatch Management Console",
+        "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "cd",
+            "console_type": "vnc",
+            "cpus": 3,
+            "hda_disk_interface": "scsi",
+            "kvm": "require",
+            "options": "",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": "cisco-fmcv.svg",
+        "usage": "Starting Stealthwatch Management Console will start an installation of SMC onto a blank 200GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+        "vendor_name": "Cisco",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "SMC-6.10.4-2018.11.14.1757-0.iso",
+                    "hda_disk_image": "empty200G.qcow2"
+                },
+                "name": "6.10.4-2018.11.14.1757-0"
+            },
+            {
+                "images": {
+                    "cdrom_image": "SMC-6.10.2-2018.03.19.2228-0.iso",
+                    "hda_disk_image": "empty200G.qcow2"
+                },
+                "name": "6.10.2-2018.03.19.2228-0"
             }
         ]
     },
@@ -329,6 +403,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Default credentials: admin / imsva",
         "vendor_name": "Trend Micro Inc.",
         "vendor_url": "http://www.trendmicro.com/",
@@ -486,6 +561,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Initial username is root, no password.",
         "vendor_name": "Juniper",
         "vendor_url": "https://www.juniper.net/us/en/",
@@ -596,6 +672,61 @@ X-Route: /v2/appliances
     },
     {
         "builtin": true,
+        "category": "firewall",
+        "description": "FortiProxy is a secure web proxy that protects employees against internet-borne attacks by incorporating multiple detection techniques such as web filtering, DNS filtering, data loss prevention, antivirus, intrusion prevention and advanced threat protection. It helps enterprises enforce internet compliance using granular application control.",
+        "documentation_url": "https://docs.fortinet.com/fortiproxy/",
+        "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FPX_KVM-v100-build0147-FORTINET.out.kvm.qcow2",
+                "filesize": 42668032,
+                "md5sum": "d7c60693bfa58246e5063304cd450c89",
+                "version": "1.1.0"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty30G.qcow2",
+                "filesize": 197120,
+                "md5sum": "3411a599e822f2ac6be560a26405821a",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "FortiProxy",
+        "port_name_format": "Port{port1}",
+        "product_name": "FortiProxy",
+        "product_url": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/FortiProxy.pdf",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 10,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "hdb_disk_interface": "virtio",
+            "kvm": "allow",
+            "ram": 2048
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "fortinet.svg",
+        "usage": "The system reboots twice during the initial setup; this is normal.\nDefault username is admin, no password is set.",
+        "vendor_name": "Fortinet",
+        "vendor_url": "http://www.fortinet.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FPX_KVM-v100-build0147-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "1.1.0"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 3745 Multiservice Access Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/routers/3745-multiservice-access-router/model.html",
@@ -628,6 +759,7 @@ X-Route: /v2/appliances
         "product_name": "3745",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -779,6 +911,7 @@ X-Route: /v2/appliances
         "product_name": "3640",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -1002,6 +1135,7 @@ X-Route: /v2/appliances
         "product_url": "http://openvswitch.org/",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "By default all interfaces are connected to the br0",
         "vendor_name": "Open vSwitch",
         "vendor_url": "http://openvswitch.org/"
@@ -1153,6 +1287,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "A config wizard will be started at first boot.",
         "vendor_name": "IPFire Project",
         "vendor_url": "http://www.ipfire.org/",
@@ -1208,12 +1343,20 @@ X-Route: /v2/appliances
         "documentation_url": "https://www.kali.org/kali-linux-documentation/",
         "images": [
             {
-                "direct_download_url": "http://cdimage.kali.org/kali-2018.3/kali-linux-2018.3-amd64.iso",
+                "direct_download_url": "http://cdimage.kali.org/kali-2018.4/kali-linux-2018.4-amd64.iso",
                 "download_url": "https://www.kali.org/downloads/",
-                "filename": "kali-linux-2018.3-amd64.iso",
-                "filesize": 3188391936,
-                "md5sum": "6dc3e57177249f73492b9edb95d082d1",
-                "version": "2018.3"
+                "filename": "kali-linux-2018.4-amd64.iso",
+                "filesize": 3139436544,
+                "md5sum": "1b2d598bb8d2003e6207c119c0ba42fe",
+                "version": "2018.4"
+            },
+            {
+                "direct_download_url": "http://cdimage.kali.org/kali-2018.3a/kali-linux-2018.3a-amd64.iso",
+                "download_url": "https://www.kali.org/downloads/",
+                "filename": "kali-linux-2018.3a-amd64.iso",
+                "filesize": 3192651776,
+                "md5sum": "2da675d016bd690c05e180e33aa98b94",
+                "version": "2018.3a"
             },
             {
                 "direct_download_url": "http://cdimage.kali.org/kali-2018.1/kali-linux-2018.1-amd64.iso",
@@ -1286,15 +1429,22 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Default password is toor",
         "vendor_name": "Kali Linux",
         "vendor_url": "https://www.kali.org/",
         "versions": [
             {
                 "images": {
-                    "cdrom_image": "kali-linux-2018.3-amd64.iso"
+                    "cdrom_image": "kali-linux-2018.4-amd64.iso"
                 },
-                "name": "2018.3"
+                "name": "2018.4"
+            },
+            {
+                "images": {
+                    "cdrom_image": "kali-linux-2018.3a-amd64.iso"
+                },
+                "name": "2018.3a"
             },
             {
                 "images": {
@@ -1356,6 +1506,7 @@ X-Route: /v2/appliances
         "product_url": "http://onosproject.org/",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "vendor_name": "Onos",
         "vendor_url": "http://onosproject.org/"
     },
@@ -1365,6 +1516,13 @@ X-Route: /v2/appliances
         "description": "FortiWeb Web Application Firewalls provide specialized, layered web application threat protection for medium/large enterprises, application service providers, and SaaS providers.",
         "documentation_url": "http://docs.fortinet.com/fortiweb",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FWB_KVM-v600-build0056-FORTINET.out.kvm.qcow2",
+                "filesize": 156959232,
+                "md5sum": "cc7800bc6c2dd60c583d2d4ef1965e01",
+                "version": "6.0.2"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FWB_KVM-v600-build0036-FORTINET.out.kvm.qcow2",
@@ -1463,6 +1621,13 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FWB_KVM-v600-build0056-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FWB_KVM-v600-build0036-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -1550,6 +1715,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "You can set admin username and password on first boot. Don't forget about the two-staged configuration, you have to commit your changes.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -1624,6 +1790,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Default user: root (no password set)",
         "vendor_name": "Olivier Cochard-Labbe",
         "vendor_url": "https://bsdrp.net/",
@@ -1711,6 +1878,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Select 'No RAID' option when installing the appliance using the VNC console. Installing the freepbx package takes a lot of time (15+ minutes).",
         "vendor_name": "Digium",
         "vendor_url": "http://www.asterisk.org/",
@@ -1735,6 +1903,77 @@ X-Route: /v2/appliances
                     "hda_disk_image": "empty30G.qcow2"
                 },
                 "name": "5.211"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "firewall",
+        "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you\u2019ll always know who is on your network and what they are doing.\n\nAt the heart of the Stealthwatch System is the highly scalable Stealthwatch Flow Collector. The Flow Collector is available as either a physical or a virtual appliance. The Flow Collector VE performs the same functions as its physical counterpart, but in a virtual environment. The Stealthwatch Flow Collector for NetFlow gathers NetFlow, cFlow, J-Flow, Packeteer 2, NetStream, and IPFIX data. To achieve full network visibility with a traditional probe-based approach, you would need to install a probe for each router or switch on your network. This results in many costly hardware installations. Conversely, Stealthwatch\u2019s flow-based approach provides you with full network visibility at a fraction of the cost. Each Flow Collector can process data for as many as 1,000,000 hosts from up to 2,000 flow exporters, depending on the Flow Collector model and license restrictions. ",
+        "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+        "first_port_name": "eth0",
+        "images": [
+            {
+                "download_url": "https://stealthwatch.flexnetoperations.com/control/lncp/product?child_plneID=786407",
+                "filename": "FlowCollector-NetFlow-6.10.4-2018.11.14.1757-0.iso",
+                "filesize": 2479288320,
+                "md5sum": "accd9fb9dd2d312805883749899a2fc0",
+                "version": "6.10.4-2018.11.14.1757-0"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2",
+                "filename": "FlowCollector-NetFlow-6.10.2-2018.03.19.2230-0.iso",
+                "filesize": 2430076928,
+                "md5sum": "e2ac83fa617ed9e073e845cedae76873",
+                "version": "6.10.2-2018.03.19.2230-0"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty200G.qcow2",
+                "filesize": 200192,
+                "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Cisco Flow Collector for NetFlow",
+        "port_name_format": "eth{port1}",
+        "product_name": "Flow Collector for NetFlow",
+        "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "cd",
+            "console_type": "vnc",
+            "cpus": 2,
+            "hda_disk_interface": "scsi",
+            "kvm": "require",
+            "options": "",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
+        "usage": "Starting Flow Collector for NetFlow will start an installation of FCNF onto a blank 200GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+        "vendor_name": "Cisco",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "FlowCollector-NetFlow-6.10.4-2018.11.14.1757-0.iso",
+                    "hda_disk_image": "empty200G.qcow2"
+                },
+                "name": "6.10.4-2018.11.14.1757-0"
+            },
+            {
+                "images": {
+                    "cdrom_image": "FlowCollector-NetFlow-6.10.2-2018.03.19.2230-0.iso",
+                    "hda_disk_image": "empty200G.qcow2"
+                },
+                "name": "6.10.2-2018.03.19.2230-0"
             }
         ]
     },
@@ -1778,6 +2017,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Username: centos\nPassword: centos",
         "vendor_name": "The CentOS Project",
         "vendor_url": "https://www.centos.org/",
@@ -2137,6 +2377,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "At boot choose the install on disk options. You need to open quickly the terminal after launching the appliance if you want to see the menu. You need a web browser in order to finalize the installation. You can use the firefox appliance for this.",
         "vendor_name": "Checkpoint",
         "vendor_url": "https://www.checkpoint.com",
@@ -2253,6 +2494,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Follow installation instructions. Once the installation process is done, you can access the web interface using a web browser: https://<zentyal-ip-address>:8443/",
         "vendor_name": "Zentyal S.L.",
         "vendor_url": "http://www.zentyal.com/",
@@ -2305,6 +2547,63 @@ X-Route: /v2/appliances
                     "hda_disk_image": "empty100G.qcow2"
                 },
                 "name": "4.0"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "firewall",
+        "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you\u2019ll always know who is on your network and what they are doing.\n\nUsing the same technology as the Stealthwatch Flow Sensor appliance, the Flow Sensor VE is a virtual appliance that provides visibility into virtual environments, generating flow data for areas that are not flow-enabled. ",
+        "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+        "first_port_name": "eth0",
+        "images": [
+            {
+                "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2",
+                "filename": "FlowSensor-AE-6.10.2-2018.03.19.2224-0.iso",
+                "filesize": 1287245824,
+                "md5sum": "ef8712e655fcbc92dc1a1551ee2e4a80",
+                "version": "6.10.2-2018.03.19.2224-0"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty100G.qcow2",
+                "filesize": 198656,
+                "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Cisco Flow Sensor",
+        "port_name_format": "eth{port1}",
+        "product_name": "Flow Sensor VE",
+        "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+        "qemu": {
+            "adapter_type": "e1000",
+            "adapters": 2,
+            "arch": "x86_64",
+            "boot_priority": "cd",
+            "console_type": "vnc",
+            "cpus": 1,
+            "hda_disk_interface": "scsi",
+            "kvm": "require",
+            "options": "",
+            "ram": 8192
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
+        "usage": "Starting Flow Sensor will start an installation of FSVE onto a blank 100GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+        "vendor_name": "Cisco",
+        "vendor_url": "http://www.cisco.com/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "FlowSensor-AE-6.10.2-2018.03.19.2224-0.iso",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "6.10.2-2018.03.19.2224-0"
             }
         ]
     },
@@ -2380,6 +2679,7 @@ X-Route: /v2/appliances
         "product_name": "Python, Go, Perl, PHP",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "vendor_name": "GNS3 Team",
         "vendor_url": "https://www.gns3.com"
     },
@@ -2400,6 +2700,7 @@ X-Route: /v2/appliances
         "product_name": "Jupyter",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "vendor_name": "Project Jupyter",
         "vendor_url": "http://jupyter.org/"
     },
@@ -2442,6 +2743,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "OpenWrt",
         "vendor_url": "http://openwrt.org",
         "versions": [
@@ -2487,6 +2789,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v6-build0255-FORTINET.out.kvm.qcow2",
+                "filesize": 114589696,
+                "md5sum": "14c98b20ed1d0729e2d04aad49ff1be5",
+                "version": "6.0.3"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAZ_VM64_KVM-v6-build0205-FORTINET.out.kvm.qcow2",
                 "filesize": 115777536,
                 "md5sum": "1c9c6a99244aaf8b215c52194e1f82ed",
@@ -2498,6 +2807,13 @@ X-Route: /v2/appliances
                 "filesize": 117940224,
                 "md5sum": "e870087db55a095c75ddcafe73e1ea27",
                 "version": "6.0.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v5-build1782-FORTINET.out.kvm.qcow2",
+                "filesize": 110862336,
+                "md5sum": "f67c115cc51e911802e9cbcb5cb0c8c2",
+                "version": "5.6.7"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -2618,6 +2934,13 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v6-build0255-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.3"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAZ_VM64_KVM-v6-build0205-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -2629,6 +2952,13 @@ X-Route: /v2/appliances
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "6.0.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v5-build1782-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.7"
             },
             {
                 "images": {
@@ -2817,6 +3147,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Configure interfaces in /opt/bootlocal.sh, BIRD configuration is done in /usr/local/etc/bird",
         "vendor_name": "CZ.NIC Labs",
         "vendor_url": "http://bird.network.cz/",
@@ -2835,6 +3166,13 @@ X-Route: /v2/appliances
         "description": "Over 200,000 IT staff across medium to large enterprises worldwide are currently using OP5 Monitor as their preferred network monitoring software.\nOP5 Monitor allows you to take control of your IT, enabling your network to be more responsive, more reliable and even faster than ever before. With unparalleled scalability, OP5 Monitor grows as your company grows, so you\u2019ll understand why we say this is the last network monitor you\u2019ll ever need to purchase.",
         "documentation_url": "https://kb.op5.com/display/MAN/Documentation+Home#sthash.pohb5bis.dpbs",
         "images": [
+            {
+                "download_url": "https://www.op5.com/download/",
+                "filename": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk",
+                "filesize": 1111941120,
+                "md5sum": "48ec6d7ee3809d9ed705a089c679e076",
+                "version": "7.4.10"
+            },
             {
                 "download_url": "https://www.op5.com/download/",
                 "filename": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk",
@@ -2866,6 +3204,12 @@ X-Route: /v2/appliances
         "vendor_name": "OP5",
         "vendor_url": "https://www.op5.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk"
+                },
+                "name": "7.4.10"
+            },
             {
                 "images": {
                     "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk"
@@ -2936,6 +3280,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "You can run the LiveCD or install to the local disk. Default root password: deft",
         "vendor_name": "DEFT Association",
         "vendor_url": "http://www.deftlinux.net/",
@@ -3001,6 +3346,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Insert the NETem VM between two network elements and connect it to them. NETem is fully transparent, it bridges the traffic from one interface to the other one. As NETem only bridges, it needs no IP addresses. On start a menu on the console allows a user-friendy configuration of the line parameters.",
         "vendor_name": "Linux",
         "vendor_url": "http://www.linuxfoundation.org/",
@@ -3074,6 +3420,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Username: ubuntu\nPassword: ubuntu",
         "vendor_name": "Canonical Inc.",
         "vendor_url": "https://www.ubuntu.com",
@@ -3161,7 +3508,7 @@ X-Route: /v2/appliances
         "maintainer": "GNS3 Team",
         "maintainer_email": "developers@gns3.net",
         "name": "Cisco IOS XRv 9000",
-        "port_name_format": "GigabitEthernet0/0/0/{0}",
+        "port_name_format": "NIC{0}",
         "product_name": "IOS XRv 9000",
         "product_url": "http://virl.cisco.com/",
         "qemu": {
@@ -3175,7 +3522,8 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
-        "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present. Interfaces may take several minutes to be usable after appliance boot.",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Default username/password: admin/admin, cisco/cisco and lab/lab. There is no default configuration present. Interfaces may take several minutes to be usable after appliance boot.\n\nThe interfaces are mapped the following way:\n- NIC0: unused\n- NIC1: unused\n- NIC2: Gi0/0/0/0\n- NIC3: Gi0/0/0/1\n- NICn: Gi0/0/0/(n-2)",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
         "versions": [
@@ -3287,6 +3635,7 @@ X-Route: /v2/appliances
         "product_name": "2600",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -3380,6 +3729,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "vendor_name": "Kerio Technologies Inc.",
         "vendor_url": "http://www.kerio.com",
         "versions": [
@@ -3464,6 +3814,7 @@ X-Route: /v2/appliances
         "product_name": "Cisco IOU L2",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -3499,6 +3850,13 @@ X-Route: /v2/appliances
                 "filesize": 30998528,
                 "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
                 "version": "ALL"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V500-build0423-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 104333312,
+                "md5sum": "993bcd0e8e5496fdacb78dffb3c9a9b3",
+                "version": "5.2.0"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -3672,6 +4030,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V500-build0423-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "5.2.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "FAD_KVM-V500-build0239-FORTINET.out.kvm-boot.qcow2",
@@ -3896,6 +4261,15 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "bzip2",
+                "direct_download_url": "https://sourceforge.net/projects/frr/files/frr6.0-vm0.2.qcow2.bz2/download",
+                "download_url": "https://sourceforge.net/projects/frr/files/",
+                "filename": "frr6.0-vm0.2.qcow2",
+                "filesize": 1762066432,
+                "md5sum": "bf5aebd98352716bfabb119abb2ba19a",
+                "version": "FRR6.0 - VM0.2"
+            },
+            {
+                "compression": "bzip2",
                 "direct_download_url": "https://sourceforge.net/projects/frr/files/frr4.0-vm0.1.qcow2.bz2/download",
                 "download_url": "https://sourceforge.net/projects/frr/files/",
                 "filename": "frr4.0-vm0.1.qcow2",
@@ -3919,10 +4293,17 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Credentials: frr / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
         "vendor_name": "FRRouting Project",
         "vendor_url": "https://frrouting.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "frr6.0-vm0.2.qcow2"
+                },
+                "name": "FRR6.0 - VM0.2"
+            },
             {
                 "images": {
                     "hda_disk_image": "frr4.0-vm0.1.qcow2"
@@ -3946,6 +4327,7 @@ X-Route: /v2/appliances
         "product_name": "Chromium",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "vendor_name": "Chromium",
         "vendor_url": "https://www.chromium.org/"
     },
@@ -3955,6 +4337,13 @@ X-Route: /v2/appliances
         "description": "The Cisco Cloud Services Router 1000V (CSR 1000V) is a router and network services platform in virtual form factor that is intended for deployment in cloud and virtual data centers. It is optimized to serve as a single-tenant or multitenant WAN gateway. Using proven, industry-leading Cisco IOS\u00ae XE Software networking and security features, the CSR 1000V enables enterprises to transparently extend their WANs into external provider-hosted clouds and cloud providers to offer their tenants enterprise-class networking services.",
         "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
         "images": [
+            {
+                "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.10.1b",
+                "filename": "csr1000v-universalk9.16.10.01b-serial.qcow2",
+                "filesize": 950468608,
+                "md5sum": "0d3d647f83631c7955ad7899e6cce293",
+                "version": "16.10.1b"
+            },
             {
                 "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Fuji-16.9.1",
                 "filename": "csr1000v-universalk9.16.09.01-serial.qcow2",
@@ -4056,10 +4445,17 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "There is no default password and enable password. A default configuration is present.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "csr1000v-universalk9.16.10.01b-serial.qcow2"
+                },
+                "name": "16.10.1b"
+            },
             {
                 "images": {
                     "hda_disk_image": "csr1000v-universalk9.16.09.01-serial.qcow2"
@@ -4141,6 +4537,14 @@ X-Route: /v2/appliances
         "documentation_url": "http://docs.cumulusnetworks.com/",
         "first_port_name": "eth0",
         "images": [
+            {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.2/cumulus-linux-3.7.2-vx-amd64-qemu.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.7.2-vx-amd64-qemu.qcow2",
+                "filesize": 1574502400,
+                "md5sum": "2fcd785da0452e403c44ba5f3ac4e870",
+                "version": "3.7.2"
+            },
             {
                 "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.1/cumulus-linux-3.7.1-vx-amd64-qemu.qcow2",
                 "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
@@ -4314,10 +4718,17 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "Default username is cumulus and password is CumulusLinux!",
         "vendor_name": "Cumulus Network",
         "vendor_url": "https://www.cumulusnetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.7.2-vx-amd64-qemu.qcow2"
+                },
+                "name": "3.7.2"
+            },
             {
                 "images": {
                     "hda_disk_image": "cumulus-linux-3.7.1-vx-amd64-qemu.qcow2"
@@ -4461,8 +4872,8 @@ X-Route: /v2/appliances
         "product_name": "cEOS",
         "registry_version": 3,
         "status": "experimental",
-        "symbol": ":/symbols/multilayer_switch.svg",
-        "usage": "Download:\nCreate a (free) Arista account and login.\nThen navigate to Support / Software Download and download the cEOS-lab image.\n\nInstallation:\nCopy the image to your GNS3VM (or other Linux) server, then run the following commands:\n\ndocker import cEOS-lab.tar.xz ceosimage:4.20.5F\necho \"rm /etc/systemd/system/getty.target.wants/getty@tty1.service\" | \\\ndocker run --name=ceos-container -e CEOS=1 -e container=docker -e EOS_PLATFORM=ceossim -e SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 -e ETBA=1 -e INTFTYPE=eth -i ceosimage:4.20.5F sh\ndocker commit --change='CMD [\"/sbin/init\"]' --change='VOLUME /mnt/flash' ceos-container ceosimage:GNS3\ndocker rm ceos-container\n\nUsage:\nThe login is admin, with no password by default",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
+        "usage": "Download:\nCreate a (free) Arista account and login.\nThen navigate to Support / Software Download and download the cEOS-lab image.\n\nInstallation:\nCopy the image to your GNS3VM (or other Linux) server, then run the following commands:\n\ncEOS-4.21.0F and newer, replace <version> by the cEOS version:\ndocker import cEOS-lab.tar.xz ceosimage:<version>\necho \"rm /etc/systemd/system/getty.target.wants/getty@tty1.service\" | \\\ndocker run --name=ceos-container -e CEOS=1 -e container=docker -e EOS_PLATFORM=ceoslab -e SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 -e ETBA=1 -e INTFTYPE=eth -i ceosimage:<version> sh\ndocker commit --change='CMD [\"/sbin/init\"]' --change='VOLUME /mnt/flash' ceos-container ceosimage:GNS3\ndocker rm ceos-container\n\ncEOS-4.20.5F:\ndocker import cEOS-lab.tar.xz ceosimage:4.20.5F\necho \"rm /etc/systemd/system/getty.target.wants/getty@tty1.service\" | \\\ndocker run --name=ceos-container -e CEOS=1 -e container=docker -e EOS_PLATFORM=ceossim -e SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 -e ETBA=1 -e INTFTYPE=eth -i ceosimage:4.20.5F sh\ndocker commit --change='CMD [\"/sbin/init\"]' --change='VOLUME /mnt/flash' ceos-container ceosimage:GNS3\ndocker rm ceos-container\n\nUsage:\nStart an auxiliary console on the cEOS and issue the \"Cli\" command.\nOnly cEOS-4.20.5F: Login on the console with username \"admin\".",
         "vendor_name": "Arista",
         "vendor_url": "http://www.arista.com/"
     },
@@ -4627,6 +5038,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "vendor_name": "HPE Aruba",
         "vendor_url": "arubanetworks.com",
         "versions": [
@@ -4688,6 +5100,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Login is admin and password is admin",
         "vendor_name": "Alcatel",
         "vendor_url": "https://www.alcatel-lucent.com/",
@@ -4739,6 +5152,7 @@ X-Route: /v2/appliances
         "product_name": "1700",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -4808,6 +5222,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Default WebUI credentials: admin / zeroshell",
         "vendor_name": "Fulvio Ricciardi",
         "vendor_url": "http://www.zeroshell.org",
@@ -4969,7 +5384,7 @@ X-Route: /v2/appliances
         "docker": {
             "adapters": 1,
             "console_type": "telnet",
-            "image": "turnkeylinux/wordpress-14.2:latest"
+            "image": "turnkeylinux/wordpress:latest"
         },
         "maintainer": "GNS3 Team",
         "maintainer_email": "developers@gns3.net",
@@ -4978,6 +5393,7 @@ X-Route: /v2/appliances
         "product_url": "https://www.turnkeylinux.org/wordpress",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "usage": "For security reasons there are no default passwords. All passwords are set at system initialization time.",
         "vendor_name": "Turnkey Linux",
         "vendor_url": "https://www.turnkeylinux.org/"
@@ -5044,7 +5460,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "experimental",
-        "symbol": ":/symbols/asa.svg",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Default username/password: admin/Admin123.",
         "vendor_name": "Cisco Systems",
         "vendor_url": "http://www.cisco.com/",
@@ -5107,6 +5523,7 @@ X-Route: /v2/appliances
         "product_name": "3620",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -5145,6 +5562,7 @@ X-Route: /v2/appliances
         "product_name": "2691",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -5317,6 +5735,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 5,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Username: osboxes.org\nPassword: osboxes.org",
         "vendor_name": "CentOS Linux",
         "vendor_url": "https://www.centos.org/",
@@ -5376,6 +5795,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Username: osboxes\nPassword: osboxes.org",
         "vendor_name": "Canonical Inc.",
         "vendor_url": "https://www.ubuntu.com",
@@ -5441,6 +5861,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Make sure the Boot priority of the configuration template is HDD or CD.\n\nAbort the BCM process and format the flash after first boot by entering these commands:\nen\nformat flash:\n\nSometimes the flash device is not available after boot.",
         "vendor_name": "Dell Inc.",
         "vendor_url": "http://www.dell.com/",
@@ -5526,6 +5947,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Default username/password is vyos/vyos. At first boot the router will start from the cdrom, login and then type install system and follow the instructions.",
         "vendor_name": "Linux",
         "vendor_url": "http://vyos.net/",
@@ -5595,6 +6017,7 @@ X-Route: /v2/appliances
         "product_name": "7200",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -5613,6 +6036,15 @@ X-Route: /v2/appliances
         "description": "CoreOS is designed for security, consistency, and reliability. Instead of installing packages via yum or apt, CoreOS uses Linux containers to manage your services at a higher level of abstraction. A single service's code and all dependencies are packaged within a container that can be run on one or many CoreOS machines.",
         "documentation_url": "https://coreos.com/docs/",
         "images": [
+            {
+                "compression": "bzip2",
+                "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1911.5.0/coreos_production_qemu_image.img.bz2",
+                "download_url": "http://stable.release.core-os.net/amd64-usr/1911.5.0/",
+                "filename": "coreos_production_qemu_image.1911.5.0.img",
+                "filesize": 940507136,
+                "md5sum": "3b5b33697cfc545d8eb9fb461c612e76",
+                "version": "1911.5.0"
+            },
             {
                 "compression": "bzip2",
                 "direct_download_url": "http://stable.release.core-os.net/amd64-usr/1855.5.0/coreos_production_qemu_image.img.bz2",
@@ -5783,9 +6215,16 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "vendor_name": "CoreOS, Inc",
         "vendor_url": "https://coreos.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "coreos_production_qemu_image.1911.5.0.img"
+                },
+                "name": "1911.5.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "coreos_production_qemu_image.1855.5.0.img"
@@ -6162,7 +6601,15 @@ X-Route: /v2/appliances
         "documentation_url": "https://doc.freenas.org/9.10/freenas.html",
         "images": [
             {
-                "direct_download_url": "https://download.freenas.org/11/11.1-U4/x64/FreeNAS-11.1-U4.iso",
+                "direct_download_url": "https://download.freenas.org/11.2/STABLE/RELEASE/x64/FreeNAS-11.2-RELEASE.iso",
+                "download_url": "http://www.freenas.org/download/",
+                "filename": "FreeNAS-11.2-RELEASE.iso",
+                "filesize": 603410432,
+                "md5sum": "bf4a9ebb19313c3d45f84c1550477727",
+                "version": "11.2"
+            },
+            {
+                "direct_download_url": "https://download.freenas.org/11/11.1-U6/x64/FreeNAS-11.1-U6.iso",
                 "download_url": "http://www.freenas.org/download/",
                 "filename": "FreeNAS-11.1-U6.iso",
                 "filesize": 636065792,
@@ -6237,9 +6684,18 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "vendor_name": "iXsystems",
         "vendor_url": "http://www.freenas.org",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "FreeNAS-11.2-RELEASE.iso",
+                    "hda_disk_image": "empty30G.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "11.2"
+            },
             {
                 "images": {
                     "cdrom_image": "FreeNAS-11.1-U6.iso",
@@ -6328,6 +6784,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "There is no default password and enable password. There is no default configuration present.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -6482,7 +6939,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
-        "symbol": "ethernet_switch.svg",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "Boot up and login is rwa/rwa",
         "vendor_name": "Extreme Networks",
         "vendor_url": "http://www.extremenetworks.com",
@@ -6734,7 +7191,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": ":/symbols/asa.svg",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "There is no default password and enable password. A default configuration is present. ASAv goes through a double-boot before becoming active. This is normal and expected.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -6935,7 +7392,7 @@ X-Route: /v2/appliances
         "product_name": "EXOS",
         "product_url": "http://www.extremenetworks.com/product/extremexos-network-operating-system",
         "qemu": {
-            "adapter_type": "e1000",
+            "adapter_type": "rtl8139",
             "adapters": 13,
             "arch": "x86_64",
             "boot_priority": "cd",
@@ -6947,6 +7404,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "You can change the console to telnet after install. Default user: admin (no password set)",
         "vendor_name": "Extreme Networks",
         "vendor_url": "http://www.extremenetworks.com/",
@@ -7145,6 +7603,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Port 0 => You computer for the configurtation\nPort 1 => WAN\n\n1. You need a serial number. You can get a trial from Sophos for free.\nUpon starting for the first time, access the setup screen at https://172.16.16.16 (Note: it may take a few minutes for the necessary services to start before the setup screen is ready).\n3. When you are prompted the default administrator credentials are:\nUsername: admin\nPassword: admin\n\n4. Make sure the device is setup for internet access (required for activation): change the network settings from the Basic Setup screen if necessary.\n5. Enter your serial number (provided below) into the setup screen and click \"Activate Device\".\n6. Then register your device with your MySophos ID by clicking \"Register Device\" and entering your MySophos ID and password that you used to download the software.\\\n7. Once the device is registered, you can initiate License Synchronization and proceed with the rest of the configuration.",
         "vendor_name": "Sophos",
         "vendor_url": "https://www.sophos.com",
@@ -7201,11 +7660,67 @@ X-Route: /v2/appliances
         ]
     },
     {
+        "availability": "service-contract",
+        "builtin": true,
+        "category": "multilayer_switch",
+        "description": "The ArubaOS-CX Simulation Software OVA is a virtual platform to enable simulation of the ArubaOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF and BGP. Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network. This software can be easily implemented in the GNS3 simulation software to enable drag and drop network design for building complex simulated topologies.",
+        "first_port_name": "mgmt",
+        "images": [
+            {
+                "download_url": "http://support.arubanetworks.com/",
+                "filename": "arubaoscx-disk-image-genericx86-p4-20180712161119.vmdk",
+                "filesize": 287734784,
+                "md5sum": "9146ae0ac650d8206c9600e03753f022",
+                "version": "10.01.0001"
+            }
+        ],
+        "maintainer": "Tak Mem Loy",
+        "maintainer_email": "alloytm@gmail.com",
+        "name": "ArubaOS-CX Simulation Software",
+        "port_name_format": "1/1/{0}",
+        "product_name": "ArubaOS-CX Simulation Software",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 8,
+            "arch": "x86_64",
+            "console_type": "vnc",
+            "cpus": 2,
+            "hda_disk_interface": "ide",
+            "hdb_disk_interface": "ide",
+            "hdc_disk_interface": "ide",
+            "kvm": "require",
+            "options": "-nographic",
+            "process_priority": "normal",
+            "ram": 4096
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
+        "usage": "Default username admin with blank password.",
+        "vendor_name": "HPE Aruba",
+        "vendor_url": "arubanetworks.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20180712161119.vmdk"
+                },
+                "name": "10.01.0001"
+            }
+        ]
+    },
+    {
         "builtin": true,
         "category": "firewall",
         "description": "Today's threats are increasingly sophisticated and often bypass traditional malware security by masking their malicious activity. A sandbox augments your security architecture by validating threats in a separate, secure environment. FortiSandbox offers a powerful combination of advanced detection, automated mitigation, actionable insight, and flexible deployment to stop targeted attacks and subsequent data loss. It's also a key component of our Advanced Threat Protection solution.",
         "documentation_url": "http://docs.fortinet.com/fortisandbox/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FSA_KVM-v300-build0049-FORTINET.out.kvm.qcow2",
+                "filesize": 156828160,
+                "md5sum": "3ef1f05124d13e23332b8b90f8f71c2c",
+                "version": "3.0.3"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FSA_KVM-v300-build0029-FORTINET.out.kvm.qcow2",
@@ -7295,6 +7810,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FSA_KVM-v300-build0049-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FSA-datadrive.qcow2"
+                },
+                "name": "3.0.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "FSA_KVM-v300-build0029-FORTINET.out.kvm.qcow2",
@@ -7498,6 +8020,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Connect to VNC console for installation, everything else can be set on the WebUI.",
         "vendor_name": "Sophos Ltd.",
         "vendor_url": "https://www.sophos.com/",
@@ -7633,6 +8156,7 @@ X-Route: /v2/appliances
         "product_name": "Jupyter",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "vendor_name": "Project Jupyter",
         "vendor_url": "http://jupyter.org/"
     },
@@ -7714,6 +8238,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Follow the installer.",
         "vendor_name": "ClearCenter, Corp.",
         "vendor_url": "https://www.clearos.com/",
@@ -7777,6 +8302,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Login is admin",
         "vendor_name": "Big Switch Networks",
         "vendor_url": "http://www.bigswitch.com/",
@@ -7819,7 +8345,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": ":/symbols/cloud.svg",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Just connect stuff to the appliance. Everything is automated.",
         "vendor_name": "GNS3",
         "vendor_url": "http://www.gns3.com",
@@ -7829,6 +8355,61 @@ X-Route: /v2/appliances
                     "hda_disk_image": "core-linux-6.4-internet-0.1.img"
                 },
                 "name": "0.1"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "guest",
+        "description": "Surveillance systems can be complicated, expensive, and unreliable. But FortiCamera and FortiRecorder simplify IP video surveillance and there are no license fees. With FortiCams, you can see everything: doors, POS terminals, public areas--whatever you need to keep an eye on. FortiRecorder captures the images for easy monitoring, storage, and retrieval. Just plug in your cameras, connect the FortiRecorder, open a web browser or client application, and you're ready to go. It's easy to navigate and configure with event timelines and profile-driven configuration.",
+        "documentation_url": "https://docs.fortinet.com/fortirecorder/",
+        "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "fortirecorder-FRC_VMKV-64-v26-build0607-FORTINET.out.kvm.qcow2",
+                "filesize": 63569920,
+                "md5sum": "ffa5d42119de576631673516f60e028b",
+                "version": "2.6.3"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty30G.qcow2",
+                "filesize": 197120,
+                "md5sum": "3411a599e822f2ac6be560a26405821a",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "FortiRecorder",
+        "port_name_format": "Port{port1}",
+        "product_name": "FortiRecorder",
+        "product_url": "https://www.fortinet.com/products/network-based-video-security/forticam-fortirecorder.html",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 10,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "hdb_disk_interface": "virtio",
+            "kvm": "allow",
+            "ram": 2048
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "fortinet.svg",
+        "usage": "Use HTTPS when connecting to the WebUI.\nDefault username is admin, no password is set.",
+        "vendor_name": "Fortinet",
+        "vendor_url": "http://www.fortinet.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "fortirecorder-FRC_VMKV-64-v26-build0607-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "2.6.3"
             }
         ]
     },
@@ -7945,6 +8526,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Boot the live CD",
         "vendor_name": "Inverse inc.",
         "vendor_url": "https://packetfence.org/",
@@ -8017,6 +8599,13 @@ X-Route: /v2/appliances
         "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",
         "documentation_url": "http://docs.fortinet.com/fortiauthenticator/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v5-build0366-FORTINET.out.kvm.qcow2",
+                "filesize": 72982528,
+                "md5sum": "c6ae060f8840b467efac6701a7e8e6af",
+                "version": "5.5.0"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAC_VM_KVM-v5-build0297-FORTINET.out.kvm.qcow2",
@@ -8107,6 +8696,13 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v5-build0366-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                },
+                "name": "5.5.0"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAC_VM_KVM-v5-build0297-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
                 },
@@ -8195,6 +8791,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Boot takes some time. NIC0 is the management port, it gets its initial address using DHCP. Default credentials: admin / ironport",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -8340,6 +8937,13 @@ X-Route: /v2/appliances
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1653-FORTINET.out.kvm.qcow2",
+                "filesize": 43180032,
+                "md5sum": "202e1ed7582b02493be63f14cc48c2cb",
+                "version": "5.6.7"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FGT_VM64_KVM-v5-build1575-FORTINET.out.kvm.qcow2",
                 "filesize": 41594880,
                 "md5sum": "c312ea8ec1afffb73858fb1b15c095ef",
@@ -8372,6 +8976,13 @@ X-Route: /v2/appliances
                 "filesize": 38760448,
                 "md5sum": "17ee2cc8c76c4928a68a2d016aa83ace",
                 "version": "5.6.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v5-build1220-FORTINET.out.kvm.qcow2",
+                "filesize": 39043072,
+                "md5sum": "7444d6c85ef6b937a98163482caa5a90",
+                "version": "5.4.10"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -8541,6 +9152,13 @@ X-Route: /v2/appliances
             },
             {
                 "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1653-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.6.7"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FGT_VM64_KVM-v5-build1575-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -8573,6 +9191,13 @@ X-Route: /v2/appliances
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "5.6.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v5-build1220-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "5.4.10"
             },
             {
                 "images": {
@@ -8725,6 +9350,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Login is root, type vadx-console to access to the console",
         "vendor_name": "Brocade",
         "vendor_url": "https://www.brocade.com",
@@ -8745,21 +9371,22 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
-                "filename": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img",
-                "filesize": 650392576,
-                "md5sum": "b754d7e75dece5e756b6539c95714a74",
-                "version": "2.4.3"
+                "filename": "pfSense-CE-2.4.4-RELEASE-amd64.iso",
+                "filesize": 685557760,
+                "md5sum": "71386433238f96fc167d14cec9c708c6",
+                "version": "2.4.4"
             },
             {
-                "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
-                "filename": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img",
-                "filesize": 1989969408,
-                "md5sum": "b6cb76adba3e1113892f84ea01894228",
-                "version": "2.3.5"
+                "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty100G.qcow2",
+                "filesize": 197120,
+                "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+                "version": "1.0"
             }
         ],
-        "maintainer": "GNS3 Team",
-        "maintainer_email": "developers@gns3.net",
+        "maintainer": "Jose Phillips",
+        "maintainer_email": "jose@latinol.com",
         "name": "pfSense",
         "port_name_format": "em{0}",
         "product_name": "pfSense",
@@ -8767,27 +9394,25 @@ X-Route: /v2/appliances
             "adapter_type": "e1000",
             "adapters": 6,
             "arch": "x86_64",
-            "console_type": "telnet",
+            "console_type": "vnc",
+            "hda_disk_interface": "virtio",
             "kvm": "allow",
             "process_priority": "normal",
             "ram": 2048
         },
         "registry_version": 3,
         "status": "stable",
-        "vendor_name": "Electric Sheep Fencing LLC",
+        "symbol": ":/symbols/classic/firewall.svg",
+        "usage": "Credentials: admin / pfsense\nTo install pfSense use all the defaults settings.\n\nNote:The default LAN port is em1.",
+        "vendor_name": "Rubicon Communications, LLC (Netgate)",
         "vendor_url": "https://www.pfsense.org",
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "pfSense-CE-memstick-2.4.3-RELEASE-amd64.img"
+                    "cdrom_image": "pfSense-CE-2.4.4-RELEASE-amd64.iso",
+                    "hda_disk_image": "empty100G.qcow2"
                 },
-                "name": "2.4.3"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "pfSense-CE-2.3.5-RELEASE-2g-amd64-nanobsd.img"
-                },
-                "name": "2.3.5"
+                "name": "2.4.4"
             }
         ]
     },
@@ -8825,6 +9450,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Username: osboxes\nPassword: osboxes.org\n\nroot password: osboxes.org",
         "vendor_name": "SUSE LLC.",
         "vendor_url": "https://www.opensuse.org/",
@@ -8869,6 +9495,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Credentials: SSH ---> username: root ---> password: 1234 MySQL DB: ---> username: root --> password: tacacs Web interface: ---> username: tacgui ---> password: abc123",
         "vendor_name": "TacacsGUI",
         "vendor_url": "https://tacacsgui.com/",
@@ -8890,11 +9517,32 @@ X-Route: /v2/appliances
         "first_port_name": "mgmt0",
         "images": [
             {
+                "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25283%2529",
+                "filename": "nxosv-final.9.2.3.qcow2",
+                "filesize": 1357643776,
+                "md5sum": "74bd9a5b4970e868685f753e48979194",
+                "version": "9.2.3"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529",
+                "filename": "nxosv-final.9.2.2.qcow2",
+                "filesize": 1344077824,
+                "md5sum": "2119702c488552fc4d1b4210a04d4f64",
+                "version": "9.2.2"
+            },
+            {
                 "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529",
                 "filename": "nxosv-final.9.2.1.qcow2",
                 "filesize": 1330315264,
                 "md5sum": "1d7fa4654602d7ffbf62544edfe71986",
                 "version": "9.2.1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/7.0%25283%2529I7%25286%2529",
+                "filename": "nxosv-final.7.0.3.I7.6.qcow2",
+                "filesize": 1031995392,
+                "md5sum": "a122ee954b4c11761abd99291b70544e",
+                "version": "7.0.3.I7.6"
             },
             {
                 "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/7.0%25283%2529I7%25285%2529",
@@ -8979,6 +9627,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "The old (I5) versions might require 8192 MB of RAM; adjust it if necessary.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -8986,9 +9635,30 @@ X-Route: /v2/appliances
             {
                 "images": {
                     "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.9.2.3.qcow2"
+                },
+                "name": "9.2.3"
+            },
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.9.2.2.qcow2"
+                },
+                "name": "9.2.2"
+            },
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
                     "hda_disk_image": "nxosv-final.9.2.1.qcow2"
                 },
                 "name": "9.2.1"
+            },
+            {
+                "images": {
+                    "bios_image": "OVMF-20160813.fd",
+                    "hda_disk_image": "nxosv-final.7.0.3.I7.6.qcow2"
+                },
+                "name": "7.0.3.I7.6"
             },
             {
                 "images": {
@@ -9740,6 +10410,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v6-build0255-FORTINET.out.kvm.qcow2",
+                "filesize": 115703808,
+                "md5sum": "5f34d52d9289b0be2a4c04943446ea39",
+                "version": "6.0.3"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FMG_VM64_KVM-v6-build0205-FORTINET.out.kvm.qcow2",
                 "filesize": 116981760,
                 "md5sum": "8f748649c537d9b5466b24c5b4e62017",
@@ -9869,6 +10546,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v6-build0255-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "FMG_VM64_KVM-v6-build0205-FORTINET.out.kvm.qcow2",
@@ -10010,6 +10694,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "WebUI can be accessed at https://GREEN_IP:441/ after installation. GREEN interface is used for the LAN, RED for the WAN connections. ORANGE and PURPLE can be used for DMZ.",
         "vendor_name": "Smoothwall Ltd.",
         "vendor_url": "http://www.smoothwall.org/",
@@ -10040,6 +10725,7 @@ X-Route: /v2/appliances
         "product_name": "ntopng",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "usage": "In the web interface login as admin/admin",
         "vendor_name": "ntop",
         "vendor_url": "http://www.ntop.org/"
@@ -10052,12 +10738,21 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "zip",
+                "direct_download_url": "https://download2.mikrotik.com/routeros/6.43.8/chr-6.43.8.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-6.43.8.img",
+                "filesize": 134217728,
+                "md5sum": "9437133fc7e77779dc3ff62b98f30dc2",
+                "version": "6.43.8"
+            },
+            {
+                "compression": "zip",
                 "direct_download_url": "https://download2.mikrotik.com/routeros/6.42.9/chr-6.42.9.img.zip",
                 "download_url": "http://www.mikrotik.com/download",
                 "filename": "chr-6.42.9.img",
                 "filesize": 134217728,
                 "md5sum": "1f856978cfc3ceb4b5e18e4e079f2e32",
-                "version": "6.42"
+                "version": "6.42.9"
             },
             {
                 "compression": "zip",
@@ -10313,11 +11008,17 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": ":/symbols/router_firewall.svg",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "If you'd like a different sized main disk, resize the image before booting the VM for the first time.\n\nOn first boot, RouterOS is actually being installed, formatting the whole main virtual disk, before finally rebooting. That whole process may take a minute or so.\n\nThe console will become available after the installation is complete. Most Telnet/SSH clients (certainly SuperPutty) will keep retrying to connect, thus letting you know when installation is done.\n\nFrom that point on, everything about RouterOS is also true about Cloud Hosted Router, including the default credentials: Username \"admin\" and an empty password.\n\nThe primary differences between RouterOS and CHR are in support for virtual devices (this appliance comes with them being selected), and in the different license model, for which you can read more about at http://wiki.mikrotik.com/wiki/Manual:CHR.",
         "vendor_name": "MikroTik",
         "vendor_url": "http://mikrotik.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "chr-6.43.8.img"
+                },
+                "name": "6.43.8"
+            },
             {
                 "images": {
                     "hda_disk_image": "chr-6.42.9.img"
@@ -10601,6 +11302,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "There is no default password and enable password. There is no default configuration present.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -10659,6 +11361,7 @@ X-Route: /v2/appliances
         "product_name": "Cisco IOU L3",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -10673,6 +11376,100 @@ X-Route: /v2/appliances
                     "image": "i86bi-linux-l3-adventerprisek9-15.4.1T.bin"
                 },
                 "name": "15.4.1T"
+            }
+        ]
+    },
+    {
+        "availability": "free",
+        "builtin": true,
+        "category": "guest",
+        "description": "Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native), in seconds, with a single command.",
+        "documentation_url": "http://mininet.org/walkthrough/",
+        "first_port_name": "eth0",
+        "images": [
+            {
+                "compression": "zip",
+                "direct_download_url": "https://github.com/mininet/mininet/releases/download/2.2.2/mininet-2.2.2-170321-ubuntu-14.04.4-server-amd64.zip",
+                "download_url": "https://github.com/mininet/mininet/releases/",
+                "filename": "mininet-vm-x86_64.vmdk",
+                "filesize": 2047868928,
+                "md5sum": "a683441642300bdaf37b8e614de85342",
+                "version": "2.2.2"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "Mininet",
+        "port_name_format": "eth{0}",
+        "product_name": "Mininet",
+        "product_url": "http://mininet.org/",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "console_type": "vnc",
+            "hda_disk_interface": "virtio",
+            "kvm": "allow",
+            "ram": 2048
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
+        "usage": "Username: mininet\nPassword: mininet",
+        "vendor_name": "Mininet Team",
+        "vendor_url": "http://mininet.org/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "mininet-vm-x86_64.vmdk"
+                },
+                "name": "2.2.2"
+            }
+        ]
+    },
+    {
+        "availability": "free",
+        "builtin": true,
+        "category": "router",
+        "description": "Vector Packet Processing (VPP) platform",
+        "documentation_url": "https://fd.io/resources/",
+        "images": [
+            {
+                "direct_download_url": "https://sigaba.net/vpp/vpp_public-18.10-07.qcow2",
+                "filename": "vpp_public-18.10-07.qcow2",
+                "filesize": 2065825792,
+                "md5sum": "3e962985e5bbda0de4dc7893e60f6366",
+                "version": "0.7"
+            }
+        ],
+        "maintainer": "Virginijus Magelinskas",
+        "maintainer_email": "virginijus.m@gmail.com",
+        "name": "VPP",
+        "port_name_format": "eth{0}",
+        "product_name": "VPP",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 5,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "ide",
+            "kvm": "require",
+            "options": "-nographic -cpu host -smp 2",
+            "ram": 4096
+        },
+        "registry_version": 4,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Login: root , pass: vpp. This appliance requires >2 vCPUs and 4GB of RAM to run",
+        "vendor_name": "FD.IO VPP router",
+        "vendor_url": "https://fd.io/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "vpp_public-18.10-07.qcow2"
+                },
+                "name": "18.10-07"
             }
         ]
     },
@@ -10762,6 +11559,7 @@ X-Route: /v2/appliances
         "product_name": "Kali Linux",
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/docker_guest.svg",
         "vendor_name": "Kali Linux",
         "vendor_url": "https://www.kali.org/"
     },
@@ -10804,6 +11602,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Default credentials: root / opnsense\nDefault IP address: 192.168.1.1",
         "vendor_name": "Deciso B.V.",
         "vendor_url": "https://opnsense.org/",
@@ -10848,6 +11647,13 @@ X-Route: /v2/appliances
         "description": "Untangle\u2019s NG Firewall enables you to quickly and easily create the network policies that deliver the perfect balance between security and productivity. Untangle combines Unified Threat Management (UTM)\u2014to address all of the key network threats\u2014with policy management tools that enable you to define access and control by individuals, groups or company-wide. And with industry-leading reports, you\u2019ll have complete visibility into and control over everything that\u2019s happening on your network.",
         "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
         "images": [
+            {
+                "download_url": "https://www.untangle.com/get-untangle/",
+                "filename": "untangle_1410_x64.iso",
+                "filesize": 682622976,
+                "md5sum": "49bb09e4796f225f482ca1d9c93de66b",
+                "version": "14.1.0"
+            },
             {
                 "download_url": "https://www.untangle.com/get-untangle/",
                 "filename": "untangle_1401_x64.iso",
@@ -10952,10 +11758,18 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Run the graphical or text based installer using VNC. The installer warns about insufficient memory but the provided 1G is enough, the installation will be successful.",
         "vendor_name": "Untangle",
         "vendor_url": "https://www.untangle.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "untangle_1410_x64.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "14.1.0"
+            },
             {
                 "images": {
                     "cdrom_image": "untangle_1401_x64.iso",
@@ -11135,7 +11949,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 4,
         "status": "experimental",
-        "symbol": ":/symbols/ids.svg",
+        "symbol": ":/symbols/classic/firewall.svg",
         "usage": "Default username/password: admin/Admin123.",
         "vendor_name": "Cisco Systems",
         "vendor_url": "http://www.cisco.com/",
@@ -11201,6 +12015,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
         "vendor_name": "Trend Micro Inc.",
         "vendor_url": "http://www.trendmicro.com/",
         "versions": [
@@ -11210,6 +12025,60 @@ X-Route: /v2/appliances
                     "hda_disk_image": "empty100G.qcow2"
                 },
                 "name": "6.5"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "guest",
+        "description": "FortiADC Manager allows you to use a web- based user interface to configure remote FortiADC devices. It allows you to simplify and speed up the FortiADC deployment and update process by maintaining configuration templates and policy packages that you can modify and apply as needed.",
+        "documentation_url": "https://docs.fortinet.com/fortiadc-manager/",
+        "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FADCManager-KVM-V500-build0020-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 70057984,
+                "md5sum": "a79d04040848b704ce4efe925518fd3f",
+                "version": "5.2.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FADCManager-KVM-v500-data.qcow2",
+                "filesize": 30998528,
+                "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
+                "version": "5.x"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "FortiADC Manager",
+        "port_name_format": "Port{port1}",
+        "product_name": "FortiADC Manager",
+        "product_url": "https://www.fortinet.com/products/application-delivery-controller/fortiadc.html",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 10,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "hdb_disk_interface": "virtio",
+            "kvm": "allow",
+            "ram": 2048
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": "fortinet.svg",
+        "usage": "Default username is admin, no password is set.",
+        "vendor_name": "Fortinet",
+        "vendor_url": "http://www.fortinet.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FADCManager-KVM-V500-build0020-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FADCManager-KVM-v500-data.qcow2"
+                },
+                "name": "5.2.0"
             }
         ]
     },
@@ -11244,6 +12113,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "User root, password gns3",
         "vendor_name": "OpenBSD",
         "vendor_url": "http://www.openbsd.org",
@@ -11524,6 +12394,13 @@ X-Route: /v2/appliances
             },
             {
                 "download_url": "https://www.arista.com/en/support/software-download",
+                "filename": "vEOS-lab-4.20.11M.vmdk",
+                "filesize": 658178048,
+                "md5sum": "19e482a193f237c157ce35c389ca9417",
+                "version": "4.20.11M"
+            },
+            {
+                "download_url": "https://www.arista.com/en/support/software-download",
                 "filename": "vEOS-lab-4.20.1F.vmdk",
                 "filesize": 662044672,
                 "md5sum": "aadb6f3dbff28317f68cb4c4502d0db8",
@@ -11624,105 +12501,113 @@ X-Route: /v2/appliances
             "adapter_type": "e1000",
             "adapters": 13,
             "arch": "x86_64",
+            "boot_priority": "d",
             "console_type": "telnet",
             "kvm": "require",
             "ram": 2048
         },
         "registry_version": 3,
         "status": "experimental",
-        "symbol": ":/symbols/multilayer_switch.svg",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "The login is admin, with no password by default",
         "vendor_name": "Arista",
         "vendor_url": "http://www.arista.com/",
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.21.1.1F.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.21.1.1F.vmdk"
                 },
-                "name": "4.21.1F"
+                "name": "4.21.1.1F"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.20.1F.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.20.11M.vmdk"
+                },
+                "name": "4.20.11M"
+            },
+            {
+                "images": {
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.20.1F.vmdk"
                 },
                 "name": "4.20.1F"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.18.5M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.18.5M.vmdk"
                 },
                 "name": "4.18.5M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.18.1F.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.18.1F.vmdk"
                 },
                 "name": "4.18.1F"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.17.8M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.17.8M.vmdk"
                 },
                 "name": "4.17.8M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.17.2F.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.17.2F.vmdk"
                 },
                 "name": "4.17.2F"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.16.13M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.16.13M.vmdk"
                 },
                 "name": "4.16.13M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.16.6M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.16.6M.vmdk"
                 },
                 "name": "4.16.6M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.15.10M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.15.10M.vmdk"
                 },
                 "name": "4.15.10M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.15.5M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.15.5M.vmdk"
                 },
                 "name": "4.15.5M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.14.14M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.14.14M.vmdk"
                 },
                 "name": "4.14.14M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.13.16M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.13.16M.vmdk"
                 },
                 "name": "4.13.16M"
             },
             {
                 "images": {
-                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
-                    "hdb_disk_image": "vEOS-lab-4.13.8M.vmdk"
+                    "cdrom_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hda_disk_image": "vEOS-lab-4.13.8M.vmdk"
                 },
                 "name": "4.13.8M"
             }
@@ -11779,6 +12664,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Default credentials: cloudrouter / gns3",
         "vendor_name": "CloudRouter Community",
         "vendor_url": "https://cloudrouter.org/",
@@ -12052,6 +12938,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Default credentials: root (no password set)",
         "vendor_name": "Kerio Technologies Inc.",
         "vendor_url": "http://www.kerio.com",
@@ -12195,6 +13082,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "You don't need to run the installer script when using GNS3 VM. Uncompress the downloaded archive using this command: tar xzSf <image_file>\nDefault credentials: admin / password",
         "vendor_name": "Riverbed Technology",
         "vendor_url": "http://www.riverbed.com",
@@ -12214,6 +13102,15 @@ X-Route: /v2/appliances
         "description": "FreeBSD is an advanced computer operating system used to power modern servers, desktops, and embedded platforms. A large community has continually developed it for more than thirty years. Its advanced networking, security, and storage features have made FreeBSD the platform of choice for many of the busiest web sites and most pervasive embedded networking and storage devices.",
         "documentation_url": "https://www.freebsd.org/docs.html",
         "images": [
+            {
+                "compression": "xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.0-RELEASE/amd64/Latest/FreeBSD-12.0-RELEASE-amd64.qcow2.xz",
+                "download_url": "https://www.freebsd.org/where.html",
+                "filename": "FreeBSD-12.0-RELEASE-amd64.qcow2",
+                "filesize": 2644836352,
+                "md5sum": "4d2126ba79dad224628be6f25a908bd8",
+                "version": "12.0"
+            },
             {
                 "compression": "xz",
                 "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.2-RELEASE/amd64/Latest/FreeBSD-11.2-RELEASE-amd64.qcow2.xz",
@@ -12276,10 +13173,17 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "User: root, not password is set.",
         "vendor_name": "FreeBSD",
         "vendor_url": "http://www.freebsd.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FreeBSD-12.0-RELEASE-amd64.qcow2"
+                },
+                "name": "12.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "FreeBSD-11.2-RELEASE-amd64.qcow2"
@@ -12349,6 +13253,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "The default username/password is admin/admin. A default configuration is present.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -12393,6 +13298,7 @@ X-Route: /v2/appliances
         "product_name": "3660",
         "registry_version": 3,
         "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com",
         "versions": [
@@ -12467,6 +13373,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link.",
         "vendor_name": "LEDE Project",
         "vendor_url": "https://lede-project.org/",
@@ -12573,7 +13480,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "experimental",
-        "symbol": ":/symbols/wlan_controller.svg",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Starting vWLC will start an installation of vWLC onto a blank 8GB Drive.",
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
@@ -12648,11 +13555,38 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "gzip",
-                "direct_download_url": "https://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/openwrt-15.05.1-x86-kvm_guest-combined-ext4.img.gz",
-                "download_url": "http://downloads.openwrt.org/chaos_calmer/15.05.1/x86/kvm_guest/",
-                "filename": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img",
+                "direct_download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/openwrt-18.06.2-x86-64-combined-ext4.img.gz",
+                "download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/",
+                "filename": "openwrt-18.06.2-x86-64-combined-ext4.img",
+                "filesize": 285736960,
+                "md5sum": "d112cd432bf51e2ddadbf9513f272fd9",
+                "version": "18.06.2"
+            },
+            {
+                "compression": "gzip",
+                "direct_download_url": "https://downloads.openwrt.org/releases/18.06.1/targets/x86/64/openwrt-18.06.1-x86-64-combined-ext4.img.gz",
+                "download_url": "https://downloads.openwrt.org/releases/18.06.1/targets/x86/64/",
+                "filename": "openwrt-18.06.1-x86-64-combined-ext4.img",
+                "filesize": 285736960,
+                "md5sum": "3e2da47c5c2496b6df364a60ded8f40a",
+                "version": "18.06.1"
+            },
+            {
+                "compression": "gzip",
+                "direct_download_url": "https://downloads.openwrt.org/releases/17.01.6/targets/x86/64/lede-17.01.6-x86-64-combined-ext4.img.gz",
+                "download_url": "https://downloads.openwrt.org/releases/17.01.6/targets/x86/64/",
+                "filename": "lede-17.01.6-x86-64-combined-ext4.img",
+                "filesize": 285736960,
+                "md5sum": "015c0d5038ddd469fbdabce7eb5265dc",
+                "version": "17.01.6"
+            },
+            {
+                "compression": "gzip",
+                "direct_download_url": "http://archive.openwrt.org/chaos_calmer/15.05.1/x86/64/openwrt-15.05.1-x86-64-combined-ext4.img.gz",
+                "download_url": "http://archive.openwrt.org/chaos_calmer/15.05.1/x86/64/",
+                "filename": "openwrt-15.05.1-x86-64-combined-ext4.img",
                 "filesize": 55050240,
-                "md5sum": "d02f5224b7fbe929efa4d3f10f4dc996",
+                "md5sum": "307d8cdb11faeb1b5e27fe55078bd152",
                 "version": "15.05.1"
             }
         ],
@@ -12663,23 +13597,42 @@ X-Route: /v2/appliances
         "product_url": "http://openwrt.org",
         "qemu": {
             "adapter_type": "virtio-net-pci",
-            "adapters": 2,
-            "arch": "i386",
+            "adapters": 4,
+            "arch": "x86_64",
             "console_type": "telnet",
             "kvm": "allow",
             "ram": 64
         },
         "registry_version": 3,
         "status": "stable",
-        "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link.",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Ethernet0 is the LAN link, Ethernet1 the WAN link, Ethernet2 and Ethernet3 are optional links.",
         "vendor_name": "OpenWrt",
         "vendor_url": "http://openwrt.org",
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "openwrt-15.05.1-x86-kvm_guest-combined-ext4.img"
+                    "hda_disk_image": "openwrt-18.06.2-x86-64-combined-ext4.img"
                 },
-                "name": "Chaos Calmer 15.05.1"
+                "name": "openwrt 18.06.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "openwrt-18.06.1-x86-64-combined-ext4.img"
+                },
+                "name": "openwrt 18.06.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "lede-17.01.6-x86-64-combined-ext4.img"
+                },
+                "name": "openwrt/lede 17.01.6"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "openwrt-15.05.1-x86-64-combined-ext4.img"
+                },
+                "name": "openwrt 15.05.1"
             }
         ]
     },
@@ -12820,6 +13773,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
         "usage": "60 days evaluation. The Brocade vRouter must be on-line and have public connectivity in order to communicate with the Brocade licensing server for automated license key generation. Please note that the evaluation software will only run for 24 hours after installation without the activation code being entered into the system. You must enter your activation code in order to retrieve your licensing key after you install the Brocade vRouter software. Default credentials: vyatta / vyatta",
         "vendor_name": "Brocade",
         "vendor_url": "http://www.brocade.com/",
@@ -13197,6 +14151,7 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
         "usage": "Default ucredentials: root / kerio",
         "vendor_name": "Kerio Technologies Inc.",
         "vendor_url": "http://www.kerio.com",

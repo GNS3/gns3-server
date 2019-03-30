@@ -1,18 +1,13 @@
-/v2/compute/projects/{project_id}/export
+/v2/default_symbols
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 .. contents::
 
-GET /v2/compute/projects/**{project_id}**/export
+GET /v2/default_symbols
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Export a project as a portable archive
-
-Parameters
-**********
-- **project_id**: Project UUID
+List of default symbols
 
 Response status codes
 **********************
-- **200**: File returned
-- **404**: The project doesn't exist
+- **200**: Default symbols list returned
 

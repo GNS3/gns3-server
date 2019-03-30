@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2961f72c-eb53-4208-849f-5e7e00940507'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/62a9389c-9bfd-4fd7-986d-ba32879fbe91'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/2961f72c-eb53-4208-849f-5e7e00940507 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/62a9389c-9bfd-4fd7-986d-ba32879fbe91 HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 2080
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:08:18 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:47:36 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
@@ -81,8 +81,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-4/test_json4/project-files/builtin/2961f72c-eb53-4208-849f-5e7e00940507",
-    "node_id": "2961f72c-eb53-4208-849f-5e7e00940507",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/builtin/62a9389c-9bfd-4fd7-986d-ba32879fbe91",
+    "node_id": "62a9389c-9bfd-4fd7-986d-ba32879fbe91",
     "ports_mapping": [
         {
             "interface": "wlp58s0",

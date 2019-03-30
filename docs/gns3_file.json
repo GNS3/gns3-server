@@ -277,6 +277,10 @@
                                 "description": "Z property",
                                 "type": "integer"
                             },
+                            "locked": {
+                                "description": "Whether the element locked or not",
+                                "type": "boolean"
+                            },
                             "rotation": {
                                 "description": "Rotation of the element",
                                 "type": "integer",
@@ -601,6 +605,10 @@
                             "z": {
                                 "description": "Z position of the node",
                                 "type": "integer"
+                            },
+                            "locked": {
+                                "description": "Whether the element locked or not",
+                                "type": "boolean"
                             },
                             "port_name_format": {
                                 "description": "Formating for port name {0} will be replace by port number",

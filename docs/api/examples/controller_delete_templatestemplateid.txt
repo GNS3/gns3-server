@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/templates/f25c50bb-c5fa-4194-b657-9246908d573e'
+curl -i -X DELETE 'http://localhost:3080/v2/templates/34671a00-c069-4631-8007-7f73aa462d7f'
 
-DELETE /v2/templates/f25c50bb-c5fa-4194-b657-9246908d573e HTTP/1.1
+DELETE /v2/templates/34671a00-c069-4631-8007-7f73aa462d7f HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Tue, 27 Nov 2018 15:09:55 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:50:14 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/templates/{template_id}
 

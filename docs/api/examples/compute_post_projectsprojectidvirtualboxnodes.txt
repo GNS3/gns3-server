@@ -10,10 +10,10 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 460
+Content-Length: 477
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:11 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:48:52 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
 
 {
@@ -25,11 +25,12 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes
     "linked_clone": false,
     "name": "VM1",
     "node_directory": null,
-    "node_id": "69d31ecf-7d5e-4285-8d3a-d64107a5d074",
+    "node_id": "8f1ecb93-c1c4-4b0b-a7ff-b81bf074b2ac",
     "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",
+    "usage": "",
     "use_any_adapter": false,
     "vmname": "VM1"
 }

@@ -1,15 +1,15 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/a238b9e0-ad04-4a7f-a348-22b3afb2a901/nodes/dd1bcde9-9f8f-470f-b3d5-4c6118ea7018/stop' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/4e74b9b1-1702-4e87-96ff-c0f3825260ea/nodes/b25c8412-f660-4257-9d46-9afa2807164d/stop' -d '{}'
 
-POST /v2/projects/a238b9e0-ad04-4a7f-a348-22b3afb2a901/nodes/dd1bcde9-9f8f-470f-b3d5-4c6118ea7018/stop HTTP/1.1
+POST /v2/projects/4e74b9b1-1702-4e87-96ff-c0f3825260ea/nodes/b25c8412-f660-4257-9d46-9afa2807164d/stop HTTP/1.1
 {}
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1137
+Content-Length: 1158
 Content-Type: application/json
-Date: Tue, 27 Nov 2018 15:09:40 GMT
-Server: Python/3.6 GNS3/2.2.0dev5
+Date: Sat, 30 Mar 2019 08:49:54 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
 
 {
@@ -17,11 +17,11 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
     "compute_id": "example.com",
     "console": null,
     "console_auto_start": false,
-    "console_host": "<MagicMock name='mock.console_host' id='140023798661016'>",
+    "console_host": "<MagicMock name='mock.console_host' id='140436286373672'>",
     "console_type": null,
     "custom_adapters": [],
     "first_port_name": null,
-    "height": 60,
+    "height": 59,
     "label": {
         "rotation": 0,
         "style": null,
@@ -29,9 +29,10 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
         "x": null,
         "y": -40
     },
+    "locked": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "dd1bcde9-9f8f-470f-b3d5-4c6118ea7018",
+    "node_id": "b25c8412-f660-4257-9d46-9afa2807164d",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -47,12 +48,12 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/stop
             "short_name": "e0"
         }
     ],
-    "project_id": "a238b9e0-ad04-4a7f-a348-22b3afb2a901",
+    "project_id": "4e74b9b1-1702-4e87-96ff-c0f3825260ea",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
     "template_id": null,
-    "width": 60,
+    "width": 65,
     "x": 0,
     "y": 0,
     "z": 1
