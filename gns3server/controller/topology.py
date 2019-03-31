@@ -191,6 +191,11 @@ def _convert_2_1_0(topo, topo_path):
     """
     topo["revision"] = 9
 
+    if "grid_size" in topo:
+        # drawing_grid_size should be the same size as grid_size
+        # to avoid overlapping grids
+        topo["drawing_grid_size"] = topo["grid_size"]
+
     for node in topo.get("topology", {}).get("nodes", []):
         if "properties" in node:
             if node["node_type"] in ("qemu", "vmware", "virtualbox"):
