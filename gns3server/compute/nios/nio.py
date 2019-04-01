@@ -34,7 +34,7 @@ class NIO(object):
         self._pcap_output_file = ""
         self._pcap_data_link_type = ""
 
-    def startPacketCapture(self, pcap_output_file, pcap_data_link_type="DLT_EN10MB"):
+    def start_packet_capture(self, pcap_output_file, pcap_data_link_type="DLT_EN10MB"):
         """
         :param pcap_output_file: PCAP destination file for the capture
         :param pcap_data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
@@ -44,7 +44,7 @@ class NIO(object):
         self._pcap_output_file = pcap_output_file
         self._pcap_data_link_type = pcap_data_link_type
 
-    def stopPacketCapture(self):
+    def stop_packet_capture(self):
 
         self._capturing = False
         self._pcap_output_file = ""

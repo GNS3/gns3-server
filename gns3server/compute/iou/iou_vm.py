@@ -1291,7 +1291,7 @@ class IOUVM(BaseNode):
             raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
                                                                                                           port_number=port_number))
 
-        nio.startPacketCapture(output_file, data_link_type)
+        nio.start_packet_capture(output_file, data_link_type)
         log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number} to {output_file}'.format(name=self._name,
                                                                                                                           id=self._id,
                                                                                                                           adapter_number=adapter_number,
@@ -1317,7 +1317,7 @@ class IOUVM(BaseNode):
         nio = self.get_nio(adapter_number, port_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
+        nio.stop_packet_capture()
         log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
                                                                                                          id=self._id,
                                                                                                          adapter_number=adapter_number,

@@ -767,7 +767,7 @@ def test_add_ubridge_connection(loop, vm):
            "rport": 4343,
            "rhost": "127.0.0.1"}
     nio = vm.manager.create_nio(nio)
-    nio.startPacketCapture("/tmp/capture.pcap")
+    nio.start_packet_capture("/tmp/capture.pcap")
     vm._ubridge_hypervisor = MagicMock()
     vm._namespace = 42
 

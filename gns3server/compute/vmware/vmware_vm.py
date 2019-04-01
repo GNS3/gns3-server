@@ -900,8 +900,7 @@ class VMwareVM(BaseNode):
         if nio.capturing:
             raise VMwareError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
-        nio.startPacketCapture(output_file)
-
+        nio.start_packet_capture(output_file)
         if self._started:
             await self._start_ubridge_capture(adapter_number, output_file)
 
@@ -919,8 +918,8 @@ class VMwareVM(BaseNode):
         nio = self.get_nio(adapter_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
 
+        nio.stop_packet_capture()
         if self._started:
             await self._stop_ubridge_capture(adapter_number)
 

@@ -489,7 +489,7 @@ class Cloud(BaseNode):
         nio = self.get_nio(port_number)
         if nio.capturing:
             raise NodeError("Packet capture is already activated on port {port_number}".format(port_number=port_number))
-        nio.startPacketCapture(output_file)
+        nio.start_packet_capture(output_file)
         bridge_name = "{}-{}".format(self._id, port_number)
         await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=bridge_name,
                                                                                            output_file=output_file))
@@ -507,7 +507,7 @@ class Cloud(BaseNode):
         nio = self.get_nio(port_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
+        nio.stop_packet_capture()
         bridge_name = "{}-{}".format(self._id, port_number)
         await self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))
 

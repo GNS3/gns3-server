@@ -1057,8 +1057,7 @@ class DockerVM(BaseNode):
         if nio.capturing:
             raise DockerError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
-        nio.startPacketCapture(output_file)
-
+        nio.start_packet_capture(output_file)
         if self.status == "started" and self.ubridge:
             await self._start_ubridge_capture(adapter_number, output_file)
 
@@ -1076,7 +1075,7 @@ class DockerVM(BaseNode):
         nio = self.get_nio(adapter_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
+        nio.stop_packet_capture()
         if self.status == "started" and self.ubridge:
             await self._stop_ubridge_capture(adapter_number)
 

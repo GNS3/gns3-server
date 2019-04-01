@@ -1117,8 +1117,7 @@ class VirtualBoxVM(BaseNode):
         if nio.capturing:
             raise VirtualBoxError("Packet capture is already activated on adapter {adapter_number}".format(adapter_number=adapter_number))
 
-        nio.startPacketCapture(output_file)
-
+        nio.start_packet_capture(output_file)
         if self.ubridge:
             await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VBOX-{}-{}".format(self._id, adapter_number),
                                                                                                output_file=output_file))
@@ -1137,8 +1136,8 @@ class VirtualBoxVM(BaseNode):
         nio = self.get_nio(adapter_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
 
+        nio.stop_packet_capture()
         if self.ubridge:
             await self._ubridge_send('bridge stop_capture {name}'.format(name="VBOX-{}-{}".format(self._id, adapter_number)))
 

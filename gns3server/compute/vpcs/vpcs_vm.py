@@ -449,8 +449,7 @@ class VPCSVM(BaseNode):
         if nio.capturing:
             raise VPCSError("Packet capture is already active on port {port_number}".format(port_number=port_number))
 
-        nio.startPacketCapture(output_file)
-
+        nio.start_packet_capture(output_file)
         if self.ubridge:
             await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name="VPCS-{}".format(self._id),
                                                                                                output_file=output_file))
@@ -469,8 +468,8 @@ class VPCSVM(BaseNode):
         nio = self.get_nio(port_number)
         if not nio.capturing:
             return
-        nio.stopPacketCapture()
 
+        nio.stop_packet_capture()
         if self.ubridge:
             await self._ubridge_send('bridge stop_capture {name}'.format(name="VPCS-{}".format(self._id)))
 

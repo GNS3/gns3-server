@@ -1445,10 +1445,7 @@ class Router(BaseNode):
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError("Port {port_number} has already a filter applied on {adapter}".format(adapter=adapter,
                                                                                                       port_number=port_number))
-
-        await nio.bind_filter("both", "capture")
-        await nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
-
+        await nio.start_packet_capture(output_file, data_link_type)
         log.info('Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(name=self._name,
                                                                                                               id=self._id,
                                                                                                               nio_name=nio.name,
@@ -1480,7 +1477,7 @@ class Router(BaseNode):
 
         if not nio.capturing:
             return
-        await nio.unbind_filter("both")
+        await nio.stop_packet_capture()
 
         log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(name=self._name,
                                                                                                               id=self._id,

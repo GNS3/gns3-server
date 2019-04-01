@@ -42,6 +42,8 @@ class NIO:
         self._filters = {}
         self._suspended = False
         self._capturing = False
+        self._pcap_output_file = ""
+        self._pcap_data_link_type = ""
         self._bandwidth = None  # no bandwidth constraint by default
         self._input_filter = None  # no input filter applied by default
         self._output_filter = None  # no output filter applied by default
@@ -66,6 +68,7 @@ class NIO:
 
         if self._input_filter or self._output_filter:
             await self.unbind_filter("both")
+            self._capturing = False
         await self._hypervisor.send("nio delete {}".format(self._name))
         log.info("NIO {name} has been deleted".format(name=self._name))
 
@@ -89,6 +92,30 @@ class NIO:
         """
 
         await self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name, debug=debug))
+
+    async def start_packet_capture(self, pcap_output_file, pcap_data_link_type="DLT_EN10MB"):
+        """
+        Starts a packet capture.
+
+        :param pcap_output_file: PCAP destination file for the capture
+        :param pcap_data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
+        """
+
+        await self.bind_filter("both", "capture")
+        await self.setup_filter("both", '{} "{}"'.format(pcap_data_link_type, pcap_output_file))
+        self._capturing = True
+        self._pcap_output_file = pcap_output_file
+        self._pcap_data_link_type = pcap_data_link_type
+
+    async def stop_packet_capture(self):
+        """
+        Stops a packet capture.
+        """
+
+        await self.unbind_filter("both")
+        self._capturing = False
+        self._pcap_output_file = ""
+        self._pcap_data_link_type = ""
 
     async def bind_filter(self, direction, filter_name):
         """
@@ -115,9 +142,6 @@ class NIO:
         elif direction == "both":
             self._input_filter = filter_name
             self._output_filter = filter_name
-
-        if filter_name == "capture":
-            self._capturing = True
 
     async def unbind_filter(self, direction):
         """
@@ -282,6 +306,26 @@ class NIO:
         """
 
         return self._capturing
+
+    @property
+    def pcap_output_file(self):
+        """
+        Returns the path to the PCAP output file.
+
+        :returns: path to the PCAP output file
+        """
+
+        return self._pcap_output_file
+
+    @property
+    def pcap_data_link_type(self):
+        """
+        Returns the PCAP data link type
+
+        :returns: PCAP data link type (DLT_* value)
+        """
+
+        return self._pcap_data_link_type
 
     def __str__(self):
         """

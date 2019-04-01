@@ -212,9 +212,7 @@ class EthernetHub(Bridge):
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError("Port {} has already a filter applied".format(port_number))
 
-        await nio.bind_filter("both", "capture")
-        await nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
-
+        await nio.start_packet_capture(output_file, data_link_type)
         log.info('Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                port=port_number))
@@ -229,7 +227,7 @@ class EthernetHub(Bridge):
         nio = self.get_nio(port_number)
         if not nio.capturing:
             return
-        await nio.unbind_filter("both")
+        await nio.stop_packet_capture()
         log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                port=port_number))
