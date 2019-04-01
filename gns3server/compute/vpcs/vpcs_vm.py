@@ -405,6 +405,7 @@ class VPCSVM(BaseNode):
             raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
                                                                                            port_number=port_number))
 
+        await self.stop_capture(port_number)
         if self.is_running():
             await self._ubridge_send("bridge delete {name}".format(name="VPCS-{}".format(self._id)))
 
@@ -466,6 +467,8 @@ class VPCSVM(BaseNode):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
 
         if self.ubridge:

@@ -162,6 +162,7 @@ class EthernetHub(Bridge):
         if port_number not in self._mappings:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         nio = self._mappings[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
@@ -226,6 +227,8 @@ class EthernetHub(Bridge):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         await nio.unbind_filter("both")
         log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,

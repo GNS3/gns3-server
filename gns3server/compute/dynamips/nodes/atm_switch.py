@@ -181,6 +181,7 @@ class ATMSwitch(Device):
         if port_number not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         # remove VCs mapped with the port
         for source, destination in self._active_mappings.copy().items():
             if len(source) == 3 and len(destination) == 3:
@@ -466,6 +467,8 @@ class ATMSwitch(Device):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         await nio.unbind_filter("both")
         log.info('ATM switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                              id=self._id,

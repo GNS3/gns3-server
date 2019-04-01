@@ -1324,6 +1324,7 @@ class Router(BaseNode):
             raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
+        await self.stop_capture(slot_number, port_number)
         await self.slot_disable_nio(slot_number, port_number)
         await self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
                                                                                                                   slot_number=slot_number,
@@ -1477,6 +1478,8 @@ class Router(BaseNode):
             raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
                                                                                            port_number=port_number))
 
+        if not nio.capturing:
+            return
         await nio.unbind_filter("both")
 
         log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(name=self._name,

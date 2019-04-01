@@ -235,7 +235,8 @@ def test_json(async_run, project, compute, link):
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
-        "capture_file_path": None
+        "capture_file_path": None,
+        "capture_compute_id": None
     }
     assert link.__json__(topology_dump=True) == {
         "link_id": link.id,

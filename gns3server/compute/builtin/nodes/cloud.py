@@ -441,6 +441,7 @@ class Cloud(BaseNode):
         if port_number not in self._nios:
             raise NodeError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
@@ -504,6 +505,8 @@ class Cloud(BaseNode):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
         bridge_name = "{}-{}".format(self._id, port_number)
         await self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))

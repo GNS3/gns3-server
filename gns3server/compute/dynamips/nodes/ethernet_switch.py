@@ -283,6 +283,7 @@ class EthernetSwitch(Device):
         if port_number not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
@@ -455,6 +456,8 @@ class EthernetSwitch(Device):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         await nio.unbind_filter("both")
         log.info('Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                   id=self._id,

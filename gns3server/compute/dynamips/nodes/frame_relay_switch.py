@@ -183,6 +183,7 @@ class FrameRelaySwitch(Device):
         if port_number not in self._nios:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         # remove VCs mapped with the port
         for source, destination in self._active_mappings.copy().items():
             source_port, source_dlci = source
@@ -352,6 +353,8 @@ class FrameRelaySwitch(Device):
         """
 
         nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
         await nio.unbind_filter("both")
         log.info('Frame relay switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                      id=self._id,

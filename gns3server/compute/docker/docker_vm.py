@@ -942,6 +942,7 @@ class DockerVM(BaseNode):
             raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
                                                                                                     adapter_number=adapter_number))
 
+        await self.stop_capture(adapter_number)
         if self.ubridge:
             nio = adapter.get_nio(0)
             bridge_name = 'bridge{}'.format(adapter_number)
@@ -1073,6 +1074,8 @@ class DockerVM(BaseNode):
         """
 
         nio = self.get_nio(adapter_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
         if self.status == "started" and self.ubridge:
             await self._stop_ubridge_capture(adapter_number)

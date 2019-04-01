@@ -41,6 +41,7 @@ class NIO:
         self._name = name
         self._filters = {}
         self._suspended = False
+        self._capturing = False
         self._bandwidth = None  # no bandwidth constraint by default
         self._input_filter = None  # no input filter applied by default
         self._output_filter = None  # no output filter applied by default
@@ -115,6 +116,9 @@ class NIO:
             self._input_filter = filter_name
             self._output_filter = filter_name
 
+        if filter_name == "capture":
+            self._capturing = True
+
     async def unbind_filter(self, direction):
         """
         Removes packet filter for this NIO.
@@ -136,6 +140,7 @@ class NIO:
         elif direction == "both":
             self._input_filter = None
             self._output_filter = None
+        self._capturing = False
 
     async def setup_filter(self, direction, options):
         """
@@ -268,6 +273,15 @@ class NIO:
 
         assert isinstance(new_filters, dict)
         self._filters = new_filters
+
+    @property
+    def capturing(self):
+        """
+        Returns either a capture is configured on this NIO.
+        :returns: boolean
+        """
+
+        return self._capturing
 
     def __str__(self):
         """

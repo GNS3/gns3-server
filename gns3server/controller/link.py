@@ -390,6 +390,17 @@ class Link:
         else:
             return None
 
+    @property
+    def capture_compute_id(self):
+        """
+        Get the capture compute ID.
+        """
+
+        if self._capture_node:
+            return self.capture_node["node"].compute.id
+        else:
+            return None
+
     def available_filters(self):
         """
         Return the list of filters compatible with this link
@@ -455,6 +466,7 @@ class Link:
             "capturing": self._capturing,
             "capture_file_name": self._capture_file_name,
             "capture_file_path": self.capture_file_path,
+            "capture_compute_id": self.capture_compute_id,
             "link_type": self._link_type,
             "filters": self._filters,
             "suspend": self._suspended

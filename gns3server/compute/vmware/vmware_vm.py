@@ -779,6 +779,7 @@ class VMwareVM(BaseNode):
             raise VMwareError("Adapter {adapter_number} doesn't exist on VMware VM '{name}'".format(name=self.name,
                                                                                                     adapter_number=adapter_number))
 
+        await self.stop_capture(adapter_number)
         nio = adapter.get_nio(0)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
@@ -916,6 +917,8 @@ class VMwareVM(BaseNode):
         """
 
         nio = self.get_nio(adapter_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
 
         if self._started:

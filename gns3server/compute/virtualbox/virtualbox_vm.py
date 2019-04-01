@@ -1059,6 +1059,7 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("Adapter {adapter_number} doesn't exist on VirtualBox VM '{name}'".format(name=self.name,
                                                                                                             adapter_number=adapter_number))
 
+        await self.stop_capture(adapter_number)
         if self.is_running():
             await self._ubridge_send("bridge delete {name}".format(name="VBOX-{}-{}".format(self._id, adapter_number)))
         vm_state = await self._get_vm_state()
@@ -1134,6 +1135,8 @@ class VirtualBoxVM(BaseNode):
         """
 
         nio = self.get_nio(adapter_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
 
         if self.ubridge:

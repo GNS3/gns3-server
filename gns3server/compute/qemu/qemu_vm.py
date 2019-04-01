@@ -1275,6 +1275,7 @@ class QemuVM(BaseNode):
             raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                  adapter_number=adapter_number))
 
+        await self.stop_capture(adapter_number)
         if self.is_running():
             await self._control_vm("set_link gns3-{} off".format(adapter_number))
             await self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
@@ -1342,6 +1343,8 @@ class QemuVM(BaseNode):
         """
 
         nio = self.get_nio(adapter_number)
+        if not nio.capturing:
+            return
         nio.stopPacketCapture()
 
         if self.ubridge:
