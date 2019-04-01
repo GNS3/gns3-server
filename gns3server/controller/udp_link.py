@@ -117,13 +117,15 @@ class UDPLink(Link):
         port_number1 = self._nodes[0]["port_number"]
         self._link_data[0]["filters"] = node1_filters
         self._link_data[0]["suspend"] = self._suspended
-        await node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
+        if node1.node_type not in ("ethernet_switch", "ethernet_hub"):
+            await node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
 
         adapter_number2 = self._nodes[1]["adapter_number"]
         port_number2 = self._nodes[1]["port_number"]
         self._link_data[1]["filters"] = node2_filters
         self._link_data[1]["suspend"] = self._suspended
-        await node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
+        if node2.node_type not in ("ethernet_switch", "ethernet_hub"):
+            await node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
 
     async def delete(self):
         """

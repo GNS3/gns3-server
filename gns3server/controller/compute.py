@@ -528,7 +528,7 @@ class Compute:
             elif response.status == 503:
                 raise aiohttp.web.HTTPServiceUnavailable(text="Service unavailable {} {}".format(url, body))
             else:
-                raise NotImplementedError("{} status code is not supported".format(response.status))
+                raise NotImplementedError("{} status code is not supported for {} '{}'".format(response.status, method, url))
         if body and len(body):
             if raw:
                 response.body = body
