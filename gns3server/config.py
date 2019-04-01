@@ -21,9 +21,10 @@ Reads the configuration file and store the settings for the controller & compute
 
 import sys
 import os
+import shutil
 import configparser
-import asyncio
 
+from .version import __version_info__
 from .utils.file_watcher import FileWatcher
 
 import logging
@@ -52,9 +53,10 @@ class Config:
         self._watched_files = {}
         self._watch_callback = []
 
-        if sys.platform.startswith("win"):
+        appname = "GNS3"
+        main_version = "{}.{}".format(__version_info__[0], __version_info__[1])
 
-            appname = "GNS3"
+        if sys.platform.startswith("win"):
 
             # On windows, the configuration file location can be one of the following:
             # 1: %APPDATA%/GNS3/gns3_server.ini
@@ -67,16 +69,28 @@ class Config:
             common_appdata = os.path.expandvars("%COMMON_APPDATA%")
 
             if self._profile:
-                user_dir = os.path.join(appdata, appname, "profiles", self._profile)
+                legacy_user_dir = os.path.join(appdata, appname, "profiles", self._profile)
+                versioned_user_dir = legacy_user_dir
             else:
-                user_dir = os.path.join(appdata, appname)
+                legacy_user_dir = os.path.join(appdata, appname)
+                versioned_user_dir = os.path.join(appdata, appname, main_version)
 
-            filename = "gns3_server.ini"
+            server_filename = "gns3_server.ini"
+            controller_filename = "gns3_controller.ini"
+
+            # move gns3_controller.conf to gns3_controller.ini (file was renamed in 2.2 on Windows)
+            old_controller_filename = os.path.join(legacy_user_dir, "gns3_controller.conf")
+            if os.path.exists(old_controller_filename):
+                try:
+                    shutil.copyfile(old_controller_filename, os.path.join(legacy_user_dir, controller_filename))
+                except OSError as e:
+                    log.error("Cannot move old controller configuration file: {}".format(e))
+
             if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [os.path.join(os.getcwd(), filename),
-                               os.path.join(user_dir, filename),
+                self._files = [os.path.join(os.getcwd(), server_filename),
+                               os.path.join(versioned_user_dir, server_filename),
                                os.path.join(appdata, appname + ".ini"),
-                               os.path.join(common_appdata, appname, filename),
+                               os.path.join(common_appdata, appname, server_filename),
                                os.path.join(common_appdata, appname + ".ini")]
         else:
 
@@ -87,28 +101,46 @@ class Config:
             # 4: /etc/xdg/GNS3.conf
             # 5: gns3_server.conf in the current working directory
 
-            appname = "GNS3"
             home = os.path.expanduser("~")
-            filename = "gns3_server.conf"
+            server_filename = "gns3_server.conf"
+            controller_filename = "gns3_controller.conf"
 
             if self._profile:
-                user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
+                legacy_user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
+                versioned_user_dir = legacy_user_dir
             else:
-                user_dir = os.path.join(home, ".config", appname)
+                legacy_user_dir = os.path.join(home, ".config", appname)
+                versioned_user_dir = os.path.join(home, ".config", appname, main_version)
 
             if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [os.path.join(os.getcwd(), filename),
-                               os.path.join(user_dir, filename),
+                self._files = [os.path.join(os.getcwd(), server_filename),
+                               os.path.join(versioned_user_dir, server_filename),
                                os.path.join(home, ".config", appname + ".conf"),
-                               os.path.join("/etc/gns3", filename),
-                               os.path.join("/etc/xdg", appname, filename),
+                               os.path.join("/etc/gns3", server_filename),
+                               os.path.join("/etc/xdg", appname, server_filename),
                                os.path.join("/etc/xdg", appname + ".conf")]
 
         if self._files is None:
             self._files = []
 
         if self._main_config_file is None:
-            self._main_config_file = os.path.join(user_dir, filename)
+
+            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 2.3)
+            # migrate post version 2.2 config files if they exist
+            os.makedirs(versioned_user_dir, exist_ok=True)
+            try:
+                # migrate the server config file
+                old_server_config = os.path.join(legacy_user_dir, server_filename)
+                if os.path.exists(old_server_config):
+                    shutil.copyfile(old_server_config, os.path.join(versioned_user_dir, server_filename))
+                # migrate the controller config file
+                old_controller_config = os.path.join(legacy_user_dir, controller_filename)
+                if os.path.exists(old_controller_config):
+                    shutil.copyfile(old_controller_config, os.path.join(versioned_user_dir, controller_filename))
+            except OSError as e:
+                log.error("Cannot migrate old config files: {}".format(e))
+
+            self._main_config_file = os.path.join(versioned_user_dir, server_filename)
             for file in self._files:
                 if os.path.exists(file):
                     self._main_config_file = file
@@ -132,7 +164,17 @@ class Config:
 
     @property
     def config_dir(self):
+
         return os.path.dirname(self._main_config_file)
+
+    @property
+    def controller_config(self):
+
+        if sys.platform.startswith("win"):
+            controller_config_filename = "gns3_controller.ini"
+        else:
+            controller_config_filename = "gns3_controller.conf"
+        return os.path.join(self.config_dir, controller_config_filename)
 
     def clear(self):
         """Restart with a clean config"""

@@ -58,7 +58,7 @@ class Controller:
         self._iou_license_settings = {"iourc_content": "",
                                       "license_check": True}
         self._config_loaded = False
-        self._config_file = os.path.join(Config.instance().config_dir, "gns3_controller.conf")
+        self._config_file = Config.instance().controller_config
         log.info("Load controller configuration file {}".format(self._config_file))
 
     async def start(self):
