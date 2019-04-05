@@ -54,7 +54,7 @@ class Config:
         self._watch_callback = []
 
         appname = "GNS3"
-        main_version = "{}.{}".format(__version_info__[0], __version_info__[1])
+        version = "{}.{}.{}".format(__version_info__[0], __version_info__[1], __version_info__[2])
 
         if sys.platform.startswith("win"):
 
@@ -73,12 +73,12 @@ class Config:
                 versioned_user_dir = legacy_user_dir
             else:
                 legacy_user_dir = os.path.join(appdata, appname)
-                versioned_user_dir = os.path.join(appdata, appname, main_version)
+                versioned_user_dir = os.path.join(appdata, appname, version)
 
             server_filename = "gns3_server.ini"
             controller_filename = "gns3_controller.ini"
 
-            # move gns3_controller.conf to gns3_controller.ini (file was renamed in 2.2 on Windows)
+            # move gns3_controller.conf to gns3_controller.ini (file was renamed in 2.2.0 on Windows)
             old_controller_filename = os.path.join(legacy_user_dir, "gns3_controller.conf")
             if os.path.exists(old_controller_filename):
                 try:
@@ -110,7 +110,7 @@ class Config:
                 versioned_user_dir = legacy_user_dir
             else:
                 legacy_user_dir = os.path.join(home, ".config", appname)
-                versioned_user_dir = os.path.join(home, ".config", appname, main_version)
+                versioned_user_dir = os.path.join(home, ".config", appname, version)
 
             if self._files is None and not hasattr(sys, "_called_from_test"):
                 self._files = [os.path.join(os.getcwd(), server_filename),
@@ -125,14 +125,16 @@ class Config:
 
         if self._main_config_file is None:
 
-            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 2.3)
-            # migrate post version 2.2 config files if they exist
+            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2.0 -> 2.2.1)
+            # migrate post version 2.2.0 config files if they exist
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:
                 # migrate the server config file
                 old_server_config = os.path.join(legacy_user_dir, server_filename)
                 if os.path.exists(old_server_config):
-                    shutil.copyfile(old_server_config, os.path.join(versioned_user_dir, server_filename))
+                    new_server_config = os.path.join(versioned_user_dir, server_filename)
+                    shutil.copyfile(old_server_config, new_server_config)
+
                 # migrate the controller config file
                 old_controller_config = os.path.join(legacy_user_dir, controller_filename)
                 if os.path.exists(old_controller_config):
