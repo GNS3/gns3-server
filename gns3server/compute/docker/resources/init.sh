@@ -87,6 +87,9 @@ done
 ifup -a -f
 
 # continue normal docker startup
-PATH="$OLD_PATH"
-exec "$@"
-
+GNS3_CMD="PATH=$OLD_PATH exec"
+while test "$#" -gt 0 ; do
+    GNS3_CMD="${GNS3_CMD} \"${1//\"/\\\"}\""
+    shift
+done
+exec su ${GNS3_USER-root} -p -c "$GNS3_CMD"
