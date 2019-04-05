@@ -1,5 +1,18 @@
 # Change Log
 
+## 2.2.0a4 05/04/2019
+
+* Use the full version number for path to config files. Ref https://github.com/GNS3/gns3-gui/issues/2756
+* Support for docker images that set the USER directive. Changes the docker user to root for the init script to configure the network, then drops to the configured user (or root if one is not defined) for continuing booting the image.
+* Fix packet filter not working for Ethernet switch and Ethernet hub. Fixes https://github.com/GNS3/gns3-gui/issues/2754
+* Fix remote packet capture for Dynamips.
+* Fix remote packet capture and make sure packet capture is stopped when deleting an NIO. Fixes https://github.com/GNS3/gns3-gui/issues/2753
+* Store config files in version specific location
+* Update pytest from 4.3.1 to 4.4.0
+* Fix opening previously saved 2.1 project grid overlapping. Fixes #2734
+* Fix empty theme name in symbol selection dialog. Fixes https://github.com/GNS3/gns3-gui/issues/2751
+* Bundle v2019.1.0-alpha.3 web-ui
+
 ## 2.2.0a3 25/03/2019
 
 * Fix traceback when starting packet capture on builtin nodes. Fixes https://github.com/GNS3/gns3-gui/issues/2743
@@ -14,7 +27,6 @@
 * Fix issue when images are not uploaded from appliance wizard. Ref https://github.com/GNS3/gns3-gui/issues/2738
 * Save the GNS3 VM settings even if the GNS3 VM cannot be stopped.
 * Fix exception when emitting event from controller. Ref https://github.com/GNS3/gns3-gui/issues/2737
-
 
 ## 2.2.0a2 14/03/2019
 
