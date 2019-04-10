@@ -567,6 +567,8 @@ class Project:
     @open_required
     async def delete_node(self, node_id):
         node = self.get_node(node_id)
+        if node.locked:
+            raise aiohttp.web.HTTPConflict(text="Node {} cannot be deleted because it is locked".format(node.name))
         await self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]

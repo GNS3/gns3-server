@@ -189,7 +189,8 @@ class NodeHandler:
         status_codes={
             204: "Instance deleted",
             400: "Invalid request",
-            404: "Instance doesn't exist"
+            404: "Instance doesn't exist",
+            409: "Cannot delete locked node"
         },
         description="Delete a node instance")
     async def delete(request, response):

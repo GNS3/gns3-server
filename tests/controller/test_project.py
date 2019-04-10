@@ -257,6 +257,25 @@ def test_delete_node(async_run, controller):
     project.emit_notification.assert_any_call("node.deleted", node.__json__())
 
 
+def test_delete_locked_node(async_run, controller):
+    """
+    For a local server we send the project path
+    """
+    compute = MagicMock()
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    assert node.id in project._nodes
+    node.locked = True
+    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
+        async_run(project.delete_node(node.id))
+
+
 def test_delete_node_delete_link(async_run, controller):
     """
     Delete a node delete all the node connected
