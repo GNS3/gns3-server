@@ -28,6 +28,11 @@
 * Save the GNS3 VM settings even if the GNS3 VM cannot be stopped.
 * Fix exception when emitting event from controller. Ref https://github.com/GNS3/gns3-gui/issues/2737
 
+## 2.1.15 21/03/2019
+
+* Fix IOU symlink issue on remote servers.
+* Fix vcpus configuration for GNS3 VM on VMware. Ref #2738.
+
 ## 2.2.0a2 14/03/2019
 
 * Web-UI v2019.1.0-alpha.1

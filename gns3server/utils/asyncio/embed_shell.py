@@ -195,8 +195,8 @@ class UnstoppableEventLoop(EventLoop):
 
 
 class ShellConnection(TelnetConnection):
-    def __init__(self, reader, writer, shell, loop):
-        super(ShellConnection, self).__init__(reader, writer)
+    def __init__(self, reader, writer, shell, window_size_changed_callback, loop):
+        super(ShellConnection, self).__init__(reader, writer, window_size_changed_callback)
         self._shell = shell
         self._loop = loop
         self._cli = None
@@ -234,9 +234,12 @@ class ShellConnection(TelnetConnection):
     async def disconnected(self):
         pass
 
+    @asyncio.coroutine
     def window_size_changed(self, columns, rows):
         self._size = Size(rows=rows, columns=columns)
         self._cb.terminal_size_changed()
+        if self._window_size_changed_callback:
+            yield from self._window_size_changed_callback(columns, rows)
 
     async def feed(self, data):
         data = data.decode()
@@ -285,8 +288,8 @@ def create_telnet_shell(shell, loop=None):
     if loop is None:
         loop = asyncio.get_event_loop()
 
-    def factory(reader, writer):
-        return ShellConnection(reader, writer, shell, loop)
+    def factory(reader, writer, window_size_changed_callback):
+        return ShellConnection(reader, writer, shell, window_size_changed_callback, loop)
 
     return AsyncioTelnetServer(binary=True, echo=True, naws=True, connection_factory=factory)
 

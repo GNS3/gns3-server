@@ -91,7 +91,6 @@ def parse_arguments(argv):
     parser.add_argument("--host", help="run on the given host/IP address")
     parser.add_argument("--port", help="run on the given port", type=int)
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
-    parser.add_argument("--no-ubridge", action="store_false", help="do not use ubridge to handle node connections")
     parser.add_argument("--config", help="Configuration file")
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
