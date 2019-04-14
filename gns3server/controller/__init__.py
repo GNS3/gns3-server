@@ -128,6 +128,7 @@ class Controller:
             except (ComputeError, aiohttp.web.HTTPError, OSError):
                 pass
         await self.gns3vm.exit_vm()
+        self.save()
         self._computes = {}
         self._projects = {}
 

@@ -131,14 +131,15 @@ class Config:
             try:
                 # migrate the server config file
                 old_server_config = os.path.join(legacy_user_dir, server_filename)
-                if os.path.exists(old_server_config):
-                    new_server_config = os.path.join(versioned_user_dir, server_filename)
+                new_server_config = os.path.join(versioned_user_dir, server_filename)
+                if not os.path.exists(new_server_config) and os.path.exists(old_server_config):
                     shutil.copyfile(old_server_config, new_server_config)
 
                 # migrate the controller config file
                 old_controller_config = os.path.join(legacy_user_dir, controller_filename)
-                if os.path.exists(old_controller_config):
-                    shutil.copyfile(old_controller_config, os.path.join(versioned_user_dir, controller_filename))
+                new_controller_config = os.path.join(versioned_user_dir, controller_filename)
+                if not os.path.exists(new_controller_config) and os.path.exists(old_controller_config):
+                    shutil.copyfile(old_controller_config, os.path.join(versioned_user_dir, new_controller_config))
             except OSError as e:
                 log.error("Cannot migrate old config files: {}".format(e))
 
