@@ -54,7 +54,7 @@ class Config:
         self._watch_callback = []
 
         appname = "GNS3"
-        version = "{}.{}.{}".format(__version_info__[0], __version_info__[1], __version_info__[2])
+        version = "{}.{}".format(__version_info__[0], __version_info__[1])
 
         if sys.platform.startswith("win"):
 
