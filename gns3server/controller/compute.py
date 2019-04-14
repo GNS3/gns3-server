@@ -150,9 +150,14 @@ class Compute:
         self._controller.save()
 
     async def close(self):
+
         self._connected = False
         if self._http_session and not self._http_session.closed:
             await self._http_session.close()
+        try:
+            await self._notifications
+        except asyncio.CancelledError:
+            pass
         self._closed = True
 
     @property
@@ -417,25 +422,36 @@ class Compute:
         Connect to the notification stream
         """
 
-        async with self._session().ws_connect(self._getUrl("/notifications/ws"), auth=self._auth) as ws:
-            async for response in ws:
-                if response.type == aiohttp.WSMsgType.TEXT and response.data:
-                    msg = json.loads(response.data)
-                    action = msg.pop("action")
-                    event = msg.pop("event")
-                    project_id = msg.pop("project_id", None)
-                    if action == "ping":
-                        self._cpu_usage_percent = event["cpu_usage_percent"]
-                        self._memory_usage_percent = event["memory_usage_percent"]
-                        #FIXME: slow down number of compute events
-                        self._controller.notification.controller_emit("compute.updated", self.__json__())
+        ws_url = self._getUrl("/notifications/ws")
+        try:
+            async with self._session().ws_connect(ws_url, auth=self._auth, heartbeat=10) as ws:
+                log.info("Connected to compute WebSocket '{}'".format(ws_url))
+                async for response in ws:
+                    if response.type == aiohttp.WSMsgType.TEXT:
+                        msg = json.loads(response.data)
+                        action = msg.pop("action")
+                        event = msg.pop("event")
+                        project_id = msg.pop("project_id", None)
+                        if action == "ping":
+                            self._cpu_usage_percent = event["cpu_usage_percent"]
+                            self._memory_usage_percent = event["memory_usage_percent"]
+                            #FIXME: slow down number of compute events
+                            self._controller.notification.controller_emit("compute.updated", self.__json__())
+                        else:
+                            await self._controller.notification.dispatch(action, event, project_id=project_id, compute_id=self.id)
                     else:
-                        await self._controller.notification.dispatch(action, event, project_id=project_id, compute_id=self.id)
-                elif response.type == aiohttp.WSMsgType.CLOSED or response.type == aiohttp.WSMsgType.ERROR or response.data is None:
-                    self._connected = False
-                    break
+                        if response.type == aiohttp.WSMsgType.CLOSE:
+                            await ws.close()
+                        elif response.type == aiohttp.WSMsgType.ERROR:
+                            log.error("Error received on compute WebSocket '{}': {}".format(ws_url, ws.exception()))
+                        elif response.type == aiohttp.WSMsgType.CLOSED:
+                            pass
+                        self._connected = False
+                        break
+        finally:
+            log.info("Connection closed to compute WebSocket '{}'".format(ws_url))
 
-        # Try to reconnect after 1 seconds if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
+        # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
             asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
 

@@ -21,6 +21,9 @@ from aiohttp.web import WebSocketResponse
 from gns3server.web.route import Route
 from gns3server.compute.notification_manager import NotificationManager
 
+import logging
+log = logging.getLogger(__name__)
+
 
 async def process_websocket(ws):
     """
@@ -44,7 +47,7 @@ class NotificationHandler:
 
         request.app['websockets'].add(ws)
         asyncio.ensure_future(process_websocket(ws))
-
+        log.info("New client has connected to compute WebSocket")
         try:
             with notifications.queue() as queue:
                 while True:
@@ -53,6 +56,7 @@ class NotificationHandler:
                         break
                     await ws.send_str(notification)
         finally:
+            log.info("Client has disconnected from compute WebSocket")
             if not ws.closed:
                 await ws.close()
             request.app['websockets'].discard(ws)
