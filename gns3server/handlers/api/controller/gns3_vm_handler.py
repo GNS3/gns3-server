@@ -72,7 +72,9 @@ class GNS3VMHandler:
         })
     async def update(request, response):
 
-        gns3_vm = Controller().instance().gns3vm
+        controller = Controller().instance()
+        gns3_vm = controller.gns3vm
         await gns3_vm.update_settings(request.json)
+        controller.save()
         response.json(gns3_vm)
         response.set_status(201)

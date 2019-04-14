@@ -74,6 +74,7 @@ class Compute:
         self._user = None
         self._password = None
         self._connected = False
+        self._notifications = None
         self._closed = False  # Close mean we are destroying the compute node
         self._controller = controller
         self._set_auth(user, password)
@@ -155,7 +156,8 @@ class Compute:
         if self._http_session and not self._http_session.closed:
             await self._http_session.close()
         try:
-            await self._notifications
+            if self._notifications:
+                await self._notifications
         except asyncio.CancelledError:
             pass
         self._closed = True
@@ -448,6 +450,8 @@ class Compute:
                             pass
                         self._connected = False
                         break
+        except aiohttp.client_exceptions.ClientResponseError as e:
+            log.error("Client response error received on compute WebSocket '{}': {}".format(ws_url,e))
         finally:
             log.info("Connection closed to compute WebSocket '{}'".format(ws_url))
 
