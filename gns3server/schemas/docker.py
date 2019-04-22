@@ -95,6 +95,14 @@ DOCKER_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 0,
         },
+        "extra_volumes": {
+            "description": "Additional directories to make persistent",
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "string"
+            }
+        },
         "container_id": {
             "description": "Docker container ID Read only",
             "type": "string",
@@ -197,6 +205,14 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "Docker extra hosts (added to /etc/hosts)",
             "type": ["string", "null"],
             "minLength": 0,
+        },
+        "extra_volumes": {
+            "description": "Additional directories to make persistent",
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "string",
+            }
         },
         "node_directory": {
             "description": "Path to the node working directory  Read only",

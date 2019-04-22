@@ -64,11 +64,12 @@ class DockerVM(BaseNode):
     :param console_http_port: Port to redirect HTTP queries
     :param console_http_path: Url part with the path of the web interface
     :param extra_hosts: Hosts which will be written into /etc/hosts into docker conainer
+    :param extra_volumes: Additional directories to make persistent
     """
 
     def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
-                 console_http_port=80, console_http_path="/", extra_hosts=None):
+                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[]):
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
@@ -89,6 +90,7 @@ class DockerVM(BaseNode):
         self._console_http_port = console_http_port
         self._console_websocket = None
         self._extra_hosts = extra_hosts
+        self._extra_volumes = extra_volumes or []
         self._permissions_fixed = False
         self._display = None
         self._closing = False
@@ -125,7 +127,8 @@ class DockerVM(BaseNode):
             "status": self.status,
             "environment": self.environment,
             "node_directory": self.working_path,
-            "extra_hosts": self.extra_hosts
+            "extra_hosts": self.extra_hosts,
+            "extra_volumes": self.extra_volumes,
         }
 
     def _get_free_display_port(self):
@@ -197,6 +200,14 @@ class DockerVM(BaseNode):
     def extra_hosts(self, extra_hosts):
         self._extra_hosts = extra_hosts
 
+    @property
+    def extra_volumes(self):
+        return self._extra_volumes
+
+    @extra_volumes.setter
+    def extra_volumes(self, extra_volumes):
+        self._extra_volumes = extra_volumes
+
     async def _get_container_state(self):
         """
         Returns the container state (e.g. running, paused etc.)
@@ -242,11 +253,14 @@ class DockerVM(BaseNode):
         binds.append("{}:/gns3volumes/etc/network:rw".format(network_config))
 
         self._volumes = ["/etc/network"]
-
-        volumes = image_info.get("Config", {}).get("Volumes")
-        if volumes is None:
-            return binds
-        for volume in volumes.keys():
+        volumes = list((image_info.get("Config", {}).get("Volumes") or {}).keys())
+        for volume in self._extra_volumes:
+            if not volume.strip() or volume[0] != "/":
+                raise DockerError("Additional volume '{}' has invalid format.".format(volume))
+        volumes.extend(self._extra_volumes)
+        for volume in volumes:
+            if volume in self._volumes:
+                raise DockerError("Duplicate persistent volume {}".format(volume))
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:/gns3volumes{}".format(source, volume))
