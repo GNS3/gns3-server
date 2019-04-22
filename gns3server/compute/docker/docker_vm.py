@@ -26,6 +26,7 @@ import shlex
 import aiohttp
 import subprocess
 import os
+import re
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
@@ -255,12 +256,15 @@ class DockerVM(BaseNode):
         self._volumes = ["/etc/network"]
         volumes = list((image_info.get("Config", {}).get("Volumes") or {}).keys())
         for volume in self._extra_volumes:
-            if not volume.strip() or volume[0] != "/":
-                raise DockerError("Additional volume '{}' has invalid format.".format(volume))
+            if not volume.strip() or volume[0] != "/" or volume.find("..") >= 0:
+                raise DockerError("Persistent volume '{}' has invalid format. It must start with a '/' and not contain '..'.".format(volume))
         volumes.extend(self._extra_volumes)
+        # define lambdas for validation checks
+        nf = lambda x: re.sub(r"//+", "/", (x if x.endswith("/") else x + "/"))
+        incompatible = lambda v1, v2: nf(v1).startswith(nf(v2)) or nf(v2).startswith(nf(v1))
         for volume in volumes:
-            if volume in self._volumes:
-                raise DockerError("Duplicate persistent volume {}".format(volume))
+            if [ v for v in self._volumes if incompatible(v, volume) ] :
+                raise DockerError("Duplicate persistent volume {} detected.\n\nVolumes specified in docker image as well as user specified persistent volumes must be unique.".format(volume))
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
             binds.append("{}:/gns3volumes{}".format(source, volume))
