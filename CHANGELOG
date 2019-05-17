@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.17 17/05/2019
+
+* Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3 This is to fix build issue for Ubuntu 19.04 package on Launchpad. Ref #1583 https://github.com/GNS3/gns3-gui/issues/2774
+
 ## 2.1.16 15/04/2019
 
 * Fix broken embedded console for Ethernet switch. Fixes #1574
