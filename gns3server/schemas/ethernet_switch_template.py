@@ -109,7 +109,7 @@ ETHERNET_SWITCH_TEMPLATE_PROPERTIES = {
     "console_type": {
         "description": "Console type",
         "enum": ["telnet", "none"],
-        "default": "telnet"
+        "default": "none"
     },
 }
 

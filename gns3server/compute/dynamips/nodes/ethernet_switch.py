@@ -79,7 +79,7 @@ class EthernetSwitch(Device):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", ports=None, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="none", ports=None, hypervisor=None):
 
         super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
@@ -131,6 +131,10 @@ class EthernetSwitch(Device):
 
     @console_type.setter
     def console_type(self, console_type):
+
+        if console_type == "telnet":
+            self.project.emit("log.warning", {
+                "message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
         self._console_type = console_type
 
     @property
@@ -184,6 +188,8 @@ class EthernetSwitch(Device):
         #    self._telnet_server = (await asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
         #except OSError as e:
         #    self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
+        if self._console_type == "telnet":
+            self.project.emit("log.warning", {"message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
