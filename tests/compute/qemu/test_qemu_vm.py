@@ -97,7 +97,7 @@ def test_vm_create(loop, tmpdir, project, manager, fake_qemu_binary):
         f.write('hello')
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, qemu_path=fake_qemu_binary)
-    vm._hda_disk_image =  fake_img
+    vm._hda_disk_image = fake_img
 
     loop.run_until_complete(asyncio.ensure_future(vm.create()))
 

@@ -811,7 +811,7 @@ def test_ethernet_switch_template_create(http_controller):
                          "builtin": False,
                          "category": "switch",
                          "compute_id": "local",
-                         "console_type": "telnet",
+                         "console_type": "none",
                          "default_name_format": "Switch{0}",
                          "name": "Ethernet switch template",
                          "ports_mapping": [{"ethertype": "",
