@@ -1081,7 +1081,15 @@ class QemuVM(BaseNode):
                 return result
 
             try:
-                writer.write(command.encode('ascii') + b"\n")
+                cmd_byte = command.encode('ascii')
+                writer.write(cmd_byte + b"\n")
+                if not expected:
+                    while True:
+                        line = await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
+                        if not line or cmd_byte in line:
+                            break
+            except asyncio.TimeoutError:
+                log.warning("Missing echo of command '{}'".format(command))
             except OSError as e:
                 log.warning("Could not write to QEMU monitor: {}".format(e))
                 writer.close()
@@ -1089,13 +1097,15 @@ class QemuVM(BaseNode):
             if expected:
                 try:
                     while result is None:
-                        line = await reader.readline()
+                        line = await asyncio.wait_for(reader.readline(), timeout=3)
                         if not line:
                             break
                         for expect in expected:
                             if expect in line:
                                 result = line.decode("utf-8").strip()
                                 break
+                except asyncio.TimeoutError:
+                    log.warning("Timeout while waiting for result of command '{}'".format(command))
                 except (ConnectionError, EOFError) as e:
                     log.warning("Could not read from QEMU monitor: {}".format(e))
             writer.close()
@@ -1118,6 +1128,9 @@ class QemuVM(BaseNode):
                 log.info("Execute QEMU monitor command: {}".format(command))
                 try:
                     writer.write(command.encode('ascii') + b"\n")
+                    await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
+                except asyncio.TimeoutError:
+                    log.warning("Missing echo of command '{}'".format(command))
                 except OSError as e:
                     log.warning("Could not write to QEMU monitor: {}".format(e))
             writer.close()
