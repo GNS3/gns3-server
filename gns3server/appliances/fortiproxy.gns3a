@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "FPX_KVM-v100-build0162-FORTINET.out.kvm.qcow2",
+            "version": "1.1.2",
+            "md5sum": "00db4c04fcc4ac0d7c389a86c71d20a5",
+            "filesize": 44601344,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FPX_KVM-v100-build0147-FORTINET.out.kvm.qcow2",
             "version": "1.1.0",
             "md5sum": "d7c60693bfa58246e5063304cd450c89",
@@ -43,6 +50,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.1.2",
+            "images": {
+                "hda_disk_image": "FPX_KVM-v100-build0162-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "1.1.0",
             "images": {

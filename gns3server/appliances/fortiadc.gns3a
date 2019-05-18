@@ -35,6 +35,13 @@
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
+            "filename": "FAD_KVM-V500-build0442-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.2.2",
+            "md5sum": "7d959ed264b064716e8f1378fceed48f",
+            "filesize": 104857600,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FAD_KVM-V500-build0423-FORTINET.out.kvm-boot.qcow2",
             "version": "5.2.0",
             "md5sum": "993bcd0e8e5496fdacb78dffb3c9a9b3",
@@ -190,6 +197,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.2.2",
+            "images": {
+                "hda_disk_image": "FAD_KVM-V500-build0442-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+            }
+        },
         {
             "name": "5.2.0",
             "images": {

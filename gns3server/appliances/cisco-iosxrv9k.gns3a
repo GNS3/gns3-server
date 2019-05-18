@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "xrv9k-fullk9-x-6.5.2.qcow2",
+            "version": "6.5.2",
+            "md5sum": "506d9e23dda7365c99dd82b613859697",
+            "filesize": 1205010432,
+            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.5.1"
+        },
+        {
             "filename": "xrv9k-fullk9-x-6.5.1.qcow2",
             "version": "6.5.1",
             "md5sum": "730868e7cd46de9aa2e950899c7f9498",
@@ -67,6 +74,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.5.2",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-6.5.2.qcow2"
+            }
+        },
         {
             "name": "6.5.1",
             "images": {

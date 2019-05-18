@@ -23,6 +23,15 @@
     },
     "images": [
         {
+            "filename": "PacketFenceZEN_USB-8.3.0.img",
+            "version": "8.3.0",
+            "md5sum": "b9de52dc2513220ad42d350486da4884",
+            "filesize": 3221225472,
+            "download_url": "https://packetfence.org/download.html#/zen",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/8.3.0/PacketFenceZEN_USB-8.3.0.tar.bz2/download",
+            "compression": "bzip2"
+        },
+        {
             "filename": "PacketFenceZEN_USB-8.1.0.img",
             "version": "8.1.0",
             "md5sum": "f326f0e70b35d598c8b84ee3fc9c611f",
@@ -114,6 +123,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "8.3.0",
+            "images": {
+                "hda_disk_image": "PacketFenceZEN_USB-8.3.0.img"
+            }
+        },
         {
             "name": "8.1.0",
             "images": {

@@ -20,6 +20,15 @@
     },
     "images": [
         {
+            "filename": "BSDRP-1.92-full-amd64-serial.img",
+            "version": "1.92",
+            "md5sum": "1a123f3ba7ce73aa5823a65a7c571be1",
+            "filesize": 1000000000,
+            "download_url": "https://bsdrp.net/downloads",
+            "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.92/amd64/BSDRP-1.92-full-amd64-serial.img.xz/download",
+            "compression": "xz"
+        },
+        {
             "filename": "BSDRP-1.91-full-amd64-serial.img",
             "version": "1.91",
             "md5sum": "cea67b29ce94e66b617e7dc90956af45",
@@ -57,6 +66,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.92",
+            "images": {
+                "hda_disk_image": "BSDRP-1.92-full-amd64-serial.img"
+            }
+        },
         {
             "name": "1.91",
             "images": {

@@ -27,6 +27,15 @@
     },
     "images": [
         {
+           "filename": "chr-6.44.2.img",
+           "version": "6.44.2",
+           "md5sum": "f1ddaa47829e12c1f9f023d8c06b88cc",
+           "filesize": 67108864,
+           "download_url": "http://www.mikrotik.com/download",
+           "direct_download_url": "https://download.mikrotik.com/routeros/6.44.2/chr-6.44.2.img.zip",
+           "compression": "zip"
+        },
+        {
            "filename": "chr-6.43.8.img",
            "version": "6.43.8",
            "md5sum": "9437133fc7e77779dc3ff62b98f30dc2",
@@ -280,6 +289,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.44.2",
+            "images": {
+                "hda_disk_image": "chr-6.44.2.img"
+            }
+        },
         {
             "name": "6.43.8",
             "images": {

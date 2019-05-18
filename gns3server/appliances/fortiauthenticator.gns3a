@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "FAC_VM_KVM-v6-build0010-FORTINET.out.kvm.qcow2",
+            "version": "6.0.0",
+            "md5sum": "6699c0b24e54dc6a5215ba3945abb364",
+            "filesize": 74317824,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FAC_VM_KVM-v5-build0366-FORTINET.out.kvm.qcow2",
             "version": "5.5.0",
             "md5sum": "c6ae060f8840b467efac6701a7e8e6af",
@@ -90,8 +97,8 @@
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
-            "filename": "FAC_VM_KVM-v500-DATADRIVE.qcow2",
-            "version": "5.x.x",
+            "filename": "FAC_VM_KVM-ALL-DATADRIVE.qcow2",
+            "version": "All",
             "md5sum": "09bad6cfe6301930adbc829eb8a67149",
             "filesize": 258048,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
@@ -99,66 +106,73 @@
     ],
     "versions": [
         {
+            "name": "6.0.0",
+            "images": {
+                "hda_disk_image": "FAC_VM_KVM-v6-build0010-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
+            }
+        },
+        {
             "name": "5.5.0",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v5-build0366-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.4.1",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v5-build0297-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.2.2",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v5-build0163-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.2.1",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v500-build0161-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.2.0",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v5-build0155-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.1.2",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v500-build0091-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.1.1",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v500-build0086-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.1.0",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v500-build0083-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         },
         {
             "name": "5.0.0",
             "images": {
                 "hda_disk_image": "FAC_VM_KVM-v500-build0012-FORTINET.out.kvm.qcow2",
-                "hdb_disk_image": "FAC_VM_KVM-v500-DATADRIVE.qcow2"
+                "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
             }
         }
     ]

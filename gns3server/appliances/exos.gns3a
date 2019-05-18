@@ -1,189 +1,139 @@
 {
-    "name": "EXOS",
+    "name": "EXOS VM",
     "category": "multilayer_switch",
-    "description": "ExtremeXOS was designed from the ground up to meet the needs of large cloud and private data centers, service providers, intelligent, converged enterprise edge networks, and everything in between. It provides the high performance and rich features required by these diverse environments.",
+    "description": "The ExtremeXOS VM is created and maintained by Extreme Networks for users to emulate a network using EXOS switches.",
     "vendor_name": "Extreme Networks",
-    "vendor_url": "http://www.extremenetworks.com/",
-    "documentation_url": "http://www.extremenetworks.com/support/documentation",
-    "product_name": "EXOS",
-    "product_url": "http://www.extremenetworks.com/product/extremexos-network-operating-system",
+    "vendor_url": "https://www.extremenetworks.com",
+    "documentation_url": "https://www.extremenetworks.com/support/documentation",
+    "product_name": "EXOS VM",
     "registry_version": 3,
     "status": "stable",
-    "maintainer": "GNS3 Team",
-    "maintainer_email": "developers@gns3.net",
-    "usage": "You can change the console to telnet after install. Default user: admin (no password set)",
-    "first_port_name": "Management",
+    "maintainer": "Extreme Networks",
+    "maintainer_email": "GitHubscripting@extremenetworks.com",
+    "usage": "Boot up and login is admin with no password.",
+    "symbol": "ethernet_switch.svg",
+    "first_port_name": "Mgmt",
     "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "rtl8139",
         "adapters": 13,
-        "ram": 256,
+        "ram": 512,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
-        "boot_priority": "cd",
-        "kvm": "require",
-        "options": "-smp 2 -cpu core2duo"
+        "boot_priority": "dc",
+        "kvm": "allow",
+        "options": "-cpu core2duo"
     },
+    
     "images": [
-        {
-            "filename": "exosvm-22.6.1.4.iso",
+
+		{
+            "filename": "EXOS-VM_v30.1.1.4.qcow2",
+            "version": "30.1.1.4",
+            "md5sum": "92d3f9b13d750f7bfa804823fa545772",
+            "filesize": 383385600,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.1.1.4.qcow2"
+        },
+		{
+            "filename": "EXOS-VM_v22.6.1.4.qcow2",
             "version": "22.6.1.4",
-            "md5sum": "66146aba82575b3879431143b6dc8a35",
-            "filesize": 53706752,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.6.1.4.iso"
+            "md5sum": "82b31b11b26143a82c8259a4825696fc",
+            "filesize": 180355072,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.6.1.4.qcow2"
         },
-        {
-            "filename": "exosvm-22.5.1.7.iso",
+		{
+            "filename": "EXOS-VM_v22.5.1.7.qcow2",
             "version": "22.5.1.7",
-            "md5sum": "132ac87de368ab55d1f496f292338cd4",
-            "filesize": 51779584,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.5.1.7.iso"
+            "md5sum": "d2e8ae6783b6ed777ad5cd8cafd83c86",
+            "filesize": 180289536,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.5.1.7.qcow2"
         },
         {
-            "filename": "exosvm-22.4.1.4.iso",
+            "filename": "EXOS-VM_v22.4.1.4-disk1.qcow2",
             "version": "22.4.1.4",
-            "md5sum": "2134a511084519a5f8ad00a6f7cd71a9",
-            "filesize": 49993728,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.4.1.4.iso"
+            "md5sum": "5f1ee41912d74d423ce8ae57ea413602",
+            "filesize": 229638144,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.4.1.4-disk1.qcow2"
         },
         {
-            "filename": "exosvm-22.2.1.5.iso",
+            "filename": "EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2",
+            "version": "22.3.1.4",
+            "md5sum": "a4585b6e987ff730f5c044af339fe090",
+            "filesize": 218431488,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2"
+        },
+		{
+            "filename": "EXOS-VM_v22.2.1.5-disk1.qcow2",
             "version": "22.2.1.5",
-            "md5sum": "bf51fd5b3c5e9dab10a616055265bcf2",
-            "filesize": 44578816,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.2.1.5.iso"
+            "md5sum": "e3cfe92077addda6ad34185288c90acf",
+            "filesize": 179568640,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.2.1.5-disk1.qcow2"
         },
         {
-            "filename": "exosvm-22.1.1.5.iso",
+            "filename": "EXOS-VM_v22.1.1.5-disk1.qcow2",
             "version": "22.1.1.5",
-            "md5sum": "df3897ca2d7c7053582587ed120114fa",
-            "filesize": 44220416,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/raw/master/vm-22.1.1.5.iso"
+            "md5sum": "77683060e75d81b776761f6829b15e9b",
+            "filesize": 179437568,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.1.1.5-disk1.qcow2"
         },
-        {
-            "filename": "exosvm-21.1.2.14.iso",
-            "version": "21.1.2.14",
-            "md5sum": "de0752d56e41d92027ce1fccd604b14b",
-            "filesize": 41101312,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/vm-21.1.2.14.iso?raw=true"
-        },
-        {
-            "filename": "exosvm-21.1.1.4.iso",
+		{
+            "filename": "EXOS-VM_v21.1.1.4-disk1.qcow2",
             "version": "21.1.1.4",
-            "md5sum": "4d5db0e01a39b08775ed6a3e2c8bf663",
-            "filesize": 41046016,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/vm-21.1.1.4.iso?raw=true"
-        },
-        {
-            "filename": "exospc-16.2.1.6.iso",
-            "version": "16.2.1.6",
-            "md5sum": "b4be339afb02c03dcb4349630c1adb4f",
-            "filesize": 36306944,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.2.1.6.iso?raw=true"
-        },
-        {
-            "filename": "exospc-16.1.3.6.iso",
-            "version": "16.1.3.6",
-            "md5sum": "4c17b2bf2a4909527f6c866a68ba406e",
-            "filesize": 35758080,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.1.3.6.iso?raw=true"
-        },
-        {
-            "filename": "exospc-16.1.2.14.iso",
-            "version": "16.1.2.14",
-            "md5sum": "140cdc11f426156ffcbde150b2f46768",
-            "filesize": 35743744,
-            "download_url": "https://github.com/extremenetworks/Virtual_EXOS",
-            "direct_download_url": "https://github.com/extremenetworks/Virtual_EXOS/blob/master/exospc-16.1.2.14.iso?raw=true"
-        },
-        {
-            "filename": "empty8G.qcow2",
-            "version": "1.0",
-            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
-            "filesize": 197120,
-            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+            "md5sum": "654606809b6fd3bca400377483eb4a79",
+            "filesize": 117560832,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v21.1.1.4-disk1.qcow2"
         }
+
     ],
+    
     "versions": [
         {
-            "name": "22.6.1.4",
+            "name": "30.1.1.4",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-22.6.1.4.iso"
+                "hda_disk_image": "EXOS-VM_v30.1.1.4.qcow2"
             }
         },
-        {
+		{
+            "name": "22.6.1.4",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v22.6.1.4.qcow2"
+            }
+        },
+		{
             "name": "22.5.1.7",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-22.5.1.7.iso"
+                "hda_disk_image": "EXOS-VM_v22.5.1.7.qcow2"
             }
         },
         {
             "name": "22.4.1.4",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-22.4.1.4.iso"
+                "hda_disk_image": "EXOS-VM_v22.4.1.4-disk1.qcow2"
+            }
+        },
+        {
+            "name": "22.3.1.4",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2"
             }
         },
         {
             "name": "22.2.1.5",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-22.2.1.5.iso"
+                "hda_disk_image": "EXOS-VM_v22.2.1.5-disk1.qcow2"
             }
         },
         {
             "name": "22.1.1.5",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-22.1.1.5.iso"
-            }
-        },
-        {
-            "name": "21.1.2.14",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-21.1.2.14.iso"
+                "hda_disk_image": "EXOS-VM_v22.1.1.5-disk1.qcow2"
             }
         },
         {
             "name": "21.1.1.4",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exosvm-21.1.1.4.iso"
-            }
-        },
-        {
-            "name": "16.2.1.6",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exospc-16.2.1.6.iso"
-            }
-        },
-        {
-            "name": "16.1.3.6",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exospc-16.1.3.6.iso"
-            }
-        },
-        {
-            "name": "16.1.2.14",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "exospc-16.1.2.14.iso"
+                "hda_disk_image": "EXOS-VM_v21.1.1.4-disk1.qcow2"
             }
         }
     ]

@@ -1,11 +1,11 @@
 {
-    "name": "AsteriskNOW",
+    "name": "AsteriskNOW / FreePBX",
     "category": "guest",
     "description": "AsteriskNOW makes it easy to create custom telephony solutions by automatically installing the 'plumbing'. It's a complete Linux distribution with Asterisk, the DAHDI driver framework, and, the FreePBX administrative GUI. Much of the complexity of Asterisk and Linux is handled by the installer, the yum package management utility and the administrative GUI. With AsteriskNOW, application developers and integrators can concentrate on building solutions, not maintaining the plumbing.",
     "vendor_name": "Digium",
     "vendor_url": "http://www.asterisk.org/",
     "documentation_url": "https://wiki.asterisk.org/wiki/display/AST/Installing+AsteriskNOW",
-    "product_name": "AsteriskNOW",
+    "product_name": "AsteriskNOW / FreePBX",
     "product_url": "http://www.asterisk.org/downloads/asterisknow",
     "registry_version": 3,
     "status": "stable",
@@ -24,6 +24,14 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "SNG7-FPBX-64bit-1805-2.iso",
+            "version": "14",
+            "md5sum": "64f0c38c17ce680f7106f94183bc5745",
+            "filesize": 1755316224,
+            "download_url": "https://www.freepbx.org/downloads/",
+            "direct_download_url": "https://downloads.freepbxdistro.org/ISO/SNG7-FPBX-64bit-1805-2.iso"
+        },
         {
             "filename": "AsteriskNow-1013-current-64.iso",
             "version": "10.13",
@@ -58,6 +66,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "14",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "SNG7-FPBX-64bit-1805-2.iso"
+            }
+        },
         {
             "name": "10.13",
             "images": {

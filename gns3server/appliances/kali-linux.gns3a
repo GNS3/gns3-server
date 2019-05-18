@@ -21,6 +21,14 @@
     },
     "images": [
         {
+            "filename": "kali-linux-2019.1a-amd64.iso",
+            "version": "2019.1a",
+            "md5sum": "58c6111ed0be1919ea87267e7e65ab0f",
+            "filesize": 3483873280,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.1a/kali-linux-2019.1a-amd64.iso"
+        },
+        {
             "filename": "kali-linux-2018.4-amd64.iso",
             "version": "2018.4",
             "md5sum": "1b2d598bb8d2003e6207c119c0ba42fe",
@@ -94,6 +102,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2019.1a",
+            "images": {
+                "cdrom_image": "kali-linux-2019.1a-amd64.iso"
+            }
+        },
         {
             "name": "2018.4",
             "images": {

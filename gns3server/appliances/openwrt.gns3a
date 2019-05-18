@@ -15,7 +15,7 @@
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
-        "ram": 64,
+        "ram": 128,
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "allow"
