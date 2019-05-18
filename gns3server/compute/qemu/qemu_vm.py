@@ -1889,6 +1889,8 @@ class QemuVM(BaseNode):
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
         additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
+        if self._console:
+            additional_options = additional_options.replace("%console-port%", self._console)
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
