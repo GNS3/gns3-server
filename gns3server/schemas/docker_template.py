@@ -80,7 +80,12 @@ DOCKER_TEMPLATE_PROPERTIES = {
     "extra_hosts": {
         "description": "Docker extra hosts (added to /etc/hosts)",
         "type": "string",
-        "default": "",
+        "default": ""
+    },
+    "extra_volumes": {
+        "description": "Additional directories to make persistent",
+        "type": "array",
+        "default": []
     },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
