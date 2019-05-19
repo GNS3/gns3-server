@@ -125,7 +125,7 @@ class Config:
 
         if self._main_config_file is None:
 
-            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2.0 -> 2.2.1)
+            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 2.3) + support profiles
             # migrate post version 2.2.0 config files if they exist
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:

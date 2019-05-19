@@ -27,6 +27,9 @@ import itertools
 from .topology import load_topology
 from ..utils.asyncio import wait_run_in_executor
 
+import logging
+log = logging.getLogger(__name__)
+
 """
 Handle the import of project from a .gns3project
 """
@@ -126,6 +129,14 @@ async def import_project(controller, project_id, stream, location=None, name=Non
                     node["compute_id"] = "vm"
         else:
             # Round-robin through available compute resources.
+            # computes = []
+            # for compute_id in controller.computes:
+            #     compute = controller.get_compute(compute_id)
+            #     # only use the local compute or any connected compute
+            #     if compute_id == "local" or compute.connected:
+            #         computes.append(compute_id)
+            #     else:
+            #         log.warning(compute.name, "is not connected!")
             compute_nodes = itertools.cycle(controller.computes)
             for node in topology["topology"]["nodes"]:
                 node["compute_id"] = next(compute_nodes)

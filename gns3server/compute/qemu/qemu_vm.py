@@ -966,7 +966,10 @@ class QemuVM(BaseNode):
                         set_link_commands.append("set_link gns3-{} off".format(adapter_number))
                 else:
                     set_link_commands.append("set_link gns3-{} off".format(adapter_number))
-            await self._control_vm_commands(set_link_commands)
+
+            if "-loadvm" not in command_string:
+                # only set the link statuses if not restoring a previous VM state
+                await self._control_vm_commands(set_link_commands)
 
         try:
             await self.start_wrap_console()
@@ -1143,7 +1146,9 @@ class QemuVM(BaseNode):
         if not (await super().close()):
             return False
 
-        self.on_close = "power_off"
+        #FIXME: Don't wait for ACPI shutdown when closing the project, should we?
+        if self.on_close == "shutdown_signal":
+            self.on_close = "power_off"
         await self.stop()
 
         for adapter in self._ethernet_adapters:
@@ -1848,18 +1853,22 @@ class QemuVM(BaseNode):
                 if not os.path.exists(disk):
                     continue
                 output = await subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
-                json_data = json.loads(output)
-                if "snapshots" in json_data:
-                    for snapshot in json_data["snapshots"]:
-                        if snapshot["name"] == snapshot_name:
-                            # delete the snapshot
-                            command = [qemu_img_path, "snapshot", "-d", snapshot_name, disk]
-                            retcode = await self._qemu_img_exec(command)
-                            if retcode:
-                                stdout = self.read_qemu_img_stdout()
-                                log.warning("Could not delete saved VM state from disk {}: {}".format(disk, stdout))
-                            else:
-                                log.info("Deleted saved VM state from disk {}".format(disk))
+                if output:
+                    try:
+                        json_data = json.loads(output)
+                    except ValueError as e:
+                        raise QemuError("Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {}".format(e))
+                    if "snapshots" in json_data:
+                        for snapshot in json_data["snapshots"]:
+                            if snapshot["name"] == snapshot_name:
+                                # delete the snapshot
+                                command = [qemu_img_path, "snapshot", "-d", snapshot_name, disk]
+                                retcode = await self._qemu_img_exec(command)
+                                if retcode:
+                                    stdout = self.read_qemu_img_stdout()
+                                    log.warning("Could not delete saved VM state from disk {}: {}".format(disk, stdout))
+                                else:
+                                    log.info("Deleted saved VM state from disk {}".format(disk))
             except subprocess.SubprocessError as e:
                 raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
 
@@ -1879,14 +1888,19 @@ class QemuVM(BaseNode):
                 if not os.path.exists(disk):
                     continue
                 output = await subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
-                json_data = json.loads(output)
-                if "snapshots" in json_data:
-                    for snapshot in json_data["snapshots"]:
-                        if snapshot["name"] == snapshot_name:
-                            log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
-                                                                                                                          id=self.id,
-                                                                                                                          snapshot=snapshot_name))
-                            return ["-loadvm", snapshot_name]
+                if output:
+                    try:
+                        json_data = json.loads(output)
+                    except ValueError as e:
+                        raise QemuError("Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {}".format(e))
+                    if "snapshots" in json_data:
+                        for snapshot in json_data["snapshots"]:
+                            if snapshot["name"] == snapshot_name:
+                                log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
+                                                                                                                              id=self.id,
+                                                                                                                              snapshot=snapshot_name))
+                                return ["-loadvm", snapshot_name]
+
             except subprocess.SubprocessError as e:
                 raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
         return []
