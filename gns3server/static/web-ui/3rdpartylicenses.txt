@@ -98,6 +98,8 @@ THE SOFTWARE.
 
 @angular/material/table
 
+@angular/material/tabs
+
 @angular/material/toolbar
 
 @angular/material/tooltip
