@@ -342,7 +342,7 @@ class IOUVM(BaseNode):
     @iourc_content.setter
     def iourc_content(self, value):
 
-        if value is not None:
+        if value:
             # If we don't save the value in the ~/ the licence is lost at project
             # reload
             path = os.path.join(os.path.expanduser("~/"), ".iourc")
@@ -402,6 +402,7 @@ class IOUVM(BaseNode):
             raise IOUError("Invalid licence check setting")
 
         if server_wide_license_check is False:
+            log.warning("License check is explicitly disabled on this server")
             return
 
         config = configparser.ConfigParser()
@@ -508,7 +509,7 @@ class IOUVM(BaseNode):
 
             iourc_path = self.iourc_path
             if not iourc_path:
-                raise IOUError("Could not find an iourc file (IOU license)")
+                raise IOUError("Could not find an iourc file (IOU license), please configure an IOU license")
             if not os.path.isfile(iourc_path):
                 raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
 
@@ -528,8 +529,7 @@ class IOUVM(BaseNode):
 
             # created a environment variable pointing to the iourc file.
             env = os.environ.copy()
-
-            if "IOURC" not in os.environ:
+            if "IOURC" not in os.environ and iourc_path:
                 env["IOURC"] = iourc_path
 
             # create a symbolic link to the image to avoid IOU error "failed code signing checks"
