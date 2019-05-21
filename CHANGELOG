@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.0b1 21/05/2019
+
+* Upgrade GNS3 Web UI to v2019.2.0-alpha.3
+* Change behavior when an IOU license is verified. Fixes https://github.com/GNS3/gns3-server/issues/1555
+* Fix Qemu VM state support after closing a project and check for JSON data returned by qemu-img. Fixes #1591
+* Ensure Qemu monitor commands are executed. Ref #1582.
+* Set console type to "none" by default for Ethernet switches and add a warning if trying to use "telnet". Fixes https://github.com/GNS3/gns3-gui/issues/2776
+* Add %console-port% variable for additional Qemu options. Fixes https://github.com/GNS3/gns3-gui/issues/2786
+* Fix invalid reStructuredText for long description in setup.py
+* Support for additional persistent docker volumes
+
 ## 2.2.0a5 15/04/2019
 
 * Back to the major.minor version for config files. Ref https://github.com/GNS3/gns3-gui/issues/2756
