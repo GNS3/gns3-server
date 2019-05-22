@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.1.18 22/05/2019
+
+* Revert "Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3" Ref https://github.com/GNS3/gns3-server/issues/1583 Ref https://github.com/GNS3/gns3-server/issues/1592
+* Fix invalid reStructuredText for long description in setup.py
+
 ## 2.1.17 17/05/2019
 
 * Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3 This is to fix build issue for Ubuntu 19.04 package on Launchpad. Ref #1583 https://github.com/GNS3/gns3-gui/issues/2774
