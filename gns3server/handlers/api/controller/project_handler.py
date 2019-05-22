@@ -305,6 +305,10 @@ class ProjectHandler:
 
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
+        if request.query.get("include_snapshots", "no").lower() == "yes":
+            include_snapshots = True
+        else:
+            include_snapshots = False
         if request.query.get("include_images", "no").lower() == "yes":
             include_images = True
         else:
@@ -323,7 +327,7 @@ class ProjectHandler:
             begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
                 with aiozipstream.ZipFile(compression=compression) as zstream:
-                    await export_project(zstream, project, tmp_dir, include_images=include_images)
+                    await export_project(zstream, project, tmp_dir, include_snapshots=include_snapshots, include_images=include_images)
 
                     # We need to do that now because export could failed and raise an HTTP error
                     # that why response start need to be the later possible
