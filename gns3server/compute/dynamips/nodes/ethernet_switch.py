@@ -132,10 +132,11 @@ class EthernetSwitch(Device):
     @console_type.setter
     def console_type(self, console_type):
 
-        if console_type == "telnet":
-            self.project.emit("log.warning", {
-                "message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
-        self._console_type = console_type
+        if self._console_type != console_type:
+            if console_type == "telnet":
+                self.project.emit("log.warning", {
+                    "message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
+            self._console_type = console_type
 
     @property
     def ports_mapping(self):
