@@ -17,6 +17,8 @@
 
 import os
 import aiohttp
+import asyncio
+
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
@@ -26,7 +28,9 @@ log = logging.getLogger(__name__)
 
 
 class SymbolHandler:
-    """API entry points for symbols management."""
+    """
+    API entry points for symbols management.
+    """
 
     @Route.get(
         r"/symbols",
@@ -45,33 +49,65 @@ class SymbolHandler:
         status_codes={
             200: "Symbol returned"
         })
-    def raw(request, response):
+    async def raw(request, response):
 
         controller = Controller.instance()
         try:
-            yield from response.file(controller.symbols.get_path(request.match_info["symbol_id"]))
-        except (KeyError, FileNotFoundError, PermissionError):
+            await response.stream_file(controller.symbols.get_path(request.match_info["symbol_id"]))
+        except (KeyError, OSError) as e:
+            log.warning("Could not get symbol file: {}".format(e))
             response.set_status(404)
 
     @Route.post(
         r"/symbols/{symbol_id:.+}/raw",
         description="Write the symbol file",
         status_codes={
-            200: "Symbol returned"
+            200: "Symbol written"
         },
         raw=True)
-    def upload(request, response):
+    async def upload(request, response):
         controller = Controller.instance()
         path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
         try:
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
+                    try:
+                        chunk = await request.content.read(1024)
+                    except asyncio.TimeoutError:
+                        raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to symbol '{}'".format(path))
+                    if not chunk:
                         break
-                    f.write(packet)
-        except OSError as e:
+                    f.write(chunk)
+        except (UnicodeEncodeError, OSError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not write symbol file '{}': {}".format(path, e))
+
         # Reset the symbol list
         controller.symbols.list()
         response.set_status(204)
+
+    @Route.get(
+        r"/default_symbols",
+        description="List of default symbols",
+        status_codes={
+            200: "Default symbols list returned"
+        })
+    def list_default_symbols(request, response):
+
+        controller = Controller.instance()
+        response.json(controller.symbols.default_symbols())
+
+    # @Route.post(
+    #     r"/symbol_theme",
+    #     description="Create a new symbol theme",
+    #     status_codes={
+    #         201: "Appliance created",
+    #         400: "Invalid request"
+    #     },
+    #     input=APPLIANCE_CREATE_SCHEMA,
+    #     output=APPLIANCE_OBJECT_SCHEMA)
+    # def create(request, response):
+    #
+    #     controller = Controller.instance()
+    #     appliance = controller.add_appliance(request.json)
+    #     response.set_status(201)
+    #     response.json(appliance)

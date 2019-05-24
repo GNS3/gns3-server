@@ -11,7 +11,7 @@ Controller endpoints
 
 The controller manages everything, it is the central decision point
 and has a complete view of your network topologies, what nodes run on
-which compute server, the links between them etc.
+which compute, the links between them etc.
 
 This is the high level API which can be used by users to manually control
 the GNS3 backend. The controller will call the compute endpoints when needed.

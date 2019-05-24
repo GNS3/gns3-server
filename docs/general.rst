@@ -87,7 +87,7 @@ Notifications
 
 Notifications can be received from the server by listening to a HTTP stream or via a Websocket.
 
-Read :doc:`notifications` for more information
+Read :doc:`controller_notifications` and `project_notifications` for more information
 
 Previous versions
 =================

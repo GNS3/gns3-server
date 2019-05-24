@@ -20,9 +20,11 @@ import pytest
 import socket
 import asyncio
 import tempfile
+import weakref
 import shutil
 import os
 import sys
+import aiohttp
 from aiohttp import web
 from unittest.mock import patch
 
@@ -75,6 +77,16 @@ def _get_unused_port():
     return port
 
 
+@pytest.fixture
+async def client(aiohttp_client):
+    """
+    Return an helper allowing you to call the server without any prefix
+    """
+    app = web.Application()
+    for method, route, handler in Route.get_routes():
+        app.router.add_route(method, route, handler)
+    return await aiohttp_client(app)
+
 @pytest.yield_fixture
 def http_server(request, loop, port_manager, monkeypatch, controller):
     """A GNS3 server"""
@@ -83,14 +95,20 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
     for method, route, handler in Route.get_routes():
         app.router.add_route(method, route, handler)
 
+    # Keep a list of active websocket connections
+    app['websockets'] = weakref.WeakSet()
+
     host = "127.0.0.1"
 
     # We try multiple time. Because on Travis test can fail when because the port is taken by someone else
     for i in range(0, 5):
         port = _get_unused_port()
         try:
-            srv = loop.create_server(app.make_handler(), host, port)
-            srv = loop.run_until_complete(srv)
+
+            runner = web.AppRunner(app)
+            loop.run_until_complete(runner.setup())
+            site = web.TCPSite(runner, host, port)
+            loop.run_until_complete(site.start())
         except OSError:
             pass
         else:
@@ -98,13 +116,17 @@ def http_server(request, loop, port_manager, monkeypatch, controller):
 
     yield (host, port)
 
+    # close websocket connections
+    for ws in set(app['websockets']):
+        loop.run_until_complete(ws.close(code=aiohttp.WSCloseCode.GOING_AWAY, message='Server shutdown'))
+
     loop.run_until_complete(controller.stop())
     for module in MODULES:
         instance = module.instance()
         monkeypatch.setattr('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.close', lambda self: True)
         loop.run_until_complete(instance.unload())
-    srv.close()
-    srv.wait_closed()
+
+    loop.run_until_complete(runner.cleanup())
 
 
 @pytest.fixture
@@ -179,7 +201,7 @@ def controller(tmpdir, controller_config_path):
     Controller._instance = None
     controller = Controller.instance()
     controller._config_file = controller_config_path
-    controller._settings = {}
+    controller._config_loaded = True
     return controller
 
 
@@ -314,7 +336,7 @@ def async_run(loop):
     """
     Shortcut for running in asyncio loop
     """
-    return lambda x: loop.run_until_complete(asyncio.async(x))
+    return lambda x: loop.run_until_complete(asyncio.ensure_future(x))
 
 
 @pytest.yield_fixture

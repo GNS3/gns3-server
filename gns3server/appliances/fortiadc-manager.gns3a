@@ -1,0 +1,53 @@
+{
+    "name": "FortiADC Manager",
+    "category": "guest",
+    "description": "FortiADC Manager allows you to use a web- based user interface to configure remote FortiADC devices. It allows you to simplify and speed up the FortiADC deployment and update process by maintaining configuration templates and policy packages that you can modify and apply as needed.",
+    "vendor_name": "Fortinet",
+    "vendor_url": "http://www.fortinet.com/",
+    "documentation_url": "https://docs.fortinet.com/fortiadc-manager/",
+    "product_name": "FortiADC Manager",
+    "product_url": "https://www.fortinet.com/products/application-delivery-controller/fortiadc.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username is admin, no password is set.",
+    "port_name_format": "Port{port1}",
+    "symbol": "fortinet.svg",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "FADCManager-KVM-V500-build0020-FORTINET.out.kvm-boot.qcow2",
+            "version": "5.2.0",
+            "md5sum": "a79d04040848b704ce4efe925518fd3f",
+            "filesize": 70057984,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FADCManager-KVM-v500-data.qcow2",
+            "version": "5.x",
+            "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
+            "filesize": 30998528,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.2.0",
+            "images": {
+                "hda_disk_image": "FADCManager-KVM-V500-build0020-FORTINET.out.kvm-boot.qcow2",
+                "hdb_disk_image": "FADCManager-KVM-v500-data.qcow2"
+            }
+        }
+    ]
+}

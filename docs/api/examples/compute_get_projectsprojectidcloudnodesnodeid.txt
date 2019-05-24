@@ -1,78 +1,100 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/870c464a-d236-4a5e-8a1d-87893c493f4c'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/62a9389c-9bfd-4fd7-986d-ba32879fbe91'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/870c464a-d236-4a5e-8a1d-87893c493f4c HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/62a9389c-9bfd-4fd7-986d-ba32879fbe91 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1584
+Content-Length: 2080
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:42 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:47:36 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
     "interfaces": [
         {
-            "name": "bridge0",
+            "name": "docker0",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "en0",
+            "name": "lo",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet0",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet1",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vboxnet2",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "virbr0",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "virbr0-nic",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet1",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet2",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet3",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet4",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "vmnet8",
+            "special": true,
+            "type": "ethernet"
+        },
+        {
+            "name": "wlp58s0",
             "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "en1",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "en2",
-            "special": false,
-            "type": "ethernet"
-        },
-        {
-            "name": "fw0",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "lo0",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "p2p0",
-            "special": true,
             "type": "ethernet"
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/builtin/870c464a-d236-4a5e-8a1d-87893c493f4c",
-    "node_id": "870c464a-d236-4a5e-8a1d-87893c493f4c",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/builtin/62a9389c-9bfd-4fd7-986d-ba32879fbe91",
+    "node_id": "62a9389c-9bfd-4fd7-986d-ba32879fbe91",
     "ports_mapping": [
         {
-            "interface": "en0",
-            "name": "en0",
+            "interface": "wlp58s0",
+            "name": "wlp58s0",
             "port_number": 0,
-            "type": "ethernet"
-        },
-        {
-            "interface": "en1",
-            "name": "en1",
-            "port_number": 1,
-            "type": "ethernet"
-        },
-        {
-            "interface": "en2",
-            "name": "en2",
-            "port_number": 2,
             "type": "ethernet"
         }
     ],
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
+    "remote_console_host": "",
+    "remote_console_http_path": "/",
+    "remote_console_port": 23,
+    "remote_console_type": "none",
     "status": "started"
 }

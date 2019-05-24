@@ -46,6 +46,10 @@ NIO_SCHEMA = {
                     "minimum": 1,
                     "maximum": 65535
                 },
+                "suspend": {
+                    "type": "boolean",
+                    "description": "Suspend the link"
+                },
                 "filters": FILTER_OBJECT_SCHEMA
             },
             "required": ["type", "lport", "rhost", "rport"],

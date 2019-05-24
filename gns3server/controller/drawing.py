@@ -37,7 +37,7 @@ class Drawing:
     text, images, rectangle... They are pure SVG elements.
     """
 
-    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=0, rotation=0):
+    def __init__(self, project, drawing_id=None, svg="<svg></svg>", x=0, y=0, z=2, locked=False, rotation=0):
         self._project = project
         if drawing_id is None:
             self._id = str(uuid.uuid4())
@@ -49,13 +49,14 @@ class Drawing:
         self._y = y
         self._z = z
         self._rotation = rotation
+        self._locked = locked
 
     @property
     def id(self):
         return self._id
 
     @property
-    def ressource_filename(self):
+    def resource_filename(self):
         """
         If the svg content has been dump to an external file return is name otherwise None
         """
@@ -158,6 +159,14 @@ class Drawing:
         self._z = val
 
     @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, val):
+        self._locked = val
+
+    @property
     def rotation(self):
         return self._rotation
 
@@ -165,8 +174,7 @@ class Drawing:
     def rotation(self, val):
         self._rotation = val
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    async def update(self, **kwargs):
         """
         Update the drawing
 
@@ -186,7 +194,7 @@ class Drawing:
         data = self.__json__()
         if not svg_changed:
             del data["svg"]
-        self._project.controller.notification.emit("drawing.updated", data)
+        self._project.emit_notification("drawing.updated", data)
         self._project.dump()
 
     def __json__(self, topology_dump=False):
@@ -199,6 +207,7 @@ class Drawing:
                 "x": self._x,
                 "y": self._y,
                 "z": self._z,
+                "locked": self._locked,
                 "rotation": self._rotation,
                 "svg": self._svg
             }
@@ -208,6 +217,7 @@ class Drawing:
             "x": self._x,
             "y": self._y,
             "z": self._z,
+            "locked": self._locked,
             "rotation": self._rotation,
             "svg": self.svg
         }

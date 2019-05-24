@@ -91,7 +91,6 @@ def parse_arguments(argv):
     parser.add_argument("--host", help="run on the given host/IP address")
     parser.add_argument("--port", help="run on the given port", type=int)
     parser.add_argument("--ssl", action="store_true", help="run in SSL mode")
-    parser.add_argument("--no-ubridge", action="store_false", help="do not use ubridge to handle node connections")
     parser.add_argument("--config", help="Configuration file")
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
@@ -183,7 +182,7 @@ def kill_ghosts():
     """
     Kill process from previous GNS3 session
     """
-    detect_process = ["vpcs", "ubridge", "dynamips"]
+    detect_process = ["vpcs", "traceng", "ubridge", "dynamips"]
     for proc in psutil.process_iter():
         try:
             name = proc.name().lower().split(".")[0]
@@ -223,9 +222,9 @@ def run():
     if server_config.getboolean("local"):
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
-    # we only support Python 3 version >= 3.4
-    if sys.version_info < (3, 4):
-        raise SystemExit("Python 3.4 or higher is required")
+    # we only support Python 3 version >= 3.5
+    if sys.version_info < (3, 5, 3):
+        raise SystemExit("Python 3.5.3 or higher is required")
 
     user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
                   major=sys.version_info[0], minor=sys.version_info[1],

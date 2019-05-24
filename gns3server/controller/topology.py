@@ -37,7 +37,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 8
+GNS3_FILE_FORMAT_REVISION = 9
 
 
 def _check_topology_schema(topo):
@@ -83,7 +83,11 @@ def project_to_topology(project):
         "show_layers": project.show_layers,
         "snap_to_grid": project.snap_to_grid,
         "show_grid": project.show_grid,
+        "grid_size": project.grid_size,
+        "drawing_grid_size": project.drawing_grid_size,
         "show_interface_labels": project.show_interface_labels,
+        "variables": project.variables,
+        "supplier": project.supplier,
         "topology": {
             "nodes": [],
             "links": [],
@@ -151,6 +155,18 @@ def load_topology(path):
     if topo["revision"] < 8:
         topo = _convert_2_0_0(topo, path)
 
+    # Version before GNS3 2.1
+    if topo["revision"] < 9:
+        topo = _convert_2_1_0(topo, path)
+
+    # Version GNS3 2.2 dev (for project created with 2.2dev).
+    # Appliance ID has been replaced by Template ID
+    if topo["revision"] == 9:
+        for node in topo.get("topology", {}).get("nodes", []):
+            if "appliance_id" in node:
+                node["template_id"] = node["appliance_id"]
+                del node["appliance_id"]
+
     try:
         _check_topology_schema(topo)
     except aiohttp.web.HTTPConflict as e:
@@ -161,8 +177,36 @@ def load_topology(path):
         try:
             with open(path, "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
-        except (OSError) as e:
+        except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
+    return topo
+
+
+def _convert_2_1_0(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.1.x to 2.2
+
+    Changes:
+     * Removed acpi_shutdown option from Qemu, VMware and VirtualBox
+    """
+    topo["revision"] = 9
+
+    if "grid_size" in topo:
+        # drawing_grid_size should be the same size as grid_size
+        # to avoid overlapping grids
+        topo["drawing_grid_size"] = topo["grid_size"]
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        if "properties" in node:
+            if node["node_type"] in ("qemu", "vmware", "virtualbox"):
+                if "acpi_shutdown" in node["properties"]:
+                    if node["properties"]["acpi_shutdown"] is True:
+                        node["properties"]["on_close"] = "save_vm_sate"
+                    else:
+                        node["properties"]["on_close"] = "power_off"
+                    del node["properties"]["acpi_shutdown"]
+                if "save_vm_state" in node["properties"]:
+                    del node["properties"]["save_vm_state"]
     return topo
 
 
@@ -406,7 +450,7 @@ def _convert_1_3_later(topo, topo_path):
             symbol = old_node.get("symbol", ":/symbols/computer.svg")
             old_node["ports"] = _create_cloud(node, old_node, symbol)
         else:
-            raise NotImplementedError("Conversion of {} is not supported".format(old_node["type"]))
+            raise aiohttp.web.HTTPConflict(text="Conversion of {} is not supported".format(old_node["type"]))
 
         for prop in old_node.get("properties", {}):
             if prop not in ["console", "name", "console_type", "console_host", "use_ubridge"]:
@@ -605,13 +649,13 @@ def _create_cloud(node, old_node, icon):
         elif old_port["name"].startswith("nio_nat"):
             continue
         else:
-            raise NotImplementedError("The conversion of cloud with {} is not supported".format(old_port["name"]))
+            raise aiohttp.web.HTTPConflict(text="The conversion of cloud with {} is not supported".format(old_port["name"]))
 
         if port_type == "udp":
             try:
                 _, lport, rhost, rport = old_port["name"].split(":")
             except ValueError:
-                raise NotImplementedError("UDP tunnel using IPV6 is not supported in cloud")
+                raise aiohttp.web.HTTPConflict(text="UDP tunnel using IPV6 is not supported in cloud")
             port = {
                 "name": "UDP tunnel {}".format(len(ports) + 1),
                 "port_number": len(ports) + 1,
@@ -642,7 +686,7 @@ def _convert_snapshots(topo_dir):
     old_snapshots_dir = os.path.join(topo_dir, "project-files", "snapshots")
     if os.path.exists(old_snapshots_dir):
         new_snapshots_dir = os.path.join(topo_dir, "snapshots")
-        os.makedirs(new_snapshots_dir)
+        os.makedirs(new_snapshots_dir, exist_ok=True)
 
         for snapshot in os.listdir(old_snapshots_dir):
             snapshot_dir = os.path.join(old_snapshots_dir, snapshot)

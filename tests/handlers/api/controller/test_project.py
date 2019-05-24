@@ -67,6 +67,31 @@ def test_create_project_with_uuid(http_controller):
     assert response.json["name"] == "test"
 
 
+def test_create_project_with_variables(http_controller):
+    variables = [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f", "variables": variables}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    assert response.json["variables"] ==  [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+
+
+def test_create_project_with_supplier(http_controller):
+    supplier = {
+        'logo': 'logo.png',
+        'url': 'http://example.com'
+    }
+    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f", "supplier": supplier}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    assert response.json["supplier"] == supplier
+
+
 def test_update_project(http_controller):
     query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
     response = http_controller.post("/projects", query)
@@ -77,6 +102,20 @@ def test_update_project(http_controller):
     response = http_controller.put("/projects/10010203-0405-0607-0809-0a0b0c0d0e0f", query, example=True)
     assert response.status == 200
     assert response.json["name"] == "test2"
+
+
+def test_update_project_with_variables(http_controller):
+    variables = [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+    query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f", "variables": variables}
+    response = http_controller.post("/projects", query)
+    assert response.status == 201
+    query = {"name": "test2"}
+    response = http_controller.put("/projects/10010203-0405-0607-0809-0a0b0c0d0e0f", query, example=True)
+    assert response.status == 200
+    assert response.json["variables"] == variables
 
 
 def test_list_projects(http_controller, tmpdir):
@@ -130,17 +169,16 @@ def test_load_project(http_controller, project, config):
 
 
 def test_notification(http_controller, project, controller, loop, async_run):
-    @asyncio.coroutine
-    def go():
-        connector = aiohttp.TCPConnector()
-        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector)
-        response.body = yield from response.content.read(200)
-        controller.notification.emit("node.created", {"a": "b"})
-        response.body += yield from response.content.readany()
-        response.close()
-        return response
 
-    response = async_run(asyncio.async(go()))
+    async def go():
+        connector = aiohttp.TCPConnector()
+        async with aiohttp.request("GET", http_controller.get_url("/projects/{project_id}/notifications".format(project_id=project.id)), connector=connector) as response:
+            response.body = await response.content.read(200)
+            controller.notification.project_emit("node.created", {"a": "b"})
+            response.body += await response.content.readany()
+            return response
+
+    response = async_run(asyncio.ensure_future(go()))
     assert response.status == 200
     assert b'"action": "ping"' in response.body
     assert b'"cpu_usage_percent"' in response.body
@@ -159,14 +197,14 @@ def test_notification_ws(http_controller, controller, project, async_run):
     answer = json.loads(answer.data)
     assert answer["action"] == "ping"
 
-    controller.notification.emit("test", {})
+    controller.notification.project_emit("test", {})
 
     answer = async_run(ws.receive())
     answer = json.loads(answer.data)
     assert answer["action"] == "test"
 
     async_run(http_controller.close())
-    ws.close()
+    async_run(ws.close())
     assert project.status == "opened"
 
 
@@ -197,7 +235,7 @@ def test_export_with_images(http_controller, tmpdir, loop, project):
         json.dump(topology, f)
 
     with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-        response = http_controller.get("/projects/{project_id}/export?include_images=1".format(project_id=project.id), raw=True)
+        response = http_controller.get("/projects/{project_id}/export?include_images=yes".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
     assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)

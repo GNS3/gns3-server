@@ -5,9 +5,9 @@
 
 GET /v2/compute/debug
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Return debug informations about the compute
+Return debug information about the compute
 
 Response status codes
 **********************
-- **201**: Writed
+- **201**: Written
 

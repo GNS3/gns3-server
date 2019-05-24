@@ -41,8 +41,7 @@ def test_create(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -54,8 +53,7 @@ def test_create(async_run, project):
     async_run(link.add_node(node1, 0, 4))
     async_run(link.update_filters({"latency": [10]}))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -64,8 +62,7 @@ def test_create(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -85,14 +82,16 @@ def test_create(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"latency": [10]}
+        "filters": {"latency": [10]},
+        "suspend": False,
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
 
 
@@ -105,8 +104,7 @@ def test_create_one_side_failure(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -117,8 +115,7 @@ def test_create_one_side_failure(async_run, project):
     link = UDPLink(project)
     async_run(link.add_node(node1, 0, 4))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -127,8 +124,7 @@ def test_create_one_side_failure(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -151,14 +147,16 @@ def test_create_one_side_failure(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": False,
     }, timeout=120)
     # The link creation has failed we rollback the nio
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
@@ -268,27 +266,6 @@ def test_capture(async_run, project):
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/stop_capture".format(project.id, node_vpcs.id))
 
 
-def test_read_pcap_from_source(project, async_run):
-    compute1 = MagicMock()
-
-    node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
-    node_vpcs._status = "started"
-    node_vpcs._ports = [EthernetPort("E0", 0, 0, 4)]
-    node_iou = Node(project, compute1, "I1", node_type="iou")
-    node_iou._ports = [EthernetPort("E0", 0, 3, 1)]
-
-    link = UDPLink(project)
-    link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_vpcs, 0, 4))
-    async_run(link.add_node(node_iou, 3, 1))
-
-    capture = async_run(link.start_capture())
-    assert link._capture_node is not None
-
-    async_run(link.read_pcap_from_source())
-    link._capture_node["node"].compute.stream_file.assert_called_with(project, "tmp/captures/" + link._capture_file_name)
-
-
 def test_node_updated(project, async_run):
     """
     If a node stop when capturing we stop the capture
@@ -318,8 +295,7 @@ def test_update(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -331,8 +307,7 @@ def test_update(async_run, project):
     async_run(link.add_node(node1, 0, 4))
     async_run(link.update_filters({"latency": [10]}))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -341,8 +316,7 @@ def test_update(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -362,6 +336,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {"latency": [10]}
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
@@ -369,6 +344,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {}
     }, timeout=120)
 
@@ -379,6 +355,7 @@ def test_update(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
+        "suspend": False,
         "filters": {
             "drop": [5],
             "bpf": ["icmp[icmptype] == 8"]
@@ -395,8 +372,7 @@ def test_update_suspend(async_run, project):
     node2 = Node(project, compute2, "node2", node_type="vpcs")
     node2._ports = [EthernetPort("E0", 0, 3, 1)]
 
-    @asyncio.coroutine
-    def subnet_callback(compute2):
+    async def subnet_callback(compute2):
         """
         Fake subnet callback
         """
@@ -409,8 +385,7 @@ def test_update_suspend(async_run, project):
     async_run(link.update_filters({"latency": [10]}))
     async_run(link.update_suspend(True))
 
-    @asyncio.coroutine
-    def compute1_callback(path, data={}, **kwargs):
+    async def compute1_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -419,8 +394,7 @@ def test_update_suspend(async_run, project):
             response.json = {"udp_port": 1024}
             return response
 
-    @asyncio.coroutine
-    def compute2_callback(path, data={}, **kwargs):
+    async def compute2_callback(path, data={}, **kwargs):
         """
         Fake server
         """
@@ -440,12 +414,14 @@ def test_update_suspend(async_run, project):
         "rhost": "192.168.1.2",
         "rport": 2048,
         "type": "nio_udp",
-        "filters": {"frequency_drop": [-1]}
+        "filters": {"frequency_drop": [-1]},
+        "suspend": True
     }, timeout=120)
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
         "rport": 1024,
         "type": "nio_udp",
-        "filters": {}
+        "filters": {},
+        "suspend": True
     }, timeout=120)

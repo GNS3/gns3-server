@@ -1,0 +1,64 @@
+{
+    "name": "VOSS VM",
+    "category": "multilayer_switch",
+    "description": "The VOSS VM is a software emulation of a VSP8K switch.",
+    "vendor_name": "Extreme Networks",
+    "vendor_url": "http://www.extremenetworks.com",
+    "documentation_url": "http://www.extremenetworks.com/support/documentation",
+    "product_name": "VOSS_VM",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "Extreme Networks",
+    "maintainer_email": "voss@extremenetworks.com",
+    "usage": "Boot up and login is rwa/rwa",
+    "symbol": ":/symbols/multilayer_switch.svg",
+    "first_port_name": "Mgmt",
+    "port_name_format": "1/{port1}",
+    "qemu":
+    {
+        "adapter_type": "e1000",
+        "adapters": 9,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "i386",
+        "console_type": "telnet",
+        "kvm": "allow",
+        "options": "-nographic"
+    },
+
+    "images":
+    [
+        {
+            "filename": "VOSSGNS3.7.1.0.0.qcow2",
+            "version": "voss_7.1.0.0",
+            "md5sum": "7bb2974efe1a1ab857debd9fa894dbe7",
+            "filesize": 193724416,
+            "direct_download_url": "https://stackingtool.extremenetworks.com/github/VOSSGNS3.7.1.0.0.qcow2"
+        },
+		{
+            "filename": "VOSSGNS3.7.0.0.0.img",
+            "version": "voss_7.0.0.0",
+            "md5sum": "65fe97461156aa88c836a90be1287649",
+            "filesize": 419430400,
+            "direct_download_url": "https://stackingtool.extremenetworks.com/github/VOSSGNS3.7.0.0.0.img"
+    	}
+    ],
+
+    "versions":
+    [
+        {
+            "name": "7.1.0.0",
+            "images":
+            {
+                "hda_disk_image": "VOSSGNS3.7.1.0.0.qcow2"
+            }
+        },
+		{
+            "name": "7.0.0.0",
+            "images": {
+                "hda_disk_image": "VOSSGNS3.7.0.0.0.img"
+        	}
+        }
+    ]
+
+}

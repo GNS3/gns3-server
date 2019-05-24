@@ -54,14 +54,15 @@ class IOUHandler:
         description="Create a new IOU instance",
         input=IOU_CREATE_SCHEMA,
         output=IOU_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         iou = IOU.instance()
-        vm = yield from iou.create_node(request.json.pop("name"),
+        vm = await iou.create_node(request.json.pop("name"),
                                         request.match_info["project_id"],
                                         request.json.get("node_id"),
                                         path=request.json.get("path"),
-                                        console=request.json.get("console"))
+                                        console=request.json.get("console"),
+                                        console_type=request.json.get("console_type", "telnet"))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
@@ -111,7 +112,7 @@ class IOUHandler:
         description="Update an IOU instance",
         input=IOU_OBJECT_SCHEMA,
         output=IOU_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -125,7 +126,7 @@ class IOUHandler:
         if vm.use_default_iou_values:
             # update the default IOU values in case the image or use_default_iou_values have changed
             # this is important to have the correct NVRAM amount in order to correctly push the configs to the NVRAM
-            yield from vm.update_default_iou_values()
+            await vm.update_default_iou_values()
         vm.updated()
         response.json(vm)
 
@@ -141,9 +142,9 @@ class IOUHandler:
             404: "Instance doesn't exist"
         },
         description="Delete an IOU instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        yield from IOU.instance().delete_node(request.match_info["node_id"])
+        await IOU.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -157,9 +158,9 @@ class IOUHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a IOU instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from IOU.instance().duplicate_node(
+        new_node = await IOU.instance().duplicate_node(
             request.match_info["node_id"],
             request.json["destination_node_id"]
         )
@@ -180,7 +181,7 @@ class IOUHandler:
         input=IOU_START_SCHEMA,
         output=IOU_OBJECT_SCHEMA,
         description="Start an IOU instance")
-    def start(request, response):
+    async def start(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -189,7 +190,7 @@ class IOUHandler:
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
 
-        yield from vm.start()
+        await vm.start()
         response.json(vm)
 
     @Route.post(
@@ -204,11 +205,11 @@ class IOUHandler:
             404: "Instance doesn't exist"
         },
         description="Stop an IOU instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -241,11 +242,11 @@ class IOUHandler:
             404: "Instance doesn't exist"
         },
         description="Reload an IOU instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -264,7 +265,7 @@ class IOUHandler:
         description="Add a NIO to a IOU instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -272,7 +273,7 @@ class IOUHandler:
         if nio_type not in ("nio_udp", "nio_tap", "nio_ethernet", "nio_generic_ethernet"):
             raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = iou_manager.create_nio(request.json)
-        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
+        await vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -289,24 +290,21 @@ class IOUHandler:
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
-        description="Update a NIO from a IOU instance",
+        description="Update a NIO on an IOU instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def update_nio(request, response):
+    async def update_nio(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        nio = vm.adapters[adapter_number].get_nio(port_number)
-        if "filters" in request.json and nio:
+        nio = vm.get_nio(adapter_number, port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        yield from vm.adapter_update_nio_binding(
-            adapter_number,
-            port_number,
-            nio)
+        await vm.adapter_update_nio_binding(adapter_number, port_number, nio)
         response.set_status(201)
-        response.json(nio)
+        response.json(request.json)
 
     @Route.delete(
         r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
@@ -322,11 +320,11 @@ class IOUHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a IOU instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
+        await vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]), int(request.match_info["port_number"]))
         response.set_status(204)
 
     @Route.post(
@@ -345,14 +343,14 @@ class IOUHandler:
         },
         description="Start a packet capture on an IOU VM instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from vm.start_capture(adapter_number, port_number, pcap_file_path, request.json["data_link_type"])
+        await vm.start_capture(adapter_number, port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": str(pcap_file_path)})
 
     @Route.post(
@@ -370,15 +368,37 @@ class IOUHandler:
             409: "VM not started"
         },
         description="Stop a packet capture on an IOU VM instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         iou_manager = IOU.instance()
         vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
         adapter_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.stop_capture(adapter_number, port_number)
+        await vm.stop_capture(adapter_number, port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/iou/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        iou_manager = IOU.instance()
+        vm = iou_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(adapter_number, port_number)
+        await iou_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.get(
         r"/iou/images",
@@ -387,10 +407,10 @@ class IOUHandler:
         },
         description="Retrieve the list of IOU images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_iou_images(request, response):
+    async def list_iou_images(request, response):
 
         iou_manager = IOU.instance()
-        images = yield from iou_manager.list_images()
+        images = await iou_manager.list_images()
         response.set_status(200)
         response.json(images)
 
@@ -404,10 +424,10 @@ class IOUHandler:
         },
         raw=True,
         description="Upload an IOU image")
-    def upload_image(request, response):
+    async def upload_image(request, response):
 
         iou_manager = IOU.instance()
-        yield from iou_manager.write_image(request.match_info["filename"], request.content)
+        await iou_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
 
 
@@ -421,7 +441,7 @@ class IOUHandler:
         },
         raw=True,
         description="Download an IOU image")
-    def download_image(request, response):
+    async def download_image(request, response):
         filename = request.match_info["filename"]
 
         iou_manager = IOU.instance()
@@ -431,4 +451,4 @@ class IOUHandler:
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        yield from response.file(image_path)
+        await response.stream_file(image_path)

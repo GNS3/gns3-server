@@ -49,3 +49,11 @@ class NetworkHandler:
 
         network_interfaces = interfaces()
         response.json(network_interfaces)
+
+    @Route.get(
+        r"/network/ports",
+        description="List all the ports used by the server")
+    def network_ports(request, response):
+
+        m = PortManager.instance()
+        response.json(m)

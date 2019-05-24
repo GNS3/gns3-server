@@ -2,9 +2,11 @@
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
+    "grid_size": 75,
     "name": "test2",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp3n7ijfjb/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
+    "path": "/tmp/tmpzsyyfzvu/projects/10010203-0405-0607-0809-0a0b0c0d0e0f",
     "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f",
     "scene_height": 1000,
     "scene_width": 2000,
@@ -13,5 +15,15 @@
     "show_layers": false,
     "snap_to_grid": false,
     "status": "opened",
+    "supplier": null,
+    "variables": [
+        {
+            "name": "TEST1"
+        },
+        {
+            "name": "TEST2",
+            "value": "value1"
+        }
+    ],
     "zoom": 100
 }

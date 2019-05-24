@@ -20,3 +20,9 @@ Response status codes
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 
+Sample session
+***************
+
+
+.. literalinclude:: ../../../examples/compute_post_projectsprojectidvmwarenodesnodeidadaptersadapternumberdportsportnumberdstopcapture.txt
+

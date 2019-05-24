@@ -19,12 +19,20 @@
 import os
 import uuid
 import shutil
-import asyncio
+import tempfile
+import aiofiles
+import zipfile
+import time
 import aiohttp.web
 from datetime import datetime, timezone
 
-
+from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import aiozipstream
+from .export_project import export_project
 from .import_project import import_project
+
+import logging
+log = logging.getLogger(__name__)
 
 
 # The string use to extract the date from the filename
@@ -71,25 +79,54 @@ class Snapshot:
     def created_at(self):
         return int(self._created_at)
 
-    @asyncio.coroutine
-    def restore(self):
+    async def create(self):
+        """
+        Create the snapshot
+        """
+
+        if os.path.exists(self.path):
+            raise aiohttp.web.HTTPConflict(text="The snapshot file '{}' already exists".format(self.name))
+
+        snapshot_directory = os.path.join(self._project.path, "snapshots")
+        try:
+            os.makedirs(snapshot_directory, exist_ok=True)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not create the snapshot directory '{}': {}".format(snapshot_directory, e))
+
+        try:
+            begin = time.time()
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Do not compress the snapshots
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                    await export_project(zstream, self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                    async with aiofiles.open(self.path, 'wb') as f:
+                        async for chunk in zstream:
+                            await f.write(chunk)
+            log.info("Snapshot '{}' created in {:.4f} seconds".format(self.name, time.time() - begin))
+        except (ValueError, OSError, RuntimeError) as e:
+            raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
+
+    async def restore(self):
         """
         Restore the snapshot
         """
 
-        yield from self._project.delete_on_computes()
-        # We don't send close notif to clients because the close / open dance is purely internal
-        yield from self._project.close(ignore_notification=True)
-        self._project.controller.notification.emit("snapshot.restored", self.__json__())
+        await self._project.delete_on_computes()
+        # We don't send close notification to clients because the close / open dance is purely internal
+        await self._project.close(ignore_notification=True)
+
         try:
-            if os.path.exists(os.path.join(self._project.path, "project-files")):
-                shutil.rmtree(os.path.join(self._project.path, "project-files"))
+            # delete the current project files
+            project_files_path = os.path.join(self._project.path, "project-files")
+            if os.path.exists(project_files_path):
+                await wait_run_in_executor(shutil.rmtree, project_files_path)
             with open(self._path, "rb") as f:
-                project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
+                project = await import_project(self._project.controller, self._project.id, f, location=self._project.path)
         except (OSError, PermissionError) as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
-        yield from project.open()
-        return project
+        await project.open()
+        self._project.emit_notification("snapshot.restored", self.__json__())
+        return self._project
 
     def __json__(self):
         return {

@@ -39,13 +39,12 @@ def test_query_success(loop, vm):
     response.status = 200
     response.headers = {'CONTENT-TYPE': 'application/json'}
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b'{"c": false}'
 
     response.read.side_effect = read
     vm._session.request = AsyncioMagicMock(return_value=response)
-    data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+    data = loop.run_until_complete(asyncio.ensure_future(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
                                            'http://docker/v1.25/test',
                                            data='{"a": true}',
@@ -61,14 +60,13 @@ def test_query_error(loop, vm):
     response = MagicMock()
     response.status = 404
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b"NOT FOUND"
 
     response.read.side_effect = read
     vm._session.request = AsyncioMagicMock(return_value=response)
     with pytest.raises(DockerError):
-        data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+        data = loop.run_until_complete(asyncio.ensure_future(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
                                            'http://docker/v1.25/test',
                                            data='{"a": true}',
@@ -82,14 +80,13 @@ def test_query_error_json(loop, vm):
     response = MagicMock()
     response.status = 404
 
-    @asyncio.coroutine
-    def read():
+    async def read():
         return b'{"message": "Error"}'
 
     response.read.side_effect = read
     vm._session.request = AsyncioMagicMock(return_value=response)
     with pytest.raises(DockerError):
-        data = loop.run_until_complete(asyncio.async(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
+        data = loop.run_until_complete(asyncio.ensure_future(vm.query("POST", "test", data={"a": True}, params={"b": 1})))
     vm._session.request.assert_called_with('POST',
                                            'http://docker/v1.25/test',
                                            data='{"a": true}',
@@ -126,7 +123,7 @@ def test_list_images(loop):
     ]
 
     with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
-        images = loop.run_until_complete(asyncio.async(Docker.instance().list_images()))
+        images = loop.run_until_complete(asyncio.ensure_future(Docker.instance().list_images()))
         mock.assert_called_with("GET", "images/json", params={"all": 0})
     assert len(images) == 5
     assert {"image": "ubuntu:12.04"} in images
@@ -145,8 +142,7 @@ def test_pull_image(loop):
         def __init__(self):
             self._read = -1
 
-        @asyncio.coroutine
-        def read(self, size):
+        async def read(self, size):
             self._read += 1
             if self._read == 0:
                 return b'{"progress": "0/100",'
@@ -160,7 +156,7 @@ def test_pull_image(loop):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query", side_effect=DockerHttp404Error("404")):
         with asyncio_patch("gns3server.compute.docker.Docker.http_query", return_value=mock_query) as mock:
-            images = loop.run_until_complete(asyncio.async(Docker.instance().pull_image("ubuntu")))
+            images = loop.run_until_complete(asyncio.ensure_future(Docker.instance().pull_image("ubuntu")))
             mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
 
 
@@ -174,7 +170,7 @@ def test_docker_check_connection_docker_minimum_version(vm, loop):
         asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
         vm._connected = False
         with pytest.raises(DockerError):
-            loop.run_until_complete(asyncio.async(vm._check_connection()))
+            loop.run_until_complete(asyncio.ensure_future(vm._check_connection()))
 
 
 def test_docker_check_connection_docker_preferred_version_against_newer(vm, loop):
@@ -185,7 +181,7 @@ def test_docker_check_connection_docker_preferred_version_against_newer(vm, loop
     with patch("gns3server.compute.docker.Docker.connector"), \
         asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
         vm._connected = False
-        loop.run_until_complete(asyncio.async(vm._check_connection()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_connection()))
         assert vm._api_version == DOCKER_PREFERRED_API_VERSION
 
 
@@ -197,5 +193,5 @@ def test_docker_check_connection_docker_preferred_version_against_older(vm, loop
     with patch("gns3server.compute.docker.Docker.connector"), \
         asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
         vm._connected = False
-        loop.run_until_complete(asyncio.async(vm._check_connection()))
+        loop.run_until_complete(asyncio.ensure_future(vm._check_connection()))
         assert vm._api_version == DOCKER_MINIMUM_API_VERSION

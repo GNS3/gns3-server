@@ -6,74 +6,128 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1461
+Content-Length: 2933
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:54 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:47:58 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/network/interfaces
 
 [
     {
-        "id": "bridge0",
-        "ip_address": "",
-        "mac_address": "ca:2a:14:12:34:00",
-        "name": "bridge0",
-        "netmask": "",
+        "id": "docker0",
+        "ip_address": "172.17.0.1",
+        "mac_address": "02:42:c5:7b:84:0b",
+        "name": "docker0",
+        "netmask": "255.255.0.0",
         "special": true,
         "type": "ethernet"
     },
     {
-        "id": "en0",
-        "ip_address": "",
-        "mac_address": "c8:2a:14:21:cf:c8",
-        "name": "en0",
-        "netmask": "",
-        "special": false,
-        "type": "ethernet"
-    },
-    {
-        "id": "en1",
-        "ip_address": "192.168.1.10",
-        "mac_address": "10:9a:dd:a4:f1:6a",
-        "name": "en1",
-        "netmask": "255.255.255.0",
-        "special": false,
-        "type": "ethernet"
-    },
-    {
-        "id": "en2",
-        "ip_address": "",
-        "mac_address": "d2:00:18:cc:6a:60",
-        "name": "en2",
-        "netmask": "",
-        "special": false,
-        "type": "ethernet"
-    },
-    {
-        "id": "fw0",
-        "ip_address": "",
-        "mac_address": "c8:2a:14:ff:fe:8c:c6:a6",
-        "name": "fw0",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "lo0",
+        "id": "lo",
         "ip_address": "127.0.0.1",
-        "mac_address": "",
-        "name": "lo0",
+        "mac_address": "00:00:00:00:00:00",
+        "name": "lo",
         "netmask": "255.0.0.0",
         "special": true,
         "type": "ethernet"
     },
     {
-        "id": "p2p0",
+        "id": "vboxnet0",
         "ip_address": "",
-        "mac_address": "02:9a:dd:a4:f1:6a",
-        "name": "p2p0",
+        "mac_address": "0a:00:27:00:00:00",
+        "name": "vboxnet0",
         "netmask": "",
         "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet1",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:01",
+        "name": "vboxnet1",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vboxnet2",
+        "ip_address": "",
+        "mac_address": "0a:00:27:00:00:02",
+        "name": "vboxnet2",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "virbr0",
+        "ip_address": "192.168.122.1",
+        "mac_address": "00:00:00:00:00:00",
+        "name": "virbr0",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "virbr0-nic",
+        "ip_address": "",
+        "mac_address": "52:54:00:cb:6a:77",
+        "name": "virbr0-nic",
+        "netmask": "",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vmnet1",
+        "ip_address": "172.16.1.1",
+        "mac_address": "00:50:56:c0:00:01",
+        "name": "vmnet1",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vmnet2",
+        "ip_address": "172.16.2.1",
+        "mac_address": "00:50:56:c0:00:02",
+        "name": "vmnet2",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vmnet3",
+        "ip_address": "172.16.3.1",
+        "mac_address": "00:50:56:c0:00:03",
+        "name": "vmnet3",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vmnet4",
+        "ip_address": "172.16.10.1",
+        "mac_address": "00:50:56:c0:00:04",
+        "name": "vmnet4",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "vmnet8",
+        "ip_address": "192.168.195.1",
+        "mac_address": "00:50:56:c0:00:08",
+        "name": "vmnet8",
+        "netmask": "255.255.255.0",
+        "special": true,
+        "type": "ethernet"
+    },
+    {
+        "id": "wlp58s0",
+        "ip_address": "192.168.1.149",
+        "mac_address": "9c:b6:d0:dc:20:29",
+        "name": "wlp58s0",
+        "netmask": "255.255.255.0",
+        "special": false,
         "type": "ethernet"
     }
 ]

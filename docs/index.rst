@@ -18,7 +18,8 @@ API
     general
     glossary
     curl
-    notifications
+    controller_notifications
+    project_notifications
     position
     endpoints
 

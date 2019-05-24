@@ -19,6 +19,7 @@ from gns3server.web.route import Route
 from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.schemas.version import VERSION_SCHEMA
+from gns3server.schemas.iou_license import IOU_LICENSE_SETTINGS_SCHEMA
 from gns3server.version import __version__
 
 from aiohttp.web import HTTPConflict, HTTPForbidden
@@ -43,7 +44,7 @@ class ServerHandler:
             201: "Server is shutting down",
             403: "Server shutdown refused"
         })
-    def shutdown(request, response):
+    async def shutdown(request, response):
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
@@ -57,10 +58,10 @@ class ServerHandler:
 
         tasks = []
         for project in projects:
-            tasks.append(asyncio.async(project.close()))
+            tasks.append(asyncio.ensure_future(project.close()))
 
         if tasks:
-            done, _ = yield from asyncio.wait(tasks)
+            done, _ = await asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
@@ -71,7 +72,10 @@ class ServerHandler:
         # then shutdown the server itself
         from gns3server.web.web_server import WebServer
         server = WebServer.instance()
-        asyncio.async(server.shutdown_server())
+        try:
+            asyncio.ensure_future(server.shutdown_server())
+        except asyncio.CancelledError:
+            pass
         response.set_status(201)
 
     @Route.get(
@@ -99,45 +103,40 @@ class ServerHandler:
         response.json({"version": __version__})
 
     @Route.get(
-        r"/settings",
-        description="Retrieve gui settings from the server. Temporary will we removed in later release")
-    def read_settings(request, response):
-
-        settings = None
-        while True:
-            # The init of the server could take some times
-            # we ensure settings are loaded before returning them
-            settings = Controller.instance().settings
-            if settings is not None:
-                break
-            yield from asyncio.sleep(0.5)
-        response.json(settings)
-
-    @Route.post(
-        r"/settings",
-        description="Write gui settings on the server. Temporary will we removed in later releas",
+        r"/iou_license",
+        description="Get the IOU license settings",
         status_codes={
-            201: "Writed"
+            200: "IOU license settings returned"
+        },
+        output_schema=IOU_LICENSE_SETTINGS_SCHEMA)
+    def show(request, response):
+
+        response.json(Controller.instance().iou_license)
+
+    @Route.put(
+        r"/iou_license",
+        description="Update the IOU license settings",
+        input_schema=IOU_LICENSE_SETTINGS_SCHEMA,
+        output_schema=IOU_LICENSE_SETTINGS_SCHEMA,
+        status_codes={
+            201: "IOU license settings updated"
         })
-    def write_settings(request, response):
-        controller = Controller.instance()
-        if controller.settings is None:  # Server is not loaded ignore settings update to prevent buggy client sync issue
-            return
-        controller.settings = request.json
-        try:
-            controller.save()
-        except (OSError, PermissionError) as e:
-            raise HTTPConflict(text="Can't save the settings {}".format(str(e)))
-        response.json(controller.settings)
+    async def update(request, response):
+
+        controller = Controller().instance()
+        iou_license = controller.iou_license
+        iou_license.update(request.json)
+        controller.save()
+        response.json(iou_license)
         response.set_status(201)
 
     @Route.post(
         r"/debug",
-        description="Dump debug informations to disk (debug directory in config directory). Work only for local server",
+        description="Dump debug information to disk (debug directory in config directory). Work only for local server",
         status_codes={
-            201: "Writed"
+            201: "Written"
         })
-    def debug(request, response):
+    async def debug(request, response):
 
         config = Config.instance()
         if config.get_section_config("Server").getboolean("local", False) is False:
@@ -152,7 +151,7 @@ class ServerHandler:
                 f.write(ServerHandler._getDebugData())
         except Exception as e:
             # If something is wrong we log the info to the log and we hope the log will be include correctly to the debug export
-            log.error("Could not export debug informations {}".format(e), exc_info=1)
+            log.error("Could not export debug information {}".format(e), exc_info=1)
 
         try:
             if Controller.instance().gns3vm.engine == "vmware":
@@ -165,7 +164,7 @@ class ServerHandler:
 
         for compute in list(Controller.instance().computes.values()):
             try:
-                r = yield from compute.get("/debug", raw=True)
+                r = await compute.get("/debug", raw=True)
                 data = r.body.decode("utf-8")
             except Exception as e:
                 data = str(e)

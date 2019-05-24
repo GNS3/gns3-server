@@ -21,9 +21,12 @@ import json
 import uuid
 import copy
 import shutil
+import time
 import asyncio
 import aiohttp
+import aiofiles
 import tempfile
+import zipfile
 
 from uuid import UUID, uuid4
 
@@ -36,7 +39,8 @@ from .udp_link import UDPLink
 from ..config import Config
 from ..utils.path import check_path_allowed, get_default_project_directory
 from ..utils.asyncio.pool import Pool
-from ..utils.asyncio import locked_coroutine
+from ..utils.asyncio import locking
+from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
 
@@ -68,7 +72,7 @@ class Project:
     def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
                  filename=None, auto_start=False, auto_open=False, auto_close=True,
                  scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
-                 show_interface_labels=False):
+                 grid_size=75, drawing_grid_size=25, show_interface_labels=False, variables=None, supplier=None):
 
         self._controller = controller
         assert name is not None
@@ -83,8 +87,14 @@ class Project:
         self._show_layers = show_layers
         self._snap_to_grid = snap_to_grid
         self._show_grid = show_grid
+        self._grid_size = grid_size
+        self._drawing_grid_size = drawing_grid_size
         self._show_interface_labels = show_interface_labels
+        self._variables = variables
+        self._supplier = supplier
+
         self._loading = False
+        self._closing = False
 
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
@@ -111,12 +121,22 @@ class Project:
 
         self.reset()
 
-        # At project creation we write an empty .gns3
+        # At project creation we write an empty .gns3 with the meta
         if not os.path.exists(self._topology_file()):
+            assert self._status != "closed"
             self.dump()
 
-    @asyncio.coroutine
-    def update(self, **kwargs):
+    def emit_notification(self, action, event):
+        """
+        Emit a notification to all clients using this project.
+
+        :param action: Action name
+        :param event: Event to send
+        """
+
+        self.controller.notification.project_emit(action, event, project_id=self.id)
+
+    async def update(self, **kwargs):
         """
         Update the project
         :param kwargs: Project properties
@@ -129,8 +149,16 @@ class Project:
 
         # We send notif only if object has changed
         if old_json != self.__json__():
-            self.controller.notification.emit("project.updated", self.__json__())
+            self.emit_notification("project.updated", self.__json__())
             self.dump()
+
+            # update on computes
+            for compute in list(self._project_created_on_compute):
+                await compute.put(
+                    "/projects/{}".format(self._id), {
+                        "variables": self.variables
+                    }
+                )
 
     def reset(self):
         """
@@ -236,6 +264,36 @@ class Project:
         self._show_grid = show_grid
 
     @property
+    def grid_size(self):
+        """
+        Grid size
+        :return: integer
+        """
+        return self._grid_size
+
+    @grid_size.setter
+    def grid_size(self, grid_size):
+        """
+        Setter for grid size
+        """
+        self._grid_size = grid_size
+
+    @property
+    def drawing_grid_size(self):
+        """
+        Grid size
+        :return: integer
+        """
+        return self._drawing_grid_size
+
+    @drawing_grid_size.setter
+    def drawing_grid_size(self, grid_size):
+        """
+        Setter for grid size
+        """
+        self._drawing_grid_size = grid_size
+
+    @property
     def show_interface_labels(self):
         """
         Show interface labels mode
@@ -251,6 +309,36 @@ class Project:
         self._show_interface_labels = show_interface_labels
 
     @property
+    def variables(self):
+        """
+        Variables applied to the project
+        :return: list
+        """
+        return self._variables
+
+    @variables.setter
+    def variables(self, variables):
+        """
+        Setter for variables applied to the project
+        """
+        self._variables = variables
+
+    @property
+    def supplier(self):
+        """
+        Supplier of the project
+        :return: dict
+        """
+        return self._supplier
+
+    @supplier.setter
+    def supplier(self, supplier):
+        """
+        Setter for supplier of the project
+        """
+        self._supplier = supplier
+
+    @property
     def auto_start(self):
         """
         Should project auto start when opened
@@ -264,7 +352,7 @@ class Project:
     @property
     def auto_close(self):
         """
-        Should project automaticaly closed when client
+        Should project automatically closed when client
         stop listening for notification
         """
         return self._auto_close
@@ -402,31 +490,30 @@ class Project:
         return new_name
 
     @open_required
-    @asyncio.coroutine
-    def add_node_from_appliance(self, appliance_id, x=0, y=0, compute_id=None):
+    async def add_node_from_template(self, template_id, x=0, y=0, compute_id=None):
         """
-        Create a node from an appliance
+        Create a node from a template.
         """
         try:
-            template = self.controller.appliances[appliance_id].data
+            template = copy.deepcopy(self.controller.template_manager.templates[template_id].settings)
         except KeyError:
-            msg = "Appliance {} doesn't exist".format(appliance_id)
+            msg = "Template {} doesn't exist".format(template_id)
             log.error(msg)
             raise aiohttp.web.HTTPNotFound(text=msg)
         template["x"] = x
         template["y"] = y
-        node_type = template.pop("node_type")
-        compute = self.controller.get_compute(template.pop("server", compute_id))
+        node_type = template.pop("template_type")
+        compute = self.controller.get_compute(template.pop("compute_id", compute_id))
         name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)
         node_id = str(uuid.uuid4())
-        node = yield from self.add_node(compute, name, node_id, node_type=node_type, **template)
+        template.pop("builtin") # not needed to add a node
+        node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
     @open_required
-    @asyncio.coroutine
-    def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
+    async def add_node(self, compute, name, node_id, dump=True, node_type=None, **kwargs):
         """
         Create a node or return an existing node
 
@@ -441,27 +528,32 @@ class Project:
         if compute not in self._project_created_on_compute:
             # For a local server we send the project path
             if compute.id == "local":
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
                     "project_id": self._id,
                     "path": self._path
-                })
+                }
             else:
-                yield from compute.post("/projects", data={
+                data = {
                     "name": self._name,
-                    "project_id": self._id,
-                })
+                    "project_id": self._id
+                }
+
+            if self._variables:
+                data["variables"] = self._variables
+
+            await compute.post("/projects", data=data)
 
             self._project_created_on_compute.add(compute)
-        yield from node.create()
+        await node.create()
         self._nodes[node.id] = node
-        self.controller.notification.emit("node.created", node.__json__())
+        self.emit_notification("node.created", node.__json__())
         if dump:
             self.dump()
         return node
 
-    @locked_coroutine
-    def __delete_node_links(self, node):
+    @locking
+    async def __delete_node_links(self, node):
         """
         Delete all link connected to this node.
 
@@ -470,18 +562,19 @@ class Project:
         """
         for link in list(self._links.values()):
             if node in link.nodes:
-                yield from self.delete_link(link.id, force_delete=True)
+                await self.delete_link(link.id, force_delete=True)
 
     @open_required
-    @asyncio.coroutine
-    def delete_node(self, node_id):
+    async def delete_node(self, node_id):
         node = self.get_node(node_id)
-        yield from self.__delete_node_links(node)
+        if node.locked:
+            raise aiohttp.web.HTTPConflict(text="Node {} cannot be deleted because it is locked".format(node.name))
+        await self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
-        yield from node.destroy()
+        await node.destroy()
         self.dump()
-        self.controller.notification.emit("node.deleted", node.__json__())
+        self.emit_notification("node.deleted", node.__json__())
 
     @open_required
     def get_node(self, node_id):
@@ -493,11 +586,37 @@ class Project:
         except KeyError:
             raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
+    def _get_closed_data(self, section, id_key):
+        """
+        Get the data for a project from the .gns3 when
+        the project is close
+
+        :param section: The section name in the .gns3
+        :param id_key: The key for the element unique id
+        """
+
+        try:
+            path = self._topology_file()
+            with open(path, "r") as f:
+                topology = json.load(f)
+        except OSError as e:
+            raise aiohttp.web.HTTPInternalServerError(text="Could not load topology: {}".format(e))
+
+        try:
+            data = {}
+            for elem in topology["topology"][section]:
+                data[elem[id_key]] = elem
+            return data
+        except KeyError:
+            raise aiohttp.web.HTTPNotFound(text="Section {} not found in the topology".format(section))
+
     @property
     def nodes(self):
         """
         :returns: Dictionary of the nodes
         """
+        if self._status == "closed":
+            return self._get_closed_data("nodes", "node_id")
         return self._nodes
 
     @property
@@ -505,11 +624,12 @@ class Project:
         """
         :returns: Dictionary of the drawings
         """
+        if self._status == "closed":
+            return self._get_closed_data("drawings", "drawing_id")
         return self._drawings
 
     @open_required
-    @asyncio.coroutine
-    def add_drawing(self, drawing_id=None, dump=True, **kwargs):
+    async def add_drawing(self, drawing_id=None, dump=True, **kwargs):
         """
         Create an drawing or return an existing drawing
 
@@ -519,7 +639,7 @@ class Project:
         if drawing_id not in self._drawings:
             drawing = Drawing(self, drawing_id=drawing_id, **kwargs)
             self._drawings[drawing.id] = drawing
-            self.controller.notification.emit("drawing.created", drawing.__json__())
+            self.emit_notification("drawing.created", drawing.__json__())
             if dump:
                 self.dump()
             return drawing
@@ -536,16 +656,14 @@ class Project:
             raise aiohttp.web.HTTPNotFound(text="Drawing ID {} doesn't exist".format(drawing_id))
 
     @open_required
-    @asyncio.coroutine
-    def delete_drawing(self, drawing_id):
+    async def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
         del self._drawings[drawing.id]
         self.dump()
-        self.controller.notification.emit("drawing.deleted", drawing.__json__())
+        self.emit_notification("drawing.deleted", drawing.__json__())
 
     @open_required
-    @asyncio.coroutine
-    def add_link(self, link_id=None, dump=True):
+    async def add_link(self, link_id=None, dump=True):
         """
         Create a link. By default the link is empty
 
@@ -560,17 +678,16 @@ class Project:
         return link
 
     @open_required
-    @asyncio.coroutine
-    def delete_link(self, link_id, force_delete=False):
+    async def delete_link(self, link_id, force_delete=False):
         link = self.get_link(link_id)
         del self._links[link.id]
         try:
-            yield from link.delete()
+            await link.delete()
         except Exception:
             if force_delete is False:
                 raise
         self.dump()
-        self.controller.notification.emit("link.deleted", link.__json__())
+        self.emit_notification("link.deleted", link.__json__())
 
     @open_required
     def get_link(self, link_id):
@@ -587,6 +704,8 @@ class Project:
         """
         :returns: Dictionary of the Links
         """
+        if self._status == "closed":
+            return self._get_closed_data("links", "link_id")
         return self._links
 
     @property
@@ -607,104 +726,103 @@ class Project:
             raise aiohttp.web.HTTPNotFound(text="Snapshot ID {} doesn't exist".format(snapshot_id))
 
     @open_required
-    @asyncio.coroutine
-    def snapshot(self, name):
+    async def snapshot(self, name):
         """
         Snapshot the project
 
         :param name: Name of the snapshot
         """
 
-        if name in [snap.name for snap in self.snapshots.values()]:
-            raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
-
+        if name in [snap.name for snap in self._snapshots.values()]:
+            raise aiohttp.web.HTTPConflict(text="The snapshot name {} already exists".format(name))
         snapshot = Snapshot(self, name=name)
-        try:
-            if os.path.exists(snapshot.path):
-                raise aiohttp.web_exceptions.HTTPConflict(text="The snapshot {} already exist".format(name))
-
-            os.makedirs(os.path.join(self.path, "snapshots"), exist_ok=True)
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                try:
-                    with open(snapshot.path, "wb") as f:
-                        for data in zipstream:
-                            f.write(data)
-                except OSError as e:
-                    raise aiohttp.web.HTTPConflict(text="Could not write snapshot file '{}': {}".format(snapshot.path, e))
-        except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
-
+        await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
         return snapshot
 
     @open_required
-    @asyncio.coroutine
-    def delete_snapshot(self, snapshot_id):
+    async def delete_snapshot(self, snapshot_id):
         snapshot = self.get_snapshot(snapshot_id)
         del self._snapshots[snapshot.id]
         os.remove(snapshot.path)
 
-    @asyncio.coroutine
-    def close(self, ignore_notification=False):
-        yield from self.stop_all()
+    @locking
+    async def close(self, ignore_notification=False):
+        if self._status == "closed" or self._closing:
+            return
+        if self._loading:
+            log.warning("Closing project '{}' ignored because it is being loaded".format(self.name))
+            return
+        self._closing = True
+        await self.stop_all()
         for compute in list(self._project_created_on_compute):
             try:
-                yield from compute.post("/projects/{}/close".format(self._id), dont_connect=True)
+                await compute.post("/projects/{}/close".format(self._id), dont_connect=True)
             # We don't care if a compute is down at this step
             except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
                 pass
-        self._cleanPictures()
+        self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
-            self.controller.notification.emit("project.closed", self.__json__())
+            self.emit_notification("project.closed", self.__json__())
+        self.reset()
+        self._closing = False
 
-    def _cleanPictures(self):
+    def _clean_pictures(self):
         """
-        Delete unused images
+        Delete unused pictures.
         """
 
-        # Project have been deleted
-        if not os.path.exists(self.path):
+        # Project have been deleted or is loading or is not opened
+        if not os.path.exists(self.path) or self._loading or self._status != "opened":
             return
         try:
             pictures = set(os.listdir(self.pictures_directory))
             for drawing in self._drawings.values():
                 try:
-                    pictures.remove(drawing.ressource_filename)
+                    resource_filename = drawing.resource_filename
+                    if resource_filename:
+                        pictures.remove(resource_filename)
                 except KeyError:
                     pass
 
-            for pict in pictures:
-                os.remove(os.path.join(self.pictures_directory, pict))
-        except OSError as e:
-            log.warning(str(e))
+            # don't remove supplier's logo
+            if self.supplier:
+                try:
+                    logo = self.supplier['logo']
+                    pictures.remove(logo)
+                except KeyError:
+                    pass
 
-    @asyncio.coroutine
-    def delete(self):
+            for pic_filename in pictures:
+                path = os.path.join(self.pictures_directory, pic_filename)
+                log.info("Deleting unused picture '{}'".format(path))
+                os.remove(path)
+        except OSError as e:
+            log.warning("Could not delete unused pictures: {}".format(e))
+
+    async def delete(self):
 
         if self._status != "opened":
             try:
-                yield from self.open()
+                await self.open()
             except aiohttp.web.HTTPConflict as e:
                 # ignore missing images or other conflicts when deleting a project
                 log.warning("Conflict while deleting project: {}".format(e.text))
-        yield from self.delete_on_computes()
-        yield from self.close()
+        await self.delete_on_computes()
+        await self.close()
         try:
             shutil.rmtree(self.path)
         except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can not delete project directory {}: {}".format(self.path, str(e)))
 
-    @asyncio.coroutine
-    def delete_on_computes(self):
+    async def delete_on_computes(self):
         """
         Delete the project on computes but not on controller
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                yield from compute.delete("/projects/{}".format(self._id))
+                await compute.delete("/projects/{}".format(self._id))
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
@@ -726,11 +844,15 @@ class Project:
     def _topology_file(self):
         return os.path.join(self.path, self._filename)
 
-    @locked_coroutine
-    def open(self):
+    @locking
+    async def open(self):
         """
         Load topology elements
         """
+
+        if self._closing is True:
+            raise aiohttp.web.HTTPConflict(text="Project is closing, please try again in a few seconds...")
+
         if self._status == "opened":
             return
 
@@ -760,6 +882,8 @@ class Project:
                 "show_layers",
                 "snap_to_grid",
                 "show_grid",
+                "grid_size",
+                "drawing_grid_size",
                 "show_interface_labels"
             ]
 
@@ -770,20 +894,20 @@ class Project:
 
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
-                yield from self.controller.add_compute(**compute)
+                await self.controller.add_compute(**compute)
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")
                 node_id = node.pop("node_id", str(uuid.uuid4()))
-                yield from self.add_node(compute, name, node_id, dump=False, **node)
+                await self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
                 if 'link_id' not in link_data.keys():
                     # skip the link
                     continue
-                link = yield from self.add_link(link_id=link_data["link_id"])
+                link = await self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
-                    yield from link.update_filters(link_data["filters"])
-                for node_link in link_data["nodes"]:
+                    await link.update_filters(link_data["filters"])
+                for node_link in link_data.get("nodes", []):
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
                     if port is None:
@@ -792,26 +916,26 @@ class Project:
                     if port.link is not None:
                         log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
                         continue
-                    yield from link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
+                    await link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
                 if len(link.nodes) != 2:
                     # a link should have 2 attached nodes, this can happen with corrupted projects
-                    yield from self.delete_link(link.id, force_delete=True)
+                    await self.delete_link(link.id, force_delete=True)
             for drawing_data in topology.get("drawings", []):
-                yield from self.add_drawing(dump=False, **drawing_data)
+                await self.add_drawing(dump=False, **drawing_data)
 
             self.dump()
         # We catch all error to be able to rollback the .gns3 to the previous state
         except Exception as e:
             for compute in list(self._project_created_on_compute):
                 try:
-                    yield from compute.post("/projects/{}/close".format(self._id))
+                    await compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step
                 except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict, aiohttp.ServerDisconnectedError):
                     pass
             try:
                 if os.path.exists(path + ".backup"):
                     shutil.copy(path + ".backup", path)
-            except (PermissionError, OSError):
+            except OSError:
                 pass
             self._status = "closed"
             self._loading = False
@@ -830,18 +954,16 @@ class Project:
             # Start all in the background without waiting for completion
             # we ignore errors because we want to let the user open
             # their project and fix it
-            asyncio.async(self.start_all())
+            asyncio.ensure_future(self.start_all())
 
-    @asyncio.coroutine
-    def wait_loaded(self):
+    async def wait_loaded(self):
         """
         Wait until the project finish loading
         """
         while self._loading:
-            yield from asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
-    @asyncio.coroutine
-    def duplicate(self, name=None, location=None):
+    async def duplicate(self, name=None, location=None):
         """
         Duplicate a project
 
@@ -855,22 +977,34 @@ class Project:
         # If the project was not open we open it temporary
         previous_status = self._status
         if self._status == "closed":
-            yield from self.open()
+            await self.open()
 
         self.dump()
+        assert self._status != "closed"
         try:
+            begin = time.time()
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                with open(os.path.join(tmpdir, "project.gns3p"), "wb") as f:
-                    for data in zipstream:
-                        f.write(data)
-                with open(os.path.join(tmpdir, "project.gns3p"), "rb") as f:
-                    project = yield from import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
-        except (OSError, UnicodeEncodeError) as e:
-            raise aiohttp.web.HTTPConflict(text="Can not duplicate project: {}".format(str(e)))
+                # Do not compress the exported project when duplicating
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                    await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
+
+                    # export the project to a temporary location
+                    project_path = os.path.join(tmpdir, "project.gns3p")
+                    log.info("Exporting project to '{}'".format(project_path))
+                    async with aiofiles.open(project_path, 'wb') as f:
+                        async for chunk in zstream:
+                            await f.write(chunk)
+
+                    # import the temporary project
+                    with open(project_path, "rb") as f:
+                        project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+
+            log.info("Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - begin))
+        except (ValueError, OSError, UnicodeEncodeError) as e:
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":
-            yield from self.close()
+            await self.close()
 
         return project
 
@@ -898,38 +1032,34 @@ class Project:
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
 
-    @asyncio.coroutine
-    def start_all(self):
+    async def start_all(self):
         """
         Start all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.start)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def stop_all(self):
+    async def stop_all(self):
         """
         Stop all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.stop)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def suspend_all(self):
+    async def suspend_all(self):
         """
         Suspend all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
             pool.append(node.suspend)
-        yield from pool.join()
+        await pool.join()
 
-    @asyncio.coroutine
-    def duplicate_node(self, node, x, y, z):
+    async def duplicate_node(self, node, x, y, z):
         """
         Duplicate a node
 
@@ -959,24 +1089,34 @@ class Project:
         data['x'] = x
         data['y'] = y
         data['z'] = z
+        data['locked'] = False  # duplicated node must not be locked
         new_node_uuid = str(uuid.uuid4())
-        new_node = yield from self.add_node(
+        new_node = await self.add_node(
             node.compute,
             node.name,
             new_node_uuid,
             node_type=node_type,
             **data)
         try:
-            yield from node.post("/duplicate", timeout=None, data={
+            await node.post("/duplicate", timeout=None, data={
                 "destination_node_id": new_node_uuid
             })
         except aiohttp.web.HTTPNotFound as e:
-            yield from self.delete_node(new_node_uuid)
+            await self.delete_node(new_node_uuid)
             raise aiohttp.web.HTTPConflict(text="This node type cannot be duplicated")
         except aiohttp.web.HTTPConflict as e:
-            yield from self.delete_node(new_node_uuid)
+            await self.delete_node(new_node_uuid)
             raise e
         return new_node
+
+    def stats(self):
+
+        return {
+            "nodes": len(self._nodes),
+            "links": len(self._links),
+            "drawings": len(self._drawings),
+            "snapshots": len(self._snapshots)
+        }
 
     def __json__(self):
         return {
@@ -994,7 +1134,11 @@ class Project:
             "show_layers": self._show_layers,
             "snap_to_grid": self._snap_to_grid,
             "show_grid": self._show_grid,
-            "show_interface_labels": self._show_interface_labels
+            "grid_size": self._grid_size,
+            "drawing_grid_size": self._drawing_grid_size,
+            "show_interface_labels": self._show_interface_labels,
+            "supplier": self._supplier,
+            "variables": self._variables
         }
 
     def __repr__(self):

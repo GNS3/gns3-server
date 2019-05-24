@@ -5,9 +5,9 @@
 
 POST /v2/debug
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Dump debug informations to disk (debug directory in config directory). Work only for local server
+Dump debug information to disk (debug directory in config directory). Work only for local server
 
 Response status codes
 **********************
-- **201**: Writed
+- **201**: Written
 

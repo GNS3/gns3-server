@@ -87,8 +87,7 @@ class Qcow2:
             return None
         return path
 
-    @asyncio.coroutine
-    def rebase(self, qemu_img, base_image):
+    async def rebase(self, qemu_img, base_image):
         """
         Rebase a linked clone in order to use the correct disk
 
@@ -99,8 +98,8 @@ class Qcow2:
         if not os.path.exists(base_image):
             raise FileNotFoundError(base_image)
         command = [qemu_img, "rebase", "-u", "-b", base_image, self._path]
-        process = yield from asyncio.create_subprocess_exec(*command)
-        retcode = yield from process.wait()
+        process = await asyncio.create_subprocess_exec(*command)
+        retcode = await process.wait()
         if retcode != 0:
             raise Qcow2Error("Could not rebase the image")
         self._reload()

@@ -1,0 +1,72 @@
+{
+    "name": "FRR",
+    "category": "router",
+    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nFRR’s seamless integration with the native Linux/Unix IP networking stacks makes it applicable to a wide variety of use cases including connecting hosts/VMs/containers to the network, advertising network services, LAN switching and routing, Internet access routers, and Internet peering.\n\nThis is an unofficial VM or FRR.",
+    "vendor_name": "FRRouting Project",
+    "vendor_url": "https://frrouting.org",
+    "product_name": "FRR",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Andras Dosztal",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Credentials: frr / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
+    "port_name_format": "ens{port3}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 8,
+        "ram": 512,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "frr7.0-vm0.3.qcow2",
+            "version": "FRR7.0 - VM0.3",
+            "md5sum": "5fa8ce0ee74215f4c4a8c61778ee0b10",
+            "filesize": 2044657664,
+            "download_url": "https://sourceforge.net/projects/frr/files/",
+            "direct_download_url": "https://sourceforge.net/projects/frr/files/FRR7.0-VM0.3.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "frr6.0-vm0.2.qcow2",
+            "version": "FRR6.0 - VM0.2",
+            "md5sum": "bf5aebd98352716bfabb119abb2ba19a",
+            "filesize": 1762066432,
+            "download_url": "https://sourceforge.net/projects/frr/files/",
+            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr6.0-vm0.2.qcow2.bz2/download",
+            "compression": "bzip2"
+        },
+        {
+            "filename": "frr4.0-vm0.1.qcow2",
+            "version": "FRR4.0 - VM0.1",
+            "md5sum": "e1dc58cbb2b71c58051538c07d412493",
+            "filesize": 1670643712,
+            "download_url": "https://sourceforge.net/projects/frr/files/",
+            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr4.0-vm0.1.qcow2.bz2/download",
+            "compression": "bzip2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "FRR7.0 - VM0.3",
+            "images": {
+                "hda_disk_image": "frr7.0-vm0.3.qcow2"
+            }
+        },
+        {
+            "name": "FRR6.0 - VM0.2",
+            "images": {
+                "hda_disk_image": "frr6.0-vm0.2.qcow2"
+            }
+        },
+        {
+            "name": "FRR4.0 - VM0.1",
+            "images": {
+                "hda_disk_image": "frr4.0-vm0.1.qcow2"
+            }
+        }
+    ]
+}

@@ -43,7 +43,7 @@ def manager(port_manager):
 @pytest.fixture(scope="function")
 def node(project, manager, loop):
     node = manager.create_node("test", project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
-    return loop.run_until_complete(asyncio.async(node))
+    return loop.run_until_complete(asyncio.ensure_future(node))
 
 
 def test_affect_uuid():
@@ -92,9 +92,29 @@ def test_changing_path_not_allowed(tmpdir):
             p.path = str(tmpdir)
 
 
+def test_variables(tmpdir):
+    variables = [{"name": "VAR1", "value": "VAL1"}]
+    p = Project(project_id=str(uuid4()), variables=variables)
+    assert p.variables == variables
+
+
 def test_json(tmpdir):
     p = Project(project_id=str(uuid4()))
-    assert p.__json__() == {"name": p.name, "project_id": p.id}
+    assert p.__json__() == {
+        "name": p.name,
+        "project_id": p.id,
+        "variables": None
+    }
+
+
+def test_json_with_variables(tmpdir):
+    variables = [{"name": "VAR1", "value": "VAL1"}]
+    p = Project(project_id=str(uuid4()), variables=variables)
+    assert p.__json__() == {
+        "name": p.name,
+        "project_id": p.id,
+        "variables": variables
+    }
 
 
 def test_node_working_directory(tmpdir, node):
@@ -120,7 +140,7 @@ def test_project_delete(loop):
     project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
-    loop.run_until_complete(asyncio.async(project.delete()))
+    loop.run_until_complete(asyncio.ensure_future(project.delete()))
     assert os.path.exists(directory) is False
 
 
@@ -130,7 +150,7 @@ def test_project_delete_permission_issue(loop):
     assert os.path.exists(directory)
     os.chmod(directory, 0)
     with pytest.raises(aiohttp.web.HTTPInternalServerError):
-        loop.run_until_complete(asyncio.async(project.delete()))
+        loop.run_until_complete(asyncio.ensure_future(project.delete()))
     os.chmod(directory, 700)
 
 
@@ -144,7 +164,7 @@ def test_project_add_node(manager):
 def test_project_close(loop, node, project):
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.close") as mock:
-        loop.run_until_complete(asyncio.async(project.close()))
+        loop.run_until_complete(asyncio.ensure_future(project.close()))
         assert mock.called
     assert node.id not in node.manager._nodes
 
@@ -161,7 +181,7 @@ def test_list_files(tmpdir, loop):
         with open(os.path.join(path, "test.txt"), "w+") as f:
             f.write("test2")
 
-        files = loop.run_until_complete(asyncio.async(project.list_files()))
+        files = loop.run_until_complete(asyncio.ensure_future(project.list_files()))
 
         assert files == [
             {
@@ -185,3 +205,10 @@ def test_emit(async_run):
         (action, event, context) = async_run(queue.get(0.5))
         assert action == "test"
         assert context["project_id"] == project.id
+
+
+def test_update_project(loop):
+    variables = [{"name": "TEST", "value": "VAL"}]
+    project = Project(project_id=str(uuid.uuid4()))
+    loop.run_until_complete(asyncio.ensure_future(project.update(variables=variables)))
+    assert project.variables == variables

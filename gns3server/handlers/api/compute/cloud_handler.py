@@ -49,14 +49,21 @@ class CloudHandler:
         description="Create a new cloud instance",
         input=CLOUD_CREATE_SCHEMA,
         output=CLOUD_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         builtin_manager = Builtin.instance()
-        node = yield from builtin_manager.create_node(request.json.pop("name"),
+        node = await builtin_manager.create_node(request.json.pop("name"),
                                                       request.match_info["project_id"],
                                                       request.json.get("node_id"),
                                                       node_type="cloud",
                                                       ports=request.json.get("ports_mapping"))
+
+        # add the remote console settings
+        node.remote_console_host = request.json.get("remote_console_host", node.remote_console_host)
+        node.remote_console_port = request.json.get("remote_console_port", node.remote_console_port)
+        node.remote_console_type = request.json.get("remote_console_type", node.remote_console_type)
+        node.remote_console_http_path = request.json.get("remote_console_http_path", node.remote_console_http_path)
+
         response.set_status(201)
         response.json(node)
 
@@ -116,10 +123,10 @@ class CloudHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a cloud instance")
-    def delete(request, response):
+    async def delete(request, response):
 
         builtin_manager = Builtin.instance()
-        yield from builtin_manager.delete_node(request.match_info["node_id"])
+        await builtin_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -134,10 +141,10 @@ class CloudHandler:
             404: "Instance doesn't exist"
         },
         description="Start a cloud")
-    def start(request, response):
+    async def start(request, response):
 
         node = Builtin.instance().get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from node.start()
+        await node.start()
         response.set_status(204)
 
     @Route.post(
@@ -190,13 +197,13 @@ class CloudHandler:
         description="Add a NIO to a cloud instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         nio = builtin_manager.create_nio(request.json)
         port_number = int(request.match_info["port_number"])
-        yield from node.add_nio(nio, port_number)
+        await node.add_nio(nio, port_number)
         response.set_status(201)
         response.json(nio)
 
@@ -215,21 +222,16 @@ class CloudHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Cloud instance")
-    def update_nio(request, response):
+        description="Update a NIO on a Cloud instance")
+    async def update_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        adapter_number = int(request.match_info["adapter_number"])
-
-        try:
-            nio = node.nios[adapter_number]
-        except KeyError:
-            raise HTTPConflict(text="NIO `{}` doesn't exist".format(adapter_number))
-
-        if "filters" in request.json and nio:
+        port_number = int(request.match_info["port_number"])
+        nio = node.get_nio(port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        yield from node.update_nio(int(request.match_info["port_number"]), nio)
+        await node.update_nio(port_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -247,12 +249,12 @@ class CloudHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a cloud instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from node.remove_nio(port_number)
+        await node.remove_nio(port_number)
         response.set_status(204)
 
     @Route.post(
@@ -270,13 +272,13 @@ class CloudHandler:
         },
         description="Start a packet capture on a cloud instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
+        await node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -293,10 +295,32 @@ class CloudHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a cloud instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         builtin_manager = Builtin.instance()
         node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from node.stop_capture(port_number)
+        await node.stop_capture(port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/cloud/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture (always 0)",
+            "port_number": "Port on the cloud"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        builtin_manager = Builtin.instance()
+        node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        nio = node.get_nio(port_number)
+        await builtin_manager.stream_pcap_file(nio, node.project.id, request, response)

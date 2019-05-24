@@ -41,34 +41,24 @@ class NIOUDP(NIO):
     :param rport: remote port number
     """
 
-    def __init__(self, node, lport, rhost, rport, filters):
+    def __init__(self, node, lport, rhost, rport):
 
         # create an unique name
         name = 'udp-{}'.format(uuid.uuid4())
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
-        self._filters = filters
         self._local_tunnel_lport = None
         self._local_tunnel_rport = None
         self._node = node
         super().__init__(name, node.hypervisor)
 
-    @property
-    def filters(self):
-        return self._filters
-
-    @filters.setter
-    def filters(self, val):
-        self._filters = val
-
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         if not self._hypervisor:
             return
         # Ubridge is not supported
         if not hasattr(self._node, "add_ubridge_udp_connection"):
-            yield from self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
+            await self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
                                                                                                     lport=self._lport,
                                                                                                     rhost=self._rhost,
                                                                                                     rport=self._rport))
@@ -76,7 +66,7 @@ class NIOUDP(NIO):
         self._local_tunnel_lport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
         self._local_tunnel_rport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
         self._bridge_name = 'DYNAMIPS-{}-{}'.format(self._local_tunnel_lport, self._local_tunnel_rport)
-        yield from self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
+        await self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
                                                                                                 lport=self._local_tunnel_lport,
                                                                                                 rhost='127.0.0.1',
                                                                                                 rport=self._local_tunnel_rport))
@@ -88,30 +78,27 @@ class NIOUDP(NIO):
 
         self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport,
                                           '127.0.0.1',
-                                          self._local_tunnel_lport,
-                                          {})
+                                          self._local_tunnel_lport)
         self._destination_nio = nio_udp.NIOUDP(self._lport,
                                                self._rhost,
-                                               self._rport,
-                                               self._filters)
-        yield from self._node.add_ubridge_udp_connection(
+                                               self._rport)
+        self._destination_nio.filters = self._filters
+        await self._node.add_ubridge_udp_connection(
             self._bridge_name,
             self._source_nio,
             self._destination_nio
         )
 
-    @asyncio.coroutine
-    def update(self):
+    async def update(self):
         self._destination_nio.filters = self._filters
-        yield from self._node.update_ubridge_udp_connection(
+        await self._node.update_ubridge_udp_connection(
             self._bridge_name,
             self._source_nio,
             self._destination_nio)
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         if self._local_tunnel_lport:
-            yield from self._node.ubridge_delete_bridge(self._bridge_name)
+            await self._node.ubridge_delete_bridge(self._bridge_name)
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_lport, self ._node.project)
         if self._local_tunnel_rport:
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_rport, self._node.project)

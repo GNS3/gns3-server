@@ -43,9 +43,9 @@ class C2691(Router):
     :param aux: auxiliary console port
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis=None):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis=None):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c2691")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c2691")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128
@@ -79,15 +79,14 @@ class C2691(Router):
 
         return self._iomem
 
-    @asyncio.coroutine
-    def set_iomem(self, iomem):
+    async def set_iomem(self, iomem):
         """
         Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        yield from self._hypervisor.send('c2691 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send('c2691 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

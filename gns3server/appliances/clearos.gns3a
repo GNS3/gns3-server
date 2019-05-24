@@ -23,6 +23,13 @@
     },
     "images": [
         {
+            "filename": "ClearOS-7.5-DVD-x86_64.iso",
+            "version": "7.5",
+            "md5sum": "1e23c5f73a6c996420d8e0e70b000bf9",
+            "filesize": 1146093568,
+            "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads"
+        },
+        {
             "filename": "ClearOS-7.4-DVD-x86_64.iso",
             "version": "7.4",
             "md5sum": "826da592f9cd4b59f5fc996ff2d569f1",
@@ -53,6 +60,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.5",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "ClearOS-7.5-DVD-x86_64.iso"
+            }
+        },
         {
             "name": "7.4",
             "images": {

@@ -1,0 +1,28 @@
+curl -i -X GET 'http://localhost:3080/v2/templates/c0c6bb37-68d5-4900-bb18-ee69a524593f'
+
+GET /v2/templates/c0c6bb37-68d5-4900-bb18-ee69a524593f HTTP/1.1
+
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 378
+Content-Type: application/json
+Date: Sat, 30 Mar 2019 08:50:14 GMT
+Etag: "01987f11368dfc5e0c95ee6cb5cf059c"
+Server: Python/3.6 GNS3/2.2.0dev8
+X-Route: /v2/templates/{template_id}
+
+{
+    "base_script_file": "vpcs_base_config.txt",
+    "builtin": false,
+    "category": "guest",
+    "compute_id": "local",
+    "console_auto_start": false,
+    "console_type": "telnet",
+    "default_name_format": "PC{0}",
+    "name": "VPCS_TEST",
+    "symbol": ":/symbols/vpcs_guest.svg",
+    "template_id": "c0c6bb37-68d5-4900-bb18-ee69a524593f",
+    "template_type": "vpcs"
+}

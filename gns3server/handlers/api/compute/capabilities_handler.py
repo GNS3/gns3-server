@@ -18,11 +18,9 @@
 import sys
 
 from gns3server.web.route import Route
-from gns3server.config import Config
 from gns3server.schemas.capabilities import CAPABILITIES_SCHEMA
 from gns3server.version import __version__
 from gns3server.compute import MODULES
-from aiohttp.web import HTTPConflict
 
 
 class CapabilitiesHandler:

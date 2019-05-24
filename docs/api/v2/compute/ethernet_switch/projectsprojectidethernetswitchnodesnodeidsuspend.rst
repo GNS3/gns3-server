@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/ethernet_switch/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend an Ethernet switch
+Suspend an Ethernet switch (does nothing)
 
 Parameters
 **********

@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2e54bfd5-33e4-4958-9eb5-9344095bcf3c' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2e54bfd5-33e4-4958-9eb5-9344095bcf3c HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e HTTP/1.1
 {
     "console": 5005,
     "ethernet_adapters": 4,
@@ -15,10 +15,10 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/2e54bfd5
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 660
+Content-Length: 625
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:48 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:47:53 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
@@ -30,13 +30,14 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_json4/project-files/iou/2e54bfd5-33e4-4958-9eb5-9344095bcf3c",
-    "node_id": "2e54bfd5-33e4-4958-9eb5-9344095bcf3c",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/iou/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e",
+    "node_id": "83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e",
     "nvram": 2048,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 512,
     "serial_adapters": 0,
     "status": "stopped",
+    "usage": "",
     "use_default_iou_values": true
 }

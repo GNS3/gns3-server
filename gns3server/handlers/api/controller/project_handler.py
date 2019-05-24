@@ -19,11 +19,15 @@ import os
 import aiohttp
 import asyncio
 import tempfile
+import zipfile
+import aiofiles
+import time
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
+from gns3server.utils.asyncio import aiozipstream
 from gns3server.config import Config
 
 
@@ -38,15 +42,16 @@ import logging
 log = logging.getLogger()
 
 
-@asyncio.coroutine
-def process_websocket(ws):
+async def process_websocket(ws):
     """
     Process ping / pong and close message
     """
     try:
-        yield from ws.receive()
+        await ws.receive()
     except aiohttp.WSServerHandshakeError:
         pass
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class ProjectHandler:
@@ -60,10 +65,10 @@ class ProjectHandler:
         },
         output=PROJECT_OBJECT_SCHEMA,
         input=PROJECT_CREATE_SCHEMA)
-    def create_project(request, response):
+    async def create_project(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.add_project(**request.json)
+        project = await controller.add_project(**request.json)
         response.set_status(201)
         response.json(project)
 
@@ -102,15 +107,48 @@ class ProjectHandler:
         description="Update a project instance",
         input=PROJECT_UPDATE_SCHEMA,
         output=PROJECT_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
         project = Controller.instance().get_project(request.match_info["project_id"])
 
         # Ignore these because we only use them when creating a project
         request.json.pop("project_id", None)
 
-        yield from project.update(**request.json)
+        await project.update(**request.json)
         response.set_status(200)
         response.json(project)
+
+    @Route.delete(
+        r"/projects/{project_id}",
+        description="Delete a project from disk",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            204: "Changes have been written on disk",
+            404: "The project doesn't exist"
+        })
+    async def delete(request, response):
+
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        await project.delete()
+        controller.remove_project(project)
+        response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/stats",
+        description="Get a project statistics",
+        parameters={
+            "project_id": "Project UUID",
+        },
+        status_codes={
+            200: "Project statistics returned",
+            404: "The project doesn't exist"
+        })
+    def get(request, response):
+        controller = Controller.instance()
+        project = controller.get_project(request.match_info["project_id"])
+        response.json(project.stats())
 
     @Route.post(
         r"/projects/{project_id}/close",
@@ -123,11 +161,11 @@ class ProjectHandler:
             404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA)
-    def close(request, response):
+    async def close(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.close()
+        await project.close()
         response.set_status(201)
         response.json(project)
 
@@ -142,11 +180,11 @@ class ProjectHandler:
             404: "The project doesn't exist"
         },
         output=PROJECT_OBJECT_SCHEMA)
-    def open(request, response):
+    async def open(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.open()
+        await project.open()
         response.set_status(201)
         response.json(project)
 
@@ -162,7 +200,7 @@ class ProjectHandler:
         },
         input=PROJECT_LOAD_SCHEMA,
         output=PROJECT_OBJECT_SCHEMA)
-    def load(request, response):
+    async def load(request, response):
 
         controller = Controller.instance()
         config = Config.instance()
@@ -170,27 +208,9 @@ class ProjectHandler:
             log.error("Can't load the project the server is not started with --local")
             response.set_status(403)
             return
-        project = yield from controller.load_project(request.json.get("path"),)
+        project = await controller.load_project(request.json.get("path"),)
         response.set_status(201)
         response.json(project)
-
-    @Route.delete(
-        r"/projects/{project_id}",
-        description="Delete a project from disk",
-        parameters={
-            "project_id": "Project UUID",
-        },
-        status_codes={
-            204: "Changes have been written on disk",
-            404: "The project doesn't exist"
-        })
-    def delete(request, response):
-
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
-        yield from project.delete()
-        controller.remove_project(project)
-        response.set_status(204)
 
     @Route.get(
         r"/projects/{project_id}/notifications",
@@ -202,31 +222,31 @@ class ProjectHandler:
             200: "End of stream",
             404: "The project doesn't exist"
         })
-    def notification(request, response):
+    async def notification(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-
         response.content_type = "application/json"
         response.set_status(200)
         response.enable_chunked_encoding()
+        await response.prepare(request)
+        log.info("New client has connected to the notification stream for project ID '{}' (HTTP long-polling method)".format(project.id))
 
-        yield from response.prepare(request)
-        with controller.notification.queue(project) as queue:
-            while True:
-                try:
-                    msg = yield from queue.get_json(5)
-                    response.write(("{}\n".format(msg)).encode("utf-8"))
-                except asyncio.futures.CancelledError as e:
-                    break
-                yield from response.drain()
+        try:
+            with controller.notification.project_queue(project.id) as queue:
+                while True:
+                    msg = await queue.get_json(5)
+                    await response.write(("{}\n".format(msg)).encode("utf-8"))
+        finally:
+            log.info("Client has disconnected from notification for project ID '{}' (HTTP long-polling method)".format(project.id))
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project.id):
+                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    await project.close()
 
-        if project.auto_close:
-            # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-            # if someone else is not connected
-            yield from asyncio.sleep(5)
-            if not controller.notification.project_has_listeners(project):
-                yield from project.close()
 
     @Route.get(
         r"/projects/{project_id}/notifications/ws",
@@ -238,32 +258,35 @@ class ProjectHandler:
             200: "End of stream",
             404: "The project doesn't exist"
         })
-    def notification_ws(request, response):
+    async def notification_ws(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-
         ws = aiohttp.web.WebSocketResponse()
-        yield from ws.prepare(request)
+        await ws.prepare(request)
 
-        asyncio.async(process_websocket(ws))
-
-        with controller.notification.queue(project) as queue:
-            while True:
-                try:
-                    notification = yield from queue.get_json(5)
-                except asyncio.futures.CancelledError as e:
-                    break
-                if ws.closed:
-                    break
-                ws.send_str(notification)
-
-        if project.auto_close:
-            # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-            # if someone else is not connected
-            yield from asyncio.sleep(5)
-            if not controller.notification.project_has_listeners(project):
-                yield from project.close()
+        request.app['websockets'].add(ws)
+        asyncio.ensure_future(process_websocket(ws))
+        log.info("New client has connected to the notification stream for project ID '{}' (WebSocket method)".format(project.id))
+        try:
+            with controller.notification.project_queue(project.id) as queue:
+                while True:
+                    notification = await queue.get_json(5)
+                    if ws.closed:
+                        break
+                    await ws.send_str(notification)
+        finally:
+            log.info("Client has disconnected from notification stream for project ID '{}' (WebSocket method)".format(project.id))
+            if not ws.closed:
+                await ws.close()
+            request.app['websockets'].discard(ws)
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project.id):
+                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    await project.close()
 
         return ws
 
@@ -278,32 +301,50 @@ class ProjectHandler:
             200: "File returned",
             404: "The project doesn't exist"
         })
-    def export_project(request, response):
+    async def export_project(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.get_loaded_project(request.match_info["project_id"])
+        project = await controller.get_loaded_project(request.match_info["project_id"])
+        if request.query.get("include_snapshots", "no").lower() == "yes":
+            include_snapshots = True
+        else:
+            include_snapshots = False
+        if request.query.get("include_images", "no").lower() == "yes":
+            include_images = True
+        else:
+            include_images = False
+        compression_query = request.query.get("compression", "zip").lower()
+        if compression_query == "zip":
+            compression = zipfile.ZIP_DEFLATED
+        elif compression_query == "none":
+            compression = zipfile.ZIP_STORED
+        elif compression_query == "bzip2":
+            compression = zipfile.ZIP_BZIP2
+        elif compression_query == "lzma":
+            compression = zipfile.ZIP_LZMA
 
         try:
+            begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
-                datas = yield from export_project(
-                    project, tmp_dir,
-                    include_images=bool(int(request.query.get("include_images", "0"))))
-                # We need to do that now because export could failed and raise an HTTP error
-                # that why response start need to be the later possible
-                response.content_type = 'application/gns3project'
-                response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
-                response.enable_chunked_encoding()
-                yield from response.prepare(request)
+                with aiozipstream.ZipFile(compression=compression) as zstream:
+                    await export_project(zstream, project, tmp_dir, include_snapshots=include_snapshots, include_images=include_images)
 
-                for data in datas:
-                    response.write(data)
-                    yield from response.drain()
+                    # We need to do that now because export could failed and raise an HTTP error
+                    # that why response start need to be the later possible
+                    response.content_type = 'application/gns3project'
+                    response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
+                    response.enable_chunked_encoding()
+                    await response.prepare(request)
 
-                yield from response.write_eof()
+                    async for chunk in zstream:
+                        await response.write(chunk)
+
+            log.info("Project '{}' exported in {:.4f} seconds".format(project.name, time.time() - begin))
+
         # Will be raise if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
-        except (OSError, RuntimeError) as e:
-            raise aiohttp.web.HTTPNotFound(text="Can't export project: {}".format(str(e)))
+        except (ValueError, OSError, RuntimeError) as e:
+            raise aiohttp.web.HTTPNotFound(text="Cannot export project: {}".format(str(e)))
 
     @Route.post(
         r"/projects/{project_id}/import",
@@ -317,7 +358,7 @@ class ProjectHandler:
             200: "Project imported",
             403: "Forbidden to import project"
         })
-    def import_project(request, response):
+    async def import_project(request, response):
 
         controller = Controller.instance()
 
@@ -331,18 +372,23 @@ class ProjectHandler:
 
         # We write the content to a temporary location and after we extract it all.
         # It could be more optimal to stream this but it is not implemented in Python.
-        # Spooled means the file is temporary kept in memory until max_size is reached
         try:
-            with tempfile.SpooledTemporaryFile(max_size=10000) as temp:
-                while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
-                        break
-                    temp.write(packet)
-                project = yield from import_project(controller, request.match_info["project_id"], temp, location=path, name=name)
+            begin = time.time()
+            with tempfile.TemporaryDirectory() as tmpdir:
+                temp_project_path = os.path.join(tmpdir, "project.zip")
+                async with aiofiles.open(temp_project_path, 'wb') as f:
+                    while True:
+                        chunk = await request.content.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        await f.write(chunk)
+
+                with open(temp_project_path, "rb") as f:
+                    project = await import_project(controller, request.match_info["project_id"], f, location=path, name=name)
+
+            log.info("Project '{}' imported in {:.4f} seconds".format(project.name, time.time() - begin))
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not import the project: {}".format(e))
-
         response.json(project)
         response.set_status(201)
 
@@ -359,10 +405,10 @@ class ProjectHandler:
             403: "The server is not the local server",
             404: "The project doesn't exist"
         })
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.get_loaded_project(request.match_info["project_id"])
+        project = await controller.get_loaded_project(request.match_info["project_id"])
 
         if request.json.get("path"):
             config = Config.instance()
@@ -373,7 +419,7 @@ class ProjectHandler:
         else:
             location = None
 
-        new_project = yield from project.duplicate(name=request.json.get("name"), location=location)
+        new_project = await project.duplicate(name=request.json.get("name"), location=location)
 
         response.json(new_project)
         response.set_status(201)
@@ -389,10 +435,10 @@ class ProjectHandler:
             403: "Permission denied",
             404: "The file doesn't exist"
         })
-    def get_file(request, response):
+    async def get_file(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.get_loaded_project(request.match_info["project_id"])
+        project = await controller.get_loaded_project(request.match_info["project_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path).strip('/')
 
@@ -401,23 +447,7 @@ class ProjectHandler:
             raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
 
-        response.content_type = "application/octet-stream"
-        response.set_status(200)
-        response.enable_chunked_encoding()
-
-        try:
-            with open(path, "rb") as f:
-                yield from response.prepare(request)
-                while True:
-                    data = f.read(4096)
-                    if not data:
-                        break
-                    yield from response.write(data)
-
-        except FileNotFoundError:
-            raise aiohttp.web.HTTPNotFound()
-        except PermissionError:
-            raise aiohttp.web.HTTPForbidden()
+        await response.stream_file(path)
 
     @Route.post(
         r"/projects/{project_id}/files/{path:.+}",
@@ -431,10 +461,10 @@ class ProjectHandler:
             403: "Permission denied",
             404: "The path doesn't exist"
         })
-    def write_file(request, response):
+    async def write_file(request, response):
 
         controller = Controller.instance()
-        project = yield from controller.get_loaded_project(request.match_info["project_id"])
+        project = await controller.get_loaded_project(request.match_info["project_id"])
         path = request.match_info["path"]
         path = os.path.normpath(path).strip("/")
 
@@ -446,12 +476,15 @@ class ProjectHandler:
         response.set_status(200)
 
         try:
-            with open(path, 'wb+') as f:
+            async with aiofiles.open(path, 'wb+') as f:
                 while True:
-                    packet = yield from request.content.read(512)
-                    if not packet:
+                    try:
+                        chunk = await request.content.read(CHUNK_SIZE)
+                    except asyncio.TimeoutError:
+                        raise aiohttp.web.HTTPRequestTimeout(text="Timeout when writing to file '{}'".format(path))
+                    if not chunk:
                         break
-                    f.write(packet)
+                    await f.write(chunk)
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

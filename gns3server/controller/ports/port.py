@@ -27,6 +27,8 @@ class Port:
         self._port_number = port_number
         self._name = name
         self._short_name = short_name
+        self._adapter_type = None
+        self._mac_address = None
         self._link = None
 
     @property
@@ -49,6 +51,22 @@ class Port:
         return self._port_number
 
     @property
+    def adapter_type(self):
+        return self._adapter_type
+
+    @adapter_type.setter
+    def adapter_type(self, val):
+        self._adapter_type = val
+
+    @property
+    def mac_address(self):
+        return self._mac_address
+
+    @mac_address.setter
+    def mac_address(self, val):
+        self._mac_address = val
+
+    @property
     def data_link_types(self):
         """
         Returns the supported PCAP DLTs.
@@ -63,19 +81,21 @@ class Port:
 
     @property
     def short_name(self):
-        # If port name format has change we use the port name as the short name (1.X behavior)
+        # If port name format has changed we use the port name as the short name (1.X behavior)
         if self._short_name:
             return self._short_name
-        elif not self._name.startswith("{}{}".format(self.long_name_type(), self._interface_number)):
-            return self._name
-        return self.short_name_type + "{}/{}".format(self._interface_number, self._port_number)
+        elif '/' in self._name:
+            return self._name.replace(self.long_name_type(), self.short_name_type())
+        elif self._name.startswith("{}{}".format(self.long_name_type(), self._interface_number)):
+            return self.short_name_type() + "{}".format(self._interface_number)
+        return self._name
 
     @short_name.setter
     def short_name(self, val):
         self._short_name = val
 
     def __json__(self):
-        return {
+        info = {
             "name": self._name,
             "short_name": self.short_name,
             "data_link_types": self.data_link_types,
@@ -83,3 +103,8 @@ class Port:
             "adapter_number": self._adapter_number,
             "link_type": self.link_type
         }
+        if self._adapter_type:
+            info["adapter_type"] = self._adapter_type
+        if self._mac_address:
+            info["mac_address"] = self._mac_address
+        return info

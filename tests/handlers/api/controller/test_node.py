@@ -164,7 +164,7 @@ def test_start_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/start".format(project.id, node.id), example=True)
-    assert response.status == 201
+    assert response.status == 200
     assert response.json == node.__json__()
 
 
@@ -173,7 +173,7 @@ def test_stop_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/stop".format(project.id, node.id), example=True)
-    assert response.status == 201
+    assert response.status == 200
     assert response.json == node.__json__()
 
 
@@ -182,7 +182,7 @@ def test_suspend_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/suspend".format(project.id, node.id), example=True)
-    assert response.status == 201
+    assert response.status == 200
     assert response.json == node.__json__()
 
 
@@ -191,7 +191,7 @@ def test_reload_node(http_controller, tmpdir, project, compute, node):
     compute.post = AsyncioMagicMock()
 
     response = http_controller.post("/projects/{}/nodes/{}/reload".format(project.id, node.id), example=True)
-    assert response.status == 201
+    assert response.status == 200
     assert response.json == node.__json__()
 
 

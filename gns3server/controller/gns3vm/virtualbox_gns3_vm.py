@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import aiohttp
 import logging
 import asyncio
@@ -39,24 +40,22 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         super().__init__(controller)
         self._virtualbox_manager = VirtualBox()
 
-    @asyncio.coroutine
-    def _execute(self, subcommand, args, timeout=60):
+    async def _execute(self, subcommand, args, timeout=60):
 
         try:
-            result = yield from self._virtualbox_manager.execute(subcommand, args, timeout)
+            result = await self._virtualbox_manager.execute(subcommand, args, timeout)
             return ("\n".join(result))
         except VirtualBoxError as e:
             raise GNS3VMError("Error while executing VBoxManage command: {}".format(e))
 
-    @asyncio.coroutine
-    def _get_state(self):
+    async def _get_state(self):
         """
         Returns the VM state (e.g. running, paused etc.)
 
         :returns: state (string)
         """
 
-        result = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        result = await self._execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in result.splitlines():
             if '=' in info:
                 name, value = info.split('=', 1)
@@ -64,15 +63,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return value.strip('"')
         return "unknown"
 
-    @asyncio.coroutine
-    def _look_for_interface(self, network_backend):
+    async def _look_for_interface(self, network_backend):
         """
         Look for an interface with a specific network backend.
 
         :returns: interface number or -1 if none is found
         """
 
-        result = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        result = await self._execute("showvminfo", [self._vmname, "--machinereadable"])
         interface = -1
         for info in result.splitlines():
             if '=' in info:
@@ -85,15 +83,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                         continue
         return interface
 
-    @asyncio.coroutine
-    def _look_for_vboxnet(self, interface_number):
+    async def _look_for_vboxnet(self, interface_number):
         """
         Look for the VirtualBox network name associated with a host only interface.
 
         :returns: None or vboxnet name
         """
 
-        result = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        result = await self._execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in result.splitlines():
             if '=' in info:
                 name, value = info.split('=', 1)
@@ -101,17 +98,15 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return value.strip('"')
         return None
 
-    @asyncio.coroutine
-    def _check_dhcp_server(self, vboxnet):
+    async def _check_dhcp_server(self, vboxnet):
         """
         Check if the DHCP server associated with a vboxnet is enabled.
 
         :param vboxnet: vboxnet name
-
         :returns: boolean
         """
 
-        properties = yield from self._execute("list", ["dhcpservers"])
+        properties = await self._execute("list", ["dhcpservers"])
         flag_dhcp_server_found = False
         for prop in properties.splitlines():
             try:
@@ -125,15 +120,47 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return True
         return False
 
-    @asyncio.coroutine
-    def _check_vbox_port_forwarding(self):
+    async def _check_vboxnet_exists(self, vboxnet):
+        """
+        Check if the vboxnet interface exists
+
+        :param vboxnet: vboxnet name
+        :returns: boolean
+        """
+
+        properties = await self._execute("list", ["hostonlyifs"])
+        for prop in properties.splitlines():
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "Name" and value.strip() == vboxnet:
+                return True
+        return False
+
+    async def _find_first_available_vboxnet(self):
+        """
+        Find the first available vboxnet.
+        """
+
+        properties = await self._execute("list", ["hostonlyifs"])
+        for prop in properties.splitlines():
+            try:
+                name, value = prop.split(':', 1)
+            except ValueError:
+                continue
+            if name.strip() == "Name":
+                return value.strip()
+        return None
+
+    async def _check_vbox_port_forwarding(self):
         """
         Checks if the NAT port forwarding rule exists.
 
         :returns: boolean
         """
 
-        result = yield from self._execute("showvminfo", [self._vmname, "--machinereadable"])
+        result = await self._execute("showvminfo", [self._vmname, "--machinereadable"])
         for info in result.splitlines():
             if '=' in info:
                 name, value = info.split('=', 1)
@@ -141,78 +168,90 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return True
         return False
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         List all VirtualBox VMs
         """
 
-        return (yield from self._virtualbox_manager.list_vms())
+        return (await self._virtualbox_manager.list_vms())
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Start the GNS3 VM.
         """
 
         # get a NAT interface number
-        nat_interface_number = yield from self._look_for_interface("nat")
+        nat_interface_number = await self._look_for_interface("nat")
         if nat_interface_number < 0:
-            raise GNS3VMError("The GNS3 VM: {} must have a NAT interface configured in order to start".format(self.vmname))
+            raise GNS3VMError('VM "{}" must have a NAT interface configured in order to start'.format(self.vmname))
 
-        hostonly_interface_number = yield from self._look_for_interface("hostonly")
+        hostonly_interface_number = await self._look_for_interface("hostonly")
         if hostonly_interface_number < 0:
-            raise GNS3VMError("The GNS3 VM: {} must have a host only interface configured in order to start".format(self.vmname))
+            raise GNS3VMError('VM "{}" must have a host-only interface configured in order to start'.format(self.vmname))
 
-        vboxnet = yield from self._look_for_vboxnet(hostonly_interface_number)
+        vboxnet = await self._look_for_vboxnet(hostonly_interface_number)
         if vboxnet is None:
-            raise GNS3VMError("VirtualBox host-only network could not be found for interface {} on GNS3 VM".format(hostonly_interface_number))
+            raise GNS3VMError('A VirtualBox host-only network could not be found on network adapter {} for "{}"'.format(hostonly_interface_number, self._vmname))
 
-        if not (yield from self._check_dhcp_server(vboxnet)):
-            raise GNS3VMError("DHCP must be enabled on VirtualBox host-only network: {} for GNS3 VM".format(vboxnet))
+        if not (await self._check_vboxnet_exists(vboxnet)):
+            if sys.platform.startswith("win") and vboxnet == "vboxnet0":
+                # The GNS3 VM is configured with vboxnet0 by default which is not available
+                # on Windows. Try to patch this with the first available vboxnet we find.
+                first_available_vboxnet = await self._find_first_available_vboxnet()
+                if first_available_vboxnet is None:
+                    raise GNS3VMError('Please add a VirtualBox host-only network with DHCP enabled and attached it to network adapter {} for "{}"'.format(hostonly_interface_number, self._vmname))
+                await self.set_hostonly_network(hostonly_interface_number, first_available_vboxnet)
+                vboxnet = first_available_vboxnet
+            else:
+                raise GNS3VMError('VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(vboxnet,
+                                                                                                                                                                         hostonly_interface_number,
+                                                                                                                                                                         self._vmname))
 
-        vm_state = yield from self._get_state()
+        if not (await self._check_dhcp_server(vboxnet)):
+            raise GNS3VMError('DHCP must be enabled on VirtualBox host-only network "{}"'.format(vboxnet))
+
+        vm_state = await self._get_state()
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
 
         if vm_state == "poweroff":
-            yield from self.set_vcpus(self.vcpus)
-            yield from self.set_ram(self.ram)
+            await self.set_vcpus(self.vcpus)
+            await self.set_ram(self.ram)
 
         if vm_state in ("poweroff", "saved"):
             # start the VM if it is not running
             args = [self._vmname]
             if self._headless:
                 args.extend(["--type", "headless"])
-            yield from self._execute("startvm", args)
+            await self._execute("startvm", args)
         elif vm_state == "paused":
             args = [self._vmname, "resume"]
-            yield from self._execute("controlvm", args)
+            await self._execute("controlvm", args)
         ip_address = "127.0.0.1"
         try:
             # get a random port on localhost
             with socket.socket() as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((ip_address, 0))
                 api_port = s.getsockname()[1]
         except OSError as e:
             raise GNS3VMError("Error while getting random port: {}".format(e))
 
-        if (yield from self._check_vbox_port_forwarding()):
+        if (await self._check_vbox_port_forwarding()):
             # delete the GNS3VM NAT port forwarding rule if it exists
             log.info("Removing GNS3VM NAT port forwarding rule from interface {}".format(nat_interface_number))
-            yield from self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number), "delete", "GNS3VM"])
+            await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number), "delete", "GNS3VM"])
 
         # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to port 3080 in the VM
         log.info("Adding GNS3VM NAT port forwarding rule with port {} to interface {}".format(api_port, nat_interface_number))
-        yield from self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number),
+        await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number),
                                                "GNS3VM,tcp,{},{},,3080".format(ip_address, api_port)])
 
-        self.ip_address = yield from self._get_ip(hostonly_interface_number, api_port)
+        self.ip_address = await self._get_ip(hostonly_interface_number, api_port)
         self.port = 3080
         log.info("GNS3 VM has been started with IP {}".format(self.ip_address))
         self.running = True
 
-    @asyncio.coroutine
-    def _get_ip(self, hostonly_interface_number, api_port):
+    async def _get_ip(self, hostonly_interface_number, api_port):
         """
         Get the IP from VirtualBox.
 
@@ -222,59 +261,50 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         """
         remaining_try = 300
         while remaining_try > 0:
-            json_data = None
-            session = aiohttp.ClientSession()
-            try:
-                resp = None
-                resp = yield from session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port))
-            except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
-                pass
-
-            if resp:
-                if resp.status < 300:
-                    try:
-                        json_data = yield from resp.json()
-                    except ValueError:
-                        pass
-                resp.close()
-
-            session.close()
-
-            if json_data:
-                for interface in json_data:
-                    if "name" in interface and interface["name"] == "eth{}".format(hostonly_interface_number - 1):
-                        if "ip_address" in interface and len(interface["ip_address"]) > 0:
-                            return interface["ip_address"]
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port)) as resp:
+                        if resp.status < 300:
+                            try:
+                                json_data = await resp.json()
+                                if json_data:
+                                    for interface in json_data:
+                                        if "name" in interface and interface["name"] == "eth{}".format(
+                                                hostonly_interface_number - 1):
+                                            if "ip_address" in interface and len(interface["ip_address"]) > 0:
+                                                return interface["ip_address"]
+                            except ValueError:
+                                pass
+                except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
+                    pass
             remaining_try -= 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
         raise GNS3VMError("Could not get the GNS3 VM ip make sure the VM receive an IP from VirtualBox")
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspend the GNS3 VM.
         """
 
-        yield from self._execute("controlvm", [self._vmname, "savestate"], timeout=3)
+        await self._execute("controlvm", [self._vmname, "savestate"], timeout=3)
         log.info("GNS3 VM has been suspend")
         self.running = False
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the GNS3 VM.
         """
 
-        vm_state = yield from self._get_state()
+        vm_state = await self._get_state()
         if vm_state == "poweroff":
             self.running = False
             return
 
-        yield from self._execute("controlvm", [self._vmname, "acpipowerbutton"], timeout=3)
+        await self._execute("controlvm", [self._vmname, "acpipowerbutton"], timeout=3)
         trial = 120
         while True:
             try:
-                vm_state = yield from self._get_state()
+                vm_state = await self._get_state()
             # During a small amount of time the command will fail
             except GNS3VMError:
                 vm_state = "running"
@@ -282,31 +312,42 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 break
             trial -= 1
             if trial == 0:
-                yield from self._execute("controlvm", [self._vmname, "poweroff"], timeout=3)
+                await self._execute("controlvm", [self._vmname, "poweroff"], timeout=3)
                 break
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
         log.info("GNS3 VM has been stopped")
         self.running = False
 
-    @asyncio.coroutine
-    def set_vcpus(self, vcpus):
+    async def set_vcpus(self, vcpus):
         """
         Set the number of vCPU cores for the GNS3 VM.
 
         :param vcpus: number of vCPU cores
         """
 
-        yield from self._execute("modifyvm", [self._vmname, "--cpus", str(vcpus)], timeout=3)
+        await self._execute("modifyvm", [self._vmname, "--cpus", str(vcpus)], timeout=3)
         log.info("GNS3 VM vCPU count set to {}".format(vcpus))
 
-    @asyncio.coroutine
-    def set_ram(self, ram):
+    async def set_ram(self, ram):
         """
         Set the RAM amount for the GNS3 VM.
 
         :param ram: amount of memory
         """
 
-        yield from self._execute("modifyvm", [self._vmname, "--memory", str(ram)], timeout=3)
+        await self._execute("modifyvm", [self._vmname, "--memory", str(ram)], timeout=3)
         log.info("GNS3 VM RAM amount set to {}".format(ram))
+
+    async def set_hostonly_network(self, adapter_number, hostonly_network_name):
+        """
+        Set a VirtualBox host-only network on a network adapter for the GNS3 VM.
+
+        :param adapter_number: network adapter number
+        :param hostonly_network_name: name of the VirtualBox host-only network
+        """
+
+        await self._execute("modifyvm", [self._vmname, "--hostonlyadapter{}".format(adapter_number), hostonly_network_name], timeout=3)
+        log.info('VirtualBox host-only network "{}" set on network adapter {} for "{}"'.format(hostonly_network_name,
+                                                                                               adapter_number,
+                                                                                               self._vmname))

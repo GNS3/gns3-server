@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/cloud/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend a cloud
+Suspend a cloud (does nothing)
 
 Parameters
 **********

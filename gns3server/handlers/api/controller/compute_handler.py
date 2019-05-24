@@ -22,7 +22,8 @@ from gns3server.schemas.compute import (
     COMPUTE_CREATE_SCHEMA,
     COMPUTE_OBJECT_SCHEMA,
     COMPUTE_UPDATE_SCHEMA,
-    COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA
+    COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA,
+    COMPUTE_PORTS_OBJECT_SCHEMA
 )
 
 import logging
@@ -30,27 +31,27 @@ log = logging.getLogger(__name__)
 
 
 class ComputeHandler:
-    """API entry points for compute server management."""
+    """API entry points for compute management."""
 
     @Route.post(
         r"/computes",
-        description="Register a compute server",
+        description="Register a compute",
         status_codes={
-            201: "Compute server added"
+            201: "Compute added"
         },
         input=COMPUTE_CREATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
-        compute = yield from Controller.instance().add_compute(**request.json)
+        compute = await Controller.instance().add_compute(**request.json)
         response.set_status(201)
         response.json(compute)
 
     @Route.get(
         r"/computes",
-        description="List of compute servers",
+        description="List of computes",
         status_codes={
-            200: "Compute servers list returned"
+            200: "Computes list returned"
         })
     def list(request, response):
 
@@ -59,39 +60,40 @@ class ComputeHandler:
 
     @Route.put(
         r"/computes/{compute_id}",
-        description="Get a compute server information",
+        description="Update a compute",
         status_codes={
-            200: "Compute server updated",
+            200: "Compute updated",
             400: "Invalid request",
             404: "Instance doesn't exist"
         },
         input=COMPUTE_UPDATE_SCHEMA,
         output=COMPUTE_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
 
         # Ignore these because we only use them when creating a node
         request.json.pop("compute_id", None)
-        yield from compute.update(**request.json)
+        await compute.update(**request.json)
         response.set_status(200)
         response.json(compute)
 
     @Route.get(
         r"/computes/{compute_id}/{emulator}/images",
         parameters={
-            "compute_id": "Compute UUID"
+            "compute_id": "Compute UUID",
+            "emulator": "Emulator type"
         },
         status_codes={
             200: "OK",
             404: "Instance doesn't exist"
         },
-        description="Return the list of images available on compute and controller for this emulator type")
-    def images(request, response):
+        description="Return the list of images available on compute for this emulator type")
+    async def images(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.images(request.match_info["emulator"])
+        res = await compute.images(request.match_info["emulator"])
         response.json(res)
 
     @Route.get(
@@ -132,10 +134,10 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def get_forward(request, response):
+    async def get_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
+        res = await compute.forward("GET", request.match_info["emulator"], request.match_info["action"])
         response.json(res)
 
     @Route.post(
@@ -149,17 +151,34 @@ class ComputeHandler:
         },
         raw=True,
         description="Forward call specific to compute node. Read the full compute API for available actions")
-    def post_forward(request, response):
+    async def post_forward(request, response):
         controller = Controller.instance()
         compute = controller.get_compute(request.match_info["compute_id"])
-        res = yield from compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        res = await compute.forward("POST", request.match_info["emulator"], request.match_info["action"], data=request.content)
+        response.json(res)
+
+    @Route.put(
+        r"/computes/{compute_id}/{emulator}/{action:.+}",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "OK",
+            404: "Instance doesn't exist"
+        },
+        raw=True,
+        description="Forward call specific to compute node. Read the full compute API for available actions")
+    async def put_forward(request, response):
+        controller = Controller.instance()
+        compute = controller.get_compute(request.match_info["compute_id"])
+        res = await compute.forward("PUT", request.match_info["emulator"], request.match_info["action"], data=request.content)
         response.json(res)
 
     @Route.get(
         r"/computes/{compute_id}",
-        description="Get a compute server information",
+        description="Get a compute information",
         status_codes={
-            200: "Compute server information returned"
+            200: "Compute information returned"
         },
         output=COMPUTE_OBJECT_SCHEMA)
     def get(request, response):
@@ -179,9 +198,9 @@ class ComputeHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a compute instance")
-    def delete(request, response):
+    async def delete(request, response):
         controller = Controller.instance()
-        yield from controller.delete_compute(request.match_info["compute_id"])
+        await controller.delete_compute(request.match_info["compute_id"])
         response.set_status(204)
 
     @Route.post(
@@ -193,8 +212,23 @@ class ComputeHandler:
             200: "Idle PC computed",
         },
         description="Compute IDLE PC value")
-    def autoidlepc(request, response):
+    async def autoidlepc(request, response):
         controller = Controller.instance()
-        res = yield from controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
+        res = await controller.autoidlepc(request.match_info["compute_id"], request.json["platform"], request.json["image"], request.json["ram"])
         response.json(res)
-        response.set_status(200)
+
+    @Route.get(
+        r"/computes/{compute_id}/ports",
+        parameters={
+            "compute_id": "Compute UUID"
+        },
+        status_codes={
+            200: "Ports information returned",
+        },
+        description="Get ports used by a compute",
+        output=COMPUTE_PORTS_OBJECT_SCHEMA)
+    async def ports(request, response):
+        controller = Controller.instance()
+        res = await controller.compute_ports(request.match_info["compute_id"])
+        response.json(res)
+

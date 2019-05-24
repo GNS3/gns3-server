@@ -44,7 +44,7 @@ VPCS_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "startup_script": {
             "description": "Content of the VPCS startup script",
@@ -73,7 +73,7 @@ VPCS_UPDATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
     },
     "additionalProperties": False,
@@ -108,11 +108,11 @@ VPCS_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "project_id": {
             "description": "Project UUID",

@@ -20,7 +20,7 @@
 # the start command of the container
 #
 OLD_PATH="$PATH"
-PATH=/gns3/bin:/tmp/gns3/bin
+PATH=/gns3/bin:/tmp/gns3/bin:/sbin
 
 # bootstrap busybox commands
 if [ ! -d /tmp/gns3/bin ]; then
@@ -60,6 +60,14 @@ ff02::1	ip6-allnodes
 ff02::2	ip6-allrouters
 __EOF__
 
+# imitate docker's `ExtraHosts` behaviour
+sed -i '/GNS3_EXTRA_HOSTS_START/,/GNS3_EXTRA_HOSTS_END/d' /etc/hosts
+[ -n "$GNS3_EXTRA_HOSTS" ] && cat >> /etc/hosts << __EOF__
+# GNS3_EXTRA_HOSTS_START
+$GNS3_EXTRA_HOSTS
+# GNS3_EXTRA_HOSTS_END
+__EOF__
+
 # configure loopback interface
 ip link set dev lo up
 
@@ -79,6 +87,9 @@ done
 ifup -a -f
 
 # continue normal docker startup
-PATH="$OLD_PATH"
-exec "$@"
-
+GNS3_CMD="PATH=$OLD_PATH exec"
+while test "$#" -gt 0 ; do
+    GNS3_CMD="${GNS3_CMD} \"${1//\"/\\\"}\""
+    shift
+done
+exec su ${GNS3_USER-root} -p -c "$GNS3_CMD"

@@ -17,7 +17,6 @@
 
 import os
 import aiohttp
-import asyncio
 from contextlib import contextmanager
 
 from ..notification_queue import NotificationQueue
@@ -30,30 +29,69 @@ class Notification:
 
     def __init__(self, controller):
         self._controller = controller
-        self._listeners = {}
+        self._project_listeners = {}
+        self._controller_listeners = []
 
     @contextmanager
-    def queue(self, project):
+    def project_queue(self, project_id):
         """
         Get a queue of notifications
 
         Use it with Python with
         """
         queue = NotificationQueue()
-        self._listeners.setdefault(project.id, set())
-        self._listeners[project.id].add(queue)
-        yield queue
-        self._listeners[project.id].remove(queue)
+        self._project_listeners.setdefault(project_id, set())
+        self._project_listeners[project_id].add(queue)
+        try:
+            yield queue
+        finally:
+            self._project_listeners[project_id].remove(queue)
 
-    def project_has_listeners(self, project):
+    @contextmanager
+    def controller_queue(self):
+        """
+        Get a queue of notifications
+
+        Use it with Python with
+        """
+        queue = NotificationQueue()
+        self._controller_listeners.append(queue)
+        try:
+            yield queue
+        finally:
+            self._controller_listeners.remove(queue)
+
+    def controller_emit(self, action, event):
+        """
+        Send a notification to clients connected to the controller stream
+
+        :param action: Action name
+        :param event: Event to send
+        """
+
+        # If use in tests for documentation we save a sample
+        if os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+            os.makedirs("docs/api/notifications", exist_ok=True)
+            try:
+                import json
+                data = json.dumps(event, indent=4, sort_keys=True)
+                if "MagicMock" not in data:
+                    with open(os.path.join("docs/api/notifications", action + ".json"), 'w+') as f:
+                        f.write(data)
+            except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
+                pass
+
+        for controller_listener in self._controller_listeners:
+            controller_listener.put_nowait((action, event, {}))
+
+    def project_has_listeners(self, project_id):
         """
         :param project_id: Project object
         :returns: True if client listen this project
         """
-        return project.id in self._listeners and len(self._listeners[project.id]) > 0
+        return project_id in self._project_listeners and len(self._project_listeners[project_id]) > 0
 
-    @asyncio.coroutine
-    def dispatch(self, action, event, compute_id):
+    async def dispatch(self, action, event, project_id, compute_id):
         """
         Notification received from compute node. Send it directly
         to clients or process it
@@ -67,18 +105,18 @@ class Notification:
                 # Update controller node data and send the event node.updated
                 project = self._controller.get_project(event["project_id"])
                 node = project.get_node(event["node_id"])
-                yield from node.parse_node_response(event)
+                await node.parse_node_response(event)
 
-                self.emit("node.updated", node.__json__())
+                self.project_emit("node.updated", node.__json__())
             except (aiohttp.web.HTTPNotFound, aiohttp.web.HTTPForbidden):  # Project closing
                 return
         elif action == "ping":
-            event["compute_id"] = compute_id
-            self.emit(action, event)
+             event["compute_id"] = compute_id
+             self.project_emit(action, event)
         else:
-            self.emit(action, event)
+            self.project_emit(action, event, project_id)
 
-    def emit(self, action, event):
+    def project_emit(self, action, event, project_id=None):
         """
         Send a notification to clients scoped by projects
 
@@ -98,10 +136,10 @@ class Notification:
             except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
                 pass
 
-        if "project_id" in event:
-            self._send_event_to_project(event["project_id"], action, event)
+        if "project_id" in event or project_id:
+            self._send_event_to_project(event.get("project_id", project_id), action, event)
         else:
-            self._send_event_to_all(action, event)
+            self._send_event_to_all_projects(action, event)
 
     def _send_event_to_project(self, project_id, action, event):
         """
@@ -113,13 +151,13 @@ class Notification:
         :param event: Event to send
         """
         try:
-            project_listeners = self._listeners[project_id]
+            project_listeners = self._project_listeners[project_id]
         except KeyError:
             return
         for listener in project_listeners:
             listener.put_nowait((action, event, {}))
 
-    def _send_event_to_all(self, action, event):
+    def _send_event_to_all_projects(self, action, event):
         """
         Send an event to all the client listening for notifications on all
         projects
@@ -127,6 +165,6 @@ class Notification:
         :param action: Action name
         :param event: Event to send
         """
-        for project_listeners in self._listeners.values():
+        for project_listeners in self._project_listeners.values():
             for listener in project_listeners:
                 listener.put_nowait((action, event, {}))

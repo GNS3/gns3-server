@@ -19,8 +19,6 @@
 Hub object that uses the Bridge interface to create a hub with ports.
 """
 
-import asyncio
-
 from .bridge import Bridge
 from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
@@ -93,10 +91,9 @@ class EthernetHub(Bridge):
 
             self._ports = ports
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from Bridge.create(self)
+        await Bridge.create(self)
         log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
     @property
@@ -109,32 +106,29 @@ class EthernetHub(Bridge):
 
         return self._mappings
 
-    @asyncio.coroutine
-    def delete(self):
-        return (yield from self.close())
+    async def delete(self):
+        return (await self.close())
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Deletes this hub.
         """
 
         for nio in self._nios:
             if nio:
-                yield from nio.close()
+                await nio.close()
 
         try:
-            yield from Bridge.delete(self)
+            await Bridge.delete(self)
             log.info('Ethernet hub "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
         except DynamipsError:
             log.debug("Could not properly delete Ethernet hub {}".format(self._name))
         if self._hypervisor and not self._hypervisor.devices:
-            yield from self.hypervisor.stop()
+            await self.hypervisor.stop()
             self._hypervisor = None
         return True
 
-    @asyncio.coroutine
-    def add_nio(self, nio, port_number):
+    async def add_nio(self, nio, port_number):
         """
         Adds a NIO as new port on this hub.
 
@@ -148,7 +142,7 @@ class EthernetHub(Bridge):
         if port_number in self._mappings:
             raise DynamipsError("Port {} isn't free".format(port_number))
 
-        yield from Bridge.add_nio(self, nio)
+        await Bridge.add_nio(self, nio)
 
         log.info('Ethernet hub "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
                                                                                        id=self._id,
@@ -156,8 +150,7 @@ class EthernetHub(Bridge):
                                                                                        port=port_number))
         self._mappings[port_number] = nio
 
-    @asyncio.coroutine
-    def remove_nio(self, port_number):
+    async def remove_nio(self, port_number):
         """
         Removes the specified NIO as member of this hub.
 
@@ -169,10 +162,11 @@ class EthernetHub(Bridge):
         if port_number not in self._mappings:
             raise DynamipsError("Port {} is not allocated".format(port_number))
 
+        await self.stop_capture(port_number)
         nio = self._mappings[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
-        yield from Bridge.remove_nio(self, nio)
+        await Bridge.remove_nio(self, nio)
 
         log.info('Ethernet hub "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
                                                                                            id=self._id,
@@ -182,8 +176,26 @@ class EthernetHub(Bridge):
         del self._mappings[port_number]
         return nio
 
-    @asyncio.coroutine
-    def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
+    def get_nio(self, port_number):
+        """
+        Gets a port NIO binding.
+
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        if port_number not in self._mappings:
+            raise DynamipsError("Port {} is not allocated".format(port_number))
+
+        nio = self._mappings[port_number]
+
+        if not nio:
+            raise DynamipsError("Port {} is not connected".format(port_number))
+
+        return nio
+
+    async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
 
@@ -192,11 +204,7 @@ class EthernetHub(Bridge):
         :param data_link_type: PCAP data link type (DLT_*), default is DLT_EN10MB
         """
 
-        if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._mappings[port_number]
-
+        nio = self.get_nio(port_number)
         data_link_type = data_link_type.lower()
         if data_link_type.startswith("dlt_"):
             data_link_type = data_link_type[4:]
@@ -204,26 +212,22 @@ class EthernetHub(Bridge):
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError("Port {} has already a filter applied".format(port_number))
 
-        yield from nio.bind_filter("both", "capture")
-        yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
-
+        await nio.start_packet_capture(output_file, data_link_type)
         log.info('Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                port=port_number))
 
-    @asyncio.coroutine
-    def stop_capture(self, port_number):
+    async def stop_capture(self, port_number):
         """
         Stops a packet capture.
 
         :param port_number: allocated port number
         """
 
-        if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
-
-        nio = self._mappings[port_number]
-        yield from nio.unbind_filter("both")
+        nio = self.get_nio(port_number)
+        if not nio.capturing:
+            return
+        await nio.stop_packet_capture()
         log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
                                                                                                id=self._id,
                                                                                                port=port_number))

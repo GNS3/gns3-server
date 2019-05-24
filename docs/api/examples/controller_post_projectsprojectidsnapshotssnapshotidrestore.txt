@@ -1,25 +1,27 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/eb0c9744-0882-440d-aeb0-f7e136989c30/snapshots/7782fde0-310f-4eed-8899-0fba6189999c/restore' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/55292fcb-7ff8-4c4a-b16e-423fe9cc4abf/snapshots/7c972c42-cec8-48d2-931a-154c9ab32836/restore' -d '{}'
 
-POST /v2/projects/eb0c9744-0882-440d-aeb0-f7e136989c30/snapshots/7782fde0-310f-4eed-8899-0fba6189999c/restore HTTP/1.1
+POST /v2/projects/55292fcb-7ff8-4c4a-b16e-423fe9cc4abf/snapshots/7c972c42-cec8-48d2-931a-154c9ab32836/restore HTTP/1.1
 {}
 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 509
+Content-Length: 560
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:40 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:50:10 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/snapshots/{snapshot_id}/restore
 
 {
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
+    "grid_size": 75,
     "name": "test",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp20r65_qe/projects/eb0c9744-0882-440d-aeb0-f7e136989c30",
-    "project_id": "eb0c9744-0882-440d-aeb0-f7e136989c30",
+    "path": "/tmp/tmpn5uwt778/projects/55292fcb-7ff8-4c4a-b16e-423fe9cc4abf",
+    "project_id": "55292fcb-7ff8-4c4a-b16e-423fe9cc4abf",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,
@@ -27,5 +29,7 @@ X-Route: /v2/projects/{project_id}/snapshots/{snapshot_id}/restore
     "show_layers": false,
     "snap_to_grid": false,
     "status": "opened",
+    "supplier": null,
+    "variables": null,
     "zoom": 100
 }

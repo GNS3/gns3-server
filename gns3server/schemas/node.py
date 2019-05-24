@@ -17,6 +17,7 @@
 
 import copy
 from .label import LABEL_OBJECT_SCHEMA
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
 
 NODE_TYPE_SCHEMA = {
     "description": "Type of node",
@@ -30,6 +31,7 @@ NODE_TYPE_SCHEMA = {
         "docker",
         "dynamips",
         "vpcs",
+        "traceng",
         "virtualbox",
         "vmware",
         "iou",
@@ -117,6 +119,13 @@ NODE_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "template_id": {
+            "description": "Template UUID from which the node has been created. Read only",
+            "type": ["null", "string"],
+            "minLength": 36,
+            "maxLength": 36,
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
         "node_type": NODE_TYPE_SCHEMA,
         "node_directory": {
             "description": "Working directory of the node. Read only",
@@ -144,7 +153,11 @@ NODE_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["vnc", "telnet", "http", "https", "spice", None]
+            "enum": ["vnc", "telnet", "http", "https", "spice", "spice+agent", "none", None]
+        },
+        "console_auto_start": {
+            "description": "Automatically start the console when the node has started",
+            "type": "boolean"
         },
         "properties": {
             "description": "Properties specific to an emulator",
@@ -180,6 +193,10 @@ NODE_OBJECT_SCHEMA = {
             "description": "Z position of the node",
             "type": "integer"
         },
+        "locked": {
+            "description": "Whether the element locked or not",
+            "type": "boolean"
+        },
         "port_name_format": {
             "description": "Formating for port name {0} will be replace by port number",
             "type": "string"
@@ -193,6 +210,7 @@ NODE_OBJECT_SCHEMA = {
             "description": "Name of the first port",
             "type": ["string", "null"],
         },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA,
         "ports": {
             "description": "List of node ports READ only",
             "type": "array",
@@ -212,6 +230,11 @@ NODE_OBJECT_SCHEMA = {
                         "type": "integer",
                         "description": "Adapter slot"
                     },
+                    "adapter_type": {
+                        "description": "Adapter type",
+                        "type": ["string", "null"],
+                        "minLength": 1,
+                    },
                     "port_number": {
                         "type": "integer",
                         "description": "Port slot"
@@ -222,8 +245,14 @@ NODE_OBJECT_SCHEMA = {
                     },
                     "data_link_types": {
                         "type": "object",
-                        "description": "Available PCAP type for capture",
+                        "description": "Available PCAP types for capture",
                         "properties": {}
+                    },
+                    "mac_address": {
+                        "description": "MAC address (if available)",
+                        "type": ["string", "null"],
+                        "minLength": 1,
+                        "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
                     },
                 },
                 "additionalProperties": False

@@ -47,6 +47,10 @@ DRAWING_OBJECT_SCHEMA = {
             "description": "Z property",
             "type": "integer"
         },
+        "locked": {
+            "description": "Whether the element locked or not",
+            "type": "boolean"
+        },
         "rotation": {
             "description": "Rotation of the element",
             "type": "integer",

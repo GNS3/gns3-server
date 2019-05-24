@@ -15,6 +15,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+SUPPLIER_OBJECT_SCHEMA = {
+    "type": ["object", "null"],
+    "description": "Supplier of the project",
+    "properties": {
+        "logo": {
+            "type": "string",
+            "description": "Path to the project supplier logo"
+        },
+        "url": {
+            "type": "string",
+            "description": "URL to the project supplier site"
+        }
+    }
+}
+
+
+VARIABLES_OBJECT_SCHEMA = {
+    "type": ["array", "null"],
+    "description": "Variables required to run the project",
+    "items": {
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Variable name"
+            },
+            "value": {
+                "type": "string",
+                "description": "Variable value"
+            }
+        },
+        "required": ["name"]
+    }
+}
+
 
 PROJECT_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -66,10 +100,20 @@ PROJECT_CREATE_SCHEMA = {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
-        }
+        },
+        "supplier": SUPPLIER_OBJECT_SCHEMA,
+        "variables": VARIABLES_OBJECT_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name"]
@@ -125,10 +169,20 @@ PROJECT_UPDATE_SCHEMA = {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
-        }
+        },
+        "supplier": SUPPLIER_OBJECT_SCHEMA,
+        "variables": VARIABLES_OBJECT_SCHEMA
     },
     "additionalProperties": False,
 }
@@ -200,10 +254,20 @@ PROJECT_OBJECT_SCHEMA = {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
-        }
+        },
+        "supplier": SUPPLIER_OBJECT_SCHEMA,
+        "variables": VARIABLES_OBJECT_SCHEMA
     },
     "additionalProperties": False,
     "required": ["project_id"]

@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
+
 DOCKER_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Docker container",
@@ -41,7 +44,7 @@ DOCKER_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc", "http", "https"]
+            "enum": ["telnet", "vnc", "http", "https", "none"]
         },
         "console_resolution": {
             "description": "Console resolution for VNC",
@@ -63,7 +66,7 @@ DOCKER_CREATE_SCHEMA = {
             "type": ["integer", "null"]
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the Docker container",
             "type": "string",
         },
         "start_command": {
@@ -87,13 +90,27 @@ DOCKER_CREATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 0,
         },
+        "extra_hosts": {
+            "description": "Docker extra hosts (added to /etc/hosts)",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
+        "extra_volumes": {
+            "description": "Additional directories to make persistent",
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "string"
+            }
+        },
         "container_id": {
             "description": "Docker container ID Read only",
             "type": "string",
             "minLength": 12,
             "maxLength": 64,
             "pattern": "^[a-f0-9]+$"
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name", "image"]
@@ -126,7 +143,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_resolution": {
             "description": "Console resolution for VNC",
@@ -135,7 +152,7 @@ DOCKER_OBJECT_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "vnc", "http", "https"]
+            "enum": ["telnet", "vnc", "http", "https", "none"]
         },
         "console_http_port": {
             "description": "Internal port in the container for the HTTP server",
@@ -171,7 +188,7 @@ DOCKER_OBJECT_SCHEMA = {
             "maximum": 99,
         },
         "usage": {
-            "description": "How to use the qemu VM",
+            "description": "How to use the Docker container",
             "type": "string",
         },
         "start_command": {
@@ -184,6 +201,19 @@ DOCKER_OBJECT_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 0,
         },
+        "extra_hosts": {
+            "description": "Docker extra hosts (added to /etc/hosts)",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
+        "extra_volumes": {
+            "description": "Additional directories to make persistent",
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "string",
+            }
+        },
         "node_directory": {
             "description": "Path to the node working directory  Read only",
             "type": "string"
@@ -192,6 +222,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "VM status Read only",
             "enum": ["started", "stopped", "suspended"]
         },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
 }

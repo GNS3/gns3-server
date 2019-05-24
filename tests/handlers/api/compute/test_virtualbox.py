@@ -108,11 +108,12 @@ def test_vbox_nio_create_udp(http_compute, vm):
         assert args[0] == 0
 
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_virtualbox_nio_update_udp(http_compute, vm):
+
     with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.ethernet_adapters'):
         with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
             response = http_compute.put("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/nio".format(
@@ -126,7 +127,7 @@ def test_virtualbox_nio_update_udp(http_compute, vm):
                     "filters": {}},
                 example=True)
     assert response.status == 201, response.body.decode()
-    assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
@@ -140,7 +141,7 @@ def test_vbox_delete_nio(http_compute, vm):
         assert args[0] == 0
 
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_vbox_update(http_compute, vm, free_console_port):
@@ -150,3 +151,31 @@ def test_vbox_update(http_compute, vm, free_console_port):
     assert response.status == 200
     assert response.json["name"] == "test"
     assert response.json["console"] == free_console_port
+
+
+def test_virtualbox_start_capture(http_compute, vm):
+
+    with patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.is_running", return_value=True):
+        with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.start_capture") as start_capture:
+            params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
+            response = http_compute.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
+            assert response.status == 200
+            assert start_capture.called
+            assert "test.pcap" in response.json["pcap_file_path"]
+
+
+def test_virtualbox_stop_capture(http_compute, vm):
+
+    with patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.is_running", return_value=True):
+        with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.stop_capture") as stop_capture:
+            response = http_compute.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+            assert response.status == 204
+            assert stop_capture.called
+
+
+def test_virtualbox_pcap(http_compute, vm, project):
+
+    with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.get_nio"):
+        with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.stream_pcap_file"):
+            response = http_compute.get("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=project.id, node_id=vm["node_id"]), raw=True)
+            assert response.status == 200

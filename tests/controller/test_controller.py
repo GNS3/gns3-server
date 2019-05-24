@@ -35,7 +35,7 @@ def test_save(controller, controller_config_path):
         data = json.load(f)
         assert data["computes"] == []
         assert data["version"] == __version__
-        assert data["settings"] == {}
+        assert data["iou_license"] == controller.iou_license
         assert data["gns3vm"] == controller.gns3vm.__json__()
 
 
@@ -53,12 +53,10 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
             "compute_id": "test1"
         }
     ]
-    data["settings"] = {"IOU": {"test": True}}
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
     assert len(async_run(controller._load_controller_settings())) == 1
-    assert controller.settings["IOU"]
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
@@ -199,13 +197,6 @@ def test_import_remote_gns3vm_1_x(controller, controller_config_path, async_run)
     assert controller.gns3vm.settings["vmname"] == "http://127.0.0.1:3081"
 
 
-def test_settings(controller):
-    controller._notification = MagicMock()
-    controller.settings = {"a": 1}
-    controller._notification.emit.assert_called_with("settings.updated", controller.settings)
-    assert controller.settings["modification_uuid"] is not None
-
-
 def test_load_projects(controller, projects_dir, async_run):
     controller.save()
 
@@ -220,10 +211,10 @@ def test_load_projects(controller, projects_dir, async_run):
 def test_add_compute(controller, controller_config_path, async_run):
     controller._notification = MagicMock()
     c = async_run(controller.add_compute(compute_id="test1", connect=False))
-    controller._notification.emit.assert_called_with("compute.created", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test1", connect=False))
-    controller._notification.emit.assert_called_with("compute.updated", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
     async_run(controller.add_compute(compute_id="test2", connect=False))
     assert len(controller.computes) == 2
@@ -244,7 +235,7 @@ def test_deleteCompute(controller, controller_config_path, async_run):
     c._connected = True
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
-    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
         assert len(data["computes"]) == 0
@@ -271,7 +262,7 @@ def test_deleteComputeProjectOpened(controller, controller_config_path, async_ru
     c._connected = True
     async_run(controller.delete_compute("test1"))
     assert len(controller.computes) == 0
-    controller._notification.emit.assert_called_with("compute.deleted", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
         data = json.load(f)
         assert len(data["computes"]) == 0
@@ -475,7 +466,7 @@ def test_load_base_files(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
-def test_appliance_templates(controller, async_run, tmpdir):
+def test_appliances(controller, async_run, tmpdir):
     my_appliance = {
         "name": "My Appliance",
         "status": "stable"
@@ -490,14 +481,14 @@ def test_appliance_templates(controller, async_run, tmpdir):
         json.dump(my_appliance, f)
 
     with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
-        controller.load_appliances()
-    assert len(controller.appliance_templates) > 0
-    for appliance in controller.appliance_templates.values():
+        controller.appliance_manager.load_appliances()
+    assert len(controller.appliance_manager.appliances) > 0
+    for appliance in controller.appliance_manager.appliances.values():
         assert appliance.__json__()["status"] != "broken"
-    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
-    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliance_templates.values()]
+    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_manager.appliances.values()]
+    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliance_manager.appliances.values()]
 
-    for c in controller.appliance_templates.values():
+    for c in controller.appliance_manager.appliances.values():
         j = c.__json__()
         if j["name"] == "Alpine Linux":
             assert j["builtin"]
@@ -505,85 +496,29 @@ def test_appliance_templates(controller, async_run, tmpdir):
             assert not j["builtin"]
 
 
-def test_load_appliances(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router"
-                }
-            ]
-        }
-    }
-    controller.load_appliances()
-    assert "Test" in [appliance.name for appliance in controller.appliances.values()]
-    assert "Cloud" in [appliance.name for appliance in controller.appliances.values()]
-    assert "VPCS" in [appliance.name for appliance in controller.appliances.values()]
+def test_load_templates(controller):
+    controller._settings = {}
+    controller.template_manager.load_templates()
 
-    for appliance in controller.appliances.values():
-        if appliance.name == "VPCS":
-            assert appliance._data["properties"] == {"base_script_file": "vpcs_base_config.txt"}
+    assert "Cloud" in [template.name for template in controller.template_manager.templates.values()]
+    assert "VPCS" in [template.name for template in controller.template_manager.templates.values()]
+
+    for template in controller.template_manager.templates.values():
+        if template.name == "VPCS":
+            assert template._settings["properties"] == {"base_script_file": "vpcs_base_config.txt"}
 
     # UUID should not change when you run again the function
-    for appliance in controller.appliances.values():
-        if appliance.name == "Test":
-            qemu_uuid = appliance.id
-        elif appliance.name == "Cloud":
-            cloud_uuid = appliance.id
-    controller.load_appliances()
-    for appliance in controller.appliances.values():
-        if appliance.name == "Test":
-            assert qemu_uuid == appliance.id
-        elif appliance.name == "Cloud":
-            assert cloud_uuid == appliance.id
-
-
-def test_load_appliances_deprecated_features_default_symbol(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router",
-                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
-                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
-                }
-            ]
-        }
-    }
-    controller.load_appliances()
-    appliances = dict([(a.name, a) for a in controller.appliances.values()])
-
-    assert appliances["Test"].__json__()["symbol"] == ":/symbols/computer.svg"
-    assert "default_symbol" not in appliances["Test"].data.keys()
-    assert "hover_symbol" not in appliances["Test"].data.keys()
-
-
-def test_load_appliances_deprecated_features_default_symbol_with_symbol(controller):
-    controller._settings = {
-        "Qemu": {
-            "vms": [
-                {
-                    "name": "Test",
-                    "node_type": "qemu",
-                    "category": "router",
-                    "default_symbol": ":/symbols/iosv_virl.normal.svg",
-                    "hover_symbol": ":/symbols/iosv_virl.selected.svg",
-                    "symbol": ":/symbols/my-symbol.svg"
-
-                }
-            ]
-        }
-    }
-    controller.load_appliances()
-    appliances = dict([(a.name, a) for a in controller.appliances.values()])
-
-    assert appliances["Test"].__json__()["symbol"] == ":/symbols/my-symbol.svg"
-    assert "default_symbol" not in appliances["Test"].data.keys()
-    assert "hover_symbol" not in appliances["Test"].data.keys()
+    for template in controller.template_manager.templates.values():
+        if template.name == "Test":
+            qemu_uuid = template.id
+        elif template.name == "Cloud":
+            cloud_uuid = template.id
+    controller.template_manager.load_templates()
+    for template in controller.template_manager.templates.values():
+        if template.name == "Test":
+            assert qemu_uuid == template.id
+        elif template.name == "Cloud":
+            assert cloud_uuid == template.id
 
 
 def test_autoidlepc(controller, async_run):

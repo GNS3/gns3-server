@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+
 import aiohttp
 
 
@@ -26,7 +26,6 @@ class UDPLink(Link):
 
     def __init__(self, project, link_id=None):
         super().__init__(project, link_id=link_id)
-        self._capture_node = None
         self._created = False
         self._link_data = []
 
@@ -37,8 +36,7 @@ class UDPLink(Link):
         """
         return self._link_data
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Create the link on the nodes
         """
@@ -52,14 +50,14 @@ class UDPLink(Link):
 
         # Get an IP allowing communication between both host
         try:
-            (node1_host, node2_host) = yield from node1.compute.get_ip_on_same_subnet(node2.compute)
+            (node1_host, node2_host) = await node1.compute.get_ip_on_same_subnet(node2.compute)
         except ValueError as e:
-            raise aiohttp.web.HTTPConflict(text=str(e))
+            raise aiohttp.web.HTTPConflict(text="Cannot get an IP address on same subnet: {}".format(e))
 
         # Reserve a UDP port on both side
-        response = yield from node1.compute.post("/projects/{}/ports/udp".format(self._project.id))
+        response = await node1.compute.post("/projects/{}/ports/udp".format(self._project.id))
         self._node1_port = response.json["udp_port"]
-        response = yield from node2.compute.post("/projects/{}/ports/udp".format(self._project.id))
+        response = await node2.compute.post("/projects/{}/ports/udp".format(self._project.id))
         self._node2_port = response.json["udp_port"]
 
         node1_filters = {}
@@ -76,46 +74,60 @@ class UDPLink(Link):
             "rhost": node2_host,
             "rport": self._node2_port,
             "type": "nio_udp",
-            "filters": node1_filters
+            "filters": node1_filters,
+            "suspend": self._suspended
         })
-        yield from node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
+        await node1.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
 
         self._link_data.append({
             "lport": self._node2_port,
             "rhost": node1_host,
             "rport": self._node1_port,
             "type": "nio_udp",
-            "filters": node2_filters
+            "filters": node2_filters,
+            "suspend": self._suspended
         })
         try:
-            yield from node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=120)
+            await node2.post("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=120)
         except Exception as e:
             # We clean the first NIO
-            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
+            await node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
             raise e
         self._created = True
 
-    @asyncio.coroutine
-    def update(self):
+    async def update(self):
+        """
+        Update the link on the nodes
+        """
+
         if len(self._link_data) == 0:
             return
         node1 = self._nodes[0]["node"]
         node2 = self._nodes[1]["node"]
+
+        node1_filters = {}
+        node2_filters = {}
         filter_node = self._get_filter_node()
+        if filter_node == node1:
+            node1_filters = self.get_active_filters()
+        elif filter_node == node2:
+            node2_filters = self.get_active_filters()
 
-        if node1 == filter_node:
-            adapter_number1 = self._nodes[0]["adapter_number"]
-            port_number1 = self._nodes[0]["port_number"]
-            self._link_data[0]["filters"] = self.get_active_filters()
-            yield from node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
-        elif node2 == filter_node:
-            adapter_number2 = self._nodes[1]["adapter_number"]
-            port_number2 = self._nodes[1]["port_number"]
-            self._link_data[1]["filters"] = self.get_active_filters()
-            yield from node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
+        adapter_number1 = self._nodes[0]["adapter_number"]
+        port_number1 = self._nodes[0]["port_number"]
+        self._link_data[0]["filters"] = node1_filters
+        self._link_data[0]["suspend"] = self._suspended
+        if node1.node_type not in ("ethernet_switch", "ethernet_hub"):
+            await node1.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), data=self._link_data[0], timeout=120)
 
-    @asyncio.coroutine
-    def delete(self):
+        adapter_number2 = self._nodes[1]["adapter_number"]
+        port_number2 = self._nodes[1]["port_number"]
+        self._link_data[1]["filters"] = node2_filters
+        self._link_data[1]["suspend"] = self._suspended
+        if node2.node_type not in ("ethernet_switch", "ethernet_hub"):
+            await node2.put("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), data=self._link_data[1], timeout=221)
+
+    async def delete(self):
         """
         Delete the link and free the resources
         """
@@ -128,7 +140,7 @@ class UDPLink(Link):
         except IndexError:
             return
         try:
-            yield from node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
+            await node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
         # If the node is already delete (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
@@ -140,36 +152,32 @@ class UDPLink(Link):
         except IndexError:
             return
         try:
-            yield from node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), timeout=120)
+            await node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), timeout=120)
         # If the node is already delete (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
-        yield from super().delete()
+        await super().delete()
 
-    @asyncio.coroutine
-    def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
+    async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """
         Start capture on a link
         """
         if not capture_file_name:
             capture_file_name = self.default_capture_file_name()
         self._capture_node = self._choose_capture_side()
-        data = {
-            "capture_file_name": capture_file_name,
-            "data_link_type": data_link_type
-        }
-        yield from self._capture_node["node"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]), data=data)
-        yield from super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
+        data = {"capture_file_name": capture_file_name,
+                "data_link_type": data_link_type}
+        await self._capture_node["node"].post("/adapters/{adapter_number}/ports/{port_number}/start_capture".format(adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]), data=data)
+        await super().start_capture(data_link_type=data_link_type, capture_file_name=capture_file_name)
 
-    @asyncio.coroutine
-    def stop_capture(self):
+    async def stop_capture(self):
         """
         Stop capture on a link
         """
         if self._capture_node:
-            yield from self._capture_node["node"].post("/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]))
+            await self._capture_node["node"].post("/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]))
             self._capture_node = None
-        yield from super().stop_capture()
+        await super().stop_capture()
 
     def _choose_capture_side(self):
         """
@@ -201,19 +209,9 @@ class UDPLink(Link):
 
         raise aiohttp.web.HTTPConflict(text="Cannot capture because there is no running device on this link")
 
-    @asyncio.coroutine
-    def read_pcap_from_source(self):
-        """
-        Return a FileStream of the Pcap from the compute node
-        """
-        if self._capture_node:
-            compute = self._capture_node["node"].compute
-            return compute.stream_file(self._project, "tmp/captures/" + self._capture_file_name)
-
-    @asyncio.coroutine
-    def node_updated(self, node):
+    async def node_updated(self, node):
         """
         Called when a node member of the link is updated
         """
         if self._capture_node and node == self._capture_node["node"] and node.status != "started":
-            yield from self.stop_capture()
+            await self.stop_capture()

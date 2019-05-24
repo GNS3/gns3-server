@@ -23,7 +23,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# This ports are disallowed by Chrome and Firefox to avoid issues, we skip them as well
+# These ports are disallowed by Chrome and Firefox to avoid issues, we skip them as well
 BANNED_PORTS = set((1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 77, 79, 87, 95, 101, 102, 103,
                     104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 139, 143, 179, 389, 465, 512, 513, 514, 515, 526,
                     530, 531, 532, 540, 556, 563, 587, 601, 636, 993, 995, 2049, 3659, 4045, 6000, 6665, 6666, 6667,
@@ -67,16 +67,25 @@ class PortManager:
             cls._instance = cls()
         return cls._instance
 
+    def __json__(self):
+
+        return {"console_port_range": self._console_port_range,
+                "console_ports": list(self._used_tcp_ports),
+                "udp_port_range": self._udp_port_range,
+                "udp_ports": list(self._used_udp_ports)}
+
     @property
     def console_host(self):
+
         assert self._console_host is not None
         return self._console_host
 
     @console_host.setter
     def console_host(self, new_host):
         """
-        If allow remote connection we need to bind console host to 0.0.0.0
+        Bind console host to 0.0.0.0 if remote connections are allowed.
         """
+
         server_config = Config.instance().get_section_config("Server")
         remote_console_connections = server_config.getboolean("allow_remote_console")
         if remote_console_connections:
@@ -228,14 +237,12 @@ class PortManager:
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
         if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
         try:
             PortManager._check_port(self._console_host, port, "TCP")
@@ -244,7 +251,6 @@ class PortManager:
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
             msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
             log.debug(msg)
-            #project.emit("log.warning", {"message": msg})
             return port
 
         self._used_tcp_ports.add(port)

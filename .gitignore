@@ -1,5 +1,6 @@
 *.py[cod]
 __pycache__
+.pytest_cache
 
 #py.test
 .cache
@@ -39,6 +40,7 @@ nosetests.xml
 .project
 .pydevproject
 .settings
+.vscode
 
 # Pycharm
 .idea

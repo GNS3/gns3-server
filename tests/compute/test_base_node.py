@@ -83,7 +83,7 @@ def test_close(node, loop, port_manager):
 
     node.aux = aux
     port = node.console
-    assert loop.run_until_complete(asyncio.async(node.close()))
+    assert loop.run_until_complete(asyncio.ensure_future(node.close()))
     # Raise an exception if the port is not free
     port_manager.reserve_tcp_port(port, node.project)
     # Raise an exception if the port is not free
@@ -92,7 +92,7 @@ def test_close(node, loop, port_manager):
     assert node.aux is None
 
     # Called twice closed should return False
-    assert loop.run_until_complete(asyncio.async(node.close())) is False
+    assert loop.run_until_complete(asyncio.ensure_future(node.close())) is False
 
 
 def test_aux(project, manager, port_manager):
@@ -130,8 +130,9 @@ def test_update_ubridge_udp_connection(node, async_run):
         "latency": [10]
     }
 
-    snio = NIOUDP(1245, "localhost", 1246, {})
-    dnio = NIOUDP(1245, "localhost", 1244, filters)
+    snio = NIOUDP(1245, "localhost", 1246)
+    dnio = NIOUDP(1245, "localhost", 1244)
+    dnio.filters = filters
     with asyncio_patch("gns3server.compute.base_node.BaseNode._ubridge_apply_filters") as mock:
         async_run(node.update_ubridge_udp_connection('VPCS-10', snio, dnio))
     mock.assert_called_with("VPCS-10", filters)

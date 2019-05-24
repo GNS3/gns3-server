@@ -21,7 +21,6 @@ import aiohttp
 
 
 from gns3server.utils.path import check_path_allowed, get_default_project_directory
-from gns3server.utils import force_unix_path
 
 
 def test_check_path_allowed(config, tmpdir):

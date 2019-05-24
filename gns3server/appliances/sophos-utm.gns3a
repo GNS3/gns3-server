@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "asg-9.510-5.1.iso",
+            "version": "9.510-5.1",
+            "md5sum": "ae21f96686f238c25941fd3240c7da5b",
+            "filesize": 871266304,
+            "download_url": "https://www.sophos.com/en-us/support/utm-downloads.aspx"
+        },
+        {
             "filename": "asg-9.506-2.1.iso",
             "version": "9.506-2.1",
             "md5sum": "6b4374f8c5ee66ccdf9683f7349f59cb",
@@ -139,6 +146,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.510-5.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "asg-9.510-5.1.iso"
+            }
+        },
         {
             "name": "9.506-2.1",
             "images": {

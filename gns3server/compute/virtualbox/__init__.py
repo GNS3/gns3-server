@@ -20,6 +20,7 @@ VirtualBox server module.
 """
 
 import os
+import re
 import sys
 import shutil
 import asyncio
@@ -93,13 +94,12 @@ class VirtualBox(BaseManager):
         self._vboxmanage_path = vboxmanage_path
         return vboxmanage_path
 
-    @asyncio.coroutine
-    def execute(self, subcommand, args, timeout=60):
+    async def execute(self, subcommand, args, timeout=60):
 
         # We use a lock prevent parallel execution due to strange errors
         # reported by a user and reproduced by us.
         # https://github.com/GNS3/gns3-gui/issues/261
-        with (yield from self._execute_lock):
+        async with self._execute_lock:
             vboxmanage_path = self.vboxmanage_path
             if not vboxmanage_path:
                 vboxmanage_path = self.find_vboxmanage()
@@ -111,12 +111,12 @@ class VirtualBox(BaseManager):
             command_string = " ".join(command)
             log.info("Executing VBoxManage with command: {}".format(command_string))
             try:
-                process = yield from asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                process = await asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             except (OSError, subprocess.SubprocessError) as e:
                 raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
 
             try:
-                stdout_data, stderr_data = yield from asyncio.wait_for(process.communicate(), timeout=timeout)
+                stdout_data, stderr_data = await asyncio.wait_for(process.communicate(), timeout=timeout)
             except asyncio.TimeoutError:
                 raise VirtualBoxError("VBoxManage has timed out after {} seconds!".format(timeout))
 
@@ -126,15 +126,14 @@ class VirtualBox(BaseManager):
 
             return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
-    @asyncio.coroutine
-    def _find_inaccessible_hdd_files(self):
+    async def _find_inaccessible_hdd_files(self):
         """
         Finds inaccessible disk files (to clean up the VirtualBox media manager)
         """
 
         hdds = []
         try:
-            properties = yield from self.execute("list", ["hdds"])
+            properties = await self.execute("list", ["hdds"])
         # If VirtualBox is not available we have no inaccessible hdd
         except VirtualBoxError:
             return hdds
@@ -152,43 +151,44 @@ class VirtualBox(BaseManager):
                 flag_inaccessible = False
         return reversed(hdds)
 
-    @asyncio.coroutine
-    def project_closed(self, project):
+    async def project_closed(self, project):
         """
         Called when a project is closed.
 
         :param project: Project instance
         """
 
-        yield from super().project_closed(project)
-        hdd_files_to_close = yield from self._find_inaccessible_hdd_files()
+        await super().project_closed(project)
+        hdd_files_to_close = await self._find_inaccessible_hdd_files()
         for hdd_file in hdd_files_to_close:
             log.info("Closing VirtualBox VM disk file {}".format(os.path.basename(hdd_file)))
             try:
-                yield from self.execute("closemedium", ["disk", hdd_file])
+                await self.execute("closemedium", ["disk", hdd_file])
             except VirtualBoxError as e:
                 log.warning("Could not close VirtualBox VM disk file {}: {}".format(os.path.basename(hdd_file), e))
                 continue
 
-    @asyncio.coroutine
-    def list_vms(self, allow_clone=False):
+    async def list_vms(self, allow_clone=False):
         """
         Gets VirtualBox VM list.
         """
 
         vbox_vms = []
-        result = yield from self.execute("list", ["vms"])
+        result = await self.execute("list", ["vms"])
         for line in result:
             if len(line) == 0 or line[0] != '"' or line[-1:] != "}":
                 continue  # Broken output (perhaps a carriage return in VM name)
-            vmname, _ = line.rsplit(' ', 1)
-            vmname = vmname.strip('"')
+            match = re.search(r"\"(.*)\"\ {(.*)}", line)
+            if not match:
+                continue
+            vmname = match.group(1)
+            uuid = match.group(2)
             if vmname == "<inaccessible>":
                 continue  # ignore inaccessible VMs
-            extra_data = yield from self.execute("getextradata", [vmname, "GNS3/Clone"])
+            extra_data = await self.execute("getextradata", [uuid, "GNS3/Clone"])
             if allow_clone or len(extra_data) == 0 or not extra_data[0].strip() == "Value: yes":
                 # get the amount of RAM
-                info_results = yield from self.execute("showvminfo", [vmname, "--machinereadable"])
+                info_results = await self.execute("showvminfo", [uuid, "--machinereadable"])
                 ram = 0
                 for info in info_results:
                     try:

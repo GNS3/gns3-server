@@ -43,10 +43,10 @@ class SnapshotHandler:
             201: "Snasphot created",
             404: "The project doesn't exist"
         })
-    def create(request, response):
+    async def create(request, response):
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        snapshot = yield from project.snapshot(request.json["name"])
+        snapshot = await project.snapshot(request.json["name"])
         response.json(snapshot)
         response.set_status(201)
 
@@ -77,11 +77,11 @@ class SnapshotHandler:
             204: "Changes have been written on disk",
             404: "The project or snapshot doesn't exist"
         })
-    def delete(request, response):
+    async def delete(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
-        yield from project.delete_snapshot(request.match_info["snapshot_id"])
+        await project.delete_snapshot(request.match_info["snapshot_id"])
         response.set_status(204)
 
     @Route.post(
@@ -96,11 +96,11 @@ class SnapshotHandler:
             201: "The snapshot has been restored",
             404: "The project or snapshot doesn't exist"
         })
-    def restore(request, response):
+    async def restore(request, response):
 
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         snapshot = project.get_snapshot(request.match_info["snapshot_id"])
-        project = yield from snapshot.restore()
+        project = await snapshot.restore()
         response.set_status(201)
         response.json(project)

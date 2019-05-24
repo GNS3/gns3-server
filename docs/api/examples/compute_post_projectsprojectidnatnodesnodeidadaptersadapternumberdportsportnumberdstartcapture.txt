@@ -1,0 +1,20 @@
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/85c32b82-3012-4917-9c1f-bc4c6cc7e35b/adapters/0/ports/0/start_capture' -d '{"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}'
+
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/85c32b82-3012-4917-9c1f-bc4c6cc7e35b/adapters/0/ports/0/start_capture HTTP/1.1
+{
+    "capture_file_name": "test.pcap",
+    "data_link_type": "DLT_EN10MB"
+}
+
+
+HTTP/1.1 200
+Connection: close
+Content-Length: 103
+Content-Type: application/json
+Date: Sat, 30 Mar 2019 08:47:57 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
+X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/start_capture
+
+{
+    "pcap_file_path": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/captures/test.pcap"
+}

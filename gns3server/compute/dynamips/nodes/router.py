@@ -36,8 +36,6 @@ log = logging.getLogger(__name__)
 
 from ...base_node import BaseNode
 from ..dynamips_error import DynamipsError
-from ..nios.nio_udp import NIOUDP
-
 
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
@@ -64,9 +62,9 @@ class Router(BaseNode):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, console_type="telnet", aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=aux)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, allocate_aux=aux)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
         try:
@@ -131,18 +129,21 @@ class Router(BaseNode):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+                    log.error("Can't move {}: {}".format(path, str(e)))
+                    continue
         for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "*_i{}_*".format(dynamips_id))):
             dst = os.path.join(self._working_directory, os.path.basename(path))
             if not os.path.exists(dst):
                 try:
                     shutil.move(path, dst)
                 except OSError as e:
-                    raise DynamipsError("Can't move {}: {}".format(path, str(e)))
+                    log.error("Can't move {}: {}".format(path, str(e)))
+                    continue
 
     def __json__(self):
 
         router_info = {"name": self.name,
+                       "usage": self.usage,
                        "node_id": self.id,
                        "node_directory": os.path.join(self._working_directory),
                        "project_id": self.project.id,
@@ -164,13 +165,12 @@ class Router(BaseNode):
                        "auto_delete_disks": self._auto_delete_disks,
                        "status": self.status,
                        "console": self.console,
-                       "console_type": "telnet",
+                       "console_type": self.console_type,
                        "aux": self.aux,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
 
-        # return the relative path if the IOS image is in the images_path directory
-        router_info["image"] = self.manager.get_relative_image_path(self._image)
+        router_info["image"] = self.manager.get_relative_image_path(self._image, self.project.path)
 
         # add the slots
         slot_number = 0
@@ -194,7 +194,7 @@ class Router(BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        asyncio.async(self.save_configs())
+        asyncio.ensure_future(self.save_configs())
 
     @property
     def dynamips_id(self):
@@ -206,16 +206,15 @@ class Router(BaseNode):
 
         return self._dynamips_id
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
         if not self._hypervisor:
             # We start the hypervisor is the dynamips folder and next we change to node dir
             # this allow the creation of common files in the dynamips folder
-            self._hypervisor = yield from self.manager.start_new_hypervisor(working_dir=self.project.module_working_directory(self.manager.module_name.lower()))
-            yield from self._hypervisor.set_working_dir(self._working_directory)
+            self._hypervisor = await self.manager.start_new_hypervisor(working_dir=self.project.module_working_directory(self.manager.module_name.lower()))
+            await self._hypervisor.set_working_dir(self._working_directory)
 
-        yield from self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
+        await self._hypervisor.send('vm create "{name}" {id} {platform}'.format(name=self._name,
                                                                                      id=self._dynamips_id,
                                                                                      platform=self._platform))
 
@@ -225,41 +224,40 @@ class Router(BaseNode):
                                                                                  platform=self._platform,
                                                                                  id=self._id))
 
-            yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
+            if self._console:
+                await self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
 
             if self.aux is not None:
-                yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self.aux))
+                await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self.aux))
 
             # get the default base MAC address
-            mac_addr = yield from self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,
+            mac_addr = await self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,
                                                                                                   name=self._name))
             self._mac_addr = mac_addr[0]
 
         self._hypervisor.devices.append(self)
 
-    @asyncio.coroutine
-    def get_status(self):
+    async def get_status(self):
         """
         Returns the status of this router
 
         :returns: inactive, shutting down, running or suspended.
         """
 
-        status = yield from self._hypervisor.send('vm get_status "{name}"'.format(name=self._name))
+        status = await self._hypervisor.send('vm get_status "{name}"'.format(name=self._name))
         if len(status) == 0:
             raise DynamipsError("Can't get vm {name} status".format(name=self._name))
         return self._status[int(status[0])]
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts this router.
         At least the IOS image must be set before it can start.
         """
 
-        status = yield from self.get_status()
+        status = await self.get_status()
         if status == "suspended":
-            yield from self.resume()
+            await self.resume()
         elif status == "inactive":
 
             if not os.path.isfile(self._image) or not os.path.exists(self._image):
@@ -292,19 +290,18 @@ class Router(BaseNode):
                 # an empty private-config can prevent a router to boot.
                 private_config_path = ''
 
-            yield from self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(
+            await self._hypervisor.send('vm set_config "{name}" "{startup}" "{private}"'.format(
                 name=self._name,
                 startup=startup_config_path,
                 private=private_config_path))
-            yield from self._hypervisor.send('vm start "{name}"'.format(name=self._name))
+            await self._hypervisor.send('vm start "{name}"'.format(name=self._name))
             self.status = "started"
             log.info('router "{name}" [{id}] has been started'.format(name=self._name, id=self._id))
 
             self._memory_watcher = FileWatcher(self._memory_files(), self._memory_changed, strategy='hash', delay=30)
             monitor_process(self._hypervisor.process, self._termination_callback)
 
-    @asyncio.coroutine
-    def _termination_callback(self, returncode):
+    async def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
 
@@ -317,94 +314,88 @@ class Router(BaseNode):
             if returncode != 0:
                 self.project.emit("log.error", {"message": "Dynamips hypervisor process has stopped, return code: {}\n{}".format(returncode, self._hypervisor.read_stdout())})
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops this router.
         """
 
-        status = yield from self.get_status()
+        status = await self.get_status()
         if status != "inactive":
             try:
-                yield from self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
+                await self._hypervisor.send('vm stop "{name}"'.format(name=self._name))
             except DynamipsError as e:
-                log.warn("Could not stop {}: {}".format(self._name, e))
+                log.warning("Could not stop {}: {}".format(self._name, e))
             self.status = "stopped"
             log.info('Router "{name}" [{id}] has been stopped'.format(name=self._name, id=self._id))
         if self._memory_watcher:
             self._memory_watcher.close()
             self._memory_watcher = None
-        yield from self.save_configs()
+        await self.save_configs()
 
-    @asyncio.coroutine
-    def reload(self):
+    async def reload(self):
         """
         Reload this router.
         """
 
-        yield from self.stop()
-        yield from self.start()
+        await self.stop()
+        await self.start()
 
-    @asyncio.coroutine
-    def suspend(self):
+    async def suspend(self):
         """
         Suspends this router.
         """
 
-        status = yield from self.get_status()
+        status = await self.get_status()
         if status == "running":
-            yield from self._hypervisor.send('vm suspend "{name}"'.format(name=self._name))
+            await self._hypervisor.send('vm suspend "{name}"'.format(name=self._name))
             self.status = "suspended"
             log.info('Router "{name}" [{id}] has been suspended'.format(name=self._name, id=self._id))
 
-    @asyncio.coroutine
-    def resume(self):
+    async def resume(self):
         """
         Resumes this suspended router
         """
 
-        status = yield from self.get_status()
+        status = await self.get_status()
         if status == "suspended":
-            yield from self._hypervisor.send('vm resume "{name}"'.format(name=self._name))
+            await self._hypervisor.send('vm resume "{name}"'.format(name=self._name))
             self.status = "started"
         log.info('Router "{name}" [{id}] has been resumed'.format(name=self._name, id=self._id))
 
-    @asyncio.coroutine
-    def is_running(self):
+    async def is_running(self):
         """
         Checks if this router is running.
 
         :returns: True if running, False otherwise
         """
 
-        status = yield from self.get_status()
+        status = await self.get_status()
         if status == "running":
             return True
         return False
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
 
-        if not (yield from super().close()):
+        if not (await super().close()):
             return False
 
         for adapter in self._slots:
             if adapter is not None:
                 for nio in adapter.ports.values():
                     if nio:
-                        yield from nio.close()
+                        await nio.close()
 
-        yield from self._stop_ubridge()
+        await self._stop_ubridge()
 
         if self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
             try:
-                yield from self.stop()
-                yield from self._hypervisor.send('vm delete "{}"'.format(self._name))
+                await self.stop()
+                await self._hypervisor.send('vm delete "{}"'.format(self._name))
             except DynamipsError as e:
-                log.warn("Could not stop and delete {}: {}".format(self._name, e))
-            yield from self.hypervisor.stop()
+                log.warning("Could not stop and delete {}: {}".format(self._name, e))
+            await self.hypervisor.stop()
 
         if self._auto_delete_disks:
             # delete nvram and disk files
@@ -418,9 +409,9 @@ class Router(BaseNode):
             for file in files:
                 try:
                     log.debug("Deleting file {}".format(file))
-                    yield from wait_run_in_executor(os.remove, file)
+                    await wait_run_in_executor(os.remove, file)
                 except OSError as e:
-                    log.warn("Could not delete file {}: {}".format(file, e))
+                    log.warning("Could not delete file {}: {}".format(file, e))
                     continue
         self.manager.release_dynamips_id(self.project.id, self.dynamips_id)
 
@@ -445,37 +436,34 @@ class Router(BaseNode):
 
         return self._hypervisor
 
-    @asyncio.coroutine
-    def list(self):
+    async def list(self):
         """
         Returns all VM instances
 
         :returns: list of all VM instances
         """
 
-        vm_list = yield from self._hypervisor.send("vm list")
+        vm_list = await self._hypervisor.send("vm list")
         return vm_list
 
-    @asyncio.coroutine
-    def list_con_ports(self):
+    async def list_con_ports(self):
         """
         Returns all VM console TCP ports
 
         :returns: list of port numbers
         """
 
-        port_list = yield from self._hypervisor.send("vm list_con_ports")
+        port_list = await self._hypervisor.send("vm list_con_ports")
         return port_list
 
-    @asyncio.coroutine
-    def set_debug_level(self, level):
+    async def set_debug_level(self, level):
         """
         Sets the debug level for this router (default is 0).
 
         :param level: level number
         """
 
-        yield from self._hypervisor.send('vm set_debug_level "{name}" {level}'.format(name=self._name, level=level))
+        await self._hypervisor.send('vm set_debug_level "{name}" {level}'.format(name=self._name, level=level))
 
     @property
     def image(self):
@@ -487,8 +475,7 @@ class Router(BaseNode):
 
         return self._image
 
-    @asyncio.coroutine
-    def set_image(self, image):
+    async def set_image(self, image):
         """
         Sets the IOS image for this router.
         There is no default.
@@ -496,9 +483,9 @@ class Router(BaseNode):
         :param image: path to IOS image file
         """
 
-        image = self.manager.get_abs_image_path(image)
+        image = self.manager.get_abs_image_path(image, self.project.path)
 
-        yield from self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
+        await self._hypervisor.send('vm set_ios "{name}" "{image}"'.format(name=self._name, image=image))
 
         log.info('Router "{name}" [{id}]: has a new IOS image set: "{image}"'.format(name=self._name,
                                                                                      id=self._id,
@@ -516,8 +503,7 @@ class Router(BaseNode):
 
         return self._ram
 
-    @asyncio.coroutine
-    def set_ram(self, ram):
+    async def set_ram(self, ram):
         """
         Sets amount of RAM allocated to this router
 
@@ -527,7 +513,7 @@ class Router(BaseNode):
         if self._ram == ram:
             return
 
-        yield from self._hypervisor.send('vm set_ram "{name}" {ram}'.format(name=self._name, ram=ram))
+        await self._hypervisor.send('vm set_ram "{name}" {ram}'.format(name=self._name, ram=ram))
         log.info('Router "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(name=self._name,
                                                                                               id=self._id,
                                                                                               old_ram=self._ram,
@@ -544,8 +530,7 @@ class Router(BaseNode):
 
         return self._nvram
 
-    @asyncio.coroutine
-    def set_nvram(self, nvram):
+    async def set_nvram(self, nvram):
         """
         Sets amount of NVRAM allocated to this router
 
@@ -555,7 +540,7 @@ class Router(BaseNode):
         if self._nvram == nvram:
             return
 
-        yield from self._hypervisor.send('vm set_nvram "{name}" {nvram}'.format(name=self._name, nvram=nvram))
+        await self._hypervisor.send('vm set_nvram "{name}" {nvram}'.format(name=self._name, nvram=nvram))
         log.info('Router "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(name=self._name,
                                                                                                     id=self._id,
                                                                                                     old_nvram=self._nvram,
@@ -572,8 +557,7 @@ class Router(BaseNode):
 
         return self._mmap
 
-    @asyncio.coroutine
-    def set_mmap(self, mmap):
+    async def set_mmap(self, mmap):
         """
         Enable/Disable use of a mapped file to simulate router memory.
         By default, a mapped file is used. This is a bit slower, but requires less memory.
@@ -586,7 +570,7 @@ class Router(BaseNode):
         else:
             flag = 0
 
-        yield from self._hypervisor.send('vm set_ram_mmap "{name}" {mmap}'.format(name=self._name, mmap=flag))
+        await self._hypervisor.send('vm set_ram_mmap "{name}" {mmap}'.format(name=self._name, mmap=flag))
 
         if mmap:
             log.info('Router "{name}" [{id}]: mmap enabled'.format(name=self._name, id=self._id))
@@ -604,8 +588,7 @@ class Router(BaseNode):
 
         return self._sparsemem
 
-    @asyncio.coroutine
-    def set_sparsemem(self, sparsemem):
+    async def set_sparsemem(self, sparsemem):
         """
         Enable/disable use of sparse memory
 
@@ -616,7 +599,7 @@ class Router(BaseNode):
             flag = 1
         else:
             flag = 0
-        yield from self._hypervisor.send('vm set_sparse_mem "{name}" {sparsemem}'.format(name=self._name, sparsemem=flag))
+        await self._hypervisor.send('vm set_sparse_mem "{name}" {sparsemem}'.format(name=self._name, sparsemem=flag))
 
         if sparsemem:
             log.info('Router "{name}" [{id}]: sparse memory enabled'.format(name=self._name, id=self._id))
@@ -634,8 +617,7 @@ class Router(BaseNode):
 
         return self._clock_divisor
 
-    @asyncio.coroutine
-    def set_clock_divisor(self, clock_divisor):
+    async def set_clock_divisor(self, clock_divisor):
         """
         Sets the clock divisor value. The higher is the value, the faster is the clock in the
         virtual machine. The default is 4, but it is often required to adjust it.
@@ -643,7 +625,7 @@ class Router(BaseNode):
         :param clock_divisor: clock divisor value (integer)
         """
 
-        yield from self._hypervisor.send('vm set_clock_divisor "{name}" {clock}'.format(name=self._name, clock=clock_divisor))
+        await self._hypervisor.send('vm set_clock_divisor "{name}" {clock}'.format(name=self._name, clock=clock_divisor))
         log.info('Router "{name}" [{id}]: clock divisor updated from {old_clock} to {new_clock}'.format(name=self._name,
                                                                                                         id=self._id,
                                                                                                         old_clock=self._clock_divisor,
@@ -660,8 +642,7 @@ class Router(BaseNode):
 
         return self._idlepc
 
-    @asyncio.coroutine
-    def set_idlepc(self, idlepc):
+    async def set_idlepc(self, idlepc):
         """
         Sets the idle Pointer Counter (PC)
 
@@ -671,18 +652,40 @@ class Router(BaseNode):
         if not idlepc:
             idlepc = "0x0"
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if not is_running:
             # router is not running
-            yield from self._hypervisor.send('vm set_idle_pc "{name}" {idlepc}'.format(name=self._name, idlepc=idlepc))
+            await self._hypervisor.send('vm set_idle_pc "{name}" {idlepc}'.format(name=self._name, idlepc=idlepc))
         else:
-            yield from self._hypervisor.send('vm set_idle_pc_online "{name}" 0 {idlepc}'.format(name=self._name, idlepc=idlepc))
+            await self._hypervisor.send('vm set_idle_pc_online "{name}" 0 {idlepc}'.format(name=self._name, idlepc=idlepc))
 
         log.info('Router "{name}" [{id}]: idle-PC set to {idlepc}'.format(name=self._name, id=self._id, idlepc=idlepc))
         self._idlepc = idlepc
 
-    @asyncio.coroutine
-    def get_idle_pc_prop(self):
+    def set_process_priority_windows(self, pid, priority=None):
+        """
+        Sets process priority on Windows
+
+        :param pid: process PID
+        """
+
+        import win32api
+        import win32process
+        import win32con
+        import pywintypes
+
+        old_priority = None
+        try:
+            handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
+            old_priority = win32process.GetPriorityClass(handle)
+            if priority is None:
+                priority = win32process.BELOW_NORMAL_PRIORITY_CLASS
+            win32process.SetPriorityClass(handle, priority)
+        except pywintypes.error as e:
+            log.error("Cannot set priority for Dynamips process (PID={}) ".format(pid, e.strerror))
+        return old_priority
+
+    async def get_idle_pc_prop(self):
         """
         Gets the idle PC proposals.
         Takes 1000 measurements and records up to 10 idle PC proposals.
@@ -691,37 +694,41 @@ class Router(BaseNode):
         :returns: list of idle PC proposal
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         was_auto_started = False
         if not is_running:
-            yield from self.start()
+            await self.start()
             was_auto_started = True
-            yield from asyncio.sleep(20)  # leave time to the router to boot
+            await asyncio.sleep(20)  # leave time to the router to boot
 
         log.info('Router "{name}" [{id}] has started calculating Idle-PC values'.format(name=self._name, id=self._id))
+        old_priority = None
+        if sys.platform.startswith("win"):
+            old_priority = self.set_process_priority_windows(self._hypervisor.process.pid)
         begin = time.time()
-        idlepcs = yield from self._hypervisor.send('vm get_idle_pc_prop "{}" 0'.format(self._name))
+        idlepcs = await self._hypervisor.send('vm get_idle_pc_prop "{}" 0'.format(self._name))
+        if old_priority is not None:
+            self.set_process_priority_windows(self._hypervisor.process.pid, old_priority)
         log.info('Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(name=self._name,
                                                                                                                   id=self._id,
                                                                                                                   time=time.time() - begin))
         if was_auto_started:
-            yield from self.stop()
+            await self.stop()
         return idlepcs
 
-    @asyncio.coroutine
-    def show_idle_pc_prop(self):
+    async def show_idle_pc_prop(self):
         """
         Dumps the idle PC proposals (previously generated).
 
         :returns: list of idle PC proposal
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if not is_running:
             # router is not running
             raise DynamipsError('Router "{name}" is not running'.format(name=self._name))
 
-        proposals = yield from self._hypervisor.send('vm show_idle_pc_prop "{}" 0'.format(self._name))
+        proposals = await self._hypervisor.send('vm show_idle_pc_prop "{}" 0'.format(self._name))
         return proposals
 
     @property
@@ -734,17 +741,16 @@ class Router(BaseNode):
 
         return self._idlemax
 
-    @asyncio.coroutine
-    def set_idlemax(self, idlemax):
+    async def set_idlemax(self, idlemax):
         """
         Sets CPU idle max value
 
         :param idlemax: idle max value (integer)
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if is_running:  # router is running
-            yield from self._hypervisor.send('vm set_idle_max "{name}" 0 {idlemax}'.format(name=self._name, idlemax=idlemax))
+            await self._hypervisor.send('vm set_idle_max "{name}" 0 {idlemax}'.format(name=self._name, idlemax=idlemax))
 
         log.info('Router "{name}" [{id}]: idlemax updated from {old_idlemax} to {new_idlemax}'.format(name=self._name,
                                                                                                       id=self._id,
@@ -763,17 +769,16 @@ class Router(BaseNode):
 
         return self._idlesleep
 
-    @asyncio.coroutine
-    def set_idlesleep(self, idlesleep):
+    async def set_idlesleep(self, idlesleep):
         """
         Sets CPU idle sleep time value.
 
         :param idlesleep: idle sleep value (integer)
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if is_running:  # router is running
-            yield from self._hypervisor.send('vm set_idle_sleep_time "{name}" 0 {idlesleep}'.format(name=self._name,
+            await self._hypervisor.send('vm set_idle_sleep_time "{name}" 0 {idlesleep}'.format(name=self._name,
                                                                                                     idlesleep=idlesleep))
 
         log.info('Router "{name}" [{id}]: idlesleep updated from {old_idlesleep} to {new_idlesleep}'.format(name=self._name,
@@ -793,15 +798,14 @@ class Router(BaseNode):
 
         return self._ghost_file
 
-    @asyncio.coroutine
-    def set_ghost_file(self, ghost_file):
+    async def set_ghost_file(self, ghost_file):
         """
         Sets ghost RAM file
 
         :ghost_file: path to ghost file
         """
 
-        yield from self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
+        await self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
                                                                                           ghost_file=shlex.quote(ghost_file)))
 
         log.info('Router "{name}" [{id}]: ghost file set to {ghost_file}'.format(name=self._name,
@@ -831,8 +835,7 @@ class Router(BaseNode):
 
         return self._ghost_status
 
-    @asyncio.coroutine
-    def set_ghost_status(self, ghost_status):
+    async def set_ghost_status(self, ghost_status):
         """
         Sets ghost RAM status
 
@@ -842,7 +845,7 @@ class Router(BaseNode):
         2 => Use an existing ghost instance
         """
 
-        yield from self._hypervisor.send('vm set_ghost_status "{name}" {ghost_status}'.format(name=self._name,
+        await self._hypervisor.send('vm set_ghost_status "{name}" {ghost_status}'.format(name=self._name,
                                                                                               ghost_status=ghost_status))
 
         log.info('Router "{name}" [{id}]: ghost status set to {ghost_status}'.format(name=self._name,
@@ -860,8 +863,7 @@ class Router(BaseNode):
 
         return self._exec_area
 
-    @asyncio.coroutine
-    def set_exec_area(self, exec_area):
+    async def set_exec_area(self, exec_area):
         """
         Sets the exec area value.
         The exec area is a pool of host memory used to store pages
@@ -871,7 +873,7 @@ class Router(BaseNode):
         :param exec_area: exec area value (integer)
         """
 
-        yield from self._hypervisor.send('vm set_exec_area "{name}" {exec_area}'.format(name=self._name,
+        await self._hypervisor.send('vm set_exec_area "{name}" {exec_area}'.format(name=self._name,
                                                                                         exec_area=exec_area))
 
         log.info('Router "{name}" [{id}]: exec area updated from {old_exec}MB to {new_exec}MB'.format(name=self._name,
@@ -890,15 +892,14 @@ class Router(BaseNode):
 
         return self._disk0
 
-    @asyncio.coroutine
-    def set_disk0(self, disk0):
+    async def set_disk0(self, disk0):
         """
         Sets the size (MB) for PCMCIA disk0.
 
         :param disk0: disk0 size (integer)
         """
 
-        yield from self._hypervisor.send('vm set_disk0 "{name}" {disk0}'.format(name=self._name, disk0=disk0))
+        await self._hypervisor.send('vm set_disk0 "{name}" {disk0}'.format(name=self._name, disk0=disk0))
 
         log.info('Router "{name}" [{id}]: disk0 updated from {old_disk0}MB to {new_disk0}MB'.format(name=self._name,
                                                                                                     id=self._id,
@@ -916,15 +917,14 @@ class Router(BaseNode):
 
         return self._disk1
 
-    @asyncio.coroutine
-    def set_disk1(self, disk1):
+    async def set_disk1(self, disk1):
         """
         Sets the size (MB) for PCMCIA disk1.
 
         :param disk1: disk1 size (integer)
         """
 
-        yield from self._hypervisor.send('vm set_disk1 "{name}" {disk1}'.format(name=self._name, disk1=disk1))
+        await self._hypervisor.send('vm set_disk1 "{name}" {disk1}'.format(name=self._name, disk1=disk1))
 
         log.info('Router "{name}" [{id}]: disk1 updated from {old_disk1}MB to {new_disk1}MB'.format(name=self._name,
                                                                                                     id=self._id,
@@ -942,8 +942,7 @@ class Router(BaseNode):
 
         return self._auto_delete_disks
 
-    @asyncio.coroutine
-    def set_auto_delete_disks(self, auto_delete_disks):
+    async def set_auto_delete_disks(self, auto_delete_disks):
         """
         Enable/disable use of auto delete disks
 
@@ -956,8 +955,7 @@ class Router(BaseNode):
             log.info('Router "{name}" [{id}]: auto delete disks disabled'.format(name=self._name, id=self._id))
         self._auto_delete_disks = auto_delete_disks
 
-    @asyncio.coroutine
-    def set_console(self, console):
+    async def set_console(self, console):
         """
         Sets the TCP console port.
 
@@ -965,10 +963,28 @@ class Router(BaseNode):
         """
 
         self.console = console
-        yield from self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self.console))
+        await self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self.console))
 
-    @asyncio.coroutine
-    def set_aux(self, aux):
+    async def set_console_type(self, console_type):
+        """
+        Sets the console type.
+
+        :param console_type: console type
+        """
+
+        if self.console_type != console_type:
+            status = await self.get_status()
+            if status == "running":
+                raise DynamipsError('"{name}" must be stopped to change the console type to {console_type}'.format(name=self._name,
+                                                                                                                   console_type=console_type))
+
+
+        self.console_type = console_type
+
+        if self._console and console_type == "telnet":
+            await self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
+
+    async def set_aux(self, aux):
         """
         Sets the TCP auxiliary port.
 
@@ -976,17 +992,16 @@ class Router(BaseNode):
         """
 
         self.aux = aux
-        yield from self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
+        await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
 
-    @asyncio.coroutine
-    def get_cpu_usage(self, cpu_id=0):
+    async def get_cpu_usage(self, cpu_id=0):
         """
         Shows cpu usage in seconds, "cpu_id" is ignored.
 
         :returns: cpu usage in seconds
         """
 
-        cpu_usage = yield from self._hypervisor.send('vm cpu_usage "{name}" {cpu_id}'.format(name=self._name, cpu_id=cpu_id))
+        cpu_usage = await self._hypervisor.send('vm cpu_usage "{name}" {cpu_id}'.format(name=self._name, cpu_id=cpu_id))
         return int(cpu_usage[0])
 
     @property
@@ -999,15 +1014,14 @@ class Router(BaseNode):
 
         return self._mac_addr
 
-    @asyncio.coroutine
-    def set_mac_addr(self, mac_addr):
+    async def set_mac_addr(self, mac_addr):
         """
         Sets the MAC address.
 
         :param mac_addr: a MAC address (hexadecimal format: hh:hh:hh:hh:hh:hh)
         """
 
-        yield from self._hypervisor.send('{platform} set_mac_addr "{name}" {mac_addr}'.format(platform=self._platform,
+        await self._hypervisor.send('{platform} set_mac_addr "{name}" {mac_addr}'.format(platform=self._platform,
                                                                                               name=self._name,
                                                                                               mac_addr=mac_addr))
 
@@ -1027,15 +1041,14 @@ class Router(BaseNode):
 
         return self._system_id
 
-    @asyncio.coroutine
-    def set_system_id(self, system_id):
+    async def set_system_id(self, system_id):
         """
         Sets the system ID.
 
         :param system_id: a system ID (also called board processor ID)
         """
 
-        yield from self._hypervisor.send('{platform} set_system_id "{name}" {system_id}'.format(platform=self._platform,
+        await self._hypervisor.send('{platform} set_system_id "{name}" {system_id}'.format(platform=self._platform,
                                                                                                 name=self._name,
                                                                                                 system_id=system_id))
 
@@ -1045,19 +1058,17 @@ class Router(BaseNode):
                                                                                               new_id=system_id))
         self._system_id = system_id
 
-    @asyncio.coroutine
-    def get_slot_bindings(self):
+    async def get_slot_bindings(self):
         """
         Returns slot bindings.
 
         :returns: slot bindings (adapter names) list
         """
 
-        slot_bindings = yield from self._hypervisor.send('vm slot_bindings "{}"'.format(self._name))
+        slot_bindings = await self._hypervisor.send('vm slot_bindings "{}"'.format(self._name))
         return slot_bindings
 
-    @asyncio.coroutine
-    def slot_add_binding(self, slot_number, adapter):
+    async def slot_add_binding(self, slot_number, adapter):
         """
         Adds a slot binding (a module into a slot).
 
@@ -1076,7 +1087,7 @@ class Router(BaseNode):
                                                                                                                         slot_number=slot_number,
                                                                                                                         adapter=current_adapter))
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
 
         # Only c7200, c3600 and c3745 (NM-4T only) support new adapter while running
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
@@ -1085,7 +1096,7 @@ class Router(BaseNode):
             raise DynamipsError('Adapter {adapter} cannot be added while router "{name}" is running'.format(adapter=adapter,
                                                                                                             name=self._name))
 
-        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} 0 {adapter}'.format(name=self._name,
+        await self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} 0 {adapter}'.format(name=self._name,
                                                                                                          slot_number=slot_number,
                                                                                                          adapter=adapter))
 
@@ -1099,15 +1110,14 @@ class Router(BaseNode):
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send('vm slot_oir_start "{name}" {slot_number} 0'.format(name=self._name,
+            await self._hypervisor.send('vm slot_oir_start "{name}" {slot_number} 0'.format(name=self._name,
                                                                                                  slot_number=slot_number))
 
             log.info('Router "{name}" [{id}]: OIR start event sent to slot {slot_number}'.format(name=self._name,
                                                                                                  id=self._id,
                                                                                                  slot_number=slot_number))
 
-    @asyncio.coroutine
-    def slot_remove_binding(self, slot_number):
+    async def slot_remove_binding(self, slot_number):
         """
         Removes a slot binding (a module from a slot).
 
@@ -1124,7 +1134,7 @@ class Router(BaseNode):
             raise DynamipsError('No adapter in slot {slot_number} on router "{name}"'.format(name=self._name,
                                                                                              slot_number=slot_number))
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
 
         # Only c7200, c3600 and c3745 (NM-4T only) support to remove adapter while running
         if is_running and not ((self._platform == 'c7200' and not str(adapter).startswith('C7200'))
@@ -1136,14 +1146,14 @@ class Router(BaseNode):
         # Generate an OIR event if the router is running
         if is_running:
 
-            yield from self._hypervisor.send('vm slot_oir_stop "{name}" {slot_number} 0'.format(name=self._name,
+            await self._hypervisor.send('vm slot_oir_stop "{name}" {slot_number} 0'.format(name=self._name,
                                                                                                 slot_number=slot_number))
 
             log.info('Router "{name}" [{id}]: OIR stop event sent to slot {slot_number}'.format(name=self._name,
                                                                                                 id=self._id,
                                                                                                 slot_number=slot_number))
 
-        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} 0'.format(name=self._name,
+        await self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} 0'.format(name=self._name,
                                                                                                   slot_number=slot_number))
 
         log.info('Router "{name}" [{id}]: adapter {adapter} removed from slot {slot_number}'.format(name=self._name,
@@ -1152,8 +1162,7 @@ class Router(BaseNode):
                                                                                                     slot_number=slot_number))
         self._slots[slot_number] = None
 
-    @asyncio.coroutine
-    def install_wic(self, wic_slot_number, wic):
+    async def install_wic(self, wic_slot_number, wic):
         """
         Installs a WIC adapter into this router.
 
@@ -1177,7 +1186,7 @@ class Router(BaseNode):
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_number = 16 * (wic_slot_number + 1)
-        yield from self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} {wic_slot_number} {wic}'.format(name=self._name,
+        await self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} {wic_slot_number} {wic}'.format(name=self._name,
                                                                                                                      slot_number=slot_number,
                                                                                                                      wic_slot_number=internal_wic_slot_number,
                                                                                                                      wic=wic))
@@ -1189,8 +1198,7 @@ class Router(BaseNode):
 
         adapter.install_wic(wic_slot_number, wic)
 
-    @asyncio.coroutine
-    def uninstall_wic(self, wic_slot_number):
+    async def uninstall_wic(self, wic_slot_number):
         """
         Uninstalls a WIC adapter from this router.
 
@@ -1213,7 +1221,7 @@ class Router(BaseNode):
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_number = 16 * (wic_slot_number + 1)
-        yield from self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} {wic_slot_number}'.format(name=self._name,
+        await self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} {wic_slot_number}'.format(name=self._name,
                                                                                                                   slot_number=slot_number,
                                                                                                                   wic_slot_number=internal_wic_slot_number))
 
@@ -1223,8 +1231,7 @@ class Router(BaseNode):
                                                                                                 wic_slot_number=wic_slot_number))
         adapter.uninstall_wic(wic_slot_number)
 
-    @asyncio.coroutine
-    def get_slot_nio_bindings(self, slot_number):
+    async def get_slot_nio_bindings(self, slot_number):
         """
         Returns slot NIO bindings.
 
@@ -1233,12 +1240,11 @@ class Router(BaseNode):
         :returns: list of NIO bindings
         """
 
-        nio_bindings = yield from self._hypervisor.send('vm slot_nio_bindings "{name}" {slot_number}'.format(name=self._name,
+        nio_bindings = await self._hypervisor.send('vm slot_nio_bindings "{name}" {slot_number}'.format(name=self._name,
                                                                                                              slot_number=slot_number))
         return nio_bindings
 
-    @asyncio.coroutine
-    def slot_add_nio_binding(self, slot_number, port_number, nio):
+    async def slot_add_nio_binding(self, slot_number, port_number, nio):
         """
         Adds a slot NIO binding.
 
@@ -1257,20 +1263,20 @@ class Router(BaseNode):
             raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         try:
-            yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
+            await self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
                                                                                                                          slot_number=slot_number,
                                                                                                                          port_number=port_number,
                                                                                                                          nio=nio))
         except DynamipsError:
             # in case of error try to remove and add the nio binding
-            yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
+            await self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
                                                                                                                       slot_number=slot_number,
                                                                                                                       port_number=port_number))
-            yield from self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
+            await self._hypervisor.send('vm slot_add_nio_binding "{name}" {slot_number} {port_number} {nio}'.format(name=self._name,
                                                                                                                          slot_number=slot_number,
                                                                                                                          port_number=port_number,
                                                                                                                          nio=nio))
@@ -1281,11 +1287,10 @@ class Router(BaseNode):
                                                                                                            slot_number=slot_number,
                                                                                                            port_number=port_number))
 
-        yield from self.slot_enable_nio(slot_number, port_number)
+        await self.slot_enable_nio(slot_number, port_number)
         adapter.add_nio(port_number, nio)
 
-    @asyncio.coroutine
-    def slot_update_nio_binding(self, slot_number, port_number, nio):
+    async def slot_update_nio_binding(self, slot_number, port_number, nio):
         """
         Update a slot NIO binding.
 
@@ -1293,10 +1298,10 @@ class Router(BaseNode):
         :param port_number: port number
         :param nio: NIO instance to add to the slot/port
         """
-        yield from nio.update()
 
-    @asyncio.coroutine
-    def slot_remove_nio_binding(self, slot_number, port_number):
+        await nio.update()
+
+    async def slot_remove_nio_binding(self, slot_number, port_number):
         """
         Removes a slot NIO binding.
 
@@ -1316,18 +1321,19 @@ class Router(BaseNode):
             raise DynamipsError("Adapter is missing in slot {slot_number}".format(slot_number=slot_number))
 
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
-        yield from self.slot_disable_nio(slot_number, port_number)
-        yield from self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
+        await self.stop_capture(slot_number, port_number)
+        await self.slot_disable_nio(slot_number, port_number)
+        await self._hypervisor.send('vm slot_remove_nio_binding "{name}" {slot_number} {port_number}'.format(name=self._name,
                                                                                                                   slot_number=slot_number,
                                                                                                                   port_number=port_number))
 
         nio = adapter.get_nio(port_number)
         if nio is None:
             return
-        yield from nio.close()
+        await nio.close()
         adapter.remove_nio(port_number)
 
         log.info('Router "{name}" [{id}]: NIO {nio_name} removed from port {slot_number}/{port_number}'.format(name=self._name,
@@ -1338,8 +1344,7 @@ class Router(BaseNode):
 
         return nio
 
-    @asyncio.coroutine
-    def slot_enable_nio(self, slot_number, port_number):
+    async def slot_enable_nio(self, slot_number, port_number):
         """
         Enables a slot NIO binding.
 
@@ -1347,9 +1352,9 @@ class Router(BaseNode):
         :param port_number: port number
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send('vm slot_enable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
+            await self._hypervisor.send('vm slot_enable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
                                                                                                               slot_number=slot_number,
                                                                                                               port_number=port_number))
 
@@ -1358,8 +1363,33 @@ class Router(BaseNode):
                                                                                                       slot_number=slot_number,
                                                                                                       port_number=port_number))
 
-    @asyncio.coroutine
-    def slot_disable_nio(self, slot_number, port_number):
+    def get_nio(self, slot_number, port_number):
+        """
+        Gets an slot NIO binding.
+
+        :param slot_number: slot number
+        :param port_number: port number
+
+        :returns: NIO instance
+        """
+
+        try:
+            adapter = self._slots[slot_number]
+        except IndexError:
+            raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
+                                                                                              slot_number=slot_number))
+        if not adapter.port_exists(port_number):
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
+                                                                                                port_number=port_number))
+
+        nio = adapter.get_nio(port_number)
+
+        if not nio:
+            raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
+                                                                                           port_number=port_number))
+        return nio
+
+    async def slot_disable_nio(self, slot_number, port_number):
         """
         Disables a slot NIO binding.
 
@@ -1367,9 +1397,9 @@ class Router(BaseNode):
         :param port_number: port number
         """
 
-        is_running = yield from self.is_running()
+        is_running = await self.is_running()
         if is_running:  # running router
-            yield from self._hypervisor.send('vm slot_disable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
+            await self._hypervisor.send('vm slot_disable_nio "{name}" {slot_number} {port_number}'.format(name=self._name,
                                                                                                                slot_number=slot_number,
                                                                                                                port_number=port_number))
 
@@ -1378,8 +1408,7 @@ class Router(BaseNode):
                                                                                                        slot_number=slot_number,
                                                                                                        port_number=port_number))
 
-    @asyncio.coroutine
-    def start_capture(self, slot_number, port_number, output_file, data_link_type="DLT_EN10MB"):
+    async def start_capture(self, slot_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
 
@@ -1400,7 +1429,7 @@ class Router(BaseNode):
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         data_link_type = data_link_type.lower()
@@ -1416,18 +1445,14 @@ class Router(BaseNode):
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
             raise DynamipsError("Port {port_number} has already a filter applied on {adapter}".format(adapter=adapter,
                                                                                                       port_number=port_number))
-
-        yield from nio.bind_filter("both", "capture")
-        yield from nio.setup_filter("both", '{} "{}"'.format(data_link_type, output_file))
-
+        await nio.start_packet_capture(output_file, data_link_type)
         log.info('Router "{name}" [{id}]: starting packet capture on port {slot_number}/{port_number}'.format(name=self._name,
                                                                                                               id=self._id,
                                                                                                               nio_name=nio.name,
                                                                                                               slot_number=slot_number,
                                                                                                               port_number=port_number))
 
-    @asyncio.coroutine
-    def stop_capture(self, slot_number, port_number):
+    async def stop_capture(self, slot_number, port_number):
         """
         Stops a packet capture.
 
@@ -1441,7 +1466,7 @@ class Router(BaseNode):
             raise DynamipsError('Slot {slot_number} does not exist on router "{name}"'.format(name=self._name,
                                                                                               slot_number=slot_number))
         if not adapter.port_exists(port_number):
-            raise DynamipsError("Port {port_number} does not exist in adapter {adapter}".format(adapter=adapter,
+            raise DynamipsError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
                                                                                                 port_number=port_number))
 
         nio = adapter.get_nio(port_number)
@@ -1450,7 +1475,9 @@ class Router(BaseNode):
             raise DynamipsError("Port {slot_number}/{port_number} is not connected".format(slot_number=slot_number,
                                                                                            port_number=port_number))
 
-        yield from nio.unbind_filter("both")
+        if not nio.capturing:
+            return
+        await nio.stop_packet_capture()
 
         log.info('Router "{name}" [{id}]: stopping packet capture on port {slot_number}/{port_number}'.format(name=self._name,
                                                                                                               id=self._id,
@@ -1491,8 +1518,7 @@ class Router(BaseNode):
         """
         return os.path.join(self._working_directory, "configs", "i{}_private-config.cfg".format(self._dynamips_id))
 
-    @asyncio.coroutine
-    def set_name(self, new_name):
+    async def set_name(self, new_name):
         """
         Renames this router.
 
@@ -1521,12 +1547,11 @@ class Router(BaseNode):
             except OSError as e:
                 raise DynamipsError("Could not amend the configuration {}: {}".format(self.private_config_path, e))
 
-        yield from self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
+        await self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
         log.info('Router "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name, id=self._id, new_name=new_name))
         self._name = new_name
 
-    @asyncio.coroutine
-    def extract_config(self):
+    async def extract_config(self):
         """
         Gets the contents of the config files
         startup-config and private-config from NVRAM.
@@ -1535,7 +1560,7 @@ class Router(BaseNode):
         """
 
         try:
-            reply = yield from self._hypervisor.send('vm extract_config "{}"'.format(self._name))
+            reply = await self._hypervisor.send('vm extract_config "{}"'.format(self._name))
         except DynamipsError:
             # for some reason Dynamips gets frozen when it does not find the magic number in the NVRAM file.
             return None, None
@@ -1544,8 +1569,7 @@ class Router(BaseNode):
         private_config = reply[1][1:-1]  # get private-config and remove single quotes
         return startup_config, private_config
 
-    @asyncio.coroutine
-    def save_configs(self):
+    async def save_configs(self):
         """
         Saves the startup-config and private-config to files.
         """
@@ -1556,7 +1580,7 @@ class Router(BaseNode):
         except OSError as e:
             raise DynamipsError("Could could not create configuration directory {}: {}".format(config_path, e))
 
-        startup_config_base64, private_config_base64 = yield from self.extract_config()
+        startup_config_base64, private_config_base64 = await self.extract_config()
         if startup_config_base64:
             startup_config = self.startup_config_path
             try:
@@ -1580,32 +1604,33 @@ class Router(BaseNode):
             except (binascii.Error, OSError) as e:
                 raise DynamipsError("Could not save the private configuration {}: {}".format(config_path, e))
 
-    def delete(self):
+    async def delete(self):
         """
-        Delete this VM (including all its files).
+        Deletes this VM (including all its files).
         """
+
         try:
-            yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
+            await wait_run_in_executor(shutil.rmtree, self._working_directory)
         except OSError as e:
-            log.warn("Could not delete file {}".format(e))
+            log.warning("Could not delete file {}".format(e))
 
         self.manager.release_dynamips_id(self._project.id, self._dynamips_id)
 
-    @asyncio.coroutine
-    def clean_delete(self):
+    async def clean_delete(self):
         """
         Deletes this router & associated files (nvram, disks etc.)
         """
 
-        yield from self._hypervisor.send('vm clean_delete "{}"'.format(self._name))
+        await self._hypervisor.send('vm clean_delete "{}"'.format(self._name))
         self._hypervisor.devices.remove(self)
         try:
-            yield from wait_run_in_executor(shutil.rmtree, self._working_directory)
+            await wait_run_in_executor(shutil.rmtree, self._working_directory)
         except OSError as e:
-            log.warn("Could not delete file {}".format(e))
+            log.warning("Could not delete file {}".format(e))
         log.info('Router "{name}" [{id}] has been deleted (including associated files)'.format(name=self._name, id=self._id))
 
     def _memory_files(self):
+
         return [
             os.path.join(self._working_directory, "{}_i{}_rom".format(self.platform, self.dynamips_id)),
             os.path.join(self._working_directory, "{}_i{}_nvram".format(self.platform, self.dynamips_id))

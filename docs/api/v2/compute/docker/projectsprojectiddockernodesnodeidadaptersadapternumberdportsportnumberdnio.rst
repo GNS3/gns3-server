@@ -12,7 +12,7 @@ Parameters
 - **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Adapter where the nio should be added
-- **port_number**: Port on the adapter
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************
@@ -29,14 +29,14 @@ Sample session
 
 PUT /v2/compute/projects/**{project_id}**/docker/nodes/**{node_id}**/adapters/**{adapter_number:\d+}**/ports/**{port_number:\d+}**/nio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Update a NIO from a Docker instance
+Update a NIO on a Docker instance
 
 Parameters
 **********
 - **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Network adapter where the nio is located
-- **port_number**: Port from where the nio should be updated
+- **port_number**: Port from where the nio should be updated (always 0)
 
 Response status codes
 **********************
@@ -60,7 +60,7 @@ Parameters
 - **project_id**: Project UUID
 - **node_id**: Node UUID
 - **adapter_number**: Adapter where the nio should be added
-- **port_number**: Port on the adapter
+- **port_number**: Port on the adapter (always 0)
 
 Response status codes
 **********************

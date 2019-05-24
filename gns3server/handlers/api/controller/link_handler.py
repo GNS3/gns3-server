@@ -15,9 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import asyncio
 import aiohttp
+import multidict
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -42,9 +41,9 @@ class LinkHandler:
             200: "List of links returned",
         },
         description="List links of a project")
-    def list_links(request, response):
+    async def list_links(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         response.json([v for v in project.links.values()])
 
     @Route.post(
@@ -59,22 +58,22 @@ class LinkHandler:
         description="Create a new link instance",
         input=LINK_OBJECT_SCHEMA,
         output=LINK_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        link = yield from project.add_link()
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        link = await project.add_link()
         if "filters" in request.json:
-            yield from link.update_filters(request.json["filters"])
+            await link.update_filters(request.json["filters"])
         if "suspend" in request.json:
-            yield from link.update_suspend(request.json["suspend"])
+            await link.update_suspend(request.json["suspend"])
         try:
             for node in request.json["nodes"]:
-                yield from link.add_node(project.get_node(node["node_id"]),
+                await link.add_node(project.get_node(node["node_id"]),
                                          node.get("adapter_number", 0),
                                          node.get("port_number", 0),
                                          label=node.get("label"))
-        except aiohttp.web_exceptions.HTTPException as e:
-            yield from project.delete_link(link.id)
+        except aiohttp.web.HTTPException as e:
+            await project.delete_link(link.id)
             raise e
         response.set_status(201)
         response.json(link)
@@ -90,9 +89,9 @@ class LinkHandler:
             400: "Invalid request"
         },
         description="Return the list of filters available for this link")
-    def list_filters(request, response):
+    async def list_filters(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         response.set_status(200)
         response.json(link.available_filters())
@@ -110,9 +109,9 @@ class LinkHandler:
         },
         description="Get a link instance",
         output=LINK_OBJECT_SCHEMA)
-    def get_link(request, response):
+    async def get_link(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         response.set_status(200)
         response.json(link)
@@ -130,16 +129,16 @@ class LinkHandler:
         description="Update a link instance",
         input=LINK_OBJECT_SCHEMA,
         output=LINK_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
         if "filters" in request.json:
-            yield from link.update_filters(request.json["filters"])
+            await link.update_filters(request.json["filters"])
         if "suspend" in request.json:
-            yield from link.update_suspend(request.json["suspend"])
+            await link.update_suspend(request.json["suspend"])
         if "nodes" in request.json:
-            yield from link.update_nodes(request.json["nodes"])
+            await link.update_nodes(request.json["nodes"])
         response.set_status(201)
         response.json(link)
 
@@ -156,11 +155,12 @@ class LinkHandler:
         input=LINK_CAPTURE_SCHEMA,
         output=LINK_OBJECT_SCHEMA,
         description="Start capture on a link instance. By default we consider it as an Ethernet link")
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
-        yield from link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"), capture_file_name=request.json.get("capture_file_name"))
+        await link.start_capture(data_link_type=request.json.get("data_link_type", "DLT_EN10MB"),
+                                 capture_file_name=request.json.get("capture_file_name"))
         response.set_status(201)
         response.json(link)
 
@@ -175,11 +175,11 @@ class LinkHandler:
             400: "Invalid request"
         },
         description="Stop capture on a link instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
-        yield from link.stop_capture()
+        await link.stop_capture()
         response.set_status(201)
         response.json(link)
 
@@ -194,10 +194,10 @@ class LinkHandler:
             400: "Invalid request"
         },
         description="Delete a link instance")
-    def delete(request, response):
+    async def delete(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
-        yield from project.delete_link(request.match_info["link_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.delete_link(request.match_info["link_id"])
         response.set_status(204)
 
     @Route.get(
@@ -206,35 +206,35 @@ class LinkHandler:
             "project_id": "Project UUID",
             "link_id": "Link UUID"
         },
-        description="Stream the pcap capture file",
+        description="Stream the PCAP capture file from compute",
         status_codes={
             200: "File returned",
             403: "Permission denied",
             404: "The file doesn't exist"
         })
-    def pcap(request, response):
+    async def pcap(request, response):
 
-        project = yield from Controller.instance().get_loaded_project(request.match_info["project_id"])
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         link = project.get_link(request.match_info["link_id"])
+        if not link.capturing:
+            raise aiohttp.web.HTTPConflict(text="This link has no active packet capture")
 
-        while link.capture_file_path is None:
-            raise aiohttp.web.HTTPNotFound(text="pcap file not found")
+        compute = link.compute
+        pcap_streaming_url = link.pcap_streaming_url()
+        headers = multidict.MultiDict(request.headers)
+        headers['Host'] = compute.host
+        headers['Router-Host'] = request.host
+        body = await request.read()
 
-        while not os.path.isfile(link.capture_file_path):
-            yield from asyncio.sleep(0.5)
+        connector = aiohttp.TCPConnector(limit=None, force_close=True)
+        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+            async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
+                proxied_response = aiohttp.web.Response(headers=response.headers, status=response.status)
+                if response.headers.get('Transfer-Encoding', '').lower() == 'chunked':
+                    proxied_response.enable_chunked_encoding()
 
-        try:
-            with open(link.capture_file_path, "rb") as f:
-
-                response.content_type = "application/vnd.tcpdump.pcap"
-                response.set_status(200)
-                response.enable_chunked_encoding()
-                yield from response.prepare(request)
-
-                while True:
-                    chunk = f.read(4096)
-                    if not chunk:
-                        yield from asyncio.sleep(0.1)
-                    yield from response.write(chunk)
-        except OSError:
-            raise aiohttp.web.HTTPNotFound(text="pcap file {} not found or not accessible".format(link.capture_file_path))
+                await proxied_response.prepare(request)
+                async for data in response.content.iter_any():
+                    if not data:
+                        break
+                    await proxied_response.write(data)

@@ -27,6 +27,41 @@
     },
     "images": [
         {
+            "filename": "FGT_VM64_KVM-v6-build0866-FORTINET.out.kvm.qcow2",
+            "version": "6.2.0",
+            "md5sum": "588df9ba0db485976f6681810001ae73",
+            "filesize": 57868288,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v6-build0200-FORTINET.out.kvm.qcow2",
+            "version": "6.0.3",
+            "md5sum": "be6f74ea13da09cf0b68e87234e2d8d5",
+            "filesize": 51552256,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v6-build0076-FORTINET.out.kvm.qcow2",
+            "version": "6.0.0",
+            "md5sum": "161728b413e097954bd640ade89dfeb1",
+            "filesize": 46104576,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build1653-FORTINET.out.kvm.qcow2",
+            "version": "5.6.7",
+            "md5sum": "202e1ed7582b02493be63f14cc48c2cb",
+            "filesize": 43180032,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build1575-FORTINET.out.kvm.qcow2",
+            "version": "5.6.4",
+            "md5sum": "c312ea8ec1afffb73858fb1b15c095ef",
+            "filesize": 41594880,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
             "version": "5.6.3",
             "md5sum": "a908f8620e8bbccce8794733f3637e13",
@@ -52,6 +87,13 @@
             "version": "5.6.0",
             "md5sum": "17ee2cc8c76c4928a68a2d016aa83ace",
             "filesize": 38760448,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v5-build1220-FORTINET.out.kvm.qcow2",
+            "version": "5.4.10",
+            "md5sum": "7444d6c85ef6b937a98163482caa5a90",
+            "filesize": 39043072,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -184,6 +226,41 @@
     ],
     "versions": [
         {
+            "name": "6.2.0",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v6-build0866-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.0.3",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v6-build0200-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.0.0",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v6-build0076-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.6.7",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1653-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.6.4",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1575-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "5.6.3",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v5-build1547-FORTINET.out.kvm.qcow2",
@@ -208,6 +285,13 @@
             "name": "5.6.0",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v5-build1449-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "5.4.10",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v5-build1220-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

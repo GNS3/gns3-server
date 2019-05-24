@@ -1,5 +1,349 @@
 # Change Log
 
+## 2.2.0b1 21/05/2019
+
+* Upgrade GNS3 Web UI to v2019.2.0-alpha.3
+* Change behavior when an IOU license is verified. Fixes https://github.com/GNS3/gns3-server/issues/1555
+* Fix Qemu VM state support after closing a project and check for JSON data returned by qemu-img. Fixes #1591
+* Ensure Qemu monitor commands are executed. Ref #1582.
+* Set console type to "none" by default for Ethernet switches and add a warning if trying to use "telnet". Fixes https://github.com/GNS3/gns3-gui/issues/2776
+* Add %console-port% variable for additional Qemu options. Fixes https://github.com/GNS3/gns3-gui/issues/2786
+* Fix invalid reStructuredText for long description in setup.py
+* Support for additional persistent docker volumes
+
+## 2.2.0a5 15/04/2019
+
+* Back to the major.minor version for config files. Ref https://github.com/GNS3/gns3-gui/issues/2756
+* Fix templates missing after server restart. Fixes https://github.com/GNS3/gns3-gui/issues/2769
+* Fix bug when GNS3 VM were not saved. Fix tests.
+* Some adjustments with compute WebSocket handling. Ref https://github.com/GNS3/gns3-server/issues/1564
+* Fix broken embedded console for Ethernet switch. Fixes #1574
+* Prevent locked nodes to be deleted. Fixes https://github.com/GNS3/gns3-gui/issues/2764
+* Remove old unused argument option. Fixes #1569
+
+## 2.1.17 17/05/2019
+
+* Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3 This is to fix build issue for Ubuntu 19.04 package on Launchpad. Ref #1583 https://github.com/GNS3/gns3-gui/issues/2774
+
+## 2.1.16 15/04/2019
+
+* Fix broken embedded console for Ethernet switch. Fixes #1574
+* Remove old unused argument option. Fixes #1569
+
+## 2.2.0a4 05/04/2019
+
+* Use the full version number for path to config files. Ref https://github.com/GNS3/gns3-gui/issues/2756
+* Support for docker images that set the USER directive. Changes the docker user to root for the init script to configure the network, then drops to the configured user (or root if one is not defined) for continuing booting the image.
+* Fix packet filter not working for Ethernet switch and Ethernet hub. Fixes https://github.com/GNS3/gns3-gui/issues/2754
+* Fix remote packet capture for Dynamips.
+* Fix remote packet capture and make sure packet capture is stopped when deleting an NIO. Fixes https://github.com/GNS3/gns3-gui/issues/2753
+* Store config files in version specific location
+* Update pytest from 4.3.1 to 4.4.0
+* Fix opening previously saved 2.1 project grid overlapping. Fixes #2734
+* Fix empty theme name in symbol selection dialog. Fixes https://github.com/GNS3/gns3-gui/issues/2751
+* Bundle v2019.1.0-alpha.3 web-ui
+
+## 2.2.0a3 25/03/2019
+
+* Fix traceback when starting packet capture on builtin nodes. Fixes https://github.com/GNS3/gns3-gui/issues/2743
+* Load v2019.1.0-alpha.2 of WebUI
+* Fetch tags for update-bundled-web-ui.sh
+* Fix mimetype for javascript, #1559
+* Serve WebUI via get_resource for freezed app
+* Deactivate the embedded shell for Ethernet switch. Ref #1424 #1556
+* Fix VBoxManage fails if VM has specific special characters in name. Fixes #2739
+* Fix IOU symlink issue on remote servers.
+* Fix vcpus configuration for GNS3 VM on VMware. Ref #2738.
+* Fix issue when images are not uploaded from appliance wizard. Ref https://github.com/GNS3/gns3-gui/issues/2738
+* Save the GNS3 VM settings even if the GNS3 VM cannot be stopped.
+* Fix exception when emitting event from controller. Ref https://github.com/GNS3/gns3-gui/issues/2737
+
+## 2.1.15 21/03/2019
+
+* Fix IOU symlink issue on remote servers.
+* Fix vcpus configuration for GNS3 VM on VMware. Ref #2738.
+
+## 2.2.0a2 14/03/2019
+
+* Web-UI v2019.1.0-alpha.1
+* Update docs for update-bundled-web-ui.sh
+* Fix issue when loading and quickly closing a project and opening it again. Fixes #1501.
+* Disable unreliable nested virtualization check.
+* Fix issue not checking build number on Windows.
+* Change Hyper-V requirement checks.
+* Early support for symbol themes.
+* Re-order handlers in order to prevent CORS
+* Download custom appliance symbols from GitHub Fix symbol cache issue. Ref https://github.com/GNS3/gns3-gui/issues/2671 Fix temporary directory for symbols was not deleted Fix temporary appliance file was not deleted
+* Option to export snapshots.
+* Support tags versioned WebUI when bundling
+* Support selecting a compression type when exporting a project.
+* Change how VPCS executable is searched.
+* Use aiofiles where relevant.
+* Update paths for binaries moved to the MacOS directory in GNS3.app
+* Locked state should not be used when duplicating a node.
+* Handle locking/unlocking items independently from the layer position.
+* Use aiozipstream for snapshots. Fix tests.
+* Project duplication support.
+
+## 2.2.0a1 29/01/2019
+
+* Restore reload support for nodes.
+* Tune how to get the size of SVG images. Ref https://github.com/GNS3/gns3-gui/issues/2674. * Default for missing height/width is "100%" as defined in the SVG specification * Better error message, if viewBox attribute is missing * Removal of "%" in percent more fault tolerant by using rstrip("%")
+* Fix DeprecationWarning: invalid escape sequence. Fixes https://github.com/GNS3/gns3-gui/issues/2670
+* Fix issue with coroutine not awaited. Fixes #1499
+* Remove "deprecated" node for VirtualBox based GNS3 VM support. Ref #1377
+* Fix wrong controller method call.
+* Move appliance and template management code in their own classes.
+* Try to delete saved VM state only if a snapshot has been saved.
+* Set socket options SO_KEEPALIVE and TCP_NODELAY for embedded Telnet server. Ref #1335
+* Fix issue with notification queue that prevented to properly close projects. Fix #1493
+* Fix issue with "usage" variable for Dynamips VMs. Fixes #1495
+* New node information dialog to display general, usage and command line information. Ref https://github.com/GNS3/gns3-gui/issues/2662 https://github.com/GNS3/gns3-gui/issues/2656
+* Support "usage" field for Dynamips, IOU, VirtualBox and VMware. Fixes https://github.com/GNS3/gns3-gui/issues/2657
+* Automatically create a symbolic link to the IOU image in the IOU working directory. Fixes #1484
+* Merge remote-tracking branch 'origin/2.1' into 2.1
+* Fix link pause/filters only work for the first interface of Docker containers. Fixes #1482
+* Fix ConnectionResetError issues and switch to aiohttp version 3.4.4. Fixes #1474.
+* Fix server authentication.
+* Fix issue when there is no gns3_controller.conf. Fixes https://github.com/GNS3/gns3-gui/issues/2644
+* Fix non responsive console for Docker VMs. Fixes https://github.com/GNS3/gns3-gui/issues/2645
+* Back to classic symbol theme. Ref https://github.com/GNS3/gns3-gui/issues/2644
+* docker_vm: fix x11vnc not starting
+* Use "template" to name what we use to create new nodes.
+* Use project instead of topology where appropriate.
+* Make sure nothing is named "compute server".
+* Allow usage property in Docker appliance.
+* Use "node" instead of "appliance" for grid support.
+* Telnet console resize support for Docker VM.
+* Allow appliances to be loaded from file without the appliance id.
+* Update schema to allow for drawing grid size to be part of project.
+* Avoid _fix_permissions() to be called twice when stopping Docker VM. Ref #1428
+* Fix _fix_permissions() garbles permissions in Docker VM. Ref #1428
+* Fix "None is not of type 'integer'" when opening project containing a Qemu VM. Fixes #2610.
+* Remove useless warning.
+* Normalize symbol ID on Windows.
+* Use POSIX path for symbol ID.
+* Early support for symbol themes.
+* Fix broken examples in API documentation.
+* Add more information about appliances to the API documentation.
+* Use Python3.6 to build the API documentation.
+* Add missing files for API documentation.
+* Restore previously removed test.
+* Update API documentation for appliance endpoints. Ref https://github.com/GNS3/gns3-gui/issues/2630
+* Require privileged access for uBridge when using VMware VMs and Docker containers. Fixes #1461.
+* Only require privileged access for uBridge when connecting a cloud to an Ethernet/TAP interface. Fixes #1461.
+* Allow virtual machines to use files in project directory as disk images.
+* Support to duplicate an appliance.
+* Fix mac address schema validation for Qemu VM appliance. Fixes https://github.com/GNS3/gns3-gui/issues/2629
+* Support "L1 keepalives" in IOU appliance schema.
+* Remove problematic test when run on Travis.
+* Change test that randomly fails on Travis.
+* Fix small bugs when using the new appliance management API.
+* Fix bug with custom adapters and categories for Docker VM. Fixes https://github.com/GNS3/gns3-gui/issues/2613
+* Handle custom adapters in schemas.
+* Reorganize how appliance creation is validated against JSON schemas. This allows for clearer error messages when validation fails.
+* Use schema to set appliance default values and better schema validation error messages.
+* Schema validation for appliance API. Ref #1427.
+* Remove generic controller settings API endpoint.
+* Working dedicated appliance management API. Ref https://github.com/GNS3/gns3-server/issues/1427
+* Support Xtigervnc restart.
+* Only require Xtigervnc or Xvfb+x11vnc for Docker with vnc console. Ref #1438
+* Support tigervnc in Docker VM. Ref #1438
+* Base for dedicated appliance management API. Ref https://github.com/GNS3/gns3-server/issues/1427
+* Reorder routes in order to get working CORS
+* Fix CORS response on node deletion, Fixes: #1446
+* Disable CORS cache, Fixes: #1445
+* Refactor how clients access PCAP capture files. Fixes https://github.com/GNS3/gns3-gui/issues/2438.
+* Remove static dir configuration
+* FIX PUT CORS for nodes, Fixes: #1434
+* Fix installation with Python 3.7. Fixes #1414. Fix deprecated use of aiohttp.Timeout. Fixes #1296. Use "async with" with aiohttp.ClientSession(). Make sure websocket connections are properly closed, see https://docs.aiohttp.org/en/stable/web_advanced.html#graceful-shutdown Finish to drop Python 3.4.
+* Drop Python 3.4 and switch to async / await syntax for asyncio. Fixes #1425
+* Added "/sbin" to init script PATH variable so that its possible to use more sophosticated dhcp clients (compared to the udhcpc that is provided by busybox) by installing them into the docker image in the normal way.
+* Notify users if x11vnc process has crashed. Fix #1401.
+* Return compute port information via API. Ref #1420.
+* Fix platform.linux_distribution() is deprecated. Fixes https://github.com/GNS3/gns3-gui/issues/2578
+* Update minimum VIX version requirements for VMware. Ref #1415.
+* Disable static directory. Ref https://github.com/GNS3/gns3-gui/issues/2558.
+* Include HTTP error code when reporting an error while download appliance templates from GitHub repository.
+* Optimize appliance templates update from GitHub repository by only downloading when the repository has been updated. Ref https://github.com/GNS3/gns3-gui/issues/2490
+* Fix appliance template tests.
+* Update appliance templates from online registry. Ref #2490.
+* Add missing doc pages.
+* Update docs for controller_notifications and project_notifications.
+* The server has now 2 notification streams * A new one for controller related events (compute, appliance templates etc.) * The existing one for project related events (links, nodes etc.)
+* Allow custom symbols to be sub-directories.
+* Add affinity symbols. Ref https://github.com/GNS3/gns3-gui/issues/2488
+* ACPI shutdown for GNS3 VM running on Hyper-V. Ref https://github.com/GNS3/gns3-gui/issues/763
+* Hyper-V support for GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/763
+* Get IP address from guest Hyper-V VM. Ref https://github.com/GNS3/gns3-gui/issues/763
+* Early Hyper-V support to run the GNS3 VM. Ref https://github.com/GNS3/gns3-gui/issues/763.
+* Add appliance UUID added to the node data. Fixes #1334.
+* Clean GNS3 close if one remote server is down. Fixes #1357.
+* Mark VirtualBox support for running the GNS3 VM as deprecated. Ref #1377.
+* Change default z value for nodes to 1
+* Re-enable static directory
+* Disable static/ dir, Ref: #2532
+* Fix tests on Windows
+* Use mocked dir for web-ui redirection test
+* Use mocked dir of web-ui for tests
+* Gitkeep for web-ui directory
+* Serve WebUI handlers and update-bundled-web-ui script, Ref: #1362
+* Support /static/ files serving, Ref: #1362
+* Console support for clouds (to connect to external devices or services).
+* Fix switching console type from telnet to VNC throws error. Fixes #2489.
+* Fix saved VM state was not deleted correctly.
+* Fix problem with VM saved stated.
+* Returns the ports' adapter types and mac addresses when available.
+* Support for console auto start.
+* Possibility to customize port names and adapter types for Qemu, VirtualBox, VMware and Docker. Fixes #2361. MAC addresses can customized for Qemu as well.
+* Allow to have projects with the same name in different locations.
+* Save state feature for VirtualBox and VMware. New "On close" setting to select the action to execute when closing/stopping a Qemu/VirtualBox/VMware VM.
+* Support for suspend to disk / resume (Qemu).
+* Fix bug with 'none' console type for Ethernet switch. Fix some tests related to traceng.
+* Allow to resize a Qemu VM disk (extend only).
+* Allow to select the default NAT interface in preferences for local server.
+* Spice with agent support for Qemu VMs.
+* Check if the HAXM service is running when starting a Qemu VM with hardware acceleration. Ref #1242.
+* Support for console type "none".
+* Support for none console type (Qemu & Docker only)
+* Fix bug and add optimizations when connecting and sending commands to QEMU monitor after starting a VM. Fixes #2336.
+* Check if HAXM support is installed on macOS. Ref #1242.
+* Fix some issues with hardware acceleration support for Qemu.
+* Support Qemu with HAXM acceleration. Ref #1242.
+* Fix packet filters for Dynamips.
+* Fix link filters/suspend tests.
+* Improve suspend a link for Qemu and VirtualBox VMs. A suspended link will be unplugged allowing the VMs to be notified of the change.
+* Qemu VM support to detect when a link is plugged/unplugged.
+* Allow to configure the interface to be used by the NAT node. Fixes #1175.
+* Restrict the list of available Ethernet/TAP adapters. Fixes #352.
+* Basic project stats.
+* Filter snapshots directory during the snapshot, Fixes: #1297
+* Calculate MD5 on thread and before json response, Ref. gui#2239
+* Cancellable md5sum calculation on thread, Ref. gui#2239
+* Compute md5sum on thread and don't block main server, Ref. gui#2239
+* Replace asyncio.async with ensure_future because of deprecation, Fixes: #1269
+* Implement #1153 into 2.2 branch.
+* Pin prompt-toolkit to latest version 1.0.15
+
+## 2.1.14 27/02/2019
+
+* Fix issue when setting cpuid.corespersocket for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2723
+* Bump ACPI Shutdown Timeout to 120 seconds. Ref #1536
+
+## 2.1.13 26/02/2019
+
+* Force jsonschema dependency to 2.6.0
+* Less aggressive connections to uBridge. Ref #1289
+* Fix topology images (Pictures) disappearing from projects. Fixes #1514.
+* Reset MAC addresses when duplicating a project. Fixes #1522
+* Fix API call to create a node from an appliance doesn't return the new node data. Fixes #1527
+* Detect invalid environment variable and send a warning when creating a Docker node. Ref #2683
+* Do not export/import symlinks for projects. Fixes #2699
+* Fix symlink not being created for duplicated IOU devices. Fixes https://github.com/GNS3/gns3-gui/issues/2699
+* Configure coresPerSocket value in VMX file for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/2688
+* Count logical CPUs to detect if the number of vCPUs is too high when configuring the GNS3 VM. Fixes #2688.
+* Add explicit error when trying to pull a Docker image from Docker Hub without Internet access. Fixes #1506.
+* Fixes double display output in GRUB in QEMU v3.1. Fixes #1516.
+
+## 2.1.12 23/01/2019
+
+* Tune how to get the size of SVG images. Ref https://github.com/GNS3/gns3-gui/issues/2674.
+* Automatically create a symbolic link to the IOU image in the IOU working directory. Fixes #1484
+* Fix link pause/filters only work for the first interface of Docker containers. Fixes #1482
+* Telnet console resize support for Docker VM.
+* Fix _fix_permissions() garbles permissions in Docker VM. Ref #1428
+* Fix "None is not of type 'integer'" when opening project containing a Qemu VM. Fixes #2610.
+* Only require Xtigervnc or Xvfb+x11vnc for Docker with vnc console. Ref #1438
+* Support tigervnc in Docker VM. Ref #1438
+* Update minimum VIX version requirements for VMware. Ref #1415.
+
+## 2.1.11 28/09/2018
+
+* Catch some exceptions.
+
+## 2.1.10 15/09/2018
+
+* Include locale information and GNS3 VM version in crash reports.
+* Fix small errors like unhandled exceptions etc.
+* Import encodings.idna to avoid LookupError when standard library is in a zip file.
+* Catch exceptions in various locations to fix small issues reported by Sentry.
+* Check if serial pipe can be opened for VMware and VirtualBox VMs.
+* Improve the invalid port format detection. Fixes https://github.com/GNS3/gns3-gui/issues/2580
+* Update aiohttp verion requirement in order to support Python 3.7. Fixes https://github.com/GNS3/gns3-gui/issues/2566
+* Update setup.py and fix minor issues.
+* Catch asyncio.CancelledError when shutting down the server.
+* Report GNS3 VM errors to the GUI server summary. Ref #1359.
+* Replace vboxnet0 (if it does not exist) by the first available vboxnet interface on Windows. Fixes https://github.com/GNS3/gns3-vm/issues/102
+* Check if the VirtualBox host-only network exists when starting a GNS3 VM running on VirtualBox. Ref https://github.com/GNS3/gns3-vm/issues/102
+* Change file timestamps if necessary because ZIP does not support timestamps before 1980. Fixes #1360.
+* Add missing coroutine decorator Ref https://github.com/GNS3/gns3-gui/issues/2566
+* Refactor asyncio locking system for Python 3.7 support. Ref https://github.com/GNS3/gns3-gui/issues/2566 Ref https://github.com/GNS3/gns3-gui/issues/2568
+* Use asyncio.ensure_future() instead of asyncio.async() with conservative approach to support Python < 3.4.4. Fixes https://github.com/GNS3/gns3-gui/issues/2566
+* Forbid controller and computes to be different versions. Report last compute error to clients and display in the server summary.
+* Fix exception with short names for Dynamips interfaces. Fixes #1386.
+* Add missing Qemu boot priority values. Fixes https://github.com/GNS3/gns3-server/issues/1385
+
+## 2.1.9 13/08/2018
+
+* Fix some more problems with interface short names. Fixes https://github.com/GNS3/gns3-gui/issues/2562
+* Fix incorrect short port names in topology summary. Fixes https://github.com/GNS3/gns3-gui/issues/2562
+* Set lower process priority when computing idle-pc value on Windows. Ref #2522.
+* Catch exception: ZIP does not support timestamps before 1980. Ref #1360.
+* Sync appliances
+
+## 2.1.8 14/06/2018
+
+* 'caplog.text()' syntax is deprecated, use 'caplog.text' property instead.
+* Remove problematic pytest-capturelog dev dependency.
+* Fix API status code for start/stop/suspend/reload a node. Fixes #1353. Fix issues with test. Update documentation.
+* Don't send variables to computes where are empty, Ref: #1340
+
+## 2.1.7 12/06/2018
+
+* Don't release NIO UDP ports when updating docker container.
+* Timeout for stream file.
+* Fix switching console type from telnet to VNC throws error.
+* Fix timeout error with "save as" for large projects.
+* Update API documentation
+* Add API endpoint to return all links attached to a node.
+* Fix issue with some SVG symbols that could not be used in GNS3. This was due to the height and width values being percentages.
+* Show correct free disk space value.
+* Force prompt-toolkit to version 1.0.15
+* Remove unwanted trailing characters and other white spaces when reading .md5sum files.
+* Change order to find vnetlib on Windows (PATH -> Registry -> Default directories).
+
+## 2.1.6 22/05/2018
+
+* Locks down async-timeout<3.0.0 for P3.4 support; Fixes: #1331
+* Create/update project on compute when variables changes
+* Support for nested global variables
+* Don't clean logo images when applied to the project
+* Support of supplier and variables in topology
+* Project global variables
+* Add command information when uBridge has an error. Ref #1289
+* Handle asyncio timeouts. Ref #1307.
+* Fix bug with export project. Ref #1187 #1307.
+* Offload slow file operations to threads for snapshots and project "save as". Ref #1187 #1307.
+*  support based on init.sh, Ref: #2482
+* Fix exception from send_signal() on Windows.
+* Add support of ExtraHosts for Docker, Ref. gns3-gui#2482
+
+## 2.1.5 18/04/2018
+
+* Set the first byte to 0C when generating a random MAC address for a Qemu VM. Ref #1267.
+* Update appliance files.
+* Do not use VMnet0 when allocating VMnet adapters.
+* Use SO_REUSEADDR before calling bind() where missing. Fixes #1289.
+* Do not fail a Dynamips project conversion if a file being used.
+* Catch exceptions when using AsyncioTelnetServer. Fixes #1321.
+* Grid size support for projects.
+* Remove 'include INSTALL' from MANIFEST.
+* Fix issue with start all.
+* Check for valid IP address and prevent to run on non-Windows platforms.
+* Enable UDP tunnel option and use ICMP probing by default.
+* Use the configured IP address to trace.
+* Have TraceNG start without needing cmd.exe
+
 ## 2.1.4 12/03/2018
 
 * Add Juniper JunOS space appliance.
@@ -466,7 +810,7 @@
 * Trust user for host binding of link adress
 * Code cleanup for docker interface creation
 * Fix a rare crash when writing a file on a remote server
-* Fix delete project on remote compute server
+* Fix delete project on remote compute
 * Fix trouble with builtin devices when we free ports
 * When a dynamips command failed display the full command to the user
 * Raise error when we can't found VboxManage at GNS3 VM startup
@@ -594,7 +938,7 @@
 * Fix naming of IOU serial interfaces
 * Improve timeout management
 * When exporting debug information export GNS3 VM vmx content
-* /debug for exporting debug informations
+* /debug for exporting debug information
 * Raise error if using a non linked clone VM twice
 * Fix a possible deadlock at exit
 * Fix import of some old dynamips topologies

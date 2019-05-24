@@ -1,0 +1,52 @@
+{
+    "name": "CentOS Cloud Guest",
+    "category": "guest",
+    "description": "CentOS official image for self-hosted cloud",
+    "vendor_name": "The CentOS Project",
+    "vendor_url": "https://www.centos.org/",
+    "documentation_url": "https://wiki.centos.org/Documentation",
+    "product_name": "Centos Cloud",
+    "product_url": "https://wiki.centos.org/Cloud",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: centos\nPassword: centos",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
+            "version": "7-1809",
+            "md5sum": "da79108d1324b27bd1759362b82fbe40",
+            "filesize": 914948096,
+            "download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1809.qcow2"
+        },
+        {
+            "filename": "centos-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "15ca60c12db6d13b8eeae1a19613fd6e",
+            "filesize": 378880,
+            "download_url": "https://github.com/asenci/gns3-centos-cloud-init-data/raw/master/centos-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7 (1809)",
+            "images": {
+                "hda_disk_image": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
+                "cdrom_image": "centos-cloud-init-data.iso"
+            }
+        }
+    ]
+}

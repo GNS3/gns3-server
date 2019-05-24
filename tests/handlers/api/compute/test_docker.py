@@ -32,7 +32,7 @@ pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supp
 @pytest.fixture
 def base_params():
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet", "console_resolution": "1280x1024"}
+    return {"name": "PC TEST 1", "image": "nginx", "start_command": "nginx-daemon", "adapters": 2, "environment": "YES=1\nNO=0", "console_type": "telnet", "console_resolution": "1280x1024", "extra_hosts": "test:127.0.0.1"}
 
 
 @pytest.yield_fixture(autouse=True)
@@ -69,7 +69,7 @@ def test_docker_create(http_compute, project, base_params):
     assert response.json["adapters"] == 2
     assert response.json["environment"] == "YES=1\nNO=0"
     assert response.json["console_resolution"] == "1280x1024"
-
+    assert response.json["extra_hosts"] == "test:127.0.0.1"
 
 def test_docker_start(http_compute, vm):
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.start", return_value=True) as mock:
@@ -120,11 +120,17 @@ def test_docker_nio_create_udp(http_compute, vm):
                                                                                                                                                                      "rhost": "127.0.0.1"},
                                  example=True)
     assert response.status == 201
-    assert response.route == "/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
 def test_docker_update_nio(http_compute, vm):
+
+    response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
+                                                                                                                                                                     "lport": 4242,
+                                                                                                                                                                     "rport": 4343,
+                                                                                                                                                                     "rhost": "127.0.0.1"})
+    assert response.status == 201
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_update_nio_binding") as mock:
         response = http_compute.put("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
                                     {
@@ -135,14 +141,14 @@ def test_docker_update_nio(http_compute, vm):
         },
             example=True)
     assert response.status == 201, response.body.decode()
-    assert response.route == "/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_docker_delete_nio(http_compute, vm):
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.adapter_remove_nio_binding") as mock:
         response = http_compute.delete("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
     assert response.status == 204
-    assert response.route == "/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
+    assert response.route == r"/projects/{project_id}/docker/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
 def test_docker_update(http_compute, vm, tmpdir, free_console_port):
@@ -150,7 +156,8 @@ def test_docker_update(http_compute, vm, tmpdir, free_console_port):
         response = http_compute.put("/projects/{project_id}/docker/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
                                                                                                                                                  "console": free_console_port,
                                                                                                                                                  "start_command": "yes",
-                                                                                                                                                 "environment": "GNS3=1\nGNS4=0"},
+                                                                                                                                                 "environment": "GNS3=1\nGNS4=0",
+                                                                                                                                                 "extra_hosts": "test:127.0.0.1"},
                                     example=True)
     assert mock.called
     assert response.status == 200
@@ -158,18 +165,16 @@ def test_docker_update(http_compute, vm, tmpdir, free_console_port):
     assert response.json["console"] == free_console_port
     assert response.json["start_command"] == "yes"
     assert response.json["environment"] == "GNS3=1\nGNS4=0"
+    assert response.json["extra_hosts"] == "test:127.0.0.1"
 
 
 def test_docker_start_capture(http_compute, vm, tmpdir, project):
 
     with patch("gns3server.compute.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.start_capture") as start_capture:
-
             params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
             response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
-
             assert response.status == 200
-
             assert start_capture.called
             assert "test.pcap" in response.json["pcap_file_path"]
 
@@ -178,11 +183,8 @@ def test_docker_stop_capture(http_compute, vm, tmpdir, project):
 
     with patch("gns3server.compute.docker.docker_vm.DockerVM.is_running", return_value=True) as mock:
         with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.stop_capture") as stop_capture:
-
             response = http_compute.post("/projects/{project_id}/docker/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
-
             assert response.status == 204
-
             assert stop_capture.called
 
 

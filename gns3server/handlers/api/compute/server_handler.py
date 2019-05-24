@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import psutil
 import platform
 
@@ -24,7 +23,6 @@ from gns3server.config import Config
 from gns3server.schemas.version import VERSION_SCHEMA
 from gns3server.compute.port_manager import PortManager
 from gns3server.version import __version__
-from aiohttp.web import HTTPConflict
 
 
 class ServerHandler:
@@ -39,12 +37,11 @@ class ServerHandler:
         local_server = config.get_section_config("Server").getboolean("local", False)
         response.json({"version": __version__, "local": local_server})
 
-
     @Route.get(
         r"/debug",
-        description="Return debug informations about the compute",
+        description="Return debug information about the compute",
         status_codes={
-            201: "Writed"
+            201: "Written"
         })
     def debug(request, response):
         response.content_type = "text/plain"

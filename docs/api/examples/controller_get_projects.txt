@@ -6,10 +6,10 @@ GET /v2/projects HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 578
+Content-Length: 637
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:38 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:50:00 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects
 
 [
@@ -17,9 +17,11 @@ X-Route: /v2/projects
         "auto_close": true,
         "auto_open": false,
         "auto_start": false,
+        "drawing_grid_size": 25,
         "filename": "test.gns3",
+        "grid_size": 75,
         "name": "test",
-        "path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_list_projects1",
+        "path": "/tmp/pytest-of-grossmj/pytest-0/test_list_projects1",
         "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
         "scene_height": 1000,
         "scene_width": 2000,
@@ -28,6 +30,8 @@ X-Route: /v2/projects
         "show_layers": false,
         "snap_to_grid": false,
         "status": "opened",
+        "supplier": null,
+        "variables": null,
         "zoom": 100
     }
 ]

@@ -111,8 +111,7 @@ class Hypervisor(DynamipsHypervisor):
 
         self._path = path
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Starts the Dynamips hypervisor process.
         """
@@ -129,7 +128,7 @@ class Hypervisor(DynamipsHypervisor):
             self._stdout_file = os.path.join(self.working_dir, "dynamips_i{}_stdout.txt".format(self._id))
             log.info("Dynamips process logging to {}".format(self._stdout_file))
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                self._process = yield from asyncio.create_subprocess_exec(*self._command,
+                self._process = await asyncio.create_subprocess_exec(*self._command,
                                                                           stdout=fd,
                                                                           stderr=subprocess.STDOUT,
                                                                           cwd=self._working_dir,
@@ -140,29 +139,28 @@ class Hypervisor(DynamipsHypervisor):
             log.error("Could not start Dynamips: {}".format(e))
             raise DynamipsError("Could not start Dynamips: {}".format(e))
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops the Dynamips hypervisor process.
         """
 
         if self.is_running():
             log.info("Stopping Dynamips process PID={}".format(self._process.pid))
-            yield from DynamipsHypervisor.stop(self)
+            await DynamipsHypervisor.stop(self)
             # give some time for the hypervisor to properly stop.
             # time to delete UNIX NIOs for instance.
-            yield from asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)
             try:
-                yield from wait_for_process_termination(self._process, timeout=3)
+                await wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
-                    log.warn("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    log.warning("Dynamips process {} is still running... killing it".format(self._process.pid))
                     try:
                         self._process.kill()
                     except OSError as e:
                         log.error("Cannot stop the Dynamips process: {}".format(e))
                     if self._process.returncode is None:
-                        log.warn('Dynamips hypervisor with PID={} is still running'.format(self._process.pid))
+                        log.warning('Dynamips hypervisor with PID={} is still running'.format(self._process.pid))
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
@@ -183,7 +181,7 @@ class Hypervisor(DynamipsHypervisor):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warn("could not read {}: {}".format(self._stdout_file, e))
+                log.warning("could not read {}: {}".format(self._stdout_file, e))
         return output
 
     def is_running(self):

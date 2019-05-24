@@ -45,6 +45,8 @@ def test_project_to_topology_empty(tmpdir):
         "show_interface_labels": False,
         "show_layers": False,
         "snap_to_grid": False,
+        "grid_size": 75,
+        "drawing_grid_size": 25,
         "topology": {
             "nodes": [],
             "links": [],
@@ -52,6 +54,8 @@ def test_project_to_topology_empty(tmpdir):
             "drawings": []
         },
         "type": "topology",
+        "supplier": None,
+        "variables": None,
         "version": __version__
     }
 
@@ -78,6 +82,26 @@ def test_basic_topology(tmpdir, async_run, controller):
     assert topo["topology"]["links"][0] == link.__json__(topology_dump=True)
     assert topo["topology"]["computes"][0] == compute.__json__(topology_dump=True)
     assert topo["topology"]["drawings"][0] == drawing.__json__(topology_dump=True)
+
+
+def test_project_to_topology(tmpdir, controller):
+    variables = [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+    supplier = {
+        'logo': 'logo.png',
+        'url': 'http://example.com'
+    }
+
+    project = Project(name="Test", controller=controller)
+    compute = Compute("my_compute", controller)
+    compute.http_query = MagicMock()
+    project.variables = variables
+    project.supplier = supplier
+    topo = project_to_topology(project)
+    assert topo["variables"] == variables
+    assert topo["supplier"] == supplier
 
 
 def test_load_topology(tmpdir):
@@ -136,3 +160,55 @@ def test_load_newer_topology(tmpdir):
         json.dump(data, f)
     with pytest.raises(aiohttp.web.HTTPConflict):
         topo = load_topology(path)
+
+
+def test_load_topology_with_variables(tmpdir):
+    variables = [
+        {"name": "TEST1"},
+        {"name": "TEST2", "value": "value1"}
+    ]
+    data = {
+        "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
+        "name": "Test",
+        "revision": GNS3_FILE_FORMAT_REVISION,
+        "topology": {
+            "nodes": [],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "variables": variables,
+        "type": "topology",
+        "version": __version__}
+
+    path = str(tmpdir / "test.gns3")
+    with open(path, "w+") as f:
+        json.dump(data, f)
+    topo = load_topology(path)
+    assert topo == data
+
+
+def test_load_topology_with_supplier(tmpdir):
+    supplier = {
+        'logo': 'logo.png',
+        'url': 'http://example.com'
+    }
+    data = {
+        "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
+        "name": "Test",
+        "revision": GNS3_FILE_FORMAT_REVISION,
+        "topology": {
+            "nodes": [],
+            "links": [],
+            "computes": [],
+            "drawings": []
+        },
+        "supplier": supplier,
+        "type": "topology",
+        "version": __version__}
+
+    path = str(tmpdir / "test.gns3")
+    with open(path, "w+") as f:
+        json.dump(data, f)
+    topo = load_topology(path)
+    assert topo == data

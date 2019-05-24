@@ -1,25 +1,27 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/0f1cab8c-a85f-46a7-b2d8-360aacffe2f2'
+curl -i -X GET 'http://localhost:3080/v2/projects/e169fb2d-2000-416a-b305-8867e9705061'
 
-GET /v2/projects/0f1cab8c-a85f-46a7-b2d8-360aacffe2f2 HTTP/1.1
+GET /v2/projects/e169fb2d-2000-416a-b305-8867e9705061 HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 509
+Content-Length: 560
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:38 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:50:00 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}
 
 {
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
+    "grid_size": 75,
     "name": "test",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp5gvzxbg_/projects/0f1cab8c-a85f-46a7-b2d8-360aacffe2f2",
-    "project_id": "0f1cab8c-a85f-46a7-b2d8-360aacffe2f2",
+    "path": "/tmp/tmpgib4zai7/projects/e169fb2d-2000-416a-b305-8867e9705061",
+    "project_id": "e169fb2d-2000-416a-b305-8867e9705061",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,
@@ -27,5 +29,7 @@ X-Route: /v2/projects/{project_id}
     "show_layers": false,
     "snap_to_grid": false,
     "status": "opened",
+    "supplier": null,
+    "variables": null,
     "zoom": 100
 }

@@ -23,6 +23,9 @@ import socket
 import struct
 import psutil
 
+from .windows_service import check_windows_service_is_running
+from gns3server.config import Config
+
 if psutil.version_info < (3, 0, 0):
     raise Exception("psutil version should >= 3.0.0. If you are under Ubuntu/Debian install gns3 via apt instead of pip")
 
@@ -113,7 +116,7 @@ def get_windows_interfaces():
                                    "netmask": netmask,
                                    "type": "ethernet"})
     except (AttributeError, pywintypes.com_error):
-        log.warn("Could not use the COM service to retrieve interface info, trying using the registry...")
+        log.warning("Could not use the COM service to retrieve interface info, trying using the registry...")
         return _get_windows_interfaces_from_registry()
 
     return interfaces
@@ -172,23 +175,6 @@ def is_interface_bridge(interface):
     return os.path.exists(os.path.join("/sys/class/net/", interface, "bridge"))
 
 
-def _check_windows_service(service_name):
-
-    import pywintypes
-    import win32service
-    import win32serviceutil
-
-    try:
-        if win32serviceutil.QueryServiceStatus(service_name, None)[1] != win32service.SERVICE_RUNNING:
-            return False
-    except pywintypes.error as e:
-        if e.winerror == 1060:
-            return False
-        else:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not check if the {} service is running: {}".format(service_name, e.strerror))
-    return True
-
-
 def interfaces():
     """
     Gets the network interfaces on this server.
@@ -198,8 +184,14 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
+        allowed_interfaces = Config.instance().get_section_config("Server").get("allowed_interfaces", None)
+        if allowed_interfaces:
+            allowed_interfaces = allowed_interfaces.split(',')
         net_if_addrs = psutil.net_if_addrs()
         for interface in sorted(net_if_addrs.keys()):
+            if allowed_interfaces and interface not in allowed_interfaces:
+                log.warning("Interface '{}' is not allowed to be used on this server".format(interface))
+                continue
             ip_address = ""
             mac_address = ""
             netmask = ""
@@ -223,7 +215,7 @@ def interfaces():
     else:
         try:
             service_installed = True
-            if not _check_windows_service("npf") and not _check_windows_service("npcap"):
+            if not check_windows_service_is_running("npf") and not check_windows_service_is_running("npcap"):
                 service_installed = False
             else:
                 results = get_windows_interfaces()

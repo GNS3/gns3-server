@@ -19,18 +19,9 @@ import copy
 import uuid
 
 
-# Convert old GUI category to text category
-ID_TO_CATEGORY = {
-    3: "firewall",
-    2: "guest",
-    1: "switch",
-    0: "router"
-}
-
-
 class Appliance:
 
-    def __init__(self, appliance_id, data, builtin=False):
+    def __init__(self, appliance_id, data, builtin=True):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
         elif isinstance(appliance_id, uuid.UUID):
@@ -38,56 +29,30 @@ class Appliance:
         else:
             self._id = appliance_id
         self._data = data.copy()
+        self._builtin = builtin
         if "appliance_id" in self._data:
             del self._data["appliance_id"]
-
-        # Version of the gui before 2.1 use linked_base
-        # and the server linked_clone
-        if "linked_base" in self._data:
-            linked_base = self._data.pop("linked_base")
-            if "linked_clone" not in self._data:
-                self._data["linked_clone"] = linked_base
-        if data["node_type"] == "iou" and "image" in data:
-            del self._data["image"]
-        self._builtin = builtin
 
     @property
     def id(self):
         return self._id
 
     @property
-    def data(self):
-        return copy.deepcopy(self._data)
+    def status(self):
+        return self._data["status"]
 
     @property
-    def name(self):
-        return self._data["name"]
+    def symbol(self):
+        return self._data.get("symbol")
 
-    @property
-    def compute_id(self):
-        return self._data.get("server")
-
-    @property
-    def builtin(self):
-        return self._builtin
+    @symbol.setter
+    def symbol(self, new_symbol):
+        self._data["symbol"] = new_symbol
 
     def __json__(self):
         """
         Appliance data (a hash)
         """
-        try:
-            category = ID_TO_CATEGORY[self._data["category"]]
-        except KeyError:
-            category = self._data["category"]
-
-        return {
-            "appliance_id": self._id,
-            "node_type": self._data["node_type"],
-            "name": self._data["name"],
-            "default_name_format": self._data.get("default_name_format", "{name}-{0}"),
-            "category": category,
-            "symbol": self._data.get("symbol", ":/symbols/computer.svg"),
-            "compute_id": self.compute_id,
-            "builtin": self._builtin,
-            "platform": self._data.get("platform", None)
-        }
+        data = copy.deepcopy(self._data)
+        data["builtin"] = self._builtin
+        return data

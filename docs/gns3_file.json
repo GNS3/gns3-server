@@ -64,9 +64,56 @@
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
+        },
+        "supplier": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "description": "Supplier of the project",
+            "properties": {
+                "logo": {
+                    "type": "string",
+                    "description": "Path to the project supplier logo"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL to the project supplier site"
+                }
+            }
+        },
+        "variables": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "description": "Variables required to run the project",
+            "items": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Variable name"
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "Variable value"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            }
         },
         "topology": {
             "description": "The topology content",
@@ -111,7 +158,7 @@
                                 ]
                             },
                             "connected": {
-                                "description": "Whether the controller is connected to the compute server or not",
+                                "description": "Whether the controller is connected to the compute or not",
                                 "type": "boolean"
                             },
                             "cpu_usage_percent": {
@@ -131,6 +178,13 @@
                                 ],
                                 "maximum": 100,
                                 "minimum": 0
+                            },
+                            "last_error": {
+                                "description": "Last error on the compute",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "capabilities": {
                                 "$schema": "http://json-schema.org/draft-04/schema#",
@@ -162,6 +216,7 @@
                                                 "docker",
                                                 "dynamips",
                                                 "vpcs",
+                                                "traceng",
                                                 "virtualbox",
                                                 "vmware",
                                                 "iou",
@@ -221,6 +276,10 @@
                             "z": {
                                 "description": "Z property",
                                 "type": "integer"
+                            },
+                            "locked": {
+                                "description": "Whether the element locked or not",
+                                "type": "boolean"
                             },
                             "rotation": {
                                 "description": "Rotation of the element",
@@ -286,11 +345,14 @@
                                                     "type": "string"
                                                 },
                                                 "style": {
-                                                    "description": "SVG style attribute",
-                                                    "type": "string"
+                                                    "description": "SVG style attribute. Apply default style if null",
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
                                                 },
                                                 "x": {
-                                                    "description": "Relative X position of the label. If null center it",
+                                                    "description": "Relative X position of the label. Center it if null",
                                                     "type": [
                                                         "integer",
                                                         "null"
@@ -387,6 +449,16 @@
                                 "maxLength": 36,
                                 "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
                             },
+                            "template_id": {
+                                "description": "Template UUID from which the node has been created. Read only",
+                                "type": [
+                                    "null",
+                                    "string"
+                                ],
+                                "minLength": 36,
+                                "maxLength": 36,
+                                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+                            },
                             "node_type": {
                                 "description": "Type of node",
                                 "enum": [
@@ -399,6 +471,7 @@
                                     "docker",
                                     "dynamips",
                                     "vpcs",
+                                    "traceng",
                                     "virtualbox",
                                     "vmware",
                                     "iou",
@@ -446,8 +519,14 @@
                                     "http",
                                     "https",
                                     "spice",
+                                    "spice+agent",
+                                    "none",
                                     null
                                 ]
+                            },
+                            "console_auto_start": {
+                                "description": "Automatically start the console when the node has started",
+                                "type": "boolean"
                             },
                             "properties": {
                                 "description": "Properties specific to an emulator",
@@ -468,11 +547,14 @@
                                         "type": "string"
                                     },
                                     "style": {
-                                        "description": "SVG style attribute",
-                                        "type": "string"
+                                        "description": "SVG style attribute. Apply default style if null",
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
                                     },
                                     "x": {
-                                        "description": "Relative X position of the label. If null center it",
+                                        "description": "Relative X position of the label. Center it if null",
                                         "type": [
                                             "integer",
                                             "null"
@@ -524,6 +606,10 @@
                                 "description": "Z position of the node",
                                 "type": "integer"
                             },
+                            "locked": {
+                                "description": "Whether the element locked or not",
+                                "type": "boolean"
+                            },
                             "port_name_format": {
                                 "description": "Formating for port name {0} will be replace by port number",
                                 "type": "string"
@@ -539,6 +625,40 @@
                                     "string",
                                     "null"
                                 ]
+                            },
+                            "custom_adapters": {
+                                "type": "array",
+                                "default": [],
+                                "items": {
+                                    "type": "object",
+                                    "description": "Custom properties",
+                                    "properties": {
+                                        "adapter_number": {
+                                            "type": "integer",
+                                            "description": "Adapter number"
+                                        },
+                                        "port_name": {
+                                            "type": "string",
+                                            "description": "Custom port name",
+                                            "minLength": 1
+                                        },
+                                        "adapter_type": {
+                                            "type": "string",
+                                            "description": "Custom adapter type",
+                                            "minLength": 1
+                                        },
+                                        "mac_address": {
+                                            "description": "Custom MAC address",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+                                        }
+                                    },
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "adapter_number"
+                                    ]
+                                }
                             },
                             "ports": {
                                 "description": "List of node ports READ only",
@@ -559,6 +679,14 @@
                                             "type": "integer",
                                             "description": "Adapter slot"
                                         },
+                                        "adapter_type": {
+                                            "description": "Adapter type",
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "minLength": 1
+                                        },
                                         "port_number": {
                                             "type": "integer",
                                             "description": "Port slot"
@@ -572,8 +700,17 @@
                                         },
                                         "data_link_types": {
                                             "type": "object",
-                                            "description": "Available PCAP type for capture",
+                                            "description": "Available PCAP types for capture",
                                             "properties": {}
+                                        },
+                                        "mac_address": {
+                                            "description": "MAC address (if available)",
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "minLength": 1,
+                                            "pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
                                         }
                                     },
                                     "additionalProperties": false

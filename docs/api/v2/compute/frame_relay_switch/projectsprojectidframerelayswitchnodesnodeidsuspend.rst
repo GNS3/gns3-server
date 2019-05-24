@@ -5,7 +5,7 @@
 
 POST /v2/compute/projects/**{project_id}**/frame_relay_switch/nodes/**{node_id}**/suspend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Suspend a Frame Relay switch
+Suspend a Frame Relay switch (does nothing)
 
 Parameters
 **********

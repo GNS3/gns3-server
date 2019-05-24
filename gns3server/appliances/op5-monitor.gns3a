@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk",
+            "version": "7.4.10",
+            "md5sum": "48ec6d7ee3809d9ed705a089c679e076",
+            "filesize": 1111941120,
+            "download_url": "https://www.op5.com/download/"
+        },
+        {
             "filename": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk",
             "version": "7.3.15",
             "md5sum": "634acc6266237d99bf1bfbcf9284beca",
@@ -34,6 +41,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.4.10",
+            "images": {
+                "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk"
+            }
+        },
         {
             "name": "7.3.15",
             "images": {

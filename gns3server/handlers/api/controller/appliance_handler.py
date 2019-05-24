@@ -17,58 +17,27 @@
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
-from gns3server.schemas.node import NODE_OBJECT_SCHEMA
-from gns3server.schemas.appliance import APPLIANCE_USAGE_SCHEMA
-
 
 import logging
 log = logging.getLogger(__name__)
 
 
 class ApplianceHandler:
-    """API entry points for appliance management."""
-
-    @Route.get(
-        r"/appliances/templates",
-        description="List of appliance templates",
-        status_codes={
-            200: "Appliance template list returned"
-        })
-    def list_templates(request, response):
-
-        controller = Controller.instance()
-        response.json([c for c in controller.appliance_templates.values()])
+    """
+    API entry points for appliance management.
+    """
 
     @Route.get(
         r"/appliances",
-        description="List of appliance",
+        description="List of appliances",
         status_codes={
             200: "Appliance list returned"
         })
-    def list(request, response):
+    async def list_appliances(request, response):
 
         controller = Controller.instance()
-        response.json([c for c in controller.appliances.values()])
-
-    @Route.post(
-        r"/projects/{project_id}/appliances/{appliance_id}",
-        description="Create a node from an appliance",
-        parameters={
-            "project_id": "Project UUID",
-            "appliance_id": "Appliance template UUID"
-        },
-        status_codes={
-            201: "Node created",
-            404: "The project or template doesn't exist"
-        },
-        input=APPLIANCE_USAGE_SCHEMA,
-        output=NODE_OBJECT_SCHEMA)
-    def create_node_from_appliance(request, response):
-
-        controller = Controller.instance()
-        project = controller.get_project(request.match_info["project_id"])
-        yield from project.add_node_from_appliance(request.match_info["appliance_id"],
-                                                   x=request.json["x"],
-                                                   y=request.json["y"],
-                                                   compute_id=request.json.get("compute_id"))
-        response.set_status(201)
+        if request.query.get("update", "no").lower() == "yes":
+            await controller.appliance_manager.download_appliances()
+        symbol_theme = request.query.get("symbol_theme", "Classic")
+        controller.appliance_manager.load_appliances(symbol_theme=symbol_theme)
+        response.json([c for c in controller.appliance_manager.appliances.values()])

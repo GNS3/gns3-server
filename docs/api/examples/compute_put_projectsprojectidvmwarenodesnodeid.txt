@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/0984c2d0-0a0c-4b46-ba69-16bd5c0464fe' -d '{"console": 5005, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/01e4a958-04bd-4431-a924-af4ae2b77e8a' -d '{"console": 5005, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/0984c2d0-0a0c-4b46-ba69-16bd5c0464fe HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/01e4a958-04bd-4431-a924-af4ae2b77e8a HTTP/1.1
 {
     "console": 5005,
     "name": "test"
@@ -9,14 +9,13 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/0984c
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 689
+Content-Length: 611
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:10 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:49:07 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "e1000",
     "adapters": 0,
     "console": 5005,
@@ -24,10 +23,12 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
     "headless": false,
     "linked_clone": false,
     "name": "test",
-    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpk__by17a/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/0984c2d0-0a0c-4b46-ba69-16bd5c0464fe",
-    "node_id": "0984c2d0-0a0c-4b46-ba69-16bd5c0464fe",
+    "node_directory": "/tmp/tmp2a2tb7g2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/01e4a958-04bd-4431-a924-af4ae2b77e8a",
+    "node_id": "01e4a958-04bd-4431-a924-af4ae2b77e8a",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
+    "usage": "",
     "use_any_adapter": false,
-    "vmx_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_vmware_update0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-0/test_vmware_update0/test.vmx"
 }

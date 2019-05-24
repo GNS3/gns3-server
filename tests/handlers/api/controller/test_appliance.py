@@ -16,73 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import uuid
-import pytest
-from unittest.mock import MagicMock
-from tests.utils import asyncio_patch
+def test_appliances_list(http_controller, controller, async_run):
 
-
-from gns3server.controller import Controller
-from gns3server.controller.appliance import Appliance
-
-
-@pytest.fixture
-def compute(http_controller, async_run):
-    compute = MagicMock()
-    compute.id = "example.com"
-    compute.host = "example.org"
-    Controller.instance()._computes = {"example.com": compute}
-    return compute
-
-
-@pytest.fixture
-def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project(name="Test"))
-
-
-def test_appliance_list(http_controller, controller):
-
-    id = str(uuid.uuid4())
-    controller.load_appliances()
-    controller._appliances[id] = Appliance(id, {
-        "node_type": "qemu",
-        "category": 0,
-        "name": "test",
-        "symbol": "guest.svg",
-        "default_name_format": "{name}-{0}",
-        "server": "local"
-    })
+    controller.appliance_manager.load_appliances()
     response = http_controller.get("/appliances", example=True)
     assert response.status == 200
-    assert response.route == "/appliances"
     assert len(response.json) > 0
-
-
-def test_appliance_templates_list(http_controller, controller, async_run):
-
-    controller.load_appliances()
-    response = http_controller.get("/appliances/templates", example=True)
-    assert response.status == 200
-    assert len(response.json) > 0
-
-
-def test_create_node_from_appliance(http_controller, controller, project, compute):
-
-    id = str(uuid.uuid4())
-    controller._appliances = {id: Appliance(id, {
-        "node_type": "qemu",
-        "category": 0,
-        "name": "test",
-        "symbol": "guest.svg",
-        "default_name_format": "{name}-{0}",
-        "server": "example.com"
-    })}
-    with asyncio_patch("gns3server.controller.project.Project.add_node_from_appliance") as mock:
-        response = http_controller.post("/projects/{}/appliances/{}".format(project.id, id), {
-            "x": 42,
-            "y": 12
-        })
-    mock.assert_called_with(id, x=42, y=12, compute_id=None)
-    print(response.body)
-    assert response.route == "/projects/{project_id}/appliances/{appliance_id}"
-    assert response.status == 201

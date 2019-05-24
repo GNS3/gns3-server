@@ -26,53 +26,53 @@
     },
     "images": [
         {
-            "filename": "ubuntu-17.10-server-cloudimg-amd64.img",
-            "version": "17.10",
-            "md5sum": "5d221878d8b2e49c5de7ebb58a2b35e3",
-            "filesize": 318373888,
-            "download_url": "https://cloud-images.ubuntu.com/releases/17.10/release/"
+            "filename": "ubuntu-18.04-server-cloudimg-amd64.img",
+            "version": "18.04",
+            "md5sum": "f4134e7fa16d7fa766c7467cbe25c949",
+            "filesize": 336134144,
+            "download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/ubuntu-18.04-server-cloudimg-amd64.img"
         },
         {
-            "filename": "ubuntu-17.04-server-cloudimg-amd64.img",
-            "version": "17.04",
-            "md5sum": "d4da8157dbf2e64f2fa1fb5d121398e5",
-            "filesize": 351993856,
-            "download_url": "https://cloud-images.ubuntu.com/releases/17.04/release/"
+            "filename": "ubuntu-17.10-server-cloudimg-amd64.img",
+            "version": "17.10",
+            "md5sum": "331b44f2b05858c251b3ea92c8b65152",
+            "filesize": 320405504,
+            "download_url": "https://cloud-images.ubuntu.com/releases/17.10/release-20180404/ubuntu-17.10-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
-            "version": "16.04.3",
-            "md5sum": "bd0c168a83b1f483bd240b3d874edd6c",
-            "filesize": 288686080,
-            "download_url": "https://cloud-images.ubuntu.com/releases/16.04/release/"
+            "version": "16.04",
+            "md5sum": "22c124ba65ea096cdef8b0a197dd613a",
+            "filesize": 290193408,
+            "download_url": "https://cloud-images.ubuntu.com/releases/16.04/release-20180405/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
         },
         {
             "filename": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
-            "version": "14.04.5",
-            "md5sum": "d7b4112c7d797e5e77ef9995d06a76f1",
-            "filesize": 262406656,
-            "download_url": "https://cloud-images.ubuntu.com/releases/14.04/release/"
+            "version": "14.04",
+            "md5sum": "d11b89321d41d0eeddcacf73bf0d2262",
+            "filesize": 262668800,
+            "download_url": "https://cloud-images.ubuntu.com/releases/14.04/release-20180404/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
         },
         {
             "filename": "ubuntu-cloud-init-data.iso",
             "version": "1.0",
             "md5sum": "328469100156ae8dbf262daa319c27ff",
             "filesize": 131072,
-            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/ubuntu-cloud-init-data.iso/download"
+            "download_url": "https://github.com/asenci/gns3-ubuntu-cloud-init-data/raw/master/ubuntu-cloud-init-data.iso"
         }
     ],
     "versions": [
         {
-            "name": "17.10",
+            "name": "18.04 (LTS)",
             "images": {
-                "hda_disk_image": "ubuntu-17.10-server-cloudimg-amd64.img",
+                "hda_disk_image": "ubuntu-18.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },
         {
-            "name": "17.04",
+            "name": "17.10",
             "images": {
-                "hda_disk_image": "ubuntu-17.04-server-cloudimg-amd64.img",
+                "hda_disk_image": "ubuntu-17.10-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },

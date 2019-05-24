@@ -1,6 +1,6 @@
 # Dockerfile for GNS3 server development
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 

@@ -20,7 +20,7 @@ import jsonschema
 import aiohttp
 import aiohttp.web
 import mimetypes
-import asyncio
+import aiofiles
 import logging
 import jinja2
 import sys
@@ -31,6 +31,8 @@ from ..version import __version__
 
 log = logging.getLogger(__name__)
 renderer = jinja2.Environment(loader=jinja2.FileSystemLoader(get_resource('templates')))
+
+CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 class Response(aiohttp.web.Response):
@@ -50,8 +52,8 @@ class Response(aiohttp.web.Response):
             self.content_length = None
         super().enable_chunked_encoding()
 
-    @asyncio.coroutine
-    def prepare(self, request):
+    async def prepare(self, request):
+
         if log.getEffectiveLevel() == logging.DEBUG:
             log.info("%s %s", request.method, request.path_qs)
             log.debug("%s", dict(request.headers))
@@ -61,7 +63,7 @@ class Response(aiohttp.web.Response):
             log.debug(dict(self.headers))
             if hasattr(self, 'body') and self.body is not None and self.headers["CONTENT-TYPE"] == "application/json":
                 log.debug(json.loads(self.body.decode('utf-8')))
-        return (yield from super().prepare(request))
+        return (await super().prepare(request))
 
     def html(self, answer):
         """
@@ -112,14 +114,22 @@ class Response(aiohttp.web.Response):
                 raise aiohttp.web.HTTPBadRequest(text="{}".format(e))
         self.body = json.dumps(answer, indent=4, sort_keys=True).encode('utf-8')
 
-    @asyncio.coroutine
-    def file(self, path, status=200, set_content_length=True):
+    async def stream_file(self, path, status=200, set_content_type=None, set_content_length=True):
         """
-        Return a file as a response
+        Stream a file as a response
         """
-        ct, encoding = mimetypes.guess_type(path)
-        if not ct:
-            ct = 'application/octet-stream'
+        encoding = None
+
+        if not os.path.exists(path):
+            raise aiohttp.web.HTTPNotFound()
+
+        if not set_content_type:
+            ct, encoding = mimetypes.guess_type(path)
+            if not ct:
+                ct = 'application/octet-stream'
+        else:
+            ct = set_content_type
+
         if encoding:
             self.headers[aiohttp.hdrs.CONTENT_ENCODING] = encoding
         self.content_type = ct
@@ -134,16 +144,13 @@ class Response(aiohttp.web.Response):
         self.set_status(status)
 
         try:
-            with open(path, 'rb') as fobj:
-                yield from self.prepare(self._request)
-
+            async with aiofiles.open(path, 'rb') as f:
+                await self.prepare(self._request)
                 while True:
-                    data = fobj.read(4096)
+                    data = await f.read(CHUNK_SIZE)
                     if not data:
                         break
-                    yield from self.write(data)
-                    yield from self.drain()
-
+                    await self.write(data)
         except FileNotFoundError:
             raise aiohttp.web.HTTPNotFound()
         except PermissionError:

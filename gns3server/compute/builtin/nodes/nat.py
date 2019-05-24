@@ -21,27 +21,34 @@ from .cloud import Cloud
 from ...error import NodeError
 
 import gns3server.utils.interfaces
+from gns3server.config import Config
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class Nat(Cloud):
     """
-    A portable and preconfigured node allowing topology to get a
-    nat access to the outside
+    A portable and pre-configured node allowing topologies to get a
+    NAT access.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, node_id, project, manager, ports=None):
 
         if sys.platform.startswith("linux"):
-            if "virbr0" not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-                raise NodeError("virbr0 is missing. You need to install libvirt")
-            interface = "virbr0"
+            nat_interface = Config.instance().get_section_config("Server").get("default_nat_interface", "virbr0")
+            if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
+                raise NodeError("NAT interface {} is missing, please install libvirt".format(nat_interface))
+            interface = nat_interface
         else:
-            interfaces = list(filter(lambda x: 'vmnet8' in x.lower(),
+            nat_interface = Config.instance().get_section_config("Server").get("default_nat_interface", "vmnet8")
+            interfaces = list(filter(lambda x: nat_interface in x.lower(),
                            [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]))
             if not len(interfaces):
-                raise NodeError("vmnet8 is missing. You need to install VMware or use the NAT node on GNS3 VM")
+                raise NodeError("NAT interface {} is missing. You need to install VMware or use the NAT node on GNS3 VM".format(nat_interface))
             interface = interfaces[0]  # take the first available interface containing the vmnet8 name
 
+        log.info("NAT node '{}' configured to use NAT interface '{}'".format(name, interface))
         ports = [
             {
                 "name": "nat0",
@@ -50,7 +57,7 @@ class Nat(Cloud):
                 "port_number": 0
             }
         ]
-        super().__init__(*args, ports=ports)
+        super().__init__(name, node_id, project, manager, ports=ports)
 
     @property
     def ports_mapping(self):

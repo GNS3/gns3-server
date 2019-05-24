@@ -16,6 +16,45 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+DYNAMIPS_ADAPTERS = {
+    "description": "Dynamips Network Module",
+    "enum": ["C7200-IO-2FE",
+             "C7200-IO-FE",
+             "C7200-IO-GE-E",
+             "NM-16ESW",
+             "NM-1E",
+             "NM-1FE-TX",
+             "NM-4E",
+             "NM-4T",
+             "PA-2FE-TX",
+             "PA-4E",
+             "PA-4T+",
+             "PA-8E",
+             "PA-8T",
+             "PA-A1",
+             "PA-FE-TX",
+             "PA-GE",
+             "PA-POS-OC3",
+             "C2600-MB-2FE",
+             "C2600-MB-1E",
+             "C1700-MB-1FE",
+             "C2600-MB-2E",
+             "C2600-MB-1FE",
+             "C1700-MB-WIC1",
+             "GT96100-FE",
+             "Leopard-2FE",
+             ""]
+}
+
+DYNAMIPS_WICS = {
+    "description": "Dynamips WIC",
+    "enum": ["WIC-1ENET",
+             "WIC-1T",
+             "WIC-2T",
+             ""]
+}
+
+#TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowd only for c7200)
 VM_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Dynamips VM instance",
@@ -39,6 +78,10 @@ VM_CREATE_SCHEMA = {
             "description": "Dynamips VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
         },
         "platform": {
             "description": "Cisco router platform",
@@ -121,13 +164,13 @@ VM_CREATE_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",
@@ -137,7 +180,7 @@ VM_CREATE_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"],
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
@@ -262,6 +305,10 @@ VM_UPDATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
+        },
         "platform": {
             "description": "Cisco router platform",
             "type": "string",
@@ -339,13 +386,13 @@ VM_UPDATE_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",
@@ -355,7 +402,7 @@ VM_UPDATE_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"],
             "minLength": 1,
             "pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },
@@ -502,6 +549,10 @@ VM_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the Dynamips VM",
+            "type": "string",
+        },
         "status": {
             "description": "VM status",
             "enum": ["started", "stopped", "suspended"]
@@ -579,13 +630,13 @@ VM_OBJECT_SCHEMA = {
         },
         "console": {
             "description": "Console TCP port",
-            "type": "integer",
+            "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "aux": {
             "description": "Auxiliary console TCP port",
@@ -595,7 +646,7 @@ VM_OBJECT_SCHEMA = {
         },
         "mac_addr": {
             "description": "Base MAC address",
-            "type": "string",
+            "type": ["null", "string"]
             #"minLength": 1,
             #"pattern": "^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
         },

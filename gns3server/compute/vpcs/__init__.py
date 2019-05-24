@@ -37,15 +37,14 @@ class VPCS(BaseManager):
         self._free_mac_ids = {}
         self._used_mac_ids = {}
 
-    @asyncio.coroutine
-    def create_node(self, *args, **kwargs):
+    async def create_node(self, *args, **kwargs):
         """
         Creates a new VPCS VM.
 
         :returns: VPCSVM instance
         """
 
-        node = yield from super().create_node(*args, **kwargs)
+        node = await super().create_node(*args, **kwargs)
         self._free_mac_ids.setdefault(node.project.id, list(range(0, 255)))
         try:
             self._used_mac_ids[node.id] = self._free_mac_ids[node.project.id].pop(0)
@@ -53,8 +52,7 @@ class VPCS(BaseManager):
             raise VPCSError("Cannot create a new VPCS VM (limit of 255 VMs reached on this host)")
         return node
 
-    @asyncio.coroutine
-    def close_node(self, node_id, *args, **kwargs):
+    async def close_node(self, node_id, *args, **kwargs):
         """
         Closes a VPCS VM.
 
@@ -66,7 +64,7 @@ class VPCS(BaseManager):
             i = self._used_mac_ids[node_id]
             self._free_mac_ids[node.project.id].insert(0, i)
             del self._used_mac_ids[node_id]
-        yield from super().close_node(node_id, *args, **kwargs)
+        await super().close_node(node_id, *args, **kwargs)
         return node
 
     def get_mac_id(self, node_id):

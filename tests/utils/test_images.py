@@ -17,6 +17,7 @@
 
 import os
 import sys
+import threading
 from unittest.mock import patch
 
 
@@ -55,6 +56,18 @@ def test_md5sum(tmpdir):
     assert md5sum(fake_img) == '5d41402abc4b2a76b9719d911017c592'
     with open(str(tmpdir / 'hello载.md5sum')) as f:
         assert f.read() == '5d41402abc4b2a76b9719d911017c592'
+
+
+def test_md5sum_stopped_event(tmpdir):
+    fake_img = str(tmpdir / 'hello_stopped')
+    with open(fake_img, 'w+') as f:
+        f.write('hello')
+
+    event = threading.Event()
+    event.set()
+
+    assert md5sum(fake_img, stopped_event=event) is None
+    assert not os.path.exists(str(tmpdir / 'hello_stopped.md5sum'))
 
 
 def test_md5sum_existing_digest(tmpdir):

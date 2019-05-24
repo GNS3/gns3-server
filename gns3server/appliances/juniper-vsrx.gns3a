@@ -12,6 +12,7 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Initial username is root, no password.",
+    "first_port_name": "fxp0",
     "port_name_format": "ge-0/0/{0}",
     "qemu": {
         "adapter_type": "e1000",
@@ -24,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2",
+            "version": "18.1R1",
+            "md5sum": "4e9393142afc675d5d3d03c5071e70ce",
+            "filesize": 4418961408,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "media-vsrx-vmdisk-17.4R1.16.qcow2",
             "version": "17.4R1",
             "md5sum": "616c4742b09652318c73a7cc598468e7",
@@ -31,10 +39,24 @@
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
         },
         {
+            "filename": "media-vsrx-vmdisk-17.3R2.10.qcow2",
+            "version": "17.3R2",
+            "md5sum": "8f2adfb0515913e0c7db32628a5deb3e",
+            "filesize": 3784572928,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "media-vsrx-vmdisk-17.3R1.10.qcow2",
             "version": "17.3R1",
             "md5sum": "49b276e9ccdd8588f9e2ff38cccc884a",
             "filesize": 3782541312,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "media-vsrx-vmdisk-15.1X49-D130.6.qcow2",
+            "version": "15.1X49-D130",
+            "md5sum": "8ad03f4067b3fe5d2ed378733a5e8541",
+            "filesize": 3300917248,
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
         },
         {
@@ -124,15 +146,33 @@
     ],
     "versions": [
         {
+            "name": "18.1R1",
+            "images": {
+                "hda_disk_image": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2"
+            }
+        },
+        {
             "name": "17.4R1",
             "images": {
                 "hda_disk_image": "media-vsrx-vmdisk-17.4R1.16.qcow2"
             }
         },
         {
+            "name": "17.3R2",
+            "images": {
+                "hda_disk_image": "media-vsrx-vmdisk-17.3R2.10.qcow2"
+            }
+        },
+        {
             "name": "17.3R1",
             "images": {
                 "hda_disk_image": "media-vsrx-vmdisk-17.3R1.10.qcow2"
+            }
+        },
+        {
+            "name": "15.1X49-D130",
+            "images": {
+                "hda_disk_image": "media-vsrx-vmdisk-15.1X49-D130.6.qcow2"
             }
         },
         {

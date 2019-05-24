@@ -1,0 +1,19 @@
+{
+    "name": "cEOS",
+    "category": "multilayer_switch",
+    "description": "Arista cEOS\u2122 introduces the containerized packaging of EOS software and its agents for deployment in cloud infrastructure with the same proven EOS software image that runs on all Arista products. These flexible deployment options empower cloud network operators that are customizing their operating environments to provide a uniform workflow for development, testing and deployment of differentiated services.",
+    "vendor_name": "Arista",
+    "vendor_url": "http://www.arista.com/",
+    "product_name": "cEOS",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Download:\nCreate a (free) Arista account and login.\nThen navigate to Support / Software Download and download the cEOS-lab image.\n\nInstallation:\nCopy the image to your GNS3VM (or other Linux) server, then run the following commands:\n\ncEOS-4.21.0F and newer, replace <version> by the cEOS version:\ndocker import cEOS-lab.tar.xz ceosimage:<version>\necho \"rm /etc/systemd/system/getty.target.wants/getty@tty1.service\" | \\\ndocker run --name=ceos-container -e CEOS=1 -e container=docker -e EOS_PLATFORM=ceoslab -e SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 -e ETBA=1 -e INTFTYPE=eth -i ceosimage:<version> sh\ndocker commit --change='CMD [\"/sbin/init\"]' --change='VOLUME /mnt/flash' ceos-container ceosimage:GNS3\ndocker rm ceos-container\n\ncEOS-4.20.5F:\ndocker import cEOS-lab.tar.xz ceosimage:4.20.5F\necho \"rm /etc/systemd/system/getty.target.wants/getty@tty1.service\" | \\\ndocker run --name=ceos-container -e CEOS=1 -e container=docker -e EOS_PLATFORM=ceossim -e SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 -e ETBA=1 -e INTFTYPE=eth -i ceosimage:4.20.5F sh\ndocker commit --change='CMD [\"/sbin/init\"]' --change='VOLUME /mnt/flash' ceos-container ceosimage:GNS3\ndocker rm ceos-container\n\nUsage:\nStart an auxiliary console on the cEOS and issue the \"Cli\" command.\nOnly cEOS-4.20.5F: Login on the console with username \"admin\".",
+    "symbol": ":/symbols/multilayer_switch.svg",
+    "docker": {
+        "adapters": 8,
+        "image": "ceosimage:GNS3",
+        "console_type": "telnet"
+    }
+}

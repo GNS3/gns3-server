@@ -23,6 +23,8 @@ from gns3server.schemas.compute import COMPUTE_OBJECT_SCHEMA
 from gns3server.schemas.drawing import DRAWING_OBJECT_SCHEMA
 from gns3server.schemas.link import LINK_OBJECT_SCHEMA
 from gns3server.schemas.node import NODE_OBJECT_SCHEMA
+from gns3server.schemas.project import VARIABLES_OBJECT_SCHEMA
+from gns3server.schemas.project import SUPPLIER_OBJECT_SCHEMA
 
 
 TOPOLOGY_SCHEMA = {
@@ -89,10 +91,20 @@ TOPOLOGY_SCHEMA = {
             "type": "boolean",
             "description": "Show the grid on the drawing area"
         },
+        "grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for nodes"
+        },
+        "drawing_grid_size": {
+            "type": "integer",
+            "description": "Grid size for the drawing area for drawings"
+        },
         "show_interface_labels": {
             "type": "boolean",
             "description": "Show interface labels on the drawing area"
         },
+        "supplier": SUPPLIER_OBJECT_SCHEMA,
+        "variables": VARIABLES_OBJECT_SCHEMA,
         "topology": {
             "description": "The topology content",
             "type": "object",

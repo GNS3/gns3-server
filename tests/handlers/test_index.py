@@ -15,13 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import aiohttp
 import os
+
 from unittest.mock import patch
 
 from gns3server.version import __version__
 from gns3server.controller import Controller
+from gns3server.utils.get_resource import get_resource
+
+
+def get_static(filename):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(os.path.abspath(os.path.join(current_dir, '..', '..', 'gns3server', 'static')), filename)
 
 
 def test_index(http_root):
@@ -48,6 +53,27 @@ def test_project(http_root, async_run):
     project = async_run(Controller.instance().add_project(name="test"))
     response = http_root.get('/projects/{}'.format(project.id))
     assert response.status == 200
+
+
+def test_web_ui(http_root, tmpdir):
+    with patch('gns3server.utils.get_resource.get_resource') as mock:
+        mock.return_value = str(tmpdir)
+        os.makedirs(str(tmpdir / 'web-ui'))
+        tmpfile = get_static('web-ui/testing.txt')
+        with open(tmpfile, 'w+') as f:
+            f.write('world')
+        response = http_root.get('/static/web-ui/testing.txt')
+        assert response.status == 200
+    os.remove(get_static('web-ui/testing.txt'))
+
+
+def test_web_ui_not_found(http_root, tmpdir):
+    with patch('gns3server.utils.get_resource.get_resource') as mock:
+        mock.return_value = str(tmpdir)
+
+        response = http_root.get('/static/web-ui/not-found.txt')
+        # should serve web-ui/index.html
+        assert response.status == 200
 
 
 def test_v1(http_root):

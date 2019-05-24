@@ -20,17 +20,14 @@ import aiohttp
 import shutil
 import asyncio
 import hashlib
-import zipstream
-import zipfile
-import json
 
 from uuid import UUID, uuid4
+
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -46,7 +43,7 @@ class Project:
     :param path: path of the project. (None use the standard directory)
     """
 
-    def __init__(self, name=None, project_id=None, path=None):
+    def __init__(self, name=None, project_id=None, path=None, variables=None):
 
         self._name = name
         if project_id:
@@ -61,6 +58,7 @@ class Project:
         self._nodes = set()
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
+        self._variables = variables
 
         if path is None:
             location = get_default_project_directory()
@@ -83,7 +81,8 @@ class Project:
 
         return {
             "name": self._name,
-            "project_id": self._id
+            "project_id": self._id,
+            "variables": self._variables
         }
 
     def _config(self):
@@ -110,7 +109,7 @@ class Project:
 
         if hasattr(self, "_path"):
             if path != self._path and self.is_local() is False:
-                raise aiohttp.web.HTTPForbidden(text="You are not allowed to modify the project directory path")
+                raise aiohttp.web.HTTPForbidden(text="Changing the project directory path is not allowed")
 
         self._path = path
 
@@ -123,13 +122,21 @@ class Project:
     def name(self, name):
 
         if "/" in name or "\\" in name:
-            raise aiohttp.web.HTTPForbidden(text="Name can not contain path separator")
+            raise aiohttp.web.HTTPForbidden(text="Project names cannot contain path separators")
         self._name = name
 
     @property
     def nodes(self):
 
         return self._nodes
+
+    @property
+    def variables(self):
+        return self._variables
+
+    @variables.setter
+    def variables(self, variables):
+        self._variables = variables
 
     def record_tcp_port(self, port):
         """
@@ -232,12 +239,12 @@ class Project:
 
     def capture_working_directory(self):
         """
-        Returns a working directory where to temporary store packet capture files.
+        Returns a working directory where to store packet capture files.
 
         :returns: path to the directory
         """
 
-        workdir = os.path.join(self._path, "tmp", "captures")
+        workdir = os.path.join(self._path, "project-files", "captures")
         if not self._deleted:
             try:
                 os.makedirs(workdir, exist_ok=True)
@@ -275,7 +282,7 @@ class Project:
 
         raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
 
-    def remove_node(self, node):
+    async def remove_node(self, node):
         """
         Removes a node from the project.
         In theory this should be called by the node manager.
@@ -284,13 +291,22 @@ class Project:
         """
 
         if node in self._nodes:
-            yield from node.delete()
+            await node.delete()
             self._nodes.remove(node)
 
-    @asyncio.coroutine
-    def close(self):
+    async def update(self, variables=None, **kwargs):
+        original_variables = self.variables
+        self.variables = variables
+
+        # we need to update docker nodes when variables changes
+        if original_variables != variables:
+            for node in self.nodes:
+                if hasattr(node, 'update'):
+                    await node.update()
+
+    async def close(self):
         """
-        Closes the project, but keep information on disk
+        Closes the project, but keep project data on disk
         """
 
         project_nodes_id = set([n.id for n in self.nodes])
@@ -299,15 +315,15 @@ class Project:
             module_nodes_id = set([n.id for n in module.instance().nodes])
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
-                yield from module.instance().project_closing(self)
+                await module.instance().project_closing(self)
 
-        yield from self._close_and_clean(False)
+        await self._close_and_clean(False)
 
         for module in self.compute():
             module_nodes_id = set([n.id for n in module.instance().nodes])
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
-                yield from module.instance().project_closed(self)
+                await module.instance().project_closed(self)
 
         try:
             if os.path.exists(self.tmp_working_directory()):
@@ -315,8 +331,7 @@ class Project:
         except OSError:
             pass
 
-    @asyncio.coroutine
-    def _close_and_clean(self, cleanup):
+    async def _close_and_clean(self, cleanup):
         """
         Closes the project, and cleanup the disk if cleanup is True
 
@@ -325,10 +340,10 @@ class Project:
 
         tasks = []
         for node in self._nodes:
-            tasks.append(asyncio.async(node.manager.close_node(node.id)))
+            tasks.append(asyncio.ensure_future(node.manager.close_node(node.id)))
 
         if tasks:
-            done, _ = yield from asyncio.wait(tasks)
+            done, _ = await asyncio.wait(tasks)
             for future in done:
                 try:
                     future.result()
@@ -338,7 +353,7 @@ class Project:
         if cleanup and os.path.exists(self.path):
             self._deleted = True
             try:
-                yield from wait_run_in_executor(shutil.rmtree, self.path)
+                await wait_run_in_executor(shutil.rmtree, self.path)
                 log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
@@ -357,17 +372,16 @@ class Project:
         for port in self._used_udp_ports.copy():
             port_manager.release_udp_port(port, self)
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Removes project from disk
         """
 
         for module in self.compute():
-            yield from module.instance().project_closing(self)
-        yield from self._close_and_clean(True)
+            await module.instance().project_closing(self)
+        await self._close_and_clean(True)
         for module in self.compute():
-            yield from module.instance().project_closed(self)
+            await module.instance().project_closed(self)
 
     def compute(self):
         """
@@ -387,14 +401,13 @@ class Project:
         """
         NotificationManager.instance().emit(action, event, project_id=self.id)
 
-    @asyncio.coroutine
-    def list_files(self):
+    async def list_files(self):
         """
         :returns: Array of files in project without temporary files. The files are dictionary {"path": "test.bin", "md5sum": "aaaaa"}
         """
 
         files = []
-        for dirpath, dirnames, filenames in os.walk(self.path):
+        for dirpath, dirnames, filenames in os.walk(self.path, followlinks=False):
             for filename in filenames:
                 if not filename.endswith(".ghost"):
                     path = os.path.relpath(dirpath, self.path)
@@ -403,7 +416,7 @@ class Project:
                     file_info = {"path": path}
 
                     try:
-                        file_info["md5sum"] = yield from wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
+                        file_info["md5sum"] = await wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
                     except OSError:
                         continue
                     files.append(file_info)

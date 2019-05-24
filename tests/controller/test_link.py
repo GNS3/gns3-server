@@ -68,7 +68,7 @@ def test_add_node(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
     project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
     assert link._nodes == [
@@ -87,7 +87,7 @@ def test_add_node(async_run, project, compute):
         }
     ]
     assert project.dump.called
-    assert not link._project.controller.notification.emit.called
+    assert not link._project.emit_notification.called
 
     assert not link.create.called
 
@@ -97,8 +97,8 @@ def test_add_node(async_run, project, compute):
     async_run(link.add_node(node2, 0, 4))
 
     assert link.create.called
-    link._project.controller.notification.emit.assert_called_with("link.created", link.__json__())
-    assert link in node2.link
+    link._project.emit_notification.assert_called_with("link.created", link.__json__())
+    assert link in node2.links
 
 
 def test_add_node_already_connected(async_run, project, compute):
@@ -112,7 +112,7 @@ def test_add_node_already_connected(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
     async_run(link.add_node(node1, 0, 4))
     node2 = Node(project, compute, "node2", node_type="qemu")
     node2._ports = [EthernetPort("E0", 0, 0, 4)]
@@ -133,7 +133,7 @@ def test_add_node_cloud(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
     async_run(link.add_node(node2, 0, 4))
@@ -150,7 +150,7 @@ def test_add_node_cloud_to_cloud(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
     with pytest.raises(aiohttp.web.HTTPConflict):
@@ -166,7 +166,7 @@ def test_add_node_same_node(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
     with pytest.raises(aiohttp.web.HTTPConflict):
@@ -184,7 +184,7 @@ def test_add_node_serial_to_ethernet(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
 
     async_run(link.add_node(node1, 0, 4))
     with pytest.raises(aiohttp.web.HTTPConflict):
@@ -235,7 +235,8 @@ def test_json(async_run, project, compute, link):
         "link_type": "ethernet",
         "capturing": False,
         "capture_file_name": None,
-        "capture_file_path": None
+        "capture_file_path": None,
+        "capture_compute_id": None
     }
     assert link.__json__(topology_dump=True) == {
         "link_id": link.id,
@@ -282,24 +283,6 @@ def test_json_serial_link(async_run, project, compute, link):
     async_run(link.add_node(node2, 1, 3))
     assert link.__json__()["link_type"] == "serial"
 
-
-def test_start_streaming_pcap(link, async_run, tmpdir, project):
-    @asyncio.coroutine
-    def fake_reader():
-        output = AsyncioBytesIO()
-        yield from output.write(b"hello")
-        output.seek(0)
-        return output
-
-    link._capture_file_name = "test.pcap"
-    link._capturing = True
-    link.read_pcap_from_source = fake_reader
-    async_run(link._start_streaming_pcap())
-    with open(os.path.join(project.captures_directory, "test.pcap"), "rb") as f:
-        c = f.read()
-        assert c == b"hello"
-
-
 def test_default_capture_file_name(project, compute, async_run):
     node1 = Node(project, compute, "Hello@", node_type="qemu")
     node1._ports = [EthernetPort("E0", 0, 0, 4)]
@@ -313,25 +296,25 @@ def test_default_capture_file_name(project, compute, async_run):
     assert link.default_capture_file_name() == "Hello_0-4_to_w0rld_1-3.pcap"
 
 
-def test_start_capture(link, async_run, tmpdir, project, controller):
-    @asyncio.coroutine
-    def fake_reader():
+def test_start_capture(link, async_run, tmpdir):
+
+    async def fake_reader():
         return AsyncioBytesIO()
 
     link.read_pcap_from_source = fake_reader
-    controller._notification = MagicMock()
+    link._project.emit_notification = MagicMock()
     async_run(link.start_capture(capture_file_name="test.pcap"))
     assert link._capturing
     assert link._capture_file_name == "test.pcap"
-    controller._notification.emit.assert_called_with("link.updated", link.__json__())
+    link._project.emit_notification.assert_called_with("link.updated", link.__json__())
 
 
-def test_stop_capture(link, async_run, tmpdir, project, controller):
+def test_stop_capture(link, async_run, tmpdir):
     link._capturing = True
-    controller._notification = MagicMock()
+    link._project.emit_notification = MagicMock()
     async_run(link.stop_capture())
     assert link._capturing is False
-    controller._notification.emit.assert_called_with("link.updated", link.__json__())
+    link._project.emit_notification.assert_called_with("link.updated", link.__json__())
 
 
 def test_delete(async_run, project, compute):
@@ -340,7 +323,7 @@ def test_delete(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
     project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
 
@@ -348,10 +331,10 @@ def test_delete(async_run, project, compute):
     node2._ports = [EthernetPort("E0", 0, 0, 4)]
     async_run(link.add_node(node2, 0, 4))
 
-    assert link in node2.link
+    assert link in node2.links
 
     async_run(link.delete())
-    assert link not in node2.link
+    assert link not in node2.links
 
 
 def test_update_filters(async_run, project, compute):
@@ -360,7 +343,7 @@ def test_update_filters(async_run, project, compute):
 
     link = Link(project)
     link.create = AsyncioMagicMock()
-    link._project.controller.notification.emit = MagicMock()
+    link._project.emit_notification = MagicMock()
     project.dump = AsyncioMagicMock()
     async_run(link.add_node(node1, 0, 4))
 

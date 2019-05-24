@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .custom_adapters import CUSTOM_ADAPTERS_ARRAY_SCHEMA
+
 
 VMWARE_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -37,6 +39,10 @@ VMWARE_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the VMware VM",
+            "type": "string",
+        },
         "vmx_path": {
             "description": "Path to the vmx file",
             "type": "string",
@@ -46,19 +52,19 @@ VMWARE_CREATE_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "headless": {
             "description": "Headless mode",
             "type": "boolean"
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "adapters": {
             "description": "Number of adapters",
@@ -74,7 +80,8 @@ VMWARE_CREATE_SCHEMA = {
         "use_any_adapter": {
             "description": "Allow GNS3 to use any VMware adapter",
             "type": "boolean",
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
     "required": ["name", "vmx_path", "linked_clone"],
@@ -90,6 +97,10 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "VMware VM instance name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the VMware VM",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",
@@ -122,9 +133,9 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "Headless mode",
             "type": "boolean"
         },
-        "acpi_shutdown": {
-            "description": "ACPI shutdown",
-            "type": "boolean"
+        "on_close": {
+            "description": "Action to execute on the VM is closed",
+            "enum": ["power_off", "shutdown_signal", "save_vm_state"],
         },
         "adapters": {
             "description": "Number of adapters",
@@ -145,16 +156,17 @@ VMWARE_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "linked_clone": {
             "description": "Whether the VM is a linked clone or not",
             "type": "boolean"
-        }
+        },
+        "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False
 }

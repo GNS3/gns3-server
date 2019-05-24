@@ -36,6 +36,10 @@ IOU_CREATE_SCHEMA = {
                 {"type": "integer"}  # for legacy projects
             ]
         },
+        "usage": {
+            "description": "How to use the IOU VM",
+            "type": "string",
+        },
         "console": {
             "description": "Console TCP port",
             "minimum": 1,
@@ -44,7 +48,7 @@ IOU_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", None]
+            "enum": ["telnet", "none", None]
         },
         "path": {
             "description": "Path of iou binary",
@@ -104,6 +108,10 @@ IOU_START_SCHEMA = {
         "iourc_content": {
             "description": "Content of the iourc file. Ignored if Null",
             "type": ["string", "null"]
+        },
+        "license_check": {
+            "description": "Whether the license should be checked",
+            "type": "boolean"
         }
     }
 }
@@ -126,6 +134,10 @@ IOU_OBJECT_SCHEMA = {
             "maxLength": 36,
             "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
         },
+        "usage": {
+            "description": "How to use the IOU VM",
+            "type": "string",
+        },
         "node_directory": {
             "description": "Path to the node working directory",
             "type": "string"
@@ -138,11 +150,11 @@ IOU_OBJECT_SCHEMA = {
             "description": "Console TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet"]
+            "enum": ["telnet", "none"]
         },
         "project_id": {
             "description": "Project UUID",

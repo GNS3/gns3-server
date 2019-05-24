@@ -65,6 +65,13 @@ class _asyncio_patch:
 def asyncio_patch(function, *args, **kwargs):
     return _asyncio_patch(function, *args, **kwargs)
 
+# monkey patch MagicMock,
+# FIXME: would probably be better to use asynctest or pytest.asyncio to test our asyncio code
+async def async_magic():
+    pass
+
+unittest.mock.MagicMock.__await__ = lambda x: async_magic().__await__()
+
 
 class AsyncioMagicMock(unittest.mock.MagicMock):
     """
@@ -100,18 +107,15 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
 
 class AsyncioBytesIO(io.BytesIO):
     """
-    An async wrapper arround io.BytesIO to fake an
+    An async wrapper around io.BytesIO to fake an
     async network connection
     """
 
-    @asyncio.coroutine
-    def read(self, length=-1):
+    async def read(self, length=-1):
         return super().read(length)
 
-    @asyncio.coroutine
-    def write(self, data):
+    async def write(self, data):
         return super().write(data)
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         return super().close()

@@ -89,7 +89,7 @@ COMPUTE_OBJECT_SCHEMA = {
             "type": ["string", "null"]
         },
         "connected": {
-            "description": "Whether the controller is connected to the compute server or not",
+            "description": "Whether the controller is connected to the compute or not",
             "type": "boolean"
         },
         "cpu_usage_percent": {
@@ -103,6 +103,10 @@ COMPUTE_OBJECT_SCHEMA = {
             "type": ["number", "null"],
             "maximum": 100,
             "minimum": 0
+        },
+        "last_error": {
+            "description": "Last error on the compute",
+            "type": ["string", "null"]
         },
         "capabilities": CAPABILITIES_SCHEMA
     },
@@ -118,6 +122,59 @@ COMPUTE_ENDPOINT_OUTPUT_OBJECT_SCHEMA = {
         "endpoint": {
             "description": "URL to endpoint on specific compute and to particular action",
             "type": "string"
+        },
+    },
+    "additionalProperties": False,
+}
+
+COMPUTE_PORTS_OBJECT_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Output schema for open ports on a compute",
+    "type": "object",
+    "properties": {
+        "console_port_range": {
+            "description": "Console port range",
+            "type": "array",
+            "uniqueItems": True,
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "console_ports": {
+            "description": "Console ports used by the compute",
+            "type": "array",
+            "uniqueItems": True,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "udp_port_range": {
+            "description": "UDP port range",
+            "type": "array",
+            "uniqueItems": True,
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        },
+        "udp_ports": {
+            "description": "UDP ports used by the compute",
+            "type": "array",
+            "uniqueItems": True,
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
         },
     },
     "additionalProperties": False,

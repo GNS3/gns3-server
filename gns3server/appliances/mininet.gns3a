@@ -1,0 +1,46 @@
+{
+    "category": "guest",
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "description": "Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native), in seconds, with a single command.",
+    "product_name": "Mininet",
+    "registry_version": 4,
+    "product_url": "http://mininet.org/",
+    "documentation_url": "http://mininet.org/walkthrough/",
+    "first_port_name": "eth0",
+    "usage": "Username: mininet\nPassword: mininet",
+    "port_name_format": "eth{0}",
+    "vendor_name": "Mininet Team",
+    "qemu": {
+        "adapters": 1,
+        "adapter_type": "virtio-net-pci",
+        "arch": "x86_64",
+        "ram": 2048,
+        "console_type": "vnc",
+        "hda_disk_interface": "virtio",
+        "kvm": "allow"
+    },
+    "availability": "free",
+    "vendor_url": "http://mininet.org/",
+    "name": "Mininet",
+    "images": [
+        {
+            "filename": "mininet-vm-x86_64.vmdk",
+            "version": "2.2.2",
+            "md5sum": "a683441642300bdaf37b8e614de85342",
+            "filesize": 2047868928,
+            "download_url": "https://github.com/mininet/mininet/releases/",
+            "direct_download_url": "https://github.com/mininet/mininet/releases/download/2.2.2/mininet-2.2.2-170321-ubuntu-14.04.4-server-amd64.zip",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "mininet-vm-x86_64.vmdk"
+            },
+            "name": "2.2.2"
+        }
+    ]
+}

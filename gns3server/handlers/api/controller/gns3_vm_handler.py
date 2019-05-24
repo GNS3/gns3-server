@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from aiohttp.web import HTTPConflict
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.schemas.gns3vm import GNS3VM_SETTINGS_SCHEMA
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -49,9 +47,9 @@ class GNS3VMHandler:
             400: "Invalid request",
         },
         description="Get all the available VMs for a specific virtualization engine")
-    def get_vms(request, response):
+    async def get_vms(request, response):
 
-        vms = yield from Controller.instance().gns3vm.list(request.match_info["engine"])
+        vms = await Controller.instance().gns3vm.list(request.match_info["engine"])
         response.json(vms)
 
     @Route.get(
@@ -72,9 +70,11 @@ class GNS3VMHandler:
         status_codes={
             201: "GNS3 VM updated"
         })
-    def update(request, response):
+    async def update(request, response):
 
-        gns3_vm = Controller().instance().gns3vm
-        yield from gns3_vm.update_settings(request.json)
+        controller = Controller().instance()
+        gns3_vm = controller.gns3vm
+        await gns3_vm.update_settings(request.json)
+        controller.save()
         response.json(gns3_vm)
         response.set_status(201)

@@ -5,11 +5,11 @@
 
 PUT /v2/computes/**{compute_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get a compute server information
+Update a compute
 
 Response status codes
 **********************
-- **200**: Compute server updated
+- **200**: Compute updated
 - **400**: Invalid request
 - **404**: Instance doesn't exist
 
@@ -36,9 +36,10 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>capabilities</td>                    <td> </td>                     <td>object</td>                     <td>Get what a server support</td>                     </tr>
     <tr><td>compute_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server identifier</td>                     </tr>
-    <tr><td>connected</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the controller is connected to the compute server or not</td>                     </tr>
+    <tr><td>connected</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the controller is connected to the compute or not</td>                     </tr>
     <tr><td>cpu_usage_percent</td>                    <td> </td>                     <td>['number', 'null']</td>                     <td>CPU usage of the compute. Read only</td>                     </tr>
     <tr><td>host</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server host</td>                     </tr>
+    <tr><td>last_error</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Last error on the compute</td>                     </tr>
     <tr><td>memory_usage_percent</td>                    <td> </td>                     <td>['number', 'null']</td>                     <td>RAM usage of the compute. Read only</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server name</td>                     </tr>
     <tr><td>port</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Server port</td>                     </tr>
@@ -49,11 +50,11 @@ Output
 
 GET /v2/computes/**{compute_id}**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Get a compute server information
+Get a compute information
 
 Response status codes
 **********************
-- **200**: Compute server information returned
+- **200**: Compute information returned
 
 Output
 *******
@@ -63,9 +64,10 @@ Output
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>capabilities</td>                    <td> </td>                     <td>object</td>                     <td>Get what a server support</td>                     </tr>
     <tr><td>compute_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server identifier</td>                     </tr>
-    <tr><td>connected</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the controller is connected to the compute server or not</td>                     </tr>
+    <tr><td>connected</td>                    <td> </td>                     <td>boolean</td>                     <td>Whether the controller is connected to the compute or not</td>                     </tr>
     <tr><td>cpu_usage_percent</td>                    <td> </td>                     <td>['number', 'null']</td>                     <td>CPU usage of the compute. Read only</td>                     </tr>
     <tr><td>host</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server host</td>                     </tr>
+    <tr><td>last_error</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Last error on the compute</td>                     </tr>
     <tr><td>memory_usage_percent</td>                    <td> </td>                     <td>['number', 'null']</td>                     <td>RAM usage of the compute. Read only</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Server name</td>                     </tr>
     <tr><td>port</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Server port</td>                     </tr>

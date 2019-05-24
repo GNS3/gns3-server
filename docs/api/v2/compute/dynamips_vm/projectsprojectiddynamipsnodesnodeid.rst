@@ -28,8 +28,8 @@ Output
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
-    <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
+    <tr><td>console</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>Disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>Disk1 size in MB</td>                     </tr>
     <tr><td>dynamips_id</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>ID to use with Dynamips</td>                     </tr>
@@ -40,7 +40,7 @@ Output
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS image</td>                     </tr>
     <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
-    <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>Base MAC address</td>                     </tr>
+    <tr><td>mac_addr</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
     <tr><td>mmap</td>                    <td> </td>                     <td>boolean</td>                     <td>MMAP feature</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips VM instance name</td>                     </tr>
@@ -63,6 +63,7 @@ Output
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>Sparse memory feature</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>System ID</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the Dynamips VM</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic1</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic2</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
@@ -95,8 +96,8 @@ Input
     <tr><td>aux</td>                    <td> </td>                     <td>integer</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
-    <tr><td>console</td>                    <td> </td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
+    <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>Disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>Disk1 size in MB</td>                     </tr>
     <tr><td>dynamips_id</td>                    <td> </td>                     <td>integer</td>                     <td>Dynamips ID</td>                     </tr>
@@ -107,7 +108,7 @@ Input
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS image</td>                     </tr>
     <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
-    <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>Base MAC address</td>                     </tr>
+    <tr><td>mac_addr</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
     <tr><td>mmap</td>                    <td> </td>                     <td>boolean</td>                     <td>MMAP feature</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Dynamips VM instance name</td>                     </tr>
@@ -126,6 +127,7 @@ Input
     <tr><td>slot6</td>                    <td> </td>                     <td></td>                     <td>Network module slot 6</td>                     </tr>
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>Sparse memory feature</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>System ID</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the Dynamips VM</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic1</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic2</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
@@ -141,8 +143,8 @@ Output
     <tr><td>aux</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Auxiliary console TCP port</td>                     </tr>
     <tr><td>chassis</td>                    <td> </td>                     <td>string</td>                     <td>Cisco router chassis model</td>                     </tr>
     <tr><td>clock_divisor</td>                    <td> </td>                     <td>integer</td>                     <td>Clock divisor</td>                     </tr>
-    <tr><td>console</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Console TCP port</td>                     </tr>
-    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet</td>                     </tr>
+    <tr><td>console</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
+    <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>disk0</td>                    <td> </td>                     <td>integer</td>                     <td>Disk0 size in MB</td>                     </tr>
     <tr><td>disk1</td>                    <td> </td>                     <td>integer</td>                     <td>Disk1 size in MB</td>                     </tr>
     <tr><td>dynamips_id</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>ID to use with Dynamips</td>                     </tr>
@@ -153,7 +155,7 @@ Output
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>Path to the IOS image</td>                     </tr>
     <tr><td>image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Checksum of the IOS image</td>                     </tr>
     <tr><td>iomem</td>                    <td> </td>                     <td>integer</td>                     <td>I/O memory percentage</td>                     </tr>
-    <tr><td>mac_addr</td>                    <td> </td>                     <td>string</td>                     <td>Base MAC address</td>                     </tr>
+    <tr><td>mac_addr</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Base MAC address</td>                     </tr>
     <tr><td>midplane</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: std, vxr</td>                     </tr>
     <tr><td>mmap</td>                    <td> </td>                     <td>boolean</td>                     <td>MMAP feature</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Dynamips VM instance name</td>                     </tr>
@@ -176,6 +178,7 @@ Output
     <tr><td>sparsemem</td>                    <td> </td>                     <td>boolean</td>                     <td>Sparse memory feature</td>                     </tr>
     <tr><td>status</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
     <tr><td>system_id</td>                    <td> </td>                     <td>string</td>                     <td>System ID</td>                     </tr>
+    <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the Dynamips VM</td>                     </tr>
     <tr><td>wic0</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic1</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>
     <tr><td>wic2</td>                    <td> </td>                     <td></td>                     <td>Network module WIC slot 0</td>                     </tr>

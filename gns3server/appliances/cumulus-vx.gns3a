@@ -24,12 +24,68 @@
     },
     "images": [
         {
+            "filename": "cumulus-linux-3.7.3-vx-amd64-qemu.qcow2",
+            "version": "3.7.3",
+            "md5sum": "e6f438cd44ede841ff290c85dedd127e",
+            "filesize": 1514340352,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.3/cumulus-linux-3.7.3-vx-amd64-qemu.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.7.2-vx-amd64-qemu.qcow2",
+            "version": "3.7.2",
+            "md5sum": "2fcd785da0452e403c44ba5f3ac4e870",
+            "filesize": 1574502400,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.2/cumulus-linux-3.7.2-vx-amd64-qemu.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.7.1-vx-amd64-qemu.qcow2",
+            "version": "3.7.1",
+            "md5sum": "201055c57e4a20bb5772289ea6216631",
+            "filesize": 1640300544,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.1/cumulus-linux-3.7.1-vx-amd64-qemu.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.6.2-vx-amd64.qcow2",
+            "version": "3.6.2",
+            "md5sum": "fda2cfc556de7b12daf45369bd60d33b",
+            "filesize": 1157169152,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "https://s3.amazonaws.com/cumulusfiles/CumulusLinux-3.6.2/cumulus-linux-3.6.2-vx-amd64.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.6.1-vx-amd64.qcow2",
+            "version": "3.6.1",
+            "md5sum": "b2145a689ceea668d003a0d2f2faa045",
+            "filesize": 1068761088,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "https://s3.amazonaws.com/cumulusfiles/CumulusLinux-3.6.1/cumulus-linux-3.6.1-vx-amd64.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.6.0-vx-amd64.qcow2",
+            "version": "3.6.0",
+            "md5sum": "b5356b6c922f5620d7e6971d44e9be4d",
+            "filesize": 1105199104,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.6.0-vx-amd64.qcow2"
+        },
+        {
+            "filename": "cumulus-linux-3.5.3-vx-amd64.qcow2",
+            "version": "3.5.3",
+            "md5sum": "4ecbd7341b214fa3c3b27ab11d1df2fb",
+            "filesize": 1084358656,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.3-vx-amd64.qcow2"
+        },
+        {
             "filename": "cumulus-linux-3.5.2-vx-amd64.qcow2",
             "version": "3.5.2",
             "md5sum": "87d1d8b297e5ebd77924669dfb7e4c9f",
             "filesize": 996605952,
             "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
-            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.0-vx-amd64.qcow2"
+            "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/cumulus-linux-3.5.3-vx-amd64.qcow2"
         },
         {
             "filename": "cumulus-linux-3.5.0-vx-amd64.qcow2",
@@ -141,6 +197,48 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.7.3",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.7.3-vx-amd64-qemu.qcow2"
+            }
+        },    
+        {
+            "name": "3.7.2",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.7.2-vx-amd64-qemu.qcow2"
+            }
+        },    
+        {
+            "name": "3.7.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.7.1-vx-amd64-qemu.qcow2"
+            }
+        },    
+        {
+            "name": "3.6.2",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.6.2-vx-amd64.qcow2"
+            }
+        },    
+        {
+            "name": "3.6.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.6.1-vx-amd64.qcow2"
+            }
+        },    
+        {
+            "name": "3.6.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.6.0-vx-amd64.qcow2"
+            }
+        },
+        {
+            "name": "3.5.3",
+            "images": {
+                "hda_disk_image": "cumulus-linux-3.5.3-vx-amd64.qcow2"
+            }
+        },
         {
             "name": "3.5.2",
             "images": {

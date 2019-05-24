@@ -1,26 +1,30 @@
 Glossary
 ========
 
+Project
+--------
+
+A project contains everything that is needed to save and restore a virtual network in GNS3 (the topology, virtual disks, settings etc.)
+
 Topology
 --------
 
-Contains everything to represent a virtual network (nodes, visual elements, links...)
+A topology represents a virtual network (nodes, visual elements, links...). A topology is often used to refer to a project.
 
 Node
 ----
 
 A Virtual Machine (Dynamips, IOU, Qemu, VPCS...) or builtin node (cloud, switch, hub...) that run on a compute.
 
+Template
+---------
+
+A template used to create a new node. A node is created when dragging a template to a topology.
+
 Appliance
 ---------
 
-A model for a node used to create a node. When you drag an appliance to the topology a node is created.
-
-Appliance template
-------------------
-
-A file (.gns3a) used to create a new node.
-
+A file (.gns3a or .gns3appliance) used to create a new template with predefined settings.
 
 Drawing
 -------

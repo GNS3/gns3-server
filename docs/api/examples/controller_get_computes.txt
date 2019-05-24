@@ -6,10 +6,10 @@ GET /v2/computes HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 387
+Content-Length: 415
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:22 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:49:46 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/computes
 
 [
@@ -22,6 +22,7 @@ X-Route: /v2/computes
         "connected": false,
         "cpu_usage_percent": null,
         "host": "localhost",
+        "last_error": null,
         "memory_usage_percent": null,
         "name": "My super server",
         "port": 84,

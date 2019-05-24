@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/1be6903e-2a33-456c-acac-0ce09f4bee53/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "7fd37d81-3c9e-42af-a5a1-04c859278b2b", "port_number": 3}, {"adapter_number": 0, "node_id": "7fd37d81-3c9e-42af-a5a1-04c859278b2b", "port_number": 4}]}'
+curl -i -X POST 'http://localhost:3080/v2/projects/bc535a6b-2209-45fe-8e2c-9c0108585568/links' -d '{"nodes": [{"adapter_number": 0, "label": {"text": "Text", "x": 42, "y": 0}, "node_id": "f612dca3-278d-46b3-a0a2-f69e37611763", "port_number": 3}, {"adapter_number": 0, "node_id": "f612dca3-278d-46b3-a0a2-f69e37611763", "port_number": 4}]}'
 
-POST /v2/projects/1be6903e-2a33-456c-acac-0ce09f4bee53/links HTTP/1.1
+POST /v2/projects/bc535a6b-2209-45fe-8e2c-9c0108585568/links HTTP/1.1
 {
     "nodes": [
         {
@@ -10,12 +10,12 @@ POST /v2/projects/1be6903e-2a33-456c-acac-0ce09f4bee53/links HTTP/1.1
                 "x": 42,
                 "y": 0
             },
-            "node_id": "7fd37d81-3c9e-42af-a5a1-04c859278b2b",
+            "node_id": "f612dca3-278d-46b3-a0a2-f69e37611763",
             "port_number": 3
         },
         {
             "adapter_number": 0,
-            "node_id": "7fd37d81-3c9e-42af-a5a1-04c859278b2b",
+            "node_id": "f612dca3-278d-46b3-a0a2-f69e37611763",
             "port_number": 4
         }
     ]
@@ -26,8 +26,8 @@ HTTP/1.1 409
 Connection: close
 Content-Length: 64
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:35 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:49:49 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/links
 
 {

@@ -46,9 +46,9 @@ class C1700(Router):
     1710 is not supported.
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, aux=None, chassis="1720"):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis="1720"):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, aux, platform="c1700")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c1700")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 64
@@ -70,12 +70,11 @@ class C1700(Router):
         router_info.update(c1700_router_info)
         return router_info
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
 
-        yield from Router.create(self)
+        await Router.create(self)
         if self._chassis != "1720":
-            yield from self.set_chassis(self._chassis)
+            await self.set_chassis(self._chassis)
         self._setup_chassis()
 
     def _setup_chassis(self):
@@ -103,8 +102,7 @@ class C1700(Router):
 
         return self._chassis
 
-    @asyncio.coroutine
-    def set_chassis(self, chassis):
+    async def set_chassis(self, chassis):
         """
         Sets the chassis.
 
@@ -112,7 +110,7 @@ class C1700(Router):
         1720, 1721, 1750, 1751 or 1760
         """
 
-        yield from self._hypervisor.send('c1700 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
+        await self._hypervisor.send('c1700 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
 
         log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
                                                                            id=self._id,
@@ -131,15 +129,14 @@ class C1700(Router):
 
         return self._iomem
 
-    @asyncio.coroutine
-    def set_iomem(self, iomem):
+    async def set_iomem(self, iomem):
         """
         Sets I/O memory size for this router.
 
         :param iomem: I/O memory size
         """
 
-        yield from self._hypervisor.send('c1700 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send('c1700 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

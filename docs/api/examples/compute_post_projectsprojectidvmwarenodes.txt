@@ -1,23 +1,22 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes' -d '{"linked_clone": false, "name": "VM1", "vmx_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_vmware_create0/test.vmx"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes' -d '{"linked_clone": false, "name": "VM1", "vmx_path": "/tmp/pytest-of-grossmj/pytest-0/test_vmware_create0/test.vmx"}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes HTTP/1.1
 {
     "linked_clone": false,
     "name": "VM1",
-    "vmx_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_vmware_create0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-0/test_vmware_create0/test.vmx"
 }
 
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 688
+Content-Length: 610
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:58 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:48:54 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "e1000",
     "adapters": 0,
     "console": 5004,
@@ -25,10 +24,12 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes
     "headless": false,
     "linked_clone": false,
     "name": "VM1",
-    "node_directory": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmpk__by17a/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/363338c7-451e-4f3d-a74a-5d7400b2325b",
-    "node_id": "363338c7-451e-4f3d-a74a-5d7400b2325b",
+    "node_directory": "/tmp/tmp2a2tb7g2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/b8bfe749-bacf-4f45-8e05-6f9f3063f80b",
+    "node_id": "b8bfe749-bacf-4f45-8e05-6f9f3063f80b",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",
+    "usage": "",
     "use_any_adapter": false,
-    "vmx_path": "/private/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/pytest-of-behlers/pytest-0/test_vmware_create0/test.vmx"
+    "vmx_path": "/tmp/pytest-of-grossmj/pytest-0/test_vmware_create0/test.vmx"
 }

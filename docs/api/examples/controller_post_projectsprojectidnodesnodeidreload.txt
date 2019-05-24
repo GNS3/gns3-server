@@ -1,35 +1,38 @@
-curl -i -X POST 'http://localhost:3080/v2/projects/23eb0cbc-0923-46c7-9e28-4b5ff829c26b/nodes/9d4f5903-e448-4e92-a2a8-be2e1e3c2390/reload' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/projects/12755712-2549-49c3-adea-bb31849a5704/nodes/d7ff2caa-80ab-47e6-9684-acbb8cb2eb02/reload' -d '{}'
 
-POST /v2/projects/23eb0cbc-0923-46c7-9e28-4b5ff829c26b/nodes/9d4f5903-e448-4e92-a2a8-be2e1e3c2390/reload HTTP/1.1
+POST /v2/projects/12755712-2549-49c3-adea-bb31849a5704/nodes/d7ff2caa-80ab-47e6-9684-acbb8cb2eb02/reload HTTP/1.1
 {}
 
 
-HTTP/1.1 201
+HTTP/1.1 200
 Connection: close
-Content-Length: 1080
+Content-Length: 1158
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:37 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:49:55 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
 
 {
     "command_line": null,
     "compute_id": "example.com",
     "console": null,
-    "console_host": "<MagicMock name='mock.console_host' id='5869899224'>",
+    "console_auto_start": false,
+    "console_host": "<MagicMock name='mock.console_host' id='140436286388432'>",
     "console_type": null,
+    "custom_adapters": [],
     "first_port_name": null,
     "height": 59,
     "label": {
         "rotation": 0,
-        "style": "font-size: 10;font-familly: Verdana",
+        "style": null,
         "text": "test",
         "x": null,
         "y": -40
     },
+    "locked": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "9d4f5903-e448-4e92-a2a8-be2e1e3c2390",
+    "node_id": "d7ff2caa-80ab-47e6-9684-acbb8cb2eb02",
     "node_type": "vpcs",
     "port_name_format": "Ethernet{0}",
     "port_segment_size": 0,
@@ -45,12 +48,13 @@ X-Route: /v2/projects/{project_id}/nodes/{node_id}/reload
             "short_name": "e0"
         }
     ],
-    "project_id": "23eb0cbc-0923-46c7-9e28-4b5ff829c26b",
+    "project_id": "12755712-2549-49c3-adea-bb31849a5704",
     "properties": {},
     "status": "stopped",
     "symbol": ":/symbols/computer.svg",
+    "template_id": null,
     "width": 65,
     "x": 0,
     "y": 0,
-    "z": 0
+    "z": 1
 }

@@ -340,26 +340,23 @@ def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
     assert response.status == 201
 
 
-def test_pcap(http_controller, tmpdir, project, compute, loop):
-    @asyncio.coroutine
-    def go(future):
-        response = yield from aiohttp.request("GET", http_controller.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id)))
-        response.body = yield from response.content.read(5)
-        response.close()
-        future.set_result(response)
-
-    link = Link(project)
-    link._capture_file_name = "test"
-    link._capturing = True
-    with open(link.capture_file_path, "w+") as f:
-        f.write("hello")
-    project._links = {link.id: link}
-
-    future = asyncio.Future()
-    asyncio.async(go(future))
-    response = loop.run_until_complete(future)
-    assert response.status == 200
-    assert b'hello' == response.body
+# def test_pcap(http_controller, tmpdir, project, compute, async_run):
+#
+#     async def go():
+#         async with aiohttp.request("GET", http_controller.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id))) as response:
+#             response.body = await response.content.read(5)
+#             return response
+#
+#     with asyncio_patch("gns3server.controller.link.Link.capture_node") as mock:
+#         link = Link(project)
+#         link._capture_file_name = "test"
+#         link._capturing = True
+#         with open(link.capture_file_path, "w+") as f:
+#             f.write("hello")
+#         project._links = {link.id: link}
+#         response = async_run(asyncio.ensure_future(go()))
+#         assert response.status == 200
+#         assert b'hello' == response.body
 
 
 def test_delete_link(http_controller, tmpdir, project, compute, async_run):

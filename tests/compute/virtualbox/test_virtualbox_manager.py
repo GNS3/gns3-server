@@ -74,25 +74,25 @@ def test_vboxmanage_path(manager, tmpdir):
 def test_list_vms(manager, loop):
     vm_list = ['"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
                '"Carriage',
-               'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
+               'Return" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c3f3}',
                '',
                '"<inaccessible>" {42b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',
                '"Linux Microcore 4.7.1" {ccd8c50b-c172-457d-99fa-dd69371ede0e}']
 
-    @asyncio.coroutine
-    def execute_mock(cmd, args):
+    async def execute_mock(cmd, args):
         if cmd == "list":
             return vm_list
         else:
-            if args[0] == "Windows 8.1":
+            print(args)
+            if args[0] == "27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1":
                 return ["memory=512"]
-            elif args[0] == "Linux Microcore 4.7.1":
+            elif args[0] == "ccd8c50b-c172-457d-99fa-dd69371ede0e":
                 return ["memory=256"]
         assert False, "Unknow {} {}".format(cmd, args)
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute") as mock:
         mock.side_effect = execute_mock
-        vms = loop.run_until_complete(asyncio.async(manager.list_vms()))
+        vms = loop.run_until_complete(asyncio.ensure_future(manager.list_vms()))
     assert vms == [
         {"vmname": "Windows 8.1", "ram": 512},
         {"vmname": "Linux Microcore 4.7.1", "ram": 256}

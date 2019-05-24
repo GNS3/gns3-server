@@ -74,11 +74,15 @@ LINK_OBJECT_SCHEMA = {
             "type": "boolean"
         },
         "capture_file_name": {
-            "description": "Read only property. The name of the capture file if capture is running",
+            "description": "Read only property. The name of the capture file if a capture is running",
             "type": ["string", "null"]
         },
         "capture_file_path": {
-            "description": "Read only property. The full path of the capture file if capture is running",
+            "description": "Read only property. The full path of the capture file if a capture is running",
+            "type": ["string", "null"]
+        },
+        "capture_compute_id": {
+            "description": "Read only property. The compute identifier where a capture is running",
             "type": ["string", "null"]
         },
         "link_type": {

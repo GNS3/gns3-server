@@ -62,23 +62,24 @@ class DynamipsVMHandler:
         description="Create a new Dynamips VM instance",
         input=VM_CREATE_SCHEMA,
         output=VM_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         dynamips_manager = Dynamips.instance()
         platform = request.json.pop("platform")
         default_chassis = None
         if platform in DEFAULT_CHASSIS:
             default_chassis = DEFAULT_CHASSIS[platform]
-        vm = yield from dynamips_manager.create_node(request.json.pop("name"),
-                                                     request.match_info["project_id"],
-                                                     request.json.get("node_id"),
-                                                     dynamips_id=request.json.get("dynamips_id"),
-                                                     platform=platform,
-                                                     console=request.json.get("console"),
-                                                     aux=request.json.get("aux"),
-                                                     chassis=request.json.pop("chassis", default_chassis),
-                                                     node_type="dynamips")
-        yield from dynamips_manager.update_vm_settings(vm, request.json)
+        vm = await dynamips_manager.create_node(request.json.pop("name"),
+                                                request.match_info["project_id"],
+                                                request.json.get("node_id"),
+                                                dynamips_id=request.json.get("dynamips_id"),
+                                                platform=platform,
+                                                console=request.json.get("console"),
+                                                console_type=request.json.get("console_type", "telnet"),
+                                                aux=request.json.get("aux"),
+                                                chassis=request.json.pop("chassis", default_chassis),
+                                                node_type="dynamips")
+        await dynamips_manager.update_vm_settings(vm, request.json)
         response.set_status(201)
         response.json(vm)
 
@@ -116,11 +117,11 @@ class DynamipsVMHandler:
         description="Update a Dynamips VM instance",
         input=VM_UPDATE_SCHEMA,
         output=VM_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from dynamips_manager.update_vm_settings(vm, request.json)
+        await dynamips_manager.update_vm_settings(vm, request.json)
         vm.updated()
         response.json(vm)
 
@@ -136,11 +137,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a Dynamips VM instance")
-    def delete(request, response):
+    async def delete(request, response):
 
         # check the project_id exists
         ProjectManager.instance().get_project(request.match_info["project_id"])
-        yield from Dynamips.instance().delete_node(request.match_info["node_id"])
+        await Dynamips.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -155,15 +156,15 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Start a Dynamips VM instance")
-    def start(request, response):
+    async def start(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         try:
-            yield from dynamips_manager.ghost_ios_support(vm)
+            await dynamips_manager.ghost_ios_support(vm)
         except GeneratorExit:
             pass
-        yield from vm.start()
+        await vm.start()
         response.set_status(204)
 
     @Route.post(
@@ -178,11 +179,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a Dynamips VM instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -197,11 +198,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Suspend a Dynamips VM instance")
-    def suspend(request, response):
+    async def suspend(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.suspend()
+        await vm.suspend()
         response.set_status(204)
 
     @Route.post(
@@ -216,11 +217,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a suspended Dynamips VM instance")
-    def resume(request, response):
+    async def resume(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.resume()
+        await vm.resume()
         response.set_status(204)
 
     @Route.post(
@@ -235,11 +236,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a Dynamips VM instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -258,14 +259,14 @@ class DynamipsVMHandler:
         description="Add a NIO to a Dynamips VM instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = yield from dynamips_manager.create_nio(vm, request.json)
+        nio = await dynamips_manager.create_nio(vm, request.json)
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.slot_add_nio_binding(slot_number, port_number, nio)
+        await vm.slot_add_nio_binding(slot_number, port_number, nio)
         response.set_status(201)
         response.json(nio)
 
@@ -284,17 +285,17 @@ class DynamipsVMHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Dynamips instance")
-    def update_nio(request, response):
+        description="Update a NIO on a Dynamips instance")
+    async def update_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        nio = vm.slots[slot_number].get_nio(port_number)
-        if "filters" in request.json and nio:
+        nio = vm.get_nio(slot_number, port_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-        yield from vm.slot_update_nio_binding(slot_number, port_number, nio)
+        await vm.slot_update_nio_binding(slot_number, port_number, nio)
         response.set_status(201)
         response.json(request.json)
 
@@ -312,14 +313,14 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a Dynamips VM instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        nio = yield from vm.slot_remove_nio_binding(slot_number, port_number)
-        yield from nio.delete()
+        nio = await vm.slot_remove_nio_binding(slot_number, port_number)
+        await nio.delete()
         response.set_status(204)
 
     @Route.post(
@@ -337,7 +338,7 @@ class DynamipsVMHandler:
         },
         description="Start a packet capture on a Dynamips VM instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -352,7 +353,7 @@ class DynamipsVMHandler:
             except UnicodeEncodeError:
                 raise DynamipsError('The capture file path "{}" must only contain ASCII (English) characters'.format(pcap_file_path))
 
-        yield from vm.start_capture(slot_number, port_number, pcap_file_path, request.json["data_link_type"])
+        await vm.start_capture(slot_number, port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -369,14 +370,37 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on a Dynamips VM instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         slot_number = int(request.match_info["adapter_number"])
         port_number = int(request.match_info["port_number"])
-        yield from vm.stop_capture(slot_number, port_number)
+        await vm.stop_capture(slot_number, port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/dynamips/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        slot_number = int(request.match_info["adapter_number"])
+        port_number = int(request.match_info["port_number"])
+        nio = vm.get_nio(slot_number, port_number)
+        await dynamips_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.get(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/idlepc_proposals",
@@ -390,12 +414,12 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Retrieve the idlepc proposals")
-    def get_idlepcs(request, response):
+    async def get_idlepcs(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.set_idlepc("0x0")
-        idlepcs = yield from vm.get_idle_pc_prop()
+        await vm.set_idlepc("0x0")
+        idlepcs = await vm.get_idle_pc_prop()
         response.set_status(200)
         response.json(idlepcs)
 
@@ -411,11 +435,11 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Retrieve the idlepc proposals")
-    def get_auto_idlepc(request, response):
+    async def get_auto_idlepc(request, response):
 
         dynamips_manager = Dynamips.instance()
         vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        idlepc = yield from dynamips_manager.auto_idlepc(vm)
+        idlepc = await dynamips_manager.auto_idlepc(vm)
         response.set_status(200)
         response.json({"idlepc": idlepc})
 
@@ -426,10 +450,10 @@ class DynamipsVMHandler:
         },
         description="Retrieve the list of Dynamips IOS images",
         output=NODE_LIST_IMAGES_SCHEMA)
-    def list_images(request, response):
+    async def list_images(request, response):
 
         dynamips_manager = Dynamips.instance()
-        images = yield from dynamips_manager.list_images()
+        images = await dynamips_manager.list_images()
         response.set_status(200)
         response.json(images)
 
@@ -443,10 +467,10 @@ class DynamipsVMHandler:
         },
         raw=True,
         description="Upload a Dynamips IOS image")
-    def upload_image(request, response):
+    async def upload_image(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.write_image(request.match_info["filename"], request.content)
+        await dynamips_manager.write_image(request.match_info["filename"], request.content)
         response.set_status(204)
 
     @Route.get(
@@ -459,7 +483,7 @@ class DynamipsVMHandler:
         },
         raw=True,
         description="Download a Dynamips IOS image")
-    def download_image(request, response):
+    async def download_image(request, response):
         filename = request.match_info["filename"]
 
         dynamips_manager = Dynamips.instance()
@@ -469,7 +493,7 @@ class DynamipsVMHandler:
         if filename[0] == ".":
             raise aiohttp.web.HTTPForbidden()
 
-        yield from response.file(image_path)
+        await response.stream_file(image_path)
 
     @Route.post(
         r"/projects/{project_id}/dynamips/nodes/{node_id}/duplicate",
@@ -482,12 +506,10 @@ class DynamipsVMHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate a dynamips instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from Dynamips.instance().duplicate_node(
-            request.match_info["node_id"],
-            request.json["destination_node_id"]
-        )
+        new_node = await Dynamips.instance().duplicate_node(request.match_info["node_id"],
+                                                            request.json["destination_node_id"])
         response.set_status(201)
         response.json(new_node)
 

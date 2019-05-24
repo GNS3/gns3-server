@@ -44,8 +44,7 @@ class EthernetHub(BaseNode):
                 "node_id": self.id,
                 "project_id": self.project.id}
 
-    @asyncio.coroutine
-    def create(self):
+    async def create(self):
         """
         Creates this hub.
         """
@@ -53,16 +52,14 @@ class EthernetHub(BaseNode):
         super().create()
         log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
-    @asyncio.coroutine
-    def delete(self):
+    async def delete(self):
         """
         Deletes this hub.
         """
 
         raise NotImplementedError()
 
-    @asyncio.coroutine
-    def add_nio(self, nio, port_number):
+    async def add_nio(self, nio, port_number):
         """
         Adds a NIO as new port on this hub.
 
@@ -72,8 +69,7 @@ class EthernetHub(BaseNode):
 
         raise NotImplementedError()
 
-    @asyncio.coroutine
-    def remove_nio(self, port_number):
+    async def remove_nio(self, port_number):
         """
         Removes the specified NIO as member of this hub.
 
@@ -84,8 +80,7 @@ class EthernetHub(BaseNode):
 
         raise NotImplementedError()
 
-    @asyncio.coroutine
-    def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
+    async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
         Starts a packet capture.
 
@@ -96,8 +91,7 @@ class EthernetHub(BaseNode):
 
         raise NotImplementedError()
 
-    @asyncio.coroutine
-    def stop_capture(self, port_number):
+    async def stop_capture(self, port_number):
         """
         Stops a packet capture.
 

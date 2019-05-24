@@ -26,7 +26,7 @@ from tests.utils import asyncio_patch
 
 @pytest.fixture
 def nio():
-    return NIOUDP(4242, "127.0.0.1", 4343, {})
+    return NIOUDP(4242, "127.0.0.1", 4343)
 
 
 @pytest.fixture
@@ -50,6 +50,10 @@ def test_json_with_ports(on_gns3vm, project, manager):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
+        "remote_console_host": "",
+        "remote_console_http_path": "/",
+        "remote_console_port": 23,
+        "remote_console_type": "none",
         "status": "stopped",
         "node_directory": cloud.working_dir,
         "ports_mapping": [
@@ -77,6 +81,10 @@ def test_json_without_ports(on_gns3vm, project, manager):
         "name": "cloud1",
         "node_id": cloud.id,
         "project_id": project.id,
+        "remote_console_host": "",
+        "remote_console_http_path": "/",
+        "remote_console_port": 23,
+        "remote_console_type": "none",
         "status": "stopped",
         "node_directory": cloud.working_dir,
         "ports_mapping": [
@@ -152,9 +160,11 @@ def test_linux_ethernet_raw_add_nio(linux_platform, project, async_run, nio):
     cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
     cloud.status = "started"
 
-    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
-        with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "eth0"}]):
-            async_run(cloud.add_nio(nio, 0))
+    with patch("shutil.which", return_value="/bin/ubridge"):
+        with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
+            with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
+                with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "eth0"}]):
+                    async_run(cloud.add_nio(nio, 0))
 
     ubridge_mock.assert_has_calls([
         call("bridge create {}-0".format(cloud._id)),
@@ -180,10 +190,12 @@ def test_linux_ethernet_raw_add_nio_bridge(linux_platform, project, async_run, n
     cloud = Cloud("cloud1", str(uuid.uuid4()), project, MagicMock(), ports=ports)
     cloud.status = "started"
 
-    with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
-        with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]):
-            with patch("gns3server.utils.interfaces.is_interface_bridge", return_value=True):
-                async_run(cloud.add_nio(nio, 0))
+    with patch("shutil.which", return_value="/bin/ubridge"):
+        with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
+            with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._ubridge_send") as ubridge_mock:
+                with patch("gns3server.compute.builtin.nodes.cloud.Cloud._interfaces", return_value=[{"name": "bridge0"}]):
+                    with patch("gns3server.utils.interfaces.is_interface_bridge", return_value=True):
+                        async_run(cloud.add_nio(nio, 0))
 
     tap = "gns3tap0-0"
     ubridge_mock.assert_has_calls([

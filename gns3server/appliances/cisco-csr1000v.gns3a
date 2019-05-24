@@ -14,7 +14,7 @@
     "usage": "There is no default password and enable password. A default configuration is present.",
     "port_name_format": "Gi{port1}",
     "qemu": {
-        "adapter_type": "virtio-net-pci",
+        "adapter_type": "vmxnet3",
         "adapters": 4,
         "ram": 3072,
         "arch": "x86_64",
@@ -22,6 +22,27 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "csr1000v-universalk9.16.10.01b-serial.qcow2",
+            "version": "16.10.1b",
+            "md5sum": "0d3d647f83631c7955ad7899e6cce293",
+            "filesize": 950468608,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.10.1b"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.09.01-serial.qcow2",
+            "version": "16.9.1",
+            "md5sum": "d7e1c83b6f513beb4200c7691d119086",
+            "filesize": 917897216,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Fuji-16.9.1"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.08.01a-serial.qcow2",
+            "version": "16.8.1a",
+            "md5sum": "91e2572f20c77606d710223511cd279a",
+            "filesize": 890044416,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477"
+        },
         {
             "filename": "csr1000v-universalk9.16.07.01-serial.qcow2",
             "version": "16.7.1",
@@ -94,6 +115,24 @@
         }
     ],
     "versions": [
+        {
+            "name": "16.10.1b",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.10.01b-serial.qcow2"
+            }
+        },
+        {
+            "name": "16.9.1",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.09.01-serial.qcow2"
+            }
+        },
+        {
+            "name": "16.8.1a",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.08.01a-serial.qcow2"
+            }
+        },
         {
             "name": "16.7.1",
             "images": {

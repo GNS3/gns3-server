@@ -23,7 +23,7 @@ import aiohttp
 import logging
 import traceback
 import jsonschema
-
+import jsonschema.exceptions
 
 log = logging.getLogger(__name__)
 
@@ -36,13 +36,12 @@ from ..crash_report import CrashReport
 from ..config import Config
 
 
-@asyncio.coroutine
-def parse_request(request, input_schema, raw):
+async def parse_request(request, input_schema, raw):
     """Parse body of request and raise HTTP errors in case of problems"""
 
     request.json = {}
     if not raw:
-        body = yield from request.read()
+        body = await request.read()
         if body:
             try:
                 request.json = json.loads(body.decode('utf-8'))
@@ -59,10 +58,12 @@ def parse_request(request, input_schema, raw):
         try:
             jsonschema.validate(request.json, input_schema)
         except jsonschema.ValidationError as e:
-            log.error("Invalid input query. JSON schema error: {}".format(e.message))
-            raise aiohttp.web.HTTPBadRequest(text="Invalid JSON: {} in schema: {}".format(
-                e.message,
-                json.dumps(e.schema)))
+            message = "JSON schema error with API request '{}' and JSON data '{}': {}".format(request.path_qs,
+                                                                                              request.json,
+                                                                                              e.message)
+            log.error(message)
+            log.debug("Input schema: {}".format(json.dumps(input_schema)))
+            raise aiohttp.web.HTTPBadRequest(text=message)
 
     return request
 
@@ -103,20 +104,21 @@ class Route(object):
 
         :returns: Response if you need to auth the user otherwise None
         """
+
         if not server_config.getboolean("auth", False):
-            return
+            return None
 
         user = server_config.get("user", "").strip()
         password = server_config.get("password", "").strip()
 
-        if len(user) == 0:
+        if not user:
             return
 
         if "AUTHORIZATION" in request.headers:
             if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password, "utf-8").encode():
-                return
+                return None
 
-        log.error("Invalid auth. Username should %s", user)
+        log.error("Invalid authentication. Username should be {}".format(user))
 
         response = Response(request=request, route=route)
         response.set_status(401)
@@ -162,14 +164,13 @@ class Route(object):
 
             func = asyncio.coroutine(func)
 
-            @asyncio.coroutine
-            def control_schema(request):
+            async def control_schema(request):
                 # This block is executed at each method call
                 server_config = Config.instance().get_section_config("Server")
 
                 # Authenticate
                 response = cls.authenticate(request, route, server_config)
-                if response:
+                if response is not None:
                     return response
 
                 try:
@@ -177,12 +178,12 @@ class Route(object):
                     if api_version is None or raw is True:
                         response = Response(request=request, route=route, output_schema=output_schema)
 
-                        request = yield from parse_request(request, None, raw)
-                        yield from func(request, response)
+                        request = await parse_request(request, None, raw)
+                        await func(request, response)
                         return response
 
                     # API call
-                    request = yield from parse_request(request, input_schema, raw)
+                    request = await parse_request(request, input_schema, raw)
                     record_file = server_config.get("record")
                     if record_file:
                         try:
@@ -190,9 +191,9 @@ class Route(object):
                                 f.write("curl -X {} 'http://{}{}' -d '{}'".format(request.method, request.host, request.path_qs, json.dumps(request.json)))
                                 f.write("\n")
                         except OSError as e:
-                            log.warn("Could not write to the record file {}: {}".format(record_file, e))
+                            log.warning("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(request=request, route=route, output_schema=output_schema)
-                    yield from func(request, response)
+                    await func(request, response)
                 except aiohttp.web.HTTPBadRequest as e:
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
@@ -220,11 +221,17 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})
+                    raise  # must raise to let aiohttp know the connection has been closed
                 except aiohttp.ClientError:
-                    log.warn("Client error")
+                    log.warning("Client error")
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Client error", "status": 408})
+                except MemoryError:
+                    log.error("Memory error detected, server has run out of memory!", exc_info=1)
+                    response = Response(request=request, route=route)
+                    response.set_status(500)
+                    response.json({"message": "Memory error", "status": 500})
                 except Exception as e:
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
@@ -241,14 +248,14 @@ class Route(object):
 
                 return response
 
-            @asyncio.coroutine
-            def node_concurrency(request):
+            async def node_concurrency(request):
                 """
                 To avoid strange effect we prevent concurrency
                 between the same instance of the node
+                (excepting when streaming a PCAP file).
                 """
 
-                if "node_id" in request.match_info:
+                if "node_id" in request.match_info and not "pcap" in request.path:
                     node_id = request.match_info.get("node_id")
 
                     if "compute" in request.path:
@@ -259,15 +266,15 @@ class Route(object):
                     cls._node_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
                     cls._node_locks[lock_key]["concurrency"] += 1
 
-                    with (yield from cls._node_locks[lock_key]["lock"]):
-                        response = yield from control_schema(request)
+                    async with cls._node_locks[lock_key]["lock"]:
+                        response = await control_schema(request)
                     cls._node_locks[lock_key]["concurrency"] -= 1
 
                     # No more waiting requests, garbage collect the lock
                     if cls._node_locks[lock_key]["concurrency"] <= 0:
                         del cls._node_locks[lock_key]
                 else:
-                    response = yield from control_schema(request)
+                    response = await control_schema(request)
                 return response
 
             cls._routes.append((method, route, node_concurrency))

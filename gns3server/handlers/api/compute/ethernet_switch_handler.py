@@ -48,19 +48,21 @@ class EthernetSwitchHandler:
         description="Create a new Ethernet switch instance",
         input=ETHERNET_SWITCH_CREATE_SCHEMA,
         output=ETHERNET_SWITCH_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         # Use the Dynamips Ethernet switch to simulate this node
         dynamips_manager = Dynamips.instance()
-        node = yield from dynamips_manager.create_node(request.json.pop("name"),
+        node = await dynamips_manager.create_node(request.json.pop("name"),
                                                        request.match_info["project_id"],
                                                        request.json.get("node_id"),
+                                                       console=request.json.get("console"),
+                                                       console_type=request.json.get("console_type"),
                                                        node_type="ethernet_switch",
                                                        ports=request.json.get("ports_mapping"))
 
         # On Linux, use the generic switch
         # builtin_manager = Builtin.instance()
-        # node = yield from builtin_manager.create_node(request.json.pop("name"),
+        # node = await builtin_manager.create_node(request.json.pop("name"),
         #                                               request.match_info["project_id"],
         #                                               request.json.get("node_id"),
         #                                               node_type="ethernet_switch")
@@ -101,12 +103,10 @@ class EthernetSwitchHandler:
             404: "Instance doesn't exist"
         },
         description="Duplicate an ethernet switch instance")
-    def duplicate(request, response):
+    async def duplicate(request, response):
 
-        new_node = yield from Dynamips.instance().duplicate_node(
-            request.match_info["node_id"],
-            request.json["destination_node_id"]
-        )
+        new_node = await Dynamips.instance().duplicate_node(request.match_info["node_id"],
+                                                            request.json["destination_node_id"])
         response.set_status(201)
         response.json(new_node)
 
@@ -125,15 +125,17 @@ class EthernetSwitchHandler:
         description="Update an Ethernet switch instance",
         input=ETHERNET_SWITCH_UPDATE_SCHEMA,
         output=ETHERNET_SWITCH_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         if "name" in request.json and node.name != request.json["name"]:
-            yield from node.set_name(request.json["name"])
+            await node.set_name(request.json["name"])
         if "ports_mapping" in request.json:
             node.ports_mapping = request.json["ports_mapping"]
-            yield from node.update_port_settings()
+            await node.update_port_settings()
+        if "console_type" in request.json:
+            node.console_type = request.json["console_type"]
 
         # builtin_manager = Builtin.instance()
         # node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -153,10 +155,10 @@ class EthernetSwitchHandler:
             404: "Instance doesn't exist"
         },
         description="Delete an Ethernet switch instance")
-    def delete(request, response):
+    async def delete(request, response):
 
         dynamips_manager = Dynamips.instance()
-        yield from dynamips_manager.delete_node(request.match_info["node_id"])
+        await dynamips_manager.delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -226,17 +228,17 @@ class EthernetSwitchHandler:
         description="Add a NIO to an Ethernet switch instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = yield from dynamips_manager.create_nio(node, request.json)
+        nio = await dynamips_manager.create_nio(node, request.json)
         port_number = int(request.match_info["port_number"])
-        yield from node.add_nio(nio, port_number)
+        await node.add_nio(nio, port_number)
 
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        #nio = yield from builtin_manager.create_nio(request.json["nio"])
+        #nio = await builtin_manager.create_nio(request.json["nio"])
 
         response.set_status(201)
         response.json(nio)
@@ -255,15 +257,15 @@ class EthernetSwitchHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from an Ethernet switch instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        nio = yield from node.remove_nio(port_number)
-        yield from nio.delete()
+        nio = await node.remove_nio(port_number)
+        await nio.delete()
         response.set_status(204)
 
     @Route.post(
@@ -281,7 +283,7 @@ class EthernetSwitchHandler:
         },
         description="Start a packet capture on an Ethernet switch instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -289,7 +291,7 @@ class EthernetSwitchHandler:
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
         pcap_file_path = os.path.join(node.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
+        await node.start_capture(port_number, pcap_file_path, request.json["data_link_type"])
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -306,12 +308,34 @@ class EthernetSwitchHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a packet capture on an Ethernet switch instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         dynamips_manager = Dynamips.instance()
         node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         #builtin_manager = Builtin.instance()
         #node = builtin_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         port_number = int(request.match_info["port_number"])
-        yield from node.stop_capture(port_number)
+        await node.stop_capture(port_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/ethernet_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture (always 0)",
+            "port_number": "Port on the switch"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        node = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        port_number = int(request.match_info["port_number"])
+        nio = node.get_nio(port_number)
+        await dynamips_manager.stream_pcap_file(nio, node.project.id, request, response)

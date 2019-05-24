@@ -8,20 +8,22 @@ POST /v2/projects/load HTTP/1.1
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 509
+Content-Length: 560
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:16:39 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:50:01 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/projects/load
 
 {
     "auto_close": true,
     "auto_open": false,
     "auto_start": false,
+    "drawing_grid_size": 25,
     "filename": "test.gns3",
+    "grid_size": 75,
     "name": "test",
-    "path": "/var/folders/qy/g6blgc5n7y93pzg61zyt7cmr0000gn/T/tmp86igc52s/projects/4ab2077c-0fe8-45f5-a82e-2a8a742b4026",
-    "project_id": "4ab2077c-0fe8-45f5-a82e-2a8a742b4026",
+    "path": "/tmp/tmpy8wy3fkc/projects/207d76b1-f1c6-4885-a95c-e3a0d21d22ab",
+    "project_id": "207d76b1-f1c6-4885-a95c-e3a0d21d22ab",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,
@@ -29,5 +31,7 @@ X-Route: /v2/projects/load
     "show_layers": false,
     "snap_to_grid": false,
     "status": "opened",
+    "supplier": null,
+    "variables": null,
     "zoom": 100
 }

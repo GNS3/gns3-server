@@ -1,19 +1,18 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/0e9631fd-c8b4-4a21-bba1-2fe71d2387e0'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/0e9631fd-c8b4-4a21-bba1-2fe71d2387e0 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 465
+Content-Length: 483
 Content-Type: application/json
-Date: Mon, 08 Jan 2018 08:15:57 GMT
-Server: Python/3.6 GNS3/2.1.2dev1
+Date: Sat, 30 Mar 2019 08:48:52 GMT
+Server: Python/3.6 GNS3/2.2.0dev8
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
 
 {
-    "acpi_shutdown": false,
     "adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
     "adapters": 0,
     "console": 5004,
@@ -22,10 +21,12 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "linked_clone": false,
     "name": "VMTEST",
     "node_directory": null,
-    "node_id": "0e9631fd-c8b4-4a21-bba1-2fe71d2387e0",
+    "node_id": "ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b",
+    "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,
     "status": "stopped",
+    "usage": "",
     "use_any_adapter": false,
     "vmname": "VMTEST"
 }

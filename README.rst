@@ -23,7 +23,7 @@ master is the next stable release, you can test it in your day to day activities
 Bug fixes or small improvements pull requests go here.
 
 2.x (2.1 for example)
-********
+*********************
 Next major release
 
 *Never* use this branch for production. Pull requests for major new features go here.
@@ -100,7 +100,7 @@ All init scripts require the creation of a GNS3 user. You can change it to anoth
     sudo adduser gns3
 
 upstart
-~~~~~~~
+-------
 
 For ubuntu < 15.04
 
@@ -113,7 +113,8 @@ You need to copy init/gns3.conf.upstart to /etc/init/gns3.conf
 
 
 systemd
-~~~~~~~~
+-------
+
 You need to copy init/gns3.service.systemd to /lib/systemd/system/gns3.service
 
 .. code:: bash
@@ -163,14 +164,14 @@ Mac OS X
 
 Please use our DMG package for a simple installation.
 
-If you want to test the current git version or contribute to the project, 
+If you want to test the current git version or contribute to the project,
 you can follow these instructions with virtualenwrapper: http://virtualenvwrapper.readthedocs.org/
 and homebrew: http://brew.sh/.
 
 .. code:: bash
 
    brew install python3
-   mkvirtualenv gns3-server --python=/usr/local/bin/python3.4
+   mkvirtualenv gns3-server --python=/usr/local/bin/python3.5
    python3 setup.py install
    gns3server
 
@@ -218,5 +219,5 @@ If you want test coverage:
 
 Security issues
 ----------------
-Please contact us using contact information available here:
+Please contact us using contact form available here:
 http://docs.gns3.com/1ON9JBXSeR7Nt2-Qum2o3ZX0GU86BZwlmNSUgvmqNWGY/index.html

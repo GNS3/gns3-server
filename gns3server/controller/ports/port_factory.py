@@ -17,6 +17,7 @@
 
 import aiohttp
 
+from gns3server.utils import macaddress_to_int, int_to_macaddress
 from .atm_port import ATMPort
 from .frame_relay_port import FrameRelayPort
 from .gigabitethernet_port import GigabitEthernetPort
@@ -51,7 +52,7 @@ class StandardPortFactory:
     """
     Create ports for standard device
     """
-    def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size):
+    def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size, custom_adapters):
         ports = []
         adapter_number = interface_number = segment_number = 0
 
@@ -61,10 +62,17 @@ class StandardPortFactory:
             ethernet_adapters = properties.get("adapters", 1)
 
         for adapter_number in range(adapter_number, ethernet_adapters + adapter_number):
+
+            custom_adapter_settings = {}
+            for custom_adapter in custom_adapters:
+                if custom_adapter["adapter_number"] == adapter_number:
+                    custom_adapter_settings = custom_adapter
+                    break
+
             for port_number in range(0, port_by_adapter):
                 if first_port_name and adapter_number == 0:
-                    port_name = first_port_name
-                    port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
+                    port_name = custom_adapter_settings.get("port_name", first_port_name)
+                    port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet", short_name=port_name)
                 else:
                     try:
                         port_name = port_name_format.format(
@@ -72,8 +80,10 @@ class StandardPortFactory:
                             segment_number,
                             adapter=adapter_number,
                             **cls._generate_replacement(interface_number, segment_number))
-                    except (ValueError, KeyError) as e:
+                    except (IndexError, ValueError, KeyError) as e:
                         raise aiohttp.web.HTTPConflict(text="Invalid port name format {}: {}".format(port_name_format, str(e)))
+
+                    port_name = custom_adapter_settings.get("port_name", port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
                     interface_number += 1
                     if port_segment_size:
@@ -83,6 +93,11 @@ class StandardPortFactory:
                     else:
                         segment_number += 1
 
+                port.adapter_type = custom_adapter_settings.get("adapter_type", properties.get("adapter_type", None))
+                mac_address = custom_adapter_settings.get("mac_address")
+                if not mac_address and "mac_address" in properties:
+                    mac_address = int_to_macaddress(macaddress_to_int(properties["mac_address"]) + adapter_number)
+                port.mac_address = mac_address
                 ports.append(port)
 
         if len(ports):
@@ -103,6 +118,7 @@ class StandardPortFactory:
         {port0} => {port9}
         {segment0} => {segment9}
         """
+
         replacements = {}
         for i in range(0, 9):
             replacements["port" + str(i)] = interface_number + i
@@ -114,6 +130,7 @@ class DynamipsPortFactory:
     """
     Create port for dynamips devices
     """
+
     ADAPTER_MATRIX = {
         "C1700-MB-1FE": {"nb_ports": 1,
                          "port": FastEthernetPort},
@@ -178,6 +195,7 @@ class DynamipsPortFactory:
                   }
 
     def __new__(cls, properties):
+
         ports = []
 
         adapter_number = 0
@@ -190,7 +208,9 @@ class DynamipsPortFactory:
                 if port_class:
                     for port_number in range(0, cls.ADAPTER_MATRIX[properties[name]]["nb_ports"]):
                         name = "{}{}/{}".format(port_class.long_name_type(), adapter_number, port_number)
-                        ports.append(port_class(name, adapter_number, adapter_number, port_number))
+                        port = port_class(name, adapter_number, adapter_number, port_number)
+                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), adapter_number, port_number)
+                        ports.append(port)
                 adapter_number += 1
             elif name.startswith("wic") and properties[name]:
                 port_class = cls.WIC_MATRIX[properties[name]]["port"]
@@ -198,7 +218,7 @@ class DynamipsPortFactory:
                     for port_number in range(0, cls.WIC_MATRIX[properties[name]]["nb_ports"]):
                         name = "{}{}/{}".format(port_class.long_name_type(), 0, display_wic_port_number)
                         port = port_class(name, 0, 0, wic_port_number)
-                        port.short_name = "{}{}/{}".format(port.short_name_type, 0, display_wic_port_number)
+                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), 0, display_wic_port_number)
                         ports.append(port)
                         display_wic_port_number += 1
                         wic_port_number += 1

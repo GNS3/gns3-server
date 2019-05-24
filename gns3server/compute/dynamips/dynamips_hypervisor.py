@@ -59,8 +59,7 @@ class DynamipsHypervisor:
         self._writer = None
         self._io_lock = asyncio.Lock()
 
-    @asyncio.coroutine
-    def connect(self, timeout=10):
+    async def connect(self, timeout=10):
         """
         Connects to the hypervisor.
         """
@@ -78,9 +77,9 @@ class DynamipsHypervisor:
         connection_success = False
         last_exception = None
         while time.time() - begin < timeout:
-            yield from asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)
             try:
-                self._reader, self._writer = yield from asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=1)
+                self._reader, self._writer = await asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=1)
             except (asyncio.TimeoutError, OSError) as e:
                 last_exception = e
                 continue
@@ -90,16 +89,16 @@ class DynamipsHypervisor:
         if not connection_success:
             raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
         else:
-            log.info("Connected to Dynamips hypervisor after {:.4f} seconds".format(time.time() - begin))
+            log.info("Connected to Dynamips hypervisor on {}:{} after {:.4f} seconds".format(host, self._port, time.time() - begin))
 
         try:
-            version = yield from self.send("hypervisor version")
+            version = await self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
         except IndexError:
             self._version = "Unknown"
 
         # this forces to send the working dir to Dynamips
-        yield from self.set_working_dir(self._working_dir)
+        await self.set_working_dir(self._working_dir)
 
     @property
     def version(self):
@@ -111,45 +110,41 @@ class DynamipsHypervisor:
 
         return self._version
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         """
         Closes the connection to this hypervisor (but leave it running).
         """
 
-        yield from self.send("hypervisor close")
+        await self.send("hypervisor close")
         self._writer.close()
         self._reader, self._writer = None
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         """
         Stops this hypervisor (will no longer run).
         """
 
         try:
             # try to properly stop the hypervisor
-            yield from self.send("hypervisor stop")
+            await self.send("hypervisor stop")
         except DynamipsError:
             pass
         try:
             if self._writer is not None:
-                yield from self._writer.drain()
+                await self._writer.drain()
                 self._writer.close()
         except OSError as e:
             log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
         self._reader = self._writer = None
 
-    @asyncio.coroutine
-    def reset(self):
+    async def reset(self):
         """
         Resets this hypervisor (used to get an empty configuration).
         """
 
-        yield from self.send("hypervisor reset")
+        await self.send("hypervisor reset")
 
-    @asyncio.coroutine
-    def set_working_dir(self, working_dir):
+    async def set_working_dir(self, working_dir):
         """
         Sets the working directory for this hypervisor.
 
@@ -157,7 +152,7 @@ class DynamipsHypervisor:
         """
 
         # encase working_dir in quotes to protect spaces in the path
-        yield from self.send('hypervisor working_dir "{}"'.format(working_dir))
+        await self.send('hypervisor working_dir "{}"'.format(working_dir))
         self._working_dir = working_dir
         log.debug("Working directory set to {}".format(self._working_dir))
 
@@ -221,8 +216,7 @@ class DynamipsHypervisor:
 
         self._host = host
 
-    @asyncio.coroutine
-    def send(self, command):
+    async def send(self, command):
         """
         Sends commands to this hypervisor.
 
@@ -244,7 +238,7 @@ class DynamipsHypervisor:
         # but still have more data. The only thing we know for sure is the last line
         # will begin with '100-' or a '2xx-' and end with '\r\n'
 
-        with (yield from self._io_lock):
+        async with self._io_lock:
             if self._writer is None or self._reader is None:
                 raise DynamipsError("Not connected")
 
@@ -252,7 +246,7 @@ class DynamipsHypervisor:
                 command = command.strip() + '\n'
                 log.debug("sending {}".format(command))
                 self._writer.write(command.encode())
-                yield from self._writer.drain()
+                await self._writer.drain()
             except OSError as e:
                 raise DynamipsError("Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}"
                                     .format(command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()))
@@ -265,8 +259,8 @@ class DynamipsHypervisor:
             while True:
                 try:
                     try:
-                        # line = yield from self._reader.readline()  # this can lead to ValueError: Line is too long
-                        chunk = yield from self._reader.read(1024)  # match to Dynamips' buffer size
+                        # line = await self._reader.readline()  # this can lead to ValueError: Line is too long
+                        chunk = await self._reader.read(1024)  # match to Dynamips' buffer size
                     except asyncio.CancelledError:
                         # task has been canceled but continue to read
                         # any remaining data sent by the hypervisor
@@ -283,7 +277,7 @@ class DynamipsHypervisor:
                                                 .format(host=self._host, port=self._port, run=self.is_running()))
                         else:
                             retries += 1
-                            yield from asyncio.sleep(0.1)
+                            await asyncio.sleep(0.1)
                             continue
                     retries = 0
                     buf += chunk.decode("utf-8", errors="ignore")

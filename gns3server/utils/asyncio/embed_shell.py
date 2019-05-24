@@ -32,8 +32,8 @@ from prompt_toolkit.shortcuts import create_prompt_application, create_asyncio_e
 from prompt_toolkit.terminal.vt100_output import Vt100_Output
 from prompt_toolkit.input import StdinInput
 
-from .telnet_server import AsyncioTelnetServer, TelnetConnection
-from .input_stream import InputStream
+from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer, TelnetConnection
+from gns3server.utils.asyncio.input_stream import InputStream
 
 
 class EmbedShell:
@@ -81,8 +81,7 @@ class EmbedShell:
     def welcome_message(self, welcome_message):
         self._welcome_message = welcome_message
 
-    @asyncio.coroutine
-    def help(self, *args):
+    async def help(self, *args):
         """
         Show help
         """
@@ -105,8 +104,7 @@ class EmbedShell:
             res += '\nhelp command for details about a command\n'
         return res
 
-    @asyncio.coroutine
-    def _parse_command(self, text):
+    async def _parse_command(self, text):
         cmd = text.split(' ')
         found = False
         if cmd[0] == '?':
@@ -119,22 +117,21 @@ class EmbedShell:
         for (name, meth) in inspect.getmembers(self):
             if name == cmd[0]:
                 cmd.pop(0)
-                res = yield from meth(*cmd)
+                res = await meth(*cmd)
                 found = True
                 break
         if not found:
-            res = ('Command not found {}\n'.format(cmd[0]) + (yield from self.help()))
+            res = ('Command not found {}\n'.format(cmd[0]) + (await self.help()))
         return res
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         if self._welcome_message:
             self._writer.feed_data(self._welcome_message.encode())
         while True:
             self._writer.feed_data(self._prompt.encode())
-            result = yield from self._reader.readline()
+            result = await self._reader.readline()
             result = result.decode().strip('\n')
-            res = yield from self._parse_command(result)
+            res = await self._parse_command(result)
             self._writer.feed_data(res.encode())
 
     def get_commands(self):
@@ -198,8 +195,8 @@ class UnstoppableEventLoop(EventLoop):
 
 
 class ShellConnection(TelnetConnection):
-    def __init__(self, reader, writer, shell, loop):
-        super(ShellConnection, self).__init__(reader, writer)
+    def __init__(self, reader, writer, shell, window_size_changed_callback, loop):
+        super(ShellConnection, self).__init__(reader, writer, window_size_changed_callback)
         self._shell = shell
         self._loop = loop
         self._cli = None
@@ -208,8 +205,7 @@ class ShellConnection(TelnetConnection):
         self.encoding = 'utf-8'
 
 
-    @asyncio.coroutine
-    def connected(self):
+    async def connected(self):
         # prompt_toolkit internally checks if it's on windows during output rendering but
         # we need to force that we use Vt100_Output not Win32_Output
         from prompt_toolkit import renderer
@@ -235,16 +231,17 @@ class ShellConnection(TelnetConnection):
 
         self._cli._redraw()
 
-    @asyncio.coroutine
-    def disconnected(self):
+    async def disconnected(self):
         pass
 
+    @asyncio.coroutine
     def window_size_changed(self, columns, rows):
         self._size = Size(rows=rows, columns=columns)
         self._cb.terminal_size_changed()
+        if self._window_size_changed_callback:
+            yield from self._window_size_changed_callback(columns, rows)
 
-    @asyncio.coroutine
-    def feed(self, data):
+    async def feed(self, data):
         data = data.decode()
         self._inputstream.feed(data)
         self._cli._redraw()
@@ -260,7 +257,7 @@ class ShellConnection(TelnetConnection):
 
             command = returned_value.text
 
-            res = yield from self._shell._parse_command(command)
+            res = await self._shell._parse_command(command)
             self.send(res.encode())
             self.reset()
 
@@ -291,8 +288,8 @@ def create_telnet_shell(shell, loop=None):
     if loop is None:
         loop = asyncio.get_event_loop()
 
-    def factory(reader, writer):
-        return ShellConnection(reader, writer, shell, loop)
+    def factory(reader, writer, window_size_changed_callback):
+        return ShellConnection(reader, writer, shell, window_size_changed_callback, loop)
 
     return AsyncioTelnetServer(binary=True, echo=True, naws=True, connection_factory=factory)
 
@@ -305,20 +302,18 @@ def create_stdin_shell(shell, loop=None):
     :param loop: The event loop
     :returns: Telnet server
     """
-    @asyncio.coroutine
-    def feed_stdin(loop, reader, shell):
+    async def feed_stdin(loop, reader, shell):
         history = InMemoryHistory()
         completer = WordCompleter([name for name, _ in shell.get_commands()], ignore_case=True)
         while True:
-            line = yield from prompt(
+            line = await prompt(
                 ">", patch_stdout=True, return_asyncio_coroutine=True, history=history, completer=completer)
             line += '\n'
             reader.feed_data(line.encode())
 
-    @asyncio.coroutine
-    def read_stdout(writer):
+    async def read_stdout(writer):
         while True:
-            c = yield from writer.read(1)
+            c = await writer.read(1)
             print(c.decode(), end='')
             sys.stdout.flush()
 
@@ -339,22 +334,20 @@ if __name__ == '__main__':
 
     class Demo(EmbedShell):
 
-        @asyncio.coroutine
-        def hello(self, *args):
+        async def hello(self, *args):
             """
             Hello world
 
             This command accept arguments: hello tutu will display tutu
             """
-            @asyncio.coroutine
-            def world():
-                yield from asyncio.sleep(2)
+            async def world():
+                await asyncio.sleep(2)
                 if len(args):
                     return ' '.join(args)
                 else:
                     return 'world\n'
 
-            return (yield from world())
+            return await world()
 
     # Demo using telnet
     shell = Demo(welcome_message="Welcome!\n")

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 import io
 import struct
 from xml.etree.ElementTree import ElementTree, ParseError
@@ -103,19 +104,34 @@ def get_size(data, default_width=0, default_height=0):
         root = tree.getroot()
 
         try:
-            width = _svg_convert_size(root.attrib.get("width", "0"))
-            height = _svg_convert_size(root.attrib.get("height", "0"))
-        except IndexError:
-            raise ValueError("Invalid SVG file")
+            width_attr = root.attrib.get("width", "100%")
+            height_attr = root.attrib.get("height", "100%")
+            if width_attr.endswith("%") or height_attr.endswith("%"):
+                # check to viewBox attribute if width or height value is a percentage
+                viewbox = root.attrib.get("viewBox")
+                if not viewbox:
+                    raise ValueError("Invalid SVG file: missing viewBox attribute")
+                _, _, viewbox_width, viewbox_height = re.split(r'[\s,]+', viewbox)
+            if width_attr.endswith("%"):
+                width = _svg_convert_size(viewbox_width, width_attr)
+            else:
+                width = _svg_convert_size(width_attr)
+            if height_attr.endswith("%"):
+                height = _svg_convert_size(viewbox_height, height_attr)
+            else:
+                height = _svg_convert_size(height_attr)
+        except (AttributeError, IndexError) as e:
+            raise ValueError("Invalid SVG file: {}".format(e))
 
     return width, height, filetype
 
 
-def _svg_convert_size(size):
+def _svg_convert_size(size, percent=None):
     """
     Convert svg size to the px version
 
     :param size: String with the size
+    :param percent: String with the percentage, None = 100%
     """
 
     # https://www.w3.org/TR/SVG/coords.html#Units
@@ -127,8 +143,11 @@ def _svg_convert_size(size):
         "in": 90,
         "px": 1
     }
-    if len(size) > 3:
+    factor = 1.0
+    if len(size) >= 3:
         if size[-2:] in conversion_table:
-            return round(float(size[:-2]) * conversion_table[size[-2:]])
-
-    return round(float(size))
+            factor = conversion_table[size[-2:]]
+            size = size[:-2]
+    if percent:
+        factor *= float(percent.rstrip("%")) / 100.0
+    return round(float(size) * factor)

@@ -83,7 +83,7 @@ def list_images(type):
                                 "md5sum": md5sum(os.path.join(root, filename)),
                                 "filesize": os.stat(os.path.join(root, filename)).st_size})
                         except OSError as e:
-                            log.warn("Can't add image {}: {}".format(path, str(e)))
+                            log.warning("Can't add image {}: {}".format(path, str(e)))
     return images
 
 
@@ -139,15 +139,17 @@ def images_directories(type):
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
     paths.append(img_dir)
-    # Return only the existings paths
+    # Return only the existing paths
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
-def md5sum(path):
+def md5sum(path, stopped_event=None):
     """
     Return the md5sum of an image and cache it on disk
 
     :param path: Path to the image
+    :param stopped_event: In case you execute this function on thread and would like to have possibility
+                          to cancel operation pass the `threading.Event`
     :returns: Digest of the image
     """
 
@@ -156,7 +158,7 @@ def md5sum(path):
 
     try:
         with open(path + '.md5sum') as f:
-            md5 = f.read()
+            md5 = f.read().strip()
             if len(md5) == 32:
                 return md5
     # Unicode error is when user rename an image to .md5sum ....
@@ -167,6 +169,9 @@ def md5sum(path):
         m = hashlib.md5()
         with open(path, 'rb') as f:
             while True:
+                if stopped_event is not None and stopped_event.is_set():
+                    log.error("MD5 sum calculation of `{}` has stopped due to cancellation".format(path))
+                    return
                 buf = f.read(128)
                 if not buf:
                     break

@@ -49,15 +49,16 @@ class VMwareHandler:
         description="Create a new VMware VM instance",
         input=VMWARE_CREATE_SCHEMA,
         output=VMWARE_OBJECT_SCHEMA)
-    def create(request, response):
+    async def create(request, response):
 
         vmware_manager = VMware.instance()
-        vm = yield from vmware_manager.create_node(request.json.pop("name"),
+        vm = await vmware_manager.create_node(request.json.pop("name"),
                                                    request.match_info["project_id"],
                                                    request.json.get("node_id"),
                                                    request.json.pop("vmx_path"),
                                                    linked_clone=request.json.pop("linked_clone"),
-                                                   console=request.json.get("console", None))
+                                                   console=request.json.get("console", None),
+                                                   console_type=request.json.get("console_type", "telnet"))
 
         for name, value in request.json.items():
             if name != "node_id":
@@ -105,7 +106,8 @@ class VMwareHandler:
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-
+        # update the console first to avoid issue if updating console type
+        vm.console = request.json.pop("console", vm.console)
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
@@ -125,11 +127,11 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Delete a VMware VM instance")
-    def delete(request, response):
+    async def delete(request, response):
 
         # check the project_id exists
         ProjectManager.instance().get_project(request.match_info["project_id"])
-        yield from VMware.instance().delete_node(request.match_info["node_id"])
+        await VMware.instance().delete_node(request.match_info["node_id"])
         response.set_status(204)
 
     @Route.post(
@@ -144,7 +146,7 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Start a VMware VM instance")
-    def start(request, response):
+    async def start(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -152,7 +154,7 @@ class VMwareHandler:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
                 raise HTTPConflict(text="Cannot start VM because hardware virtualization (VT-x/AMD-V) is already used by another software like VirtualBox or KVM (on Linux)")
-        yield from vm.start()
+        await vm.start()
         response.set_status(204)
 
     @Route.post(
@@ -167,11 +169,11 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Stop a VMware VM instance")
-    def stop(request, response):
+    async def stop(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.stop()
+        await vm.stop()
         response.set_status(204)
 
     @Route.post(
@@ -186,11 +188,11 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Suspend a VMware VM instance")
-    def suspend(request, response):
+    async def suspend(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.suspend()
+        await vm.suspend()
         response.set_status(204)
 
     @Route.post(
@@ -205,11 +207,11 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Resume a suspended VMware VM instance")
-    def resume(request, response):
+    async def resume(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.resume()
+        await vm.resume()
         response.set_status(204)
 
     @Route.post(
@@ -224,11 +226,11 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Reload a VMware VM instance")
-    def reload(request, response):
+    async def reload(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.reload()
+        await vm.reload()
         response.set_status(204)
 
     @Route.post(
@@ -247,7 +249,7 @@ class VMwareHandler:
         description="Add a NIO to a VMware VM instance",
         input=NIO_SCHEMA,
         output=NIO_SCHEMA)
-    def create_nio(request, response):
+    async def create_nio(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -255,7 +257,7 @@ class VMwareHandler:
         if nio_type not in ("nio_udp", "nio_vmnet", "nio_nat", "nio_tap"):
             raise HTTPConflict(text="NIO of type {} is not supported".format(nio_type))
         nio = vmware_manager.create_nio(request.json)
-        yield from vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
+        await vm.adapter_add_nio_binding(int(request.match_info["adapter_number"]), nio)
         response.set_status(201)
         response.json(nio)
 
@@ -274,17 +276,18 @@ class VMwareHandler:
         },
         input=NIO_SCHEMA,
         output=NIO_SCHEMA,
-        description="Update a NIO from a Virtualbox instance")
-    def update_nio(request, response):
+        description="Update a NIO on a VMware VM instance")
+    async def update_nio(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        nio = vm.ethernet_adapters[int(request.match_info["adapter_number"])]
-        if "filters" in request.json and nio:
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = vm.get_nio(adapter_number)
+        if "filters" in request.json:
             nio.filters = request.json["filters"]
-            yield from vm.adapter_update_nio_binding(int(request.match_info["adapter_number"]), nio)
-            response.set_status(201)
-            response.json(request.json)
+        await vm.adapter_update_nio_binding(adapter_number, nio)
+        response.set_status(201)
+        response.json(request.json)
 
     @Route.delete(
         r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio",
@@ -300,11 +303,12 @@ class VMwareHandler:
             404: "Instance doesn't exist"
         },
         description="Remove a NIO from a VMware VM instance")
-    def delete_nio(request, response):
+    async def delete_nio(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-        yield from vm.adapter_remove_nio_binding(int(request.match_info["adapter_number"]))
+        adapter_number = int(request.match_info["adapter_number"])
+        await vm.adapter_remove_nio_binding(adapter_number)
         response.set_status(204)
 
     @Route.post(
@@ -322,13 +326,13 @@ class VMwareHandler:
         },
         description="Start a packet capture on a VMware VM instance",
         input=NODE_CAPTURE_SCHEMA)
-    def start_capture(request, response):
+    async def start_capture(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
         pcap_file_path = os.path.join(vm.project.capture_working_directory(), request.json["capture_file_name"])
-        yield from vm.start_capture(adapter_number, pcap_file_path)
+        await vm.start_capture(adapter_number, pcap_file_path)
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
@@ -345,13 +349,35 @@ class VMwareHandler:
             404: "Instance doesn't exist",
         },
         description="Stop a packet capture on a VMware VM instance")
-    def stop_capture(request, response):
+    async def stop_capture(request, response):
 
         vmware_manager = VMware.instance()
         vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         adapter_number = int(request.match_info["adapter_number"])
-        yield from vm.stop_capture(adapter_number)
+        await vm.stop_capture(adapter_number)
         response.set_status(204)
+
+    @Route.get(
+        r"/projects/{project_id}/vmware/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        description="Stream the pcap capture file",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+            "adapter_number": "Adapter to steam a packet capture",
+            "port_number": "Port on the adapter (always 0)"
+        },
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def stream_pcap_file(request, response):
+
+        vmware_manager = VMware.instance()
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        adapter_number = int(request.match_info["adapter_number"])
+        nio = vm.get_nio(adapter_number)
+        await vmware_manager.stream_pcap_file(nio, vm.project.id, request, response)
 
     @Route.post(
         r"/projects/{project_id}/vmware/nodes/{node_id}/interfaces/vmnet",
@@ -379,7 +405,7 @@ class VMwareHandler:
             200: "Success",
         },
         description="Get all VMware VMs available")
-    def get_vms(request, response):
+    async def get_vms(request, response):
         vmware_manager = VMware.instance()
-        vms = yield from vmware_manager.list_vms()
+        vms = await vmware_manager.list_vms()
         response.json(vms)

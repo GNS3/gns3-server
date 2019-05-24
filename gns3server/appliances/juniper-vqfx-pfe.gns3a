@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "cosim_20180212.qcow2",
+            "version": "17.4R1",
+            "md5sum": "0372e9c1b7df3608099186ab8cbbf2ad",
+            "filesize": 1911291904,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+        },
+        {
             "filename": "vqfx10k-pfe-20160609-2.vmdk",
             "version": "15.1X53-D60",
             "md5sum": "faa6905fd8e935c6e97859191143e8c3",
@@ -33,6 +40,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.4R1",
+            "images": {
+                "hda_disk_image": "cosim_20180212.qcow2"
+            }
+        },
         {
             "name": "15.1X53-D60",
             "images": {

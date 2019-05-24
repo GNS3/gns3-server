@@ -31,8 +31,8 @@ def web_server():
 
 
 def test_shutdown_local(http_controller, web_server, config):
-    @asyncio.coroutine
-    def hello():
+
+    async def hello():
         return 0
 
     web_server.shutdown_server.return_value = hello()
