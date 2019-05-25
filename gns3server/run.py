@@ -101,6 +101,9 @@ def parse_arguments(argv):
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
     parser.add_argument("--log", help="send output to logfile instead of console")
+    parser.add_argument("--logmaxsize", help="maximum logfile size in bytes (default is 1GB)")
+    parser.add_argument("--logbackupcount", help="number of historical log files to keep (default is 10)")
+    parser.add_argument("--logcompression", action="store_true", help="compress inactive (historical) logs")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
     parser.add_argument("--pid", help="store process pid")
     parser.add_argument("--profile", help="Settings profile (blank will use default settings files)")
@@ -123,7 +126,10 @@ def parse_arguments(argv):
         "allow": config.getboolean("allow_remote_console", False),
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
-        "logfile": config.getboolean("logfile", "")
+        "logfile": config.getboolean("logfile", ""),
+        "logmaxsize": config.get("logfile", 1000000000),  # default is 1GB
+        "logbackupcount": config.get("logbackupcount", 10),
+        "logcompression": config.getboolean("logcompression", False)
     }
 
     parser.set_defaults(**defaults)
@@ -208,7 +214,8 @@ def run():
     if args.debug:
         level = logging.DEBUG
 
-    user_log = init_logger(level, logfile=args.log, quiet=args.quiet)
+    user_log = init_logger(level, logfile=args.log, max_bytes=int(args.logmaxsize), backup_count=int(args.logbackupcount),
+                           compression=args.logcompression, quiet=args.quiet)
     user_log.info("GNS3 server version {}".format(__version__))
     current_year = datetime.date.today().year
     user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
