@@ -101,7 +101,7 @@ def parse_arguments(argv):
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
     parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
     parser.add_argument("--log", help="send output to logfile instead of console")
-    parser.add_argument("--logmaxsize", help="maximum logfile size in bytes (default is 1GB)")
+    parser.add_argument("--logmaxsize", help="maximum logfile size in bytes (default is 10MB)")
     parser.add_argument("--logbackupcount", help="number of historical log files to keep (default is 10)")
     parser.add_argument("--logcompression", action="store_true", help="compress inactive (historical) logs")
     parser.add_argument("--daemon", action="store_true", help="start as a daemon")
@@ -127,7 +127,7 @@ def parse_arguments(argv):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "logfile": config.getboolean("logfile", ""),
-        "logmaxsize": config.get("logfile", 1000000000),  # default is 1GB
+        "logmaxsize": config.get("logfile", 10000000),  # default is 10MB
         "logbackupcount": config.get("logbackupcount", 10),
         "logcompression": config.getboolean("logcompression", False)
     }
