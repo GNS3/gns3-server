@@ -972,7 +972,8 @@ class QemuVM(BaseNode):
                 await self._control_vm_commands(set_link_commands)
 
         try:
-            await self.start_wrap_console()
+            if self.is_running():
+                await self.start_wrap_console()
         except OSError as e:
             raise QemuError("Could not start Telnet QEMU console {}\n".format(e))
 
