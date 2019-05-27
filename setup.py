@@ -49,11 +49,6 @@ setup(
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.rst", "r").read(),
-    setup_requires=[
-        # Environment markers were implemented and stabilized in setuptools
-        # v20.8.1 (see <http://stackoverflow.com/a/32643122/391865>).
-        "setuptools>=20.8.1"
-    ],
     install_requires=dependencies,
     entry_points={
         "console_scripts": [
