@@ -127,7 +127,7 @@ def parse_arguments(argv):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "logfile": config.getboolean("logfile", ""),
-        "logmaxsize": config.get("logfile", 10000000),  # default is 10MB
+        "logmaxsize": config.get("logmaxsize", 10000000),  # default is 10MB
         "logbackupcount": config.get("logbackupcount", 10),
         "logcompression": config.getboolean("logcompression", False)
     }

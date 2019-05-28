@@ -138,7 +138,7 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
         self.stream = self._open()
 
 
-def init_logger(level, logfile=None, max_bytes=1000000000, backup_count=10, compression=True, quiet=False):
+def init_logger(level, logfile=None, max_bytes=10000000, backup_count=10, compression=True, quiet=False):
     if logfile and len(logfile) > 0:
         if compression:
             stream_handler = CompressedRotatingFileHandler(logfile, maxBytes=max_bytes, backupCount=backup_count)
