@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.1.19 28/05/2019
+
+* Sync appliances.
+* Remove yarl from requirements.txt since it is installed by aiohttp.
+* Drop typing dependency.
+
 ## 2.1.18 22/05/2019
 
 * Revert "Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3" Ref https://github.com/GNS3/gns3-server/issues/1583 Ref https://github.com/GNS3/gns3-server/issues/1592
