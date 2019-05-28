@@ -1,0 +1,53 @@
+{
+    "name": "ParrotOS",
+    "category": "guest",
+    "description": " Parrot is a GNU/Linux distribution based on Debian Testing and designed with Security, Development and Privacy in mind.  It includes a full portable laboratory for security and digital forensics experts, but it also includes all you need to develop your own software or protect your privacy while surfing the net.",
+    "vendor_name": "Parrot Project",
+    "vendor_url": "https://parrotsec.org/",
+    "documentation_url": "https://docs.parrotsec.org/doku.php",
+    "product_name": "ParrotOS",
+    "product_url": "https://parrotsec.org/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Brent Stewart",
+    "maintainer_email": "brent@stewart.tc",
+    "usage": "Passwords are set during installation.",
+    "symbol": "parrotlogo.png",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "Parrot-security-3.11_amd64.iso",
+            "version": "Security Build 3.11",
+            "md5sum": "71c94474fb474f682da0844d95f0040b",
+            "filesize": 3788668928,
+            "download_url": "https://www.parrotsec.org/download.fx",
+            "direct_download_url": "https://www.parrotsec.org/download-full.fx"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    
+    ],
+    "versions": [
+        {
+            "name": "Security Build 3.11",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "Parrot-security-3.11_amd64.iso"
+            }
+        }
+        
+]
+}

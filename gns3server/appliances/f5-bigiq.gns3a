@@ -30,6 +30,13 @@
     },
     "images": [
         {
+            "filename": "BIG-IQ-6.0.1.1.0.0.9.qcow2",
+            "version": "6.0.1.1",
+            "md5sum": "3ae32308fe39d5db555f7f1cdcc734dd",
+            "filesize": 3895787520,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/6.0.1/english/v6.0.1.1/&sw=BIG-IQ&pro=big-iq_CM&ver=6.0.1&container=v6.0.1.1&file=BIG-IQ-6.0.1.1.0.0.9.qcow2.zip"
+        },
+        {
             "filename": "BIG-IQ-5.4.0.2.24.7467.qcow2",
             "version": "5.4.0.2",
             "md5sum": "e3e6389438ba1e1676f507658f767e95",
@@ -88,6 +95,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.0.1.1",
+            "images": {
+                "hda_disk_image": "BIG-IQ-6.0.1.1.0.0.9.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "5.4.0.2",
             "images": {

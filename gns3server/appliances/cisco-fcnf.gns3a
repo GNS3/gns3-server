@@ -1,0 +1,70 @@
+{
+    "name": "Cisco Flow Collector for NetFlow",
+    "category": "firewall",
+    "description": "Cisco Stealthwatch is the most comprehensive visibility and network traffic security analytics solution that uses enterprise telemetry from the existing network infrastructure. It provides advanced threat detection, accelerated threat response, and simplified network segmentation using multilayer machine learning and entity modeling. With advanced behavioral analytics, you’ll always know who is on your network and what they are doing.\n\nAt the heart of the Stealthwatch System is the highly scalable Stealthwatch Flow Collector. The Flow Collector is available as either a physical or a virtual appliance. The Flow Collector VE performs the same functions as its physical counterpart, but in a virtual environment. The Stealthwatch Flow Collector for NetFlow gathers NetFlow, cFlow, J-Flow, Packeteer 2, NetStream, and IPFIX data. To achieve full network visibility with a traditional probe-based approach, you would need to install a probe for each router or switch on your network. This results in many costly hardware installations. Conversely, Stealthwatch’s flow-based approach provides you with full network visibility at a fraction of the cost. Each Flow Collector can process data for as many as 1,000,000 hosts from up to 2,000 flow exporters, depending on the Flow Collector model and license restrictions. ",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://www.cisco.com/c/en/us/support/security/stealthwatch/tsd-products-support-series-home.html",
+    "product_name": "Flow Collector for NetFlow",
+    "product_url": "https://www.cisco.com/c/en/us/products/security/stealthwatch/index.html",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Starting Flow Collector for NetFlow will start an installation of FCNF onto a blank 200GB Drive.\nDefault console username/password: sysadmin/lan1cope.\nDefault web username/password: admin/lan411cope.",
+    "symbol": ":/symbols/asa.svg",
+    "first_port_name": "eth0",
+	"port_name_format": "eth{port1}",
+    "qemu": {
+        "cpus": 2,
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 8192,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": ""
+    },
+    "images": [
+        {
+            "filename": "FlowCollector-NetFlow-6.10.4-2018.11.14.1757-0.iso",
+            "version": "6.10.4-2018.11.14.1757-0",
+            "md5sum": "accd9fb9dd2d312805883749899a2fc0",
+            "filesize": 2479288320,
+            "download_url": "https://stealthwatch.flexnetoperations.com/control/lncp/product?child_plneID=786407"
+        },
+        {
+            "filename": "FlowCollector-NetFlow-6.10.2-2018.03.19.2230-0.iso",
+            "version": "6.10.2-2018.03.19.2230-0",
+            "md5sum": "e2ac83fa617ed9e073e845cedae76873",
+            "filesize": 2430076928,
+            "download_url": "https://software.cisco.com/download/home/286307342/type/286307754/release/6.10.2"
+        },
+        {
+            "filename": "empty200G.qcow2",
+            "version": "1.0",
+            "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+            "filesize": 200192,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "6.10.4-2018.11.14.1757-0",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "FlowCollector-NetFlow-6.10.4-2018.11.14.1757-0.iso"
+            }
+        },
+        {
+            "name": "6.10.2-2018.03.19.2230-0",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "FlowCollector-NetFlow-6.10.2-2018.03.19.2230-0.iso"
+            }
+        }
+    ]
+}

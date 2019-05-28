@@ -1,0 +1,53 @@
+{
+    "name": "ArubaOS-CX Simulation Software",
+    "category": "multilayer_switch",
+    "status": "stable",
+    "product_name": "ArubaOS-CX Simulation Software",
+    "description": "The ArubaOS-CX Simulation Software OVA is a virtual platform to enable simulation of the ArubaOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF and BGP. Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network. This software can be easily implemented in the GNS3 simulation software to enable drag and drop network design for building complex simulated topologies.",
+    "maintainer_email": "alloytm@gmail.com",
+    "vendor_url": "arubanetworks.com",
+    "vendor_name": "HPE Aruba",
+    "availability": "service-contract",
+    "maintainer": "Tak Mem Loy",
+    "registry_version": 4,
+    "usage": "Default username admin with blank password.",
+    "symbol": ":/symbols/route_switch_processor.svg",
+    "first_port_name": "mgmt",
+    "port_name_format": "1/1/{0}",
+
+    "qemu": {
+        "arch": "x86_64",
+        "ram": 4096,
+        "adapters": 8,
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "hda_disk_interface": "ide",
+        "cpus": 2,
+        "kvm": "require",
+        "adapter_type": "virtio-net-pci",
+        "console_type": "vnc",
+        "options": "-nographic",
+        "process_priority": "normal"
+    },   
+
+    "images": [
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20180712161119.vmdk",
+            "version": "10.01.0001",
+            "md5sum": "9146ae0ac650d8206c9600e03753f022",
+            "filesize": 287734784,
+            "download_url": "http://support.arubanetworks.com/"
+        }
+
+    ],
+
+    "versions": [
+        {
+            "name": "10.01.0001",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20180712161119.vmdk"
+            }
+        }
+    ]    
+    
+}

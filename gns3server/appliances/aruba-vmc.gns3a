@@ -1,0 +1,56 @@
+{
+    "versions": [
+        {
+            "name": "8.2.1.1",
+            "images": {
+                "hda_disk_image": "ArubaOS_VMC_8.2.1.1_65265-disk1.qcow2",
+                "hdb_disk_image": "ArubaOS_VMC_8.2.1.1_65265-disk2.qcow2"
+            }
+        }
+    ],
+    "status": "stable",
+    "name": "Aruba VMC",
+    "product_name": "Aruba VMC",
+    "maintainer_email": "gary.ossewaarde@gmail.com",
+    "vendor_url": "arubanetworks.com",
+    "vendor_name": "HPE Aruba",
+    "images": [
+        {
+            "filename": "ArubaOS_VMC_8.2.1.1_65265-disk1.qcow2",
+            "version": "8.2.1.1",
+            "md5sum": "f3bc233f0714e4b1cc127e337d077574",
+            "filesize": 197066752,
+            "download_url": "http://support.arubanetworks.com/"
+        },
+        {
+            "filename": "ArubaOS_VMC_8.2.1.1_65265-disk2.qcow2",
+            "version": "8.2.1.1",
+            "md5sum": "18ede2afc7595fdac4508a8a3972e302",
+            "filesize": 19202048,
+            "download_url": "http://support.arubanetworks.com/"
+        }
+
+    ],
+    "port_name_format": "GE0/0/{0}",
+    "qemu": {
+        "arch": "x86_64",
+        "ram": 6144,
+        "adapters": 4,
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "hda_disk_interface": "ide",
+        "cpus": 3,
+        "kvm": "require",
+        "kernel_command_line": "-smp cores=3,threads=1,sockets=1 -cpu host -nographic",
+        "adapter_type": "e1000",
+        "console_type": "vnc",
+        "options": "-smp cores=3,threads=1,sockets=1 -cpu host -nographic",
+        "process_priority": "normal"
+    },
+    "availability": "service-contract",
+    "category": "guest",
+    "maintainer": "Gary Ossewaarde",
+    "description": "Aruba Virtual Mobility Controller",
+    "first_port_name": "mgmt",
+    "registry_version": 4
+}

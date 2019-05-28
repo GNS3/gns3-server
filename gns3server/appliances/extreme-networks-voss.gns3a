@@ -11,7 +11,7 @@
     "maintainer": "Extreme Networks",
     "maintainer_email": "voss@extremenetworks.com",
     "usage": "Boot up and login is rwa/rwa",
-    "symbol": "ethernet_switch.svg",
+    "symbol": ":/symbols/multilayer_switch.svg",
     "first_port_name": "Mgmt",
     "port_name_format": "1/{port1}",
     "qemu":

@@ -33,6 +33,13 @@
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
         },
         {
+            "filename": "vFPC-20180126.img",
+            "version": "17.3R2.10-KVM",
+            "md5sum": "02d6b719053485c52a511fe6f5a598e3",
+            "filesize": 2313158656,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
             "filename": "vfpc_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
             "md5sum": "169dd487b8547d58b12b2918a5667360",
@@ -137,6 +144,12 @@
             "name": "17.4R1.16-KVM",
             "images": {
                 "hda_disk_image": "vFPC-20171213.img"
+            }
+        },
+        {
+            "name": "17.3R2.10-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20180126.img"
             }
         },
         {

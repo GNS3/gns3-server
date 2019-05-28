@@ -44,6 +44,24 @@
             "filesize": 16777216
         },
         {
+            "filename": "junos-vmx-x86-64-17.3R2.10.qcow2",
+            "version": "17.3R2.10-KVM",
+            "md5sum": "11984eb87b471e8cc2677212c4277959",
+            "filesize": 1298137088
+        },
+        {
+            "filename": "vmxhdd-17.3R2.10.img",
+            "version": "17.3R2.10-KVM",
+            "md5sum": "9d843e5493d5e86d37853a72885d84c8",
+            "filesize": 108986368
+        },
+        {
+            "filename": "metadata-usb-re-17.3R2.10.img",
+            "version": "17.3R2.10-KVM",
+            "md5sum": "564ca5b7c03ed39680d2d42464d9489b",
+            "filesize": 16777216
+        },
+        {
             "filename": "vcp_17.1R1.8-disk1.vmdk",
             "version": "17.1R1.8-ESXi",
             "md5sum": "2dba6dff363c0619903f85c3dedce8d8",
@@ -306,6 +324,14 @@
                 "hda_disk_image": "junos-vmx-x86-64-17.4R1.16.qcow2",
                 "hdb_disk_image": "vmxhdd-17.4R1.16.img",
                 "hdc_disk_image": "metadata-usb-re-17.4R1.16.img"
+            }
+        },
+        {
+            "name": "17.3R2.10-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-17.3R2.10.qcow2",
+                "hdb_disk_image": "vmxhdd-17.3R2.10.img",
+                "hdc_disk_image": "metadata-usb-re-17.3R2.10.img"
             }
         },
         {

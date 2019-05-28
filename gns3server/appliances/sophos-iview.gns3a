@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "VI-SIVOS_03.01.2.KVM-009-PRIMARY.qcow2",
+            "version": "3.1.2",
+            "md5sum": "62551f70f71e08283d3a23929321eba9",
+            "filesize": 644218880,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
             "filename": "VI-SIVOS_02.00.0_MR-2.KVM-776-PRIMARY.qcow2",
             "version": "2.0.0 MR2",
             "md5sum": "d78c6f0c42186a4c606d7e57f2f3a6d7",
@@ -32,7 +39,7 @@
             "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
         },
         {
-            "filename": "VI-SIVOS_02.00.0_MR-2.KVM-776-AUXILARY.qcow2",
+            "filename": "VI-SIVOS-AUXILARY.qcow2",
             "version": "2.0.0 MR2",
             "md5sum": "a52d8cedb1ccd4b5b9f2723dfb41588b",
             "filesize": 204800,
@@ -41,10 +48,17 @@
     ],
     "versions": [
         {
+            "name": "3.1.2",
+            "images": {
+                "hda_disk_image": "VI-SIVOS_03.01.2.KVM-009-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-SIVOS-AUXILARY.qcow2"
+            }
+        },
+        {
             "name": "2.0.0 MR2",
             "images": {
                 "hda_disk_image": "VI-SIVOS_02.00.0_MR-2.KVM-776-PRIMARY.qcow2",
-                "hdb_disk_image": "VI-SIVOS_02.00.0_MR-2.KVM-776-AUXILARY.qcow2"
+                "hdb_disk_image": "VI-SIVOS-AUXILARY.qcow2"
             }
         }
     ]
