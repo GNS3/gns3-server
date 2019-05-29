@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.0b2 29/05/2019
+
+* Ignore Unicode errors when reading base config file contents.
+* Sync appliances.
+* Support snapshots for portable projects. Fixes https://github.com/GNS3/gns3-gui/issues/2792
+* Update the GNS3 version in topology file if converted. Ref https://github.com/GNS3/gns3-gui/issues/2798
+* Support for log rotation and compression. Fixes #1586
+* Do not start QEMU console if QEMU process is not started. Fixes https://github.com/GNS3/gns3-gui/issues/2712
+* Avoid sending warning message all the time for Ethernet switch.
+* Support to include snapshots in portable projects.
+
 ## 2.1.20 29/05/2019
 
 * Ignore Unicode errors when reading base config file contents.
