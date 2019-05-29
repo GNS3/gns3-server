@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.20 29/05/2019
+
+* Ignore Unicode errors when reading base config file contents.
+
 ## 2.1.19 28/05/2019
 
 * Sync appliances.
