@@ -28,6 +28,22 @@
     "images": [
 
         {
+            "filename": "CentOS 7-18.10 (64bit).vmdk",
+            "version": "7-1810",
+            "md5sum": "7307e143c11910f3c782b1e013e6f14f",
+            "filesize": 4886233088,
+            "download_url": "http://www.osboxes.org/centos/"
+        },
+
+        {
+            "filename": "CentOS 7-1804 (64bit).vmdk",
+            "version": "7-1804",
+            "md5sum": "eae8dc48bb390c0c2d9a9a0432ced9bc",
+            "filesize": 4701356032,
+            "download_url": "http://www.osboxes.org/centos/"
+        },
+
+        {
             "filename": "CentOS 7-1611 (64bit).vmdk",
             "version": "7-1611",
             "md5sum": "1da15f6144eab25c8546f81dd1c34092",
@@ -36,6 +52,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "7-1810",
+            "images": {
+                "hda_disk_image": "CentOS 7-18.10 (64bit).vmdk"
+            }
+        },
+
+        {
+            "name": "7-1804",
+            "images": {
+                "hda_disk_image": "CentOS 7-1804 (64bit).vmdk"
+            }
+        },
+
         {
             "name": "7-1611",
             "images": {

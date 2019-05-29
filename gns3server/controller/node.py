@@ -187,7 +187,7 @@ class Node:
         if not os.path.isabs(path):
             path = os.path.join(self.project.controller.configs_path(), path)
         try:
-            with open(path, encoding="utf-8") as f:
+            with open(path, encoding="utf-8", errors="ignore") as f:
                 return f.read()
         except OSError:
             return None
