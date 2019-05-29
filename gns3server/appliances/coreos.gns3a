@@ -22,6 +22,15 @@
     },
     "images": [
         {
+            "filename": "coreos_production_qemu_image.img",
+            "version": "2079.4.0",
+            "md5sum": "d5e28d68bcadf252ff9c909a159b9504",
+            "filesize": 970129408,
+            "download_url": "http://stable.release.core-os.net/amd64-usr/2079.4.0/",
+            "direct_download_url": "http://stable.release.core-os.net/amd64-usr/2079.4.0/coreos_production_qemu_image.img.bz2",
+            "compression": "bzip2"
+        },
+        {
             "filename": "coreos_production_qemu_image.2023.5.0.img",
             "version": "2023.5.0",
             "md5sum": "f8b12e524aa81220222d06473b3f36dc",
@@ -194,6 +203,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2079.4.0",
+            "images": {
+                "hda_disk_image": "coreos_production_qemu_image.img"
+            }
+        },
         {
             "name": "2023.5.0",
             "images": {
