@@ -28,6 +28,7 @@ IOU_TEMPLATE_PROPERTIES = {
     "usage": {
         "description": "How to use the IOU VM",
         "type": "string",
+        "default": ""
     },
     "ethernet_adapters": {
         "description": "Number of ethernet adapters",
