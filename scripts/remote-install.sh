@@ -146,7 +146,7 @@ deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main univer
 EOFLIST2
 fi
 
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A2E3EF7B
+apt-key adv --keyserver keyserver.ubuntu.com:80 --recv-keys A2E3EF7B
 
 log "Update system packages"
 apt-get update
