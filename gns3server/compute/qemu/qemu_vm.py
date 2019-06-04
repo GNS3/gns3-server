@@ -36,6 +36,7 @@ import json
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
+from .utils.qcow2 import Qcow2, Qcow2Error
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
@@ -43,7 +44,6 @@ from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
-from .qcow2 import Qcow2, Qcow2Error
 from ...utils import macaddress_to_int, int_to_macaddress
 
 
@@ -67,7 +67,7 @@ class QemuVM(BaseNode):
     :param platform: Platform to emulate
     """
 
-    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, node_id, project, manager, guest_cid=None, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, wrap_console=True)
         server_config = manager.config.get_section_config("Server")
@@ -80,6 +80,7 @@ class QemuVM(BaseNode):
         self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
+        self._guest_cid = guest_cid
 
         # QEMU VM settings
         if qemu_path:
@@ -123,6 +124,16 @@ class QemuVM(BaseNode):
         self.mac_address = ""  # this will generate a MAC address
         self.adapters = 1  # creates 1 adapter by default
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+
+    @property
+    def guest_cid(self):
+        """
+        Returns guest_cid (console ID) which unique identifier between 3 and 65535
+
+        :returns: integer between 3 and 65535
+        """
+
+        return self._guest_cid
 
     @property
     def monitor(self):
@@ -1917,7 +1928,8 @@ class QemuVM(BaseNode):
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
         additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
-        if self._console:
+        additional_options = additional_options.replace("%guest-cid%", str(self._guest_cid))
+        if self._console_type != "none" and self._console:
             additional_options = additional_options.replace("%console-port%", str(self._console))
         command = [self.qemu_path]
         command.extend(["-name", self._name])

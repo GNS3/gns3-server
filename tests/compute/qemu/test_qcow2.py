@@ -20,7 +20,7 @@ import pytest
 import shutil
 import asyncio
 
-from gns3server.compute.qemu.qcow2 import Qcow2, Qcow2Error
+from gns3server.compute.qemu.utils.qcow2 import Qcow2, Qcow2Error
 
 
 def qemu_img():
