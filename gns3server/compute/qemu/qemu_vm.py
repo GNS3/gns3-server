@@ -67,7 +67,7 @@ class QemuVM(BaseNode):
     :param platform: Platform to emulate
     """
 
-    def __init__(self, name, node_id, project, manager, guest_cid=None, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, wrap_console=True)
         server_config = manager.config.get_section_config("Server")
@@ -80,7 +80,7 @@ class QemuVM(BaseNode):
         self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
-        self._guest_cid = guest_cid
+        self._guest_cid = None
 
         # QEMU VM settings
         if qemu_path:
@@ -128,12 +128,22 @@ class QemuVM(BaseNode):
     @property
     def guest_cid(self):
         """
-        Returns guest_cid (console ID) which unique identifier between 3 and 65535
+        Returns the CID (console ID) which is an unique identifier between 3 and 65535
 
         :returns: integer between 3 and 65535
         """
 
         return self._guest_cid
+
+    @guest_cid.setter
+    def guest_cid(self, guest_cid):
+        """
+        Set the CID (console ID) which is an unique identifier between 3 and 65535
+
+        :returns: integer between 3 and 65535
+        """
+
+        self._guest_cid = guest_cid
 
     @property
     def monitor(self):

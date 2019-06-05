@@ -53,12 +53,19 @@ class Qemu(BaseManager):
         :returns: QemuVM instance
         """
 
-        async with self._guest_cid_lock:
-            # wait for a node to be completely created before adding a new one
-            # this is important otherwise we allocate the same application ID
-            # when creating multiple Qemu VMs at the same time
-            guest_cid = get_next_guest_cid(self.nodes)
-            node = await super().create_node(*args, guest_cid=guest_cid, **kwargs)
+        node = await super().create_node(*args, **kwargs)
+
+        # allocate a guest console ID (CID)
+        if node.console_type != "none" and node.console:
+            # by default, the guest CID is equal to the console port
+            node.guest_cid = node.console
+        else:
+            # otherwise pick a guest CID if no console port is configured
+            async with self._guest_cid_lock:
+                # wait for a node to be completely created before adding a new one
+                # this is important otherwise we allocate the same guest ID
+                # when creating multiple Qemu VMs at the same time
+                node.guest_cid = get_next_guest_cid(self.nodes)
         return node
 
     @staticmethod
