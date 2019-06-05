@@ -99,7 +99,7 @@ def test_create(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -138,7 +138,7 @@ def test_create_with_tag(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -180,7 +180,7 @@ def test_create_vnc(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
                         "Privileged": True
@@ -296,7 +296,7 @@ def test_create_start_cmd(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -396,7 +396,7 @@ def test_create_image_not_available(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -439,7 +439,7 @@ def test_create_with_user(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
                     },
@@ -509,8 +509,35 @@ def test_create_with_extra_volumes_duplicate_1_image(loop, project, manager):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/vol/1"])
-            with pytest.raises(DockerError):
-                loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network:/vol/1"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
 
 def test_create_with_extra_volumes_duplicate_2_user(loop, project, manager):
 
@@ -521,8 +548,35 @@ def test_create_with_extra_volumes_duplicate_2_user(loop, project, manager):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/vol/1", "/vol/1"])
-            with pytest.raises(DockerError):
-                loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network:/vol/1"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
 
 def test_create_with_extra_volumes_duplicate_3_subdir(loop, project, manager):
 
@@ -533,8 +587,35 @@ def test_create_with_extra_volumes_duplicate_3_subdir(loop, project, manager):
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/vol/1/", "/vol"])
-            with pytest.raises(DockerError):
-                loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network:/vol"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
 
 def test_create_with_extra_volumes_duplicate_4_backslash(loop, project, manager):
 
@@ -545,8 +626,111 @@ def test_create_with_extra_volumes_duplicate_4_backslash(loop, project, manager)
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
             vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/vol//", "/vol"])
-            with pytest.raises(DockerError):
-                loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network:/vol"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
+
+def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(loop, project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": [],
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/etc"])
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
+
+def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(loop, project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": [],
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]) as mock_list_images:
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), project, manager, "ubuntu:latest", extra_volumes=["/etc/test", "/etc"])
+            loop.run_until_complete(asyncio.ensure_future(vm.create()))
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
+                        ],
+                        "Privileged": True
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
 
 def test_create_with_extra_volumes(loop, project, manager):
 
@@ -572,7 +756,7 @@ def test_create_with_extra_volumes(loop, project, manager):
                         "CapAdd": ["ALL"],
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                             "{}:/gns3volumes/vol/2".format(os.path.join(vm.working_dir, "vol", "2")),
                         ],
@@ -795,7 +979,7 @@ def test_update(loop, vm):
             "CapAdd": ["ALL"],
             "Binds": [
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
         },
@@ -864,7 +1048,7 @@ def test_update_running(loop, vm):
             "CapAdd": ["ALL"],
             "Binds": [
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network"))
+                "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
         },
@@ -1138,7 +1322,7 @@ def test_mount_binds(vm, tmpdir):
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
         "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-        "{}:/gns3volumes/etc/network:rw".format(os.path.join(vm.working_dir, "etc", "network")),
+        "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
         "{}:/gns3volumes{}".format(dst, "/test/experimental")
     ]
 
