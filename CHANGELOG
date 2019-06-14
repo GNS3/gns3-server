@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.21 14/06/2019
+
+* Change uBridge debug level to '1' when debugging is enabled. Fixes #1598
+
 ## 2.1.20 29/05/2019
 
 * Ignore Unicode errors when reading base config file contents.
