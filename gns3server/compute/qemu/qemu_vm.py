@@ -434,10 +434,31 @@ class QemuVM(BaseNode):
         :param cdrom_image: QEMU cdrom image path
         """
 
-        self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     cdrom_image=self._cdrom_image))
+        if cdrom_image:
+            self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
+
+            log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                         id=self._id,
+                                                                                                         cdrom_image=self._cdrom_image))
+        else:
+            self._cdrom_image = ""
+
+    async def update_cdrom_image(self):
+        """
+        Update the cdrom image path for the Qemu guest OS
+        """
+
+        if self.is_running():
+            if self._cdrom_image:
+                self._cdrom_option()  # this will check the cdrom image is accessible
+                await self._control_vm("eject -f ide1-cd0")
+                await self._control_vm("change ide1-cd0 {}".format(self._cdrom_image))
+                log.info('QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                            id=self._id,
+                                                                                                            cdrom_image=self._cdrom_image))
+            else:
+                await self._control_vm("eject -f ide1-cd0")
+                log.info('QEMU VM "{name}" [{id}] has ejected the cdrom image'.format(name=self._name, id=self._id))
 
     @property
     def bios_image(self):
