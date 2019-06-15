@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.0b3 15/06/2019
+
+* Fix template migration issues from GUI to controller. Fixes https://github.com/GNS3/gns3-gui/issues/2803
+* Refresh mounted media after ISO switch.
+* Resolve conflicts in docker volumes instead of error. Fixes https://github.com/GNS3/gns3-server/issues/1595
+* %guest-cid% variable implementation for Qemu VMs. Fixes https://github.com/GNS3/gns3-gui/issues/2804
+* Fix KeyError: 'usage' exception when configuring IOU template. Fixes https://github.com/GNS3/gns3-gui/issues/2806
+
 ## 2.2.0b2 29/05/2019
 
 * Ignore Unicode errors when reading base config file contents.
