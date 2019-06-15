@@ -24,17 +24,17 @@
     },
     "images": [
         {
-            "filename": "Check_Point_R80.10_T421_Gaia.iso",
+            "filename": "Check_Point_R80.10_T479_Gaia.iso",
             "version": "80.10",
-            "md5sum": "12d9723fadb89bb722e20ca3f89012ce",
-            "filesize": 3420127232,
-            "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859"
+            "md5sum": "1b97cce21dbee78fec505b44e637cc9a",
+            "filesize": 3301212160,
+            "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal/user/anon/page/default.psml/media-type/html?action=portlets.DCFileAction&eventSubmit_doGetdcdetails=&fileid=54509"
         },
         {
-            "filename": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso",
+            "filename": "Check_Point_R77.30_Install_and_Upgrade_T5.Gaia.iso",
             "version": "77.30",
-            "md5sum": "6fa7586bbb6832fa965d3173276c5b87",
-            "filesize": 2799271936,
+            "md5sum": "3f6f459df3fb3beaf7b2457f08982425",
+            "filesize": 289692076,
             "download_url": "https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk104859"
         },
         {
@@ -58,14 +58,14 @@
             "name": "80.10",
             "images": {
                 "hda_disk_image": "empty100G.qcow2",
-                "cdrom_image": "Check_Point_R80.10_T421_Gaia.iso"
+                "cdrom_image": "Check_Point_R80.10_T479_Gaia.iso"
             }
         },
         {
             "name": "77.30",
             "images": {
                 "hda_disk_image": "empty100G.qcow2",
-                "cdrom_image": "Check_Point_R77.30_T204_Install_and_Upgrade.Gaia.iso"
+                "cdrom_image": "Check_Point_R77.30_Install_and_Upgrade_T5.Gaia.iso"
             }
         },
         {

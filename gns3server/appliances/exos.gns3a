@@ -29,6 +29,13 @@
     "images": [
 
 		{
+            "filename": "EXOS-VM_v30.2.1.8.qcow2",
+            "version": "30.2.1.8",
+            "md5sum": "4bdbf3ddff7a030e19c6bb71270b56d2",
+            "filesize": 355205120,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.2.1.8.qcow2"
+        },
+		{
             "filename": "EXOS-VM_v30.1.1.4.qcow2",
             "version": "30.1.1.4",
             "md5sum": "92d3f9b13d750f7bfa804823fa545772",
@@ -88,6 +95,13 @@
     ],
     
     "versions": [
+
+        {
+            "name": "30.2.1.8",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v30.2.1.8.qcow2"
+            }
+        },
         {
             "name": "30.1.1.4",
             "images": {

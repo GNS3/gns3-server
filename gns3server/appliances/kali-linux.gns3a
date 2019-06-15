@@ -21,6 +21,22 @@
     },
     "images": [
         {
+            "filename": "kali-linux-mate-2019.2-amd64.iso",
+            "version": "2019.2 (MATE)",
+            "md5sum": "fec8dd7009f932c51a74323df965a709",
+            "filesize": 3313217536,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.1a/kali-linux-mate-2019.2-amd64.iso"
+        },
+        {
+            "filename": "kali-linux-2019.2-amd64.iso",
+            "version": "2019.2",
+            "md5sum": "0f89b6225d7ea9c18682f7cc541c1179",
+            "filesize": 3353227264,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.1a/kali-linux-2019.2-amd64.iso"
+        },
+        {
             "filename": "kali-linux-2019.1a-amd64.iso",
             "version": "2019.1a",
             "md5sum": "58c6111ed0be1919ea87267e7e65ab0f",
@@ -102,6 +118,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "2019.2 (MATE)",
+            "images": {
+                "cdrom_image": "kali-linux-mate-2019.2-amd64.iso"
+            }
+        },
+        {
+            "name": "2019.2",
+            "images": {
+                "cdrom_image": "kali-linux-2019.2-amd64.iso"
+            }
+        },
         {
             "name": "2019.1a",
             "images": {
