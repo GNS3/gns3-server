@@ -253,5 +253,5 @@ class Hypervisor(UBridgeHypervisor):
         command = [self._path]
         command.extend(["-H", "{}:{}".format(self._host, self._port)])
         if log.getEffectiveLevel() == logging.DEBUG:
-            command.extend(["-d", "2"])
+            command.extend(["-d", "1"])
         return command
