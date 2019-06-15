@@ -451,13 +451,14 @@ class QemuVM(BaseNode):
         if self.is_running():
             if self._cdrom_image:
                 self._cdrom_option()  # this will check the cdrom image is accessible
+                await self._control_vm("eject -f ide1-cd0")
                 await self._control_vm("change ide1-cd0 {}".format(self._cdrom_image))
-                log.info('QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image} for the guest OS'.format(name=self._name,
-                                                                                                                              id=self._id,
-                                                                                                                              cdrom_image=self._cdrom_image))
+                log.info('QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                            id=self._id,
+                                                                                                            cdrom_image=self._cdrom_image))
             else:
-                await self._control_vm("eject ide1-cd0")
-                log.info('QEMU VM "{name}" [{id}] has ejected the cdrom image for the guest OS'.format(name=self._name, id=self._id))
+                await self._control_vm("eject -f ide1-cd0")
+                log.info('QEMU VM "{name}" [{id}] has ejected the cdrom image'.format(name=self._name, id=self._id))
 
     @property
     def bios_image(self):
