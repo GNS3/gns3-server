@@ -1,0 +1,16 @@
+GNS3 WebUI is web implementation of user interface for GNS3 software.
+
+Current version: 2019.2.0
+
+What's New
+- Help section added with information about third party components
+- Showing progress when server starting
+- Possibility to edit interface & node labels by using context menu
+- Enhancements in moving elements on map
+- Context menu extended with option to duplicate
+- Main menu extended with option to lock all items on map
+
+Bug Fixes
+- Removing issues with positioning interface labels while adding link between nodes on map
+- Context menu now is correctly placed
+- Entered text in text & style editor is now validated
