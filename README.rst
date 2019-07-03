@@ -34,6 +34,7 @@ Linux
 GNS3 is perhaps packaged for your distribution:
 
 * Gentoo: https://packages.gentoo.org/package/net-misc/gns3-server
+* Alpine: https://pkgs.alpinelinux.org/package/v3.10/community/x86_64/gns3-server
 
 
 Linux (Debian based)
