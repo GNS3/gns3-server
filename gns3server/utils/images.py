@@ -120,7 +120,7 @@ def default_images_directory(type):
 
 def images_directories(type):
     """
-    Return all directory where we will look for images
+    Return all directories where we will look for images
     by priority
 
     :param type: Type of emulator

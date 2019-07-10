@@ -492,15 +492,17 @@ class BaseManager:
         # Windows path should not be send to a unix server
         if not sys.platform.startswith("win"):
             if re.match(r"^[A-Z]:", path) is not None:
-                raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+                raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'".format(path, img_directory))
 
         if not os.path.isabs(path):
             for directory in valid_directory_prefices:
+                log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
                 path = self._recursive_search_file_in_directory(directory, orig_path)
                 if path:
                     return force_unix_path(path)
 
             # Not found we try the default directory
+            log.debug("Searching for image '{}' in default directory".format(orig_path))
             s = os.path.split(orig_path)
             path = force_unix_path(os.path.join(img_directory, *s))
             if os.path.exists(path):
@@ -509,6 +511,7 @@ class BaseManager:
 
         # For local server we allow using absolute path outside image directory
         if server_config.getboolean("local", False) is True:
+            log.debug("Searching for '{}'".format(orig_path))
             path = force_unix_path(path)
             if os.path.exists(path):
                 return path
@@ -517,11 +520,12 @@ class BaseManager:
         # Check to see if path is an absolute path to a valid directory
         path = force_unix_path(path)
         for directory in valid_directory_prefices:
+            log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
             if os.path.commonprefix([directory, path]) == directory:
                 if os.path.exists(path):
                     return path
                 raise ImageMissingError(orig_path)
-        raise NodeError("{} is not allowed on this remote server. Please use only a filename in {}.".format(path, img_directory))
+        raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'".format(path, img_directory))
 
     def _recursive_search_file_in_directory(self, directory, searched_file):
         """
