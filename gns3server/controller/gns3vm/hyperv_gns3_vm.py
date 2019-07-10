@@ -248,7 +248,10 @@ class HyperVGNS3VM(BaseGNS3VM):
         vnics = self._get_vm_resources(self._vm, 'Msvm_SyntheticEthernetPortSettingData')
         while True:
             for port in ports:
-                vnic = [v for v in vnics if port.Parent == v.path_()][0]
+                try:
+                    vnic = [v for v in vnics if port.Parent == v.path_()][0]
+                except IndexError:
+                    continue
                 config = vnic.associators(wmi_result_class='Msvm_GuestNetworkAdapterConfiguration')
                 ip_addresses = config[0].IPAddresses
                 for ip_address in ip_addresses:
