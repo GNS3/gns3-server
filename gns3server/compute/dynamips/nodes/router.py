@@ -1525,6 +1525,8 @@ class Router(BaseNode):
         :param new_name: new name string
         """
 
+        await self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
+
         # change the hostname in the startup-config
         if os.path.isfile(self.startup_config_path):
             try:
@@ -1547,7 +1549,6 @@ class Router(BaseNode):
             except OSError as e:
                 raise DynamipsError("Could not amend the configuration {}: {}".format(self.private_config_path, e))
 
-        await self._hypervisor.send('vm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
         log.info('Router "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name, id=self._id, new_name=new_name))
         self._name = new_name
 
