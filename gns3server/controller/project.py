@@ -1032,6 +1032,7 @@ class Project:
         except OSError as e:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
 
+    @open_required
     async def start_all(self):
         """
         Start all nodes
@@ -1041,6 +1042,7 @@ class Project:
             pool.append(node.start)
         await pool.join()
 
+    @open_required
     async def stop_all(self):
         """
         Stop all nodes
@@ -1050,6 +1052,7 @@ class Project:
             pool.append(node.stop)
         await pool.join()
 
+    @open_required
     async def suspend_all(self):
         """
         Suspend all nodes
@@ -1059,6 +1062,7 @@ class Project:
             pool.append(node.suspend)
         await pool.join()
 
+    @open_required
     async def duplicate_node(self, node, x, y, z):
         """
         Duplicate a node
