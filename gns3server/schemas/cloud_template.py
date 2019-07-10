@@ -28,13 +28,15 @@ CLOUD_TEMPLATE_PROPERTIES = {
     "remote_console_host": {
         "description": "Remote console host or IP",
         "type": ["string"],
-        "minLength": 1
+        "minLength": 1,
+        "default": "127.0.0.1"
     },
     "remote_console_port": {
         "description": "Console TCP port",
         "minimum": 1,
         "maximum": 65535,
-        "type": "integer"
+        "type": "integer",
+        "default": 23
     },
     "remote_console_type": {
         "description": "Console type",
@@ -43,7 +45,8 @@ CLOUD_TEMPLATE_PROPERTIES = {
     "remote_console_http_path": {
         "description": "Path of the remote web interface",
         "type": "string",
-        "minLength": 1
+        "minLength": 1,
+        "default": "/"
     },
 }
 
