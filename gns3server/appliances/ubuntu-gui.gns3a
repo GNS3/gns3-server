@@ -26,45 +26,59 @@
     },
     "images": [
         {
-            "filename": "Ubuntu_17.04-VM-64bit.vmdk",
-            "version": "17.04",
-            "md5sum": "5c82d69c49ba08179e9a94901f67da1f",
-            "filesize": 4792123392,
+            "filename": "Ubuntu 19.04 (64bit).vmdk",
+            "version": "19.04",
+            "md5sum": "21535675c54507e9325bf8774a7bd73e",
+            "filesize": 5558435840,
             "download_url": "http://www.osboxes.org/ubuntu/"
         },
         {
-            "filename": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk",
-            "version": "16.10",
-            "md5sum": "c835f24dbb86f5f61c78d992ed38b6b1",
-            "filesize": 9133293568,
+            "filename": "Ubuntu 18.10 Cosmic (64Bit).vmdk",
+            "version": "18.10",
+            "md5sum": "7f72be569356baa20863cd354d2efa60",
+            "filesize": 6747389952,
             "download_url": "http://www.osboxes.org/ubuntu/"
         },
         {
-            "filename": "Ubuntu_16.04.3-VM-64bit.vmdk",
-            "version": "16.04",
-            "md5sum": "45bccf63f2777e492f022dbf025f67d0",
-            "filesize": 4302110720,
+            "filename": "Ubuntu 18.04.2 (64bit).vmdk",
+            "version": "18.04.2",
+            "md5sum": "d57b732d90759e3b3a62594a83f8f196",
+            "filesize": 6003097600,
+            "download_url": "http://www.osboxes.org/ubuntu/"
+        },
+        {
+            "filename": "Ubuntu 16.04.6 (64bit).vmdk",
+            "version": "16.04.6",
+            "md5sum": "33b2964cef607c1c9fe748db8a2fa6ea",
+            "filesize": 4780982272,
             "download_url": "http://www.osboxes.org/ubuntu/"
         }
     ],
     "versions": [
         {
-            "name": "17.04",
+            "name": "19.04",
             "images": {
-                "hda_disk_image": "Ubuntu_17.04-VM-64bit.vmdk"
+                "hda_disk_image": "Ubuntu 19.04 (64bit).vmdk"
             }
         },
         {
-            "name": "16.10",
+            "name": "18.10",
             "images": {
-                "hda_disk_image": "Ubuntu_16.10_Yakkety-VM-64bit.vmdk"
+                "hda_disk_image": "Ubuntu 18.10 Cosmic (64Bit).vmdk"
             }
         },
         {
-            "name": "16.04",
+            "name": "18.04.2",
             "images": {
-                "hda_disk_image": "Ubuntu_16.04.3-VM-64bit.vmdk"
+                "hda_disk_image": "Ubuntu 18.04.2 (64bit).vmdk"
+            }
+        },
+        {
+            "name": "16.04.6",
+            "images": {
+                "hda_disk_image": "Ubuntu 16.04.6 (64bit).vmdk"
             }
         }
     ]
 }
+
