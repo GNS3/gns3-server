@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.0b4 11/07/2019
+
+* Requires a project to be opened to start/stop/suspend all nodes. Fixes #1609
+* Fix issue when starting GNS3 VM for Hyper-V
+* Set defaults for custom cloud nodes.
+* Fix issue when trying to rename a Dynamips node that is already powered on. Fixes #2824
+* Remove deprecated Qemu parameter to run legacy ASA VMs. Fixes #2827
+* Add debug message when searching for an image. Ref https://github.com/GNS3/gns3-gui/issues/2828
+
 ## 2.2.0b3 15/06/2019
 
 * Fix template migration issues from GUI to controller. Fixes https://github.com/GNS3/gns3-gui/issues/2803
