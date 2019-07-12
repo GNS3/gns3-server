@@ -23,7 +23,8 @@ from .port import PORT_OBJECT_SCHEMA
 CLOUD_TEMPLATE_PROPERTIES = {
     "ports_mapping": {
         "type": "array",
-        "items": [PORT_OBJECT_SCHEMA]
+        "items": [PORT_OBJECT_SCHEMA],
+        "default": []
     },
     "remote_console_host": {
         "description": "Remote console host or IP",
@@ -40,7 +41,8 @@ CLOUD_TEMPLATE_PROPERTIES = {
     },
     "remote_console_type": {
         "description": "Console type",
-        "enum": ["telnet", "vnc", "spice", "http", "https", "none"]
+        "enum": ["telnet", "vnc", "spice", "http", "https", "none"],
+        "default": "none"
     },
     "remote_console_http_path": {
         "description": "Path of the remote web interface",
