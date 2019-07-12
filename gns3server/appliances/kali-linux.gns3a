@@ -10,16 +10,34 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default password is toor",
+    "usage": "Default password is toor\nEnable persistence by selecting boot option 'Live USB Persistence'",
+    "port_name_format": "eth{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 8,
         "ram": 1024,
         "arch": "x86_64",
         "console_type": "vnc",
+        "boot_priority": "d",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "kali-linux-2019.2-amd64.iso",
+            "version": "2019.2",
+            "md5sum": "0f89b6225d7ea9c18682f7cc541c1179",
+            "filesize": 3353227264,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.2/kali-linux-2019.2-amd64.iso"
+        },
+        {
+            "filename": "kali-linux-mate-2019.2-amd64.iso",
+            "version": "2019.2 (MATE)",
+            "md5sum": "fec8dd7009f932c51a74323df965a709",
+            "filesize": 3313217536,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.2/kali-linux-mate-2019.2-amd64.iso"
+        },
         {
             "filename": "kali-linux-2019.1a-amd64.iso",
             "version": "2019.1a",
@@ -99,66 +117,98 @@
             "filesize": 3320512512,
             "download_url": "https://www.offensive-security.com/kali-linux-vmware-arm-image-download/",
             "direct_download_url": "http://images.kali.org/Kali-Linux-2.0.0-vm-amd64.7z"
+        },
+        {
+            "filename": "kali-linux-persistence-1gb.qcow2",
+            "version": "1.0",
+            "md5sum": "14e9c92f3ba5a0bd1128c1ea26a129ea",
+            "filesize": 34734080,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/kali-linux-persistence-1gb.qcow2/download"
         }
     ],
     "versions": [
         {
+            "name": "2019.2",
+            "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
+                "cdrom_image": "kali-linux-2019.2-amd64.iso"
+            }
+        },
+        {
+            "name": "2019.2 (MATE)",
+            "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
+                "cdrom_image": "kali-linux-mate-2019.2-amd64.iso"
+            }
+        },
+        {
             "name": "2019.1a",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2019.1a-amd64.iso"
             }
         },
         {
             "name": "2018.4",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2018.4-amd64.iso"
             }
         },
         {
             "name": "2018.3a",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2018.3a-amd64.iso"
             }
         },
         {
             "name": "2018.1",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2018.1-amd64.iso"
             }
         },
         {
             "name": "2017.3",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2017.3-amd64.iso"
             }
         },
         {
             "name": "2017.2",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2017.2-amd64.iso"
             }
         },
         {
             "name": "2017.1",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2017.1-amd64.iso"
             }
         },
         {
             "name": "2016.2",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2016.2-amd64.iso"
             }
         },
         {
             "name": "2016.1",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2016.1-amd64.iso"
             }
         },
         {
             "name": "2.0",
             "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2.0-amd64.iso"
             }
         }

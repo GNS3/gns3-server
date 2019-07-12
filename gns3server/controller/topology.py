@@ -128,17 +128,18 @@ def load_topology(path):
         raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
 
     if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
-        raise aiohttp.web.HTTPConflict(text="This project is designed for a more recent version of GNS3 please update GNS3 to version {} or later".format(topo["version"]))
+        raise aiohttp.web.HTTPConflict(text="This project was created with more recent version of GNS3 (file revision: {}). Please upgrade GNS3 to version {} or later".format(topo["revision"], topo["version"]))
 
     changed = False
     if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
-        # If it's an old GNS3 file we need to convert it
-        # first we backup the file
+        # Convert the topology if this is an old one but backup the file first
         try:
             shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
-        except (OSError) as e:
+        except OSError as e:
             raise aiohttp.web.HTTPConflict(text="Can't write backup of the topology {}: {}".format(path, str(e)))
         changed = True
+        # update the version because we converted the topology
+        topo["version"] = __version__
 
     if "revision" not in topo or topo["revision"] < 5:
         topo = _convert_1_3_later(topo, path)

@@ -28,6 +28,7 @@ import shutil
 
 
 from gns3server.controller.topology import load_topology, GNS3_FILE_FORMAT_REVISION
+from gns3server.version import __version__
 
 topologies_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "topologies")
 
@@ -104,7 +105,7 @@ def compare_dict(path, source, reference):
     """
     assert isinstance(source, dict), "Source is not a dict in {}".format(path)
     for key in source:
-        assert key in reference, "Unexcepted {} in {} it should be {}".format(key, source, reference)
+        assert key in reference, "Unexpected {} in {} it should be {}".format(key, source, reference)
     for key in sorted(reference.keys()):
         val = reference[key]
         assert key in source, "{} is missing in {}".format(key, source)
@@ -113,10 +114,12 @@ def compare_dict(path, source, reference):
                 pass
             elif val == "ANYUUID" and len(source[key]) == 36:
                 pass
-            # We test that the revision number has been bumpd to last version. This avoid modifying all the tests
+            # We test that the revision number has been bumped to last version. This avoid modifying all the tests
             # at each new revision bump.
             elif key == "revision":
                 assert source[key] == GNS3_FILE_FORMAT_REVISION
+            elif key == "version":
+                assert source[key] == __version__
             else:
                 assert val == source[key], "Wrong value for {}: \n{}\nit should be\n{}".format(key, source[key], val)
         elif isinstance(val, dict):

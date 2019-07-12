@@ -175,7 +175,6 @@ class Controller:
 
         try:
             if not os.path.exists(self._config_file):
-                await self._import_gns3_gui_conf()
                 self._config_loaded = True
                 self.save()
             with open(self._config_file) as f:
@@ -253,118 +252,6 @@ class Controller:
         images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
-
-    async def _import_gns3_gui_conf(self):
-        """
-        Import old config from GNS3 GUI
-        """
-
-        config_file = os.path.join(os.path.dirname(self._config_file), "gns3_gui.conf")
-        if os.path.exists(config_file):
-            with open(config_file) as f:
-                settings = json.load(f)
-                server_settings = settings.get("Servers", {})
-                for remote in server_settings.get("remote_servers", []):
-                    try:
-                        await self.add_compute(host=remote.get("host", "localhost"),
-                                               port=remote.get("port", 3080),
-                                               protocol=remote.get("protocol", "http"),
-                                               name=remote.get("url"),
-                                               user=remote.get("user"),
-                                               password=remote.get("password"))
-                    except aiohttp.web.HTTPConflict:
-                        pass  # if the server is broken we skip it
-                if "vm" in server_settings:
-                    vmname = None
-                    vm_settings = server_settings["vm"]
-                    if vm_settings["virtualization"] == "VMware":
-                        engine = "vmware"
-                        vmname = vm_settings.get("vmname", "")
-                    elif vm_settings["virtualization"] == "VirtualBox":
-                        engine = "virtualbox"
-                        vmname = vm_settings.get("vmname", "")
-                    else:
-                        engine = "remote"
-                        # In case of remote server we match the compute with url parameter
-                        for compute in self._computes.values():
-                            if compute.host == vm_settings.get("remote_vm_host") and compute.port == vm_settings.get("remote_vm_port"):
-                                vmname = compute.name
-
-                    if vm_settings.get("auto_stop", True):
-                        when_exit = "stop"
-                    else:
-                        when_exit = "keep"
-
-                    self.gns3vm.settings = {
-                        "engine": engine,
-                        "enable": vm_settings.get("auto_start", False),
-                        "when_exit": when_exit,
-                        "headless": vm_settings.get("headless", False),
-                        "vmname": vmname
-                    }
-
-                vms = []
-                for vm in settings.get("Qemu", {}).get("vms", []):
-                    vm["template_type"] = "qemu"
-                    vms.append(vm)
-                for vm in settings.get("IOU", {}).get("devices", []):
-                    vm["template_type"] = "iou"
-                    vms.append(vm)
-                for vm in settings.get("Docker", {}).get("containers", []):
-                    vm["template_type"] = "docker"
-                    vms.append(vm)
-                for vm in settings.get("Builtin", {}).get("cloud_nodes", []):
-                    vm["template_type"] = "cloud"
-                    vms.append(vm)
-                for vm in settings.get("Builtin", {}).get("ethernet_switches", []):
-                    vm["template_type"] = "ethernet_switch"
-                    vms.append(vm)
-                for vm in settings.get("Builtin", {}).get("ethernet_hubs", []):
-                    vm["template_type"] = "ethernet_hub"
-                    vms.append(vm)
-                for vm in settings.get("Dynamips", {}).get("routers", []):
-                    vm["template_type"] = "dynamips"
-                    vms.append(vm)
-                for vm in settings.get("VMware", {}).get("vms", []):
-                    vm["template_type"] = "vmware"
-                    vms.append(vm)
-                for vm in settings.get("VirtualBox", {}).get("vms", []):
-                    vm["template_type"] = "virtualbox"
-                    vms.append(vm)
-                for vm in settings.get("VPCS", {}).get("nodes", []):
-                    vm["template_type"] = "vpcs"
-                    vms.append(vm)
-                for vm in settings.get("TraceNG", {}).get("nodes", []):
-                    vm["template_type"] = "traceng"
-                    vms.append(vm)
-
-                for vm in vms:
-                    # remove deprecated properties
-                    for prop in vm.copy():
-                        if prop in ["enable_remote_console", "use_ubridge", "acpi_shutdown"]:
-                            del vm[prop]
-
-                    # remove deprecated default_symbol and hover_symbol
-                    # and set symbol if not present
-                    deprecated = ["default_symbol", "hover_symbol"]
-                    if len([prop for prop in vm.keys() if prop in deprecated]) > 0:
-                        if "default_symbol" in vm.keys():
-                            del vm["default_symbol"]
-                        if "hover_symbol" in vm.keys():
-                            del vm["hover_symbol"]
-
-                        if "symbol" not in vm.keys():
-                            vm["symbol"] = ":/symbols/computer.svg"
-
-                    vm.setdefault("template_id", str(uuid.uuid4()))
-                    try:
-                        template = Template(vm["template_id"], vm)
-                        template.__json__()  # Check if loaded without error
-                        self.template_manager.templates[template.id] = template
-                    except KeyError as e:
-                        # template data is not complete (missing name or type)
-                        log.warning("Cannot load template {} ('{}'): missing key {}".format(vm["template_id"], vm.get("name", "unknown"), e))
-                        continue
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """

@@ -25,8 +25,16 @@
     },
     "images": [
         {
+            "filename": "SNG7-FPBX-64bit-1904-2.iso",
+            "version": "14-1904",
+            "md5sum": "f37c316bc0ff208682769b6f2d468e93",
+            "filesize": 2015363072,
+            "download_url": "https://www.freepbx.org/downloads/",
+            "direct_download_url": "https://downloads.freepbxdistro.org/ISO/SNG7-FPBX-64bit-1904-2.iso"
+        },
+        {
             "filename": "SNG7-FPBX-64bit-1805-2.iso",
-            "version": "14",
+            "version": "14-1805",
             "md5sum": "64f0c38c17ce680f7106f94183bc5745",
             "filesize": 1755316224,
             "download_url": "https://www.freepbx.org/downloads/",
@@ -67,7 +75,14 @@
     ],
     "versions": [
         {
-            "name": "14",
+            "name": "14-1904",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "SNG7-FPBX-64bit-1904-2.iso"
+            }
+        },
+        {
+            "name": "14-1805",
             "images": {
                 "hda_disk_image": "empty30G.qcow2",
                 "cdrom_image": "SNG7-FPBX-64bit-1805-2.iso"

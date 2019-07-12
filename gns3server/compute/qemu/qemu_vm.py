@@ -36,6 +36,7 @@ import json
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
+from .utils.qcow2 import Qcow2, Qcow2Error
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
@@ -43,7 +44,6 @@ from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
-from .qcow2 import Qcow2, Qcow2Error
 from ...utils import macaddress_to_int, int_to_macaddress
 
 
@@ -80,6 +80,7 @@ class QemuVM(BaseNode):
         self._qemu_img_stdout_file = ""
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
+        self._guest_cid = None
 
         # QEMU VM settings
         if qemu_path:
@@ -123,6 +124,26 @@ class QemuVM(BaseNode):
         self.mac_address = ""  # this will generate a MAC address
         self.adapters = 1  # creates 1 adapter by default
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+
+    @property
+    def guest_cid(self):
+        """
+        Returns the CID (console ID) which is an unique identifier between 3 and 65535
+
+        :returns: integer between 3 and 65535
+        """
+
+        return self._guest_cid
+
+    @guest_cid.setter
+    def guest_cid(self, guest_cid):
+        """
+        Set the CID (console ID) which is an unique identifier between 3 and 65535
+
+        :returns: integer between 3 and 65535
+        """
+
+        self._guest_cid = guest_cid
 
     @property
     def monitor(self):
@@ -413,10 +434,31 @@ class QemuVM(BaseNode):
         :param cdrom_image: QEMU cdrom image path
         """
 
-        self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     cdrom_image=self._cdrom_image))
+        if cdrom_image:
+            self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
+
+            log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                         id=self._id,
+                                                                                                         cdrom_image=self._cdrom_image))
+        else:
+            self._cdrom_image = ""
+
+    async def update_cdrom_image(self):
+        """
+        Update the cdrom image path for the Qemu guest OS
+        """
+
+        if self.is_running():
+            if self._cdrom_image:
+                self._cdrom_option()  # this will check the cdrom image is accessible
+                await self._control_vm("eject -f ide1-cd0")
+                await self._control_vm("change ide1-cd0 {}".format(self._cdrom_image))
+                log.info('QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(name=self._name,
+                                                                                                            id=self._id,
+                                                                                                            cdrom_image=self._cdrom_image))
+            else:
+                await self._control_vm("eject -f ide1-cd0")
+                log.info('QEMU VM "{name}" [{id}] has ejected the cdrom image'.format(name=self._name, id=self._id))
 
     @property
     def bios_image(self):
@@ -972,7 +1014,8 @@ class QemuVM(BaseNode):
                 await self._control_vm_commands(set_link_commands)
 
         try:
-            await self.start_wrap_console()
+            if self.is_running():
+                await self.start_wrap_console()
         except OSError as e:
             raise QemuError("Could not start Telnet QEMU console {}\n".format(e))
 
@@ -1916,7 +1959,8 @@ class QemuVM(BaseNode):
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
         additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
-        if self._console:
+        additional_options = additional_options.replace("%guest-cid%", str(self._guest_cid))
+        if self._console_type != "none" and self._console:
             additional_options = additional_options.replace("%console-port%", str(self._console))
         command = [self.qemu_path]
         command.extend(["-name", self._name])

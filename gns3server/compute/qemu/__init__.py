@@ -30,6 +30,7 @@ from ...utils.asyncio import subprocess_check_output
 from ..base_manager import BaseManager
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
+from .utils.guest_cid import get_next_guest_cid
 
 import logging
 log = logging.getLogger(__name__)
@@ -39,6 +40,33 @@ class Qemu(BaseManager):
 
     _NODE_CLASS = QemuVM
     _NODE_TYPE = "qemu"
+
+    def __init__(self):
+
+        super().__init__()
+        self._guest_cid_lock = asyncio.Lock()
+
+    async def create_node(self, *args, **kwargs):
+        """
+        Creates a new Qemu VM.
+
+        :returns: QemuVM instance
+        """
+
+        node = await super().create_node(*args, **kwargs)
+
+        # allocate a guest console ID (CID)
+        if node.console_type != "none" and node.console:
+            # by default, the guest CID is equal to the console port
+            node.guest_cid = node.console
+        else:
+            # otherwise pick a guest CID if no console port is configured
+            async with self._guest_cid_lock:
+                # wait for a node to be completely created before adding a new one
+                # this is important otherwise we allocate the same guest ID
+                # when creating multiple Qemu VMs at the same time
+                node.guest_cid = get_next_guest_cid(self.nodes)
+        return node
 
     @staticmethod
     async def get_kvm_archs():

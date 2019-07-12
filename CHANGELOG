@@ -1,5 +1,48 @@
 # Change Log
 
+## 2.2.0b4 11/07/2019
+
+* Requires a project to be opened to start/stop/suspend all nodes. Fixes #1609
+* Fix issue when starting GNS3 VM for Hyper-V
+* Set defaults for custom cloud nodes.
+* Fix issue when trying to rename a Dynamips node that is already powered on. Fixes #2824
+* Remove deprecated Qemu parameter to run legacy ASA VMs. Fixes #2827
+* Add debug message when searching for an image. Ref https://github.com/GNS3/gns3-gui/issues/2828
+
+## 2.2.0b3 15/06/2019
+
+* Fix template migration issues from GUI to controller. Fixes https://github.com/GNS3/gns3-gui/issues/2803
+* Refresh mounted media after ISO switch.
+* Resolve conflicts in docker volumes instead of error. Fixes https://github.com/GNS3/gns3-server/issues/1595
+* %guest-cid% variable implementation for Qemu VMs. Fixes https://github.com/GNS3/gns3-gui/issues/2804
+* Fix KeyError: 'usage' exception when configuring IOU template. Fixes https://github.com/GNS3/gns3-gui/issues/2806
+
+## 2.2.0b2 29/05/2019
+
+* Ignore Unicode errors when reading base config file contents.
+* Sync appliances.
+* Support snapshots for portable projects. Fixes https://github.com/GNS3/gns3-gui/issues/2792
+* Update the GNS3 version in topology file if converted. Ref https://github.com/GNS3/gns3-gui/issues/2798
+* Support for log rotation and compression. Fixes #1586
+* Do not start QEMU console if QEMU process is not started. Fixes https://github.com/GNS3/gns3-gui/issues/2712
+* Avoid sending warning message all the time for Ethernet switch.
+* Support to include snapshots in portable projects.
+
+## 2.1.20 29/05/2019
+
+* Ignore Unicode errors when reading base config file contents.
+
+## 2.1.19 28/05/2019
+
+* Sync appliances.
+* Remove yarl from requirements.txt since it is installed by aiohttp.
+* Drop typing dependency.
+
+## 2.1.18 22/05/2019
+
+* Revert "Force aiohttp version to 2.3.10 and aiohttp-cors version to 0.5.3" Ref https://github.com/GNS3/gns3-server/issues/1583 Ref https://github.com/GNS3/gns3-server/issues/1592
+* Fix invalid reStructuredText for long description in setup.py
+
 ## 2.2.0b1 21/05/2019
 
 * Upgrade GNS3 Web UI to v2019.2.0-alpha.3

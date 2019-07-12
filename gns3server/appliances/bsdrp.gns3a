@@ -22,7 +22,7 @@
         {
             "filename": "BSDRP-1.92-full-amd64-serial.img",
             "version": "1.92",
-            "md5sum": "1a123f3ba7ce73aa5823a65a7c571be1",
+            "md5sum": "b02f2502188915490bb9756ffca36910",
             "filesize": 1000000000,
             "download_url": "https://bsdrp.net/downloads",
             "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.92/amd64/BSDRP-1.92-full-amd64-serial.img.xz/download",

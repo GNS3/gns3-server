@@ -187,7 +187,7 @@ class Node:
         if not os.path.isabs(path):
             path = os.path.join(self.project.controller.configs_path(), path)
         try:
-            with open(path, encoding="utf-8") as f:
+            with open(path, encoding="utf-8", errors="ignore") as f:
                 return f.read()
         except OSError:
             return None
@@ -388,7 +388,6 @@ class Node:
 
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
-
         old_json = self.__json__()
 
         compute_properties = None
@@ -402,6 +401,8 @@ class Node:
                 if prop == "properties":
                     compute_properties = kwargs[prop]
                 else:
+                    if prop == "name" and self.node_type == "dynamips" and self.status == "started":
+                        raise aiohttp.web.HTTPConflict(text="Sorry, it is not possible rename of a Dynamips node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
         if compute_properties and "custom_adapters" in compute_properties:

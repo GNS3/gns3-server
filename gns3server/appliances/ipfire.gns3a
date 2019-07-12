@@ -25,6 +25,15 @@
     },
     "images": [
         {
+            "filename": "ipfire-2.23.2gb-ext4.x86_64-full-core131.img",
+            "version": "2.23",
+            "md5sum": "604c06e20c36985ff00802da4509340c",
+            "filesize": 1541160960,
+            "download_url": "http://www.ipfire.org/download",
+            "direct_download_url": "https://muug.ca/mirror/ipfire/releases/ipfire-2.x/2.23-core131/ipfire-2.23.2gb-ext4.x86_64-full-core131.img.xz",
+            "compression": "xz"
+        },
+        {
             "filename": "ipfire-2.21.2gb-ext4.x86_64-full-core129.img",
             "version": "2.21.129",
             "md5sum": "84801c588174763c585967a2851a7769",
@@ -98,6 +107,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.23",
+            "images": {
+                "hda_disk_image": "ipfire-2.23.2gb-ext4.x86_64-full-core131.img"
+            }
+        },
         {
             "name": "2.21.129",
             "images": {

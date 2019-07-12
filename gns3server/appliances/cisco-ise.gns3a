@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "ise-2.4.0.357.SPA.x86_64.iso",
+            "version": "2.4.0.357",
+            "md5sum": "766945618a0ff35f6c720b3bc4b46bfb",
+            "filesize": 8326062080,
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.4.0"
+        },
+		{
             "filename": "ise-2.2.0.470.SPA.x86_64.iso",
             "version": "2.2.0.470",
             "md5sum": "7fe5e730d0a51ef66e69d1463717ff3f",
@@ -65,6 +72,13 @@
     ],
     "versions": [
         {
+            "name": "2.4.0.357",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.4.0.357.SPA.x86_64.iso"
+            }
+        },
+		{
             "name": "2.2.0.470",
             "images": {
                 "hda_disk_image": "empty200G.qcow2",

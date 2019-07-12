@@ -1,6 +1,6 @@
-#!/bin/sh
+# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2017 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# A docker server use for localy test a remote GNS3 server  
+from ..qemu_error import QemuError
 
-docker build -t gns3-server .
-docker run -i -h gns3vm -p 8001:8001/tcp -t gns3-server python3 -m gns3server --local --port 8001
+import logging
+log = logging.getLogger(__name__)
 
 
+def get_next_guest_cid(nodes):
+    """
+    Calculates free guest_id from given nodes
+
+    :param nodes:
+    :raises QemuError when exceeds number
+    :return: integer first free cid
+    """
+
+    used = set([n.guest_cid for n in nodes])
+    pool = set(range(3, 65535))
+    try:
+        return (pool - used).pop()
+    except KeyError:
+        raise QemuError("Cannot create a new Qemu VM (limit of 65535 guest ID on one host reached)")

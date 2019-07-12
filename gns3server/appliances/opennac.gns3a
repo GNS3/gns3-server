@@ -1,0 +1,44 @@
+{
+    "name": "OpenNAC",
+    "category": "guest",
+    "description": "openNAC is an opensource Network Access Control for corporate LAN / WAN environments. It enables authentication, authorization and audit policy-based all access to network. It supports diferent network vendors like Cisco, Alcatel, 3Com or Extreme Networks, and different clients like PCs with Windows or Linux, Mac,devices like smartphones and tablets.  Based on open source components and self-development It is based on industry standards such as FreeRadius, 802.1x, AD, ldap, ...It is very extensible, new features can be incorporated because it is architectured in plugins. Easily integrated with existing systems Last but not least, It provides value added services such as configuration management, network, backup configurations, Network Discovery and Network Monitoring.  Download the OVA, then extract the VMDK (tar -xvf FILE.ova), then convert to qcow2 (qemu-img convert -O qcow2 FILE.vmdk FILE.qcow2).",
+    "vendor_name": "Opennactech",
+    "vendor_url": "http://www.opennac.org/opennac/en.html",
+    "documentation_url": "http://www.opennac.org/opennac/en/support.html",
+    "product_name": "OpenNAC",
+    "product_url": "https://opennac.org/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Brent Stewart",
+    "maintainer_email": "brent@stewart.tc",
+    "usage": "Passwords are set during installation.",
+    "symbol": "opennac.png",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 512,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require",
+        "options": "-smp 2"
+    },
+    "images": [
+        {
+            "filename": "opennac_3711_img.qcow2",
+            "version": "OpenNAC 3711",
+            "md5sum": "88d6129265860aa58c5306cd7b413aab",
+            "filesize": 3968729088,
+            "download_url": "http://www.opennac.org/opennac/en/download.html",
+            "direct_download_url": "http://sourceforge.net/projects/opennac/files/ova/opennac_3711_img.ova/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "OpenNAC 3711",
+            "images": {
+                "hda_disk_image": "opennac_3711_img.qcow2"
+            }
+        }
+        
+]
+}

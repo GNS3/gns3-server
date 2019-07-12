@@ -22,10 +22,13 @@ import uuid
 import shutil
 import zipfile
 import aiohttp
+import aiofiles
 import itertools
+import tempfile
 
 from .topology import load_topology
 from ..utils.asyncio import wait_run_in_executor
+from ..utils.asyncio import aiozipstream
 
 import logging
 log = logging.getLogger(__name__)
@@ -159,8 +162,13 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         json.dump(topology, f, indent=4)
     os.remove(os.path.join(path, "project.gns3"))
 
-    if os.path.exists(os.path.join(path, "images")):
-        _import_images(controller, path)
+    images_path = os.path.join(path, "images")
+    if os.path.exists(images_path):
+        await _import_images(controller, images_path)
+
+    snapshots_path = os.path.join(path, "snapshots")
+    if os.path.exists(snapshots_path):
+        await _import_snapshots(snapshots_path, project_name, project_id)
 
     project = await controller.load_project(dot_gns3_path, load=False)
     return project
@@ -215,13 +223,13 @@ async def _upload_file(compute, project_id, file_path, path):
         await compute.http_query("POST", path, f, timeout=None)
 
 
-def _import_images(controller, path):
+async def _import_images(controller, images_path):
     """
     Copy images to the images directory or delete them if they already exists.
     """
 
     image_dir = controller.images_path()
-    root = os.path.join(path, "images")
+    root = images_path
     for (dirpath, dirnames, filenames) in os.walk(root, followlinks=False):
         for filename in filenames:
             path = os.path.join(dirpath, filename)
@@ -229,4 +237,54 @@ def _import_images(controller, path):
                 continue
             dst = os.path.join(image_dir, os.path.relpath(path, root))
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.move(path, dst)
+            await wait_run_in_executor(shutil.move, path, dst)
+
+
+async def _import_snapshots(snapshots_path, project_name, project_id):
+    """
+    Import the snapshots and update their project name and ID to be the same as the main project.
+    """
+
+    for snapshot in os.listdir(snapshots_path):
+        if not snapshot.endswith(".gns3project"):
+            continue
+        snapshot_path = os.path.join(snapshots_path, snapshot)
+        with tempfile.TemporaryDirectory(dir=snapshots_path) as tmpdir:
+
+            # extract everything to a temporary directory
+            try:
+                with open(snapshot_path, "rb") as f:
+                    with zipfile.ZipFile(f) as zip_file:
+                        await wait_run_in_executor(zip_file.extractall, tmpdir)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Cannot open snapshot '{}': {}".format(os.path.basename(snapshot), e))
+            except zipfile.BadZipFile:
+                raise aiohttp.web.HTTPConflict(text="Cannot extract files from snapshot '{}': not a GNS3 project (invalid zip)".format(os.path.basename(snapshot)))
+
+            # patch the topology with the correct project name and ID
+            try:
+                topology_file_path = os.path.join(tmpdir, "project.gns3")
+                with open(topology_file_path, encoding="utf-8") as f:
+                    topology = json.load(f)
+
+                    topology["name"] = project_name
+                    topology["project_id"] = project_id
+                with open(topology_file_path, "w+", encoding="utf-8") as f:
+                    json.dump(topology, f, indent=4, sort_keys=True)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the project.gns3 file cannot be modified: {}".format(os.path.basename(snapshot), e))
+            except (ValueError, KeyError):
+                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the project.gns3 file is corrupted".format(os.path.basename(snapshot)))
+
+            # write everything back to the original snapshot file
+            try:
+                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                    for root, dirs, files in os.walk(tmpdir, topdown=True, followlinks=False):
+                        for file in files:
+                            path = os.path.join(root, file)
+                            zstream.write(path, os.path.relpath(path, tmpdir))
+                    async with aiofiles.open(snapshot_path, 'wb+') as f:
+                        async for chunk in zstream:
+                            await f.write(chunk)
+            except OSError as e:
+                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the snapshot cannot be recreated: {}".format(os.path.basename(snapshot), e))

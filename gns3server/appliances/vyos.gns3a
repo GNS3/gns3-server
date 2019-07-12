@@ -1,7 +1,7 @@
 {
     "name": "VyOS",
     "category": "router",
-    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality.",
+    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is in the rolling release track.",
     "vendor_name": "Linux",
     "vendor_url": "http://vyos.net/",
     "documentation_url": "http://vyos.net/wiki/User_Guide",
@@ -9,6 +9,7 @@
     "product_url": "http://vyos.net/",
     "registry_version": 3,
     "status": "stable",
+    "symbol": "vyos.png",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username/password is vyos/vyos. At first boot the router will start from the cdrom, login and then type install system and follow the instructions.",
@@ -24,10 +25,10 @@
     },
     "images": [
         {
-            "filename": "vyos-1.2.0-beta1-amd64.iso",
-            "version": "1.2.0-beta1",
-            "md5sum": "c2906532d4c7a0d29b61e8eab326d6c7",
-            "filesize": 243269632,
+            "filename": "vyos-1.2.0-rolling+201906040337-amd64.iso",
+            "version": "1.2.0-2019-06-04",
+            "md5sum": "2a1342985b2a9edfef9f66310ce11a92",
+            "filesize": 427819008,
             "download_url": "http://dev.packages.vyos.net/iso/preview/1.2.0-beta1/",
             "direct_download_url": "http://dev.packages.vyos.net/iso/preview/1.2.0-beta1/vyos-1.2.0-beta1-amd64.iso"
         },
@@ -74,10 +75,10 @@
     ],
     "versions": [
         {
-            "name": "1.2.0-beta1",
+            "name": "1.2.0-2019-06-04",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.0-beta1-amd64.iso"
+                "cdrom_image": "vyos-1.2.0-rolling+201906040337-amd64.iso"
             }
         },
         {

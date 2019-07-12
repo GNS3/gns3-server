@@ -116,7 +116,7 @@ class QEMUHandler:
         description="Update a Qemu VM instance",
         input=QEMU_UPDATE_SCHEMA,
         output=QEMU_OBJECT_SCHEMA)
-    def update(request, response):
+    async def update(request, response):
 
         qemu_manager = Qemu.instance()
         vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
@@ -125,6 +125,9 @@ class QEMUHandler:
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
+                if name == "cdrom_image":
+                    # let the guest know about the new cdrom image
+                    await vm.update_cdrom_image()
 
         vm.updated()
         response.json(vm)
