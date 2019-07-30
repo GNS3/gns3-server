@@ -182,8 +182,8 @@ class HyperVGNS3VM(BaseGNS3VM):
 
         vms = []
         try:
-            for vm in self._conn.Msvm_ComputerSystem():
-                if vm.Caption == "Virtual Machine":
+            for vm in self._conn.Msvm_VirtualSystemSettingData():
+                if vm.VirtualSystemType == "Microsoft:Hyper-V:System:Realized":
                     vms.append({"vmname": vm.ElementName})
         except wmi.x_wmi as e:
             raise GNS3VMError("Could not list Hyper-V VMs: {}".format(e))
