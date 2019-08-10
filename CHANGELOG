@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.0rc1 10/08/2019
+
+* Bump jsonschema to version 3.0.2
+* List Hyper-V VMs on non-english OSes. Fixes #1612
+* Add missing default values in Cloud schema.
+* Release 2019.2.0-alpha.5
+* Fix redirection to web-ui bundled server
+
 ## 2.2.0b4 11/07/2019
 
 * Requires a project to be opened to start/stop/suspend all nodes. Fixes #1609
