@@ -32,6 +32,13 @@
             "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Qemu Appliances/IOSv_startup_config.img/download"
         },
         {
+            "filename": "vios-adventerprisek9-m.vmdk.SPA.157-3.M3",
+            "version": "15.7(3)M3",
+            "md5sum": "37c148ffa14a82f418a6e9c2b049fafe",
+            "filesize": 134021120,
+            "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
             "version": "15.6(2)T",
             "md5sum": "83707e3cc93646da58ee6563a68002b5",
@@ -54,6 +61,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.7(3)M3",
+            "images": {
+                "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.157-3.M3",
+                "hdb_disk_image": "IOSv_startup_config.img"
+            }
+        },
         {
             "name": "15.6(2)T",
             "images": {

@@ -43,6 +43,13 @@
             "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.1.1.4.qcow2"
         },
 		{
+            "filename": "EXOS-VM_v22.7.1.2.qcow2",
+            "version": "22.7.1.2",
+            "md5sum": "a13e839b3fa05e8a5b0fb31f7e3dda86",
+            "filesize": 180420608,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.7.1.2.qcow2"
+        },
+		{
             "filename": "EXOS-VM_v22.6.1.4.qcow2",
             "version": "22.6.1.4",
             "md5sum": "82b31b11b26143a82c8259a4825696fc",
@@ -83,13 +90,6 @@
             "md5sum": "77683060e75d81b776761f6829b15e9b",
             "filesize": 179437568,
             "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.1.1.5-disk1.qcow2"
-        },
-		{
-            "filename": "EXOS-VM_v21.1.1.4-disk1.qcow2",
-            "version": "21.1.1.4",
-            "md5sum": "654606809b6fd3bca400377483eb4a79",
-            "filesize": 117560832,
-            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v21.1.1.4-disk1.qcow2"
         }
 
     ],
@@ -108,6 +108,12 @@
                 "hda_disk_image": "EXOS-VM_v30.1.1.4.qcow2"
             }
         },
+		{
+            "name": "22.7.1.2",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v22.7.1.2.qcow2"
+            }
+		},
 		{
             "name": "22.6.1.4",
             "images": {
@@ -142,12 +148,6 @@
             "name": "22.1.1.5",
             "images": {
                 "hda_disk_image": "EXOS-VM_v22.1.1.5-disk1.qcow2"
-            }
-        },
-        {
-            "name": "21.1.1.4",
-            "images": {
-                "hda_disk_image": "EXOS-VM_v21.1.1.4-disk1.qcow2"
             }
         }
     ]
