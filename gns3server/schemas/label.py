@@ -39,9 +39,7 @@ LABEL_OBJECT_SCHEMA = {
         },
     },
     "required": [
-        "text",
-        "x",
-        "y"
+        "text"
     ],
     "additionalProperties": False
 }

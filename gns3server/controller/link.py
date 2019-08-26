@@ -248,11 +248,8 @@ class Link:
 
         if label is None:
             label = {
-                "x": -10,
-                "y": -10,
-                "rotation": 0,
                 "text": html.escape("{}/{}".format(adapter_number, port_number)),
-                "style": "font-size: 10; font-style: Verdana"
+                "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
             }
 
         self._nodes.append({

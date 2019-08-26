@@ -78,11 +78,8 @@ def test_add_node(async_run, project, compute):
             "adapter_number": 0,
             "port_number": 4,
             'label': {
-                'y': -10,
                 'text': '0/4',
-                'x': -10,
-                'rotation': 0,
-                'style': 'font-size: 10; font-style: Verdana'
+                'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
             }
         }
     ]
@@ -210,11 +207,8 @@ def test_json(async_run, project, compute, link):
                 "adapter_number": 0,
                 "port_number": 4,
                 'label': {
-                    'y': -10,
                     'text': '0/4',
-                    'x': -10,
-                    'rotation': 0,
-                    'style': 'font-size: 10; font-style: Verdana'
+                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
                 }
             },
             {
@@ -222,11 +216,8 @@ def test_json(async_run, project, compute, link):
                 "adapter_number": 1,
                 "port_number": 3,
                 'label': {
-                    'y': -10,
                     'text': '1/3',
-                    'x': -10,
-                    'rotation': 0,
-                    'style': 'font-size: 10; font-style: Verdana'
+                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
                 }
             }
         ],
@@ -246,11 +237,8 @@ def test_json(async_run, project, compute, link):
                 "adapter_number": 0,
                 "port_number": 4,
                 'label': {
-                    'y': -10,
                     'text': '0/4',
-                    'x': -10,
-                    'rotation': 0,
-                    'style': 'font-size: 10; font-style: Verdana'
+                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
                 }
             },
             {
@@ -258,11 +246,8 @@ def test_json(async_run, project, compute, link):
                 "adapter_number": 1,
                 "port_number": 3,
                 'label': {
-                    'y': -10,
                     'text': '1/3',
-                    'x': -10,
-                    'rotation': 0,
-                    'style': 'font-size: 10; font-style: Verdana'
+                    'style': 'font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;'
                 }
             }
         ],
