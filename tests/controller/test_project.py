@@ -236,6 +236,37 @@ def test_add_node_from_template(async_run, controller):
     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
+def test_add_builtin_node_from_template(async_run, controller):
+    """
+    For a local server we send the project path
+    """
+    compute = MagicMock()
+    compute.id = "local"
+    project = Project(controller=controller, name="Test")
+    project.emit_notification = MagicMock()
+    template = Template(str(uuid.uuid4()), {
+        "name": "Builtin-switch",
+        "template_type": "ethernet_switch",
+    }, builtin=True)
+    controller.template_manager.templates[template.id] = template
+    template.__json__()
+    controller._computes["local"] = compute
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node = async_run(project.add_node_from_template(template.id, x=23, y=12, compute_id="local"))
+    compute.post.assert_any_call('/projects', data={
+        "name": project._name,
+        "project_id": project._id,
+        "path": project._path
+    })
+
+    assert compute in project._project_created_on_compute
+    project.emit_notification.assert_any_call("node.created", node.__json__())
+
+
 def test_delete_node(async_run, controller):
     """
     For a local server we send the project path
