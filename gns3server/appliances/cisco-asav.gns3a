@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "asav9-12-2.qcow2",
+            "version": "9.12.2",
+            "md5sum": "ad1f8ce94417a654949ecc53d280b29f",
+            "filesize": 197853184,
+            "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.12.2"
+        },
+        {
             "filename": "asav992.qcow2",
             "version": "9.9.2",
             "md5sum": "0cba453dbf70313d8d63a00700618f52",
@@ -111,6 +118,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.12.2",
+            "images": {
+                "hda_disk_image": "asav9-12-2.qcow2"
+            }
+        },   
         {
             "name": "9.9.2",
             "images": {

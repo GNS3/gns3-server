@@ -23,6 +23,13 @@
     },
     "images": [
         {
+            "filename": "csr1000v-universalk9.16.12.01a-serial.qcow2",
+            "version": "16.12.1a",
+            "md5sum": "015777ce5279263314b15e01af59877e",
+            "filesize": 983629824,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.12.1a"
+        },
+        {
             "filename": "csr1000v-universalk9.16.10.01b-serial.qcow2",
             "version": "16.10.1b",
             "md5sum": "0d3d647f83631c7955ad7899e6cce293",
@@ -49,6 +56,13 @@
             "md5sum": "bad9000d4ae8317bbc99a34a8cdd2eb4",
             "filesize": 884539392,
             "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.06.06-serial.qcow2",
+            "version": "16.6.6",
+            "md5sum": "31bd32ef6b0d83a8ca19c7b566737a36",
+            "filesize": 1573191680,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.2"
         },
         {
             "filename": "csr1000v-universalk9.16.06.02-serial.qcow2",
@@ -116,6 +130,12 @@
     ],
     "versions": [
         {
+            "name": "16.12.1a",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.12.01a-serial.qcow2"
+            }
+        },
+        {
             "name": "16.10.1b",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.10.01b-serial.qcow2"
@@ -137,6 +157,12 @@
             "name": "16.7.1",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.07.01-serial.qcow2"
+            }
+        },
+        {
+            "name": "16.6.6",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.06.06-serial.qcow2"
             }
         },
         {
