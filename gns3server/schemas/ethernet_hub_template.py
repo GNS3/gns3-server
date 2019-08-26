@@ -68,7 +68,7 @@ ETHERNET_HUB_TEMPLATE_PROPERTIES = {
 
 ETHERNET_HUB_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
 ETHERNET_HUB_TEMPLATE_PROPERTIES["category"]["default"] = "switch"
-ETHERNET_HUB_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Hub-{0}"
+ETHERNET_HUB_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Hub{0}"
 ETHERNET_HUB_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/hub.svg"
 
 ETHERNET_HUB_TEMPLATE_OBJECT_SCHEMA = {
