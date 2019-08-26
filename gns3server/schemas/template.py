@@ -37,7 +37,7 @@ BASE_TEMPLATE_PROPERTIES = {
     },
     "compute_id": {
         "description": "Compute identifier",
-        "type": "string"
+        "type": ["null", "string"]
     },
     "default_name_format": {
         "description": "Default name format",

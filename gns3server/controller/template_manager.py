@@ -60,13 +60,13 @@ class TemplateManager:
 
         # Add builtins
         builtins = []
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"template_type": "cloud", "name": "Cloud", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"template_type": "nat", "name": "NAT", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"template_type": "cloud", "name": "Cloud", "default_name_format": "Cloud-{0}", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"template_type": "nat", "name": "NAT", "default_name_format": "NAT-{0}", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
         builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"template_type": "vpcs", "name": "VPCS", "default_name_format": "PC-{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"template_type": "ethernet_switch", "console_type": "none", "name": "Ethernet switch", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"template_type": "ethernet_hub", "name": "Ethernet hub", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"template_type": "frame_relay_switch", "name": "Frame Relay switch", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
-        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"template_type": "atm_switch", "name": "ATM switch", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"template_type": "ethernet_switch", "console_type": "none", "name": "Ethernet switch", "default_name_format": "Switch-{0}", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"template_type": "ethernet_hub", "name": "Ethernet hub", "default_name_format": "Hub-{0}", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"), {"template_type": "frame_relay_switch", "name": "Frame Relay switch", "default_name_format": "FRSW-{0}", "category": 1, "symbol": ":/symbols/frame_relay_switch.svg"}, builtin=True))
+        builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"), {"template_type": "atm_switch", "name": "ATM switch", "default_name_format": "ATMSW-{0}", "category": 1, "symbol": ":/symbols/atm_switch.svg"}, builtin=True))
 
         #FIXME: disable TraceNG
         #if sys.platform.startswith("win"):

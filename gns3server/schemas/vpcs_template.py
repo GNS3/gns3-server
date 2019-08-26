@@ -40,7 +40,7 @@ VPCS_TEMPLATE_PROPERTIES = {
 
 VPCS_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
 VPCS_TEMPLATE_PROPERTIES["category"]["default"] = "guest"
-VPCS_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "PC{0}"
+VPCS_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "PC-{0}"
 VPCS_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/vpcs_guest.svg"
 
 VPCS_TEMPLATE_OBJECT_SCHEMA = {

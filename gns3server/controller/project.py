@@ -503,7 +503,11 @@ class Project:
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")
-        compute = self.controller.get_compute(template.pop("compute_id", compute_id))
+        if template["builtin"] is True:
+            # compute_id is selected by clients for builtin templates
+            compute = self.controller.get_compute(compute_id)
+        else:
+            compute = self.controller.get_compute(template.pop("compute_id", compute_id))
         name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)

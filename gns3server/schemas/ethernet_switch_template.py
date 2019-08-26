@@ -115,7 +115,7 @@ ETHERNET_SWITCH_TEMPLATE_PROPERTIES = {
 
 ETHERNET_SWITCH_TEMPLATE_PROPERTIES.update(copy.deepcopy(BASE_TEMPLATE_PROPERTIES))
 ETHERNET_SWITCH_TEMPLATE_PROPERTIES["category"]["default"] = "switch"
-ETHERNET_SWITCH_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Switch{0}"
+ETHERNET_SWITCH_TEMPLATE_PROPERTIES["default_name_format"]["default"] = "Switch-{0}"
 ETHERNET_SWITCH_TEMPLATE_PROPERTIES["symbol"]["default"] = ":/symbols/ethernet_switch.svg"
 
 ETHERNET_SWITCH_TEMPLATE_OBJECT_SCHEMA = {

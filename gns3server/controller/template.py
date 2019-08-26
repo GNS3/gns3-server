@@ -203,7 +203,11 @@ class Template:
         settings.update({"template_id": self._id,
                          "builtin": self.builtin})
 
-        if not self.builtin:
+        if self.builtin:
+            # builin templates have compute_id set to None to tell clients
+            # to select a compute
+            settings["compute_id"] = None
+        else:
             settings["compute_id"] = self.compute_id
 
         return settings
