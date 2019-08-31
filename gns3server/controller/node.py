@@ -96,7 +96,7 @@ class Node:
                     try:
                         setattr(self, prop, kwargs[prop])
                     except AttributeError as e:
-                        log.critical("Cannot set attribute '%s'".format(prop))
+                        log.critical("Cannot set attribute '{}'".format(prop))
                         raise e
                 else:
                     if prop not in self.CONTROLLER_ONLY_PROPERTIES and kwargs[prop] is not None and kwargs[prop] != "":
