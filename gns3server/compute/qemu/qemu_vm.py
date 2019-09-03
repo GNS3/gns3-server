@@ -1641,10 +1641,10 @@ class QemuVM(BaseNode):
             if interface == "sata":
                 # special case, sata controller doesn't exist in Qemu
                 options.extend(["-device", 'ahci,id=ahci{},bus=pci.{}'.format(disk_index, disk_index)])
-                options.extend(["-drive", 'file={},if=none,id=drive-sata-disk{},index={},media=disk'.format(disk, disk_index, disk_index)])
-                options.extend(["-device", 'ide-drive,drive=drive-sata-disk{},bus=ahci{}.0,id=drive-sata-disk{}'.format(disk_index, disk_index, disk_index)])
+                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
+                options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
             else:
-                options.extend(["-drive", 'file={},if={},index={},media=disk'.format(disk, interface, disk_index)])
+                options.extend(["-drive", 'file={},if={},index={},media=disk,id=drive{}'.format(disk, interface, disk_index, disk_index)])
 
         return options
 
