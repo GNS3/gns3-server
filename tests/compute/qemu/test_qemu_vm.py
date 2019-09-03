@@ -352,7 +352,7 @@ def test_disk_options(vm, tmpdir, loop, fake_qemu_img_binary):
         args, kwargs = process.call_args
         assert args == (fake_qemu_img_binary, "create", "-o", "backing_file={}".format(vm._hda_disk_image), "-f", "qcow2", os.path.join(vm.working_dir, "hda_disk.qcow2"))
 
-    assert options == ['-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk']
+    assert options == ['-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0']
 
 
 def test_cdrom_option(vm, tmpdir, loop, fake_qemu_img_binary):
@@ -407,10 +407,10 @@ def test_disk_options_multiple_disk(vm, tmpdir, loop, fake_qemu_img_binary):
         options = loop.run_until_complete(asyncio.ensure_future(vm._disk_options()))
 
     assert options == [
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=ide,index=1,media=disk',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdc_disk.qcow2") + ',if=ide,index=2,media=disk',
-        '-drive', 'file=' + os.path.join(vm.working_dir, "hdd_disk.qcow2") + ',if=ide,index=3,media=disk'
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hda_disk.qcow2") + ',if=ide,index=0,media=disk,id=drive0',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdb_disk.qcow2") + ',if=ide,index=1,media=disk,id=drive1',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdc_disk.qcow2") + ',if=ide,index=2,media=disk,id=drive2',
+        '-drive', 'file=' + os.path.join(vm.working_dir, "hdd_disk.qcow2") + ',if=ide,index=3,media=disk,id=drive3'
     ]
 
 
