@@ -28,11 +28,11 @@
     "images": [
         {
            "filename": "chr-6.44.3.img",
-           "version": "6.44.2",
+           "version": "6.44.3",
            "md5sum": "c46b33125d536faa24473a519abbb89d",
            "filesize": 67108864,
            "download_url": "http://www.mikrotik.com/download",
-           "direct_download_url": "https://download.mikrotik.com/routeros/6.44.2/chr-6.44.2.img.zip",
+           "direct_download_url": "https://download.mikrotik.com/routeros/6.44.3/chr-6.44.3.img.zip",
            "compression": "zip"
         },
         {

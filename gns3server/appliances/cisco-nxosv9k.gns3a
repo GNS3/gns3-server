@@ -54,6 +54,13 @@
             "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529"
         },
         {
+            "filename": "nxosv-final.7.0.3.I7.7.qcow2",
+            "version": "7.0.3.I7.7",
+            "md5sum": "5daab34b672f9534c9aee59a6c8903b3",
+            "filesize": 996212736,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/7.0%25283%2529I7%25287%2529"
+        },
+        {
             "filename": "nxosv-final.7.0.3.I7.6.qcow2",
             "version": "7.0.3.I7.6",
             "md5sum": "a122ee954b4c11761abd99291b70544e",
@@ -153,6 +160,13 @@
             "images": {
                 "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nxosv-final.9.2.1.qcow2"
+            }
+        },
+        {
+            "name": "7.0.3.I7.7",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.7.0.3.I7.7.qcow2"
             }
         },
         {
