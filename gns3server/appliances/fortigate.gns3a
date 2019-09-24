@@ -15,7 +15,7 @@
     "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
     "qemu": {
-        "adapter_type": "virtio-net-pci",
+        "adapter_type": "e1000",
         "adapters": 10,
         "ram": 1024,
         "hda_disk_interface": "virtio",

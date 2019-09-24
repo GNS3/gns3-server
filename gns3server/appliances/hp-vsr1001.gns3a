@@ -21,7 +21,7 @@
         "console_type": "vnc",
         "boot_priority": "c",
         "kvm": "require",
-        "options": "-machine type=pc-1.0"
+        "options": "-cpu qemu64"
     },
     "images": [
         {
