@@ -81,7 +81,7 @@ class ATMSwitch(Device):
         :param new_name: New name for this switch
         """
 
-        await self._hypervisor.send('atm rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
+        await self._hypervisor.send('atmsw rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
         log.info('ATM switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
                                                                               id=self._id,
                                                                               new_name=new_name))
