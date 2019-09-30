@@ -144,6 +144,7 @@ class Qemu(BaseManager):
 
         qemus = []
         for path in Qemu.paths_list():
+            log.debug("Searching for Qemu binaries in '{}'".format(path))
             try:
                 for f in os.listdir(path):
                     if f.endswith("-spice"):
