@@ -26,6 +26,42 @@
         "options": "-nographic"
     },
     "images": [
+            {
+              "filename": "chr-6.45.6.img",
+              "version": "6.45",
+              "md5sum": "e68db699ba23ac7e4fba95b3075c1c6b",
+              "filesize": 67108864,
+              "download_url": "http://www.mikrotik.com/download",
+              "direct_download_url": "https://download2.mikrotik.com/routeros/6.45.6/chr-6.45.6.img.zip",
+              "compression": "zip"
+           },
+           {
+             "filename": "chr-6.44.5.img",
+             "version": "6.44",
+             "md5sum": "19aa21073c8ea4540daacde69bacda24",
+             "filesize": 67108864,
+             "download_url": "http://www.mikrotik.com/download",
+             "direct_download_url": "https://download2.mikrotik.com/routeros/6.44.5/chr-6.44.5.img.zip",
+             "compression": "zip"
+          },
+          {
+            "filename": "chr-6.42.12.img",
+            "version": "6.42",
+            "md5sum": "8485c606eb38e629fb1f5356d31bbc86",
+            "filesize": 45537201,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.42.12/chr-6.42.12.img.zip",
+            "compression": "zip"
+         },
+         {
+            "filename": "chr-6.44.img",
+            "version": "6.44",
+            "md5sum": "86fdf9f0093b4e8f9e7b1c8019fb37b5",
+            "filesize": 33621035,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download2.mikrotik.com/routeros/6.44/chr-6.44.img.zip",
+            "compression": "zip"
+         },
         {
            "filename": "chr-6.44.3.img",
            "version": "6.44.3",
@@ -109,6 +145,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.45.6",
+            "images": {
+                "hda_disk_image": "chr-6.45.6.img"
+            }
+        },
+        {
+            "name": "6.44.5",
+            "images": {
+                "hda_disk_image": "chr-6.44.5.img"
+            }
+        },
         {
             "name": "6.44.3",
             "images": {
