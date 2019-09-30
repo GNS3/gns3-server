@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.0 30/09/2019
+
+* Add debug message for what directory is checked for Qemu binaries. Ref #1655
+* Release 2019.2.0-alpha.8
+* Fix single quote is not closed. Fixes #1654
+* Fix wrong Dynamips command used to rename an ATM switch. Fixes #1651
+* Don't specify the PCI bus for AHCI device
+* Add id value to all Qemu drives
+
 ## 2.2.0rc5 09/09/2019
 
 * Fix AttributeError: Cannot set attribute '%s'. Fixes #1646
