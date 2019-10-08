@@ -48,7 +48,7 @@ IOU_CREATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
-            "enum": ["telnet", "none", None]
+            "enum": ["telnet", "none"]
         },
         "path": {
             "description": "Path of iou binary",

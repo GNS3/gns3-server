@@ -167,6 +167,9 @@ def load_topology(path):
             if "appliance_id" in node:
                 node["template_id"] = node["appliance_id"]
                 del node["appliance_id"]
+            # make sure console_type is not None but "none" string
+            if "console_type" in node and node["console_type"] is None:
+                node["console_type"] = "none"
 
     try:
         _check_topology_schema(topo)
@@ -189,6 +192,7 @@ def _convert_2_1_0(topo, topo_path):
 
     Changes:
      * Removed acpi_shutdown option from Qemu, VMware and VirtualBox
+
     """
     topo["revision"] = 9
 
@@ -198,6 +202,9 @@ def _convert_2_1_0(topo, topo_path):
         topo["drawing_grid_size"] = topo["grid_size"]
 
     for node in topo.get("topology", {}).get("nodes", []):
+        # make sure console_type is not None but "none" string
+        if "console_type" in node and node["console_type"] is None:
+            node["console_type"] = "none"
         if "properties" in node:
             if node["node_type"] in ("qemu", "vmware", "virtualbox"):
                 if "acpi_shutdown" in node["properties"]:
