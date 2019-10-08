@@ -279,7 +279,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     pass
             remaining_try -= 1
             await asyncio.sleep(1)
-        raise GNS3VMError("Could not get the GNS3 VM ip make sure the VM receive an IP from VirtualBox")
+        raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
 
     async def suspend(self):
         """

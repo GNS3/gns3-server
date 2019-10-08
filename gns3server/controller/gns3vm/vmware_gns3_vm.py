@@ -164,17 +164,22 @@ class VMwareGNS3VM(BaseGNS3VM):
         guest_ip_address = ""
         log.info("Waiting for GNS3 VM IP")
         while True:
-            guest_ip_address = await self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
-            guest_ip_address = guest_ip_address.strip()
-            if len(guest_ip_address) != 0:
-                break
-            trial -= 1
-            # If ip not found fallback on old method
-            if trial == 0:
-                log.warning("No IP found for the VM via readVariable fallback to getGuestIPAddress")
-                guest_ip_address = await self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
-                break
+            try:
+                guest_ip_address = await self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
+                guest_ip_address = guest_ip_address.strip()
+                if len(guest_ip_address) != 0:
+                    break
+                trial -= 1
+                # If IP address not found then fallback an old method
+                if trial == 0:
+                    log.warning("No IP found for the VM via readVariable fallback to getGuestIPAddress")
+                    guest_ip_address = await self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
+                    break
+            except GNS3VMError as e:
+                log.debug("{}".format(e))
             await asyncio.sleep(1)
+        if not guest_ip_address:
+            raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
         self.ip_address = guest_ip_address
         log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
         self.running = True
