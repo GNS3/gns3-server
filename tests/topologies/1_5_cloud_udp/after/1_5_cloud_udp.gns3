@@ -20,7 +20,7 @@
             {
                 "compute_id": "local",
                 "console": null,
-                "console_type": null,
+                "console_type": "none",
                 "first_port_name": null,
                 "label": {
                     "rotation": 0,

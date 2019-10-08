@@ -19,7 +19,7 @@
             {
                 "compute_id": "local",
                 "console": null,
-                "console_type": null,
+                "console_type": "none",
                 "label": {
                     "rotation": 0,
                     "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
