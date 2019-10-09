@@ -23,6 +23,7 @@ order to run a QEMU VM.
 import sys
 import os
 import re
+import shlex
 import math
 import shutil
 import asyncio
