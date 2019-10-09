@@ -214,8 +214,10 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
 
         if vm_state == "poweroff":
+            log.info("Update GNS3 VM settings (CPU, RAM and Hardware Virtualization)")
             await self.set_vcpus(self.vcpus)
             await self.set_ram(self.ram)
+            await self.enable_nested_hw_virt()
 
         if vm_state in ("poweroff", "saved"):
             # start the VM if it is not running
@@ -338,6 +340,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
 
         await self._execute("modifyvm", [self._vmname, "--memory", str(ram)], timeout=3)
         log.info("GNS3 VM RAM amount set to {}".format(ram))
+
+    async def enable_nested_hw_virt(self):
+        """
+        Enable nested hardware virtualization for the GNS3 VM.
+        """
+
+        await self._execute("modifyvm", [self._vmname, "--nested-hw-virt", "on"], timeout=3)
+        log.info("Nested hardware virtualization enabled")
 
     async def set_hostonly_network(self, adapter_number, hostonly_network_name):
         """

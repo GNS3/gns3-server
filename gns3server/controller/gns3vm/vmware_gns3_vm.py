@@ -147,7 +147,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         except VMwareError as e:
             raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
         if not running:
-            log.info("Update GNS3 VM settings")
+            log.info("Update GNS3 VM settings (CPU, RAM and Hardware Virtualization)")
             # set the number of vCPUs and amount of RAM
             await self._set_vcpus_ram(self.vcpus, self.ram)
             await self._set_extra_options()

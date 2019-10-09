@@ -226,8 +226,7 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Could not find Hyper-V VM {}".format(self.vmname))
 
         if not self._is_running():
-
-            log.info("Update GNS3 VM settings")
+            log.info("Update GNS3 VM settings (CPU and RAM)")
             # set the number of vCPUs and amount of RAM
             self._set_vcpus_ram(self.vcpus, self.ram)
 
