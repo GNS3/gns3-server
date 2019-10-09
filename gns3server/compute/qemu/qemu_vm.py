@@ -25,7 +25,6 @@ import os
 import re
 import math
 import shutil
-import shlex
 import asyncio
 import socket
 import gns3server
@@ -33,7 +32,7 @@ import subprocess
 import time
 import json
 
-from gns3server.utils import parse_version
+from gns3server.utils import parse_version, shlex_quote
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
@@ -969,7 +968,7 @@ class QemuVM(BaseNode):
             self.check_available_ram(self.ram)
 
             command = await self._build_command()
-            command_string = " ".join(shlex.quote(s) for s in command)
+            command_string = " ".join(shlex_quote(s) for s in command)
             try:
                 log.info("Starting QEMU with: {}".format(command_string))
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
@@ -1566,7 +1565,7 @@ class QemuVM(BaseNode):
 
         self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
         log.info("logging to {}".format(self._qemu_img_stdout_file))
-        command_string = " ".join(shlex.quote(s) for s in command)
+        command_string = " ".join(shlex_quote(s) for s in command)
         log.info("Executing qemu-img with: {}".format(command_string))
         with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
             process = await asyncio.create_subprocess_exec(*command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir)

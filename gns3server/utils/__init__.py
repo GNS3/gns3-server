@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 import re
+import shlex
 import textwrap
 import posixpath
 
@@ -87,3 +89,14 @@ def parse_version(version):
             version.append("000000")
         version.append("final")
     return tuple(version)
+
+
+def shlex_quote(s):
+    """
+    Compatible shlex_quote to handle case where Windows needs double quotes around file names, not single quotes.
+    """
+
+    if sys.platform.startswith("win"):
+        return s if re.match(r'^[-_\w./]+$', s) else '"%s"' % s.replace('"', '\\"')
+    else:
+        return shlex.quote(s)

@@ -806,7 +806,7 @@ class Router(BaseNode):
         """
 
         await self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
-                                                                                          ghost_file=shlex.quote(ghost_file)))
+                                                                                     ghost_file=shlex.quote(ghost_file)))
 
         log.info('Router "{name}" [{id}]: ghost file set to {ghost_file}'.format(name=self._name,
                                                                                  id=self._id,
