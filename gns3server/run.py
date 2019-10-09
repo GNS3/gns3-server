@@ -116,7 +116,7 @@ def parse_arguments(argv):
 
     config = Config.instance().get_section_config("Server")
     defaults = {
-        "host": config.get("host", "localhost"),
+        "host": config.get("host", "0.0.0.0"),
         "port": config.get("port", 3080),
         "ssl": config.getboolean("ssl", False),
         "certfile": config.get("certfile", ""),

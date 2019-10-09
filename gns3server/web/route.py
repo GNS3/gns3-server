@@ -118,7 +118,7 @@ class Route(object):
         if not user:
             log.error("HTTP authentication is enabled but no username is configured")
         else:
-            log.error("Invalid authentication for username '{}'".format(user))
+            log.error("Invalid HTTP authentication for username '{}'".format(user))
 
         response = Response(request=request, route=route)
         response.set_status(401)
