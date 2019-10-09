@@ -70,7 +70,7 @@ class Config:
 
             if self._profile:
                 legacy_user_dir = os.path.join(appdata, appname, "profiles", self._profile)
-                versioned_user_dir = legacy_user_dir
+                versioned_user_dir = os.path.join(appdata, appname, version, "profiles", self._profile)
             else:
                 legacy_user_dir = os.path.join(appdata, appname)
                 versioned_user_dir = os.path.join(appdata, appname, version)
@@ -107,7 +107,7 @@ class Config:
 
             if self._profile:
                 legacy_user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
-                versioned_user_dir = legacy_user_dir
+                versioned_user_dir = os.path.join(home, ".config", appname, version, "profiles", self._profile)
             else:
                 legacy_user_dir = os.path.join(home, ".config", appname)
                 versioned_user_dir = os.path.join(home, ".config", appname, version)
