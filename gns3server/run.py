@@ -229,6 +229,13 @@ def run():
     if server_config.getboolean("local"):
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
+    if server_config.getboolean("auth"):
+        user = server_config.get("user", "").strip()
+        if not user:
+            log.critical("HTTP authentication is enabled but no username is configured")
+            return
+        log.info("HTTP authentication is enabled with username '{}'".format(user))
+
     # we only support Python 3 version >= 3.5
     if sys.version_info < (3, 5, 3):
         raise SystemExit("Python 3.5.3 or higher is required")

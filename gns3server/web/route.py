@@ -111,14 +111,14 @@ class Route(object):
         user = server_config.get("user", "").strip()
         password = server_config.get("password", "").strip()
 
-        if not user:
-            return
-
-        if "AUTHORIZATION" in request.headers:
+        if user and "AUTHORIZATION" in request.headers:
             if request.headers["AUTHORIZATION"] == aiohttp.helpers.BasicAuth(user, password, "utf-8").encode():
                 return None
 
-        log.error("Invalid authentication. Username should be {}".format(user))
+        if not user:
+            log.error("HTTP authentication is enabled but no username is configured")
+        else:
+            log.error("Invalid authentication for username '{}'".format(user))
 
         response = Response(request=request, route=route)
         response.set_status(401)
