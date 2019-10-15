@@ -1173,8 +1173,12 @@ class QemuVM(BaseNode):
             for command in commands:
                 log.info("Execute QEMU monitor command: {}".format(command))
                 try:
-                    writer.write(command.encode('ascii') + b"\n")
-                    await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
+                    cmd_byte = command.encode('ascii')
+                    writer.write(cmd_byte + b"\n")
+                    while True:
+                        line = await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
+                        if not line or cmd_byte in line:
+                            break
                 except asyncio.TimeoutError:
                     log.warning("Missing echo of command '{}'".format(command))
                 except OSError as e:
