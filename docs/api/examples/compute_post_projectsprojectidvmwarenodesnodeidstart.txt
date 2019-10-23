@@ -1,6 +1,6 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/7290cb18-a955-4955-90fe-28fcb69b592c/start' -d '{}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/4bf0b781-65cf-45ca-91fa-bf711d2d5704/start' -d '{}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/7290cb18-a955-4955-90fe-28fcb69b592c/start HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/4bf0b781-65cf-45ca-91fa-bf711d2d5704/start HTTP/1.1
 {}
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Sat, 30 Mar 2019 08:48:56 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:43:01 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}/start
 

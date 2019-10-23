@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/e169fb2d-2000-416a-b305-8867e9705061'
+curl -i -X GET 'http://localhost:3080/v2/projects/08d937ca-932b-4454-8f4e-76f0c0482281'
 
-GET /v2/projects/e169fb2d-2000-416a-b305-8867e9705061 HTTP/1.1
+GET /v2/projects/08d937ca-932b-4454-8f4e-76f0c0482281 HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 560
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:50:00 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:43:40 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/projects/{project_id}
 
 {
@@ -20,8 +20,8 @@ X-Route: /v2/projects/{project_id}
     "filename": "test.gns3",
     "grid_size": 75,
     "name": "test",
-    "path": "/tmp/tmpgib4zai7/projects/e169fb2d-2000-416a-b305-8867e9705061",
-    "project_id": "e169fb2d-2000-416a-b305-8867e9705061",
+    "path": "/tmp/tmps5x07f9w/projects/08d937ca-932b-4454-8f4e-76f0c0482281",
+    "project_id": "08d937ca-932b-4454-8f4e-76f0c0482281",
     "scene_height": 1000,
     "scene_width": 2000,
     "show_grid": false,

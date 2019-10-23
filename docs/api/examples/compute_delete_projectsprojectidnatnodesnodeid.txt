@@ -1,6 +1,6 @@
-curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/6fd4180e-4c48-4faa-8b92-2f61b38e456f'
+curl -i -X DELETE 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/e584bb1a-8bc9-413b-aec6-388e4192b739'
 
-DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/6fd4180e-4c48-4faa-8b92-2f61b38e456f HTTP/1.1
+DELETE /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/nat/nodes/e584bb1a-8bc9-413b-aec6-388e4192b739 HTTP/1.1
 
 
 
@@ -8,7 +8,7 @@ HTTP/1.1 204
 Connection: close
 Content-Length: 0
 Content-Type: application/octet-stream
-Date: Sat, 30 Mar 2019 08:47:57 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:30 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/nat/nodes/{node_id}
 

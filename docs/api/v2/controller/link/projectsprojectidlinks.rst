@@ -41,8 +41,9 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>capture_file_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The name of the capture file if capture is running</td>                     </tr>
-    <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The full path of the capture file if capture is running</td>                     </tr>
+    <tr><td>capture_compute_id</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The compute identifier where a capture is running</td>                     </tr>
+    <tr><td>capture_file_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The name of the capture file if a capture is running</td>                     </tr>
+    <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The full path of the capture file if a capture is running</td>                     </tr>
     <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only property. True if a capture running on the link</td>                     </tr>
     <tr><td>filters</td>                    <td> </td>                     <td>object</td>                     <td>Packet filter. This allow to simulate latency and errors</td>                     </tr>
     <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link UUID</td>                     </tr>
@@ -58,8 +59,9 @@ Output
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>capture_file_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The name of the capture file if capture is running</td>                     </tr>
-    <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The full path of the capture file if capture is running</td>                     </tr>
+    <tr><td>capture_compute_id</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The compute identifier where a capture is running</td>                     </tr>
+    <tr><td>capture_file_name</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The name of the capture file if a capture is running</td>                     </tr>
+    <tr><td>capture_file_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Read only property. The full path of the capture file if a capture is running</td>                     </tr>
     <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only property. True if a capture running on the link</td>                     </tr>
     <tr><td>filters</td>                    <td> </td>                     <td>object</td>                     <td>Packet filter. This allow to simulate latency and errors</td>                     </tr>
     <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link UUID</td>                     </tr>

@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/adcea44c-6419-4253-a4e9-d851abc1ddb4'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/b35e68c5-e746-4446-845c-50b386e6e7c0'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/adcea44c-6419-4253-a4e9-d851abc1ddb4 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/vmware/nodes/b35e68c5-e746-4446-845c-50b386e6e7c0 HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 610
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:48:55 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:43:00 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
 
 {
@@ -20,8 +20,8 @@ X-Route: /v2/compute/projects/{project_id}/vmware/nodes/{node_id}
     "headless": false,
     "linked_clone": false,
     "name": "VMTEST",
-    "node_directory": "/tmp/tmp2a2tb7g2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/adcea44c-6419-4253-a4e9-d851abc1ddb4",
-    "node_id": "adcea44c-6419-4253-a4e9-d851abc1ddb4",
+    "node_directory": "/tmp/tmp1i_44uq8/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/vmware/b35e68c5-e746-4446-845c-50b386e6e7c0",
+    "node_id": "b35e68c5-e746-4446-845c-50b386e6e7c0",
     "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped",

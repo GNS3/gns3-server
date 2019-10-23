@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/8412b0e5-7bd1-429e-bade-0fa71bb2b7e5' -d '{"console": 5005, "ethernet_adapters": 4, "l1_keepalives": true, "name": "test", "nvram": 2048, "ram": 512, "serial_adapters": 0, "use_default_iou_values": true}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/iou/nodes/8412b0e5-7bd1-429e-bade-0fa71bb2b7e5 HTTP/1.1
 {
     "console": 5005,
     "ethernet_adapters": 4,
@@ -17,8 +17,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 625
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:47:53 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:19 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
 
 {
@@ -30,8 +30,8 @@ X-Route: /v2/compute/projects/{project_id}/iou/nodes/{node_id}
     "l1_keepalives": true,
     "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c",
     "name": "test",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/iou/83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e",
-    "node_id": "83f8d15d-1c9c-4b3c-8aec-10b6d0f3242e",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/iou/8412b0e5-7bd1-429e-bade-0fa71bb2b7e5",
+    "node_id": "8412b0e5-7bd1-429e-bade-0fa71bb2b7e5",
     "nvram": 2048,
     "path": "iou.bin",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",

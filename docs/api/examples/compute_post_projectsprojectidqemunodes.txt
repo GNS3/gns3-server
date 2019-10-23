@@ -1,10 +1,10 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "hello.img", "name": "PC TEST 1", "qemu_path": "/tmp/tmpjg3j58ga/qemu-system-x86_64"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes' -d '{"hda_disk_image": "hello.img", "name": "PC TEST 1", "qemu_path": "/tmp/tmp0zpbcecd/qemu-system-x86_64"}'
 
 POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes HTTP/1.1
 {
     "hda_disk_image": "hello.img",
     "name": "PC TEST 1",
-    "qemu_path": "/tmp/tmpjg3j58ga/qemu-system-x86_64"
+    "qemu_path": "/tmp/tmp0zpbcecd/qemu-system-x86_64"
 }
 
 
@@ -12,8 +12,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 1420
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:48:17 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:47 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes
 
 {
@@ -47,16 +47,16 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "0c:dd:80:c7:ca:00",
+    "mac_address": "0c:dd:80:b0:fc:00",
     "name": "PC TEST 1",
-    "node_directory": "/tmp/tmp2a2tb7g2/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/5cb24b0b-7252-4b97-85aa-31efaf6dc7ca",
-    "node_id": "5cb24b0b-7252-4b97-85aa-31efaf6dc7ca",
+    "node_directory": "/tmp/tmp1i_44uq8/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/1bb54256-713a-4615-81ed-0a08178bb0fc",
+    "node_id": "1bb54256-713a-4615-81ed-0a08178bb0fc",
     "on_close": "power_off",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/tmp/tmpjg3j58ga/qemu-system-x86_64",
+    "qemu_path": "/tmp/tmp0zpbcecd/qemu-system-x86_64",
     "ram": 256,
     "status": "stopped",
     "usage": ""

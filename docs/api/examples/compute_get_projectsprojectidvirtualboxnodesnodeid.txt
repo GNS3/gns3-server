@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/61f32a99-3e04-47fd-8f8e-f59af985ffa3'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/61f32a99-3e04-47fd-8f8e-f59af985ffa3 HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 483
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:48:52 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:42:58 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
 
 {
@@ -21,7 +21,7 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "linked_clone": false,
     "name": "VMTEST",
     "node_directory": null,
-    "node_id": "ee5edbb1-c7cc-4db2-b16f-2389b75d3f7b",
+    "node_id": "61f32a99-3e04-47fd-8f8e-f59af985ffa3",
     "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,

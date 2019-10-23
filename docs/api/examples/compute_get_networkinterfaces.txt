@@ -6,17 +6,17 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2933
+Content-Length: 1600
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:47:58 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:31 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/network/interfaces
 
 [
     {
         "id": "docker0",
         "ip_address": "172.17.0.1",
-        "mac_address": "02:42:c5:7b:84:0b",
+        "mac_address": "02:42:fb:9a:14:99",
         "name": "docker0",
         "netmask": "255.255.0.0",
         "special": true,
@@ -32,36 +32,9 @@ X-Route: /v2/compute/network/interfaces
         "type": "ethernet"
     },
     {
-        "id": "vboxnet0",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:00",
-        "name": "vboxnet0",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet1",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:01",
-        "name": "vboxnet1",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vboxnet2",
-        "ip_address": "",
-        "mac_address": "0a:00:27:00:00:02",
-        "name": "vboxnet2",
-        "netmask": "",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
         "id": "virbr0",
         "ip_address": "192.168.122.1",
-        "mac_address": "00:00:00:00:00:00",
+        "mac_address": "52:54:00:d4:71:01",
         "name": "virbr0",
         "netmask": "255.255.255.0",
         "special": true,
@@ -70,7 +43,7 @@ X-Route: /v2/compute/network/interfaces
     {
         "id": "virbr0-nic",
         "ip_address": "",
-        "mac_address": "52:54:00:cb:6a:77",
+        "mac_address": "52:54:00:d4:71:01",
         "name": "virbr0-nic",
         "netmask": "",
         "special": true,
@@ -78,7 +51,7 @@ X-Route: /v2/compute/network/interfaces
     },
     {
         "id": "vmnet1",
-        "ip_address": "172.16.1.1",
+        "ip_address": "172.16.9.1",
         "mac_address": "00:50:56:c0:00:01",
         "name": "vmnet1",
         "netmask": "255.255.255.0",
@@ -86,35 +59,8 @@ X-Route: /v2/compute/network/interfaces
         "type": "ethernet"
     },
     {
-        "id": "vmnet2",
-        "ip_address": "172.16.2.1",
-        "mac_address": "00:50:56:c0:00:02",
-        "name": "vmnet2",
-        "netmask": "255.255.255.0",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vmnet3",
-        "ip_address": "172.16.3.1",
-        "mac_address": "00:50:56:c0:00:03",
-        "name": "vmnet3",
-        "netmask": "255.255.255.0",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
-        "id": "vmnet4",
-        "ip_address": "172.16.10.1",
-        "mac_address": "00:50:56:c0:00:04",
-        "name": "vmnet4",
-        "netmask": "255.255.255.0",
-        "special": true,
-        "type": "ethernet"
-    },
-    {
         "id": "vmnet8",
-        "ip_address": "192.168.195.1",
+        "ip_address": "192.168.193.1",
         "mac_address": "00:50:56:c0:00:08",
         "name": "vmnet8",
         "netmask": "255.255.255.0",
@@ -122,10 +68,10 @@ X-Route: /v2/compute/network/interfaces
         "type": "ethernet"
     },
     {
-        "id": "wlp58s0",
-        "ip_address": "192.168.1.149",
-        "mac_address": "9c:b6:d0:dc:20:29",
-        "name": "wlp58s0",
+        "id": "wlp2s0",
+        "ip_address": "192.168.2.10",
+        "mac_address": "9c:b6:d0:99:3c:07",
+        "name": "wlp2s0",
         "netmask": "255.255.255.0",
         "special": false,
         "type": "ethernet"

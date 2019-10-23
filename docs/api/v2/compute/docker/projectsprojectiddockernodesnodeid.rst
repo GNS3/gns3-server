@@ -52,6 +52,7 @@ Input
     <tr><td>custom_adapters</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>environment</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker environment</td>                     </tr>
     <tr><td>extra_hosts</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker extra hosts (added to /etc/hosts)</td>                     </tr>
+    <tr><td>extra_volumes</td>                    <td> </td>                     <td>array</td>                     <td>Additional directories to make persistent</td>                     </tr>
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>Docker image name  Read only</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the node working directory  Read only</td>                     </tr>
@@ -79,6 +80,7 @@ Output
     <tr><td>custom_adapters</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>environment</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker environment</td>                     </tr>
     <tr><td>extra_hosts</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Docker extra hosts (added to /etc/hosts)</td>                     </tr>
+    <tr><td>extra_volumes</td>                    <td> </td>                     <td>array</td>                     <td>Additional directories to make persistent</td>                     </tr>
     <tr><td>image</td>                    <td> </td>                     <td>string</td>                     <td>Docker image name  Read only</td>                     </tr>
     <tr><td>name</td>                    <td> </td>                     <td>string</td>                     <td>Docker container name</td>                     </tr>
     <tr><td>node_directory</td>                    <td> </td>                     <td>string</td>                     <td>Path to the node working directory  Read only</td>                     </tr>

@@ -1,11 +1,12 @@
 {
+    "capture_compute_id": null,
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
     "filters": {},
-    "link_id": "56ee24d1-9e61-4239-a9fb-d0496c021c91",
+    "link_id": "9224e2a2-842b-47b0-b3a9-c8d2901c14f8",
     "link_type": "ethernet",
     "nodes": [],
-    "project_id": "5b0d6522-946f-4e88-b4cc-055812007d17",
+    "project_id": "ca0a8564-8a6c-49ed-a508-6326cdfa3e57",
     "suspend": false
 }

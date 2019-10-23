@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/projects/6d2027c1-ce9b-4db0-855e-e58a13bf5149/links/0677eec3-6872-460a-804b-ccc3525128dc' -d '{"filters": {"frequency_drop": [50], "latency": [10]}, "nodes": [{"adapter_number": 0, "label": {"text": "Hello", "x": 64, "y": 0}, "node_id": "f5d999f4-7e82-4b4d-8495-37e015bd7160", "port_number": 3}, {"adapter_number": 2, "node_id": "692bc02a-c687-4d8d-a94f-f25bea0eaea6", "port_number": 4}]}'
+curl -i -X PUT 'http://localhost:3080/v2/projects/98dffbde-364b-49ef-bd61-cd3d12f5e521/links/2ac96baf-b053-446a-8bbf-51d331c318c6' -d '{"filters": {"frequency_drop": [50], "latency": [10]}, "nodes": [{"adapter_number": 0, "label": {"text": "Hello", "x": 64, "y": 0}, "node_id": "d72e2acf-d797-47a0-8c29-f269b1287aff", "port_number": 3}, {"adapter_number": 2, "node_id": "27ada508-50dd-4671-b0cd-584fbc467676", "port_number": 4}]}'
 
-PUT /v2/projects/6d2027c1-ce9b-4db0-855e-e58a13bf5149/links/0677eec3-6872-460a-804b-ccc3525128dc HTTP/1.1
+PUT /v2/projects/98dffbde-364b-49ef-bd61-cd3d12f5e521/links/2ac96baf-b053-446a-8bbf-51d331c318c6 HTTP/1.1
 {
     "filters": {
         "frequency_drop": [
@@ -18,12 +18,12 @@ PUT /v2/projects/6d2027c1-ce9b-4db0-855e-e58a13bf5149/links/0677eec3-6872-460a-8
                 "x": 64,
                 "y": 0
             },
-            "node_id": "f5d999f4-7e82-4b4d-8495-37e015bd7160",
+            "node_id": "d72e2acf-d797-47a0-8c29-f269b1287aff",
             "port_number": 3
         },
         {
             "adapter_number": 2,
-            "node_id": "692bc02a-c687-4d8d-a94f-f25bea0eaea6",
+            "node_id": "27ada508-50dd-4671-b0cd-584fbc467676",
             "port_number": 4
         }
     ]
@@ -32,13 +32,14 @@ PUT /v2/projects/6d2027c1-ce9b-4db0-855e-e58a13bf5149/links/0677eec3-6872-460a-8
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1022
+Content-Length: 1027
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:49:50 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:43:36 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/projects/{project_id}/links/{link_id}
 
 {
+    "capture_compute_id": null,
     "capture_file_name": null,
     "capture_file_path": null,
     "capturing": false,
@@ -50,7 +51,7 @@ X-Route: /v2/projects/{project_id}/links/{link_id}
             10
         ]
     },
-    "link_id": "0677eec3-6872-460a-804b-ccc3525128dc",
+    "link_id": "2ac96baf-b053-446a-8bbf-51d331c318c6",
     "link_type": "ethernet",
     "nodes": [
         {
@@ -60,22 +61,19 @@ X-Route: /v2/projects/{project_id}/links/{link_id}
                 "x": 64,
                 "y": 0
             },
-            "node_id": "f5d999f4-7e82-4b4d-8495-37e015bd7160",
+            "node_id": "d72e2acf-d797-47a0-8c29-f269b1287aff",
             "port_number": 3
         },
         {
             "adapter_number": 2,
             "label": {
-                "rotation": 0,
-                "style": "font-size: 10; font-style: Verdana",
-                "text": "2/4",
-                "x": -10,
-                "y": -10
+                "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                "text": "2/4"
             },
-            "node_id": "692bc02a-c687-4d8d-a94f-f25bea0eaea6",
+            "node_id": "27ada508-50dd-4671-b0cd-584fbc467676",
             "port_number": 4
         }
     ],
-    "project_id": "6d2027c1-ce9b-4db0-855e-e58a13bf5149",
+    "project_id": "98dffbde-364b-49ef-bd61-cd3d12f5e521",
     "suspend": false
 }

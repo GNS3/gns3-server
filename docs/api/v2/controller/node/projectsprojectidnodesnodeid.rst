@@ -156,6 +156,7 @@ Response status codes
 - **204**: Instance deleted
 - **400**: Invalid request
 - **404**: Instance doesn't exist
+- **409**: Cannot delete locked node
 
 Sample session
 ***************

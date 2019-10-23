@@ -8,11 +8,11 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 49
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:50:16 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:46:12 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/version
 
 {
     "local": true,
-    "version": "2.2.0dev8"
+    "version": "2.2.1dev1"
 }

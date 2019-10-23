@@ -1,19 +1,20 @@
-curl -i -X GET 'http://localhost:3080/v2/projects/42ee96fe-5802-4164-86d7-f4b8fec50eea/links'
+curl -i -X GET 'http://localhost:3080/v2/projects/7ba6bf64-8660-4fc5-8698-4d4de0f6a0ed/links'
 
-GET /v2/projects/42ee96fe-5802-4164-86d7-f4b8fec50eea/links HTTP/1.1
+GET /v2/projects/7ba6bf64-8660-4fc5-8698-4d4de0f6a0ed/links HTTP/1.1
 
 
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1293
+Content-Length: 1251
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:49:50 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:43:36 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/projects/{project_id}/links
 
 [
     {
+        "capture_compute_id": null,
         "capture_file_name": null,
         "capture_file_path": null,
         "capturing": false,
@@ -25,35 +26,29 @@ X-Route: /v2/projects/{project_id}/links
                 10
             ]
         },
-        "link_id": "423fceec-5297-4fa4-8ae7-be7abfeef98e",
+        "link_id": "8119504a-b500-4b21-9c5a-fb51fa6d7f5f",
         "link_type": "ethernet",
         "nodes": [
             {
                 "adapter_number": 0,
                 "label": {
-                    "rotation": 0,
-                    "style": "font-size: 10; font-style: Verdana",
-                    "text": "0/3",
-                    "x": -10,
-                    "y": -10
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "0/3"
                 },
-                "node_id": "2d322416-e9af-4665-8a85-13fbde3b100d",
+                "node_id": "edc21b55-e691-4d5b-8c39-96ad981901eb",
                 "port_number": 3
             },
             {
                 "adapter_number": 2,
                 "label": {
-                    "rotation": 0,
-                    "style": "font-size: 10; font-style: Verdana",
-                    "text": "2/4",
-                    "x": -10,
-                    "y": -10
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "2/4"
                 },
-                "node_id": "69dae8da-bded-4b8b-baea-e1bb280432bf",
+                "node_id": "85ab9d5c-7389-43bd-a70d-e6e046b7f831",
                 "port_number": 4
             }
         ],
-        "project_id": "42ee96fe-5802-4164-86d7-f4b8fec50eea",
+        "project_id": "7ba6bf64-8660-4fc5-8698-4d4de0f6a0ed",
         "suspend": false
     }
 ]

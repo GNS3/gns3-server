@@ -1,8 +1,8 @@
-curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/a6d2e376-d9b9-4d2f-b955-74939a34a278/duplicate' -d '{"destination_node_id": "0a133429-a8ea-44f3-8a35-d52ec14bf92c"}'
+curl -i -X POST 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/4aa341d8-d76a-40dd-8004-0ec736b9e6aa/duplicate' -d '{"destination_node_id": "126588e6-d180-4b4a-838d-5ae4c73f3335"}'
 
-POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/a6d2e376-d9b9-4d2f-b955-74939a34a278/duplicate HTTP/1.1
+POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/4aa341d8-d76a-40dd-8004-0ec736b9e6aa/duplicate HTTP/1.1
 {
-    "destination_node_id": "0a133429-a8ea-44f3-8a35-d52ec14bf92c"
+    "destination_node_id": "126588e6-d180-4b4a-838d-5ae4c73f3335"
 }
 
 
@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 4
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:48:48 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:42:50 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}/duplicate
 
 true

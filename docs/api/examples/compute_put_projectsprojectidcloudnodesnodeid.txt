@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/56c14edf-c5d0-4855-a422-399bc310769f' -d '{"name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/c6622940-a9ba-4647-ae21-c4b1e9165484' -d '{"name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/56c14edf-c5d0-4855-a422-399bc310769f HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/c6622940-a9ba-4647-ae21-c4b1e9165484 HTTP/1.1
 {
     "name": "test"
 }
@@ -8,10 +8,10 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes/56c14e
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 2077
+Content-Length: 1402
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:47:38 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:06 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
 
 {
@@ -23,21 +23,6 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
         },
         {
             "name": "lo",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vboxnet0",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vboxnet1",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vboxnet2",
             "special": true,
             "type": "ethernet"
         },
@@ -57,38 +42,23 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes/{node_id}
             "type": "ethernet"
         },
         {
-            "name": "vmnet2",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet3",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
-            "name": "vmnet4",
-            "special": true,
-            "type": "ethernet"
-        },
-        {
             "name": "vmnet8",
             "special": true,
             "type": "ethernet"
         },
         {
-            "name": "wlp58s0",
+            "name": "wlp2s0",
             "special": false,
             "type": "ethernet"
         }
     ],
     "name": "test",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/builtin/56c14edf-c5d0-4855-a422-399bc310769f",
-    "node_id": "56c14edf-c5d0-4855-a422-399bc310769f",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/builtin/c6622940-a9ba-4647-ae21-c4b1e9165484",
+    "node_id": "c6622940-a9ba-4647-ae21-c4b1e9165484",
     "ports_mapping": [
         {
-            "interface": "wlp58s0",
-            "name": "wlp58s0",
+            "interface": "wlp2s0",
+            "name": "wlp2s0",
             "port_number": 0,
             "type": "ethernet"
         }

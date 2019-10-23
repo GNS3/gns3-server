@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/290969e8-5a29-4c6f-8a5c-a683d5dbbe8a' -d '{"console": 5005, "name": "test"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/41488461-5b4d-4f37-87cc-ef7967bf6fd7' -d '{"console": 5005, "name": "test"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/290969e8-5a29-4c6f-8a5c-a683d5dbbe8a HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/virtualbox/nodes/41488461-5b4d-4f37-87cc-ef7967bf6fd7 HTTP/1.1
 {
     "console": 5005,
     "name": "test"
@@ -11,8 +11,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 481
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:48:53 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:42:59 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
 
 {
@@ -24,7 +24,7 @@ X-Route: /v2/compute/projects/{project_id}/virtualbox/nodes/{node_id}
     "linked_clone": false,
     "name": "test",
     "node_directory": null,
-    "node_id": "290969e8-5a29-4c6f-8a5c-a683d5dbbe8a",
+    "node_id": "41488461-5b4d-4f37-87cc-ef7967bf6fd7",
     "on_close": "power_off",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "ram": 0,

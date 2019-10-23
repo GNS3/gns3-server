@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/cbb090e6-5b5a-427c-b74e-25eff0d78b26' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "extra_hosts": "test:127.0.0.1", "name": "test", "start_command": "yes"}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/7f847a23-2448-4b84-a40a-5cca2e9218bf' -d '{"console": 5006, "environment": "GNS3=1\nGNS4=0", "extra_hosts": "test:127.0.0.1", "name": "test", "start_command": "yes"}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/cbb090e6-5b5a-427c-b74e-25eff0d78b26 HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/7f847a23-2448-4b84-a40a-5cca2e9218bf HTTP/1.1
 {
     "console": 5006,
     "environment": "GNS3=1\nGNS4=0",
@@ -12,10 +12,10 @@ PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/docker/nodes/cbb09
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 655
+Content-Length: 680
 Content-Type: application/json
-Date: Sat, 30 Mar 2019 08:47:39 GMT
-Server: Python/3.6 GNS3/2.2.0dev8
+Date: Wed, 23 Oct 2019 13:41:08 GMT
+Server: Python/3.6 GNS3/2.2.1dev1
 X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
 
 {
@@ -29,10 +29,11 @@ X-Route: /v2/compute/projects/{project_id}/docker/nodes/{node_id}
     "container_id": "8bd8153ea8f5",
     "environment": "GNS3=1\nGNS4=0",
     "extra_hosts": "test:127.0.0.1",
+    "extra_volumes": [],
     "image": "nginx:latest",
     "name": "test",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/docker/cbb090e6-5b5a-427c-b74e-25eff0d78b26",
-    "node_id": "cbb090e6-5b5a-427c-b74e-25eff0d78b26",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/docker/7f847a23-2448-4b84-a40a-5cca2e9218bf",
+    "node_id": "7f847a23-2448-4b84-a40a-5cca2e9218bf",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "start_command": "yes",
     "status": "stopped",
