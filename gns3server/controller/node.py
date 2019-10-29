@@ -473,7 +473,8 @@ class Node:
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
-        if self._console_type:
+        if self._console_type and self._node_type not in ("cloud", "nat", "ethernet_hub", "frame_relay_switch", "atm_switch"):
+            # console_type is not supported by all builtin nodes excepting Ethernet switch
             data["console_type"] = self._console_type
         if self.custom_adapters:
             data["custom_adapters"] = self.custom_adapters
@@ -482,6 +483,7 @@ class Node:
         for key in list(data.keys()):
             if data[key] is None or data[key] is {} or key in self.CONTROLLER_ONLY_PROPERTIES:
                 del data[key]
+
         return data
 
     async def destroy(self):
