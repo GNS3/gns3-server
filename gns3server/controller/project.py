@@ -816,9 +816,12 @@ class Project:
         await self.delete_on_computes()
         await self.close()
         try:
+            project_directory = get_default_project_directory()
+            if not os.path.commonprefix([project_directory, self.path]) == project_directory:
+                raise aiohttp.web.HTTPConflict(text="Project '{}' cannot be deleted because it is not in the default project directory: '{}'".format(self._name, project_directory))
             shutil.rmtree(self.path)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can not delete project directory {}: {}".format(self.path, str(e)))
+            raise aiohttp.web.HTTPConflict(text="Cannot delete project directory {}: {}".format(self.path, str(e)))
 
     async def delete_on_computes(self):
         """

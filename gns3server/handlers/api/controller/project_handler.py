@@ -204,11 +204,12 @@ class ProjectHandler:
 
         controller = Controller.instance()
         config = Config.instance()
+        dot_gns3_file = request.json.get("path")
         if config.get_section_config("Server").getboolean("local", False) is False:
-            log.error("Can't load the project the server is not started with --local")
+            log.error("Cannot load '{}' because the server has not been started with the '--local' parameter".format(dot_gns3_file))
             response.set_status(403)
             return
-        project = await controller.load_project(request.json.get("path"),)
+        project = await controller.load_project(dot_gns3_file,)
         response.set_status(201)
         response.json(project)
 
