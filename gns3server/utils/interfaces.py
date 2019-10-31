@@ -189,7 +189,7 @@ def interfaces():
             allowed_interfaces = allowed_interfaces.split(',')
         net_if_addrs = psutil.net_if_addrs()
         for interface in sorted(net_if_addrs.keys()):
-            if allowed_interfaces and interface not in allowed_interfaces:
+            if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):
                 log.warning("Interface '{}' is not allowed to be used on this server".format(interface))
                 continue
             ip_address = ""
