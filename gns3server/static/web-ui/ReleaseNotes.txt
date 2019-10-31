@@ -3,6 +3,36 @@ GNS3 WebUI is web implementation of user interface for GNS3 software.
 Current version: 2019.2.0
 
 What's New
+- Qemu image configurator
+- Custom console for particular node
+- Option to connect console to all nodes
+- Option to start Winpcap
+- Filtering devices with packet filters on topology summary
+- Filtering devices with captures on topology summary
+- View options taken from map configuration
+- Servers summary widget
+- Ability to lock single item on the map
+- Editing & import & export config files
+- Context menu for inserted drawings
+- Ability to drag topology summary & servers summary & console widgets
+- Ability to resize topology summary & servers summary & console widgets
+- Option to show the grid
+- Option to snap to grid
+- Usage instructions available from context menu
+- Errors & warnings visible as notifications
+- Fit in view options
+- Support for global variables
+- Support for layers
+- Extending template preferences
+
+Bug Fixes
+- Input validation in styles editor
+- Fix for saving map as image
+- Removing errors with uncorrect subscriptions
+
+Previous version
+
+What's New
 - Editing interface labels on double click
 - Support for keyboard shortcuts
 - Menu extended with option to delete currently opened project, export & import project
