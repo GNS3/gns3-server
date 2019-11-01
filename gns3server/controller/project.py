@@ -503,7 +503,7 @@ class Project:
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")
-        if template["builtin"] is True:
+        if template.get("builtin") is True:
             # compute_id is selected by clients for builtin templates
             compute = self.controller.get_compute(compute_id)
         else:
