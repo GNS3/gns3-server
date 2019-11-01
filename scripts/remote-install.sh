@@ -252,18 +252,20 @@ else
     cat <<EOFI > /lib/systemd/system/gns3.service
 [Unit]
 Description=GNS3 server
+After=network-online.target
+Wants=network-online.target
+Conflicts=shutdown.target
 
 [Service]
-Type=forking
 User=gns3
 Group=gns3
 PermissionsStartOnly=true
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStartPre=/bin/mkdir -p /var/log/gns3 /var/run/gns3
 ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
-ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log \
-     --pid /var/run/gns3/gns3.pid --daemon
-Restart=on-abort
-PIDFile=/var/run/gns3/gns3.pid
+ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
