@@ -1,5 +1,22 @@
 # Change Log
 
+## 2.2.1 01/11/2019
+
+* Handle builtin entry does not exist when adding node from template.
+* Upgrade aiohttp to version 3.6.2
+* Fix issue when linking to more than one NAT node with allowed_interface option enabled. Fixes #1671
+* Prevent deleting a GNS3 project outside the project directory. Ref #1669
+* Do not send "console_type" property to computes for all builtin nodes excepting Ethernet switches. Fixes https://github.com/GNS3/gns3-gui/issues/2882
+* Fix QEMU link detection flaky on last port. Fixes #1666
+* Use compatible shlex_quote to handle case where Windows needs double quotes around file names, not single quotes. Ref https://github.com/GNS3/gns3-gui/issues/2866
+* Use 0.0.0.0 by default for server host. Fixes https://github.com/GNS3/gns3-server/issues/1663
+* Improvement to validate HTTP authentication config. Ref #1662
+* Use versioned config directory for profiles. Fixes #1664
+* Enable nested hardware virtualization by default for GNS3 VM running in VirtualBox. Fixes #1377 No error is sent by VBoxManage is this feature is not available, for instance with Intel processors.
+* Set default host to "localhost". Fixes https://github.com/GNS3/gns3-server/issues/1663
+* Improve process to get guest IP address from GNS3 VM running in VMware workstation/player. Ref https://github.com/GNS3/gns3-gui/issues/2866
+* Fix error with console type in Ethernet switch schema. Fixes #1659
+
 ## 2.2.0 30/09/2019
 
 * Add debug message for what directory is checked for Qemu binaries. Ref #1655
