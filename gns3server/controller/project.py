@@ -503,7 +503,7 @@ class Project:
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")
-        if template.get("builtin") is True:
+        if template.pop("builtin", False) is True:
             # compute_id is selected by clients for builtin templates
             compute = self.controller.get_compute(compute_id)
         else:
@@ -512,7 +512,6 @@ class Project:
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         name = default_name_format.replace("{name}", name)
         node_id = str(uuid.uuid4())
-        template.pop("builtin") # not needed to add a node
         node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node
 
