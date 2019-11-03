@@ -174,6 +174,15 @@ class VirtualBoxVM(BaseNode):
             trial += 1
             await asyncio.sleep(1)
 
+    async def _refresh_vm_uuid(self):
+
+        vm_info = await self._get_vm_info()
+        self._uuid = vm_info.get("UUID")
+        if not self._uuid:
+            raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
+        if "memory" in vm_info:
+            self._ram = int(vm_info["memory"])
+
     async def create(self):
 
         if not self.linked_clone:
@@ -186,24 +195,15 @@ class VirtualBoxVM(BaseNode):
             raise VirtualBoxError("The VirtualBox API version is lower than 4.3")
         log.info("VirtualBox VM '{name}' [{id}] created".format(name=self.name, id=self.id))
 
-        vm_info = await self._get_vm_info()
-        if "memory" in vm_info:
-            self._ram = int(vm_info["memory"])
-        if "UUID" in vm_info:
-            self._uuid = vm_info["UUID"]
-        if not self._uuid:
-            raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
-
         if self.linked_clone:
             if self.id and os.path.isdir(os.path.join(self.working_dir, self._vmname)):
                 self._patch_vm_uuid()
                 await self.manager.execute("registervm", [self._linked_vbox_file()])
+                await self._refresh_vm_uuid()
                 await self._reattach_linked_hdds()
-                vm_info = await self._get_vm_info()
-                self._uuid = vm_info.get("UUID")
-                if not self._uuid:
-                    raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
+
             else:
+                await self._refresh_vm_uuid()
                 await self._create_linked_clone()
 
         if self._adapters:
@@ -915,7 +915,9 @@ class VirtualBoxVM(BaseNode):
         result = await self.manager.execute("clonevm", args)
         log.debug("VirtualBox VM: {} cloned".format(result))
 
+        # refresh the UUID and vmname to match with the clone
         self._vmname = self._name
+        await self._refresh_vm_uuid()
         await self.manager.execute("setextradata", [self._uuid, "GNS3/Clone", "yes"])
 
         # We create a reset snapshot in order to simplify life of user who want to rollback their VM
