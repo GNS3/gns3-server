@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.2 04/11/2019
+
+* Release 2019.2.0-alpha.10
+* Fix how PCI bridges are created for Qemu VMs with greater than 32 interfaces.
+* Fix broken support for cloned VirtualBox VMs. Fixes https://github.com/GNS3/gns3-gui/issues/2889
+* Handle builtin entry does not exist when adding node from template (new fix).
+* Let systemd directly supervises the GNS3 service. Fixes #1678
+
 ## 2.2.1 01/11/2019
 
 * Handle builtin entry does not exist when adding node from template.
