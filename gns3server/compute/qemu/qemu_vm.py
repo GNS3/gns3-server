@@ -1730,18 +1730,14 @@ class QemuVM(BaseNode):
 
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
         pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
-        bridge_id = 0
-        for bridge_id in range(1, math.floor(pci_devices / 32) + 1):
-            network_options.extend(["-device", "i82801b11-bridge,id=dmi_pci_bridge{bridge_id}".format(bridge_id=bridge_id)])
-            network_options.extend(["-device", "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(bridge_id=bridge_id)])
-
-        if bridge_id > 1:
+        pci_bridges = math.floor(pci_devices / 32)
+        pci_bridges_created = 0
+        if pci_bridges >= 1:
             qemu_version = await self.manager.get_qemu_version(self.qemu_path)
             if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
                 raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
 
-        pci_device_id = 4 + bridge_id  # Bridge consume PCI ports
-
+        pci_device_id = 4 + pci_bridges  # Bridge consume PCI ports
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
             mac = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
 
@@ -1786,6 +1782,10 @@ class QemuVM(BaseNode):
                 device_string = "{},mac={}".format(adapter_type, mac)
                 bridge_id = math.floor(pci_device_id / 32)
                 if bridge_id > 0:
+                    if pci_bridges_created < bridge_id:
+                        network_options.extend(["-device", "i82801b11-bridge,id=dmi_pci_bridge{bridge_id}".format(bridge_id=bridge_id)])
+                        network_options.extend(["-device", "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(bridge_id=bridge_id)])
+                        pci_bridges_created += 1
                     addr = pci_device_id % 32
                     device_string = "{},bus=pci-bridge{bridge_id},addr=0x{addr:02x}".format(device_string, bridge_id=bridge_id, addr=addr)
                 pci_device_id += 1
