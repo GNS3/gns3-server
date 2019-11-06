@@ -91,9 +91,9 @@ def test_reserve_tcp_port_already_used():
 def test_reserve_udp_port():
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
-    pm.reserve_udp_port(10000, project)
+    pm.reserve_udp_port(20000, project)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        pm.reserve_udp_port(10000, project)
+        pm.reserve_udp_port(20000, project)
 
 
 def test_reserve_udp_port_outside_range():
@@ -106,9 +106,9 @@ def test_reserve_udp_port_outside_range():
 def test_release_udp_port():
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
-    pm.reserve_udp_port(10000, project)
-    pm.release_udp_port(10000, project)
-    pm.reserve_udp_port(10000, project)
+    pm.reserve_udp_port(20000, project)
+    pm.release_udp_port(20000, project)
+    pm.reserve_udp_port(20000, project)
 
 
 def test_find_unused_port():
