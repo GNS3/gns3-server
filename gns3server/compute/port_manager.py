@@ -50,8 +50,8 @@ class PortManager:
         self._console_port_range = (console_start_port_range, console_end_port_range)
         log.debug("Console port range is {}-{}".format(console_start_port_range, console_end_port_range))
 
-        udp_start_port_range = server_config.getint("udp_start_port_range", 10000)
-        udp_end_port_range = server_config.getint("udp_end_port_range", 20000)
+        udp_start_port_range = server_config.getint("udp_start_port_range", 20000)
+        udp_end_port_range = server_config.getint("udp_end_port_range", 30000)
         self._udp_port_range = (udp_start_port_range, udp_end_port_range)
         log.debug("UDP port range is {}-{}".format(udp_start_port_range, udp_end_port_range))
 
