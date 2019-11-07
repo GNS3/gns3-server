@@ -266,6 +266,7 @@ ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
 ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log
 Restart=on-failure
 RestartSec=5
+LimitNOFILE=16384
 
 [Install]
 WantedBy=multi-user.target
