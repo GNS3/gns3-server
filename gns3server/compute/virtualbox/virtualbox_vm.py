@@ -205,6 +205,8 @@ class VirtualBoxVM(BaseNode):
             else:
                 await self._refresh_vm_uuid()
                 await self._create_linked_clone()
+        else:
+            await self._refresh_vm_uuid()
 
         if self._adapters:
             await self.set_adapters(self._adapters)

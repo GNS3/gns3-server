@@ -54,13 +54,13 @@ class VirtualBoxHandler:
 
         vbox_manager = VirtualBox.instance()
         vm = await vbox_manager.create_node(request.json.pop("name"),
-                                                 request.match_info["project_id"],
-                                                 request.json.get("node_id"),
-                                                 request.json.pop("vmname"),
-                                                 linked_clone=request.json.pop("linked_clone", False),
-                                                 console=request.json.get("console", None),
-                                                 console_type=request.json.get("console_type", "telnet"),
-                                                 adapters=request.json.get("adapters", 0))
+                                            request.match_info["project_id"],
+                                            request.json.get("node_id"),
+                                            request.json.pop("vmname"),
+                                            linked_clone=request.json.pop("linked_clone", False),
+                                            console=request.json.get("console", None),
+                                            console_type=request.json.get("console_type", "telnet"),
+                                            adapters=request.json.get("adapters", 0))
 
         if "ram" in request.json:
             ram = request.json.pop("ram")
