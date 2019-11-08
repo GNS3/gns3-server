@@ -177,7 +177,7 @@ class VirtualBoxVM(BaseNode):
     async def _refresh_vm_uuid(self):
 
         vm_info = await self._get_vm_info()
-        self._uuid = vm_info.get("UUID")
+        self._uuid = vm_info.get("UUID", self._uuid)
         if not self._uuid:
             raise VirtualBoxError("Could not find any UUID for VM '{}'".format(self._vmname))
         if "memory" in vm_info:
