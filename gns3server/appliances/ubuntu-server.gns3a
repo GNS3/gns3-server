@@ -1,0 +1,44 @@
+{
+    "name": "Ubuntu Server",
+    "category": "guest",
+    "description": "This is a custom Ubuntu server which comes with Canonical security updates, Xorg and Telnetd",
+    "vendor_name": "Canonical Inc.",
+    "vendor_url": "https://www.ubuntu.com",
+    "documentation_url": "https://help.ubuntu.com",
+    "product_name": "Ubuntu",
+    "product_url": "https://ubuntu.com/server",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Mohamad Siblini",
+    "maintainer_email": "https://www.ictkin.com/contact",
+    "usage": "Username: gns3\nPassword: gns3 | MD5: 435f15a54f7f673e302ad26f05226e0e",
+    "port_name_format": "ens{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-vga virtio"
+    },
+    "images": [
+        {
+            "filename": "Ubuntu Server 18.04.3 LTS (64bit).vmdk",
+            "version": "18.04.3",
+            "md5sum": "435f15a54f7f673e302ad26f05226e0e",
+            "filesize": 2707814912,
+            "download_url": "https://www.ictkin.com/gns3-appliance/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "18.04.3 LTS Server",
+            "images": {
+                "hda_disk_image": "Ubuntu Server 18.04.3 LTS (64bit).vmdk"
+            }
+        }
+    ]
+}

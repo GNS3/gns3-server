@@ -21,6 +21,15 @@
     },
     "images": [
         {
+            "filename": "ZeroShell-3.9.3-X86-USB.img",
+            "version": "3.9.3",
+            "md5sum": "9be2b399f59df51e5026d81e45b8caf3",
+            "filesize": 1992294400,
+            "download_url": "http://www.zeroshell.org/download/",
+            "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.9.3-X86-USB.img.gz",
+            "compression": "gzip"
+        },
+        {
             "filename": "ZeroShell-3.8.2-X86-USB.img",
             "version": "3.8.2",
             "md5sum": "bb8c7f24c86eb59e26ce36ff1979ecd4",
@@ -58,6 +67,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "3.9.3",
+            "images": {
+                "hda_disk_image": "ZeroShell-3.9.3-X86-USB.img"
+            }
+        },
         {
             "name": "3.8.2",
             "images": {
