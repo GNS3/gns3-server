@@ -22,8 +22,6 @@ import sys
 import os
 import threading
 
-from asyncio.futures import CancelledError
-
 
 async def wait_run_in_executor(func, *args, **kwargs):
     """
@@ -56,7 +54,7 @@ async def cancellable_wait_run_in_executor(func, *args, **kwargs):
     kwargs['stopped_event'] = stopped_event
     try:
         await wait_run_in_executor(func, *args, **kwargs)
-    except CancelledError:
+    except asyncio.CancelledError:
         stopped_event.set()
 
 

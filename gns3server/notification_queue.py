@@ -42,7 +42,7 @@ class NotificationQueue(asyncio.Queue):
 
         try:
             (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout)
-        except asyncio.futures.TimeoutError:
+        except asyncio.TimeoutError:
             return ("ping", PingStats.get(), {})
         return (action, msg, kwargs)
 

@@ -20,12 +20,9 @@ import json
 import urllib
 import asyncio
 import aiohttp
-import logging
 import traceback
 import jsonschema
 import jsonschema.exceptions
-
-log = logging.getLogger(__name__)
 
 from ..compute.error import NodeError, ImageMissingError
 from ..controller.controller_error import ControllerError
@@ -34,6 +31,10 @@ from ..controller.gns3vm.gns3_vm_error import GNS3VMError
 from .response import Response
 from ..crash_report import CrashReport
 from ..config import Config
+
+
+import logging
+log = logging.getLogger(__name__)
 
 
 async def parse_request(request, input_schema, raw):
@@ -217,7 +218,7 @@ class Route(object):
                     response = Response(request=request, route=route)
                     response.set_status(409)
                     response.json({"message": str(e), "status": 409, "image": e.image, "exception": e.__class__.__name__})
-                except asyncio.futures.CancelledError:
+                except asyncio.CancelledError:
                     response = Response(request=request, route=route)
                     response.set_status(408)
                     response.json({"message": "Request canceled", "status": 408})

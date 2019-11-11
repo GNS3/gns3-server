@@ -193,7 +193,7 @@ class ProjectHandler:
                     msg = json.dumps({"action": action, "event": msg}, sort_keys=True)
                 log.debug("Send notification: %s", msg)
                 await response.write(("{}\n".format(msg)).encode("utf-8"))
-            except asyncio.futures.TimeoutError:
+            except asyncio.TimeoutError:
                 await response.write("{}\n".format(json.dumps(ProjectHandler._getPingMessage())).encode("utf-8"))
         project.stop_listen_queue(queue)
         if project.id in ProjectHandler._notifications_listening:
