@@ -45,6 +45,9 @@ class Config:
         self._files = files
         self._profile = profile
         if files and len(files):
+            directory_name = os.path.dirname(files[0])
+            if not directory_name or directory_name == "":
+                files[0] = os.path.dirname(os.path.abspath(files[0])) + os.path.sep + files[0]
             self._main_config_file = files[0]
         else:
             self._main_config_file = None
