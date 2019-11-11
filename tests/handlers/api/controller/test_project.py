@@ -148,7 +148,7 @@ def test_delete_project_invalid_uuid(http_controller):
 def test_close_project(http_controller, project):
     with asyncio_patch("gns3server.controller.project.Project.close", return_value=True) as mock:
         response = http_controller.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
-        assert response.status == 201
+        assert response.status == 204
         assert mock.called
 
 

@@ -166,8 +166,7 @@ class ProjectHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         await project.close()
-        response.set_status(201)
-        response.json(project)
+        response.set_status(204)
 
     @Route.post(
         r"/projects/{project_id}/open",
