@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.2.3 12/11/2019
+
+* Improved how the path to the config file is actually determined
+* Return HTTP status code 204 in API when project successfully closed. Fixes #1689
+* Python3.8 support. Ref https://github.com/GNS3/gns3-gui/issues/2895
+* Make sure still support Python >= 3.5.3
+* Added workaround for #1690. Added venv/ to .gitignore
+* Fix exception when adding VirtualBox VM. Fixes #1685.
+* Set psutil to version 5.6.3 in requirements.txt
+* Add `LimitNOFILE=16384` to GNS3 service. Ref #1678
+* Change the default UDP port range to be 20000 to 30000. Ref #1271
+
 ## 2.2.2 04/11/2019
 
 * Release 2019.2.0-alpha.10
