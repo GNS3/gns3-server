@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "vFPC-20190819.img",
+            "version": "19.3R1.8-KVM",
+            "md5sum": "b77ca27a45a07c56b8f72905fafbe822",
+            "filesize": 2447376384,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
             "filename": "vFPC-20171213.img",
             "version": "17.4R1.16-KVM",
             "md5sum": "848a6256da7296e8fede368a258c68e4",
@@ -140,6 +147,12 @@
     ],
 
     "versions": [
+        {
+            "name": "19.3R1.8-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20190819.img"
+            }
+        },
         {
             "name": "17.4R1.16-KVM",
             "images": {

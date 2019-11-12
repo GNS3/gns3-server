@@ -15,7 +15,7 @@
     "first_port_name": "fxp0",
     "port_name_format": "ge-0/0/{0}",
     "qemu": {
-        "adapter_type": "e1000",
+        "adapter_type": "vmxnet3",
         "adapters": 6,
         "ram": 4096,
         "arch": "x86_64",
@@ -24,6 +24,13 @@
         "options": "-smp 2"
     },
     "images": [
+        {
+            "filename": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2",
+            "version": "19.3R1",
+            "md5sum": "4121122ccf9ec697fd26cdac91b81543",
+            "filesize": 5185142784,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
         {
             "filename": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2",
             "version": "18.1R1",
@@ -145,6 +152,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "19.3R1",
+            "images": {
+                "hda_disk_image": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2"
+            }
+        },
         {
             "name": "18.1R1",
             "images": {

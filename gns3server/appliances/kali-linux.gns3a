@@ -23,6 +23,14 @@
     },
     "images": [
         {
+            "filename": "kali-linux-2019.3-amd64.iso",
+            "version": "2019.3",
+            "md5sum": "9c6fb00558f78ed06992d89f745ef975",
+            "filesize": 3037736960,
+            "download_url": "https://www.kali.org/downloads/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2019.3/kali-linux-2019.3-amd64.iso"
+        },
+        {
             "filename": "kali-linux-2019.2-amd64.iso",
             "version": "2019.2",
             "md5sum": "0f89b6225d7ea9c18682f7cc541c1179",
@@ -128,6 +136,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "2019.3",
+            "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
+                "cdrom_image": "kali-linux-2019.3-amd64.iso"
+            }
+        },
         {
             "name": "2019.2",
             "images": {
