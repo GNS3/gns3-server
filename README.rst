@@ -1,224 +1,70 @@
-GNS3-server
+GNS3-server-zstdsnap
 ===========
 
-.. image:: https://travis-ci.org/GNS3/gns3-server.svg?branch=master
-    :target: https://travis-ci.org/GNS3/gns3-server
+This is a branch off of the GNS3 2.1.21 release to support much faster snapshotting
+of large projects by replacing zipstream with the facebook zstandard streaming 
+compressor: https://github.com/facebook/zstd
 
-.. image:: https://img.shields.io/pypi/v/gns3-server.svg
-    :target: https://pypi.python.org/pypi/gns3-server
+The python-zstandard library is used for this purpose: 
+https://github.com/indygreg/python-zstandard
 
-This is the GNS3 server repository.
+The zstandard library provides multi-threaded compression and much more tunable 
+compression settings which provide much improved speed and compression ratios.
 
-The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
-Clients like the GNS3 GUI controls the server using a HTTP REST API.
+The zstandard compression will ONLY be applied to newly created *snapshots*. This branch
+has full interoperability with standard GNS3 snapshots and will just use the existing
+zipstream code to import those. Standard project import/export will also use the
+standard zip format; this is to maintain portability.
 
-You will need the GNS3 GUI (gns3-gui repository) to control the server.
-
-Branches
+Performance
 --------
 
-master
-******
-master is the next stable release, you can test it in your day to day activities.
-Bug fixes or small improvements pull requests go here.
+Using a 154GB source project-files directory, we can see a dramatic difference in
+compression time and ratio between zipstream and zstandard. The machine doing the
+compression has the following specs:
 
-2.x (2.1 for example)
-*********************
-Next major release
+Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz with 32 (hyper-threaded) cores
+128GB RAM
+NFS backing storage (limits write throughput to ~1Gbit)
 
-*Never* use this branch for production. Pull requests for major new features go here.
+The limiting factor with the above machine is the storage speed. As such, I have
+tweaked the compression parameters to use long range matching and a higher
+compression level to produce a smaller result rather than focusing purely on
+speed. On an appliance with direct SSD storage the compression, the compression
+strategy can be modified to prioritize speed.
 
-Linux
------
+.. image:: https://user-images.githubusercontent.com/39999922/69082867-fbe30300-0a0e-11ea-9967-68ee21c2e92e.png
+.. image:: https://user-images.githubusercontent.com/39999922/69083023-511f1480-0a0f-11ea-901a-f62268228bb5.png
 
-GNS3 is perhaps packaged for your distribution:
+zipstream compressed the project in just over 2 hours with a compression ratio of ~2.2 whereas
+zstandard compressed the project in 30 minutes with a compression ratio of ~4
 
-* Gentoo: https://packages.gentoo.org/package/net-misc/gns3-server
-
-
-Linux (Debian based)
---------------------
-
-The following instructions have been tested with Ubuntu and Mint.
-You must be connected to the Internet in order to install the dependencies.
-
-Dependencies:
-
-- Python 3.4 or above
-- aiohttp
-- setuptools
-- psutil
-- jsonschema
-
-The following commands will install some of these dependencies:
-
-.. code:: bash
-
-   sudo apt-get install python3-setuptools
-
-Finally these commands will install the server as well as the rest of the dependencies:
-
-.. code:: bash
-
-   cd gns3-server-master
-   sudo python3 setup.py install
-   gns3server
-
-To run tests use:
-
-.. code:: bash
-
-   py.test -v
-
-
-Docker container
-****************
-
-For development you can run the GNS3 server in a container
-
-.. code:: bash
-
-    bash scripts/docker_dev_server.sh
-
-
-Run as daemon (Unix only)
-**************************
-
-You will found init sample script for various systems
-inside the init directory.
-
-Usefull options:
-
-* --daemon: start process as a daemon
-* --log logfile: store output in a logfile
-* --pid pidfile: store the pid of the running process in a file and prevent double execution
-
-All the init script require the creation of a GNS3 user. You can change it to another user.
-
-.. code:: bash
-
-    sudo adduser gns3
-
-upstart
--------
-
-For ubuntu < 15.04
-
-You need to copy init/gns3.conf.upstart to /etc/init/gns3.conf
-
-.. code:: bash
-
-    sudo chown root /etc/init/gns3.conf
-    sudo service gns3 start
-
-
-systemd
--------
-
-You need to copy init/gns3.service.systemd to /lib/systemd/system/gns3.service
-
-.. code:: bash
-
-    sudo chown root /lib/systemd/system/gns3.service
-    sudo systemctl start gns3
-
-Windows
--------
-
-
-Please use our `all-in-one installer <https://community.gns3.com/community/software/download>`_ to install the stable build.
-
-If you install via source you need to first install:
-
-- Python (3.3 or above) - https://www.python.org/downloads/windows/
-- Pywin32 - https://sourceforge.net/projects/pywin32/
-
-Then you can call
-
-.. code:: bash
-
-    python setup.py install
-
-to install the remaining dependencies.
-
-To run the tests, you also need to call
-
-.. code:: bash
-
-   pip install pytest pytest-capturelog
-
-before actually running the tests with
-
-.. code:: bash
-
-   python setup.py test
-
-or with
-
-.. code:: bash
-
-   py.test -v
-
-Mac OS X
+Default Settings
 --------
 
-Please use our DMG package for a simple installation.
+The default compression settings are designed for an appliance with ample memory and CPU power, where the primary concern is to produce a file with better compression ratio while still beating zipstream on speed.
 
-If you want to test the current git version or contribute to the project.
+The compression level can be changed in the snapshot.py file by modifying the compression params:
 
-You can follow this instructions with virtualenwrapper: http://virtualenvwrapper.readthedocs.org/
-and homebrew: http://brew.sh/.
+/usr/share/gns3/gns3-server/lib/python3.5/site-packages/gns3server/controller/snapshot.py
 
-.. code:: bash
-
-   brew install python3
-   mkvirtualenv gns3-server --python=/usr/local/bin/python3.4
-   python3 setup.py install
-   gns3server
-
-SSL
----
-
-If you want enable SSL support on GNS3 you can generate a self signed certificate:
-
-.. code:: bash
-
-    bash gns3server/cert_utils/create_cert.sh
-
-This command will put the files in ~/.config/GNS3/ssl
-
-After you can start the server in SSL mode with:
-
-.. code:: bash
-
-    python gns3server/main.py --certfile ~/.config/GNS3/ssl/server.cert --certkey ~/.config/GNS3/ssl/server.key --ssl
-
-
-Or in your gns3_server.conf by adding in the Server section:
-
-.. code:: ini
+.. code-block:: python
     
-    [Server]
-    certfile=/Users/noplay/.config/GNS3/ssl/server.cert
-    certkey=/Users/noplay/.config/GNS3/ssl/server.key
-    ssl=True
+    def _create_snapshot_zs(self, filelist):
+        """
+        Creates new zstandard format snapshot file (to be run in its own thread)
+        """
+        #create zstandard compressor to use as many threads as logical cpus
+        params = zstd.ZstdCompressionParameters.from_level(11,threads=-1,enable_ldm=True,window_log=31)
+        cctx = zstd.ZstdCompressor(compression_params=params)
 
-Running tests
-*************
+A list of parameters is available here: https://github.com/indygreg/python-zstandard 
 
-Just run:
+With more detailed parameters described here: https://github.com/facebook/zstd/blob/dev/lib/zstd.h
 
-.. code:: bash
+For example, to maintain multi-threading and lower the memory usage/CPU usage requirements one can reset to the default level:
 
-    py.test -vv
+.. code-block:: python
 
-If you want test coverage:
-
-.. code:: bash
-
-    py.test --cov-report term-missing --cov=gns3server
-
-Security issues
-----------------
-Please contact us using contact form available here:
-http://docs.gns3.com/1ON9JBXSeR7Nt2-Qum2o3ZX0GU86BZwlmNSUgvmqNWGY/index.html
+        params = zstd.ZstdCompressionParameters.from_level(3,threads=-1)
+        
