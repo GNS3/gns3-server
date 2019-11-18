@@ -22,6 +22,8 @@ import uuid
 import shutil
 import asyncio
 import zipfile
+import zstandard as zstd
+import tarfile
 import aiohttp
 import itertools
 
@@ -34,13 +36,14 @@ Handle the import of project from a .gns3project
 
 
 @asyncio.coroutine
-def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False):
+def import_project(controller, selfpath, project_id, stream, location=None, name=None, keep_compute_id=False):
     """
-    Import a project contain in a zip file
+    Import a project contain in a zip file OR a zstandard archive
 
     You need to handle OSError exceptions
 
     :param controller: GNS3 Controller
+    :param selfpath: archive file path
     :param project_id: ID of the project to import
     :param stream: A io.BytesIO of the zipfile
     :param location: Directory for the project if None put in the default directory
@@ -53,27 +56,27 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     if location and ".gns3" in location:
         raise aiohttp.web.HTTPConflict(text="The destination path should not contain .gns3")
 
-    try:
-        with zipfile.ZipFile(stream) as zip_file:
-            project_file = zip_file.read("project.gns3").decode()
-    except zipfile.BadZipFile:
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid zip)")
-    except KeyError:
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, project.gns3 file could not be found")
-
-    try:
-        topology = json.loads(project_file)
-        # We import the project on top of an existing project (snapshots)
-        if topology["project_id"] == project_id:
-            project_name = topology["name"]
-        else:
-            # If the project name is already used we generate a new one
-            if name:
-                project_name = controller.get_free_project_name(name)
+    if selfpath.endswith(".gns3project"):
+        try:
+            with zipfile.ZipFile(stream) as zip_file:
+                project_file = zip_file.read("project.gns3").decode()
+        except zipfile.BadZipFile:
+            raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid zip)")
+        except KeyError:
+            raise aiohttp.web.HTTPConflict(text="Cannot import project, project.gns3 file could not be found")
+        try:
+            topology = json.loads(project_file)
+            # We import the project on top of an existing project (snapshots)
+            if topology["project_id"] == project_id:
+                project_name = topology["name"]
             else:
-                project_name = controller.get_free_project_name(topology["name"])
-    except (ValueError, KeyError):
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, the project.gns3 file is corrupted")
+                # If the project name is already used we generate a new one
+                if name:
+                    project_name = controller.get_free_project_name(name)
+                else:
+                    project_name = controller.get_free_project_name(topology["name"])
+        except (ValueError, KeyError):
+            raise aiohttp.web.HTTPConflict(text="Cannot import project, the project.gns3 file is corrupted")
 
     if location:
         path = location
@@ -85,11 +88,36 @@ def import_project(controller, project_id, stream, location=None, name=None, kee
     except UnicodeEncodeError:
         raise aiohttp.web.HTTPConflict(text="The project name contain non supported or invalid characters")
 
-    try:
-        with zipfile.ZipFile(stream) as zip_file:
-            yield from wait_run_in_executor(zip_file.extractall, path)
-    except zipfile.BadZipFile:
-        raise aiohttp.web.HTTPConflict(text="Cannot extract files from GNS3 project (invalid zip)")
+    if selfpath.endswith(".genens3"):
+        try:
+            dctx = zstd.ZstdDecompressor(max_window_size=2147483648)
+            with open(selfpath, "rb") as f:
+                with dctx.stream_reader(f) as reader:
+                #stream into tarfile
+                    with tarfile.open(name=None, mode='r|', fileobj=reader) as tfile:
+                        yield from wait_run_in_executor(tfile.extractall, path=path)
+        except tfile.ReadError:
+            raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid tar)")
+        try:
+            with open(os.path.join(path,"project.gns3")) as project_file:
+                topology = json.loads(project_file.read())
+                # We import the project on top of an existing project (snapshots)
+                if topology["project_id"] == project_id:
+                    project_name = topology["name"]
+                else:
+                    # If the project name is already used we generate a new one
+                    if name:
+                        project_name = controller.get_free_project_name(name)
+                    else:
+                        project_name = controller.get_free_project_name(topology["name"])
+        except (ValueError, KeyError):
+            raise aiohttp.web.HTTPConflict(text="Cannot import project, the project.gns3 file is corrupted")
+    elif selfpath.endswith(".gns3project"):
+        try:
+            with zipfile.ZipFile(stream) as zip_file:
+                yield from wait_run_in_executor(zip_file.extractall, path)
+        except zipfile.BadZipFile:
+            raise aiohttp.web.HTTPConflict(text="Cannot extract files from GNS3 project (invalid zip)")
 
     topology = load_topology(os.path.join(path, "project.gns3"))
     topology["name"] = project_name

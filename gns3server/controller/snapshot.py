@@ -22,12 +22,17 @@ import shutil
 import tempfile
 import asyncio
 import aiohttp.web
+import zstandard as zstd
+import tarfile
 from datetime import datetime, timezone
 
 from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
+from .export_project import export_project_zs
 from .import_project import import_project
 
+import logging
+log = logging.getLogger(__name__)
 
 # The string use to extract the date from the filename
 FILENAME_TIME_FORMAT = "%d%m%y_%H%M%S"
@@ -47,7 +52,7 @@ class Snapshot:
         if name:
             self._name = name
             self._created_at = datetime.now().timestamp()
-            filename = self._name + "_" + datetime.utcfromtimestamp(self._created_at).replace(tzinfo=None).strftime(FILENAME_TIME_FORMAT) + ".gns3project"
+            filename = self._name + "_" + datetime.utcfromtimestamp(self._created_at).replace(tzinfo=None).strftime(FILENAME_TIME_FORMAT) + ".genens3"
         else:
             self._name = filename.split("_")[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
@@ -82,6 +87,20 @@ class Snapshot:
             for data in zipstream:
                 f.write(data)
 
+    def _create_snapshot_zs(self, filelist):
+        """
+        Creates new zstandard format snapshot file (to be run in its own thread)
+        """
+        #create zstandard compressor to use as many threads as logical cpus
+        params = zstd.ZstdCompressionParameters.from_level(11,threads=-1,enable_ldm=True,window_log=31)
+        cctx = zstd.ZstdCompressor(compression_params=params)
+        with open(self.path, "wb") as f:
+            with cctx.stream_writer(f) as compressor:
+                #stream tar into compressor
+                with tarfile.open(name=None, mode='w|', fileobj=compressor) as tfile:
+                    for path,arcpath in filelist.items():
+                        tfile.add(path,arcname=arcpath)
+
     @asyncio.coroutine
     def create(self):
         """
@@ -99,8 +118,11 @@ class Snapshot:
 
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                zipstream = yield from export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
-                yield from wait_run_in_executor(self._create_snapshot_file, zipstream)
+                #zipstream = yield from export_project(self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                #yield from wait_run_in_executor(self._create_snapshot_file, filelist)
+                # Get list of files to add into tar.zs
+                filelist = yield from export_project_zs(self._project, self._id, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                yield from wait_run_in_executor(self._create_snapshot_zs, filelist)
         except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
 
@@ -120,7 +142,7 @@ class Snapshot:
             if os.path.exists(project_files_path):
                 yield from wait_run_in_executor(shutil.rmtree, project_files_path)
             with open(self._path, "rb") as f:
-                project = yield from import_project(self._project.controller, self._project.id, f, location=self._project.path)
+                project = yield from import_project(self._project.controller, self._path, self._project.id, f, location=self._project.path)
         except (OSError, PermissionError) as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
         yield from project.open()

@@ -160,7 +160,7 @@ class Project:
         snapshot_dir = os.path.join(self.path, "snapshots")
         if os.path.exists(snapshot_dir):
             for snap in os.listdir(snapshot_dir):
-                if snap.endswith(".gns3project"):
+                if snap.endswith(".gns3project") or snap.endswith(".genens3"):
                     snapshot = Snapshot(self, filename=snap)
                     self._snapshots[snapshot.id] = snapshot
 
