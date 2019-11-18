@@ -43,7 +43,7 @@ dependencies = open("requirements.txt", "r").read().splitlines()
 setup(
     name="gns3-server",
     version=__import__("gns3server").__version__,
-    url="http://github.com/GNS3/gns3-server",
+    url="https://github.com/gleyfer/gns3-server/",
     license="GNU General Public License v3 (GPLv3)",
     tests_require=["pytest", "pytest-capturelog"],
     cmdclass={"test": PyTest},
