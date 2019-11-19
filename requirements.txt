@@ -7,4 +7,4 @@ psutil>=3.0.0
 zipstream>=1.1.4
 prompt-toolkit==1.0.15
 async-timeout<3.0.0 # pyup: ignore; 3.0 drops support for python 3.4
-python-zstandard>=0.12.0
+zstandard>=0.12.0
