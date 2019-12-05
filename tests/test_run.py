@@ -38,7 +38,7 @@ def test_locale_check():
 def test_parse_arguments(capsys, tmpdir):
 
     Config.reset()
-    config = Config.instance(str(tmpdir / "test.cfg"))
+    config = Config.instance([str(tmpdir / "test.cfg")])
     server_config = config.get_section_config("Server")
 
     with pytest.raises(SystemExit):
