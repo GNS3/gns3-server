@@ -269,11 +269,17 @@ class VirtualBoxVM(BaseNode):
             return
 
         # VM must be powered off to start it
-        if vm_state != "poweroff":
+        if vm_state == "saved":
+            result = await self.manager.execute("guestproperty", ["get", self._uuid, "SavedByGNS3"])
+            if result == ['No value set!']:
+                raise VirtualBoxError("VirtualBox VM was not saved from GNS3")
+            else:
+                await self.manager.execute("guestproperty", ["delete", self._uuid, "SavedByGNS3"])
+        elif vm_state == "poweroff":
+            await self._set_network_options()
+            await self._set_serial_console()
+        else:
             raise VirtualBoxError("VirtualBox VM not powered off")
-
-        await self._set_network_options()
-        await self._set_serial_console()
 
         # check if there is enough RAM to run
         self.check_available_ram(self.ram)
@@ -314,9 +320,11 @@ class VirtualBoxVM(BaseNode):
         await self._stop_ubridge()
         await self._stop_remote_console()
         vm_state = await self._get_vm_state()
-        if vm_state == "running" or vm_state == "paused" or vm_state == "stuck":
+        if vm_state in ("running", "paused", "stuck"):
 
             if self.on_close == "save_vm_state":
+                # add a guest property to know the VM has been saved
+                await self.manager.execute("guestproperty", ["set", self._uuid, "SavedByGNS3", "yes"])
                 result = await self._control_vm("savestate")
                 self.status = "stopped"
                 log.debug("Stop result: {}".format(result))
@@ -343,18 +351,20 @@ class VirtualBoxVM(BaseNode):
 
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             await asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
-            try:
-                # deactivate the first serial port
-                await self._modify_vm("--uart1 off")
-            except VirtualBoxError as e:
-                log.warning("Could not deactivate the first serial port: {}".format(e))
+            if self.on_close != "save_vm_state":
+                # do some cleaning when the VM is powered off
+                try:
+                    # deactivate the first serial port
+                    await self._modify_vm("--uart1 off")
+                except VirtualBoxError as e:
+                    log.warning("Could not deactivate the first serial port: {}".format(e))
 
-            for adapter_number in range(0, self._adapters):
-                nio = self._ethernet_adapters[adapter_number].get_nio(0)
-                if nio:
-                    await self._modify_vm("--nictrace{} off".format(adapter_number + 1))
-                    await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
-                    await self._modify_vm("--nic{} null".format(adapter_number + 1))
+                for adapter_number in range(0, self._adapters):
+                    nio = self._ethernet_adapters[adapter_number].get_nio(0)
+                    if nio:
+                        await self._modify_vm("--nictrace{} off".format(adapter_number + 1))
+                        await self._modify_vm("--cableconnected{} off".format(adapter_number + 1))
+                        await self._modify_vm("--nic{} null".format(adapter_number + 1))
         await super().stop()
 
     async def suspend(self):
