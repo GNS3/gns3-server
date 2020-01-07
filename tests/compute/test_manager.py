@@ -224,11 +224,13 @@ def test_get_relative_image_path(qemu, tmpdir, config):
 def test_list_images(loop, qemu, tmpdir):
 
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
+    tmp_images_dir = os.path.join(tmpdir, "images")
+    os.makedirs(tmp_images_dir, exist_ok=True)
     for image in fake_images:
-        with open(str(tmpdir / image), "w+") as f:
+        with open(os.path.join(tmp_images_dir, image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
         assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
@@ -237,17 +239,19 @@ def test_list_images(loop, qemu, tmpdir):
 
 def test_list_images_recursives(loop, qemu, tmpdir):
 
+    tmp_images_dir = os.path.join(tmpdir, "images")
+    os.makedirs(tmp_images_dir, exist_ok=True)
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
     for image in fake_images:
-        with open(str(tmpdir / image), "w+") as f:
+        with open(os.path.join(tmp_images_dir, image), "w+") as f:
             f.write("1")
-    os.makedirs(str(tmpdir / "c"))
+    os.makedirs(os.path.join(tmp_images_dir, "c"))
     fake_images = ["c.qcow2", "c.qcow2.md5sum"]
     for image in fake_images:
-        with open(str(tmpdir / "c" / image), "w+") as f:
+        with open(os.path.join(tmp_images_dir, "c", image), "w+") as f:
             f.write("1")
 
-    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
+    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
 
         assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
