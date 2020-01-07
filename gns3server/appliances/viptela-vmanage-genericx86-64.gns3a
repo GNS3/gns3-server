@@ -1,0 +1,66 @@
+{
+    "name": "vManage",
+    "category": "router",
+    "description": "vManage",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/",
+    "product_name": "VIPtela Manage",
+    "product_url": "http://www.cisco.com/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "Laurent LEVIER",
+    "maintainer_email": "laurent.levier@orange.com",
+    "usage": "Initial username is admin, password is admin as well.",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 6,
+        "ram": 32768,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-cpu host -smp 2,maxcpus=2"
+    },
+    "images": [
+        {
+            "filename": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
+            "version": "19.2.0",
+            "md5sum": "27ef126f178c6c929a36ad2cf6ed8db7",
+            "filesize": 1185349632,
+            "download_url": "http://www.cisco.com/"
+        },
+        {
+            "filename": "viptela-vmanage-genericx86-64-disk1.vmdk",
+            "version": "18.3.7",
+            "md5sum": "2290c6467c907d9ca9c65793fe898716",
+            "filesize": 1085447680,
+            "download_url": "http://www.cisco.com/"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "19.2.0",
+            "images": {
+                "hda_disk_image": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
+								"hdb_disk_image": "empty30G.qcow2"
+
+            }
+        },
+        {
+            "name": "18.3.7",
+            "images": {
+                "hda_disk_image": "viptela-vmanage-genericx86-64-disk1.vmdk",
+								"hdb_disk_image": "empty30G.qcow2"
+
+            }
+        }
+    ]
+}

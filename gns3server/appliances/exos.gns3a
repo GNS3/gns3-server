@@ -11,7 +11,7 @@
     "maintainer": "Extreme Networks",
     "maintainer_email": "GitHubscripting@extremenetworks.com",
     "usage": "Boot up and login is admin with no password.",
-    "symbol": "ethernet_switch.svg",
+    "symbol": ":/symbols/multilayer_switch.svg",
     "first_port_name": "Mgmt",
     "port_name_format": "Port{port1}",
     "qemu": {
@@ -28,6 +28,20 @@
     
     "images": [
 
+		{
+            "filename": "EXOS-VM_v30.4.1.2.qcow2",
+            "version": "30.4.1.2",
+            "md5sum": "133fa38bf80daec9e389729c96e692c0",
+            "filesize": 454557696,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.4.1.2.qcow2"
+        },
+		{
+            "filename": "EXOS-VM_v30.3.1.6.qcow2",
+            "version": "30.3.1.6",
+            "md5sum": "edb86b406efe99434c6d5366d9bfa97f",
+            "filesize": 448266240,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.3.1.6.qcow2"
+        },
 		{
             "filename": "EXOS-VM_v30.2.1.8.qcow2",
             "version": "30.2.1.8",
@@ -62,6 +76,18 @@
     "versions": [
 
         {
+            "name": "30.4.1.2",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v30.4.1.2.qcow2"
+            }
+        },
+		{
+            "name": "30.3.1.6",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v30.3.1.6.qcow2"
+            }
+        },
+		{
             "name": "30.2.1.8",
             "images": {
                 "hda_disk_image": "EXOS-VM_v30.2.1.8.qcow2"
@@ -87,4 +113,3 @@
         }
     ]
 }
-

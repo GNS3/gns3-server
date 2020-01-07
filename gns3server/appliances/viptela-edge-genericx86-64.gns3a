@@ -1,0 +1,58 @@
+{
+    "name": "vEdgeCloud",
+    "category": "router",
+    "description": "vEdgeCloud",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/",
+    "product_name": "VIPtela Edge",
+    "product_url": "http://www.cisco.com/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "Laurent LEVIER",
+    "maintainer_email": "laurent.levier@orange.com",
+    "usage": "Initial username is admin, password is admin as well.",
+    "first_port_name": "Management0/0",
+    "port_name_format": "Ge0/{0}",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 5,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "hda_disk_interface": "virtio",
+        "kvm": "require",
+        "options": "-cpu host"
+    },
+    "images": [
+        {
+            "filename": "viptela-edge-genericx86-64.qcow2",
+            "version": "18.3.7",
+            "md5sum": "67f85649fde80dc7d28cc6dea7bdaf7a",
+            "filesize": 249495552,
+            "download_url": "http://www.cisco.com/"
+        },
+        {
+            "filename": "viptela-edge-19.2.0-genericx86-64.qcow2",
+            "version": "19.2.0",
+            "md5sum": "4aa487101d4cdc390f53a6e8b6f45ca7",
+            "filesize": 328400896,
+            "download_url": "http://www.cisco.com/"
+        }
+				
+    ],
+    "versions": [
+        {
+            "name": "19.2.0",
+            "images": {
+                "hda_disk_image": "viptela-edge-19.2.0-genericx86-64.qcow2"
+            }
+        },
+        {
+            "name": "18.3.7",
+            "images": {
+                "hda_disk_image": "viptela-edge-genericx86-64.qcow2"
+            }
+        }
+    ]
+}

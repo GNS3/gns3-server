@@ -1,0 +1,44 @@
+{
+    "name": "WatchGuard",
+    "category": "firewall",
+    "description": "Organizations of all sizes are turning to virtualization to reduce costs and increase the efficiency, availability, and flexibility of their IT resources. But virtualization comes at a cost. Virtual environments are complex to manage and vulnerable to security threats. IT must be prepared. Now applications can be secured, resources can be maximized and your IT department can reap the rewards of having a single, unified management system – without a security risk in sight. WatchGuard XTMv brings best-in-class network security to the world of virtualization. With real-time monitoring, multi-WAN support and scalable solutions to fit any-sized business, your virtual environments can be just as secure as your physical one.",
+    "vendor_name": "WatchGuard",
+    "vendor_url": "https://www.watchguard.com/",
+    "documentation_url": "https://www.watchguard.com/wgrd-products/virtual-and-cloud/fireboxv",
+    "product_name": "XTMv",
+    "product_url": "https://www.watchguard.com/wgrd-help/documentation/xtm",
+    "registry_version": 5,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "You need to extract the OVA file with tar or 7-Zip.\n\nThere are two active interfaces: external and trusted. The trusted interface has the IP address 10.0.1.1, the WebUI listens on port 8080 (https://10.0.1.1:8080). The external interface is configured to receive an IP address through DHCP. The trusted interface is not configured to assign IP addresses with DHCP. Both the trusted and external interfaces accept management connections.\n\nCredentials: admin / readwrite",
+    "port_name_format": "{0}",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 2,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "spice",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "xtmv_12_1_3_U3_signed-disk1.vmdk",
+            "version": "12.1.3 U3",
+            "md5sum": "3f9666a37544e764f48f50b8a7939190",
+            "filesize": 95944704,
+            "download_url": "https://watchguardsupport.secure.force.com/software/SoftwareDownloads?current=true&familyId=a2RF00000009OmLMAU",
+            "direct_download_url": "http://cdn.watchguard.com/SoftwareCenter/Files/XTM/12_1_3_U3/xtmv_12_1_3_U3.ova"
+        }
+    ],
+    "versions": [
+        {
+            "name": "12.1.3 U3",
+            "images": {
+                "hda_disk_image": "xtmv_12_1_3_U3_signed-disk1.vmdk"
+            }
+        }
+    ]
+}

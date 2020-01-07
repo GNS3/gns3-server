@@ -11,7 +11,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Interface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
+    "usage": "Newer versions come with OVA files only, you need to extract it to get the VMDK disk file.\nInterface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
     "port_name_format": "eth{0}",
     "symbol": "mgmt_station.svg",
     "qemu": {
@@ -25,6 +25,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "op5-monitor-8.0.9.centos7-x64-disk1.vmdk",
+            "version": "8.0.9",
+            "md5sum": "081a9514f9ed5e0c648ded26e7761e6e",
+            "filesize": 1219249152,
+            "download_url": "https://www.op5.com/download/"
+        },
         {
             "filename": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk",
             "version": "7.4.10",
@@ -41,6 +48,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "8.0.9",
+            "images": {
+                "hda_disk_image": "op5-monitor-8.0.9.centos7-x64-disk1.vmdk"
+            }
+        },
         {
             "name": "7.4.10",
             "images": {

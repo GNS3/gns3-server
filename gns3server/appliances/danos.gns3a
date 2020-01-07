@@ -1,0 +1,55 @@
+{
+    "name": "DANOS",
+    "category": "router",
+    "description": "The Disaggregated Network Operating System (DANOS) project enables community collaboration across network hardware, forwarding, and operating system layers. DANOS is initially based on AT&T’s “dNOS” software framework of a more open, cost-effective and flexible alternative to traditional networking equipment. As part of The Linux Foundation, it now incorporates contributions from complementary open source communities in building a standardized distributed Network Operating System (NOS) to speed the adoption and use of white boxes in a service provider’s infrastructure.",
+    "vendor_name": "Linux",
+    "vendor_url": "https://www.danosproject.org/",
+    "documentation_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/753667/DANOS+1908",
+    "product_name": "DANOS",
+    "product_url": "https://www.danosproject.org/",
+    "registry_version": 4,
+    "status": "stable",
+    "symbol": ":/symbols/affinity/circle/gray/router_cloud.svg",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username/password is vyatta/vyatta.  DANOS will live boot and drop into a shell. DANOS can then be installed inside the VM by typing install image.  Defaults to using a telnet console, but the vnc console can provide additional help if it's not booting.",
+    "port_name_format": "dp0p{1}s{0}",
+    "qemu": {
+        "cpus": 2,
+        "adapter_type": "virtio-net-pci",
+        "adapters": 3,
+        "ram": 4096,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "dc",
+        "kvm": "allow",
+        "options": "-cpu host"
+    },
+    "images": [
+        {
+            "filename": "danos-1908-amd64-vrouter.iso",
+            "version": "1908",
+            "md5sum": "e850b6aa2859de1075c11b9149fa50f4",
+            "filesize": 409993216,
+            "download_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/753667/DANOS+1908",
+            "direct_download_url": "http://repos.danosproject.org.s3-website-us-west-1.amazonaws.com/images/danos-1908-amd64-vrouter.iso"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "danos-1908-amd64-vrouter",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "danos-1908-amd64-vrouter.iso"
+            }
+        }
+    ]
+}

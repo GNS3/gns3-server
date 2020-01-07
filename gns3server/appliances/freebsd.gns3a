@@ -41,6 +41,15 @@
             "compression": "xz"
         },
         {
+            "filename": "FreeBSD-11.3-RELEASE-amd64.qcow2",
+            "version": "11.3",
+            "md5sum": "cdb35f676571b91584ff88502c48d399",
+            "filesize": 1698037760,
+            "download_url": "https://www.freebsd.org/where.html",
+            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.3-RELEASE/amd64/Latest/FreeBSD-11.3-RELEASE-amd64.qcow2.xz",
+            "compression": "xz"
+        },
+        {
             "filename": "FreeBSD-11.2-RELEASE-amd64.qcow2",
             "version": "11.2",
             "md5sum": "44d37e65be4bb4054f067911c84d074a",
@@ -97,6 +106,12 @@
             "name": "12.0",
             "images": {
                 "hda_disk_image": "FreeBSD-12.0-RELEASE-amd64.qcow2"
+            }
+        },
+        {
+            "name": "11.3",
+            "images": {
+                "hda_disk_image": "FreeBSD-11.3-RELEASE-amd64.qcow2"
             }
         },
         {

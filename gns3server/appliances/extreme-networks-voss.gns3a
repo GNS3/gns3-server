@@ -18,10 +18,11 @@
     {
         "adapter_type": "e1000",
         "adapters": 9,
-        "ram": 1024,
+        "ram": 2048,
         "hda_disk_interface": "ide",
-        "arch": "i386",
+        "arch": "x86_64",
         "console_type": "telnet",
+        "boot_priority": "dc",
         "kvm": "allow",
         "options": "-nographic"
     },
@@ -29,6 +30,13 @@
     "images":
     [
         {
+            "filename": "VOSSGNS3.8.1.0.0.qcow2",
+            "version": "v8.1.0.0",
+            "md5sum": "6b46fd54999a4cd2369440809ccc5099",
+            "filesize": 311820288,
+			"direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_VOSS/VOSSGNS3.8.1.0.0.qcow2"
+        },
+		{
             "filename": "VOSSGNS3.7.1.0.0.qcow2",
             "version": "voss_7.1.0.0",
             "md5sum": "7bb2974efe1a1ab857debd9fa894dbe7",
@@ -47,6 +55,13 @@
     "versions":
     [
         {
+            "name": "v8.1.0.0",
+            "images":
+            {
+                "hda_disk_image": "VOSSGNS3.8.1.0.0.qcow2"
+            }
+        },
+		{
             "name": "7.1.0.0",
             "images":
             {

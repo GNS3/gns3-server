@@ -22,6 +22,15 @@
     },
     "images": [
         {
+            "filename": "openwrt-18.06.5-x86-64-combined-ext4.img",
+            "version": "18.06.5",
+            "md5sum": "6fce24c15f0bc75af16c133b839aea30",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/openwrt-18.06.5-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
             "filename": "openwrt-18.06.2-x86-64-combined-ext4.img",
             "version": "18.06.2",
             "md5sum": "d112cd432bf51e2ddadbf9513f272fd9",
@@ -59,6 +68,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "18.06.5",
+            "images": {
+                "hda_disk_image": "openwrt-18.06.5-x86-64-combined-ext4.img"
+            }
+        },
         {
             "name": "openwrt 18.06.2",
             "images": {

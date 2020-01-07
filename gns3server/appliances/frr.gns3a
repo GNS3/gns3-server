@@ -9,7 +9,7 @@
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Credentials: frr / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
+    "usage": "Credentials: frradmin / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
     "port_name_format": "ens{port3}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
@@ -22,50 +22,20 @@
     },
     "images": [
         {
-            "filename": "frr7.0-vm0.3.qcow2",
-            "version": "FRR7.0 - VM0.3",
-            "md5sum": "5fa8ce0ee74215f4c4a8c61778ee0b10",
-            "filesize": 2044657664,
+            "filename": "frr7.1-vm0.4.qcow2",
+            "version": "7.1 - VM0.4",
+            "md5sum": "08390f257203126e5edffb9710e47974",
+            "filesize": 2051801088,
             "download_url": "https://sourceforge.net/projects/frr/files/",
-            "direct_download_url": "https://sourceforge.net/projects/frr/files/FRR7.0-VM0.3.qcow2.bz2/download",
-            "compression": "bzip2"
-        },
-        {
-            "filename": "frr6.0-vm0.2.qcow2",
-            "version": "FRR6.0 - VM0.2",
-            "md5sum": "bf5aebd98352716bfabb119abb2ba19a",
-            "filesize": 1762066432,
-            "download_url": "https://sourceforge.net/projects/frr/files/",
-            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr6.0-vm0.2.qcow2.bz2/download",
-            "compression": "bzip2"
-        },
-        {
-            "filename": "frr4.0-vm0.1.qcow2",
-            "version": "FRR4.0 - VM0.1",
-            "md5sum": "e1dc58cbb2b71c58051538c07d412493",
-            "filesize": 1670643712,
-            "download_url": "https://sourceforge.net/projects/frr/files/",
-            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr4.0-vm0.1.qcow2.bz2/download",
+            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr7.1-vm0.4.qcow2.bz2/download",
             "compression": "bzip2"
         }
     ],
     "versions": [
         {
-            "name": "FRR7.0 - VM0.3",
+            "name": "7.1 - VM0.4",
             "images": {
-                "hda_disk_image": "frr7.0-vm0.3.qcow2"
-            }
-        },
-        {
-            "name": "FRR6.0 - VM0.2",
-            "images": {
-                "hda_disk_image": "frr6.0-vm0.2.qcow2"
-            }
-        },
-        {
-            "name": "FRR4.0 - VM0.1",
-            "images": {
-                "hda_disk_image": "frr4.0-vm0.1.qcow2"
+                "hda_disk_image": "frr7.1-vm0.4.qcow2"
             }
         }
     ]

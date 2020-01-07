@@ -1,0 +1,54 @@
+{
+    "name": "vSmart",
+    "category": "router",
+    "description": "vSmart",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://www.cisco.com",
+    "documentation_url": "http://www.cisco.com/",
+    "product_name": "VIPtela Smart",
+    "product_url": "http://www.cisco.com/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "Laurent LEVIER",
+    "maintainer_email": "laurent.levier@orange.com",
+    "usage": "Initial username is admin, password is admin as well.",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 6,
+        "ram": 4096,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-smp 2,maxcpus=2 -cpu host"
+    },
+    "images": [
+        {
+            "filename": "viptela-smart-19.2.0-genericx86-64.qcow2",
+            "version": "19.2.0",
+            "md5sum": "94854f81465d62f58fed591e8f581661",
+            "filesize": 328400896,
+            "download_url": "http://www.cisco.com/"
+        },
+        {
+            "filename": "viptela-smart-genericx86-64-disk1.vmdk",
+            "version": "18.3.7",
+            "md5sum": "ab9b06c212319336810a4b336ec3dd96",
+            "filesize": 246990848,
+            "download_url": "http://www.cisco.com/"
+        }
+    ],
+    "versions": [
+        {
+            "name": "18.3.7",
+            "images": {
+                "hda_disk_image": "viptela-smart-genericx86-64-disk1.vmdk"
+            }
+        },
+        {
+            "name": "19.2.0",
+            "images": {
+                "hda_disk_image": "viptela-smart-19.2.0-genericx86-64.qcow2"
+            }
+        }
+    ]
+}
