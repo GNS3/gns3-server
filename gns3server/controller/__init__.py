@@ -132,6 +132,20 @@ class Controller:
         self._computes = {}
         self._projects = {}
 
+    def check_can_write_config(self):
+        """
+        Check if the controller configuration can be written on disk
+
+        :returns: boolean
+        """
+
+        try:
+            os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
+            if not os.access(self._config_file, os.W_OK):
+                raise aiohttp.web.HTTPConflict(text="Change rejected, cannot write to controller configuration file '{}'".format(self._config_file))
+        except OSError as e:
+            raise aiohttp.web.HTTPConflict(text="Change rejected: {}".format(e))
+
     def save(self):
         """
         Save the controller configuration on disk

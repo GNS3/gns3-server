@@ -177,9 +177,11 @@ class Template:
 
     def update(self, **kwargs):
 
-        self._settings.update(kwargs)
+
         from gns3server.controller import Controller
         controller = Controller.instance()
+        Controller.instance().check_can_write_config()
+        self._settings.update(kwargs)
         controller.notification.controller_emit("template.updated", self.__json__())
         controller.save()
 

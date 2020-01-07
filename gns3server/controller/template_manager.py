@@ -93,8 +93,10 @@ class TemplateManager:
         except jsonschema.ValidationError as e:
             message = "JSON schema error adding template with JSON data '{}': {}".format(settings, e.message)
             raise aiohttp.web.HTTPBadRequest(text=message)
-        self._templates[template.id] = template
+
         from . import Controller
+        Controller.instance().check_can_write_config()
+        self._templates[template.id] = template
         Controller.instance().save()
         Controller.instance().notification.controller_emit("template.created", template.__json__())
         return template
@@ -123,8 +125,9 @@ class TemplateManager:
         template = self.get_template(template_id)
         if template.builtin:
             raise aiohttp.web.HTTPConflict(text="Template ID {} cannot be deleted because it is a builtin".format(template_id))
-        self._templates.pop(template_id)
         from . import Controller
+        Controller.instance().check_can_write_config()
+        self._templates.pop(template_id)
         Controller.instance().save()
         Controller.instance().notification.controller_emit("template.deleted", template.__json__())
 
