@@ -27,6 +27,7 @@ import sys
 import aiohttp
 from aiohttp import web
 from unittest.mock import patch
+from pathlib import Path
 
 
 sys._called_from_test = True
@@ -200,6 +201,8 @@ def controller_config_path(tmpdir):
 def controller(tmpdir, controller_config_path):
     Controller._instance = None
     controller = Controller.instance()
+    os.makedirs(os.path.dirname(controller_config_path), exist_ok=True)
+    Path(controller_config_path).touch()
     controller._config_file = controller_config_path
     controller._config_loaded = True
     return controller
