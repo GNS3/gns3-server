@@ -1532,7 +1532,7 @@ class Router(BaseNode):
             try:
                 with open(self.startup_config_path, "r+", encoding="utf-8", errors="replace") as f:
                     old_config = f.read()
-                    new_config = re.sub(r"^hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
+                    new_config = re.sub(r"hostname .+$", "hostname " + new_name, old_config, flags=re.MULTILINE)
                     f.seek(0)
                     f.write(new_config)
             except OSError as e:

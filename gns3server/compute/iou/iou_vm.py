@@ -325,7 +325,7 @@ class IOUVM(BaseNode):
 
         if self.startup_config_file:
             content = self.startup_config_content
-            content = re.sub(r"^hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
+            content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
             self.startup_config_content = content
 
         super(IOUVM, IOUVM).name.__set__(self, new_name)
