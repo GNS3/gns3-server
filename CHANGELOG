@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.2.4 08/01/2020
+
+* Accept a node name when creating a node from a template using the API. Fixes #1708
+* Disallow to modify a template if changes cannot be written on disk. Fixes #1695
+* Fix renaming IOL hostname replaces %h only in a single place. Fixes #1707
+* Add symbols_path
+* Bundle Web Ui version 2019.2.0-alpha.11
+* Change the default UDP port range to be 20000 to 30000 in gns3_server.conf Ref #1271
+* Fix cannot power on VirtualBox VM in saved state. Ref #1702
+
 ## 2.2.3 12/11/2019
 
 * Improved how the path to the config file is actually determined
