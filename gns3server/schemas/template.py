@@ -97,6 +97,10 @@ TEMPLATE_USAGE_SCHEMA = {
             "description": "Y position",
             "type": "integer"
         },
+        "name": {
+            "description": "Use this name to create a new node",
+            "type": ["null", "string"]
+        },
         "compute_id": {
             "description": "If the template don't have a default compute use this compute",
             "type": ["null", "string"]

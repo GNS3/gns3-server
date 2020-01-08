@@ -490,7 +490,7 @@ class Project:
         return new_name
 
     @open_required
-    async def add_node_from_template(self, template_id, x=0, y=0, compute_id=None):
+    async def add_node_from_template(self, template_id, x=0, y=0, name=None, compute_id=None):
         """
         Create a node from a template.
         """
@@ -508,9 +508,10 @@ class Project:
             compute = self.controller.get_compute(compute_id)
         else:
             compute = self.controller.get_compute(template.pop("compute_id", compute_id))
-        name = template.pop("name")
+        template_name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
-        name = default_name_format.replace("{name}", name)
+        if name is None:
+            name = default_name_format.replace("{name}", template_name)
         node_id = str(uuid.uuid4())
         node = await self.add_node(compute, name, node_id, node_type=node_type, **template)
         return node

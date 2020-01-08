@@ -966,6 +966,6 @@ def test_create_node_from_template(http_controller, controller, project, compute
             "x": 42,
             "y": 12
         })
-    mock.assert_called_with(id, x=42, y=12, compute_id=None)
+    mock.assert_called_with(id, x=42, y=12, name=None, compute_id=None)
     assert response.route == "/projects/{project_id}/templates/{template_id}"
     assert response.status == 201
