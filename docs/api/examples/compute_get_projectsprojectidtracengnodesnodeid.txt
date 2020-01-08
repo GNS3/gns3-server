@@ -1,6 +1,6 @@
-curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/1d21ec8b-7616-4be1-89bc-83c9b79d38b5'
+curl -i -X GET 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/c03cc894-a5e9-4359-b85a-1fd917184de4'
 
-GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/1d21ec8b-7616-4be1-89bc-83c9b79d38b5 HTTP/1.1
+GET /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/traceng/nodes/c03cc894-a5e9-4359-b85a-1fd917184de4 HTTP/1.1
 
 
 
@@ -8,8 +8,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 443
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:42:57 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:27:26 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}
 
 {
@@ -19,8 +19,8 @@ X-Route: /v2/compute/projects/{project_id}/traceng/nodes/{node_id}
     "default_destination": "",
     "ip_address": "",
     "name": "TraceNG TEST 1",
-    "node_directory": "/tmp/tmp1i_44uq8/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/traceng/1d21ec8b-7616-4be1-89bc-83c9b79d38b5",
-    "node_id": "1d21ec8b-7616-4be1-89bc-83c9b79d38b5",
+    "node_directory": "/tmp/tmp3gc2avyo/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/traceng/c03cc894-a5e9-4359-b85a-1fd917184de4",
+    "node_id": "c03cc894-a5e9-4359-b85a-1fd917184de4",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped"
 }

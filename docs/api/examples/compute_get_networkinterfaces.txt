@@ -6,17 +6,17 @@ GET /v2/compute/network/interfaces HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 1600
+Content-Length: 1601
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:41:31 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:26:16 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/compute/network/interfaces
 
 [
     {
         "id": "docker0",
         "ip_address": "172.17.0.1",
-        "mac_address": "02:42:fb:9a:14:99",
+        "mac_address": "02:42:0f:c7:42:69",
         "name": "docker0",
         "netmask": "255.255.0.0",
         "special": true,
@@ -69,7 +69,7 @@ X-Route: /v2/compute/network/interfaces
     },
     {
         "id": "wlp2s0",
-        "ip_address": "192.168.2.10",
+        "ip_address": "192.168.1.175",
         "mac_address": "9c:b6:d0:99:3c:07",
         "name": "wlp2s0",
         "netmask": "255.255.255.0",

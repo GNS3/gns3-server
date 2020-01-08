@@ -11,7 +11,7 @@
             10
         ]
     },
-    "link_id": "2ac96baf-b053-446a-8bbf-51d331c318c6",
+    "link_id": "b76bd8b1-2171-4361-9228-801713d23079",
     "link_type": "ethernet",
     "nodes": [
         {
@@ -21,7 +21,7 @@
                 "x": 64,
                 "y": 0
             },
-            "node_id": "d72e2acf-d797-47a0-8c29-f269b1287aff",
+            "node_id": "8b77b480-361e-488b-96b1-a769890e11ec",
             "port_number": 3
         },
         {
@@ -30,10 +30,10 @@
                 "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
                 "text": "2/4"
             },
-            "node_id": "27ada508-50dd-4671-b0cd-584fbc467676",
+            "node_id": "b4688a3d-0af8-4ddc-b85f-e26dc1031c4c",
             "port_number": 4
         }
     ],
-    "project_id": "98dffbde-364b-49ef-bd61-cd3d12f5e521",
+    "project_id": "85333131-b83a-4112-9a51-184ba0c536a8",
     "suspend": false
 }

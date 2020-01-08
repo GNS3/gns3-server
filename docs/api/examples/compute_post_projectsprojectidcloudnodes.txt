@@ -8,10 +8,10 @@ POST /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/cloud/nodes HTTP/
 
 HTTP/1.1 201
 Connection: close
-Content-Length: 1405
+Content-Length: 1406
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:41:02 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:25:43 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/compute/projects/{project_id}/cloud/nodes
 
 {
@@ -53,8 +53,8 @@ X-Route: /v2/compute/projects/{project_id}/cloud/nodes
         }
     ],
     "name": "Cloud 1",
-    "node_directory": "/tmp/pytest-of-grossmj/pytest-0/test_json4/project-files/builtin/fcba8e8e-d688-4244-8c80-43306977b2ab",
-    "node_id": "fcba8e8e-d688-4244-8c80-43306977b2ab",
+    "node_directory": "/tmp/pytest-of-grossmj/pytest-41/test_json4/project-files/builtin/3cba86a4-73d7-4989-9c83-f0bb480ff950",
+    "node_id": "3cba86a4-73d7-4989-9c83-f0bb480ff950",
     "ports_mapping": [
         {
             "interface": "wlp2s0",

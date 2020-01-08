@@ -10,8 +10,8 @@ HTTP/1.1 201
 Connection: close
 Content-Length: 443
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:42:57 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:27:26 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/compute/projects/{project_id}/traceng/nodes
 
 {
@@ -21,8 +21,8 @@ X-Route: /v2/compute/projects/{project_id}/traceng/nodes
     "default_destination": "",
     "ip_address": "",
     "name": "TraceNG TEST 1",
-    "node_directory": "/tmp/tmp1i_44uq8/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/traceng/2760f8a8-85c2-41ff-944e-08584038c0c3",
-    "node_id": "2760f8a8-85c2-41ff-944e-08584038c0c3",
+    "node_directory": "/tmp/tmp3gc2avyo/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/traceng/f27f5247-e419-4404-9150-b1bb9306d783",
+    "node_id": "f27f5247-e419-4404-9150-b1bb9306d783",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
     "status": "stopped"
 }

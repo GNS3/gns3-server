@@ -6,10 +6,10 @@ GET /v2/appliances HTTP/1.1
 
 HTTP/1.1 200
 Connection: close
-Content-Length: 651446
+Content-Length: 686928
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:43:22 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:27:49 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/appliances
 
 [
@@ -39,6 +39,13 @@ X-Route: /v2/appliances
         "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",
         "documentation_url": "http://docs.fortinet.com/fortiauthenticator/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAC_VM_KVM-v6-build0058-FORTINET.out.kvm.qcow2",
+                "filesize": 73912320,
+                "md5sum": "5812e4ab63aa1feba85324897dd37fa5",
+                "version": "6.0.3"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAC_VM_KVM-v6-build0010-FORTINET.out.kvm.qcow2",
@@ -141,6 +148,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAC_VM_KVM-v6-build0058-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FAC_VM_KVM-ALL-DATADRIVE.qcow2"
+                },
+                "name": "6.0.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "FAC_VM_KVM-v6-build0010-FORTINET.out.kvm.qcow2",
@@ -273,6 +287,20 @@ X-Route: /v2/appliances
         "description": "FortiMail is a complete Secure Email Gateway offering suitable for any size organization. It provides a single solution to protect against inbound attacks - including advanced malware -, as well as outbound threats and data loss with a wide range of top-rated security capabilities.",
         "documentation_url": "http://docs.fortinet.com/fortimail/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v60-build0257-FORTINET.out.kvm.qcow2",
+                "filesize": 104464384,
+                "md5sum": "79449970d26979af79b0ccb7b0cf3880",
+                "version": "6.2.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FML_VMKV-64-v60-build0160-FORTINET.out.kvm.qcow2",
+                "filesize": 99483648,
+                "md5sum": "925a0b76607613962119cd5ea568458f",
+                "version": "6.0.7"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FML_VMKV-64-v60-build0143-FORTINET.out.kvm.qcow2",
@@ -441,6 +469,20 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FML_VMKV-64-v60-build0257-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.1"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FML_VMKV-64-v60-build0160-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.7"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FML_VMKV-64-v60-build0143-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -581,6 +623,14 @@ X-Route: /v2/appliances
         "documentation_url": "https://www.kali.org/kali-linux-documentation/",
         "images": [
             {
+                "direct_download_url": "http://cdimage.kali.org/kali-2019.3/kali-linux-2019.3-amd64.iso",
+                "download_url": "https://www.kali.org/downloads/",
+                "filename": "kali-linux-2019.3-amd64.iso",
+                "filesize": 3037736960,
+                "md5sum": "9c6fb00558f78ed06992d89f745ef975",
+                "version": "2019.3"
+            },
+            {
                 "direct_download_url": "http://cdimage.kali.org/kali-2019.2/kali-linux-2019.2-amd64.iso",
                 "download_url": "https://www.kali.org/downloads/",
                 "filename": "kali-linux-2019.2-amd64.iso",
@@ -708,6 +758,13 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "kali-linux-2019.3-amd64.iso",
+                    "hda_disk_image": "kali-linux-persistence-1gb.qcow2"
+                },
+                "name": "2019.3"
+            },
+            {
+                "images": {
                     "cdrom_image": "kali-linux-2019.2-amd64.iso",
                     "hda_disk_image": "kali-linux-persistence-1gb.qcow2"
                 },
@@ -820,6 +877,13 @@ X-Route: /v2/appliances
         "first_port_name": "Mgmt",
         "images": [
             {
+                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_VOSS/VOSSGNS3.8.1.0.0.qcow2",
+                "filename": "VOSSGNS3.8.1.0.0.qcow2",
+                "filesize": 311820288,
+                "md5sum": "6b46fd54999a4cd2369440809ccc5099",
+                "version": "v8.1.0.0"
+            },
+            {
                 "direct_download_url": "https://stackingtool.extremenetworks.com/github/VOSSGNS3.7.1.0.0.qcow2",
                 "filename": "VOSSGNS3.7.1.0.0.qcow2",
                 "filesize": 193724416,
@@ -842,12 +906,13 @@ X-Route: /v2/appliances
         "qemu": {
             "adapter_type": "e1000",
             "adapters": 9,
-            "arch": "i386",
+            "arch": "x86_64",
+            "boot_priority": "dc",
             "console_type": "telnet",
             "hda_disk_interface": "ide",
             "kvm": "allow",
             "options": "-nographic",
-            "ram": 1024
+            "ram": 2048
         },
         "registry_version": 3,
         "status": "experimental",
@@ -856,6 +921,12 @@ X-Route: /v2/appliances
         "vendor_name": "Extreme Networks",
         "vendor_url": "http://www.extremenetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "VOSSGNS3.8.1.0.0.qcow2"
+                },
+                "name": "v8.1.0.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "VOSSGNS3.7.1.0.0.qcow2"
@@ -931,6 +1002,13 @@ X-Route: /v2/appliances
                 "filesize": 30998528,
                 "md5sum": "b7500835594e62d8acb1c6ec43d597c1",
                 "version": "ALL"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAD_KVM-V500-build0655-FORTINET.out.kvm-boot.qcow2",
+                "filesize": 112918528,
+                "md5sum": "aa16f574a234ceada5d8ac6cc6536835",
+                "version": "5.3.3"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -1118,6 +1196,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FAD_KVM-V500-build0655-FORTINET.out.kvm-boot.qcow2",
+                    "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
+                },
+                "name": "5.3.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "FAD_KVM-V500-build0442-FORTINET.out.kvm-boot.qcow2",
@@ -1375,10 +1460,24 @@ X-Route: /v2/appliances
     {
         "builtin": true,
         "category": "multilayer_switch",
-        "description": "The ExtremeXOS VM is created and maintained by Extreme Networks for\u00a0users to emulate a network using EXOS switches.",
+        "description": "The ExtremeXOS VM is created and maintained by Extreme Networks for users to emulate a network using EXOS switches.",
         "documentation_url": "https://www.extremenetworks.com/support/documentation",
         "first_port_name": "Mgmt",
         "images": [
+            {
+                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.4.1.2.qcow2",
+                "filename": "EXOS-VM_v30.4.1.2.qcow2",
+                "filesize": 454557696,
+                "md5sum": "133fa38bf80daec9e389729c96e692c0",
+                "version": "30.4.1.2"
+            },
+            {
+                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.3.1.6.qcow2",
+                "filename": "EXOS-VM_v30.3.1.6.qcow2",
+                "filesize": 448266240,
+                "md5sum": "edb86b406efe99434c6d5366d9bfa97f",
+                "version": "30.3.1.6"
+            },
             {
                 "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v30.2.1.8.qcow2",
                 "filename": "EXOS-VM_v30.2.1.8.qcow2",
@@ -1401,46 +1500,11 @@ X-Route: /v2/appliances
                 "version": "22.7.1.2"
             },
             {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.6.1.4.qcow2",
-                "filename": "EXOS-VM_v22.6.1.4.qcow2",
-                "filesize": 180355072,
-                "md5sum": "82b31b11b26143a82c8259a4825696fc",
-                "version": "22.6.1.4"
-            },
-            {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.5.1.7.qcow2",
-                "filename": "EXOS-VM_v22.5.1.7.qcow2",
-                "filesize": 180289536,
-                "md5sum": "d2e8ae6783b6ed777ad5cd8cafd83c86",
-                "version": "22.5.1.7"
-            },
-            {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.4.1.4-disk1.qcow2",
-                "filename": "EXOS-VM_v22.4.1.4-disk1.qcow2",
-                "filesize": 229638144,
-                "md5sum": "5f1ee41912d74d423ce8ae57ea413602",
-                "version": "22.4.1.4"
-            },
-            {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2",
-                "filename": "EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2",
-                "filesize": 218431488,
-                "md5sum": "a4585b6e987ff730f5c044af339fe090",
-                "version": "22.3.1.4"
-            },
-            {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.2.1.5-disk1.qcow2",
-                "filename": "EXOS-VM_v22.2.1.5-disk1.qcow2",
-                "filesize": 179568640,
-                "md5sum": "e3cfe92077addda6ad34185288c90acf",
-                "version": "22.2.1.5"
-            },
-            {
-                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v22.1.1.5-disk1.qcow2",
-                "filename": "EXOS-VM_v22.1.1.5-disk1.qcow2",
-                "filesize": 179437568,
-                "md5sum": "77683060e75d81b776761f6829b15e9b",
-                "version": "22.1.1.5"
+                "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v21.1.1.4-disk1.qcow2",
+                "filename": "EXOS-VM_v21.1.1.4-disk1.qcow2",
+                "filesize": 117560832,
+                "md5sum": "654606809b6fd3bca400377483eb4a79",
+                "version": "21.1.1.4"
             }
         ],
         "maintainer": "Extreme Networks",
@@ -1461,11 +1525,23 @@ X-Route: /v2/appliances
         },
         "registry_version": 3,
         "status": "stable",
-        "symbol": "ethernet_switch.svg",
+        "symbol": ":/symbols/classic/multilayer_switch.svg",
         "usage": "Boot up and login is admin with no password.",
         "vendor_name": "Extreme Networks",
         "vendor_url": "https://www.extremenetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "EXOS-VM_v30.4.1.2.qcow2"
+                },
+                "name": "30.4.1.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "EXOS-VM_v30.3.1.6.qcow2"
+                },
+                "name": "30.3.1.6"
+            },
             {
                 "images": {
                     "hda_disk_image": "EXOS-VM_v30.2.1.8.qcow2"
@@ -1486,39 +1562,9 @@ X-Route: /v2/appliances
             },
             {
                 "images": {
-                    "hda_disk_image": "EXOS-VM_v22.6.1.4.qcow2"
+                    "hda_disk_image": "EXOS-VM_v21.1.1.4-disk1.qcow2"
                 },
-                "name": "22.6.1.4"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "EXOS-VM_v22.5.1.7.qcow2"
-                },
-                "name": "22.5.1.7"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "EXOS-VM_v22.4.1.4-disk1.qcow2"
-                },
-                "name": "22.4.1.4"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "EXOS-VM_v22.3.1.4patch1-4-disk1.qcow2"
-                },
-                "name": "22.3.1.4"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "EXOS-VM_v22.2.1.5-disk1.qcow2"
-                },
-                "name": "22.2.1.5"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "EXOS-VM_v22.1.1.5-disk1.qcow2"
-                },
-                "name": "22.1.1.5"
+                "name": "21.1.1.4"
             }
         ]
     },
@@ -1549,12 +1595,21 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "xz",
-                "direct_download_url": "https://muug.ca/mirror/ipfire/releases/ipfire-2.x/2.23-core131/ipfire-2.23.2gb-ext4.x86_64-full-core131.img.xz",
+                "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.23-core136/ipfire-2.23.2gb-ext4.x86_64-full-core136.img.xz",
+                "download_url": "http://www.ipfire.org/download",
+                "filename": "ipfire-2.23.2gb-ext4.x86_64-full-core136.img",
+                "filesize": 1540358144,
+                "md5sum": "56d4cdce08417a9ddb465e445bd4ef63",
+                "version": "2.23.136"
+            },
+            {
+                "compression": "xz",
+                "direct_download_url": "https://downloads.ipfire.org/releases/ipfire-2.x/2.23-core131/ipfire-2.23.2gb-ext4.x86_64-full-core131.img.xz",
                 "download_url": "http://www.ipfire.org/download",
                 "filename": "ipfire-2.23.2gb-ext4.x86_64-full-core131.img",
                 "filesize": 1541160960,
                 "md5sum": "604c06e20c36985ff00802da4509340c",
-                "version": "2.23"
+                "version": "2.23.131"
             },
             {
                 "compression": "xz",
@@ -2586,6 +2641,14 @@ X-Route: /v2/appliances
         "first_port_name": "eth0",
         "images": [
             {
+                "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.10/cumulus-linux-3.7.10-vx-amd64-qemu.qcow2",
+                "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+                "filename": "cumulus-linux-3.7.10-vx-amd64-qemu.qcow2",
+                "filesize": 576458240,
+                "md5sum": "3474c950f9d348a6c9f0ce52b5698369",
+                "version": "3.7.10"
+            },
+            {
                 "direct_download_url": "http://cumulusfiles.s3.amazonaws.com/CumulusLinux-3.7.6/cumulus-linux-3.7.6-vx-amd64-qemu.qcow2",
                 "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
                 "filename": "cumulus-linux-3.7.6-vx-amd64-qemu.qcow2",
@@ -2787,6 +2850,12 @@ X-Route: /v2/appliances
         "vendor_name": "Cumulus Network",
         "vendor_url": "https://www.cumulusnetworks.com",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "cumulus-linux-3.7.10-vx-amd64-qemu.qcow2"
+                },
+                "name": "3.7.10"
+            },
             {
                 "images": {
                     "hda_disk_image": "cumulus-linux-3.7.6-vx-amd64-qemu.qcow2"
@@ -3305,6 +3374,52 @@ X-Route: /v2/appliances
     {
         "builtin": true,
         "category": "firewall",
+        "description": "Organizations of all sizes are turning to virtualization to reduce costs and increase the efficiency, availability, and flexibility of their IT resources. But virtualization comes at a cost. Virtual environments are complex to manage and vulnerable to security threats. IT must be prepared. Now applications can be secured, resources can be maximized and your IT department can reap the rewards of having a single, unified management system \u2013 without a security risk in sight. WatchGuard FireboxV brings best-in-class network security to the world of virtualization. With real-time monitoring, multi-WAN support and scalable solutions to fit any-sized business, your virtual environments can be just as secure as your physical one.",
+        "documentation_url": "https://www.watchguard.com/wgrd-products/virtual-and-cloud/fireboxv",
+        "images": [
+            {
+                "direct_download_url": "http://cdn.watchguard.com/SoftwareCenter/Files/XTM/12_5_2/FireboxV_12_5_2.ova",
+                "download_url": "https://watchguardsupport.secure.force.com/software/SoftwareDownloads?current=true&familyId=a2R2A000001YGv4UAG",
+                "filename": "FireboxV_12_5_2_signed-disk1.vmdk",
+                "filesize": 191653888,
+                "md5sum": "5a17b57a149f2324ed4d34563367d1c0",
+                "version": "12.5.2"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "WatchGuard",
+        "port_name_format": "{0}",
+        "product_name": "FireboxV",
+        "product_url": "https://www.watchguard.com/wgrd-help/documentation/xtm",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 2,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "spice",
+            "hda_disk_interface": "ide",
+            "kvm": "require",
+            "ram": 1024
+        },
+        "registry_version": 5,
+        "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
+        "usage": "You need to extract the OVA file with tar or 7-Zip.\n\nThere are two active interfaces: external and trusted. The trusted interface has the IP address 10.0.1.1, the WebUI listens on port 8080 (https://10.0.1.1:8080). The external interface is configured to receive an IP address through DHCP. The trusted interface is not configured to assign IP addresses with DHCP. Both the trusted and external interfaces accept management connections.\n\nCredentials: admin / readwrite",
+        "vendor_name": "WatchGuard",
+        "vendor_url": "https://www.watchguard.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FireboxV_12_5_2_signed-disk1.vmdk"
+                },
+                "name": "12.5.2"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "firewall",
         "description": "A Free firewall that includes its own security-hardened GNU/Linux operating system and an easy-to-use web interface.",
         "documentation_url": "https://sourceforge.net/projects/smoothwall/files/SmoothWall%20Manuals/",
         "images": [
@@ -3365,10 +3480,10 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
-                "filename": "cosim_20180212.qcow2",
+                "filename": "cosim-18.4R1.8_20180212.qcow2",
                 "filesize": 1911291904,
                 "md5sum": "0372e9c1b7df3608099186ab8cbbf2ad",
-                "version": "17.4R1"
+                "version": "17.4R1 & 18.4R1"
             },
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
@@ -3402,9 +3517,9 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "cosim_20180212.qcow2"
+                    "hda_disk_image": "cosim-18.4R1.8_20180212.qcow2"
                 },
-                "name": "17.4R1"
+                "name": "17.4R1 & 18.4R1"
             },
             {
                 "images": {
@@ -4228,6 +4343,52 @@ X-Route: /v2/appliances
     },
     {
         "builtin": true,
+        "category": "firewall",
+        "description": "Organizations of all sizes are turning to virtualization to reduce costs and increase the efficiency, availability, and flexibility of their IT resources. But virtualization comes at a cost. Virtual environments are complex to manage and vulnerable to security threats. IT must be prepared. Now applications can be secured, resources can be maximized and your IT department can reap the rewards of having a single, unified management system \u2013 without a security risk in sight. WatchGuard XTMv brings best-in-class network security to the world of virtualization. With real-time monitoring, multi-WAN support and scalable solutions to fit any-sized business, your virtual environments can be just as secure as your physical one.",
+        "documentation_url": "https://www.watchguard.com/wgrd-products/virtual-and-cloud/fireboxv",
+        "images": [
+            {
+                "direct_download_url": "http://cdn.watchguard.com/SoftwareCenter/Files/XTM/12_1_3_U3/xtmv_12_1_3_U3.ova",
+                "download_url": "https://watchguardsupport.secure.force.com/software/SoftwareDownloads?current=true&familyId=a2RF00000009OmLMAU",
+                "filename": "xtmv_12_1_3_U3_signed-disk1.vmdk",
+                "filesize": 95944704,
+                "md5sum": "3f9666a37544e764f48f50b8a7939190",
+                "version": "12.1.3 U3"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "WatchGuard",
+        "port_name_format": "{0}",
+        "product_name": "XTMv",
+        "product_url": "https://www.watchguard.com/wgrd-help/documentation/xtm",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 2,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "spice",
+            "hda_disk_interface": "ide",
+            "kvm": "require",
+            "ram": 1024
+        },
+        "registry_version": 5,
+        "status": "stable",
+        "symbol": ":/symbols/classic/firewall.svg",
+        "usage": "You need to extract the OVA file with tar or 7-Zip.\n\nThere are two active interfaces: external and trusted. The trusted interface has the IP address 10.0.1.1, the WebUI listens on port 8080 (https://10.0.1.1:8080). The external interface is configured to receive an IP address through DHCP. The trusted interface is not configured to assign IP addresses with DHCP. Both the trusted and external interfaces accept management connections.\n\nCredentials: admin / readwrite",
+        "vendor_name": "WatchGuard",
+        "vendor_url": "https://www.watchguard.com/",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "xtmv_12_1_3_U3_signed-disk1.vmdk"
+                },
+                "name": "12.1.3 U3"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "router",
         "description": "Cisco 2600 Router",
         "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
@@ -4271,6 +4432,14 @@ X-Route: /v2/appliances
         "description": "FreeNAS is a Free and Open Source Network Attached Storage (NAS) software appliance. This means that you can use FreeNAS to share data over file-based sharing protocols, including CIFS for Windows users, NFS for Unix-like operating systems, and AFP for Mac OS X users. FreeNAS uses the ZFS file system to store, manage, and protect data. ZFS provides advanced features like snapshots to keep old versions of files, incremental remote backups to keep your data safe on another device without huge file transfers, and intelligent compression, which reduces the size of files so quickly and efficiently that it actually helps transfers happen faster.",
         "documentation_url": "https://doc.freenas.org/9.10/freenas.html",
         "images": [
+            {
+                "direct_download_url": "https://download.freenas.org/11.2/STABLE/U6/x64/FreeNAS-11.2-U6.iso",
+                "download_url": "http://www.freenas.org/download/",
+                "filename": "FreeNAS-11.2-U6.iso",
+                "filesize": 602275840,
+                "md5sum": "3957086acdf5e0459a7da15af781e0f9",
+                "version": "11.2 U6"
+            },
             {
                 "direct_download_url": "https://download.freenas.org/11.2/STABLE/U3/x64/FreeNAS-11.2-U3.iso",
                 "download_url": "http://www.freenas.org/download/",
@@ -4369,6 +4538,14 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "cdrom_image": "FreeNAS-11.2-U6.iso",
+                    "hda_disk_image": "empty30G.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "11.2 U6"
+            },
+            {
+                "images": {
                     "cdrom_image": "FreeNAS-11.2-U3.iso",
                     "hda_disk_image": "empty30G.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
@@ -4441,10 +4618,24 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
+                "filesize": 139145216,
+                "md5sum": "f5051a8fe49d916bb554b9bae32a1eb4",
+                "version": "6.2.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FMG_VM64_KVM-v6-build1050-FORTINET.out.kvm.qcow2",
                 "filesize": 126894080,
                 "md5sum": "c19d2527f91ad1bbafbde5bf08487867",
                 "version": "6.2.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FMG_VM64_KVM-v6-build0349-FORTINET.out.kvm.qcow2",
+                "filesize": 112553984,
+                "md5sum": "d03f024c948ba6e2bb9e66c11ca8f34c",
+                "version": "6.0.6"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -4586,10 +4777,24 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FMG_VM64_KVM-v6-build1050-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "6.2.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FMG_VM64_KVM-v6-build0349-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.6"
             },
             {
                 "images": {
@@ -4753,6 +4958,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.op5.com/download/",
+                "filename": "op5-monitor-8.0.9.centos7-x64-disk1.vmdk",
+                "filesize": 1219249152,
+                "md5sum": "081a9514f9ed5e0c648ded26e7761e6e",
+                "version": "8.0.9"
+            },
+            {
+                "download_url": "https://www.op5.com/download/",
                 "filename": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk",
                 "filesize": 1111941120,
                 "md5sum": "48ec6d7ee3809d9ed705a089c679e076",
@@ -4785,10 +4997,16 @@ X-Route: /v2/appliances
         "registry_version": 3,
         "status": "stable",
         "symbol": "mgmt_station.svg",
-        "usage": "Interface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
+        "usage": "Newer versions come with OVA files only, you need to extract it to get the VMDK disk file.\nInterface eth0 is set to DHCP. Default credentials:\n- CLI: root / monitor\n- Web access: admin / monitor\n- Logserver Extension: admin / admin",
         "vendor_name": "OP5",
         "vendor_url": "https://www.op5.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "op5-monitor-8.0.9.centos7-x64-disk1.vmdk"
+                },
+                "name": "8.0.9"
+            },
             {
                 "images": {
                     "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.4.10.x86_64-disk1.vmdk"
@@ -4800,6 +5018,65 @@ X-Route: /v2/appliances
                     "hda_disk_image": "op5-Monitor-Virtual-Appliance-7.3.15.x86_64.vmdk"
                 },
                 "name": "7.3.15"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "router",
+        "description": "vEdgeCloud",
+        "documentation_url": "http://www.cisco.com/",
+        "first_port_name": "Management0/0",
+        "images": [
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-edge-genericx86-64.qcow2",
+                "filesize": 249495552,
+                "md5sum": "67f85649fde80dc7d28cc6dea7bdaf7a",
+                "version": "18.3.7"
+            },
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-edge-19.2.0-genericx86-64.qcow2",
+                "filesize": 328400896,
+                "md5sum": "4aa487101d4cdc390f53a6e8b6f45ca7",
+                "version": "19.2.0"
+            }
+        ],
+        "maintainer": "Laurent LEVIER",
+        "maintainer_email": "laurent.levier@orange.com",
+        "name": "vEdgeCloud",
+        "port_name_format": "Ge0/{0}",
+        "product_name": "VIPtela Edge",
+        "product_url": "http://www.cisco.com/",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 5,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "options": "-cpu host",
+            "ram": 2048
+        },
+        "registry_version": 3,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Initial username is admin, password is admin as well.",
+        "vendor_name": "Cisco",
+        "vendor_url": "https://www.cisco.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "viptela-edge-19.2.0-genericx86-64.qcow2"
+                },
+                "name": "19.2.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "viptela-edge-genericx86-64.qcow2"
+                },
+                "name": "18.3.7"
             }
         ]
     },
@@ -5261,6 +5538,13 @@ X-Route: /v2/appliances
         "first_port_name": "Management0/0",
         "images": [
             {
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.12.2%20Interim",
+                "filename": "asav9-12-2-9.qcow2",
+                "filesize": 198115328,
+                "md5sum": "d90ada2efeb19801e654b6059de61845",
+                "version": "9.12.2-9"
+            },
+            {
                 "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.12.2",
                 "filename": "asav9-12-2.qcow2",
                 "filesize": 197853184,
@@ -5271,84 +5555,49 @@ X-Route: /v2/appliances
                 "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.9.2",
                 "filename": "asav992.qcow2",
                 "filesize": 204865536,
-                "md5sum": "6fd1337c5334844484b371d1033c038a",
+                "md5sum": "0cba453dbf70313d8d63a00700618f52",
                 "version": "9.9.2"
             },
             {
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.8.4%20Interim",
+                "filename": "asav984-15.qcow2",
+                "filesize": 200015872,
+                "md5sum": "3c6742a9617767d8eae14b3ad4d33981",
+                "version": "9.8.4-15"
+            },
+            {
                 "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.8.3",
-                "filename": "asav983.qcow2",
-                "filesize": 199491584,
-                "md5sum": "f9cf40b2d555a1bea6d36bc83f06ea33",
-                "version": "9.8.3"
+                "filename": "asav983-8.qcow2",
+                "filesize": 199426048,
+                "md5sum": "54dbf135c545dbae40c8be61ff3863a4",
+                "version": "9.8.3-8"
             },
             {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
-                "filename": "asav981-5.qcow2",
-                "filesize": 193069056,
-                "md5sum": "77b3ca856dd2df476bcda34e218425ca",
-                "version": "9.8.1-5"
-            },
-            {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.8.1&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.8.1",
                 "filename": "asav981.qcow2",
                 "filesize": 193069056,
                 "md5sum": "8d3612fe22b1a7dec118010e17e29411",
                 "version": "9.8.1"
             },
             {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
-                "filename": "asav971-8.qcow2",
-                "filesize": 197066752,
-                "md5sum": "b2486c8d0f6fda149ce877208b816818",
-                "version": "9.7.1-8"
-            },
-            {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.7.1",
                 "filename": "asav971-4.qcow2",
                 "filesize": 197066752,
                 "md5sum": "f9a671d1ceaf983f7241f19df15e787f",
                 "version": "9.7.1-4"
             },
             {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
-                "filename": "asav971-2.qcow2",
-                "filesize": 199753728,
-                "md5sum": "ff036b23f5dbb2bcf1e6530476cc1989",
-                "version": "9.7.1-2"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
-                "filename": "asav971.qcow2",
-                "filesize": 198443008,
-                "md5sum": "07eef9b8ca489a8ad37448fadf45a673",
-                "version": "9.7.1"
-            },
-            {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
-                "filename": "asav963-8.qcow2",
-                "filesize": 168427520,
-                "md5sum": "8b8a45b94a302dae8076e7ec90c7d4c2",
-                "version": "9.6.3-8"
-            },
-            {
-                "download_url": "https://software.cisco.com/download/release.html?mdfid=286119613&flowid=50242&softwareid=280775065&release=9.6.3&relind=AVAILABLE&rellifecycle=&reltype=latest",
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.6.3",
                 "filename": "asav963-1.qcow2",
                 "filesize": 172294144,
                 "md5sum": "d6a5c8d7bff5e69c5987ca664a52dbd8",
                 "version": "9.6.3-1"
             },
             {
-                "download_url": "https://software.cisco.com/download/type.html?mdfid=286119613&flowid=50242",
-                "filename": "asav962-13.qcow2",
-                "filesize": 177668096,
-                "md5sum": "2a6bec030fcaef31b611051180cc142c",
-                "version": "9.6.2-13"
-            },
-            {
-                "download_url": "https://virl.mediuscorp.com/my-account/",
+                "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.6.2",
                 "filename": "asav962.qcow2",
                 "filesize": 177274880,
-                "md5sum": "dfb8110ce38da4588e994865d5a9656a",
+                "md5sum": "a4c892afe610776dde8a176f1049ae96",
                 "version": "9.6.2"
             }
         ],
@@ -5376,6 +5625,12 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "asav9-12-2-9.qcow2"
+                },
+                "name": "9.12.2-9"
+            },
+            {
+                "images": {
                     "hda_disk_image": "asav9-12-2.qcow2"
                 },
                 "name": "9.12.2"
@@ -5388,15 +5643,15 @@ X-Route: /v2/appliances
             },
             {
                 "images": {
-                    "hda_disk_image": "asav983.qcow2"
+                    "hda_disk_image": "asav984-15.qcow2"
                 },
-                "name": "9.8.3"
+                "name": "9.8.4-15"
             },
             {
                 "images": {
-                    "hda_disk_image": "asav981-5.qcow2"
+                    "hda_disk_image": "asav983-8.qcow2"
                 },
-                "name": "9.8.1-5"
+                "name": "9.8.3-8"
             },
             {
                 "images": {
@@ -5406,45 +5661,15 @@ X-Route: /v2/appliances
             },
             {
                 "images": {
-                    "hda_disk_image": "asav971-8.qcow2"
-                },
-                "name": "9.7.1-8"
-            },
-            {
-                "images": {
                     "hda_disk_image": "asav971-4.qcow2"
                 },
                 "name": "9.7.1-4"
             },
             {
                 "images": {
-                    "hda_disk_image": "asav971-2.qcow2"
-                },
-                "name": "9.7.1-2"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav971.qcow2"
-                },
-                "name": "9.7.1"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav963-8.qcow2"
-                },
-                "name": "9.6.3-8"
-            },
-            {
-                "images": {
                     "hda_disk_image": "asav963-1.qcow2"
                 },
                 "name": "9.6.3-1"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "asav962-13.qcow2"
-                },
-                "name": "9.6.2-13"
             },
             {
                 "images": {
@@ -5596,6 +5821,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
+                "filename": "pfSense-CE-2.4.4-RELEASE-p3-amd64.iso",
+                "filesize": 696539136,
+                "md5sum": "0be54ffe3aae36c5511e95954d1e32d1",
+                "version": "2.4.4-p3"
+            },
+            {
+                "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads",
                 "filename": "pfSense-CE-2.4.4-RELEASE-amd64.iso",
                 "filesize": 685557760,
                 "md5sum": "71386433238f96fc167d14cec9c708c6",
@@ -5632,6 +5864,13 @@ X-Route: /v2/appliances
         "vendor_name": "Rubicon Communications, LLC (Netgate)",
         "vendor_url": "https://www.pfsense.org",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "pfSense-CE-2.4.4-RELEASE-p3-amd64.iso",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "2.4.4-p3"
+            },
             {
                 "images": {
                     "cdrom_image": "pfSense-CE-2.4.4-RELEASE-amd64.iso",
@@ -5700,11 +5939,64 @@ X-Route: /v2/appliances
     },
     {
         "builtin": true,
+        "category": "guest",
+        "description": "This is a custom Ubuntu server which comes with Canonical security updates, Xorg and Telnetd",
+        "documentation_url": "https://help.ubuntu.com",
+        "images": [
+            {
+                "download_url": "https://www.ictkin.com/gns3-appliance/",
+                "filename": "Ubuntu Server 18.04.3 LTS (64bit).vmdk",
+                "filesize": 2707814912,
+                "md5sum": "435f15a54f7f673e302ad26f05226e0e",
+                "version": "18.04.3"
+            }
+        ],
+        "maintainer": "Mohamad Siblini",
+        "maintainer_email": "https://www.ictkin.com/contact",
+        "name": "Ubuntu Server",
+        "port_name_format": "ens{0}",
+        "product_name": "Ubuntu",
+        "product_url": "https://ubuntu.com/server",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 1,
+            "arch": "x86_64",
+            "boot_priority": "c",
+            "console_type": "vnc",
+            "hda_disk_interface": "virtio",
+            "kvm": "require",
+            "options": "-vga virtio",
+            "ram": 2048
+        },
+        "registry_version": 3,
+        "status": "stable",
+        "symbol": ":/symbols/classic/qemu_guest.svg",
+        "usage": "Username: gns3\nPassword: gns3 | MD5: 435f15a54f7f673e302ad26f05226e0e",
+        "vendor_name": "Canonical Inc.",
+        "vendor_url": "https://www.ubuntu.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Ubuntu Server 18.04.3 LTS (64bit).vmdk"
+                },
+                "name": "18.04.3 LTS Server"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "router",
         "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Forwarding Plane (vFP) VM and is meant to be paired with the Virtual Control Plane (vCP) VM.",
         "documentation_url": "http://www.juniper.net/techpubs/",
         "first_port_name": "Eth0",
         "images": [
+            {
+                "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/",
+                "filename": "vFPC-20190819.img",
+                "filesize": 2447376384,
+                "md5sum": "b77ca27a45a07c56b8f72905fafbe822",
+                "version": "19.3R1.8-KVM"
+            },
             {
                 "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/",
                 "filename": "vFPC-20171213.img",
@@ -5840,6 +6132,12 @@ X-Route: /v2/appliances
         "vendor_name": "Juniper",
         "vendor_url": "https://www.juniper.net/us/en/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "vFPC-20190819.img"
+                },
+                "name": "19.3R1.8-KVM"
+            },
             {
                 "images": {
                     "hda_disk_image": "vFPC-20171213.img"
@@ -6169,6 +6467,15 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "xz",
+                "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.95/amd64/BSDRP-1.95-full-amd64-serial.img.xz/download",
+                "download_url": "https://bsdrp.net/downloads",
+                "filename": "BSDRP-1.95-full-amd64-serial.img",
+                "filesize": 2000000000,
+                "md5sum": "f1e080506a965e46503673c426b9c764",
+                "version": "1.95"
+            },
+            {
+                "compression": "xz",
                 "direct_download_url": "https://sourceforge.net/projects/bsdrp/files/BSD_Router_Project/1.92/amd64/BSDRP-1.92-full-amd64-serial.img.xz/download",
                 "download_url": "https://bsdrp.net/downloads",
                 "filename": "BSDRP-1.92-full-amd64-serial.img",
@@ -6232,6 +6539,12 @@ X-Route: /v2/appliances
         "vendor_name": "Olivier Cochard-Labbe",
         "vendor_url": "https://bsdrp.net/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "BSDRP-1.95-full-amd64-serial.img"
+                },
+                "name": "1.95"
+            },
             {
                 "images": {
                     "hda_disk_image": "BSDRP-1.92-full-amd64-serial.img"
@@ -6330,6 +6643,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://software.cisco.com/download/home/281722751/type/282088134/release/11.1%25281%2529",
+                "filename": "dcnm-va.11.2.1.iso",
+                "filesize": 4782958592,
+                "md5sum": "2e50e0a4ea72875c54edf593b7c93a66",
+                "version": "11.2.1"
+            },
+            {
+                "download_url": "https://software.cisco.com/download/home/281722751/type/282088134/release/11.1%25281%2529",
                 "filename": "dcnm-va.11.1.1.iso",
                 "filesize": 4432132096,
                 "md5sum": "43af970d046d1430d3ec7950dbe4a20a",
@@ -6359,7 +6679,7 @@ X-Route: /v2/appliances
         "product_url": "http://www.cisco.com/c/en/us/products/cloud-systems-management/prime-data-center-network-manager/index.html",
         "qemu": {
             "adapter_type": "e1000",
-            "adapters": 2,
+            "adapters": 3,
             "arch": "x86_64",
             "console_type": "vnc",
             "hda_disk_interface": "ide",
@@ -6374,6 +6694,13 @@ X-Route: /v2/appliances
         "vendor_name": "Cisco",
         "vendor_url": "http://www.cisco.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "dcnm-va.11.2.1.iso",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "11.2.1"
+            },
             {
                 "images": {
                     "cdrom_image": "dcnm-va.11.1.1.iso",
@@ -6809,10 +7136,31 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v6-build1010-FORTINET.out.kvm.qcow2",
+                "filesize": 58916864,
+                "md5sum": "da411e21e4c0bc25553d0e72201af7a4",
+                "version": "6.2.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v6-build0932-FORTINET.out.kvm.qcow2",
+                "filesize": 58785792,
+                "md5sum": "725d41460ed1858dc905dbe2846a8400",
+                "version": "6.2.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FGT_VM64_KVM-v6-build0866-FORTINET.out.kvm.qcow2",
                 "filesize": 57868288,
                 "md5sum": "588df9ba0db485976f6681810001ae73",
                 "version": "6.2.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FGT_VM64_KVM-v6-build0272-FORTINET.out.kvm.qcow2",
+                "filesize": 52076544,
+                "md5sum": "c71d14d1567ec7ad271be8a9d06dbe7b",
+                "version": "6.0.6"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -7031,6 +7379,20 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v6-build1010-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.2"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v6-build0932-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FGT_VM64_KVM-v6-build0866-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
@@ -7042,6 +7404,13 @@ X-Route: /v2/appliances
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "6.0.3"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FGT_VM64_KVM-v6-build0272-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.6"
             },
             {
                 "images": {
@@ -7686,6 +8055,24 @@ X-Route: /v2/appliances
         "first_port_name": "fxp0",
         "images": [
             {
+                "filename": "junos-vmx-x86-64-19.3R1.8.qcow2",
+                "filesize": 1435238400,
+                "md5sum": "cd14a6884edeb6b337d3c2be02241c63",
+                "version": "19.3R1.8-KVM"
+            },
+            {
+                "filename": "vmxhdd-19.3R1.8.img",
+                "filesize": 197120,
+                "md5sum": "ae26e0f32605a53a5c85342bad677c9f",
+                "version": "19.3R1.8-KVM"
+            },
+            {
+                "filename": "metadata-usb-re-19.3R1.8.img",
+                "filesize": 10485760,
+                "md5sum": "3c66c4657773a0cd2b38ffd84115446a",
+                "version": "19.3R1.8-KVM"
+            },
+            {
                 "filename": "junos-vmx-x86-64-17.4R1.16.qcow2",
                 "filesize": 1325400064,
                 "md5sum": "85239193e852d643dfd9d5c257240bdf",
@@ -7999,6 +8386,14 @@ X-Route: /v2/appliances
         "vendor_name": "Juniper",
         "vendor_url": "https://www.juniper.net/us/en/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "junos-vmx-x86-64-19.3R1.8.qcow2",
+                    "hdb_disk_image": "vmxhdd-19.3R1.8.img",
+                    "hdc_disk_image": "metadata-usb-re-19.3R1.8.img"
+                },
+                "name": "19.3R1.8-KVM"
+            },
             {
                 "images": {
                     "hda_disk_image": "junos-vmx-x86-64-17.4R1.16.qcow2",
@@ -8769,6 +9164,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads",
+                "filename": "ClearOS-7.6-DVD-x86_64.iso",
+                "filesize": 1141899264,
+                "md5sum": "aca5827a37c18549aee2f5bbfbe49922",
+                "version": "7.6"
+            },
+            {
+                "download_url": "https://www.clearos.com/clearfoundation/software/clearos-downloads",
                 "filename": "ClearOS-7.5-DVD-x86_64.iso",
                 "filesize": 1146093568,
                 "md5sum": "1e23c5f73a6c996420d8e0e70b000bf9",
@@ -8825,6 +9227,13 @@ X-Route: /v2/appliances
         "vendor_name": "ClearCenter, Corp.",
         "vendor_url": "https://www.clearos.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "ClearOS-7.6-DVD-x86_64.iso",
+                    "hda_disk_image": "empty30G.qcow2"
+                },
+                "name": "7.6"
+            },
             {
                 "images": {
                     "cdrom_image": "ClearOS-7.5-DVD-x86_64.iso",
@@ -9081,10 +9490,73 @@ X-Route: /v2/appliances
     },
     {
         "builtin": true,
+        "category": "router",
+        "description": "vSmart",
+        "documentation_url": "http://www.cisco.com/",
+        "images": [
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-smart-19.2.0-genericx86-64.qcow2",
+                "filesize": 328400896,
+                "md5sum": "94854f81465d62f58fed591e8f581661",
+                "version": "19.2.0"
+            },
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-smart-genericx86-64-disk1.vmdk",
+                "filesize": 246990848,
+                "md5sum": "ab9b06c212319336810a4b336ec3dd96",
+                "version": "18.3.7"
+            }
+        ],
+        "maintainer": "Laurent LEVIER",
+        "maintainer_email": "laurent.levier@orange.com",
+        "name": "vSmart",
+        "product_name": "VIPtela Smart",
+        "product_url": "http://www.cisco.com/",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 6,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "kvm": "require",
+            "options": "-smp 2,maxcpus=2 -cpu host",
+            "ram": 4096
+        },
+        "registry_version": 3,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Initial username is admin, password is admin as well.",
+        "vendor_name": "Cisco",
+        "vendor_url": "https://www.cisco.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "viptela-smart-genericx86-64-disk1.vmdk"
+                },
+                "name": "18.3.7"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "viptela-smart-19.2.0-genericx86-64.qcow2"
+                },
+                "name": "19.2.0"
+            }
+        ]
+    },
+    {
+        "builtin": true,
         "category": "firewall",
         "description": "Today's threats are increasingly sophisticated and often bypass traditional malware security by masking their malicious activity. A sandbox augments your security architecture by validating threats in a separate, secure environment. FortiSandbox offers a powerful combination of advanced detection, automated mitigation, actionable insight, and flexible deployment to stop targeted attacks and subsequent data loss. It's also a key component of our Advanced Threat Protection solution.",
         "documentation_url": "http://docs.fortinet.com/fortisandbox/admin-guides",
         "images": [
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FSA_KVM-v300-build0124-FORTINET.out.kvm.qcow2",
+                "filesize": 186253824,
+                "md5sum": "fc2b9a00d20063a6fa4103360d89a2d4",
+                "version": "3.1.2"
+            },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FSA_KVM-v300-build0060-FORTINET.out.kvm.qcow2",
@@ -9190,6 +9662,13 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FSA_KVM-v300-build0124-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "FSA-datadrive.qcow2"
+                },
+                "name": "3.1.2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FSA_KVM-v300-build0060-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "FSA-datadrive.qcow2"
                 },
@@ -9263,9 +9742,84 @@ X-Route: /v2/appliances
     {
         "builtin": true,
         "category": "router",
+        "description": "vManage",
+        "documentation_url": "http://www.cisco.com/",
+        "images": [
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
+                "filesize": 1185349632,
+                "md5sum": "27ef126f178c6c929a36ad2cf6ed8db7",
+                "version": "19.2.0"
+            },
+            {
+                "download_url": "http://www.cisco.com/",
+                "filename": "viptela-vmanage-genericx86-64-disk1.vmdk",
+                "filesize": 1085447680,
+                "md5sum": "2290c6467c907d9ca9c65793fe898716",
+                "version": "18.3.7"
+            },
+            {
+                "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty30G.qcow2",
+                "filesize": 197120,
+                "md5sum": "3411a599e822f2ac6be560a26405821a",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "Laurent LEVIER",
+        "maintainer_email": "laurent.levier@orange.com",
+        "name": "vManage",
+        "product_name": "VIPtela Manage",
+        "product_url": "http://www.cisco.com/",
+        "qemu": {
+            "adapter_type": "vmxnet3",
+            "adapters": 6,
+            "arch": "x86_64",
+            "console_type": "telnet",
+            "kvm": "require",
+            "options": "-cpu host -smp 2,maxcpus=2",
+            "ram": 32768
+        },
+        "registry_version": 3,
+        "status": "experimental",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Initial username is admin, password is admin as well.",
+        "vendor_name": "Cisco",
+        "vendor_url": "https://www.cisco.com",
+        "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "19.2.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "viptela-vmanage-genericx86-64-disk1.vmdk",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "18.3.7"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "router",
         "description": "Cloud Hosted Router (CHR) is a RouterOS version meant for running as a virtual machine. It supports x86 64-bit architecture and can be used on most of popular hypervisors such as VMWare, Hyper-V, VirtualBox, KVM and others. CHR has full RouterOS features enabled by default but has a different licensing model than other RouterOS versions.",
         "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
         "images": [
+            {
+                "compression": "zip",
+                "direct_download_url": "https://download.mikrotik.com/routeros/7.0beta3/chr-7.0beta3.img.zip",
+                "download_url": "http://www.mikrotik.com/download",
+                "filename": "chr-7.0beta3.img",
+                "filesize": 67108864,
+                "md5sum": "938c59989df039cb9f33e0da96c22174",
+                "version": "7.0beta3"
+            },
             {
                 "compression": "zip",
                 "direct_download_url": "https://download2.mikrotik.com/routeros/6.45.6/chr-6.45.6.img.zip",
@@ -9273,7 +9827,7 @@ X-Route: /v2/appliances
                 "filename": "chr-6.45.6.img",
                 "filesize": 67108864,
                 "md5sum": "e68db699ba23ac7e4fba95b3075c1c6b",
-                "version": "6.45"
+                "version": "6.45.6"
             },
             {
                 "compression": "zip",
@@ -9282,7 +9836,7 @@ X-Route: /v2/appliances
                 "filename": "chr-6.44.5.img",
                 "filesize": 67108864,
                 "md5sum": "19aa21073c8ea4540daacde69bacda24",
-                "version": "6.44"
+                "version": "6.44.5"
             },
             {
                 "compression": "zip",
@@ -9291,7 +9845,7 @@ X-Route: /v2/appliances
                 "filename": "chr-6.42.12.img",
                 "filesize": 45537201,
                 "md5sum": "8485c606eb38e629fb1f5356d31bbc86",
-                "version": "6.42"
+                "version": "6.42.12"
             },
             {
                 "compression": "zip",
@@ -9408,6 +9962,12 @@ X-Route: /v2/appliances
         "vendor_name": "MikroTik",
         "vendor_url": "http://mikrotik.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "chr-7.0beta3.img"
+                },
+                "name": "7.0beta3"
+            },
             {
                 "images": {
                     "hda_disk_image": "chr-6.45.6.img"
@@ -9937,30 +10497,12 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "bzip2",
-                "direct_download_url": "https://sourceforge.net/projects/frr/files/FRR7.0-VM0.3.qcow2.bz2/download",
+                "direct_download_url": "https://sourceforge.net/projects/frr/files/frr7.1-vm0.4.qcow2.bz2/download",
                 "download_url": "https://sourceforge.net/projects/frr/files/",
-                "filename": "frr7.0-vm0.3.qcow2",
-                "filesize": 2044657664,
-                "md5sum": "5fa8ce0ee74215f4c4a8c61778ee0b10",
-                "version": "FRR7.0 - VM0.3"
-            },
-            {
-                "compression": "bzip2",
-                "direct_download_url": "https://sourceforge.net/projects/frr/files/frr6.0-vm0.2.qcow2.bz2/download",
-                "download_url": "https://sourceforge.net/projects/frr/files/",
-                "filename": "frr6.0-vm0.2.qcow2",
-                "filesize": 1762066432,
-                "md5sum": "bf5aebd98352716bfabb119abb2ba19a",
-                "version": "FRR6.0 - VM0.2"
-            },
-            {
-                "compression": "bzip2",
-                "direct_download_url": "https://sourceforge.net/projects/frr/files/frr4.0-vm0.1.qcow2.bz2/download",
-                "download_url": "https://sourceforge.net/projects/frr/files/",
-                "filename": "frr4.0-vm0.1.qcow2",
-                "filesize": 1670643712,
-                "md5sum": "e1dc58cbb2b71c58051538c07d412493",
-                "version": "FRR4.0 - VM0.1"
+                "filename": "frr7.1-vm0.4.qcow2",
+                "filesize": 2051801088,
+                "md5sum": "08390f257203126e5edffb9710e47974",
+                "version": "7.1 - VM0.4"
             }
         ],
         "maintainer": "Andras Dosztal",
@@ -9980,27 +10522,15 @@ X-Route: /v2/appliances
         "registry_version": 3,
         "status": "stable",
         "symbol": ":/symbols/classic/router.svg",
-        "usage": "Credentials: frr / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
+        "usage": "Credentials: frradmin / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
         "vendor_name": "FRRouting Project",
         "vendor_url": "https://frrouting.org",
         "versions": [
             {
                 "images": {
-                    "hda_disk_image": "frr7.0-vm0.3.qcow2"
+                    "hda_disk_image": "frr7.1-vm0.4.qcow2"
                 },
-                "name": "FRR7.0 - VM0.3"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "frr6.0-vm0.2.qcow2"
-                },
-                "name": "FRR6.0 - VM0.2"
-            },
-            {
-                "images": {
-                    "hda_disk_image": "frr4.0-vm0.1.qcow2"
-                },
-                "name": "FRR4.0 - VM0.1"
+                "name": "7.1 - VM0.4"
             }
         ]
     },
@@ -10280,6 +10810,15 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "gzip",
+                "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.9.3-X86-USB.img.gz",
+                "download_url": "http://www.zeroshell.org/download/",
+                "filename": "ZeroShell-3.9.3-X86-USB.img",
+                "filesize": 1992294400,
+                "md5sum": "9be2b399f59df51e5026d81e45b8caf3",
+                "version": "3.9.3"
+            },
+            {
+                "compression": "gzip",
                 "direct_download_url": "http://www.zeroshell.net/listing/ZeroShell-3.8.2-X86-USB.img.gz",
                 "download_url": "http://www.zeroshell.org/download/",
                 "filename": "ZeroShell-3.8.2-X86-USB.img",
@@ -10334,6 +10873,12 @@ X-Route: /v2/appliances
         "vendor_name": "Fulvio Ricciardi",
         "vendor_url": "http://www.zeroshell.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "ZeroShell-3.9.3-X86-USB.img"
+                },
+                "name": "3.9.3"
+            },
             {
                 "images": {
                     "hda_disk_image": "ZeroShell-3.8.2-X86-USB.img"
@@ -10652,6 +11197,20 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.arista.com/en/support/software-download",
+                "filename": "vEOS-lab-4.23.0.1F.vmdk",
+                "filesize": 439484416,
+                "md5sum": "08d52154aa11a834aef9f42bbf29f977",
+                "version": "4.23.0.1F"
+            },
+            {
+                "download_url": "https://www.arista.com/en/support/software-download",
+                "filename": "vEOS-lab-4.22.2.1F.vmdk",
+                "filesize": 426377216,
+                "md5sum": "2a425bf8efe569a2bdf0e328f240cd16",
+                "version": "4.22.2.1F"
+            },
+            {
+                "download_url": "https://www.arista.com/en/support/software-download",
                 "filename": "vEOS-lab-4.22.0F.vmdk",
                 "filesize": 414121984,
                 "md5sum": "cfcc75c2b8176cfd819afcfd6799b74c",
@@ -10812,6 +11371,20 @@ X-Route: /v2/appliances
         "vendor_name": "Arista",
         "vendor_url": "http://www.arista.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hdb_disk_image": "vEOS-lab-4.23.0.1F.vmdk"
+                },
+                "name": "4.23.0.1F"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                    "hdb_disk_image": "vEOS-lab-4.22.2.1F.vmdk"
+                },
+                "name": "4.22.2.1F"
+            },
             {
                 "images": {
                     "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
@@ -11532,6 +12105,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FWB_KVM-v600-build0727-FORTINET.out.kvm.qcow2",
+                "filesize": 225313280,
+                "md5sum": "05523a6db26030a8fc3d84e53902d162",
+                "version": "6.2.1"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FWB_KVM-v600-build0383-FORTINET.out.kvm.qcow2",
                 "filesize": 190120448,
                 "md5sum": "d2dbbde9f03eb716a54119cc3e6055c4",
@@ -11640,6 +12220,13 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FWB_KVM-v600-build0727-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.1"
+            },
             {
                 "images": {
                     "hda_disk_image": "FWB_KVM-v600-build0383-FORTINET.out.kvm.qcow2",
@@ -12043,6 +12630,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
+                "filename": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2",
+                "filesize": 5185142784,
+                "md5sum": "4121122ccf9ec697fd26cdac91b81543",
+                "version": "19.3R1"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/",
                 "filename": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2",
                 "filesize": 4418961408,
                 "md5sum": "4e9393142afc675d5d3d03c5071e70ce",
@@ -12168,7 +12762,7 @@ X-Route: /v2/appliances
         "product_name": "Juniper vSRX",
         "product_url": "https://www.juniper.net/us/en/products-services/security/srx-series/vsrx/",
         "qemu": {
-            "adapter_type": "e1000",
+            "adapter_type": "vmxnet3",
             "adapters": 6,
             "arch": "x86_64",
             "console_type": "telnet",
@@ -12183,6 +12777,12 @@ X-Route: /v2/appliances
         "vendor_name": "Juniper",
         "vendor_url": "https://www.juniper.net/us/en/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2"
+                },
+                "name": "19.3R1"
+            },
             {
                 "images": {
                     "hda_disk_image": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2"
@@ -12474,6 +13074,15 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "gzip",
+                "direct_download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/openwrt-18.06.5-x86-64-combined-ext4.img.gz",
+                "download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/",
+                "filename": "openwrt-18.06.5-x86-64-combined-ext4.img",
+                "filesize": 285736960,
+                "md5sum": "6fce24c15f0bc75af16c133b839aea30",
+                "version": "18.06.5"
+            },
+            {
+                "compression": "gzip",
                 "direct_download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/openwrt-18.06.2-x86-64-combined-ext4.img.gz",
                 "download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/",
                 "filename": "openwrt-18.06.2-x86-64-combined-ext4.img",
@@ -12529,6 +13138,12 @@ X-Route: /v2/appliances
         "vendor_name": "OpenWrt",
         "vendor_url": "http://openwrt.org",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "openwrt-18.06.5-x86-64-combined-ext4.img"
+                },
+                "name": "18.06.5"
+            },
             {
                 "images": {
                     "hda_disk_image": "openwrt-18.06.2-x86-64-combined-ext4.img"
@@ -12730,6 +13345,62 @@ X-Route: /v2/appliances
     {
         "builtin": true,
         "category": "router",
+        "description": "The Disaggregated Network Operating System (DANOS) project enables community collaboration across network hardware, forwarding, and operating system layers. DANOS is initially based on AT&T\u2019s \u201cdNOS\u201d software framework of a more open, cost-effective and flexible alternative to traditional networking equipment. As part of The Linux Foundation, it now incorporates contributions from complementary open source communities in building a standardized distributed Network Operating System (NOS) to speed the adoption and use of white boxes in a service provider\u2019s infrastructure.",
+        "documentation_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/753667/DANOS+1908",
+        "images": [
+            {
+                "direct_download_url": "http://repos.danosproject.org.s3-website-us-west-1.amazonaws.com/images/danos-1908-amd64-vrouter.iso",
+                "download_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/753667/DANOS+1908",
+                "filename": "danos-1908-amd64-vrouter.iso",
+                "filesize": 409993216,
+                "md5sum": "e850b6aa2859de1075c11b9149fa50f4",
+                "version": "1908"
+            },
+            {
+                "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download",
+                "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+                "filename": "empty8G.qcow2",
+                "filesize": 197120,
+                "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+                "version": "1.0"
+            }
+        ],
+        "maintainer": "GNS3 Team",
+        "maintainer_email": "developers@gns3.net",
+        "name": "DANOS",
+        "port_name_format": "dp0p{1}s{0}",
+        "product_name": "DANOS",
+        "product_url": "https://www.danosproject.org/",
+        "qemu": {
+            "adapter_type": "virtio-net-pci",
+            "adapters": 3,
+            "arch": "x86_64",
+            "boot_priority": "dc",
+            "console_type": "telnet",
+            "cpus": 2,
+            "kvm": "allow",
+            "options": "-cpu host",
+            "ram": 4096
+        },
+        "registry_version": 4,
+        "status": "stable",
+        "symbol": ":/symbols/classic/router.svg",
+        "usage": "Default username/password is vyatta/vyatta.  DANOS will live boot and drop into a shell. DANOS can then be installed inside the VM by typing install image.  Defaults to using a telnet console, but the vnc console can provide additional help if it's not booting.",
+        "vendor_name": "Linux",
+        "vendor_url": "https://www.danosproject.org/",
+        "versions": [
+            {
+                "images": {
+                    "cdrom_image": "danos-1908-amd64-vrouter.iso",
+                    "hda_disk_image": "empty8G.qcow2"
+                },
+                "name": "danos-1908-amd64-vrouter"
+            }
+        ]
+    },
+    {
+        "builtin": true,
+        "category": "router",
         "description": "With proven ultra-high performance and scalability, the Brocade vRouter is the networking industry leader in software innovation. The Brocade vRouter has set a the benchmark for all software-based routers, while offering easy scalability, a broad set of capabilities, and the peace of mind that comes with rock solid reliability.",
         "documentation_url": "http://www.brocade.com/en/products-services/software-networking/network-functions-virtualization/vrouter.html",
         "images": [
@@ -12874,6 +13545,15 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "bzip2",
+                "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/9.1.0/PacketFenceZEN_USB-9.1.0.tar.bz2/download",
+                "download_url": "https://packetfence.org/download.html#/zen",
+                "filename": "PacketFenceZEN_USB-9.1.0.img",
+                "filesize": 3221225472,
+                "md5sum": "107a8b2f76105a72406ac76e4f356c6d",
+                "version": "9.1.0"
+            },
+            {
+                "compression": "bzip2",
                 "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/9.0.1/PacketFenceZEN_USB-9.0.1.tar.bz2/download",
                 "download_url": "https://packetfence.org/download.html#/zen",
                 "filename": "PacketFenceZEN_USB-9.0.1.img",
@@ -12957,6 +13637,12 @@ X-Route: /v2/appliances
         "vendor_name": "Inverse inc.",
         "vendor_url": "https://packetfence.org/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "PacketFenceZEN_USB-9.1.0.img"
+                },
+                "name": "9.1.0"
+            },
             {
                 "images": {
                     "hda_disk_image": "PacketFenceZEN_USB-9.0.1.img"
@@ -13057,6 +13743,13 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
+                "filename": "jinstall-vqfx-10-f-18.4R1.8.qcow2",
+                "filesize": 549584896,
+                "md5sum": "1b0dbd9a235f887e56a8506c0b2f684f",
+                "version": "18.4R1"
+            },
+            {
+                "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
                 "filename": "jinstall-vqfx-10-f-17.4R1.16.img",
                 "filesize": 553910272,
                 "md5sum": "dd83313b0f5beaf68488ed3d5e1e5240",
@@ -13077,7 +13770,7 @@ X-Route: /v2/appliances
         "product_name": "Juniper vQFX RE",
         "product_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
         "qemu": {
-            "adapter_type": "e1000",
+            "adapter_type": "virtio-net-pci",
             "adapters": 12,
             "arch": "x86_64",
             "console_type": "telnet",
@@ -13092,6 +13785,12 @@ X-Route: /v2/appliances
         "vendor_name": "Juniper",
         "vendor_url": "https://www.juniper.net/us/en/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "jinstall-vqfx-10-f-18.4R1.8.qcow2"
+                },
+                "name": "18.4R1"
+            },
             {
                 "images": {
                     "hda_disk_image": "jinstall-vqfx-10-f-17.4R1.16.img"
@@ -13251,6 +13950,27 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html",
+                "filename": "FortiSIEM-VA-5.2.5.1615-OS.qcow2",
+                "filesize": 4412970903,
+                "md5sum": "dfdc08a213bb80bf3f078869aeef6da6",
+                "version": "5.2.5"
+            },
+            {
+                "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html",
+                "filename": "FortiSIEM-VA-5.2.5.1615-CMDB.qcow2",
+                "filesize": 46858240,
+                "md5sum": "3963f0439c41d9efd33b7f5bda3f1c2d",
+                "version": "5.2.5"
+            },
+            {
+                "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html",
+                "filename": "FortiSIEM-VA-5.2.5.1615-SVN.qcow2",
+                "filesize": 46858240,
+                "md5sum": "e90b2da5e2c7f2e338a822a448f326b2",
+                "version": "5.2.5"
+            },
+            {
+                "download_url": "https://images-cdn.fortisiem.fortinet.com/VirtualAppliances/release510.html",
                 "filename": "FortiSIEM-VA-5.2.1.1553-OS.qcow2",
                 "filesize": 3902208000,
                 "md5sum": "9dc3f4a9614b65c83d3e9733248cbcea",
@@ -13381,6 +14101,14 @@ X-Route: /v2/appliances
         "vendor_name": "Fortinet",
         "vendor_url": "http://www.fortinet.com/",
         "versions": [
+            {
+                "images": {
+                    "hda_disk_image": "FortiSIEM-VA-5.2.5.1615-OS.qcow2",
+                    "hdb_disk_image": "FortiSIEM-VA-5.2.5.1615-CMDB.qcow2",
+                    "hdc_disk_image": "FortiSIEM-VA-5.2.5.1615-SVN.qcow2"
+                },
+                "name": "5.2.5"
+            },
             {
                 "images": {
                     "hda_disk_image": "FortiSIEM-VA-5.2.1.1553-OS.qcow2",
@@ -14066,12 +14794,30 @@ X-Route: /v2/appliances
         "images": [
             {
                 "compression": "xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.1-RELEASE/amd64/Latest/FreeBSD-12.1-RELEASE-amd64.qcow2.xz",
+                "download_url": "https://www.freebsd.org/where.html",
+                "filename": "FreeBSD-12.1-RELEASE-amd64.qcow2",
+                "filesize": 3043229696,
+                "md5sum": "0079b4ca99f64bb825cfbaefcca10fd4",
+                "version": "12.1"
+            },
+            {
+                "compression": "xz",
                 "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.0-RELEASE/amd64/Latest/FreeBSD-12.0-RELEASE-amd64.qcow2.xz",
                 "download_url": "https://www.freebsd.org/where.html",
                 "filename": "FreeBSD-12.0-RELEASE-amd64.qcow2",
                 "filesize": 2644836352,
                 "md5sum": "4d2126ba79dad224628be6f25a908bd8",
                 "version": "12.0"
+            },
+            {
+                "compression": "xz",
+                "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.3-RELEASE/amd64/Latest/FreeBSD-11.3-RELEASE-amd64.qcow2.xz",
+                "download_url": "https://www.freebsd.org/where.html",
+                "filename": "FreeBSD-11.3-RELEASE-amd64.qcow2",
+                "filesize": 1698037760,
+                "md5sum": "cdb35f676571b91584ff88502c48d399",
+                "version": "11.3"
             },
             {
                 "compression": "xz",
@@ -14142,9 +14888,21 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FreeBSD-12.1-RELEASE-amd64.qcow2"
+                },
+                "name": "12.1"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FreeBSD-12.0-RELEASE-amd64.qcow2"
                 },
                 "name": "12.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FreeBSD-11.3-RELEASE-amd64.qcow2"
+                },
+                "name": "11.3"
             },
             {
                 "images": {
@@ -14186,10 +14944,24 @@ X-Route: /v2/appliances
         "images": [
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
+                "filesize": 152506368,
+                "md5sum": "d65ee8754bed66027a6ac095e0dc3e40",
+                "version": "6.2.2"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
                 "filename": "FAZ_VM64_KVM-v6-build1050-FORTINET.out.kvm.qcow2",
                 "filesize": 140177408,
                 "md5sum": "dc123116e4c816d8b4dee244bd671844",
                 "version": "6.2.0"
+            },
+            {
+                "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
+                "filename": "FAZ_VM64_KVM-v6-build0349-FORTINET.out.kvm.qcow2",
+                "filesize": 111235072,
+                "md5sum": "47b83be1b22945df7f4f1c081722fd7a",
+                "version": "6.0.6"
             },
             {
                 "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx",
@@ -14338,10 +15110,24 @@ X-Route: /v2/appliances
         "versions": [
             {
                 "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.2.2"
+            },
+            {
+                "images": {
                     "hda_disk_image": "FAZ_VM64_KVM-v6-build1050-FORTINET.out.kvm.qcow2",
                     "hdb_disk_image": "empty30G.qcow2"
                 },
                 "name": "6.2.0"
+            },
+            {
+                "images": {
+                    "hda_disk_image": "FAZ_VM64_KVM-v6-build0349-FORTINET.out.kvm.qcow2",
+                    "hdb_disk_image": "empty30G.qcow2"
+                },
+                "name": "6.0.6"
             },
             {
                 "images": {
@@ -14464,6 +15250,14 @@ X-Route: /v2/appliances
         "documentation_url": "https://wiki.zentyal.org/wiki/Zentyal_Wiki",
         "images": [
             {
+                "direct_download_url": "http://download.zentyal.com/zentyal-6.1-development-amd64.iso",
+                "download_url": "http://download.zentyal.com/",
+                "filename": "zentyal-6.1-development-amd64.iso",
+                "filesize": 1003487232,
+                "md5sum": "83ff98b344f4fbb354c32ae42ff57c7b",
+                "version": "6.1"
+            },
+            {
                 "direct_download_url": "http://download.zentyal.com/zentyal-6.0-development-amd64.iso",
                 "download_url": "http://download.zentyal.com/",
                 "filename": "zentyal-6.0-development-amd64.iso",
@@ -14551,6 +15345,13 @@ X-Route: /v2/appliances
         "vendor_name": "Zentyal S.L.",
         "vendor_url": "http://www.zentyal.com/",
         "versions": [
+            {
+                "images": {
+                    "cdrom_image": "zentyal-6.1-development-amd64.iso",
+                    "hda_disk_image": "empty100G.qcow2"
+                },
+                "name": "6.1"
+            },
             {
                 "images": {
                     "cdrom_image": "zentyal-6.0-development-amd64.iso",

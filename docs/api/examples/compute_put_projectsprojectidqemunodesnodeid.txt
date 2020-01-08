@@ -1,6 +1,6 @@
-curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/0a88ed86-c906-40ba-bf39-271665cb5aec' -d '{"console": 5006, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
+curl -i -X PUT 'http://localhost:3080/v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/93352cad-8f0c-42d6-a4bf-72a48c3d2bff' -d '{"console": 5006, "hdb_disk_image": "linux\u8f7d.img", "name": "test", "ram": 1024}'
 
-PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/0a88ed86-c906-40ba-bf39-271665cb5aec HTTP/1.1
+PUT /v2/compute/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/qemu/nodes/93352cad-8f0c-42d6-a4bf-72a48c3d2bff HTTP/1.1
 {
     "console": 5006,
     "hdb_disk_image": "linux\u8f7d.img",
@@ -13,8 +13,8 @@ HTTP/1.1 200
 Connection: close
 Content-Length: 1422
 Content-Type: application/json
-Date: Wed, 23 Oct 2019 13:42:12 GMT
-Server: Python/3.6 GNS3/2.2.1dev1
+Date: Wed, 08 Jan 2020 02:26:42 GMT
+Server: Python/3.6 GNS3/2.2.4dev1
 X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
 
 {
@@ -48,16 +48,16 @@ X-Route: /v2/compute/projects/{project_id}/qemu/nodes/{node_id}
     "kernel_image": "",
     "kernel_image_md5sum": null,
     "legacy_networking": false,
-    "mac_address": "0c:dd:80:5a:ec:00",
+    "mac_address": "0c:dd:80:2b:ff:00",
     "name": "test",
-    "node_directory": "/tmp/tmp1i_44uq8/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/0a88ed86-c906-40ba-bf39-271665cb5aec",
-    "node_id": "0a88ed86-c906-40ba-bf39-271665cb5aec",
+    "node_directory": "/tmp/tmp3gc2avyo/projects/a1e920ca-338a-4e9f-b363-aa607b09dd80/project-files/qemu/93352cad-8f0c-42d6-a4bf-72a48c3d2bff",
+    "node_id": "93352cad-8f0c-42d6-a4bf-72a48c3d2bff",
     "on_close": "power_off",
     "options": "",
     "platform": "x86_64",
     "process_priority": "low",
     "project_id": "a1e920ca-338a-4e9f-b363-aa607b09dd80",
-    "qemu_path": "/tmp/tmp0zpbcecd/qemu-system-x86_64",
+    "qemu_path": "/tmp/tmphb4tqqk2/qemu-system-x86_64",
     "ram": 1024,
     "status": "stopped",
     "usage": ""

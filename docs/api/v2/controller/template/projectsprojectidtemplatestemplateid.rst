@@ -24,6 +24,7 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>compute_id</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>If the template don't have a default compute use this compute</td>                     </tr>
+    <tr><td>name</td>                    <td> </td>                     <td>['null', 'string']</td>                     <td>Use this name to create a new node</td>                     </tr>
     <tr><td>x</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>X position</td>                     </tr>
     <tr><td>y</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Y position</td>                     </tr>
     </table>
