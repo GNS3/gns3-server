@@ -1,6 +1,31 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: 2019.2.0
+Current version: GNS3 Web UI 2019.2.0 v11
+
+What's New
+- Support for suspended status added
+- Suport for 404 page
+- Actions for group of nodes added
+- Updating packages
+- Button to close project added
+- Opening ads in new window
+- New dialog for adding nodes
+- Option to import config
+- Support for light theme added
+
+Bug Fixes
+- Fix for navigating to project that doesn't exist
+- Fix for AdButler errors
+- Fix for screenshot issue
+- Proper centering of icons
+- Fix for adding custom symbols
+- Fix for return command in console
+- Fix for deleting links
+- Fix for duplicating any node type
+- Fix for console errors on servers page
+- Fix for console errors on projects page
+
+GNS3 Web UI 2019.2.0 v10
 
 What's New
 - Qemu image configurator
@@ -30,7 +55,7 @@ Bug Fixes
 - Fix for saving map as image
 - Removing errors with uncorrect subscriptions
 
-Previous version
+GNS3 Web UI 2019.2.0 v9
 
 What's New
 - Editing interface labels on double click
