@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.2.5 09/01/2020
+
+* No changes
+
 ## 2.2.4 08/01/2020
 
 * Accept a node name when creating a node from a template using the API. Fixes #1708
