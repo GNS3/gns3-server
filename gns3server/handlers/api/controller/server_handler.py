@@ -139,11 +139,11 @@ class ServerHandler:
         })
     async def statistics(request, response):
 
-        compute_statistics = {}
+        compute_statistics = []
         for compute in list(Controller.instance().computes.values()):
             try:
                 r = await compute.get("/statistics")
-                compute_statistics[compute.name] = r.json
+                compute_statistics.append({"compute_id": compute.id, "compute_name": compute.name, "statistics": r.json})
             except HTTPConflict as e:
                 log.error("Could not retrieve statistics on compute {}: {}".format(compute.name, e.text))
         response.json(compute_statistics)
