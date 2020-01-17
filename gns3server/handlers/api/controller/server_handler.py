@@ -130,6 +130,24 @@ class ServerHandler:
         response.json(iou_license)
         response.set_status(201)
 
+    @Route.get(
+        r"/statistics",
+        description="Retrieve server statistics",
+        status_codes={
+            200: "Statistics information returned",
+            409: "Conflict"
+        })
+    async def statistics(request, response):
+
+        compute_statistics = []
+        for compute in list(Controller.instance().computes.values()):
+            try:
+                r = await compute.get("/statistics")
+                compute_statistics.append({"compute_id": compute.id, "compute_name": compute.name, "statistics": r.json})
+            except HTTPConflict as e:
+                log.error("Could not retrieve statistics on compute {}: {}".format(compute.name, e.text))
+        response.json(compute_statistics)
+
     @Route.post(
         r"/debug",
         description="Dump debug information to disk (debug directory in config directory). Work only for local server",
