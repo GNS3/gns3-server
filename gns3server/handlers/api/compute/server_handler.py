@@ -21,8 +21,11 @@ import platform
 from gns3server.web.route import Route
 from gns3server.config import Config
 from gns3server.schemas.version import VERSION_SCHEMA
+from gns3server.schemas.server_statistics import SERVER_STATISTICS_SCHEMA
 from gns3server.compute.port_manager import PortManager
 from gns3server.version import __version__
+from aiohttp.web import HTTPConflict
+from psutil._common import bytes2human
 
 
 class ServerHandler:
@@ -36,6 +39,42 @@ class ServerHandler:
         config = Config.instance()
         local_server = config.get_section_config("Server").getboolean("local", False)
         response.json({"version": __version__, "local": local_server})
+
+    @Route.get(
+        r"/statistics",
+        description="Retrieve server statistics",
+        output=SERVER_STATISTICS_SCHEMA,
+        status_codes={
+            200: "Statistics information returned",
+            409: "Conflict"
+        })
+    def statistics(request, response):
+
+        try:
+            memory_total = psutil.virtual_memory().total
+            memory_free = psutil.virtual_memory().available
+            memory_used = memory_total - memory_free  # actual memory usage in a cross platform fashion
+            swap_total = psutil.swap_memory().total
+            swap_free = psutil.swap_memory().free
+            swap_used = psutil.swap_memory().used
+            cpu_percent = int(psutil.cpu_percent())
+            load_average_percent = [int(x / psutil.cpu_count() * 100) for x in psutil.getloadavg()]
+            memory_percent = int(psutil.virtual_memory().percent)
+            swap_percent = int(psutil.swap_memory().percent)
+            disk_usage_percent = int(psutil.disk_usage('/').percent)
+        except psutil.Error as e:
+            raise HTTPConflict(text="Psutil error detected: {}".format(e))
+        response.json({"memory_total": memory_total,
+                       "memory_free": memory_free,
+                       "memory_used": memory_used,
+                       "swap_total": swap_total,
+                       "swap_free": swap_free,
+                       "swap_used": swap_used,
+                       "cpu_usage_percent": cpu_percent,
+                       "memory_usage_percent": memory_percent,
+                       "swap_usage_percent": swap_percent,
+                       "disk_usage_percent": disk_usage_percent,
+                       "load_average_percent": load_average_percent})
 
     @Route.get(
         r"/debug",

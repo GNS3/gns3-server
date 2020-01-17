@@ -70,3 +70,8 @@ def test_debug_non_local(http_controller, config, tmpdir):
     config.set("Server", "local", False)
     response = http_controller.post('/debug')
     assert response.status == 403
+
+
+def test_statistics_output(http_controller):
+    response = http_controller.get('/statistics')
+    assert response.status == 200
