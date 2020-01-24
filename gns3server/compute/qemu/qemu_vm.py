@@ -1723,10 +1723,13 @@ class QemuVM(BaseNode):
 
         patched_qemu = False
         if self._legacy_networking:
-            version = await self.manager.get_qemu_version(self.qemu_path)
-            if version and parse_version(version) < parse_version("1.1.0"):
-                # this is a patched Qemu if version is below 1.1.0
-                patched_qemu = True
+            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
+            if qemu_version:
+                if parse_version(qemu_version) >= parse_version("2.9.0"):
+                    raise QemuError("Qemu version 2.9.0 and later doesn't support legacy networking mode")
+                if parse_version(qemu_version) < parse_version("1.1.0"):
+                    # this is a patched Qemu if version is below 1.1.0
+                    patched_qemu = True
 
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
         pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
