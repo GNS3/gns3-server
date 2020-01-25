@@ -115,7 +115,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     },
     "hda_disk_interface": {
         "description": "QEMU hda interface",
-        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
+        "enum": ["ide", "sata", "nvme", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdb_disk_image": {
@@ -125,7 +125,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     },
     "hdb_disk_interface": {
         "description": "QEMU hdb interface",
-        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
+        "enum": ["ide", "sata", "nvme", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdc_disk_image": {
@@ -135,7 +135,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     },
     "hdc_disk_interface": {
         "description": "QEMU hdc interface",
-        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
+        "enum": ["ide", "sata", "nvme", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "hdd_disk_image": {
@@ -145,7 +145,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     },
     "hdd_disk_interface": {
         "description": "QEMU hdd interface",
-        "enum": ["ide", "sata", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
+        "enum": ["ide", "sata", "nvme", "scsi", "sd", "mtd", "floppy", "pflash", "virtio", "none"],
         "default": "ide"
     },
     "cdrom_image": {
