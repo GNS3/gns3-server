@@ -253,10 +253,11 @@ class Route(object):
                 """
                 To avoid strange effect we prevent concurrency
                 between the same instance of the node
-                (excepting when streaming a PCAP file).
+                (excepting when streaming a PCAP file and WebSocket consoles).
                 """
 
-                if "node_id" in request.match_info and not "pcap" in request.path:
+                #FIXME: ugly exceptions for capture and websocket console
+                if "node_id" in request.match_info and not "pcap" in request.path and not "ws" in request.path:
                     node_id = request.match_info.get("node_id")
 
                     if "compute" in request.path:

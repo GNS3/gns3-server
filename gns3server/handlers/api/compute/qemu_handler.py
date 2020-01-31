@@ -580,3 +580,16 @@ class QEMUHandler:
             raise aiohttp.web.HTTPForbidden()
 
         await response.stream_file(image_path)
+
+    @Route.get(
+        r"/projects/{project_id}/qemu/nodes/{node_id}/console/ws",
+        description="WebSocket for console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        })
+    async def console_ws(request, response):
+
+        qemu_manager = Qemu.instance()
+        vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        return await vm.start_websocket_console(request)

@@ -513,3 +513,15 @@ class DynamipsVMHandler:
         response.set_status(201)
         response.json(new_node)
 
+    @Route.get(
+        r"/projects/{project_id}/dynamips/nodes/{node_id}/console/ws",
+        description="WebSocket for console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        })
+    async def console_ws(request, response):
+
+        dynamips_manager = Dynamips.instance()
+        vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        return await vm.start_websocket_console(request)
