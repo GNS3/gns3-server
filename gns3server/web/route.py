@@ -106,7 +106,8 @@ class Route(object):
         :returns: Response if you need to auth the user otherwise None
         """
 
-        if not server_config.getboolean("auth", False):
+        # FIXME: ugly exception to not require authentication for websocket consoles
+        if not server_config.getboolean("auth", False) or request.path.endswith("console/ws"):
             return None
 
         user = server_config.get("user", "").strip()
@@ -257,7 +258,7 @@ class Route(object):
                 """
 
                 #FIXME: ugly exceptions for capture and websocket console
-                if "node_id" in request.match_info and not "pcap" in request.path and not "ws" in request.path:
+                if "node_id" in request.match_info and not "pcap" in request.path and not request.path.endswith("console/ws"):
                     node_id = request.match_info.get("node_id")
 
                     if "compute" in request.path:

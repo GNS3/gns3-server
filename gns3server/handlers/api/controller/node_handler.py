@@ -469,6 +469,7 @@ class NodeHandler:
         })
     async def ws_console(request, response):
 
+        print("HERE!")
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
         node = project.get_node(request.match_info["node_id"])
         compute = node.compute
