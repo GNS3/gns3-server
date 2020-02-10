@@ -15,24 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..iou_error import IOUError
+import aiohttp
 
 import logging
 log = logging.getLogger(__name__)
 
 
-def get_next_application_id(nodes):
+def get_next_application_id(projects, compute):
     """
     Calculates free application_id from given nodes
 
-    :param nodes:
-    :raises IOUError when exceeds number
+    :param projects: all projects managed by controller
+    :param compute: Compute instance
+    :raises HTTPConflict when exceeds number
     :return: integer first free id
     """
 
-    used = set([n.application_id for n in nodes])
+    nodes = []
+
+    # look for application id for in all nodes across all opened projects that share the same compute
+    for project in projects.values():
+        if project.status == "opened" and compute in project.computes:
+            nodes.extend(list(project.nodes.values()))
+
+    used = set([n.properties["application_id"] for n in nodes if n.node_type == "iou"])
     pool = set(range(1, 512))
     try:
         return (pool - used).pop()
     except KeyError:
-        raise IOUError("Cannot create a new IOU VM (limit of 512 VMs on one host reached)")
+        raise aiohttp.web.HTTPConflict(text="Cannot create a new IOU node (limit of 512 nodes across all opened projects using compute {} reached".format(compute.name))

@@ -28,6 +28,7 @@ from uuid import uuid4
 
 from gns3server.controller.project import Project
 from gns3server.controller.template import Template
+from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.config import Config
 
@@ -202,6 +203,131 @@ def test_add_node_non_local(async_run, controller):
                                  timeout=1200)
     assert compute in project._project_created_on_compute
     project.emit_notification.assert_any_call("node.created", node.__json__())
+
+
+def test_add_node_iou(async_run, controller):
+    """
+    Test if an application ID is allocated for IOU nodes
+    """
+    compute = MagicMock()
+    compute.id = "local"
+    project = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test1"))
+    project.emit_notification = MagicMock()
+
+    response = MagicMock()
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project.add_node(compute, "test1", None, node_type="iou"))
+    node2 = async_run(project.add_node(compute, "test2", None, node_type="iou"))
+    node3 = async_run(project.add_node(compute, "test3", None, node_type="iou"))
+    assert node1.properties["application_id"] == 1
+    assert node2.properties["application_id"] == 2
+    assert node3.properties["application_id"] == 3
+
+
+def test_add_node_iou_with_multiple_projects(async_run, controller):
+    """
+    Test if an application ID is allocated for IOU nodes with different projects already opened
+    """
+    compute = MagicMock()
+    compute.id = "local"
+    project1 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test1"))
+    project1.emit_notification = MagicMock()
+    project2 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test2"))
+    project2.emit_notification = MagicMock()
+    project3 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test3"))
+    project3.emit_notification = MagicMock()
+    response = MagicMock()
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project1.add_node(compute, "test1", None, node_type="iou"))
+    node2 = async_run(project1.add_node(compute, "test2", None, node_type="iou"))
+    node3 = async_run(project1.add_node(compute, "test3", None, node_type="iou"))
+
+    node4 = async_run(project2.add_node(compute, "test4", None, node_type="iou"))
+    node5 = async_run(project2.add_node(compute, "test5", None, node_type="iou"))
+    node6 = async_run(project2.add_node(compute, "test6", None, node_type="iou"))
+
+    node7 = async_run(project3.add_node(compute, "test7", None, node_type="iou"))
+    node8 = async_run(project3.add_node(compute, "test8", None, node_type="iou"))
+    node9 = async_run(project3.add_node(compute, "test9", None, node_type="iou"))
+
+    assert node1.properties["application_id"] == 1
+    assert node2.properties["application_id"] == 2
+    assert node3.properties["application_id"] == 3
+
+    assert node4.properties["application_id"] == 4
+    assert node5.properties["application_id"] == 5
+    assert node6.properties["application_id"] == 6
+
+    assert node7.properties["application_id"] == 7
+    assert node8.properties["application_id"] == 8
+    assert node9.properties["application_id"] == 9
+
+    controller.remove_project(project1)
+    project4 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test4"))
+    project4.emit_notification = MagicMock()
+
+    node10 = async_run(project3.add_node(compute, "test10", None, node_type="iou"))
+    node11 = async_run(project3.add_node(compute, "test11", None, node_type="iou"))
+    node12 = async_run(project3.add_node(compute, "test12", None, node_type="iou"))
+
+    assert node10.properties["application_id"] == 1
+    assert node11.properties["application_id"] == 2
+    assert node12.properties["application_id"] == 3
+
+
+def test_add_node_iou_with_multiple_projects_different_computes(async_run, controller):
+    """
+    Test if an application ID is allocated for IOU nodes with different projects already opened
+    """
+    compute1 = MagicMock()
+    compute1.id = "remote1"
+    compute2 = MagicMock()
+    compute2.id = "remote2"
+    project1 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test1"))
+    project1.emit_notification = MagicMock()
+    project2 = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test2"))
+    project2.emit_notification = MagicMock()
+    response = MagicMock()
+    compute1.post = AsyncioMagicMock(return_value=response)
+    compute2.post = AsyncioMagicMock(return_value=response)
+
+    node1 = async_run(project1.add_node(compute1, "test1", None, node_type="iou"))
+    node2 = async_run(project1.add_node(compute1, "test2", None, node_type="iou"))
+
+    node3 = async_run(project2.add_node(compute2, "test3", None, node_type="iou"))
+    node4 = async_run(project2.add_node(compute2, "test4", None, node_type="iou"))
+
+    assert node1.properties["application_id"] == 1
+    assert node2.properties["application_id"] == 2
+
+    assert node3.properties["application_id"] == 1
+    assert node4.properties["application_id"] == 2
+
+    node5 = async_run(project1.add_node(compute2, "test5", None, node_type="iou"))
+    node6 = async_run(project2.add_node(compute1, "test6", None, node_type="iou"))
+
+    assert node5.properties["application_id"] == 3
+    assert node6.properties["application_id"] == 4
+
+
+def test_add_node_iou_no_id_available(async_run, controller):
+    """
+    Test if an application ID is allocated for IOU nodes
+    """
+    compute = MagicMock()
+    compute.id = "local"
+    project = async_run(controller.add_project(project_id=str(uuid.uuid4()), name="test"))
+    project.emit_notification = MagicMock()
+    response = MagicMock()
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    with pytest.raises(aiohttp.web.HTTPConflict):
+        for i in range(1, 513):
+            prop = {"properties": {"application_id": i}}
+            project._nodes[i] = Node(project, compute, "Node{}".format(i), node_id=i, node_type="iou", **prop)
+        async_run(project.add_node(compute, "test1", None, node_type="iou"))
 
 
 def test_add_node_from_template(async_run, controller):
