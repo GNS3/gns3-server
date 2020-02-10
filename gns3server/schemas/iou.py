@@ -96,7 +96,7 @@ IOU_CREATE_SCHEMA = {
         },
     },
     "additionalProperties": False,
-    "required": ["name", "path"]
+    "required": ["application_id", "name", "path"]
 }
 
 

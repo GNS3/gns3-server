@@ -58,16 +58,17 @@ class IOUHandler:
 
         iou = IOU.instance()
         vm = await iou.create_node(request.json.pop("name"),
-                                        request.match_info["project_id"],
-                                        request.json.get("node_id"),
-                                        path=request.json.get("path"),
-                                        console=request.json.get("console"),
-                                        console_type=request.json.get("console_type", "telnet"))
+                                   request.match_info["project_id"],
+                                   request.json.get("node_id"),
+                                   application_id=request.json.get("application_id"),
+                                   path=request.json.get("path"),
+                                   console=request.json.get("console"),
+                                   console_type=request.json.get("console_type", "telnet"))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
                 if name == "application_id":
-                    continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
+                    continue  # we must ignore this to avoid overwriting the application_id allocated by the controller
                 if name == "startup_config_content" and (vm.startup_config_content and len(vm.startup_config_content) > 0):
                     continue
                 if name == "private_config_content" and (vm.private_config_content and len(vm.private_config_content) > 0):

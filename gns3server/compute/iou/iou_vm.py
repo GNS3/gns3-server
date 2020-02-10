@@ -70,6 +70,10 @@ class IOUVM(BaseNode):
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
 
+        log.info('IOU "{name}" [{id}]: assigned with application ID {application_id}'.format(name=self._name,
+                                                                                             id=self._id,
+                                                                                             application_id=application_id))
+
         self._iou_process = None
         self._telnet_server = None
         self._iou_stdout_file = ""

@@ -25,7 +25,6 @@ import asyncio
 from ..base_manager import BaseManager
 from .iou_error import IOUError
 from .iou_vm import IOUVM
-from .utils.application_id import get_next_application_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,12 +47,7 @@ class IOU(BaseManager):
         :returns: IOUVM instance
         """
 
-        async with self._iou_id_lock:
-            # wait for a node to be completely created before adding a new one
-            # this is important otherwise we allocate the same application ID
-            # when creating multiple IOU node at the same time
-            application_id = get_next_application_id(self.nodes)
-            node = await super().create_node(*args, application_id=application_id, **kwargs)
+        node = await super().create_node(*args, **kwargs)
         return node
 
     @staticmethod
