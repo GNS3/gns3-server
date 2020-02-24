@@ -1645,17 +1645,17 @@ class QemuVM(BaseNode):
             if interface == "sata":
                 # special case, sata controller doesn't exist in Qemu
                 options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk,format=raw'.format(disk, disk_index, disk_index)])
+                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
                 options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
             elif interface == "nvme":
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk,format=raw'.format(disk, disk_index, disk_index)])
+                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
                 options.extend(["-device", 'nvme,drive=drive{},serial={}'.format(disk_index, disk_index)])
             elif interface == "scsi":
                 options.extend(["-device", 'virtio-scsi-pci,id=scsi{}'.format(disk_index)])
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk,format=raw'.format(disk, disk_index, disk_index)])
+                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
                 options.extend(["-device", 'scsi-hd,drive=drive{}'.format(disk_index)])
             #elif interface == "sd":
-            #    options.extend(["-drive", 'file={},id=drive{},index={},format=raw'.format(disk, disk_index, disk_index)])
+            #    options.extend(["-drive", 'file={},id=drive{},index={}'.format(disk, disk_index, disk_index)])
             #    options.extend(["-device", 'sd-card,drive=drive{},id=drive{}'.format(disk_index, disk_index, disk_index)])
             else:
                 options.extend(["-drive", 'file={},if={},index={},media=disk,id=drive{}'.format(disk, interface, disk_index, disk_index)])
