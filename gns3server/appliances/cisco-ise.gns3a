@@ -7,7 +7,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/security/identity-services-engine/tsd-products-support-series-home.html",
     "product_name": "Identity Services Engine",
     "product_url": "http://www.cisco.com/c/en/us/products/security/identity-services-engine/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -15,9 +15,10 @@
     "symbol": "cisco-ise.svg",
     "port_name_format": "GigabitEthernet{0}",
     "qemu": {
+        "cpus": 2,
         "adapter_type": "e1000",
-        "adapters": 2,
-        "ram": 4096,
+        "adapters": 6,
+        "ram": 8192,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
@@ -27,11 +28,32 @@
     },
     "images": [
         {
+            "filename": "ise-2.7.0.356.SPA.x86_64.iso",
+            "version": "2.7.0.356",
+            "md5sum": "efbc831bf05513e4df8695eb3a362921",
+            "filesize": 9184415744,
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.7.0"
+        },
+        {
+            "filename": "ise-2.6.0.156.SPA.x86_64.iso",
+            "version": "2.6.0.156",
+            "md5sum": "296e65b662821269ad67dd3dea8804d9",
+            "filesize": 8618913792,
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.6.0"
+        },
+        {
             "filename": "ise-2.4.0.357.SPA.x86_64.iso",
             "version": "2.4.0.357",
-            "md5sum": "766945618a0ff35f6c720b3bc4b46bfb",
+            "md5sum": "7f32a28f8d95c7525885786a6556913e",
             "filesize": 8326062080,
             "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.4.0"
+        },
+        {
+            "filename": "ise-2.3.0.298.SPA.x86_64.iso",
+            "version": "2.3.0.298",
+            "md5sum": "da98d1a34f6b11d63da0f29bd5ef9caf",
+            "filesize": 8174278656,
+            "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.3.0"
         },
 		{
             "filename": "ise-2.2.0.470.SPA.x86_64.iso",
@@ -72,10 +94,31 @@
     ],
     "versions": [
         {
+            "name": "2.7.0.356",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.7.0.356.SPA.x86_64.iso"
+            }
+        },
+        {
+            "name": "2.6.0.156",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.6.0.156.SPA.x86_64.iso"
+            }
+        },
+        {
             "name": "2.4.0.357",
             "images": {
                 "hda_disk_image": "empty200G.qcow2",
                 "cdrom_image": "ise-2.4.0.357.SPA.x86_64.iso"
+            }
+        },
+        {
+            "name": "2.3.0.298",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2",
+                "cdrom_image": "ise-2.3.0.298.SPA.x86_64.iso"
             }
         },
 		{
