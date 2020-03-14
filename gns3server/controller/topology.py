@@ -171,6 +171,11 @@ def load_topology(path):
             if "console_type" in node and node["console_type"] is None:
                 node["console_type"] = "none"
 
+        # make sure we can open a project with empty variable name
+        variables = topo.get("variables")
+        if variables:
+            topo["variables"] = [var for var in variables if var.get("name")]
+
     try:
         _check_topology_schema(topo)
     except aiohttp.web.HTTPConflict as e:

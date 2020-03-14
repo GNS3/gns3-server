@@ -38,7 +38,8 @@ VARIABLES_OBJECT_SCHEMA = {
         "properties": {
             "name": {
                 "type": "string",
-                "description": "Variable name"
+                "description": "Variable name",
+                "minLength": 1
             },
             "value": {
                 "type": "string",
