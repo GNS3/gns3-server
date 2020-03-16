@@ -493,7 +493,7 @@ class Dynamips(BaseManager):
             await vm.set_sparsemem(False)
 
         usage = settings.get("usage")
-        if usage and usage != vm.usage:
+        if usage is not None and usage != vm.usage:
             vm.usage = usage
 
         # update the configs if needed
