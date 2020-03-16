@@ -684,6 +684,8 @@ class Project:
     @open_required
     async def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
+        if drawing.locked:
+            raise aiohttp.web.HTTPConflict(text="Drawing ID {} cannot be deleted because it is locked".format(drawing_id))
         del self._drawings[drawing.id]
         self.dump()
         self.emit_notification("drawing.deleted", drawing.__json__())
