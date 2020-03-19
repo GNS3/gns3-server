@@ -448,11 +448,11 @@ class Compute:
                             log.error("Error received on compute WebSocket '{}': {}".format(ws_url, ws.exception()))
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
-                        self._connected = False
                         break
         except aiohttp.client_exceptions.ClientResponseError as e:
             log.error("Client response error received on compute WebSocket '{}': {}".format(ws_url,e))
         finally:
+            self._connected = False
             log.info("Connection closed to compute WebSocket '{}'".format(ws_url))
 
         # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
