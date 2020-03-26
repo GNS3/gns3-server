@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-dev \ 
     qemu-system-x86 \
-    qemu-system-arm \
     qemu-kvm \
     libvirt-bin \
     x11vnc 
@@ -33,4 +32,4 @@ RUN pip3 install -r /server/requirements.txt
 
 EXPOSE 3080
 
-CMD python3 -m gns3server --local
+CMD python3 -m gns3server
