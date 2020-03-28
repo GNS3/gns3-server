@@ -1,5 +1,27 @@
 # Change Log
 
+## 2.2.6 26/03/2020
+
+* Remove --local when starting Docker dev server.
+* Release 2020.1.0-alpha.1
+* Monitor ubrige processes.
+* Add Xvnc command to the VNC servers list. Fixes #172
+* Allow controller to reconnect to compute if communication is lost. Ref #1634
+* Improvement of support for docker USER directive. Fixes #1727.
+* Fix cannot delete Dynamips router the content of the "usage" field. Fixes https://github.com/GNS3/gns3-gui/issues/2947
+* Prevent locked drawings to be deleted. Fixes https://github.com/GNS3/gns3-gui/issues/2948
+* Fix issues with empty project variables. Fixes https://github.com/GNS3/gns3-gui/issues/2941
+* Upgrade psutil to version 5.6.6 due to CVE-2019-18874 https://github.com/advisories/GHSA-qfc5-mcwq-26q8
+* Remove 'format=raw' from the Qemu options of the disk interfaces. Ref #1699
+* Allocate application IDs for IOU nodes on the controller. An application ID is used by IOU to generate its interface Mac addresses. They must be unique across all opened projects sharing the same computes to avoid Mac address collisions.
+* Require VirtualBox >= 6.0 on AMD and >= 6.1 on Intel processors (for GNS3 VM only). Fixes #1610
+* Add nvme disk interface and fix scsi disk interface for Qemu VMs.
+* Disallow using "legacy networking mode" with Qemu >= 2.9.0
+* Add latest Qemu nic models.
+* Attempt to fix error when loading wmi module. Fixes #1712
+* Handle "aborted" state for VirtualBox VMs. Fixes #1702
+* Change how Hyper-V VMs are found. Ref #1612
+
 ## 2.2.5 09/01/2020
 
 * No changes

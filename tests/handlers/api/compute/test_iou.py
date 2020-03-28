@@ -42,7 +42,7 @@ def fake_iou_bin(images_dir):
 @pytest.fixture
 def base_params(tmpdir, fake_iou_bin):
     """Return standard parameters"""
-    return {"name": "PC TEST 1", "path": "iou.bin"}
+    return {"application_id": 42, "name": "PC TEST 1", "path": "iou.bin"}
 
 
 @pytest.fixture

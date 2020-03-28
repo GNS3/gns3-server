@@ -22,6 +22,42 @@
     },
     "images": [
         {
+            "filename": "openwrt-19.07.1-x86-64-combined-ext4.img",
+            "version": "19.07.1",
+            "md5sum": "2d36f48bcc37edf3c5cfc28fed44b533",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/19.07.1/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/19.07.1/targets/x86/64/openwrt-19.07.1-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-18.06.7-x86-64-combined-ext4.img",
+            "version": "18.06.7",
+            "md5sum": "f463f38cccf89e1a2229f74a4c42d3ef",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/openwrt-18.06.7-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-19.07.0-x86-64-combined-ext4.img",
+            "version": "19.07.0",
+            "md5sum": "cf2a353d10e017b9e71cd3761f7aa724",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/19.07.0/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/19.07.0/targets/x86/64/openwrt-19.07.0-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-18.06.6-x86-64-combined-ext4.img",
+            "version": "18.06.6",
+            "md5sum": "0afeec80ad7e5035f739e0ed0a07fb83",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.6/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.6/targets/x86/64/openwrt-18.06.6-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
             "filename": "openwrt-18.06.5-x86-64-combined-ext4.img",
             "version": "18.06.5",
             "md5sum": "6fce24c15f0bc75af16c133b839aea30",
@@ -68,6 +104,30 @@
         }
     ],
     "versions": [
+        {
+            "name": "19.07.1",
+            "images": {
+                "hda_disk_image": "openwrt-19.07.1-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "18.06.7",
+            "images": {
+                "hda_disk_image": "openwrt-18.06.7-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "19.07.0",
+            "images": {
+                "hda_disk_image": "openwrt-19.07.0-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "18.06.6",
+            "images": {
+                "hda_disk_image": "openwrt-18.06.6-x86-64-combined-ext4.img"
+            }
+        },
         {
             "name": "18.06.5",
             "images": {

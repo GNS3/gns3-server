@@ -564,12 +564,14 @@ class DockerVM(BaseNode):
         """
 
         self._display = self._get_free_display_port()
-        if not (shutil.which("Xtigervnc") or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install tigervnc-standalone-server (recommended) or Xvfb + x11vnc before using VNC support")
+        tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
 
-        if shutil.which("Xtigervnc"):
+        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
+            raise DockerError("Please install TigerVNC (recommended) or Xvfb + x11vnc before using VNC support")
+
+        if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec("Xtigervnc",
+                self._vnc_process = await asyncio.create_subprocess_exec(tigervnc_path,
                                                                          "-geometry", self._console_resolution,
                                                                          "-depth", "16",
                                                                          "-interface", self._manager.port_manager.console_host,
@@ -606,8 +608,9 @@ class DockerVM(BaseNode):
         """
 
         self._display = self._get_free_display_port()
-        if not (shutil.which("Xtigervnc") or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install tigervnc-standalone-server (recommended) or Xvfb + x11vnc before using VNC support")
+        tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
+        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
+            raise DockerError("Please install TigerVNC server (recommended) or Xvfb + x11vnc before using VNC support")
         await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         await wait_for_file_creation(x11_socket)

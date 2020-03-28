@@ -25,7 +25,21 @@
         "kvm": "require"
     },
     "images": [
-         {
+        {
+            "filename": "nexus9500v.9.3.3.qcow2",
+            "version": "9500v 9.3.3",
+            "md5sum": "7230c944041fdaa0e1b18cecccbc9a32",
+            "filesize": 1714159616,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(3)"
+        },
+        {
+            "filename": "nexus9300v.9.3.3.qcow2",
+            "version": "9300v 9.3.3",
+            "md5sum": "8e9a7c4815907ef47d850623f77042e2",
+            "filesize": 1714225152,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(3)"
+        },
+        {
             "filename": "nxosv.9.3.1.qcow2",
             "version": "9.3.1",
             "md5sum": "148fd38cb1ff78df2883f844e172fad9",
@@ -134,6 +148,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "9500v 9.3.3",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nexus9500v.9.3.3.qcow2"
+            }
+        },
+        {
+            "name": "9300v 9.3.3",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nexus9300v.9.3.3.qcow2"
+            }
+        }, 
         {
             "name": "9.3.1",
             "images": {

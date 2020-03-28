@@ -279,7 +279,7 @@ class VirtualBoxVM(BaseNode):
             await self._set_network_options()
             await self._set_serial_console()
         else:
-            raise VirtualBoxError("VirtualBox VM not powered off")
+            raise VirtualBoxError("VirtualBox VM '{}' is not powered off (current state is '{}')".format(self.name, vm_state))
 
         # check if there is enough RAM to run
         self.check_available_ram(self.ram)
@@ -320,7 +320,8 @@ class VirtualBoxVM(BaseNode):
         await self._stop_ubridge()
         await self._stop_remote_console()
         vm_state = await self._get_vm_state()
-        if vm_state in ("running", "paused", "stuck"):
+        log.info("Stopping VirtualBox VM '{name}' [{id}] (current state is {vm_state})".format(name=self.name, id=self.id, vm_state=vm_state))
+        if vm_state in ("running", "paused"):
 
             if self.on_close == "save_vm_state":
                 # add a guest property to know the VM has been saved
@@ -348,7 +349,10 @@ class VirtualBoxVM(BaseNode):
                 result = await self._control_vm("poweroff")
                 self.status = "stopped"
                 log.debug("Stop result: {}".format(result))
+        elif vm_state == "aborted":
+            self.status = "stopped"
 
+        if self.status == "stopped":
             log.info("VirtualBox VM '{name}' [{id}] stopped".format(name=self.name, id=self.id))
             await asyncio.sleep(0.5)  # give some time for VirtualBox to unlock the VM
             if self.on_close != "save_vm_state":

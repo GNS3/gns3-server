@@ -21,9 +21,6 @@ import asyncio
 import psutil
 import ipaddress
 
-if sys.platform.startswith("win"):
-    import wmi
-
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
 log = logging.getLogger(__name__)
@@ -47,6 +44,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         self._conn = None
         self._vm = None
         self._management = None
+        self._wmi = None
 
     def _check_requirements(self):
         """
@@ -64,8 +62,12 @@ class HyperVGNS3VM(BaseGNS3VM):
                 raise GNS3VMError("Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later")
 
         try:
-            conn = wmi.WMI()
-        except wmi.x_wmi as e:
+            import pythoncom
+            pythoncom.CoInitialize()
+            import wmi
+            self._wmi = wmi
+            conn = self._wmi.WMI()
+        except self._wmi.x_wmi as e:
             raise GNS3VMError("Could not connect to WMI: {}".format(e))
 
         if not conn.Win32_ComputerSystem()[0].HypervisorPresent:
@@ -86,8 +88,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         self._check_requirements()
 
         try:
-            self._conn = wmi.WMI(namespace=r"root\virtualization\v2")
-        except wmi.x_wmi as e:
+            self._conn = self._wmi.WMI(namespace=r"root\virtualization\v2")
+        except self._wmi.x_wmi as e:
             raise GNS3VMError("Could not connect to WMI: {}".format(e))
 
         if not self._conn.Msvm_VirtualSystemManagementService():
@@ -182,10 +184,10 @@ class HyperVGNS3VM(BaseGNS3VM):
 
         vms = []
         try:
-            for vm in self._conn.Msvm_VirtualSystemSettingData():
-                if vm.VirtualSystemType == "Microsoft:Hyper-V:System:Realized":
+            for vm in self._conn.Msvm_ComputerSystem():
+                if vm.ElementName != self._management.SystemName:
                     vms.append({"vmname": vm.ElementName})
-        except wmi.x_wmi as e:
+        except self._wmi.x_wmi as e:
             raise GNS3VMError("Could not list Hyper-V VMs: {}".format(e))
         return vms
 
@@ -194,7 +196,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         Gets the WMI object.
         """
 
-        return wmi.WMI(moniker=path.replace('\\', '/'))
+        return self._wmi.WMI(moniker=path.replace('\\', '/'))
 
     async def _set_state(self, state):
         """

@@ -11,7 +11,7 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "dynamips": {
-        "platform": "c3600",
+        "platform": "c2691",
         "ram": 192,
         "nvram": 256,
         "startup_config": "ios_base_startup-config.txt",

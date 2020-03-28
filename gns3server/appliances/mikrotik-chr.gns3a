@@ -27,6 +27,15 @@
     },
     "images": [
             {
+              "filename": "chr-7.0beta5.img",
+              "version": "7.0beta5",
+              "md5sum": "3c9855f0efdc23df29511c76aee52c95",
+              "filesize": 67108864,
+              "download_url": "http://www.mikrotik.com/download",
+              "direct_download_url": "https://download.mikrotik.com/routeros/7.0beta5/chr-7.0beta5.img.zip",
+              "compression": "zip"
+           },
+			{
               "filename": "chr-7.0beta3.img",
               "version": "7.0beta3",
               "md5sum": "938c59989df039cb9f33e0da96c22174",
@@ -35,7 +44,25 @@
               "direct_download_url": "https://download.mikrotik.com/routeros/7.0beta3/chr-7.0beta3.img.zip",
               "compression": "zip"
            },
+		   {
+              "filename": "chr-6.46.3.img",
+              "version": "6.46.3",
+              "md5sum": "72d72c4a585a04eb9ed24ec9e4678486",
+              "filesize": 67108864,
+              "download_url": "http://www.mikrotik.com/download",
+              "direct_download_url": "https://download.mikrotik.com/routeros/6.46.3/chr-6.46.3.img.zip",
+              "compression": "zip"
+           },
             {
+              "filename": "chr-6.45.8.img",
+              "version": "6.45.8",
+              "md5sum": "73cc01e22e0b301dc29416f59ced8a7d",
+              "filesize": 67108864,
+              "download_url": "http://www.mikrotik.com/download",
+              "direct_download_url": "https://download.mikrotik.com/routeros/6.45.8/chr-6.45.8.img.zip",
+              "compression": "zip"
+           },
+			{
               "filename": "chr-6.45.6.img",
               "version": "6.45.6",
               "md5sum": "e68db699ba23ac7e4fba95b3075c1c6b",
@@ -155,9 +182,27 @@
     ],
     "versions": [
         {
+            "name": "7.0beta5",
+            "images": {
+                "hda_disk_image": "chr-7.0beta5.img"
+            }
+        },
+		{
             "name": "7.0beta3",
             "images": {
                 "hda_disk_image": "chr-7.0beta3.img"
+            }
+        },
+		{
+            "name": "6.46.3",
+            "images": {
+                "hda_disk_image": "chr-6.46.3.img"
+            }
+        },
+		{
+            "name": "6.45.8",
+            "images": {
+                "hda_disk_image": "chr-6.45.8.img"
             }
         },
         {

@@ -28,6 +28,7 @@ import re
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import wait_for_process_termination
+from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.asyncio import subprocess_check_output
 from .ubridge_hypervisor import UBridgeHypervisor
 from .ubridge_error import UbridgeError
@@ -176,6 +177,7 @@ class Hypervisor(UBridgeHypervisor):
                                                                           env=env)
 
             log.info("ubridge started PID={}".format(self._process.pid))
+            monitor_process(self._process, self._termination_callback)
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
             log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
@@ -188,9 +190,12 @@ class Hypervisor(UBridgeHypervisor):
         :param returncode: Process returncode
         """
 
-        log.info("uBridge process has stopped, return code: %d", returncode)
         if returncode != 0:
-            self._project.emit("log.error", {"message": "uBridge process has stopped, return code: {}\n{}".format(returncode, self.read_stdout())})
+            error_msg = "uBridge process has stopped, return code: {}\n{}\n".format(returncode, self.read_stdout())
+            log.error(error_msg)
+            self._project.emit("log.error", {"message": error_msg})
+        else:
+            log.info("uBridge process has stopped, return code: %d", returncode)
 
     async def stop(self):
         """

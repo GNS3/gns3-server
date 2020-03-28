@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "BIGIP-14.1.2.3-0.0.5.qcow2",
+            "version": "14.1.2.3",
+            "md5sum": "356520eedb615c93e985474f2b2ec603",
+            "filesize": 5036834816,
+            "download_url": "https://downloads.f5.com"
+        },
+        {
             "filename": "BIGIP-14.0.0.3-0.0.4.qcow2",
             "version": "14.0.0 HF3",
             "md5sum": "dc80a7e436ff93e2f4092eece18d369b",
@@ -142,6 +149,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "14.1.2.3",
+            "images": {
+                "hda_disk_image": "BIGIP-14.1.2.3-0.0.5.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "14.0.0 HF3",
             "images": {
