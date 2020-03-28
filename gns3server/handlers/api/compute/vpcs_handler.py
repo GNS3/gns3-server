@@ -362,3 +362,16 @@ class VPCSHandler:
         port_number = int(request.match_info["port_number"])
         nio = vm.get_nio(port_number)
         await vpcs_manager.stream_pcap_file(nio, vm.project.id, request, response)
+
+    @Route.get(
+        r"/projects/{project_id}/vpcs/nodes/{node_id}/console/ws",
+        description="WebSocket for console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        })
+    async def console_ws(request, response):
+
+        vpcs_manager = VPCS.instance()
+        vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        return await vm.start_websocket_console(request)

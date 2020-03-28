@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
+import asyncio
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -453,3 +454,58 @@ class NodeHandler:
         data = await request.content.read()  #FIXME: are we handling timeout or large files correctly?
         await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
         response.set_status(201)
+
+    @Route.get(
+        r"/projects/{project_id}/nodes/{node_id}/console/ws",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        description="Connect to WebSocket console",
+        status_codes={
+            200: "File returned",
+            403: "Permission denied",
+            404: "The file doesn't exist"
+        })
+    async def ws_console(request, response):
+
+        print("HERE!")
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        compute = node.compute
+        ws = aiohttp.web.WebSocketResponse()
+        await ws.prepare(request)
+        request.app['websockets'].add(ws)
+
+        ws_console_compute_url = "ws://{compute_host}:{compute_port}/v2/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/ws".format(compute_host=compute.host,
+                                                                                                                                                     compute_port=compute.port,
+                                                                                                                                                     project_id=project.id,
+                                                                                                                                                     node_type=node.node_type,
+                                                                                                                                                     node_id=node.id)
+
+        async def ws_forward(ws_client):
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    await ws_client.send_str(msg.data)
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    await ws_client.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+
+        try:
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True)) as session:
+                async with session.ws_connect(ws_console_compute_url) as ws_client:
+                    asyncio.ensure_future(ws_forward(ws_client))
+                    async for msg in ws_client:
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            await ws.send_str(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.BINARY:
+                            await ws.send_bytes(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                            break
+        finally:
+            if not ws.closed:
+                await ws.close()
+            request.app['websockets'].discard(ws)
+
+        return ws
