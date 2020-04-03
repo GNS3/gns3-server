@@ -108,6 +108,59 @@ def test_get_node(http_controller, tmpdir, project, compute):
     assert response.status == 200
     assert response.json["name"] == "test"
 
+def test_get_nodes_filtered_by_type(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
+        "name": "test",
+        "node_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    http_controller.post("/projects/{}/nodes".format(project.id), {
+        "name": "test2",
+        "node_type": "ethernet_switch",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    response = http_controller.get("/projects/{}/nodes?node_type=vpcs".format(project.id), example=True)
+    assert response.status == 200
+    assert len(response.json) == 1
+
+def test_get_nodes_filtered_by_status(http_controller, tmpdir, project, compute):
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
+        "name": "test",
+        "node_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    http_controller.put("/projects/{}/nodes/{}".format(project.id, response.json["node_id"]), {
+        "status": "started"
+    }, example=True)
+    
+    response = http_controller.post("/projects/{}/nodes".format(project.id), {
+        "name": "test2",
+        "node_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    response = http_controller.get("/projects/{}/nodes?status=started".format(project.id), example=True)
+    assert response.status == 200
+    assert len(response.json) == 1
 
 def test_update_node(http_controller, tmpdir, project, compute, node):
     response = MagicMock()

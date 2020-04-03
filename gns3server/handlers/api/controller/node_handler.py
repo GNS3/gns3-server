@@ -85,7 +85,7 @@ class NodeHandler:
             nodes = [node for node in nodes if node["node_type"] == node_type]
 
         if status is not None:
-            nodes = [node for node in nodes if node.has_key("status") and node["status"] == "started"]
+            nodes = [node for node in nodes if "status" in node and node["status"] == "started"]
 
         if name is not None:
             nodes = [node for node in nodes if node["name"] == name]
