@@ -17,6 +17,8 @@
 
 import aiohttp
 import asyncio
+import logging
+log = logging.getLogger(__name__)
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -59,16 +61,40 @@ class NodeHandler:
     @Route.get(
         r"/projects/{project_id}/nodes",
         parameters={
-            "project_id": "Project UUID"
+            "project_id": "Project UUID",
+            "node_type": "Node type",
+            "status": "Status",
+            "name": "Node name",
+            "locked": "Locked"
         },
         status_codes={
             200: "List of nodes returned",
         },
         description="List nodes of a project")
     async def list_nodes(request, response):
+        project_id = request.match_info["project_id"]
+        node_type = request.query.get("node_type", None)
+        status = request.query.get("status", None)
+        name = request.query.get("name", None)
+        locked = request.query.get("locked", None)
 
-        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        response.json([v for v in project.nodes.values()])
+        project = await Controller.instance().get_loaded_project(project_id)
+        nodes = [v for v in project.nodes.values()]
+
+        if node_type is not None:
+            nodes = [node for node in nodes if node["node_type"] == node_type]
+
+        if status is not None:
+            nodes = [node for node in nodes if node.has_key("status") and node["status"] == "started"]
+
+        if name is not None:
+            nodes = [node for node in nodes if node["name"] == name]
+
+        if locked is not None:
+            locked = locked == "true"
+            nodes = [node for node in nodes if node["locked"] is locked]
+
+        response.json(nodes)
 
     @Route.post(
         r"/projects/{project_id}/nodes/start",
