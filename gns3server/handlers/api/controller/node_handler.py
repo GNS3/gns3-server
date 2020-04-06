@@ -73,7 +73,8 @@ class NodeHandler:
     @Route.post(
         r"/projects/{project_id}/nodes/start",
         parameters={
-            "project_id": "Project UUID"
+            "project_id": "Project UUID",
+            "delay": "Delay between starting subsequent nodes"
         },
         status_codes={
             204: "All nodes successfully started",
@@ -84,14 +85,16 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     async def start_all(request, response):
 
+        delay = request.query.get("delay", 0)
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        await project.start_all()
+        await project.start_all(delay)
         response.set_status(204)
 
     @Route.post(
         r"/projects/{project_id}/nodes/stop",
         parameters={
-            "project_id": "Project UUID"
+            "project_id": "Project UUID",
+            "delay": "Delay between stopping subsequent nodes"
         },
         status_codes={
             204: "All nodes successfully stopped",
@@ -102,14 +105,16 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     async def stop_all(request, response):
 
+        delay = request.query.get("delay", 0)
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        await project.stop_all()
+        await project.stop_all(delay)
         response.set_status(204)
 
     @Route.post(
         r"/projects/{project_id}/nodes/suspend",
         parameters={
-            "project_id": "Project UUID"
+            "project_id": "Project UUID",
+            "delay": "Delay between suspending subsequent nodes"
         },
         status_codes={
             204: "All nodes successfully suspended",
@@ -120,14 +125,16 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     async def suspend_all(request, response):
 
+        delay = request.query.get("delay", 0)
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        await project.suspend_all()
+        await project.suspend_all(delay)
         response.set_status(204)
 
     @Route.post(
         r"/projects/{project_id}/nodes/reload",
         parameters={
-            "project_id": "Project UUID"
+            "project_id": "Project UUID",
+            "delay": "Delay between reloading subsequent nodes"
         },
         status_codes={
             204: "All nodes successfully reloaded",
@@ -138,9 +145,10 @@ class NodeHandler:
         output=NODE_OBJECT_SCHEMA)
     async def reload_all(request, response):
 
+        delay = request.query.get("delay", 0)
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-        await project.stop_all()
-        await project.start_all()
+        await project.stop_all(delay)
+        await project.start_all(delay)
         response.set_status(204)
 
     @Route.get(

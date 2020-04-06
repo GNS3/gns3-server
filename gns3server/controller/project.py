@@ -1064,17 +1064,18 @@ class Project:
             raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
 
     @open_required
-    async def start_all(self):
+    async def start_all(self, delay = 0):
         """
         Start all nodes
         """
         pool = Pool(concurrency=3)
         for node in self.nodes.values():
+            await asyncio.sleep(delay)
             pool.append(node.start)
         await pool.join()
 
     @open_required
-    async def stop_all(self):
+    async def stop_all(self, delay = 0):
         """
         Stop all nodes
         """
@@ -1084,7 +1085,7 @@ class Project:
         await pool.join()
 
     @open_required
-    async def suspend_all(self):
+    async def suspend_all(self, delay = 0):
         """
         Suspend all nodes
         """
