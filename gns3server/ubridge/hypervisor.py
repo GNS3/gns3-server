@@ -177,7 +177,9 @@ class Hypervisor(UBridgeHypervisor):
                                                                           env=env)
 
             log.info("ubridge started PID={}".format(self._process.pid))
-            monitor_process(self._process, self._termination_callback)
+            # recv: Bad address is received by uBridge when a docker image stops by itself
+            # see https://github.com/GNS3/gns3-gui/issues/2957
+            #monitor_process(self._process, self._termination_callback)
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
             log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
