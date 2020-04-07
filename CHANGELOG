@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.2.7 07/04/2020
+
+* Release 2020.2.0-beta.1
+* Fix uBrigde error popups when Docker image has stopped. Fixes https://github.com/GNS3/gns3-gui/issues/2957
+* Fix warning that you are explicitly comparing literals
+
 ## 2.2.6 26/03/2020
 
 * Remove --local when starting Docker dev server.
