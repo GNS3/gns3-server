@@ -37,6 +37,7 @@ from gns3server.utils import parse_version, shlex_quote
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
+from .utils.ziputils import pack_zip, unpack_zip
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..error import NodeError, ImageMissingError
 from ..nios.nio_udp import NIOUDP
@@ -1657,8 +1658,8 @@ class QemuVM(BaseNode):
             os.mkdir(config_dir)
             if os.path.exists(zip_file):
                 os.remove(zip_file)
-            if await self._mcopy("-s", "-m", "x:/", config_dir) == 0:
-                shutil.make_archive(zip_file[:-4], "zip", config_dir)
+            if await self._mcopy("-s", "-m", "-n", "--", "x:/", config_dir) == 0:
+                pack_zip(zip_file, config_dir)
         except OSError as e:
             log.error("Can't export config: {}".format(e))
         finally:
@@ -1674,12 +1675,12 @@ class QemuVM(BaseNode):
         try:
             shutil.rmtree(config_dir, ignore_errors=True)
             os.mkdir(config_dir)
-            shutil.unpack_archive(zip_file, config_dir)
+            unpack_zip(zip_file, config_dir)
             shutil.copyfile(getattr(self, "config_disk_image"), disk)
             config_files = [os.path.join(config_dir, fname)
                             for fname in os.listdir(config_dir)]
             if config_files:
-                if await self._mcopy("-s", "-m", *config_files, "x:/") != 0:
+                if await self._mcopy("-s", "-m", "-o", "--", *config_files, "x:/") != 0:
                     os.remove(disk)
                     os.remove(zip_file)
         except OSError as e:
