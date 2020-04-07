@@ -458,7 +458,7 @@ class Dynamips(BaseManager):
                         await vm.slot_add_binding(slot_id, adapter)
                 except IndexError:
                     raise DynamipsError("Slot {} doesn't exist on this router".format(slot_id))
-            elif name.startswith("slot") and (value is None or value is ""):
+            elif name.startswith("slot") and (value is None or value == ""):
                 slot_id = int(name[-1])
                 try:
                     if vm.slots[slot_id]:
@@ -476,7 +476,7 @@ class Dynamips(BaseManager):
                         await vm.install_wic(wic_slot_id, wic)
                 except IndexError:
                     raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
-            elif name.startswith("wic") and (value is None or value is ""):
+            elif name.startswith("wic") and (value is None or value == ""):
                 wic_slot_id = int(name[-1])
                 try:
                     if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
