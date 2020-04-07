@@ -1,6 +1,6 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: GNS3 Web UI 2019.2.0 v11
+Current version: GNS3 Web UI 2020.2.0
 
 What's New
 - Support for suspended status added
