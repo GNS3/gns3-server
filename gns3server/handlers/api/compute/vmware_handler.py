@@ -409,3 +409,16 @@ class VMwareHandler:
         vmware_manager = VMware.instance()
         vms = await vmware_manager.list_vms()
         response.json(vms)
+
+    @Route.get(
+        r"/projects/{project_id}/vmware/nodes/{node_id}/console/ws",
+        description="WebSocket for console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        })
+    async def console_ws(request, response):
+
+        vmware_manager = VMware.instance()
+        vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        return await vm.start_websocket_console(request)

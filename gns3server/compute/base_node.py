@@ -27,6 +27,7 @@ import psutil
 import platform
 import re
 
+from aiohttp.web import WebSocketResponse
 from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor, locking
@@ -339,8 +340,8 @@ class BaseNode:
 
     async def start_wrap_console(self):
         """
-        Start a telnet proxy for the console allowing multiple client
-        connected at the same time
+        Start a telnet proxy for the console allowing multiple telnet clients
+        to be connected at the same time
         """
 
         if not self._wrap_console or self._console_type != "telnet":
@@ -368,6 +369,62 @@ class BaseNode:
         if self._wrapper_telnet_server:
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
+
+    async def start_websocket_console(self, request):
+        """
+        Connect to console using Websocket.
+
+        :param ws: Websocket object
+        """
+
+        if self.status != "started":
+            raise NodeError("Node {} is not started".format(self.name))
+
+        if self._console_type != "telnet":
+            raise NodeError("Node {} console type is not telnet".format(self.name))
+
+        try:
+            (telnet_reader, telnet_writer) = await asyncio.open_connection(self._manager.port_manager.console_host, self.console)
+        except ConnectionError as e:
+            raise NodeError("Cannot connect to node {} telnet server: {}".format(self.name, e))
+
+        log.info("Connected to Telnet server")
+
+        ws = WebSocketResponse()
+        await ws.prepare(request)
+        request.app['websockets'].add(ws)
+
+        log.info("New client has connected to console WebSocket")
+
+        async def ws_forward(telnet_writer):
+
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    telnet_writer.write(msg.data.encode())
+                    await telnet_writer.drain()
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    await telnet_writer.write(msg.data)
+                    await telnet_writer.drain()
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    log.debug("Websocket connection closed with exception {}".format(ws.exception()))
+
+        async def telnet_forward(telnet_reader):
+
+            while not ws.closed and not telnet_reader.at_eof():
+                data = await telnet_reader.read(1024)
+                if data:
+                    await ws.send_bytes(data)
+
+        try:
+            # keep forwarding websocket data in both direction
+            await asyncio.wait([ws_forward(telnet_writer), telnet_forward(telnet_reader)], return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            log.info("Client has disconnected from console WebSocket")
+            if not ws.closed:
+                await ws.close()
+            request.app['websockets'].discard(ws)
+
+        return ws
 
     @property
     def allocate_aux(self):

@@ -412,3 +412,16 @@ class DockerHandler:
         docker_manager = Docker.instance()
         images = await docker_manager.list_images()
         response.json(images)
+
+    @Route.get(
+        r"/projects/{project_id}/docker/nodes/{node_id}/console/ws",
+        description="WebSocket for console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        })
+    async def console_ws(request, response):
+
+        docker_manager = Docker.instance()
+        container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        return await container.start_websocket_console(request)
