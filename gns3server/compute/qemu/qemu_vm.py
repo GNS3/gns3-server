@@ -26,6 +26,7 @@ import re
 import shlex
 import math
 import shutil
+import struct
 import asyncio
 import socket
 import gns3server
@@ -1628,11 +1629,26 @@ class QemuVM(BaseNode):
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
 
-    async def _mcopy(self, *args):
-        env = os.environ
-        env["MTOOLSRC"] = 'mtoolsrc'
+    async def _mcopy(self, image, *args):
         try:
-            process = await asyncio.create_subprocess_exec("mcopy", *args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.working_dir, env=env)
+            # read offset of first partition from MBR
+            with open(image, "rb") as img_file:
+                mbr = img_file.read(512)
+            part_type, offset, signature = struct.unpack("<450xB3xL52xH", mbr)
+            if signature != 0xAA55:
+                log.error("mcopy failure: {}: invalid MBR".format(image))
+                return 1
+            if part_type not in (1, 4, 6, 11, 12, 14):
+                log.error("mcopy failure: {}: invalid partition type {:02X}"
+                          .format(image, part_type))
+                return 1
+            part_image = image + "@@{}S".format(offset)
+
+            process = await asyncio.create_subprocess_exec(
+                "mcopy", "-i", part_image, *args,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                cwd=self.working_dir)
             (stdout, _) = await process.communicate()
             retcode = process.returncode
         except (OSError, subprocess.SubprocessError) as e:
@@ -1648,8 +1664,10 @@ class QemuVM(BaseNode):
 
     async def _export_config(self):
         disk_name = getattr(self, "config_disk_name")
-        if not disk_name or \
-           not os.path.exists(os.path.join(self.working_dir, disk_name)):
+        if not disk_name:
+            return
+        disk = os.path.join(self.working_dir, disk_name)
+        if not os.path.exists(disk):
             return
         config_dir = os.path.join(self.working_dir, "configs")
         zip_file = os.path.join(self.working_dir, "config.zip")
@@ -1658,7 +1676,7 @@ class QemuVM(BaseNode):
             os.mkdir(config_dir)
             if os.path.exists(zip_file):
                 os.remove(zip_file)
-            if await self._mcopy("-s", "-m", "-n", "--", "x:/", config_dir) == 0:
+            if await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir) == 0:
                 pack_zip(zip_file, config_dir)
         except OSError as e:
             log.error("Can't export config: {}".format(e))
@@ -1680,7 +1698,7 @@ class QemuVM(BaseNode):
             config_files = [os.path.join(config_dir, fname)
                             for fname in os.listdir(config_dir)]
             if config_files:
-                if await self._mcopy("-s", "-m", "-o", "--", *config_files, "x:/") != 0:
+                if await self._mcopy(disk, "-s", "-m", "-o", "--", *config_files, "::/") != 0:
                     os.remove(disk)
                     os.remove(zip_file)
         except OSError as e:
@@ -1795,15 +1813,6 @@ class QemuVM(BaseNode):
                         shutil.copyfile(disk_image, disk)
                     except OSError as e:
                         raise QemuError("Could not create '{}' disk image: {}".format(disk_name, e))
-                mtoolsrc = os.path.join(self.working_dir, "mtoolsrc")
-                if not os.path.exists(mtoolsrc):
-                    try:
-                        with open(mtoolsrc, 'w') as outfile:
-                            outfile.write('drive x:\n')
-                            outfile.write('  file="{}"\n'.format(disk))
-                            outfile.write('  partition=1\n')
-                    except OSError as e:
-                        raise QemuError("Could not create 'mtoolsrc': {}".format(e))
                 options.extend(self._disk_interface_options(disk, 3, interface, "raw"))
 
         return options
