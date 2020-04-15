@@ -64,7 +64,7 @@ class SnapshotHandler:
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         snapshots = [s for s in project.snapshots.values()]
-        response.json(sorted(snapshots, key=lambda s: s.created_at))
+        response.json(sorted(snapshots, key=lambda s: (s.created_at, s.name)))
 
     @Route.delete(
         r"/projects/{project_id}/snapshots/{snapshot_id}",
