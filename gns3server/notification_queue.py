@@ -17,8 +17,7 @@
 
 import asyncio
 import json
-
-from gns3server.utils.ping_stats import PingStats
+import psutil
 
 
 class NotificationQueue(asyncio.Queue):
@@ -38,13 +37,23 @@ class NotificationQueue(asyncio.Queue):
         # At first get we return a ping so the client immediately receives data
         if self._first:
             self._first = False
-            return ("ping", PingStats.get(), {})
+            return ("ping", self._getPing(), {})
 
         try:
             (action, msg, kwargs) = await asyncio.wait_for(super().get(), timeout)
         except asyncio.TimeoutError:
-            return ("ping", PingStats.get(), {})
+            return ("ping", self._getPing(), {})
         return (action, msg, kwargs)
+
+    def _getPing(self):
+        """
+        Return the content of the ping notification
+        """
+        msg = {}
+        # Non blocking call in order to get cpu usage. First call will return 0
+        msg["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
+        msg["memory_usage_percent"] = psutil.virtual_memory().percent
+        return msg
 
     async def get_json(self, timeout):
         """
