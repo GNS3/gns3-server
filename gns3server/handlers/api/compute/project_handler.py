@@ -25,6 +25,7 @@ import tempfile
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute import MODULES
+from gns3server.utils.cpu_percent import CpuPercent
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
@@ -208,7 +209,7 @@ class ProjectHandler:
         """
         stats = {}
         # Non blocking call in order to get cpu usage. First call will return 0
-        stats["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
+        stats["cpu_usage_percent"] = CpuPercent.get(interval=None)
         stats["memory_usage_percent"] = psutil.virtual_memory().percent
         return {"action": "ping", "event": stats}
 

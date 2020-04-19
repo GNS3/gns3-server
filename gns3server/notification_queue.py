@@ -19,6 +19,8 @@ import asyncio
 import json
 import psutil
 
+from gns3server.utils.cpu_percent import CpuPercent
+
 
 class NotificationQueue(asyncio.Queue):
     """
@@ -51,7 +53,7 @@ class NotificationQueue(asyncio.Queue):
         """
         msg = {}
         # Non blocking call in order to get cpu usage. First call will return 0
-        msg["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
+        msg["cpu_usage_percent"] = CpuPercent.get(interval=None)
         msg["memory_usage_percent"] = psutil.virtual_memory().percent
         return msg
 
