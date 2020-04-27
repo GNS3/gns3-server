@@ -23,6 +23,7 @@ from gns3server.config import Config
 from gns3server.schemas.version import VERSION_SCHEMA
 from gns3server.schemas.server_statistics import SERVER_STATISTICS_SCHEMA
 from gns3server.compute.port_manager import PortManager
+from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.version import __version__
 from aiohttp.web import HTTPConflict
 from psutil._common import bytes2human
@@ -57,7 +58,7 @@ class ServerHandler:
             swap_total = psutil.swap_memory().total
             swap_free = psutil.swap_memory().free
             swap_used = psutil.swap_memory().used
-            cpu_percent = int(psutil.cpu_percent())
+            cpu_percent = int(CpuPercent.get())
             load_average_percent = [int(x / psutil.cpu_count() * 100) for x in psutil.getloadavg()]
             memory_percent = int(psutil.virtual_memory().percent)
             swap_percent = int(psutil.swap_memory().percent)
