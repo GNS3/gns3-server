@@ -259,9 +259,8 @@ def run():
     port = int(server_config["port"])
 
     server = WebServer.instance(host, port)
-    status = 0
     try:
-        status = server.run()
+        server.run()
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
         if not sys.platform.startswith("win") and not e.winerror == 0:
