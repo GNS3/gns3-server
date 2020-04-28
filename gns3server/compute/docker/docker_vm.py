@@ -19,6 +19,7 @@
 Docker container instance.
 """
 
+import sys
 import asyncio
 import shutil
 import psutil
@@ -616,10 +617,11 @@ class DockerVM(BaseNode):
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         await wait_for_file_creation(x11_socket)
 
-        # Start vncconfig for tigervnc clipboard support, connection available only after socket creation.
-        tigervncconfig_path = shutil.which("vncconfig")
-        if tigervnc_path and tigervncconfig_path:
-	        self._vncconfig_process = await asyncio.create_subprocess_exec(tigervncconfig_path, "-display", ":{}".format(self._display), "-nowin")
+        if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+            # Start vncconfig for tigervnc clipboard support, connection available only after socket creation.
+            tigervncconfig_path = shutil.which("vncconfig")
+            if tigervnc_path and tigervncconfig_path:
+                self._vncconfig_process = await asyncio.create_subprocess_exec(tigervncconfig_path, "-display", ":{}".format(self._display), "-nowin")
 
         # sometimes the VNC process can crash
         monitor_process(self._vnc_process, self._vnc_callback)
