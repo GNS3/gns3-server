@@ -259,8 +259,9 @@ def run():
     port = int(server_config["port"])
 
     server = WebServer.instance(host, port)
+    status = 0
     try:
-        server.run()
+        status = server.run()
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
         if not sys.platform.startswith("win") and not e.winerror == 0:
@@ -269,10 +270,10 @@ def run():
         log.critical("Critical error while running the server: {}".format(e), exc_info=1)
         CrashReport.instance().capture_exception()
         return
-
-    if args.pid:
-        log.info("Remove PID file %s", args.pid)
-        try:
-            os.remove(args.pid)
-        except OSError as e:
-            log.critical("Can't remove pid file %s: %s", args.pid, str(e))
+    finally:
+        if args.pid:
+            log.info("Remove PID file %s", args.pid)
+            try:
+                os.remove(args.pid)
+            except OSError as e:
+                log.critical("Can't remove pid file %s: %s", args.pid, str(e))

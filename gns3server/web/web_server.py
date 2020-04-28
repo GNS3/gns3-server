@@ -296,7 +296,7 @@ class WebServer:
         self._handler = self._app.make_handler()
         if self._run_application(self._handler, ssl_context) is False:
             self._loop.stop()
-            return
+            sys.exit(1)
 
         self._signal_handling()
         self._exit_handling()
@@ -317,3 +317,4 @@ class WebServer:
                     self._loop.run_until_complete(self.shutdown_server())
                 except asyncio.CancelledError:
                     pass
+
