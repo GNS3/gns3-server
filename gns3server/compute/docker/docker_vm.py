@@ -86,6 +86,7 @@ class DockerVM(BaseNode):
         self._telnet_servers = []
         self._xvfb_process = None
         self._vnc_process = None
+        self._vncconfig_process = None
         self._console_resolution = console_resolution
         self._console_http_path = console_http_path
         self._console_http_port = console_http_port
@@ -615,6 +616,11 @@ class DockerVM(BaseNode):
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         await wait_for_file_creation(x11_socket)
 
+        # Start vncconfig for tigervnc clipboard support, connection available only after socket creation.
+        tigervncconfig_path = shutil.which("vncconfig")
+        if tigervnc_path and tigervncconfig_path:
+	        self._vncconfig_process = await asyncio.create_subprocess_exec(tigervncconfig_path, "-display", ":{}".format(self._display), "-nowin")
+
         # sometimes the VNC process can crash
         monitor_process(self._vnc_process, self._vnc_callback)
 
@@ -825,6 +831,12 @@ class DockerVM(BaseNode):
                 await self.stop()
 
             if self.console_type == "vnc":
+                if self._vncconfig_process:
+                    try:
+                        self._vncconfig_process.terminate()
+                        await self._vncconfig_process.wait()
+                    except ProcessLookupError:
+                        pass
                 if self._vnc_process:
                     try:
                         self._vnc_process.terminate()

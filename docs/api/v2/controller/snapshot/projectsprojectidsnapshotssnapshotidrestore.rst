@@ -10,7 +10,7 @@ Restore a snapshot from disk
 Parameters
 **********
 - **project_id**: Project UUID
-- **snapshot_id**: Snasphot UUID
+- **snapshot_id**: Snapshot UUID
 
 Response status codes
 **********************

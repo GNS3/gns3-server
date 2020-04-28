@@ -40,7 +40,7 @@ class SnapshotHandler:
         input=SNAPSHOT_CREATE_SCHEMA,
         output=SNAPSHOT_OBJECT_SCHEMA,
         status_codes={
-            201: "Snasphot created",
+            201: "Snapshot created",
             404: "The project doesn't exist"
         })
     async def create(request, response):
@@ -57,21 +57,21 @@ class SnapshotHandler:
             "project_id": "Project UUID",
         },
         status_codes={
-            200: "Snasphot list returned",
+            200: "Snapshot list returned",
             404: "The project doesn't exist"
         })
     def list(request, response):
         controller = Controller.instance()
         project = controller.get_project(request.match_info["project_id"])
         snapshots = [s for s in project.snapshots.values()]
-        response.json(sorted(snapshots, key=lambda s: s.created_at))
+        response.json(sorted(snapshots, key=lambda s: (s.created_at, s.name)))
 
     @Route.delete(
         r"/projects/{project_id}/snapshots/{snapshot_id}",
         description="Delete a snapshot from disk",
         parameters={
             "project_id": "Project UUID",
-            "snapshot_id": "Snasphot UUID"
+            "snapshot_id": "Snapshot UUID"
         },
         status_codes={
             204: "Changes have been written on disk",
@@ -89,7 +89,7 @@ class SnapshotHandler:
         description="Restore a snapshot from disk",
         parameters={
             "project_id": "Project UUID",
-            "snapshot_id": "Snasphot UUID"
+            "snapshot_id": "Snapshot UUID"
         },
         output=PROJECT_OBJECT_SCHEMA,
         status_codes={

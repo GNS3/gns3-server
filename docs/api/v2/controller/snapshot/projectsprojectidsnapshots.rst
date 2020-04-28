@@ -13,7 +13,7 @@ Parameters
 
 Response status codes
 **********************
-- **201**: Snasphot created
+- **201**: Snapshot created
 - **404**: The project doesn't exist
 
 Input
@@ -54,7 +54,7 @@ Parameters
 
 Response status codes
 **********************
-- **200**: Snasphot list returned
+- **200**: Snapshot list returned
 - **404**: The project doesn't exist
 
 Sample session
