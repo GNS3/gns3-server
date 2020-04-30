@@ -29,8 +29,8 @@ def get_static(filename):
     return os.path.join(os.path.abspath(os.path.join(current_dir, '..', '..', 'gns3server', 'static')), filename)
 
 
-def test_index(http_root):
-    response = http_root.get('/')
+def test_debug(http_root):
+    response = http_root.get('/debug')
     assert response.status == 200
     html = response.html
     assert "Website" in html
