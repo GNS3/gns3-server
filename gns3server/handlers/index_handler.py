@@ -31,7 +31,24 @@ class IndexHandler:
         r"/",
         description="Home page of the GNS3 server"
     )
-    def index(request, response):
+    async def index(request, response):
+
+        #FIXME: this could probably be handled in a better way
+        static = get_resource(os.path.join('static', 'web-ui', 'bundled'))
+
+        # guesstype prefers to have text/html type than application/javascript
+        # which results with warnings in Firefox 66 on Windows
+        # Ref. gns3-server#1559
+        _, ext = os.path.splitext(static)
+        mimetype = ext == '.js' and 'application/javascript' or None
+
+        await response.stream_file(static, status=200, set_content_type=mimetype)
+
+    @Route.get(
+        r"/debug",
+        description="Old index page"
+    )
+    def upload(request, response):
         response.template("index.html")
 
     @Route.get(
