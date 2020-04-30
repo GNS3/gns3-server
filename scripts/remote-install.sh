@@ -264,6 +264,7 @@ Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStartPre=/bin/mkdir -p /var/log/gns3 /var/run/gns3
 ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
 ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log
+ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=16384

@@ -80,7 +80,7 @@ class Controller:
         if name == "gns3vm":
             name = "Main server"
 
-        computes = await self._load_controller_settings()
+        computes = self._load_controller_settings()
         try:
             self._local_server = await self.add_compute(compute_id="local",
                                                         name=name,
@@ -118,7 +118,7 @@ class Controller:
 
     async def stop(self):
 
-        log.info("Controller is Stopping")
+        log.info("Controller is stopping")
         for project in self._projects.values():
             await project.close()
         for compute in self._computes.values():
@@ -131,6 +131,12 @@ class Controller:
         #self.save()
         self._computes = {}
         self._projects = {}
+
+    async def reload(self):
+
+        log.info("Controller is reloading")
+        self._load_controller_settings()
+        await self.load_projects()
 
     def check_can_write_config(self):
         """
@@ -182,7 +188,7 @@ class Controller:
         except OSError as e:
             log.error("Cannot write controller configuration file '{}': {}".format(self._config_file, e))
 
-    async def _load_controller_settings(self):
+    def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """

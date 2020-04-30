@@ -18,6 +18,9 @@
 import copy
 import uuid
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Appliance:
 
@@ -33,6 +36,9 @@ class Appliance:
         if "appliance_id" in self._data:
             del self._data["appliance_id"]
 
+        if self.status != 'broken':
+            log.debug('Appliance "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+
     @property
     def id(self):
         return self._id
@@ -44,6 +50,10 @@ class Appliance:
     @property
     def symbol(self):
         return self._data.get("symbol")
+
+    @property
+    def name(self):
+        return self._data.get("name")
 
     @symbol.setter
     def symbol(self, new_symbol):

@@ -88,6 +88,15 @@ class WebServer:
             return False
         return True
 
+
+    async def reload_server(self):
+        """
+        Reload the server.
+        """
+
+        await Controller.instance().reload()
+
+
     async def shutdown_server(self):
         """
         Cleanly shutdown the server.
@@ -141,9 +150,14 @@ class WebServer:
     def _signal_handling(self):
 
         def signal_handler(signame, *args):
-            log.warning("Server has got signal {}, exiting...".format(signame))
+
             try:
-                asyncio.ensure_future(self.shutdown_server())
+                if signame == "SIGHUP":
+                    log.info("Server has got signal {}, reloading...".format(signame))
+                    asyncio.ensure_future(self.reload_server())
+                else:
+                    log.warning("Server has got signal {}, exiting...".format(signame))
+                    asyncio.ensure_future(self.shutdown_server())
             except asyncio.CancelledError:
                 pass
 
@@ -265,9 +279,7 @@ class WebServer:
         # Background task started with the server
         self._app.on_startup.append(self._on_startup)
 
-        resource_options = aiohttp_cors.ResourceOptions(
-            expose_headers="*", allow_headers="*", max_age=0
-        )
+        resource_options = aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*", max_age=0)
 
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(self._app, defaults={

@@ -129,6 +129,8 @@ class Project:
 
         self._iou_id_lock = asyncio.Lock()
 
+        log.debug('Project "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+
     def emit_notification(self, action, event):
         """
         Emit a notification to all clients using this project.

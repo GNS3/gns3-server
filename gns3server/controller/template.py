@@ -147,6 +147,8 @@ class Template:
                 # special case for Dynamips to cover all platform types that contain specific settings
                 self.validate_and_apply_defaults(DYNAMIPS_PLATFORM_TO_SHEMA[self._settings["platform"]])
 
+        log.debug('Template "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+
     @property
     def id(self):
         return self._id

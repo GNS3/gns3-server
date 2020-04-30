@@ -240,9 +240,8 @@ def run():
     if sys.version_info < (3, 5, 3):
         raise SystemExit("Python 3.5.3 or higher is required")
 
-    user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
-                  major=sys.version_info[0], minor=sys.version_info[1],
-                  micro=sys.version_info[2], pid=os.getpid()))
+    user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0], minor=sys.version_info[1],
+                                                                                         micro=sys.version_info[2], pid=os.getpid()))
 
     # check for the correct locale (UNIX/Linux only)
     locale_check()
@@ -255,7 +254,6 @@ def run():
 
     CrashReport.instance()
     host = server_config["host"]
-
     port = int(server_config["port"])
 
     server = WebServer.instance(host, port)
