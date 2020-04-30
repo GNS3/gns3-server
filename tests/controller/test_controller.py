@@ -56,7 +56,7 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
-    assert len(async_run(controller._load_controller_settings())) == 1
+    assert len(controller._load_controller_settings()) == 1
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
@@ -67,7 +67,7 @@ def test_load_controller_settings_with_no_computes_section(controller, controlle
     del data['computes']
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
-    assert len(async_run(controller._load_controller_settings())) == 0
+    assert len(controller._load_controller_settings()) == 0
 
 
 def test_import_computes_1_x(controller, controller_config_path, async_run):
@@ -94,7 +94,7 @@ def test_import_computes_1_x(controller, controller_config_path, async_run):
     with open(os.path.join(config_dir, "gns3_gui.conf"), "w+") as f:
         json.dump(gns3_gui_conf, f)
 
-    async_run(controller._load_controller_settings())
+    controller._load_controller_settings()
     for compute in controller.computes.values():
         if compute.id != "local":
             assert len(compute.id) == 36

@@ -223,6 +223,7 @@ class WebServer:
         """
         Called when the HTTP server start
         """
+
         await Controller.instance().start()
         # Because with a large image collection
         # without md5sum already computed we start the
