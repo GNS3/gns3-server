@@ -28,11 +28,32 @@
     },
     "images": [
         {
+            "filename": "BIGIP-15.1.0.2-0.0.9.qcow2",
+            "version": "15.1.0.2",
+            "md5sum": "95ff618b7d0b53c4252299cd49b0e564",
+            "filesize": 5236588544,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v15.x/15.1.0/english/15.1.0.2_virtual-edition/&sw=BIG-IP&pro=big-ip_v15.x&ver=15.1.0&container=15.1.0.2_Virtual-Edition&file=BIGIP-15.1.0.2-0.0.9.ALL.qcow2.zip"
+        },
+        {
+            "filename": "BIGIP-15.0.1.3-0.0.4.qcow2",
+            "version": "15.0.1.3",
+            "md5sum": "9caf1fb3e373ab37b9d489c038ff1908",
+            "filesize": 5236588544,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v15.x/15.0.1/english/15.0.1.3_virtual-edition/&sw=BIG-IP&pro=big-ip_v15.x&ver=15.0.1&container=15.0.1.3_Virtual-Edition&file=BIGIP-15.0.1.3-0.0.4.ALL.qcow2.zip"
+        },
+        {
+            "filename": "BIGIP-15.0.0-0.0.39.qcow2",
+            "version": "15.0.0",
+            "md5sum": "978ede3addc717ff853e9d05dc0e9289",
+            "filesize": 5251923968,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v15.x/15.0.0/english/virtual-edition/&sw=BIG-IP&pro=big-ip_v15.x&ver=15.0.0&container=Virtual-Edition&file=BIGIP-15.0.0-0.0.39.ALL.qcow2.zip"
+        },
+        {
             "filename": "BIGIP-14.1.2.3-0.0.5.qcow2",
             "version": "14.1.2.3",
-            "md5sum": "356520eedb615c93e985474f2b2ec603",
-            "filesize": 5036834816,
-            "download_url": "https://downloads.f5.com"
+            "md5sum": "a16fbbd264605460cf254d0f0fb7faad",
+            "filesize": 5110169600,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v14.x/14.1.2/english/14.1.2.3_virtual-edition/&sw=BIG-IP&pro=big-ip_v14.x&ver=14.1.2&container=14.1.2.3_Virtual-Edition&file=BIGIP-14.1.2.3-0.0.5.ALL.qcow2.zip"
         },
         {
             "filename": "BIGIP-14.0.0.3-0.0.4.qcow2",
@@ -133,22 +154,36 @@
             "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v11.x/11.6.0/english/virtual-edition/&sw=BIG-IP&pro=big-ip_v11.x&ver=11.6.0&container=Virtual-Edition&file=BIGIP-11.6.0.0.0.401.ALL.qcow2.zip"
         },
         {
-            "filename": "BIGIP-11.3.0.39.0.qcow2",
-            "version": "11.3.0",
-            "md5sum": "f3dec4565484fe81233077ab2ce426ae",
-            "filesize": 1842020352,
-            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v11.x/11.3.0/english/virtual-edition-trial/&sw=BIG-IP&pro=big-ip_v11.x&ver=11.3.0&container=Virtual-Edition-Trial&file=BIGIP-11.3.0.39.0.qcow2.zip"
-        },
-        {
             "filename": "empty100G.qcow2",
             "version": "1.0",
             "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
             "filesize": 198656,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
     ],
     "versions": [
+        {
+            "name": "15.1.0.2",
+            "images": {
+                "hda_disk_image": "BIGIP-15.1.0.2-0.0.9.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "15.0.1.3",
+            "images": {
+                "hda_disk_image": "BIGIP-15.0.1.3-0.0.4.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "15.0.0",
+            "images": {
+                "hda_disk_image": "BIGIP-15.0.0-0.0.39.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "14.1.2.3",
             "images": {
@@ -251,13 +286,6 @@
             "name": "11.6.0",
             "images": {
                 "hda_disk_image": "BIGIP-11.6.0.0.0.401.qcow2",
-                "hdb_disk_image": "empty100G.qcow2"
-            }
-        },
-        {
-            "name": "11.3.0",
-            "images": {
-                "hda_disk_image": "BIGIP-11.3.0.39.0.qcow2",
                 "hdb_disk_image": "empty100G.qcow2"
             }
         }

@@ -77,21 +77,21 @@
             "version": "6.2.25",
             "md5sum": "3f54e62b6f7cedfb2607233e5e465766",
             "filesize": 1190723584,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "xrv9k-fullk9-x.qcow2-6.0.1",
             "version": "6.0.1",
             "md5sum": "e20d046807075046c35b6ce7d6766a7f",
             "filesize": 2109210624,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "xrv9k-fullk9-x.qcow2-6.0.0",
             "version": "6.0.0",
             "md5sum": "64c538c34252aaeb4ed1ddb93d6803fd",
             "filesize": 2572943360,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         }
     ],
     "versions": [

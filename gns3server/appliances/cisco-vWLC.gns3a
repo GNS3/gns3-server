@@ -68,7 +68,7 @@
             "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
             "filesize": 197120,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
         }
     ],
     "versions": [

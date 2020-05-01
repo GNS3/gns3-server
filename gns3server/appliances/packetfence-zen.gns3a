@@ -74,7 +74,7 @@
             "md5sum": "dfeb8a97bba2e475ce418b02327c0ea1",
             "filesize": 3221225472,
             "download_url": "https://packetfence.org/download.html#/zen",
-            "direct_download_url": "http://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.3.0/PacketFenceZEN_USB-7.3.0.tar.bz2/download",
+            "direct_download_url": "https://sourceforge.net/projects/packetfence/files/PacketFence%20ZEN/7.3.0/PacketFenceZEN_USB-7.3.0.tar.bz2/download",
             "compression": "bzip2"
         },
         {

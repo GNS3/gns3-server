@@ -22,6 +22,13 @@
         "kvm": "require"
     },
     "images": [
+            {
+            "filename": "csr1000v-universalk9.16.12.03-serial.qcow2",
+            "version": "16.12.3",
+            "md5sum": "1fc380569ad3cc145fb9cbc993b2eb32",
+            "filesize": 986775552,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.12.3"
+        },
         {
             "filename": "csr1000v-universalk9.16.12.01a-serial.qcow2",
             "version": "16.12.1a",
@@ -36,6 +43,13 @@
             "filesize": 950468608,
             "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.10.1b"
         },
+        {
+            "filename": "csr1000v-universalk9.16.09.05-serial.qcow2",
+            "version": "16.9.5",
+            "md5sum": "7a07a182178243c1c107e68f04ecd8b5",
+            "filesize": 920518656,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Fuji-16.9.5"
+        },        
         {
             "filename": "csr1000v-universalk9.16.09.01-serial.qcow2",
             "version": "16.9.1",
@@ -58,11 +72,18 @@
             "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Fuji-16.7.1"
         },
         {
+            "filename": "csr1000v-universalk9.16.06.07-serial.qcow2",
+            "version": "16.6.7",
+            "md5sum": "2aba82d78091b4603224a13710399447",
+            "filesize": 1573322752,
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.7"
+        },        
+        {
             "filename": "csr1000v-universalk9.16.06.06-serial.qcow2",
             "version": "16.6.6",
             "md5sum": "31bd32ef6b0d83a8ca19c7b566737a36",
             "filesize": 1573191680,
-            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.2"
+            "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.6"
         },
         {
             "filename": "csr1000v-universalk9.16.06.02-serial.qcow2",
@@ -90,21 +111,21 @@
             "version": "16.5.1b",
             "md5sum": "ac11d33041b8ff6dc3553e324d02cccb",
             "filesize": 1209543680,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "csr1000v-universalk9.03.17.00.S.156-1.S-ext.qcow2",
             "version": "3.17",
             "md5sum": "06cbfcd11f3557391db64fe2a6015a6e",
             "filesize": 1346305024,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "csr1000v-universalk9.16.3.1-build2.qcow2",
             "version": "16.3.1-build2",
             "md5sum": "a770e96de928265515304c9c9d6b46b9",
             "filesize": 1280835584,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "csr1000v-universalk9.16.03.01.qcow2",
@@ -118,7 +139,7 @@
             "version": "16.3.2",
             "md5sum": "2e5803d23cd52cba5d55fa8306be5f13",
             "filesize": 1167720448,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "csr1000v-universalk9.16.4.1.qcow2",
@@ -126,9 +147,22 @@
             "md5sum": "3428e0dcf5132a1b11ab7696d8c61b2e",
             "filesize": 1261961216,
             "download_url": "https://virl.mediuscorp.com/my-account/"
+        },
+        {
+            "filename": "csr1000v-universalk9.16.6.1.qcow2",
+            "version": "16.6.1-VIRL",
+            "md5sum": "996eb6dbf54781f6393bd689571a818c",
+            "filesize": 1316301824,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         }
     ],
     "versions": [
+        {
+            "name": "16.12.3",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.12.03-serial.qcow2"
+            }
+        },    
         {
             "name": "16.12.1a",
             "images": {
@@ -141,6 +175,12 @@
                 "hda_disk_image": "csr1000v-universalk9.16.10.01b-serial.qcow2"
             }
         },
+        {
+            "name": "16.9.5",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.09.05-serial.qcow2"
+            }
+        },        
         {
             "name": "16.9.1",
             "images": {
@@ -159,6 +199,12 @@
                 "hda_disk_image": "csr1000v-universalk9.16.07.01-serial.qcow2"
             }
         },
+        {
+            "name": "16.6.7",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.06.07-serial.qcow2"
+            }
+        },        
         {
             "name": "16.6.6",
             "images": {
@@ -217,6 +263,12 @@
             "name": "16.4.1",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.4.1.qcow2"
+            }
+        },
+        {
+            "name": "16.6.1-VIRL",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.16.6.1.qcow2"
             }
         }
     ]

@@ -28,14 +28,14 @@
             "version": "6.1.3",
             "md5sum": "1693b5d22a398587dd0fed2877d8dfac",
             "filesize": 428588544,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         },
         {
             "filename": "iosxrv-k9-demo-6.0.1.qcow2",
             "version": "6.0.1",
             "md5sum": "0831ecf43628eccb752ebb275de9a62a",
             "filesize": 908132352,
-            "download_url": "https://virl.mediuscorp.com/my-account/"
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
         }
     ],
     "versions": [

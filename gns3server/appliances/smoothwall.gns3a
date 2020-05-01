@@ -30,7 +30,7 @@
             "md5sum": "cfaf7f11901a164cd00c07518c7311ba",
             "filesize": 214206464,
             "download_url": "http://www.smoothwall.org/download/",
-            "direct_download_url": "http://sourceforge.net/projects/smoothwall/files/SmoothWall/3.1/Express-3.1-x86_64.iso/download"
+            "direct_download_url": "https://sourceforge.net/projects/smoothwall/files/SmoothWall/3.1/Express-3.1-x86_64.iso/download"
         },
         {
             "filename": "empty8G.qcow2",

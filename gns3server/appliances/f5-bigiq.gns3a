@@ -30,11 +30,18 @@
     },
     "images": [
         {
-            "filename": "BIG-IQ-7.0.0.0.0.1854.qcow2",
-            "version": "7.0.0.0",
-            "md5sum": "89ff128c4ba82c266a6cefa21c80029b",
-            "filesize": 4312006656,
-            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/7.0.0/english/v7.0.0/&sw=BIG-IQ&pro=big-iq_CM&ver=7.0.0&container=v7.0.0&file=BIG-IQ-7.0.0.0.0.1854.qcow2.zip"
+            "filename": "BIG-IQ-7.1.0.0.0.1511.qcow2",
+            "version": "7.1.0.0",
+            "md5sum": "8d93b06e6eec656584a73ad16be6efa3",
+            "filesize": 4567072768,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/7.1.0/english/v7.1.0/&sw=BIG-IQ&pro=big-iq_CM&ver=7.1.0&container=v7.1.0&file=BIG-IQ-7.1.0.0.0.1511.qcow2.zip"
+        },
+        {
+            "filename": "BIG-IQ-7.0.0.1.0.0.6.qcow2",
+            "version": "7.0.0.1",
+            "md5sum": "e86c851a1c43c8c0743f32742d97eba2",
+            "filesize": 4294246400,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/7.0.0/english/v7.0.0.1/&sw=BIG-IQ&pro=big-iq_CM&ver=7.0.0&container=v7.0.0.1&file=BIG-IQ-7.0.0.1.0.0.6.qcow2.zip"
         },
         {
             "filename": "BIG-IQ-6.0.1.1.0.0.9.qcow2",
@@ -49,13 +56,6 @@
             "md5sum": "e3e6389438ba1e1676f507658f767e95",
             "filesize": 3480748032,
             "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.4.0/english/virtual-edition_base-plus-hf2/&sw=BIG-IQ&pro=big-iq_CM&ver=5.4.0&container=Virtual-Edition_Base-Plus-HF2&file=BIG-IQ-5.4.0.2.24.7467.qcow2.zip"
-        },
-        {
-            "filename": "BIG-IQ-5.4.0.0.0.7437.qcow2",
-            "version": "5.4.0",
-            "md5sum": "068b1f4d21048b9b2a082c0c27ef4d53",
-            "filesize": 3300917248,
-            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-iq/big-iq_cm/5.4.0/english/v5.4.0/&sw=BIG-IQ&pro=big-iq_CM&ver=5.4.0&container=v5.4.0&file=BIG-IQ-5.4.0.0.0.7437.qcow2.zip"
         },
         {
             "filename": "BIG-IQ-5.3.0.0.0.1119.qcow2",
@@ -98,14 +98,21 @@
             "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
             "filesize": 198656,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
     ],
     "versions": [
         {
-            "name": "7.0.0.0",
+            "name": "7.1.0.0",
             "images": {
-                "hda_disk_image": "BIG-IQ-7.0.0.0.0.1854.qcow2",
+                "hda_disk_image": "BIG-IQ-7.1.0.0.0.1511.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "7.0.0.1",
+            "images": {
+                "hda_disk_image": "BIG-IQ-7.0.0.1.0.0.6.qcow2",
                 "hdb_disk_image": "empty100G.qcow2"
             }
         },
@@ -120,13 +127,6 @@
             "name": "5.4.0.2",
             "images": {
                 "hda_disk_image": "BIG-IQ-5.4.0.2.24.7467.qcow2",
-                "hdb_disk_image": "empty100G.qcow2"
-            }
-        },
-        {
-            "name": "5.4.0",
-            "images": {
-                "hda_disk_image": "BIG-IQ-5.4.0.0.0.7437.qcow2",
                 "hdb_disk_image": "empty100G.qcow2"
             }
         },

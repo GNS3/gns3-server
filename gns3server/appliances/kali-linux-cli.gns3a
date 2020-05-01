@@ -12,6 +12,6 @@
     "maintainer_email": "developers@gns3.net",
     "docker": {
         "adapters": 2,
-        "image": "gns3/kalilinux:v2"
+        "image": "gns3/kalilinux:latest"
     }
 }

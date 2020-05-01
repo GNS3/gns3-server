@@ -52,7 +52,7 @@
             "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
             "filesize": 198656,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
     ],
     "versions": [

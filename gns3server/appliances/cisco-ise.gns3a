@@ -89,7 +89,7 @@
             "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
             "filesize": 200192,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
-            "direct_download_url": "http://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
         }
     ],
     "versions": [
