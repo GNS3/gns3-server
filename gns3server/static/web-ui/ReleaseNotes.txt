@@ -1,6 +1,36 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: GNS3 Web UI 2020.2.0
+Current version: GNS3 Web UI 2020.2.0-beta.2
+
+What's New
+- Drag & drop to add new nodes on topology
+- Option to minimize/maximize and hide console widget
+- Ability to add IOS templates
+- Node names in HTTP console tabs
+- Default settings for templates
+- Support for adding IOS images
+- Node dialog updated
+- Messages with description in toasts
+- Adding interfaces to cloud nodes
+- Changes in notification box mechanism (once per day option)
+- Additional tooltips added
+- Copy/paste options in console (only Chrome full support)
+- More details for server failed connections
+
+Bug Fixes
+- Fix for console icons
+- Fix for creating ethernet switches and hubs
+- Fix for opening console from context menu
+- Qemu configurator now works properly
+- Fixes in snap to grid option
+- Symbols preview now works correctly
+- Error messages in preferences should be displayed
+- Default values for New Ethernet devices in configurator
+- Fix for wrong adapter types in Qemu
+- Fix for fit in view option on Firefox
+- Fix for navigation errors
+
+GNS3 Web UI 2020.2.0-beta.1
 
 What's New
 - Support for suspended status added
