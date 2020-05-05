@@ -87,7 +87,7 @@ def test_auto_start(async_run, controller, dummy_gns3vm, dummy_engine):
     assert dummy_engine.start.called
     assert controller.computes["vm"].name == "GNS3 VM (Test VM)"
     assert controller.computes["vm"].host == "vm.local"
-    assert controller.computes["vm"].port == 8442
+    assert controller.computes["vm"].port == 80
     assert controller.computes["vm"].protocol == "https"
     assert controller.computes["vm"].user == "hello"
     assert controller.computes["vm"].password == "world"
