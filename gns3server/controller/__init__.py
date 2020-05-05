@@ -205,7 +205,12 @@ class Controller:
 
         # load GNS3 VM settings
         if "gns3vm" in controller_settings:
-            self.gns3vm.settings = controller_settings["gns3vm"]
+            gns3_vm_settings = controller_settings["gns3vm"]
+            if "port" not in gns3_vm_settings:
+                # port setting was added in version 2.2.8
+                # the default port was 3080 before this
+                gns3_vm_settings["port"] = 3080
+            self.gns3vm.settings = gns3_vm_settings
 
         # load the IOU license settings
         if "iou_license" in controller_settings:

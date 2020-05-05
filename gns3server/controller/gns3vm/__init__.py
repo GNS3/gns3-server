@@ -39,7 +39,7 @@ class GNS3VM:
     Proxy between the controller and the GNS3 VM engine
     """
 
-    def __init__(self, controller, settings={}):
+    def __init__(self, controller):
         self._controller = controller
         # Keep instance of the loaded engines
         self._engines = {}
@@ -50,9 +50,9 @@ class GNS3VM:
             "enable": False,
             "engine": "vmware",
             "ram": 2048,
-            "vcpus": 1
+            "vcpus": 1,
+            "port": 80,
         }
-        self.settings = settings
 
     def engine_list(self):
         """
@@ -72,10 +72,11 @@ class GNS3VM:
         else:
             vmware_info["name"] = "VMware Workstation / Player (recommended)"
 
+        download_url = "https://github.com/GNS3/gns3-gui/releases/download/v{version}/GNS3.VM.Hyper-V.{version}.zip".format(version=__version__)
         hyperv_info = {
             "engine_id": "hyper-v",
             "name": "Hyper-V",
-            "description": 'Hyper-V support (Windows 10/Server 2016 and above). Nested virtualization must be supported and enabled (Intel processor only)',
+            "description": 'Hyper-V support (Windows 10/Server 2016 and above). Nested virtualization must be supported and enabled (Intel processor only)<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
             "support_when_exit": True,
             "support_headless": False,
             "support_ram": True
@@ -85,7 +86,7 @@ class GNS3VM:
         virtualbox_info = {
             "engine_id": "virtualbox",
             "name": "VirtualBox",
-            "description": 'VirtualBox doesn\'t support nested virtualization, this means Qemu based VMs will run extremely slowly.<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
+            "description": 'VirtualBox support. Nested virtualization for both Intel and AMD processors is supported since version 6.1<br>The GNS3 VM can be <a href="{}">downloaded here</a>'.format(download_url),
             "support_when_exit": True,
             "support_headless": True,
             "support_ram": True
@@ -278,9 +279,9 @@ class GNS3VM:
                 # User will receive the error later when they will try to use the node
                 try:
                     compute = await self._controller.add_compute(compute_id="vm",
-                                                                      name="GNS3 VM ({})".format(self.current_engine().vmname),
-                                                                      host=None,
-                                                                      force=True)
+                                                                 name="GNS3 VM ({})".format(self.current_engine().vmname),
+                                                                 host=None,
+                                                                 force=True)
                     compute.set_last_error(str(e))
 
                 except aiohttp.web.HTTPConflict:
@@ -313,6 +314,7 @@ class GNS3VM:
             engine.ram = self._settings["ram"]
             engine.vcpus = self._settings["vcpus"]
             engine.headless = self._settings["headless"]
+            engine.port = self._settings["port"]
             compute = await self._controller.add_compute(compute_id="vm",
                                                          name="GNS3 VM is starting ({})".format(engine.vmname),
                                                          host=None,
@@ -329,11 +331,11 @@ class GNS3VM:
                 raise e
             await compute.connect()  # we can connect now that the VM has started
             await compute.update(name="GNS3 VM ({})".format(engine.vmname),
-                                      protocol=self.protocol,
-                                      host=self.ip_address,
-                                      port=self.port,
-                                      user=self.user,
-                                      password=self.password)
+                                 protocol=self.protocol,
+                                 host=self.ip_address,
+                                 port=self.port,
+                                 user=self.user,
+                                 password=self.password)
 
             # check if the VM is in the same subnet as the local server, start 10 seconds later to give
             # some time for the compute in the VM to be ready for requests

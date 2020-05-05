@@ -285,13 +285,12 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             log.info("Removing GNS3VM NAT port forwarding rule from interface {}".format(nat_interface_number))
             await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number), "delete", "GNS3VM"])
 
-        # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to port 3080 in the VM
+        # add a GNS3VM NAT port forwarding rule to redirect 127.0.0.1 with random port to the port in the VM
         log.info("Adding GNS3VM NAT port forwarding rule with port {} to interface {}".format(api_port, nat_interface_number))
         await self._execute("controlvm", [self._vmname, "natpf{}".format(nat_interface_number),
-                                               "GNS3VM,tcp,{},{},,3080".format(ip_address, api_port)])
+                                               "GNS3VM,tcp,{},{},,{}".format(ip_address, api_port, self.port)])
 
         self.ip_address = await self._get_ip(hostonly_interface_number, api_port)
-        self.port = 3080
         log.info("GNS3 VM has been started with IP {}".format(self.ip_address))
         self.running = True
 

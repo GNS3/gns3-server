@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import psutil
 
 import logging
@@ -29,7 +28,7 @@ class BaseGNS3VM:
         self._controller = controller
         self._vmname = None
         self._ip_address = None
-        self._port = 3080
+        self._port = 80  # value not used, will be overwritten
         self._headless = False
         self._vcpus = 1
         self._ram = 1024

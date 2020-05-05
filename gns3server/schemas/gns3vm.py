@@ -48,6 +48,12 @@ GNS3VM_SETTINGS_SCHEMA = {
         "ram": {
             "description": "Amount of ram affected to the VM",
             "type": "integer"
+        },
+        "port": {
+            "description": "Server port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
         }
     },
     "additionalProperties": False
