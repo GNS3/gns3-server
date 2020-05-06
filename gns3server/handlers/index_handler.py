@@ -34,7 +34,8 @@ class IndexHandler:
     async def index(request, response):
 
         #FIXME: this could probably be handled in a better way
-        static = get_resource(os.path.join('static', 'web-ui', 'bundled'))
+        static = get_resource(os.path.join('static', 'web-ui', 'index.html'))
+        print(static)
 
         # guesstype prefers to have text/html type than application/javascript
         # which results with warnings in Firefox 66 on Windows
