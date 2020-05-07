@@ -1,5 +1,22 @@
 # Change Log
 
+## 2.2.8 07/05/2020
+
+* Release Web-Ui 2020.2.0-beta.3
+* Default port set to 80 for server running in the GNS3 VM. Fixes #1737
+* Make the Web UI the default page. Ref https://github.com/GNS3/gns3-server/issues/1737
+* Support controller reloading for templates, appliances and projects. Ref #1743
+* Return exit status 1 if server fails to start. Fixes #1744
+* Use Environmental Markers to force jsonschema version. Fixes https://github.com/GNS3/gns3-gui/issues/2849 Version 3.2.0 with Python >= 3.8 Version 2.6.0 with Python < 3.8
+* Use Environmental Markers to force jsonschema version 2.6.0 on Windows/macOS. Ref https://github.com/GNS3/gns3-gui/issues/2849
+* Implement a minimum interval between cpu_percent() calls. Fixes #1738
+* Add clipboard support for TigerVnc
+* Sort snapshots by (created_at, name)
+* Unprotected access for websocket consoles. Ref https://github.com/GNS3/gns3-gui/issues/2883#issuecomment-580677552
+* Support for WebSocket consoles
+* Return array for controller statistics endpoint
+* Server statistics implementation
+
 ## 2.2.7 07/04/2020
 
 * Release 2020.2.0-beta.1
