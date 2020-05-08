@@ -62,6 +62,7 @@ setup(
     zip_safe=False,
     platforms="any",
     python_requires='>=3.5.3',
+    setup_requires=["setuptools>=17.1"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
