@@ -31,7 +31,6 @@ import zipfile
 import asyncio
 import aiofiles
 from concurrent import futures
-from async_generator import async_generator, yield_
 
 from zipfile import (structCentralDir, structEndArchive64, structEndArchive, structEndArchive64Locator,
                      stringCentralDir, stringEndArchive64, stringEndArchive, stringEndArchive64Locator)
@@ -162,7 +161,6 @@ class ZipFile(zipfile.ZipFile):
         self._comment = comment
         self._didModify = True
 
-    @async_generator
     async def data_generator(self, path):
 
         async with aiofiles.open(path, "rb") as f:
@@ -170,7 +168,7 @@ class ZipFile(zipfile.ZipFile):
                 part = await f.read(self._chunksize)
                 if not part:
                     break
-                await yield_(part)
+                yield part
         return
 
     async def _run_in_executor(self, task, *args, **kwargs):
@@ -181,14 +179,13 @@ class ZipFile(zipfile.ZipFile):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(futures.ThreadPoolExecutor(max_workers=1), task, *args, **kwargs)
 
-    @async_generator
     async def _stream(self):
 
         for kwargs in self.paths_to_write:
             async for chunk in self._write(**kwargs):
-                await yield_(chunk)
+                yield chunk
         for chunk in self._close():
-            await yield_(chunk)
+            yield chunk
 
     def write(self, filename, arcname=None, compress_type=None):
         """
@@ -215,7 +212,6 @@ class ZipFile(zipfile.ZipFile):
             yield data
         return self.write_iter(arcname, _iterable(), compress_type=compress_type)
 
-    @async_generator
     async def _write(self, filename=None, iterable=None, arcname=None, compress_type=None):
         """
         Put the bytes from filename into the archive under the name `arcname`.
@@ -272,7 +268,7 @@ class ZipFile(zipfile.ZipFile):
             zinfo.CRC = 0
             self.filelist.append(zinfo)
             self.NameToInfo[zinfo.filename] = zinfo
-            await yield_(self.fp.write(zinfo.FileHeader(False)))
+            yield self.fp.write(zinfo.FileHeader(False))
             return
 
         cmpr = _get_compressor(zinfo.compress_type)
@@ -282,7 +278,7 @@ class ZipFile(zipfile.ZipFile):
         zinfo.compress_size = compress_size = 0
         # Compressed size can be larger than uncompressed size
         zip64 = self._allowZip64 and zinfo.file_size * 1.05 > zipfile.ZIP64_LIMIT
-        await yield_(self.fp.write(zinfo.FileHeader(zip64)))
+        yield self.fp.write(zinfo.FileHeader(zip64))
 
         file_size = 0
         if filename:
@@ -292,7 +288,7 @@ class ZipFile(zipfile.ZipFile):
                 if cmpr:
                     buf = await self._run_in_executor(cmpr.compress, buf)
                     compress_size = compress_size + len(buf)
-                await yield_(self.fp.write(buf))
+                yield self.fp.write(buf)
         else: # we have an iterable
             for buf in iterable:
                 file_size = file_size + len(buf)
@@ -300,12 +296,12 @@ class ZipFile(zipfile.ZipFile):
                 if cmpr:
                     buf = await self._run_in_executor(cmpr.compress, buf)
                     compress_size = compress_size + len(buf)
-                await yield_(self.fp.write(buf))
+                yield self.fp.write(buf)
 
         if cmpr:
             buf = cmpr.flush()
             compress_size = compress_size + len(buf)
-            await yield_(self.fp.write(buf))
+            yield self.fp.write(buf)
             zinfo.compress_size = compress_size
         else:
             zinfo.compress_size = file_size
@@ -317,7 +313,7 @@ class ZipFile(zipfile.ZipFile):
             if compress_size > zipfile.ZIP64_LIMIT:
                 raise RuntimeError('Compressed size larger than uncompressed size')
 
-        await yield_(self.fp.write(zinfo.DataDescriptor()))
+        yield self.fp.write(zinfo.DataDescriptor())
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
