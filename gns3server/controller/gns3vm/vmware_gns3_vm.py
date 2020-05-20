@@ -115,6 +115,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         """
         List all VMware VMs
         """
+
         try:
             return (await self._vmware_manager.list_vms())
         except VMwareError as e:

@@ -212,8 +212,11 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         List all VirtualBox VMs
         """
 
-        await self._check_requirements()
-        return await self._virtualbox_manager.list_vms()
+        try:
+            await self._check_requirements()
+            return await self._virtualbox_manager.list_vms()
+        except VirtualBoxError as e:
+            raise GNS3VMError("Could not list VirtualBox VMs: {}".format(str(e)))
 
     async def start(self):
         """
