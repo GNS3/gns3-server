@@ -179,7 +179,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         List all Hyper-V VMs
         """
 
-        if self._conn is None:
+        if self._conn is None or self._management is None:
             self._connect()
 
         vms = []
