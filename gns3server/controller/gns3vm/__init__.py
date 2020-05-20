@@ -250,6 +250,7 @@ class GNS3VM:
     def __json__(self):
         return self._settings
 
+    @locking
     async def list(self, engine):
         """
         List VMS for an engine
