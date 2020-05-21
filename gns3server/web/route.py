@@ -242,7 +242,7 @@ class Route(object):
                     log.error("Uncaught exception detected: {type}".format(type=type(e)), exc_info=1)
                     response = Response(request=request, route=route)
                     response.set_status(500)
-                    CrashReport.instance().capture_exception()
+                    CrashReport.instance().capture_exception(request)
                     exc_type, exc_value, exc_tb = sys.exc_info()
                     lines = traceback.format_exception(exc_type, exc_value, exc_tb)
                     if api_version is not None:

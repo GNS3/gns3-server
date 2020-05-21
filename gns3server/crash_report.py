@@ -17,7 +17,7 @@
 
 try:
     import sentry_sdk
-    from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
     SENTRY_SDK_AVAILABLE = True
 except ImportError:
     # Sentry SDK is not installed with deb package in order to simplify packaging
@@ -42,7 +42,8 @@ log = logging.getLogger(__name__)
 if __version_info__[3] != 0:
     import faulthandler
 
-    # Display a traceback in case of segfault crash. Usefull when frozen
+    # Display a traceback in case of segfault crash.
+    # Useful when this application is frozen.
     # Not enabled by default for security reason
     log.info("Enable catching segfault")
     try:
@@ -78,10 +79,13 @@ class CrashReport:
                 else:
                     log.error("The SSL certificate bundle file '{}' could not be found".format(cacert_resource))
 
+            # Don't send log records as events.
+            sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
+
             sentry_sdk.init(dsn=CrashReport.DSN,
                             release=__version__,
                             ca_certs=cacert,
-                            integrations=[AioHttpIntegration()])
+                            integrations=[sentry_logging])
 
             tags = {
                 "os:name": platform.system(),
@@ -128,20 +132,39 @@ class CrashReport:
                 for key, value in extra_context.items():
                     scope.set_extra(key, value)
 
-    def capture_exception(self):
+    def capture_exception(self, request):
+
         if not SENTRY_SDK_AVAILABLE:
             return
-        if os.path.exists(".git"):
+
+        if not hasattr(sys, "frozen") and os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
             log.warning(".git directory detected, crash reporting is turned off for developers.")
             return
+
         server_config = Config.instance().get_section_config("Server")
         if server_config.getboolean("report_errors"):
 
+            if not SENTRY_SDK_AVAILABLE:
+                log.warning("Cannot capture exception: Sentry SDK is not available")
+                return
+
+            if os.path.exists(".git"):
+                log.warning(".git directory detected, crash reporting is turned off for developers.")
+                return
+
             try:
-                sentry_sdk.capture_exception()
+                if request:
+                    # add specific extra request information
+                    with sentry_sdk.push_scope() as scope:
+                        scope.set_extra("method", request.method)
+                        scope.set_extra("url", request.path)
+                        scope.set_extra("json", request.json)
+                        sentry_sdk.capture_exception()
+                else:
+                    sentry_sdk.capture_exception()
                 log.info("Crash report sent with event ID: {}".format(sentry_sdk.last_event_id()))
             except Exception as e:
-                log.error("Can't send crash report to Sentry: {}".format(e))
+                log.warning("Can't send crash report to Sentry: {}".format(e))
 
     @classmethod
     def instance(cls):
