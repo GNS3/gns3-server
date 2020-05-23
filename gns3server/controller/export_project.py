@@ -193,9 +193,10 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
                 if "properties" in node and node["node_type"] != "docker":
                     for prop, value in node["properties"].items():
 
-                        # reset the MAC address
-                        if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
-                            node["properties"][prop] = None
+                        # reset the MAC address, limited to cloud nodes. 
+                        if node["node_type"] == "cloud":
+                            if reset_mac_addresses and prop in ("mac_addr", "mac_address"):
+                                node["properties"][prop] = None
 
                         if node["node_type"] == "iou":
                             if not prop == "path":
