@@ -119,7 +119,7 @@ def project_to_topology(project):
             compute = compute.__json__(topology_dump=True)
             if compute["compute_id"] not in ("vm", "local", ):
                 data["topology"]["computes"].append(compute)
-        else:
+        elif isinstance(compute, dict):
             data["topology"]["computes"].append(compute)
     _check_topology_schema(data)
     return data
