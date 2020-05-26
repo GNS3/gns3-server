@@ -437,6 +437,9 @@ class Project:
         """
         :return: List of computes used by the project
         """
+
+        if self._status == "closed":
+            return self._get_closed_data("computes", "compute_id").values()
         return self._project_created_on_compute
 
     def remove_allocated_node_name(self, name):

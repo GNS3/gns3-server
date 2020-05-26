@@ -99,19 +99,28 @@ def project_to_topology(project):
         "version": __version__
     }
 
-    computes = set()
     for node in project.nodes.values():
-        computes.add(node.compute)
-        data["topology"]["nodes"].append(node.__json__(topology_dump=True))
+        if hasattr(node, "__json__"):
+            data["topology"]["nodes"].append(node.__json__(topology_dump=True))
+        else:
+            data["topology"]["nodes"].append(node)
     for link in project.links.values():
-        data["topology"]["links"].append(link.__json__(topology_dump=True))
+        if hasattr(link, "__json__"):
+            data["topology"]["links"].append(link.__json__(topology_dump=True))
+        else:
+            data["topology"]["links"].append(link)
     for drawing in project.drawings.values():
-        data["topology"]["drawings"].append(drawing.__json__(topology_dump=True))
-    for compute in computes:
+        if hasattr(drawing, "__json__"):
+            data["topology"]["drawings"].append(drawing.__json__(topology_dump=True))
+        else:
+            data["topology"]["drawings"].append(drawing)
+    for compute in project.computes:
         if hasattr(compute, "__json__"):
             compute = compute.__json__(topology_dump=True)
             if compute["compute_id"] not in ("vm", "local", ):
                 data["topology"]["computes"].append(compute)
+        else:
+            data["topology"]["computes"].append(compute)
     _check_topology_schema(data)
     return data
 
