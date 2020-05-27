@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 SUPPLIER_OBJECT_SCHEMA = {
     "type": ["object", "null"],
     "description": "Supplier of the project",
@@ -119,6 +121,13 @@ PROJECT_CREATE_SCHEMA = {
     "additionalProperties": False,
     "required": ["name"]
 }
+
+# Create a project duplicate schema based on create schema and add "reset_mac_addresses" properties
+PROJECT_DUPLICATE_SCHEMA = copy.deepcopy(PROJECT_CREATE_SCHEMA)
+PROJECT_DUPLICATE_SCHEMA["description"] = "Request validation to duplicate a Project instance"
+PROJECT_DUPLICATE_SCHEMA["properties"].update({"reset_mac_addresses": {"type": "boolean",
+                                                                       "description": "Reset MAC addresses for this project"
+                                                                      }})
 
 PROJECT_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

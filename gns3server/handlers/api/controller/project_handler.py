@@ -35,7 +35,8 @@ from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
     PROJECT_UPDATE_SCHEMA,
     PROJECT_LOAD_SCHEMA,
-    PROJECT_CREATE_SCHEMA
+    PROJECT_CREATE_SCHEMA,
+    PROJECT_DUPLICATE_SCHEMA
 )
 
 import logging
@@ -313,6 +314,11 @@ class ProjectHandler:
             include_images = True
         else:
             include_images = False
+        if request.query.get("reset_mac_addresses", "no").lower() == "yes":
+            reset_mac_addresses = True
+        else:
+            reset_mac_addresses = False
+
         compression_query = request.query.get("compression", "zip").lower()
         if compression_query == "zip":
             compression = zipfile.ZIP_DEFLATED
@@ -327,7 +333,7 @@ class ProjectHandler:
             begin = time.time()
             with tempfile.TemporaryDirectory() as tmp_dir:
                 with aiozipstream.ZipFile(compression=compression) as zstream:
-                    await export_project(zstream, project, tmp_dir, include_snapshots=include_snapshots, include_images=include_images)
+                    await export_project(zstream, project, tmp_dir, include_snapshots=include_snapshots, include_images=include_images, reset_mac_addresses=reset_mac_addresses)
 
                     # We need to do that now because export could failed and raise an HTTP error
                     # that why response start need to be the later possible
@@ -398,7 +404,7 @@ class ProjectHandler:
         parameters={
             "project_id": "Project UUID",
         },
-        input=PROJECT_CREATE_SCHEMA,
+        input=PROJECT_DUPLICATE_SCHEMA,
         output=PROJECT_OBJECT_SCHEMA,
         status_codes={
             201: "Project duplicate",
@@ -419,7 +425,9 @@ class ProjectHandler:
         else:
             location = None
 
-        new_project = await project.duplicate(name=request.json.get("name"), location=location)
+        reset_mac_addresses = request.json.get("reset_mac_addresses", False)
+
+        new_project = await project.duplicate(name=request.json.get("name"), location=location, reset_mac_addresses=reset_mac_addresses)
 
         response.json(new_project)
         response.set_status(201)

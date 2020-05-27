@@ -999,7 +999,7 @@ class Project:
         while self._loading:
             await asyncio.sleep(0.5)
 
-    async def duplicate(self, name=None, location=None):
+    async def duplicate(self, name=None, location=None, reset_mac_addresses=True):
         """
         Duplicate a project
 
@@ -1009,6 +1009,7 @@ class Project:
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
         :param location: Parent directory of the new project
+        :param reset_mac_addresses: Reset MAC addresses for the new project
         """
         # If the project was not open we open it temporary
         previous_status = self._status
@@ -1022,7 +1023,7 @@ class Project:
             with tempfile.TemporaryDirectory() as tmpdir:
                 # Do not compress the exported project when duplicating
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
-                    await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=True)
+                    await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=reset_mac_addresses)
 
                     # export the project to a temporary location
                     project_path = os.path.join(tmpdir, "project.gns3p")
