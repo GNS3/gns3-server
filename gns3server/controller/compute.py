@@ -361,17 +361,17 @@ class Compute:
                 response = await self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
                 log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
-                # Try to reconnect after 2 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
+                # Try to reconnect after 5 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
-                    if self.id != "local" and not self._controller.compute_has_open_project(self):
-                        log.info("Not reconnecting to compute '{}' because there is no project opened on it".format(self._id))
+                    if self.id != "local" and self.id != "vm" and not self._controller.compute_has_open_project(self):
+                        log.warning("Not reconnecting to compute '{}' because there is no project opened on it".format(self._id))
                         return
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 10:
                         log.error("Could not connect to compute '{}' after multiple attempts: {}".format(self._id, e))
                         await self._controller.close_compute_projects(self)
-                    asyncio.get_event_loop().call_later(2, lambda: asyncio.ensure_future(self._try_reconnect()))
+                    asyncio.get_event_loop().call_later(5, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
                 raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
