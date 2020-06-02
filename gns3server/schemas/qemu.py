@@ -186,6 +186,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": ["boolean", "null"],
         },
+        "replicate_network_connection_state": {
+            "description": "Replicate the network connection state for links in Qemu",
+            "type": ["boolean", "null"],
+        },
         "on_close": {
             "description": "Action to execute on the VM is closed",
             "enum": ["power_off", "shutdown_signal", "save_vm_state"],
@@ -370,6 +374,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "legacy_networking": {
             "description": "Use QEMU legagy networking commands (-net syntax)",
+            "type": ["boolean", "null"],
+        },
+        "replicate_network_connection_state": {
+            "description": "Replicate the network connection state for links in Qemu",
             "type": ["boolean", "null"],
         },
         "on_close": {
@@ -571,6 +579,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Use QEMU legagy networking commands (-net syntax)",
             "type": "boolean",
         },
+        "replicate_network_connection_state": {
+            "description": "Replicate the network connection state for links in Qemu",
+            "type": "boolean",
+        },
         "on_close": {
             "description": "Action to execute on the VM is closed",
             "enum": ["power_off", "shutdown_signal", "save_vm_state"],
@@ -640,6 +652,7 @@ QEMU_OBJECT_SCHEMA = {
                  "kernel_image_md5sum",
                  "kernel_command_line",
                  "legacy_networking",
+                 "replicate_network_connection_state",
                  "on_close",
                  "cpu_throttling",
                  "process_priority",

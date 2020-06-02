@@ -117,6 +117,7 @@ class QemuVM(BaseNode):
         self._kernel_image = ""
         self._kernel_command_line = ""
         self._legacy_networking = False
+        self._replicate_network_connection_state = True
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
@@ -616,6 +617,30 @@ class QemuVM(BaseNode):
         self._legacy_networking = legacy_networking
 
     @property
+    def replicate_network_connection_state(self):
+        """
+        Returns whether the network connection state for links is replicated in QEMU.
+
+        :returns: boolean
+        """
+
+        return self._replicate_network_connection_state
+
+    @replicate_network_connection_state.setter
+    def replicate_network_connection_state(self, replicate_network_connection_state):
+        """
+        Sets whether the network connection state for links is replicated in QEMU
+
+        :param replicate_network_connection_state: boolean
+        """
+
+        if replicate_network_connection_state:
+            log.info('QEMU VM "{name}" [{id}] has enabled network connection state replication'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled network connection state replication'.format(name=self._name, id=self._id))
+        self._replicate_network_connection_state = replicate_network_connection_state
+
+    @property
     def on_close(self):
         """
         Returns the action to execute when the VM is stopped/closed
@@ -1004,12 +1029,12 @@ class QemuVM(BaseNode):
                     await self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                                self._local_udp_tunnels[adapter_number][1],
                                                                nio)
-                    if nio.suspend:
+                    if nio.suspend and self._replicate_network_connection_state:
                         set_link_commands.append("set_link gns3-{} off".format(adapter_number))
-                else:
+                elif self._replicate_network_connection_state:
                     set_link_commands.append("set_link gns3-{} off".format(adapter_number))
 
-            if "-loadvm" not in command_string:
+            if "-loadvm" not in command_string and self._replicate_network_connection_state:
                 # only set the link statuses if not restoring a previous VM state
                 await self._control_vm_commands(set_link_commands)
 
@@ -1293,7 +1318,8 @@ class QemuVM(BaseNode):
                 await self.add_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                            self._local_udp_tunnels[adapter_number][1],
                                                            nio)
-                await self._control_vm("set_link gns3-{} on".format(adapter_number))
+                if self._replicate_network_connection_state:
+                    await self._control_vm("set_link gns3-{} on".format(adapter_number))
             except (IndexError, KeyError):
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
@@ -1317,10 +1343,11 @@ class QemuVM(BaseNode):
                 await self.update_ubridge_udp_connection("QEMU-{}-{}".format(self._id, adapter_number),
                                                               self._local_udp_tunnels[adapter_number][1],
                                                               nio)
-                if nio.suspend:
-                    await self._control_vm("set_link gns3-{} off".format(adapter_number))
-                else:
-                    await self._control_vm("set_link gns3-{} on".format(adapter_number))
+                if self._replicate_network_connection_state:
+                    if nio.suspend:
+                        await self._control_vm("set_link gns3-{} off".format(adapter_number))
+                    else:
+                        await self._control_vm("set_link gns3-{} on".format(adapter_number))
             except IndexError:
                 raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
                                                                                                      adapter_number=adapter_number))
@@ -1342,7 +1369,8 @@ class QemuVM(BaseNode):
 
         await self.stop_capture(adapter_number)
         if self.is_running():
-            await self._control_vm("set_link gns3-{} off".format(adapter_number))
+            if self._replicate_network_connection_state:
+                await self._control_vm("set_link gns3-{} off".format(adapter_number))
             await self._ubridge_send("bridge delete {name}".format(name="QEMU-{}-{}".format(self._id, adapter_number)))
 
         nio = adapter.get_nio(0)

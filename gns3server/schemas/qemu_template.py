@@ -178,6 +178,11 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "boolean",
         "default": False
     },
+    "replicate_network_connection_state": {
+        "description": "Replicate the network connection state for links in Qemu",
+        "type": "boolean",
+        "default": True
+    },
     "on_close": {
         "description": "Action to execute on the VM is closed",
         "enum": ["power_off", "shutdown_signal", "save_vm_state"],
