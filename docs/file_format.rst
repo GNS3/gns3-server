@@ -58,7 +58,7 @@ The zip can be a ZIP64 if the project is too big for standard zip file.
 These files contain everything needed to create a new appliance template in GNS3.
 
 A JSON schema is available there:
-https://github.com/GNS3/gns3-registry/blob/master/schemas/appliance.json
+https://github.com/GNS3/gns3-registry/blob/master/schemas/appliance_v6.json
 
 And samples there:
 https://github.com/GNS3/gns3-registry/tree/master/appliances
