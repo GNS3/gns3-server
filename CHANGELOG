@@ -1,5 +1,21 @@
 # Change Log
 
+## 2.2.9 04/06/2020
+
+* Release Web-Ui version 2020.2.0-beta.4
+* Support to activate/deactive network connection state replication in Qemu.
+* Possible fix for problem connecting to the GNS3 VM. Ref https://github.com/GNS3/gns3-gui/issues/2969 #1760
+* Option to reset or not all MAC addresses when exporting or duplicating a project.
+* Fix bug when changing properties for closed project. Fixes #1754
+* Fix issues with crash reporting & bump version to 2.2.9dev2. Ref https://github.com/GNS3/gns3-server/issues/1758
+* Lock listing VMs. Ref #1755
+* Try to fix error when listing Hyper-V VMs. Ref #1755
+* Catch VirtualBox errors when listing VMs. Fixes #1759
+* Deprecate running with Python 3.5
+* aiocontextvars is only necessary for Python < 3.7
+* Replace Raven by Sentry SDK. Fixes https://github.com/GNS3/gns3-server/issues/1758
+* Require setuptools>=17.1 in setup.py. Ref https://github.com/GNS3/gns3-server/issues/1751 This is to support environmental markers. https://github.com/pypa/setuptools/blob/master/CHANGES.rst#171
+
 ## 2.2.8 07/05/2020
 
 * Release Web-Ui 2020.2.0-beta.3
