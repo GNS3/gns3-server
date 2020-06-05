@@ -26,7 +26,6 @@ from gns3server.compute.port_manager import PortManager
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.version import __version__
 from aiohttp.web import HTTPConflict
-from psutil._common import bytes2human
 
 
 class ServerHandler:
