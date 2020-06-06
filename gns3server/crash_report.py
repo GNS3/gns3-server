@@ -85,6 +85,7 @@ class CrashReport:
             sentry_sdk.init(dsn=CrashReport.DSN,
                             release=__version__,
                             ca_certs=cacert,
+                            default_integrations=False,
                             integrations=[sentry_logging])
 
             tags = {
