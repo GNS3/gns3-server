@@ -1540,11 +1540,14 @@ class QemuVM(BaseNode):
 
         if self._console:
             console_host = self._manager.port_manager.console_host
-            if console_host == "0.0.0.0" and socket.has_ipv6:
-                # to fix an issue with Qemu when IPv4 is not enabled
-                # see https://github.com/GNS3/gns3-gui/issues/2352
-                # FIXME: consider making this more global (not just for Qemu + SPICE)
-                console_host = "::"
+            if console_host == "0.0.0.0":
+                if socket.has_ipv6:
+                    # to fix an issue with Qemu when IPv4 is not enabled
+                    # see https://github.com/GNS3/gns3-gui/issues/2352
+                    # FIXME: consider making this more global (not just for Qemu + SPICE)
+                    console_host = "::"
+                else:
+                    raise QemuError("IPv6 must be enabled in order to use the SPICE console")
             return ["-spice",
                     "addr={},port={},disable-ticketing".format(console_host, self._console),
                     "-vga", "qxl"]
