@@ -615,7 +615,10 @@ class DockerVM(BaseNode):
             raise DockerError("Please install TigerVNC server (recommended) or Xvfb + x11vnc before using VNC support")
         await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
-        await wait_for_file_creation(x11_socket)
+        try:
+            await wait_for_file_creation(x11_socket)
+        except asyncio.TimeoutError:
+            raise DockerError('x11 socket file "{}" does not exist'.format(x11_socket))
 
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
             # Start vncconfig for tigervnc clipboard support, connection available only after socket creation.

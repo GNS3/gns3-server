@@ -126,7 +126,7 @@ def monitor_process(process, termination_callback):
     asyncio.ensure_future(_check_process(process, termination_callback))
 
 
-async def wait_for_file_creation(path, timeout=10):
+async def wait_for_file_creation(path, timeout=60):
 
     while timeout > 0:
         if os.path.exists(path):
