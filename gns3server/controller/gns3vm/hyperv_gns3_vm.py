@@ -57,9 +57,10 @@ class HyperVGNS3VM(BaseGNS3VM):
         if sys.getwindowsversion().platform_version[0] < 10:
             raise GNS3VMError("Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {} detected)".format(sys.getwindowsversion().platform_version[0]))
 
-        if sys.getwindowsversion().platform_version[0] == 10 and sys.getwindowsversion().platform_version[1] == 0:
-            if sys.getwindowsversion().platform_version[2] < 14393:
-                raise GNS3VMError("Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later")
+        is_windows_10 = sys.getwindowsversion().platform_version[0] == 10 and sys.getwindowsversion().platform_version[1] == 0
+
+        if is_windows_10 and sys.getwindowsversion().platform_version[2] < 14393:
+            raise GNS3VMError("Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later")
 
         try:
             import pythoncom
@@ -74,7 +75,11 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Hyper-V is not installed or activated")
 
         if conn.Win32_Processor()[0].Manufacturer != "GenuineIntel":
-            raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization")
+            if is_windows_10 and conn.Win32_Processor()[0].Manufacturer == "AuthenticAMD":
+                if sys.getwindowsversion().platform_version[2] < 19640:
+                    raise GNS3VMError("Windows 10 (build 10.0.19640) or later is required by Hyper-V to support nested virtualization with AMD processors")
+            else:
+                raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization on this version of Windows")
 
         # This is not reliable
         #if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
