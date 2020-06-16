@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,7 @@ import uuid
 import os
 import pytest
 from unittest.mock import patch
-from tests.utils import AsyncioMagicMock, asyncio_patch
-
+from tests.utils import asyncio_patch
 
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.dynamips import Dynamips
@@ -30,7 +29,8 @@ from gns3server.utils import force_unix_path
 
 
 @pytest.fixture(scope="function")
-def vpcs(port_manager):
+async def vpcs(loop, port_manager):
+
     VPCS._instance = None
     vpcs = VPCS.instance()
     vpcs.port_manager = port_manager
@@ -38,49 +38,53 @@ def vpcs(port_manager):
 
 
 @pytest.fixture(scope="function")
-def qemu(port_manager):
+async def qemu(loop, port_manager):
+
     Qemu._instance = None
     qemu = Qemu.instance()
     qemu.port_manager = port_manager
     return qemu
 
 
-def test_create_node_new_topology(loop, project, vpcs):
+async def test_create_node_new_topology(compute_project, vpcs):
+
     node_id = str(uuid.uuid4())
-    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id))
-    assert node in project.nodes
+    node = await vpcs.create_node("PC 1", compute_project.id, node_id)
+    assert node in compute_project.nodes
 
 
-def test_create_twice_same_node_new_topology(loop, project, vpcs):
-    project._nodes = set()
+async def test_create_twice_same_node_new_topology(compute_project, vpcs):
+
+    compute_project._nodes = set()
     node_id = str(uuid.uuid4())
-    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id, console=2222))
-    assert node in project.nodes
-    assert len(project.nodes) == 1
-    node = loop.run_until_complete(vpcs.create_node("PC 2", project.id, node_id, console=2222))
-    assert len(project.nodes) == 1
+    node = await vpcs.create_node("PC 1", compute_project.id, node_id, console=2222)
+    assert node in compute_project.nodes
+    assert len(compute_project.nodes) == 1
+    await vpcs.create_node("PC 2", compute_project.id, node_id, console=2222)
+    assert len(compute_project.nodes) == 1
 
 
-def test_create_node_new_topology_without_uuid(loop, project, vpcs):
-    node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, None))
-    assert node in project.nodes
+async def test_create_node_new_topology_without_uuid(compute_project, vpcs):
+
+    node = await vpcs.create_node("PC 1", compute_project.id, None)
+    assert node in compute_project.nodes
     assert len(node.id) == 36
 
 
-def test_create_node_old_topology(loop, project, tmpdir, vpcs):
+async def test_create_node_old_topology(compute_project, tmpdir, vpcs):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         # Create an old topology directory
         project_dir = str(tmpdir / "testold")
         node_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
-        project.path = project_dir
-        project.name = "testold"
+        compute_project.path = project_dir
+        compute_project.name = "testold"
         os.makedirs(node_dir, exist_ok=True)
         with open(os.path.join(node_dir, "startup.vpc"), "w+") as f:
             f.write("1")
 
         node_id = 1
-        node = loop.run_until_complete(vpcs.create_node("PC 1", project.id, node_id))
+        node = await vpcs.create_node("PC 1", compute_project.id, node_id)
         assert len(node.id) == 36
 
         assert os.path.exists(os.path.join(project_dir, "testold-files")) is False
@@ -91,6 +95,7 @@ def test_create_node_old_topology(loop, project, tmpdir, vpcs):
 
 
 def test_get_abs_image_path(qemu, tmpdir, config):
+
     os.makedirs(str(tmpdir / "QEMU"))
     path1 = force_unix_path(str(tmpdir / "test1.bin"))
     open(path1, 'w+').close()
@@ -107,6 +112,7 @@ def test_get_abs_image_path(qemu, tmpdir, config):
 
 
 def test_get_abs_image_path_non_local(qemu, tmpdir, config):
+
     path1 = tmpdir / "images" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -128,6 +134,7 @@ def test_get_abs_image_path_non_local(qemu, tmpdir, config):
 
 
 def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
+
     path1 = tmpdir / "images1" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -151,6 +158,7 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
 
 
 def test_get_abs_image_recursive(qemu, tmpdir, config):
+
     path1 = tmpdir / "images1" / "QEMU" / "demo" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -169,6 +177,7 @@ def test_get_abs_image_recursive(qemu, tmpdir, config):
 
 
 def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
+
     path1 = tmpdir / "images1" / "QEMU" / "demo" / "test.ova" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -187,6 +196,7 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
 
 
 def test_get_relative_image_path(qemu, tmpdir, config):
+
     os.makedirs(str(tmpdir / "images1" / "QEMU"))
     os.makedirs(str(tmpdir / "images1" / "VBOX"))
     path1 = force_unix_path(str(tmpdir / "images1" / "test1.bin"))
@@ -221,7 +231,7 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     assert qemu.get_relative_image_path(path5) == path5
 
 
-def test_list_images(loop, qemu, tmpdir):
+async def test_list_images(qemu, tmpdir):
 
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
     tmp_images_dir = os.path.join(tmpdir, "images")
@@ -231,13 +241,13 @@ def test_list_images(loop, qemu, tmpdir):
             f.write("1")
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
-        assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
+        assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 
-def test_list_images_recursives(loop, qemu, tmpdir):
+async def test_list_images_recursives(qemu, tmpdir):
 
     tmp_images_dir = os.path.join(tmpdir, "images")
     os.makedirs(tmp_images_dir, exist_ok=True)
@@ -253,52 +263,57 @@ def test_list_images_recursives(loop, qemu, tmpdir):
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmp_images_dir)):
 
-        assert sorted(loop.run_until_complete(qemu.list_images()), key=lambda k: k['filename']) == [
+        assert sorted(await qemu.list_images(), key=lambda k: k['filename']) == [
             {"filename": "a.qcow2", "path": "a.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "b.qcow2", "path": "b.qcow2", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1},
             {"filename": "c.qcow2", "path": force_unix_path(os.path.sep.join(["c", "c.qcow2"])), "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}
         ]
 
 
-def test_list_images_empty(loop, qemu, tmpdir):
+async def test_list_images_empty(qemu, tmpdir):
+
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
-        assert loop.run_until_complete(qemu.list_images()) == []
+        assert await qemu.list_images() == []
 
 
-def test_list_images_directory_not_exist(loop, qemu):
+async def test_list_images_directory_not_exist(qemu):
+
     with patch("gns3server.compute.Qemu.get_images_directory", return_value="/bla"):
-        assert loop.run_until_complete(qemu.list_images()) == []
+        assert await qemu.list_images() == []
 
 
-def test_delete_node(async_run, vpcs, project):
-    project._nodes = set()
+async def test_delete_node(vpcs, compute_project):
+
+    compute_project._nodes = set()
     node_id = str(uuid.uuid4())
-    node = async_run(vpcs.create_node("PC 1", project.id, node_id, console=2222))
-    assert node in project.nodes
+    node = await vpcs.create_node("PC 1", compute_project.id, node_id, console=2222)
+    assert node in compute_project.nodes
     with patch("gns3server.compute.project.Project.emit") as mock_emit:
-        async_run(vpcs.delete_node(node_id))
+        await vpcs.delete_node(node_id)
         mock_emit.assert_called_with("node.deleted", node)
-    assert node not in project.nodes
+    assert node not in compute_project.nodes
 
 
-def test_duplicate_vpcs(async_run, vpcs, project):
+async def test_duplicate_vpcs(vpcs, compute_project):
+
     source_node_id = str(uuid.uuid4())
-    source_node = async_run(vpcs.create_node("PC-1", project.id, source_node_id, console=2222))
+    source_node = await vpcs.create_node("PC-1", compute_project.id, source_node_id, console=2222)
     with open(os.path.join(source_node.working_dir, "startup.vpc"), "w+") as f:
         f.write("set pcname PC-1\nip dhcp\n")
     destination_node_id = str(uuid.uuid4())
-    destination_node = async_run(vpcs.create_node("PC-2", project.id, destination_node_id, console=2223))
-    async_run(vpcs.duplicate_node(source_node_id, destination_node_id))
+    destination_node = await vpcs.create_node("PC-2", compute_project.id, destination_node_id, console=2223)
+    await vpcs.duplicate_node(source_node_id, destination_node_id)
     with open(os.path.join(destination_node.working_dir, "startup.vpc")) as f:
         startup = f.read().strip()
         assert startup == "set pcname PC-2\nip dhcp\n".strip()
 
 
-def test_duplicate_ethernet_switch(async_run, project):
+async def test_duplicate_ethernet_switch(compute_project):
+
     with asyncio_patch('gns3server.compute.dynamips.nodes.ethernet_switch.EthernetSwitch.create'):
         dynamips_manager = Dynamips.instance()
         source_node_id = str(uuid.uuid4())
-        source_node = async_run(dynamips_manager.create_node("SW-1", project.id, source_node_id, node_type='ethernet_switch'))
+        await dynamips_manager.create_node("SW-1", compute_project.id, source_node_id, node_type='ethernet_switch')
         destination_node_id = str(uuid.uuid4())
-        destination_node = async_run(dynamips_manager.create_node("SW-2", project.id, destination_node_id, node_type='ethernet_switch'))
-        async_run(dynamips_manager.duplicate_node(source_node_id, destination_node_id))
+        await dynamips_manager.create_node("SW-2", compute_project.id, destination_node_id, node_type='ethernet_switch')
+        await dynamips_manager.duplicate_node(source_node_id, destination_node_id)

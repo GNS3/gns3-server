@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,23 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import asyncio
 import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock
 
-from gns3server.controller.project import Project
 from gns3server.controller.udp_link import UDPLink
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.node import Node
 
 
-@pytest.fixture
-def project(controller):
-    return Project(controller=controller, name="Test")
+async def test_create(project):
 
-
-def test_create(async_run, project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
@@ -50,8 +44,8 @@ def test_create(async_run, project):
     compute1.get_ip_on_same_subnet.side_effect = subnet_callback
 
     link = UDPLink(project)
-    async_run(link.add_node(node1, 0, 4))
-    async_run(link.update_filters({"latency": [10]}))
+    await link.add_node(node1, 0, 4)
+    await link.update_filters({"latency": [10]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -75,7 +69,7 @@ def test_create(async_run, project):
     compute1.host = "example.com"
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
-    async_run(link.add_node(node2, 3, 1))
+    await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
@@ -85,6 +79,7 @@ def test_create(async_run, project):
         "filters": {"latency": [10]},
         "suspend": False,
     }, timeout=120)
+
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
@@ -95,7 +90,8 @@ def test_create(async_run, project):
     }, timeout=120)
 
 
-def test_create_one_side_failure(async_run, project):
+async def test_create_one_side_failure(project):
+
     compute1 = MagicMock()
     compute2 = MagicMock()
 
@@ -113,7 +109,7 @@ def test_create_one_side_failure(async_run, project):
     compute1.get_ip_on_same_subnet.side_effect = subnet_callback
 
     link = UDPLink(project)
-    async_run(link.add_node(node1, 0, 4))
+    await link.add_node(node1, 0, 4)
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -140,7 +136,7 @@ def test_create_one_side_failure(async_run, project):
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
     with pytest.raises(aiohttp.web.HTTPConflict):
-        async_run(link.add_node(node2, 3, 1))
+        await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
@@ -150,6 +146,7 @@ def test_create_one_side_failure(async_run, project):
         "filters": {},
         "suspend": False,
     }, timeout=120)
+
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
@@ -162,7 +159,8 @@ def test_create_one_side_failure(async_run, project):
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
 
 
-def test_delete(async_run, project):
+async def test_delete(project):
+
     compute1 = MagicMock()
     compute2 = MagicMock()
 
@@ -173,19 +171,20 @@ def test_delete(async_run, project):
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
-    async_run(link.add_node(node1, 0, 4))
-    async_run(link.add_node(node2, 3, 1))
+    await link.add_node(node1, 0, 4)
+    await link.add_node(node2, 3, 1)
 
-    async_run(link.delete())
+    await link.delete()
 
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
     compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120)
 
 
-def test_choose_capture_side(async_run, project):
+async def test_choose_capture_side(project):
     """
     The link capture should run on the optimal node
     """
+
     compute1 = MagicMock()
     compute2 = MagicMock()
     compute2.id = "local"
@@ -200,8 +199,8 @@ def test_choose_capture_side(async_run, project):
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_vpcs, 0, 4))
-    async_run(link.add_node(node_iou, 3, 1))
+    await link.add_node(node_vpcs, 0, 4)
+    await link.add_node(node_iou, 3, 1)
 
     assert link._choose_capture_side()["node"] == node_iou
 
@@ -215,8 +214,8 @@ def test_choose_capture_side(async_run, project):
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_iou, 0, 4))
-    async_run(link.add_node(node_switch, 3, 1))
+    await link.add_node(node_iou, 0, 4)
+    await link.add_node(node_switch, 3, 1)
 
     assert link._choose_capture_side()["node"] == node_switch
 
@@ -228,8 +227,8 @@ def test_choose_capture_side(async_run, project):
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_vpcs, 0, 4))
-    async_run(link.add_node(node_iou, 3, 1))
+    await link.add_node(node_vpcs, 0, 4)
+    await link.add_node(node_iou, 3, 1)
 
     with pytest.raises(aiohttp.web.HTTPConflict):
         link._choose_capture_side()
@@ -238,7 +237,7 @@ def test_choose_capture_side(async_run, project):
     assert link._choose_capture_side()["node"] == node_vpcs
 
 
-def test_capture(async_run, project):
+async def test_capture(project):
     compute1 = MagicMock()
 
     node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
@@ -249,10 +248,10 @@ def test_capture(async_run, project):
 
     link = UDPLink(project)
     link.create = AsyncioMagicMock()
-    async_run(link.add_node(node_vpcs, 0, 4))
-    async_run(link.add_node(node_iou, 3, 1))
+    await link.add_node(node_vpcs, 0, 4)
+    await link.add_node(node_iou, 3, 1)
 
-    capture = async_run(link.start_capture())
+    await link.start_capture()
     assert link.capturing
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/start_capture".format(project.id, node_vpcs.id), data={
@@ -260,16 +259,17 @@ def test_capture(async_run, project):
         "data_link_type": "DLT_EN10MB"
     })
 
-    capture = async_run(link.stop_capture())
+    await link.stop_capture()
     assert link.capturing is False
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/stop_capture".format(project.id, node_vpcs.id))
 
 
-def test_node_updated(project, async_run):
+async def test_node_updated(project):
     """
     If a node stop when capturing we stop the capture
     """
+
     compute1 = MagicMock()
     node_vpcs = Node(project, compute1, "V1", node_type="vpcs")
     node_vpcs._status = "started"
@@ -278,15 +278,16 @@ def test_node_updated(project, async_run):
     link._capture_node = {"node": node_vpcs}
     link.stop_capture = AsyncioMagicMock()
 
-    async_run(link.node_updated(node_vpcs))
+    await link.node_updated(node_vpcs)
     assert not link.stop_capture.called
 
     node_vpcs._status = "stopped"
-    async_run(link.node_updated(node_vpcs))
+    await link.node_updated(node_vpcs)
     assert link.stop_capture.called
 
 
-def test_update(async_run, project):
+async def test_update(project):
+
     compute1 = MagicMock()
     compute2 = MagicMock()
 
@@ -304,8 +305,8 @@ def test_update(async_run, project):
     compute1.get_ip_on_same_subnet.side_effect = subnet_callback
 
     link = UDPLink(project)
-    async_run(link.add_node(node1, 0, 4))
-    async_run(link.update_filters({"latency": [10]}))
+    await link.add_node(node1, 0, 4)
+    await link.update_filters({"latency": [10]})
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -329,7 +330,7 @@ def test_update(async_run, project):
     compute1.host = "example.com"
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
-    async_run(link.add_node(node2, 3, 1))
+    await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
@@ -339,6 +340,7 @@ def test_update(async_run, project):
         "suspend": False,
         "filters": {"latency": [10]}
     }, timeout=120)
+
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",
@@ -349,7 +351,7 @@ def test_update(async_run, project):
     }, timeout=120)
 
     assert link.created
-    async_run(link.update_filters({"drop": [5], "bpf": ["icmp[icmptype] == 8"]}))
+    await link.update_filters({"drop": [5], "bpf": ["icmp[icmptype] == 8"]})
     compute1.put.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
         "rhost": "192.168.1.2",
@@ -363,7 +365,7 @@ def test_update(async_run, project):
     }, timeout=120)
 
 
-def test_update_suspend(async_run, project):
+async def test_update_suspend(project):
     compute1 = MagicMock()
     compute2 = MagicMock()
 
@@ -381,9 +383,9 @@ def test_update_suspend(async_run, project):
     compute1.get_ip_on_same_subnet.side_effect = subnet_callback
 
     link = UDPLink(project)
-    async_run(link.add_node(node1, 0, 4))
-    async_run(link.update_filters({"latency": [10]}))
-    async_run(link.update_suspend(True))
+    await link.add_node(node1, 0, 4)
+    await link.update_filters({"latency": [10]})
+    await link.update_suspend(True)
 
     async def compute1_callback(path, data={}, **kwargs):
         """
@@ -407,7 +409,7 @@ def test_update_suspend(async_run, project):
     compute1.host = "example.com"
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
-    async_run(link.add_node(node2, 3, 1))
+    await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
         "lport": 1024,
@@ -417,6 +419,7 @@ def test_update_suspend(async_run, project):
         "filters": {"frequency_drop": [-1]},
         "suspend": True
     }, timeout=120)
+
     compute2.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), data={
         "lport": 2048,
         "rhost": "192.168.1.1",

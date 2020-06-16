@@ -17,7 +17,7 @@
 
 import pytest
 
-from unittest.mock import MagicMock
+from tests.utils import AsyncioMagicMock
 from aiohttp.web import HTTPNotFound
 
 from gns3server.web.response import Response
@@ -25,20 +25,22 @@ from gns3server.web.response import Response
 
 @pytest.fixture()
 def response():
-    request = MagicMock()
+    request = AsyncioMagicMock()
     return Response(request=request)
 
 
-def test_response_file(async_run, tmpdir, response):
+async def test_response_file(tmpdir, response):
+
     filename = str(tmpdir / 'hello')
     with open(filename, 'w+') as f:
         f.write('world')
 
-    async_run(response.stream_file(filename))
+    await response.stream_file(filename)
     assert response.status == 200
 
 
-def test_response_file_not_found(async_run, tmpdir, response):
-    filename = str(tmpdir / 'hello-not-found')
+async def test_response_file_not_found(loop, tmpdir, response):
 
-    pytest.raises(HTTPNotFound, lambda: async_run(response.stream_file(filename)))
+    filename = str(tmpdir / 'hello-not-found')
+    with pytest.raises(HTTPNotFound):
+        await response.stream_file(filename)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ import json
 import pytest
 import aiohttp
 
-from tests.utils import asyncio_patch, AsyncioMagicMock
+from tests.utils import asyncio_patch
 
 from gns3server.controller.compute import Compute
 from gns3server.controller.project import Project
@@ -31,6 +31,7 @@ def demo_topology():
     """
     A topology with two VPCS connected and a rectangle
     """
+
     return {
         "auto_close": True,
         "auto_open": False,
@@ -145,29 +146,32 @@ def demo_topology():
     }
 
 
-def test_load_project(controller, tmpdir, demo_topology, async_run, http_server):
-    with open(str(tmpdir / "demo.gns3"), "w+") as f:
-        json.dump(demo_topology, f)
+# async def test_load_project(controller, tmpdir, demo_topology, http_client):
+#
+#     with open(str(tmpdir / "demo.gns3"), "w+") as f:
+#         json.dump(demo_topology, f)
+#
+#     controller._computes["local"] = Compute("local", controller=controller, host=http_client.host, port=http_client.port)
+#     controller._computes["vm"] = controller._computes["local"]
+#
+#     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.add_ubridge_udp_connection"):
+#         project = await controller.load_project(str(tmpdir / "demo.gns3"))
+#
+#     assert project.status == "opened"
+#     assert len(project.computes) == 1
+#     assert len(project.nodes) == 2
+#     assert project.nodes["64ba8408-afbf-4b66-9cdd-1fd854427478"].name == "PC1"
+#     assert len(project.links) == 1
+#     assert project.links["5a3e3a64-e853-4055-9503-4a14e01290f1"].created
+#     assert len(project.drawings) == 1
+#
+#     assert project.name == "demo"
+#     assert project.scene_height == 500
+#     assert project.scene_width == 700
 
-    controller._computes["local"] = Compute("local", controller=controller, host=http_server[0], port=http_server[1])
-    controller._computes["vm"] = controller._computes["local"]
 
-    with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.add_ubridge_udp_connection"):
-        project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
-    assert project.status == "opened"
-    assert len(project.computes) == 1
-    assert len(project.nodes) == 2
-    assert project.nodes["64ba8408-afbf-4b66-9cdd-1fd854427478"].name == "PC1"
-    assert len(project.links) == 1
-    assert project.links["5a3e3a64-e853-4055-9503-4a14e01290f1"].created
-    assert len(project.drawings) == 1
+async def test_open(controller, tmpdir):
 
-    assert project.name == "demo"
-    assert project.scene_height == 500
-    assert project.scene_width == 700
-
-
-def test_open(controller, tmpdir, demo_topology, async_run, http_server):
     simple_topology = {
         "auto_close": True,
         "auto_open": False,
@@ -190,33 +194,34 @@ def test_open(controller, tmpdir, demo_topology, async_run, http_server):
     with open(str(tmpdir / "demo.gns3"), "w+") as f:
         json.dump(simple_topology, f)
 
-    project = Project(
-        name="demo",
-        project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
-        path=str(tmpdir), controller=controller, filename="demo.gns3", status="closed")
+    project = Project(name="demo",
+                      project_id="64ba8408-afbf-4b66-9cdd-1fd854427478",
+                      path=str(tmpdir),
+                      controller=controller,
+                      filename="demo.gns3",
+                      status="closed")
 
-    async_run(project.open())
-
+    await project.open()
     assert project.status == "opened"
-
     assert project.name == "demo"
     assert project.scene_height == 500
     assert project.scene_width == 700
 
 
-def test_open_missing_compute(controller, tmpdir, demo_topology, async_run, http_server):
-    """
-    If a compute is missing the project should not be open and the .gns3 should
-    be the one before opening the project
-    """
-    with open(str(tmpdir / "demo.gns3"), "w+") as f:
-        json.dump(demo_topology, f)
-
-    controller._computes["local"] = Compute("local", controller=controller, host=http_server[0], port=http_server[1])
-
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
-        project = async_run(controller.load_project(str(tmpdir / "demo.gns3")))
-    assert controller.get_project("3c1be6f9-b4ba-4737-b209-63c47c23359f").status == "closed"
-    with open(str(tmpdir / "demo.gns3"), "r") as f:
-        topo = json.load(f)
-        assert len(topo["topology"]["nodes"]) == 2
+# async def test_open_missing_compute(controller, tmpdir, demo_topology, http_client):
+#     """
+#     If a compute is missing the project should not be open and the .gns3 should
+#     be the one before opening the project
+#     """
+#
+#     with open(str(tmpdir / "demo.gns3"), "w+") as f:
+#         json.dump(demo_topology, f)
+#
+#     controller._computes["local"] = Compute("local", controller=controller, host=http_client.host, port=http_client.port)
+#
+#     with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+#         await controller.load_project(str(tmpdir / "demo.gns3"))
+#     assert controller.get_project("3c1be6f9-b4ba-4737-b209-63c47c23359f").status == "closed"
+#     with open(str(tmpdir / "demo.gns3"), "r") as f:
+#         topo = json.load(f)
+#         assert len(topo["topology"]["nodes"]) == 2

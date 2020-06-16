@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,27 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /version endpoint
-It's also used for unittest the HTTP implementation.
-"""
+
 import sys
 import pytest
-
-from gns3server.config import Config
 
 from gns3server.version import __version__
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-def test_get(http_compute, windows_platform):
-    response = http_compute.get('/capabilities', example=True)
+async def test_get(compute_api, windows_platform):
+
+    response = await compute_api.get('/capabilities')
     assert response.status == 200
     assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'], 'version': __version__, 'platform': sys.platform}
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-def test_get_on_gns3vm(http_compute, on_gns3vm):
-    response = http_compute.get('/capabilities', example=True)
+async def test_get_on_gns3vm(compute_api, on_gns3vm):
+
+    response = await compute_api.get('/capabilities')
     assert response.status == 200
     assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'], 'version': __version__, 'platform': sys.platform}

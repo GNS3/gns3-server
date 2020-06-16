@@ -21,7 +21,6 @@ import uuid
 from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.node import Node
-from gns3server.controller.project import Project
 from gns3server.controller.ports.ethernet_port import EthernetPort
 
 
@@ -30,12 +29,6 @@ def compute():
     s = AsyncioMagicMock()
     s.id = "http://test.com:42"
     return s
-
-
-@pytest.fixture
-def project(controller):
-    return Project(str(uuid.uuid4()), controller=controller)
-
 
 @pytest.fixture
 def node(compute, project):
@@ -51,6 +44,7 @@ def test_list_ports(node):
     """
     List port by default
     """
+
     assert node.__json__()["ports"] == [
         {
             "name": "Ethernet0",
@@ -67,6 +61,7 @@ def test_list_ports_vpcs(node):
     """
     List port by default
     """
+
     node._node_type = "vpcs"
     assert node.__json__()["ports"] == [
         {
@@ -84,6 +79,7 @@ def test_list_ports_docker(node):
     """
     List port by default
     """
+
     node._node_type = "docker"
     node._properties["adapters"] = 2
     assert node.__json__()["ports"] == [
@@ -110,6 +106,7 @@ def test_list_ports_port_name_format(node):
     """
     Support port name format
     """
+
     node._first_port_name = None
     node._port_name_format = "eth{}"
     node._list_ports()
@@ -139,6 +136,7 @@ def test_list_ports_adapters(node):
     """
     List port using adapters properties
     """
+
     node.properties["adapters"] = 2
     assert node.__json__()["ports"] == [
         {
@@ -164,6 +162,7 @@ def test_list_ports_adapters_cloud(project, compute):
     """
     List port using adapters properties
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="cloud")
@@ -192,6 +191,7 @@ def test_list_ports_ethernet_hub(project, compute):
     """
     List port for atm switch
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="ethernet_hub")
@@ -230,6 +230,7 @@ def test_list_ports_atm_switch(project, compute):
     """
     List port for atm switch
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="atm_switch")
@@ -261,6 +262,7 @@ def test_list_ports_frame_relay_switch(project, compute):
     """
     List port for frame relay switch
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="frame_relay_switch")
@@ -309,6 +311,7 @@ def test_list_ports_iou(compute, project):
     """
     IOU has a special behavior 4 port by adapters
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="iou")
@@ -514,6 +517,7 @@ def test_list_ports_dynamips(project, compute):
     """
     List port for dynamips
     """
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="dynamips")
@@ -595,6 +599,7 @@ def test_list_ports_dynamips(project, compute):
 
 
 def test_short_name():
+
     # If no customization of port name format return the default short name
     assert EthernetPort("Ethernet0", 0, 0, 0).short_name == "e0"
     assert EthernetPort("Ethernet0", 0, 0, 0, short_name="mgmt").short_name == "mgmt"

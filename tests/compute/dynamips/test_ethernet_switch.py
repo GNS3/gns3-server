@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from tests.utils import AsyncioMagicMock
-#from gns3server.compute.dynamips.nodes.ethernet_switch import EthernetSwitchConsole
 from gns3server.compute.nios.nio_udp import NIOUDP
 
 
-def test_mac_command(async_run):
+def test_mac_command():
+
     node = AsyncioMagicMock()
     node.name = "Test"
     node.nios = {}

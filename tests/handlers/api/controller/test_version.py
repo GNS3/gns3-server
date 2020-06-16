@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,48 +15,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /version endpoint
-It's also used for unittest the HTTP implementation.
-"""
-
-from gns3server.config import Config
 
 from gns3server.version import __version__
 
 
-def test_version_output(http_controller):
-    config = Config.instance()
-    config.set("Server", "local", "true")
+async def test_version_output(controller_api, config):
 
-    response = http_controller.get('/version', example=True)
+    config.set("Server", "local", "true")
+    response = await controller_api.get('/version')
     assert response.status == 200
     assert response.json == {'local': True, 'version': __version__}
 
 
-def test_version_input(http_controller):
-    query = {'version': __version__}
-    response = http_controller.post('/version', query, example=True)
+async def test_version_input(controller_api):
+
+    params = {'version': __version__}
+    response = await controller_api.post('/version', params)
     assert response.status == 200
     assert response.json == {'version': __version__}
 
 
-def test_version_invalid_input(http_controller):
-    query = {'version': "0.4.2"}
-    response = http_controller.post('/version', query)
-    assert response.status == 409
+async def test_version_invalid_input(controller_api):
 
+    params = {'version': "0.4.2"}
+    response = await controller_api.post('/version', params)
+    assert response.status == 409
     assert response.json == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__),
                              'status': 409}
 
 
-def test_version_invalid_input_schema(http_controller):
-    query = {'version': "0.4.2", "bla": "blu"}
-    response = http_controller.post('/version', query)
+async def test_version_invalid_input_schema(controller_api):
+
+    params = {'version': "0.4.2", "bla": "blu"}
+    response = await controller_api.post('/version', params)
     assert response.status == 400
 
 
-def test_version_invalid_json(http_controller):
-    query = "BOUM"
-    response = http_controller.post('/version', query, raw=True)
+async def test_version_invalid_json(controller_api):
+
+    params = "BOUM"
+    response = await controller_api.post('/version', params, raw=True)
     assert response.status == 400

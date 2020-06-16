@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,16 +17,19 @@
 
 import aiohttp
 import pytest
+
 from gns3server.compute.project_manager import ProjectManager
 
 
 def test_create_project():
+
     pm = ProjectManager.instance()
     project = pm.create_project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert project == pm.get_project('00010203-0405-0607-0809-0a0b0c0d0e0f')
 
 
 def test_project_not_found():
+
     pm = ProjectManager.instance()
     with pytest.raises(aiohttp.web.HTTPNotFound):
         pm.get_project('00010203-0405-0607-0809-000000000000')

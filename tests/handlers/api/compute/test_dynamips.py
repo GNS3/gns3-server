@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,75 +24,83 @@ from tests.utils import asyncio_patch
 
 
 # @pytest.yield_fixture(scope="module")
-# def vm(http_compute, project):
+# async def vm(compute_api, compute_project, fake_image):
 #
 #     dynamips_path = "/fake/dynamips"
+#     params = {
+#         "name": "My router",
+#         "platform": "c3745",
+#         "image": fake_image,
+#         "ram": 128
+#     }
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.create", return_value=True) as mock:
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes".format(project_id=project.id), {"name": "My router",
-#                                                                                                      "platform": "c3745",
-#                                                                                                      "image": "somewhere",
-#                                                                                                      "ram": 128})
+#         response = await compute_api.post("/projects/{project_id}/dynamips/nodes".format(project_id=compute_project.id), params)
 #     assert mock.called
 #     assert response.status == 201
 #
-#     with asyncio_patch("gns3server.compute.dynamips.Dynamips.find_dynamips", return_value=dynamips_path):
-#         yield response.json
+#     #with asyncio_patch("gns3server.compute.dynamips.Dynamips.find_dynamips", return_value=dynamips_path):
+#     #    yield response.json
+
+
+# async def test_dynamips_vm_create(compute_api, compute_project, fake_image):
 #
+#     params = {
+#         "name": "My router",
+#         "platform": "c3745",
+#         "image": os.path.basename(fake_image),
+#         "ram": 128
+#     }
 #
-# def test_dynamips_vm_create(http_compute, project):
+#     print(fake_image)
 #
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.create", return_value=True):
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes".format(project_id=project.id), {"name": "My router",
-#                                                                                                      "platform": "c3745",
-#                                                                                                      "image": "somewhere",
-#                                                                                                      "ram": 128},
-#                                example=True)
+#         response = await compute_api.post("/projects/{project_id}/dynamips/nodes".format(project_id=compute_project.id), params)
 #         assert response.status == 201
 #         assert response.json["name"] == "My router"
-#         assert response.json["project_id"] == project.id
+#         assert response.json["project_id"] == compute_project.id
 #         assert response.json["dynamips_id"]
-#
-#
-# def test_dynamips_vm_get(http_compute, project, vm):
-#     response = http_compute.get("/projects/{project_id}/dynamips/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+
+
+# def test_dynamips_vm_get(compute_api, project, vm):
+#     response = compute_api.get("/projects/{project_id}/dynamips/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
 #     assert response.status == 200
 #     assert response.route == "/projects/{project_id}/dynamips/nodes/{node_id}"
 #     assert response.json["name"] == "My router"
 #     assert response.json["project_id"] == project.id
 #
 #
-# def test_dynamips_vm_start(http_compute, vm):
+# def test_dynamips_vm_start(compute_api, vm):
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.start", return_value=True) as mock:
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+#         response = compute_api.post("/projects/{project_id}/dynamips/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
-# def test_dynamips_vm_stop(http_compute, vm):
+# def test_dynamips_vm_stop(compute_api, vm):
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.stop", return_value=True) as mock:
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+#         response = compute_api.post("/projects/{project_id}/dynamips/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
-# def test_dynamips_vm_suspend(http_compute, vm):
+# def test_dynamips_vm_suspend(compute_api, vm):
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.suspend", return_value=True) as mock:
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes/{node_id}/suspend".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+#         response = compute_api.post("/projects/{project_id}/dynamips/nodes/{node_id}/suspend".format(project_id=vm["project_id"], node_id=vm["node_id"]))
 #         assert mock.called
 #         assert response.status == 204
 #
 #
-# def test_dynamips_vm_resume(http_compute, vm):
+# def test_dynamips_vm_resume(compute_api, vm):
 #     with asyncio_patch("gns3server.compute.dynamips.nodes.router.Router.resume", return_value=True) as mock:
-#         response = http_compute.post("/projects/{project_id}/dynamips/nodes/{node_id}/resume".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+#         response = compute_api.post("/projects/{project_id}/dynamips/nodes/{node_id}/resume".format(project_id=vm["project_id"], node_id=vm["node_id"]))
 #         assert mock.called
 #         assert response.status == 204
 
 
-# def test_vbox_nio_create_udp(http_compute, vm):
+# def test_vbox_nio_create_udp(compute_api, vm):
 #
 #     with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_add_nio_binding') as mock:
-#         response = http_compute.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/nio".format(project_id=vm["project_id"],
+#         response = compute_api.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/nio".format(project_id=vm["project_id"],
 #                                                                                                      node_id=vm["node_id"]), {"type": "nio_udp",
 #                                                                                                                           "lport": 4242,
 #                                                                                                                           "rport": 4343,
@@ -108,10 +116,10 @@ from tests.utils import asyncio_patch
 #     assert response.json["type"] == "nio_udp"
 #
 #
-# def test_vbox_delete_nio(http_compute, vm):
+# def test_vbox_delete_nio(compute_api, vm):
 #
 #     with asyncio_patch('gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.adapter_remove_nio_binding') as mock:
-#         response = http_compute.delete("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+#         response = compute_api.delete("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
 #
 #         assert mock.called
 #         args, kwgars = mock.call_args
@@ -121,8 +129,8 @@ from tests.utils import asyncio_patch
 #     assert response.route == "/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/{adapter_id:\d+}/nio"
 #
 #
-# def test_vbox_update(http_compute, vm, free_console_port):
-#     response = http_compute.put("/projects/{project_id}/virtualbox/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
+# def test_vbox_update(compute_api, vm, free_console_port):
+#     response = compute_api.put("/projects/{project_id}/virtualbox/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test",
 #                                                                                                                                    "console": free_console_port})
 #     assert response.status == 200
 #     assert response.json["name"] == "test"
@@ -130,8 +138,9 @@ from tests.utils import asyncio_patch
 
 
 @pytest.fixture
-def fake_dynamips(tmpdir):
+def fake_image(tmpdir):
     """Create a fake Dynamips image on disk"""
+
     path = str(tmpdir / "7200.bin")
     with open(path, "wb+") as f:
         f.write(b'\x7fELF\x01\x02\x01')
@@ -150,10 +159,10 @@ def fake_file(tmpdir):
     return path
 
 
-def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
+async def test_images(compute_api, tmpdir, fake_image, fake_file):
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = http_compute.get("/dynamips/images")
+        response = await compute_api.get("/dynamips/images")
     assert response.status == 200
     assert response.json == [{"filename": "7200.bin",
                               "path": "7200.bin",
@@ -162,8 +171,9 @@ def test_images(http_compute, tmpdir, fake_dynamips, fake_file):
                               }]
 
 
-def test_upload_image(http_compute, tmpdir, images_dir):
-    response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
+async def test_upload_image(compute_api, images_dir):
+
+    response = await compute_api.post("/dynamips/images/test2", body="TEST", raw=True)
     assert response.status == 204
 
     with open(os.path.join(images_dir, "IOS", "test2")) as f:
@@ -174,12 +184,13 @@ def test_upload_image(http_compute, tmpdir, images_dir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-def test_upload_image_permission_denied(http_compute, tmpdir, images_dir):
+async def test_upload_image_permission_denied(compute_api, tmpdir, images_dir):
+
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
     with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = http_compute.post("/dynamips/images/test2", body="TEST", raw=True)
+        response = await compute_api.post("/dynamips/images/test2", body="TEST", raw=True)
         assert response.status == 409

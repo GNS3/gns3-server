@@ -38,8 +38,9 @@ def test_template_json():
 
 
 def test_template_json_with_not_known_category():
+
     with pytest.raises(jsonschema.ValidationError):
-        a = Template(None, {
+        Template(None, {
             "node_type": "qemu",
             "name": "Test",
             "default_name_format": "{name}-{0}",
@@ -51,6 +52,7 @@ def test_template_json_with_not_known_category():
 
 
 def test_template_json_with_platform():
+
     a = Template(None, {
         "node_type": "dynamips",
         "name": "Test",
@@ -73,6 +75,7 @@ def test_template_fix_linked_base():
     Version of the gui before 2.1 use linked_base and the server
     linked_clone
     """
+
     a = Template(None, {
         "node_type": "qemu",
         "name": "Test",

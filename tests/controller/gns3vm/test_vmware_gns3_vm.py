@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2017 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,41 +17,42 @@
 
 import pytest
 
-from tests.utils import asyncio_patch
-
 from gns3server.controller.gns3vm.vmware_gns3_vm import VMwareGNS3VM
 
 
 @pytest.fixture
 def gns3vm(controller):
+
     vm = VMwareGNS3VM(controller)
     vm.vmname = "GNS3 VM"
     return vm
 
 
 @pytest.fixture
-def tmx_path(tmpdir):
-    return str(tmpdir / "vmware.tmx")
+def vmx_path(tmpdir):
+
+    return str(tmpdir / "vmwware_vm.vmx")
 
 
-def test_set_extra_options(gns3vm, async_run, tmx_path):
-    gns3vm._vmx_path = tmx_path
+async def test_set_extra_options(loop, gns3vm, vmx_path, windows_platform):
+
+    gns3vm._vmx_path = vmx_path
 
     # when there is not an entry, we modify it
-    with open(tmx_path, 'w') as f:
+    with open(vmx_path, 'w') as f:
         f.write("")
 
-    async_run(gns3vm._set_extra_options())
+    await gns3vm._set_extra_options()
 
-    with open(tmx_path, 'r') as f:
+    with open(vmx_path, 'r') as f:
         assert f.read() == 'vhv.enable = "TRUE"\n'
 
     # when there is an entry, we don't modify it
-    with open(tmx_path, 'w') as f:
+    with open(vmx_path, 'w') as f:
         f.write('vhv.enable = "FALSE"\n')
 
-    async_run(gns3vm._set_extra_options())
+    await gns3vm._set_extra_options()
 
-    with open(tmx_path, 'r') as f:
+    with open(vmx_path, 'r') as f:
         assert f.read() == 'vhv.enable = "FALSE"\n'
 

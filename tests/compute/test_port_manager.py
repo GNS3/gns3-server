@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 
 import aiohttp
 import pytest
-import sys
 import uuid
 from unittest.mock import patch
 
@@ -26,6 +25,7 @@ from gns3server.compute.project import Project
 
 
 def test_reserve_tcp_port():
+
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     pm.reserve_tcp_port(2001, project)
@@ -35,6 +35,7 @@ def test_reserve_tcp_port():
 
 
 def test_reserve_tcp_port_outside_range():
+
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     with patch("gns3server.compute.project.Project.emit") as mock_emit:
@@ -60,7 +61,7 @@ def test_reserve_tcp_port_already_used_by_another_program():
 
         mock_check.side_effect = execute_mock
 
-        with patch("gns3server.compute.project.Project.emit") as mock_emit:
+        with patch("gns3server.compute.project.Project.emit"):
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
 
@@ -68,7 +69,7 @@ def test_reserve_tcp_port_already_used_by_another_program():
 def test_reserve_tcp_port_already_used():
     """
     This test simulate a scenario where the port is already taken
-    by another programm on the server
+    by another program on the server
     """
 
     pm = PortManager()
@@ -83,12 +84,13 @@ def test_reserve_tcp_port_already_used():
 
         mock_check.side_effect = execute_mock
 
-        with patch("gns3server.compute.project.Project.emit") as mock_emit:
+        with patch("gns3server.compute.project.Project.emit"):
             port = pm.reserve_tcp_port(2001, project)
             assert port != 2001
 
 
 def test_reserve_udp_port():
+
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     pm.reserve_udp_port(20000, project)
@@ -97,6 +99,7 @@ def test_reserve_udp_port():
 
 
 def test_reserve_udp_port_outside_range():
+
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     with pytest.raises(aiohttp.web.HTTPConflict):
@@ -104,6 +107,7 @@ def test_reserve_udp_port_outside_range():
 
 
 def test_release_udp_port():
+
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     pm.reserve_udp_port(20000, project)
@@ -112,11 +116,13 @@ def test_release_udp_port():
 
 
 def test_find_unused_port():
+
     p = PortManager().find_unused_port(1000, 10000)
     assert p is not None
 
 
 def test_find_unused_port_invalid_range():
+
     with pytest.raises(aiohttp.web.HTTPConflict):
         p = PortManager().find_unused_port(10000, 1000)
 
@@ -126,6 +132,7 @@ def test_set_console_host(config):
     If allow remote connection we need to bind console host
     to 0.0.0.0
     """
+
     p = PortManager()
     config.set_section_config("Server", {"allow_remote_console": False})
     p.console_host = "10.42.1.42"

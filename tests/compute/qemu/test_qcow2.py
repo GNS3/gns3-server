@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 import os
 import pytest
 import shutil
-import asyncio
 
 from gns3server.compute.qemu.utils.qcow2 import Qcow2, Qcow2Error
 
@@ -40,34 +39,39 @@ def qemu_img():
 
 
 def test_valid_base_file():
+
     qcow2 = Qcow2("tests/resources/empty8G.qcow2")
     assert qcow2.version == 3
     assert qcow2.backing_file is None
 
 
 def test_valid_linked_file():
+
     qcow2 = Qcow2("tests/resources/linked.qcow2")
     assert qcow2.version == 3
     assert qcow2.backing_file == "empty8G.qcow2"
 
 
 def test_invalid_file():
+
     with pytest.raises(Qcow2Error):
         Qcow2("tests/resources/nvram_iou")
 
 
 def test_invalid_empty_file(tmpdir):
+
     open(str(tmpdir / 'a'), 'w+').close()
     with pytest.raises(Qcow2Error):
         Qcow2(str(tmpdir / 'a'))
 
 
 @pytest.mark.skipif(qemu_img() is None, reason="qemu-img is not available")
-def test_rebase(tmpdir, loop):
+async def test_rebase(loop, tmpdir):
+
     shutil.copy("tests/resources/empty8G.qcow2", str(tmpdir / "empty16G.qcow2"))
     shutil.copy("tests/resources/linked.qcow2", str(tmpdir / "linked.qcow2"))
     qcow2 = Qcow2(str(tmpdir / "linked.qcow2"))
     assert qcow2.version == 3
     assert qcow2.backing_file == "empty8G.qcow2"
-    loop.run_until_complete(asyncio.ensure_future(qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))))
+    await qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))
     assert qcow2.backing_file == str(tmpdir / "empty16G.qcow2")

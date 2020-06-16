@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,14 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import urllib.parse
 
-from gns3server.config import Config
 
+async def test_symbols(controller_api):
 
-def test_symbols(http_controller):
-    response = http_controller.get('/symbols', example=True)
+    response = await controller_api.get('/symbols')
+
     assert response.status == 200
     assert {
         'symbol_id': ':/symbols/classic/firewall.svg',
@@ -33,25 +32,27 @@ def test_symbols(http_controller):
     } in response.json
 
 
-def test_get(http_controller, controller):
+async def test_get(controller_api, controller):
+
     controller.symbols.theme = "Classic"
-    response = http_controller.get('/symbols/' + urllib.parse.quote(':/symbols/classic/firewall.svg') + '/raw')
+    response = await controller_api.get('/symbols/' + urllib.parse.quote(':/symbols/classic/firewall.svg') + '/raw')
     assert response.status == 200
     assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
     assert response.headers['CONTENT-LENGTH'] == '9381'
     assert '</svg>' in response.html
 
-    # Reply by the default symbol
-    response = http_controller.get('/symbols/404.png/raw')
+    # Reply with the default symbol
+    response = await controller_api.get('/symbols/404.png/raw')
     assert response.status == 200
 
 
-def test_upload(http_controller, symbols_dir):
-    response = http_controller.post("/symbols/test2/raw", body="TEST", raw=True)
+async def test_upload(controller_api, symbols_dir):
+
+    response = await controller_api.post("/symbols/test2/raw", body="TEST", raw=True)
     assert response.status == 204
 
     with open(os.path.join(symbols_dir, "test2")) as f:
         assert f.read() == "TEST"
 
-    response = http_controller.get('/symbols/test2/raw')
+    response = await controller_api.get('/symbols/test2/raw')
     assert response.status == 200

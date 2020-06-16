@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,15 +17,13 @@
 
 
 import uuid
-import pytest
-from unittest.mock import MagicMock
+
 from tests.utils import asyncio_patch
 
-from gns3server.controller import Controller
 from gns3server.controller.template import Template
 
 
-def test_template_list(http_controller, controller):
+async def test_template_list(controller_api, controller):
 
     id = str(uuid.uuid4())
     controller.template_manager.load_templates()
@@ -37,13 +35,13 @@ def test_template_list(http_controller, controller):
         "default_name_format": "{name}-{0}",
         "compute_id": "local"
     })
-    response = http_controller.get("/templates", example=True)
+    response = await controller_api.get("/templates")
     assert response.status == 200
     assert response.route == "/templates"
     assert len(response.json) > 0
 
 
-def test_template_create_without_id(http_controller, controller):
+async def test_template_create_without_id(controller_api, controller):
 
     params = {"base_script_file": "vpcs_base_config.txt",
               "category": "guest",
@@ -55,14 +53,14 @@ def test_template_create_without_id(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params, example=True)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.route == "/templates"
     assert response.json["template_id"] is not None
-    assert len(controller.template_manager._templates) == 1
+    assert len(controller.template_manager.templates) == 1
 
 
-def test_template_create_with_id(http_controller, controller):
+async def test_template_create_with_id(controller_api, controller):
 
     params = {"template_id": str(uuid.uuid4()),
               "base_script_file": "vpcs_base_config.txt",
@@ -75,14 +73,14 @@ def test_template_create_with_id(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params, example=True)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.route == "/templates"
     assert response.json["template_id"] is not None
-    assert len(controller.template_manager._templates) == 1
+    assert len(controller.template_manager.templates) == 1
 
 
-def test_template_create_wrong_type(http_controller, controller):
+async def test_template_create_wrong_type(controller_api, controller):
 
     params = {"template_id": str(uuid.uuid4()),
               "base_script_file": "vpcs_base_config.txt",
@@ -95,12 +93,12 @@ def test_template_create_wrong_type(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "invalid_template_type"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 400
-    assert len(controller.template_manager._templates) == 0
+    assert len(controller.template_manager.templates) == 0
 
 
-def test_template_get(http_controller, controller):
+async def test_template_get(controller_api):
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -114,15 +112,15 @@ def test_template_get(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
 
-    response = http_controller.get("/templates/{}".format(template_id), example=True)
+    response = await controller_api.get("/templates/{}".format(template_id))
     assert response.status == 200
     assert response.json["template_id"] == template_id
 
 
-def test_template_update(http_controller, controller):
+async def test_template_update(controller_api):
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -136,21 +134,21 @@ def test_template_update(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
 
-    response = http_controller.get("/templates/{}".format(template_id))
+    response = await controller_api.get("/templates/{}".format(template_id))
     assert response.status == 200
     assert response.json["template_id"] == template_id
 
     params["name"] = "VPCS_TEST_RENAMED"
-    response = http_controller.put("/templates/{}".format(template_id), params, example=True)
+    response = await controller_api.put("/templates/{}".format(template_id), params)
 
     assert response.status == 200
     assert response.json["name"] == "VPCS_TEST_RENAMED"
 
 
-def test_template_delete(http_controller, controller):
+async def test_template_delete(controller_api, controller):
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -164,22 +162,22 @@ def test_template_delete(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
 
-    response = http_controller.get("/templates")
+    response = await controller_api.get("/templates")
     assert len(response.json) == 1
     assert len(controller.template_manager._templates) == 1
 
-    response = http_controller.delete("/templates/{}".format(template_id), example=True)
+    response = await controller_api.delete("/templates/{}".format(template_id))
     assert response.status == 204
 
-    response = http_controller.get("/templates")
+    response = await controller_api.get("/templates")
     assert len(response.json) == 0
-    assert len(controller.template_manager._templates) == 0
+    assert len(controller.template_manager.templates) == 0
 
 
-def test_template_duplicate(http_controller, controller):
+async def test_template_duplicate(controller_api, controller):
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -193,22 +191,22 @@ def test_template_duplicate(http_controller, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
 
-    response = http_controller.post("/templates/{}/duplicate".format(template_id), example=True)
+    response = await controller_api.post("/templates/{}/duplicate".format(template_id))
     assert response.status == 201
     assert response.json["template_id"] != template_id
     params.pop("template_id")
     for param, value in params.items():
         assert response.json[param] == value
 
-    response = http_controller.get("/templates")
+    response = await controller_api.get("/templates")
     assert len(response.json) == 2
-    assert len(controller.template_manager._templates) == 2
+    assert len(controller.template_manager.templates) == 2
 
 
-def test_c7200_dynamips_template_create(http_controller):
+async def test_c7200_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c7200 template",
               "platform": "c7200",
@@ -216,7 +214,7 @@ def test_c7200_dynamips_template_create(http_controller):
               "image": "c7200-adventerprisek9-mz.124-24.T5.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -253,7 +251,7 @@ def test_c7200_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c3745_dynamips_template_create(http_controller):
+async def test_c3745_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c3745 template",
               "platform": "c3745",
@@ -261,7 +259,7 @@ def test_c3745_dynamips_template_create(http_controller):
               "image": "c3745-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -297,7 +295,7 @@ def test_c3745_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c3725_dynamips_template_create(http_controller):
+async def test_c3725_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c3725 template",
               "platform": "c3725",
@@ -305,7 +303,7 @@ def test_c3725_dynamips_template_create(http_controller):
               "image": "c3725-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -341,7 +339,7 @@ def test_c3725_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c3600_dynamips_template_create(http_controller):
+async def test_c3600_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c3600 template",
               "platform": "c3600",
@@ -350,7 +348,7 @@ def test_c3600_dynamips_template_create(http_controller):
               "image": "c3660-a3jk9s-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -387,7 +385,7 @@ def test_c3600_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c3600_dynamips_template_create_wrong_chassis(http_controller):
+async def test_c3600_dynamips_template_create_wrong_chassis(controller_api):
 
     params = {"name": "Cisco c3600 template",
               "platform": "c3600",
@@ -396,11 +394,11 @@ def test_c3600_dynamips_template_create_wrong_chassis(http_controller):
               "image": "c3660-a3jk9s-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 400
 
 
-def test_c2691_dynamips_template_create(http_controller):
+async def test_c2691_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c2691 template",
               "platform": "c2691",
@@ -408,7 +406,7 @@ def test_c2691_dynamips_template_create(http_controller):
               "image": "c2691-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -444,7 +442,7 @@ def test_c2691_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c2600_dynamips_template_create(http_controller):
+async def test_c2600_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c2600 template",
               "platform": "c2600",
@@ -453,7 +451,7 @@ def test_c2600_dynamips_template_create(http_controller):
               "image": "c2600-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -490,7 +488,7 @@ def test_c2600_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c2600_dynamips_template_create_wrong_chassis(http_controller):
+async def test_c2600_dynamips_template_create_wrong_chassis(controller_api):
 
     params = {"name": "Cisco c2600 template",
               "platform": "c2600",
@@ -499,11 +497,11 @@ def test_c2600_dynamips_template_create_wrong_chassis(http_controller):
               "image": "c2600-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 400
 
 
-def test_c1700_dynamips_template_create(http_controller):
+async def test_c1700_dynamips_template_create(controller_api):
 
     params = {"name": "Cisco c1700 template",
               "platform": "c1700",
@@ -512,7 +510,7 @@ def test_c1700_dynamips_template_create(http_controller):
               "image": "c1700-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -549,7 +547,7 @@ def test_c1700_dynamips_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_c1700_dynamips_template_create_wrong_chassis(http_controller):
+async def test_c1700_dynamips_template_create_wrong_chassis(controller_api):
 
     params = {"name": "Cisco c1700 template",
               "platform": "c1700",
@@ -558,11 +556,11 @@ def test_c1700_dynamips_template_create_wrong_chassis(http_controller):
               "image": "c1700-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 400
 
 
-def test_dynamips_template_create_wrong_platform(http_controller):
+async def test_dynamips_template_create_wrong_platform(controller_api):
 
     params = {"name": "Cisco c3900 template",
               "platform": "c3900",
@@ -570,18 +568,18 @@ def test_dynamips_template_create_wrong_platform(http_controller):
               "image": "c3900-test.124-25d.image",
               "template_type": "dynamips"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 400
 
 
-def test_iou_template_create(http_controller):
+async def test_iou_template_create(controller_api):
 
     params = {"name": "IOU template",
               "compute_id": "local",
               "path": "/path/to/i86bi_linux-ipbase-ms-12.4.bin",
               "template_type": "iou"}
 
-    response = http_controller.post("/templates", params, example=True)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -608,14 +606,14 @@ def test_iou_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_docker_template_create(http_controller):
+async def test_docker_template_create(controller_api):
 
     params = {"name": "Docker template",
               "compute_id": "local",
               "image": "gns3/endhost:latest",
               "template_type": "docker"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -642,7 +640,7 @@ def test_docker_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_qemu_template_create(http_controller):
+async def test_qemu_template_create(controller_api):
 
     params = {"name": "Qemu template",
               "compute_id": "local",
@@ -651,7 +649,7 @@ def test_qemu_template_create(http_controller):
               "ram": 512,
               "template_type": "qemu"}
 
-    response = http_controller.post("/templates", params, example=True)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -701,14 +699,14 @@ def test_qemu_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_vmware_template_create(http_controller):
+async def test_vmware_template_create(controller_api):
 
     params = {"name": "VMware template",
               "compute_id": "local",
               "template_type": "vmware",
               "vmx_path": "/path/to/vm.vmx"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -737,14 +735,14 @@ def test_vmware_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_virtualbox_template_create(http_controller):
+async def test_virtualbox_template_create(controller_api):
 
     params = {"name": "VirtualBox template",
               "compute_id": "local",
               "template_type": "virtualbox",
               "vmname": "My VirtualBox VM"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -773,13 +771,14 @@ def test_virtualbox_template_create(http_controller):
     for item, value in expected_response.items():
         assert response.json.get(item) == value
 
-def test_vpcs_template_create(http_controller):
+
+async def test_vpcs_template_create(controller_api):
 
     params = {"name": "VPCS template",
               "compute_id": "local",
               "template_type": "vpcs"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -797,13 +796,14 @@ def test_vpcs_template_create(http_controller):
     for item, value in expected_response.items():
         assert response.json.get(item) == value
 
-def test_ethernet_switch_template_create(http_controller):
+
+async def test_ethernet_switch_template_create(controller_api):
 
     params = {"name": "Ethernet switch template",
               "compute_id": "local",
               "template_type": "ethernet_switch"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -868,13 +868,13 @@ def test_ethernet_switch_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_cloud_template_create(http_controller):
+async def test_cloud_template_create(controller_api):
 
     params = {"name": "Cloud template",
               "compute_id": "local",
               "template_type": "cloud"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -890,13 +890,13 @@ def test_cloud_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-def test_ethernet_hub_template_create(http_controller):
+async def test_ethernet_hub_template_create(controller_api):
 
     params = {"name": "Ethernet hub template",
               "compute_id": "local",
               "template_type": "ethernet_hub"}
 
-    response = http_controller.post("/templates", params)
+    response = await controller_api.post("/templates", params)
     assert response.status == 201
     assert response.json["template_id"] is not None
 
@@ -936,21 +936,7 @@ def test_ethernet_hub_template_create(http_controller):
         assert response.json.get(item) == value
 
 
-@pytest.fixture
-def compute(http_controller, async_run):
-    compute = MagicMock()
-    compute.id = "example.com"
-    compute.host = "example.org"
-    Controller.instance()._computes = {"example.com": compute}
-    return compute
-
-
-@pytest.fixture
-def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project(name="Test"))
-
-
-def test_create_node_from_template(http_controller, controller, project, compute):
+async def test_create_node_from_template(controller_api, controller, project):
 
     id = str(uuid.uuid4())
     controller.template_manager._templates = {id: Template(id, {
@@ -962,7 +948,7 @@ def test_create_node_from_template(http_controller, controller, project, compute
         "compute_id": "example.com"
     })}
     with asyncio_patch("gns3server.controller.project.Project.add_node_from_template", return_value={"name": "test", "node_type": "qemu", "compute_id": "example.com"}) as mock:
-        response = http_controller.post("/projects/{}/templates/{}".format(project.id, id), {
+        response = await controller_api.post("/projects/{}/templates/{}".format(project.id, id), {
             "x": 42,
             "y": 12
         })

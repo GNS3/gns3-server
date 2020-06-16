@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,15 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import shutil
-import aiohttp
 import pytest
 import uuid
-import asyncio
-import copy
 import os
+
 from unittest.mock import MagicMock, ANY
-
-
 from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.node import Node
@@ -33,18 +29,15 @@ from gns3server.controller.project import Project
 
 @pytest.fixture
 def compute():
+
     s = AsyncioMagicMock()
     s.id = "http://test.com:42"
     return s
 
 
 @pytest.fixture
-def project(controller):
-    return Project(str(uuid.uuid4()), controller=controller)
-
-
-@pytest.fixture
 def node(compute, project):
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="vpcs",
@@ -57,6 +50,7 @@ def test_name(compute, project):
     """
     If node use a name template generate names
     """
+
     node = Node(project, compute, "PC",
                 node_id=str(uuid.uuid4()),
                 node_type="vpcs",
@@ -76,16 +70,13 @@ def test_name(compute, project):
                 properties={"startup_script": "echo test"})
     assert node.name == "PC2"
 
-    # If we change the name to a name already used we patch the name to a free
-    node.name == "PC1"
-    assert node.name == "PC2"
-
 
 def test_vmname(compute, project):
     """
     Additionnal properties should be add to the properties
     field
     """
+
     node = Node(project, compute, "PC",
                 node_id=str(uuid.uuid4()),
                 node_type="virtualbox",
@@ -111,6 +102,7 @@ def test_empty_properties(compute, project):
 
 
 def test_eq(compute, project, node, controller):
+
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
     assert node != "a"
     assert node != Node(project, compute, "demo2", node_id=str(uuid.uuid4()), node_type="qemu")
@@ -118,6 +110,7 @@ def test_eq(compute, project, node, controller):
 
 
 def test_json(node, compute):
+
     assert node.__json__() == {
         "compute_id": str(compute.id),
         "project_id": node.project.id,
@@ -156,6 +149,7 @@ def test_json(node, compute):
             }
         ]
     }
+
     assert node.__json__(topology_dump=True) == {
         "compute_id": str(compute.id),
         "node_id": node.id,
@@ -188,14 +182,14 @@ def test_init_without_uuid(project, compute):
     assert node.id is not None
 
 
-def test_create(node, compute, project, async_run):
-    node._console = 2048
+async def test_create(node, compute):
 
+    node._console = 2048
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    assert async_run(node.create()) is True
+    assert await node.create() is True
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -208,9 +202,9 @@ def test_create(node, compute, project, async_run):
     assert node._properties == {"startup_script": "echo test"}
 
 
-def test_create_image_missing(node, compute, project, async_run):
-    node._console = 2048
+async def test_create_image_missing(node, compute):
 
+    node._console = 2048
     node.__calls = 0
 
     async def resp(*args, **kwargs):
@@ -226,13 +220,13 @@ def test_create_image_missing(node, compute, project, async_run):
     compute.post = AsyncioMagicMock(side_effect=resp)
     node._upload_missing_image = AsyncioMagicMock(return_value=True)
 
-    assert async_run(node.create()) is True
-    node._upload_missing_image.called is True
+    assert await node.create() is True
+    #assert node._upload_missing_image.called is True
 
 
-def test_create_base_script(node, config, compute, tmpdir, async_run):
+async def test_create_base_script(node, config, compute, tmpdir):
+
     config.set_section_config("Server", {"configs_path": str(tmpdir)})
-
     with open(str(tmpdir / 'test.txt'), 'w+') as f:
         f.write('hostname test')
 
@@ -243,7 +237,7 @@ def test_create_base_script(node, config, compute, tmpdir, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    assert async_run(node.create()) is True
+    assert await node.create() is True
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -251,10 +245,11 @@ def test_create_base_script(node, config, compute, tmpdir, async_run):
         "startup_script": "hostname test",
         "name": "demo"
     }
+
     compute.post.assert_called_with("/projects/{}/vpcs/nodes".format(node.project.id), data=data, timeout=1200)
 
 
-def test_symbol(node, symbols_dir, controller):
+def test_symbol(node, symbols_dir):
     """
     Change symbol should change the node size
     """
@@ -304,14 +299,15 @@ def test_label_with_default_label_font(node):
     assert node.label["style"] == None #"font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #ff0000;fill-opacity: 1.0;"
 
 
-def test_update(node, compute, project, async_run, controller):
+async def test_update(node, compute, project, controller):
+
     response = MagicMock()
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
     controller._notification = AsyncioMagicMock()
     project.dump = MagicMock()
 
-    async_run(node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo"))
+    await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "echo test"}, name="demo")
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -326,7 +322,7 @@ def test_update(node, compute, project, async_run, controller):
     assert project.dump.called
 
 
-def test_update_properties(node, compute, project, async_run, controller):
+async def test_update_properties(node, compute, controller):
     """
     properties will be updated by the answer from compute
     """
@@ -335,7 +331,7 @@ def test_update_properties(node, compute, project, async_run, controller):
     compute.put = AsyncioMagicMock(return_value=response)
     controller._notification = AsyncioMagicMock()
 
-    async_run(node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "hello world"}, name="demo"))
+    await node.update(x=42, console=2048, console_type="vnc", properties={"startup_script": "hello world"}, name="demo")
     data = {
         "console": 2048,
         "console_type": "vnc",
@@ -354,26 +350,27 @@ def test_update_properties(node, compute, project, async_run, controller):
     #controller._notification.emit.assert_called_with("node.updated", node_notif)
 
 
-def test_update_only_controller(node, controller, compute, async_run):
+async def test_update_only_controller(node, compute):
     """
     When updating property used only on controller we don't need to
     call the compute
     """
+
     compute.put = AsyncioMagicMock()
     node._project.emit_notification = AsyncioMagicMock()
 
-    async_run(node.update(x=42))
+    await node.update(x=42)
     assert not compute.put.called
     assert node.x == 42
     node._project.emit_notification.assert_called_with("node.updated", node.__json__())
 
-    # If nothing change a second notif should not be send
+    # If nothing change a second notif should not be sent
     node._project.emit_notification = AsyncioMagicMock()
-    async_run(node.update(x=42))
+    await node.update(x=42)
     assert not node._project.emit_notification.called
 
 
-def test_update_no_changes(node, compute, project, async_run):
+async def test_update_no_changes(node, compute):
     """
     We don't call the compute node if all compute properties has not changed
     """
@@ -381,24 +378,25 @@ def test_update_no_changes(node, compute, project, async_run):
     response.json = {"console": 2048}
     compute.put = AsyncioMagicMock(return_value=response)
 
-    async_run(node.update(console=2048, x=42))
+    await node.update(console=2048, x=42)
     assert compute.put.called
 
     compute.put = AsyncioMagicMock()
-    async_run(node.update(console=2048, x=43))
+    await node.update(console=2048, x=43)
     assert not compute.put.called
     assert node.x == 43
 
 
-def test_start(node, compute, project, async_run):
+async def test_start(node, compute):
 
     compute.post = AsyncioMagicMock()
 
-    async_run(node.start())
+    await node.start()
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
 
 
-def test_start_iou(compute, project, async_run, controller):
+async def test_start_iou(compute, project, controller):
+
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="iou")
@@ -409,44 +407,42 @@ def test_start_iou(compute, project, async_run, controller):
     #    async_run(node.start())
 
     controller._iou_license_settings = {"license_check": True, "iourc_content": "aa"}
-    async_run(node.start())
+    await node.start()
     compute.post.assert_called_with("/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id), timeout=240, data={"license_check": True, "iourc_content": "aa"})
 
 
-def test_stop(node, compute, project, async_run):
+async def test_stop(node, compute):
 
     compute.post = AsyncioMagicMock()
 
-    async_run(node.stop())
+    await node.stop()
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240, dont_connect=True)
 
 
-def test_suspend(node, compute, project, async_run):
+async def test_suspend(node, compute):
 
     compute.post = AsyncioMagicMock()
-
-    async_run(node.suspend())
+    await node.suspend()
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id), timeout=240)
 
 
-def test_reload(node, compute, project, async_run):
+async def test_reload(node, compute):
 
     compute.post = AsyncioMagicMock()
-
-    async_run(node.reload())
+    await node.reload()
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id), timeout=240)
 
 
-def test_create_without_console(node, compute, project, async_run):
+async def test_create_without_console(node, compute):
     """
-    None properties should be send. Because it can mean the emulator doesn"t support it
+    None properties should be send. Because it can mean the emulator doesn't support it
     """
 
     response = MagicMock()
     response.json = {"console": 2048, "test_value": "success"}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    async_run(node.create())
+    await node.create()
     data = {
         "console_type": "vnc",
         "node_id": node.id,
@@ -458,49 +454,53 @@ def test_create_without_console(node, compute, project, async_run):
     assert node._properties == {"test_value": "success", "startup_script": "echo test"}
 
 
-def test_delete(node, compute, async_run):
-    async_run(node.destroy())
+async def test_delete(node, compute):
+
+    await node.destroy()
     compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id))
 
 
-def test_post(node, compute, async_run):
-    async_run(node.post("/test", {"a": "b"}))
+async def test_post(node, compute):
+
+    await node.post("/test", {"a": "b"})
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id), data={"a": "b"})
 
 
-def test_delete(node, compute, async_run):
-    async_run(node.delete("/test"))
+async def test_delete(node, compute):
+
+    await node.delete("/test")
     compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id))
 
 
-def test_dynamips_idle_pc(node, async_run, compute):
+async def test_dynamips_idle_pc(node, compute):
+
     node._node_type = "dynamips"
     response = MagicMock()
     response.json = {"idlepc": "0x60606f54"}
     compute.get = AsyncioMagicMock(return_value=response)
-
-    async_run(node.dynamips_auto_idlepc())
+    await node.dynamips_auto_idlepc()
     compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id), timeout=240)
 
 
-def test_dynamips_idlepc_proposals(node, async_run, compute):
+async def test_dynamips_idlepc_proposals(node, compute):
+
     node._node_type = "dynamips"
     response = MagicMock()
     response.json = ["0x60606f54", "0x30ff6f37"]
     compute.get = AsyncioMagicMock(return_value=response)
-
-    async_run(node.dynamips_idlepc_proposals())
+    await node.dynamips_idlepc_proposals()
     compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240)
 
 
-def test_upload_missing_image(compute, controller, async_run, images_dir):
+async def test_upload_missing_image(compute, controller, images_dir):
+
     project = Project(str(uuid.uuid4()), controller=controller)
     node = Node(project, compute, "demo",
                 node_id=str(uuid.uuid4()),
                 node_type="qemu",
                 properties={"hda_disk_image": "linux.img"})
     open(os.path.join(images_dir, "linux.img"), 'w+').close()
-    assert async_run(node._upload_missing_image("qemu", "linux.img")) is True
+    assert await node._upload_missing_image("qemu", "linux.img") is True
     compute.post.assert_called_with("/qemu/images/linux.img", data=ANY, timeout=None)
 
 
@@ -509,6 +509,7 @@ def test_update_label(node):
     The text in label need to be always the
     node name
     """
+
     node.name = "Test"
     assert node.label["text"] == "Test"
     node.label = {"text": "Wrong", "x": 12}
@@ -517,6 +518,7 @@ def test_update_label(node):
 
 
 def test_get_port(node):
+
     node._node_type = "qemu"
     node._properties["adapters"] = 2
     node._list_ports()
@@ -529,12 +531,13 @@ def test_get_port(node):
     assert port is None
 
 
-def test_parse_node_response(node, async_run):
+async def test_parse_node_response(node):
     """
     When a node is updated we notify the links connected to it
     """
+
     link = MagicMock()
     link.node_updated = AsyncioMagicMock()
     node.add_link(link)
-    async_run(node.parse_node_response({"status": "started"}))
+    await node.parse_node_response({"status": "started"})
     assert link.node_updated.called
