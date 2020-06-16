@@ -59,7 +59,7 @@ async def test_list(loop, controller):
         await vm.list("hyperv")
 
 
-async def test_json(controller):
+async def test_json(loop, controller):
 
     vm = GNS3VM(controller)
     assert vm.__json__() == vm._settings
