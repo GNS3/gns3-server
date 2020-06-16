@@ -21,6 +21,12 @@ from .handlers.api.base import Query
 sys._called_from_test = True
 sys.original_platform = sys.platform
 
+if sys.platform.startswith("win"):
+    import asyncio
+    # use the Proactor event loop on Windows
+    loop = asyncio.ProactorEventLoop()
+    asyncio.set_event_loop(loop)
+
 
 @pytest.fixture(scope='function')
 async def http_client(aiohttp_client):
