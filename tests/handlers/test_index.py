@@ -60,23 +60,16 @@ async def test_project(http_client, controller):
     assert response.status == 200
 
 
-async def test_web_ui(http_client, tmpdir):
+async def test_web_ui(http_client):
 
-    with patch('gns3server.utils.get_resource.get_resource') as mock:
-        mock.return_value = str(tmpdir)
-        os.makedirs(str(tmpdir / 'web-ui'))
-        tmpfile = get_static('web-ui/testing.txt')
-        with open(tmpfile, 'w+') as f:
-            f.write('world')
-        response = await http_client.get('/static/web-ui/testing.txt')
-        assert response.status == 200
+    response = await http_client.get('/static/web-ui/index.html')
+    assert response.status == 200
 
 
 async def test_web_ui_not_found(http_client, tmpdir):
 
     with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
-
         response = await http_client.get('/static/web-ui/not-found.txt')
         # should serve web-ui/index.html
         assert response.status == 200

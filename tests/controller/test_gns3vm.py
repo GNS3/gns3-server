@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import sys
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.gns3vm import GNS3VM
@@ -65,6 +66,7 @@ async def test_json(loop, controller):
     assert vm.__json__() == vm._settings
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 async def test_update_settings(loop, controller):
 
     vm = GNS3VM(controller)
