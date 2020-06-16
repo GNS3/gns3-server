@@ -65,7 +65,7 @@ async def test_json(loop, controller):
     assert vm.__json__() == vm._settings
 
 
-async def test_update_settings(controller):
+async def test_update_settings(loop, controller):
 
     vm = GNS3VM(controller)
     vm.settings = {
