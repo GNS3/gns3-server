@@ -67,7 +67,7 @@ def fake_qemu_binary(monkeypatch, tmpdir):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
+async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
 
     manager.port_manager.console_host = "127.0.0.1"
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
@@ -87,7 +87,7 @@ def running_subprocess_mock():
     return mm
 
 
-def test_vm(compute_project, manager, fake_qemu_binary):
+async def test_vm(compute_project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
     assert vm.name == "test"
@@ -110,7 +110,7 @@ async def test_vm_create(tmpdir, compute_project, manager, fake_qemu_binary):
     assert os.path.exists(str(tmpdir / 'hello.md5sum'))
 
 
-def test_vm_invalid_qemu_with_platform(compute_project, manager, fake_qemu_binary):
+async def test_vm_invalid_qemu_with_platform(compute_project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path="/usr/fake/bin/qemu-system-64", platform="x86_64")
 
@@ -118,7 +118,7 @@ def test_vm_invalid_qemu_with_platform(compute_project, manager, fake_qemu_binar
     assert vm.platform == "x86_64"
 
 
-def test_vm_invalid_qemu_without_platform(compute_project, manager, fake_qemu_binary):
+async def test_vm_invalid_qemu_without_platform(compute_project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path="/usr/fake/bin/qemu-system-x86_64")
 
@@ -335,7 +335,7 @@ def test_set_qemu_path_kvm_binary(vm, fake_qemu_binary):
     assert vm.platform == "x86_64"
 
 
-def test_set_platform(compute_project, manager):
+async def test_set_platform(compute_project, manager):
 
     with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
         with patch("gns3server.compute.qemu.QemuVM._check_qemu_path"):
@@ -737,7 +737,7 @@ def test_hda_disk_image(vm, images_dir):
     assert vm.hda_disk_image == force_unix_path(os.path.join(images_dir, "QEMU", "test2"))
 
 
-def test_hda_disk_image_non_linked_clone(vm, images_dir, compute_project, manager, fake_qemu_binary):
+async def test_hda_disk_image_non_linked_clone(vm, images_dir, compute_project, manager, fake_qemu_binary):
     """
     Two non linked can't use the same image at the same time
     """

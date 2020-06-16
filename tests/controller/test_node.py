@@ -101,7 +101,7 @@ def test_empty_properties(compute, project):
     assert "category" not in node.properties  # Controller only
 
 
-def test_eq(compute, project, node, controller):
+async def test_eq(compute, project, node, controller):
 
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
     assert node != "a"

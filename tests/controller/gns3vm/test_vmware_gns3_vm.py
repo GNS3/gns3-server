@@ -21,7 +21,7 @@ from gns3server.controller.gns3vm.vmware_gns3_vm import VMwareGNS3VM
 
 
 @pytest.fixture
-def gns3vm(controller):
+async def gns3vm(loop, controller):
 
     vm = VMwareGNS3VM(controller)
     vm.vmname = "GNS3 VM"
@@ -34,7 +34,7 @@ def vmx_path(tmpdir):
     return str(tmpdir / "vmwware_vm.vmx")
 
 
-async def test_set_extra_options(loop, gns3vm, vmx_path, windows_platform):
+async def test_set_extra_options(gns3vm, vmx_path, windows_platform):
 
     gns3vm._vmx_path = vmx_path
 

@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 import tempfile
 import shutil
 import weakref
@@ -21,11 +22,15 @@ from .handlers.api.base import Query
 sys._called_from_test = True
 sys.original_platform = sys.platform
 
-if sys.platform.startswith("win"):
-    import asyncio
-    # use the Proactor event loop on Windows
+@pytest.mark.skipif(not sys.platform.startswith("win"), reason="asyncio.ProactorEventLoop() is Only supported on Windows")
+@pytest.yield_fixture(scope="session")
+def loop(request):
+    """Return an event loop and destroy it at the end of test"""
+
     loop = asyncio.ProactorEventLoop()
-    asyncio.set_event_loop(loop)
+    asyncio.set_event_loop(loop)  # Replace main loop to avoid conflict between tests
+    yield loop
+    asyncio.set_event_loop(None)
 
 
 @pytest.fixture(scope='function')

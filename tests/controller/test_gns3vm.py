@@ -46,7 +46,7 @@ def dummy_gns3vm(controller, dummy_engine):
     return vm
 
 
-async def test_list(controller):
+async def test_list(loop, controller):
 
     vm = GNS3VM(controller)
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.list", return_value=[{"vmname": "test", "vmx_path": "test"}]):
@@ -59,7 +59,7 @@ async def test_list(controller):
         await vm.list("hyperv")
 
 
-def test_json(controller):
+async def test_json(controller):
 
     vm = GNS3VM(controller)
     assert vm.__json__() == vm._settings

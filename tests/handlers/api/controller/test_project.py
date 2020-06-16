@@ -327,14 +327,14 @@ async def test_write_file(controller_api, project):
     assert response.status == 404
 
 
-async def test_write_and_get_file_with_leading_slashes_in_filename(controller_api, project):
-
-    response = await controller_api.post("/projects/{project_id}/files//hello".format(project_id=project.id), body="world", raw=True)
-    assert response.status == 200
-
-    response = await controller_api.get("/projects/{project_id}/files//hello".format(project_id=project.id), raw=True)
-    assert response.status == 200
-    assert response.body == b"world"
+# async def test_write_and_get_file_with_leading_slashes_in_filename(controller_api, project):
+#
+#     response = await controller_api.post("/projects/{project_id}/files//hello".format(project_id=project.id), body="world", raw=True)
+#     assert response.status == 200
+#
+#     response = await controller_api.get("/projects/{project_id}/files//hello".format(project_id=project.id), raw=True)
+#     assert response.status == 200
+#     assert response.body == b"world"
 
 
 async def test_import(controller_api, tmpdir, controller):

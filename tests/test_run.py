@@ -28,7 +28,7 @@ from gns3server.version import __version__
 def test_locale_check():
 
     try:
-        locale.setlocale(locale.LC_ALL, ("fr_FR"))
+        locale.setlocale(locale.LC_ALL, ("fr_FR", "UTF-8"))
     except:  # Locale is not available on the server
         return
     run.locale_check()

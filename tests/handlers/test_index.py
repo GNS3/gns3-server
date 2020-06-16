@@ -70,7 +70,6 @@ async def test_web_ui(http_client, tmpdir):
             f.write('world')
         response = await http_client.get('/static/web-ui/testing.txt')
         assert response.status == 200
-        os.remove(tmpfile)
 
 
 async def test_web_ui_not_found(http_client, tmpdir):

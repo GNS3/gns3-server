@@ -27,9 +27,8 @@ from gns3server.compute.traceng import TraceNG
 from gns3server.compute.notification_manager import NotificationManager
 
 
-
 @pytest.fixture
-def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = TraceNG.instance()
     m.port_manager = port_manager
@@ -37,7 +36,7 @@ def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-def vm(loop, compute_project, manager, ubridge_path):
+async def vm(compute_project, manager, ubridge_path):
 
     vm = TraceNGVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     vm._start_ubridge = AsyncioMagicMock()
@@ -46,7 +45,7 @@ def vm(loop, compute_project, manager, ubridge_path):
     return vm
 
 
-def test_vm(project, manager):
+async def test_vm(project, manager):
 
     vm = TraceNGVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     assert vm.name == "test"

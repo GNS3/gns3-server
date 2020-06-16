@@ -23,7 +23,7 @@ from gns3server.compute.vmware import VMware
 
 
 @pytest.fixture
-def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = VMware.instance()
     m.port_manager = port_manager
@@ -31,20 +31,20 @@ def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, tmpdir):
+async def vm(compute_project, manager, tmpdir):
 
     fake_vmx = str(tmpdir / "test.vmx")
     open(fake_vmx, "w+").close()
     return VMwareVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, fake_vmx, False)
 
 
-def test_vm(vm):
+async def test_vm(vm):
 
     assert vm.name == "test"
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_json(vm, tmpdir, compute_project):
+async def test_json(vm, tmpdir, compute_project):
 
     assert vm.__json__()["node_directory"] is not None
     compute_project._path = str(tmpdir)
