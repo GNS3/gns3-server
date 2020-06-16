@@ -84,6 +84,7 @@ async def test_update_settings(loop, controller):
     assert "vm" not in controller.computes
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     """
     When start the compute should be add to the controller
