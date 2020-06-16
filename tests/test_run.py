@@ -50,23 +50,23 @@ def test_parse_arguments(capsys, tmpdir):
 
     with pytest.raises(SystemExit):
         run.parse_arguments(["-v"])
-    out, err = capsys.readouterr()
-    assert __version__ in "{}{}".format(out.strip(), err.strip())  # Depending of the Python version the location of the version change
+    out, _ = capsys.readouterr()
+    assert __version__ in "{}".format(out.strip())  # Depending of the Python version the location of the version change
 
     with pytest.raises(SystemExit):
         run.parse_arguments(["--version"])
-    out, err = capsys.readouterr()
-    assert __version__ in "{}{}".format(out.strip(), err.strip())  # Depending of the Python version the location of the version change
+    out, _ = capsys.readouterr()
+    assert __version__ in "{}".format(out.strip())  # Depending of the Python version the location of the version change
 
     with pytest.raises(SystemExit):
         run.parse_arguments(["-h"])
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert __version__ in out
     assert "optional arguments" in out
 
     with pytest.raises(SystemExit):
         run.parse_arguments(["--help"])
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert __version__ in out
     assert "optional arguments" in out
 
