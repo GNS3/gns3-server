@@ -100,7 +100,7 @@ async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     assert controller.computes["vm"].user == "hello"
     assert controller.computes["vm"].password == "world"
 
-
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 async def test_auto_start_with_error(controller, dummy_gns3vm, dummy_engine):
 
     dummy_engine.start.side_effect = GNS3VMError("Dummy error")
