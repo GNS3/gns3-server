@@ -1819,7 +1819,9 @@ class QemuVM(BaseNode):
             else:
                 disk_name = getattr(self, "config_disk_name")
                 disk = os.path.join(self.working_dir, disk_name)
-                interface = getattr(self, "hda_disk_interface", "ide")
+                interface = getattr(self, "hdd_disk_interface", "ide")
+                if interface == "ide":
+                    interface = getattr(self, "hda_disk_interface", "none")
                 await self._import_config()
                 if not os.path.exists(disk):
                     try:
