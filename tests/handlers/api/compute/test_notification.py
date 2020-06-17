@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,19 @@ import json
 from gns3server.compute.notification_manager import NotificationManager
 
 
-def test_notification_ws(http_compute, async_run):
-    ws = http_compute.websocket("/notifications/ws")
-    answer = async_run(ws.receive())
+async def test_notification_ws(compute_api, http_client):
+
+    ws = await http_client.ws_connect(compute_api.get_url("/notifications/ws"))
+    answer = await ws.receive()
     answer = json.loads(answer.data)
+
     assert answer["action"] == "ping"
 
     NotificationManager.instance().emit("test", {})
 
-    answer = async_run(ws.receive())
+    answer = await ws.receive()
     answer = json.loads(answer.data)
     assert answer["action"] == "test"
 
-    async_run(http_compute.close())
+    if not ws.closed:
+        await ws.close()

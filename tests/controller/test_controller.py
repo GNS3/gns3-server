@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from gns3server.version import __version__
 
 
 def test_save(controller, controller_config_path):
+
     controller.save()
     assert os.path.exists(controller_config_path)
     with open(controller_config_path) as f:
@@ -39,7 +40,8 @@ def test_save(controller, controller_config_path):
         assert data["gns3vm"] == controller.gns3vm.__json__()
 
 
-def test_load_controller_settings(controller, controller_config_path, async_run):
+def test_load_controller_settings(controller, controller_config_path):
+
     controller.save()
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -60,7 +62,8 @@ def test_load_controller_settings(controller, controller_config_path, async_run)
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
-def test_load_controller_settings_with_no_computes_section(controller, controller_config_path, async_run):
+def test_load_controller_settings_with_no_computes_section(controller, controller_config_path):
+
     controller.save()
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -70,11 +73,12 @@ def test_load_controller_settings_with_no_computes_section(controller, controlle
     assert len(controller._load_controller_settings()) == 0
 
 
-def test_import_computes_1_x(controller, controller_config_path, async_run):
+def test_import_computes_1_x(controller, controller_config_path):
     """
     At first start the server should import the
     computes from the gns3_gui 1.X
     """
+
     gns3_gui_conf = {
         "Servers": {
             "remote_servers": [
@@ -106,43 +110,46 @@ def test_import_computes_1_x(controller, controller_config_path, async_run):
             assert compute.password is None
 
 
-def test_load_projects(controller, projects_dir, async_run):
-    controller.save()
+async def test_load_projects(controller, projects_dir):
 
+    controller.save()
     os.makedirs(os.path.join(projects_dir, "project1"))
     with open(os.path.join(projects_dir, "project1", "project1.gns3"), "w+") as f:
         f.write("")
     with asyncio_patch("gns3server.controller.Controller.load_project") as mock_load_project:
-        async_run(controller.load_projects())
+        await controller.load_projects()
     mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
 
 
-def test_add_compute(controller, controller_config_path, async_run):
+async def test_add_compute(controller):
+
     controller._notification = MagicMock()
-    c = async_run(controller.add_compute(compute_id="test1", connect=False))
+    c = await controller.add_compute(compute_id="test1", connect=False)
     controller._notification.controller_emit.assert_called_with("compute.created", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute(compute_id="test1", connect=False))
+    await controller.add_compute(compute_id="test1", connect=False)
     controller._notification.controller_emit.assert_called_with("compute.updated", c.__json__())
     assert len(controller.computes) == 1
-    async_run(controller.add_compute(compute_id="test2", connect=False))
+    await controller.add_compute(compute_id="test2", connect=False)
     assert len(controller.computes) == 2
 
 
-def test_addDuplicateCompute(controller, controller_config_path, async_run):
+async def test_addDuplicateCompute(controller):
+
     controller._notification = MagicMock()
-    c = async_run(controller.add_compute(compute_id="test1", name="Test", connect=False))
+    c = await controller.add_compute(compute_id="test1", name="Test", connect=False)
     assert len(controller.computes) == 1
     with pytest.raises(aiohttp.web.HTTPConflict):
-        async_run(controller.add_compute(compute_id="test2", name="Test", connect=False))
+        await controller.add_compute(compute_id="test2", name="Test", connect=False)
 
 
-def test_deleteCompute(controller, controller_config_path, async_run):
-    c = async_run(controller.add_compute(compute_id="test1", connect=False))
+async def test_deleteCompute(controller, controller_config_path):
+
+    c = await controller.add_compute(compute_id="test1", connect=False)
     assert len(controller.computes) == 1
     controller._notification = MagicMock()
     c._connected = True
-    async_run(controller.delete_compute("test1"))
+    await controller.delete_compute("test1")
     assert len(controller.computes) == 0
     controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
@@ -151,25 +158,26 @@ def test_deleteCompute(controller, controller_config_path, async_run):
     assert c.connected is False
 
 
-def test_deleteComputeProjectOpened(controller, controller_config_path, async_run):
+async def test_deleteComputeProjectOpened(controller, controller_config_path):
     """
     When you delete a compute the project using it are close
     """
-    c = async_run(controller.add_compute(compute_id="test1", connect=False))
+
+    c = await controller.add_compute(compute_id="test1", connect=False)
     c.post = AsyncioMagicMock()
     assert len(controller.computes) == 1
 
-    project1 = async_run(controller.add_project(name="Test1"))
-    async_run(project1.open())
+    project1 = await controller.add_project(name="Test1")
+    await project1.open()
     # We simulate that the project use this compute
     project1._project_created_on_compute.add(c)
 
-    project2 = async_run(controller.add_project(name="Test2"))
-    async_run(project2.open())
+    project2 = await controller.add_project(name="Test2")
+    await project2.open()
 
     controller._notification = MagicMock()
     c._connected = True
-    async_run(controller.delete_compute("test1"))
+    await controller.delete_compute("test1")
     assert len(controller.computes) == 0
     controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
     with open(controller_config_path) as f:
@@ -182,8 +190,9 @@ def test_deleteComputeProjectOpened(controller, controller_config_path, async_ru
     assert project2.status == "opened"
 
 
-def test_addComputeConfigFile(controller, controller_config_path, async_run):
-    async_run(controller.add_compute(compute_id="test1", name="Test", connect=False))
+async def test_addComputeConfigFile(controller, controller_config_path):
+
+    await controller.add_compute(compute_id="test1", name="Test", connect=False)
     assert len(controller.computes) == 1
     with open(controller_config_path) as f:
         data = json.load(f)
@@ -200,170 +209,180 @@ def test_addComputeConfigFile(controller, controller_config_path, async_run):
         ]
 
 
-def test_getCompute(controller, async_run):
-    compute = async_run(controller.add_compute(compute_id="test1", connect=False))
+async def test_getCompute(controller):
 
+    compute = await controller.add_compute(compute_id="test1", connect=False)
     assert controller.get_compute("test1") == compute
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_compute("dsdssd")
 
 
-def test_has_compute(controller, async_run):
-    compute = async_run(controller.add_compute(compute_id="test1", connect=False))
+async def test_has_compute(controller):
 
+    await controller.add_compute(compute_id="test1", connect=False)
     assert controller.has_compute("test1")
     assert not controller.has_compute("test2")
 
 
-def test_add_project(controller, async_run):
+async def test_add_project(controller):
+
     uuid1 = str(uuid.uuid4())
     uuid2 = str(uuid.uuid4())
-
-    async_run(controller.add_project(project_id=uuid1, name="Test"))
+    await controller.add_project(project_id=uuid1, name="Test")
     assert len(controller.projects) == 1
-    async_run(controller.add_project(project_id=uuid1, name="Test"))
+    await controller.add_project(project_id=uuid1, name="Test")
     assert len(controller.projects) == 1
-    async_run(controller.add_project(project_id=uuid2, name="Test 2"))
+    await controller.add_project(project_id=uuid2, name="Test 2")
     assert len(controller.projects) == 2
 
 
-def test_addDuplicateProject(controller, async_run):
+async def test_addDuplicateProject(controller):
+
     uuid1 = str(uuid.uuid4())
     uuid2 = str(uuid.uuid4())
-
-    async_run(controller.add_project(project_id=uuid1, name="Test"))
+    await controller.add_project(project_id=uuid1, name="Test")
     assert len(controller.projects) == 1
     with pytest.raises(aiohttp.web.HTTPConflict):
-        async_run(controller.add_project(project_id=uuid2, name="Test"))
+        await controller.add_project(project_id=uuid2, name="Test")
 
 
-def test_remove_project(controller, async_run):
+async def test_remove_project(controller):
+
     uuid1 = str(uuid.uuid4())
-
-    project1 = async_run(controller.add_project(project_id=uuid1, name="Test"))
+    project1 = await controller.add_project(project_id=uuid1, name="Test")
     assert len(controller.projects) == 1
-
     controller.remove_project(project1)
     assert len(controller.projects) == 0
 
 
-def test_addProject_with_compute(controller, async_run):
-    uuid1 = str(uuid.uuid4())
+async def test_addProject_with_compute(controller):
 
+    uuid1 = str(uuid.uuid4())
     compute = Compute("test1", controller=MagicMock())
     compute.post = MagicMock()
     controller._computes = {"test1": compute}
+    await controller.add_project(project_id=uuid1, name="Test")
 
-    project1 = async_run(controller.add_project(project_id=uuid1, name="Test"))
 
+async def test_getProject(controller):
 
-def test_getProject(controller, async_run):
     uuid1 = str(uuid.uuid4())
-
-    project = async_run(controller.add_project(project_id=uuid1, name="Test"))
+    project = await controller.add_project(project_id=uuid1, name="Test")
     assert controller.get_project(uuid1) == project
     with pytest.raises(aiohttp.web.HTTPNotFound):
         assert controller.get_project("dsdssd")
 
 
-def test_start(controller, async_run):
+async def test_start(controller):
+
     controller.gns3vm.settings = {
         "enable": False,
         "engine": "vmware",
         "vmname": "GNS3 VM"
     }
+
     with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock:
-        async_run(controller.start())
+        await controller.start()
+    assert mock.called
     assert len(controller.computes) == 1  # Local compute is created
     assert controller.computes["local"].name == socket.gethostname()
 
 
-def test_start_vm(controller, async_run):
+async def test_start_vm(controller):
     """
     Start the controller with a GNS3 VM
     """
+
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
         "vmname": "GNS3 VM"
     }
+
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start") as mock:
-        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
-            with asyncio_patch("gns3server.controller.compute.Compute.connect") as mock_connect:
-                async_run(controller.start())
+        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
+            with asyncio_patch("gns3server.controller.compute.Compute.connect"):
+                await controller.start()
                 assert mock.called
     assert "local" in controller.computes
     assert "vm" in controller.computes
     assert len(controller.computes) == 2  # Local compute and vm are created
 
 
-def test_stop(controller, async_run):
-    c = async_run(controller.add_compute(compute_id="test1", connect=False))
+async def test_stop(controller):
+
+    c = await controller.add_compute(compute_id="test1", connect=False)
     c._connected = True
-    async_run(controller.stop())
+    await controller.stop()
     assert c.connected is False
 
 
-def test_stop_vm(controller, async_run):
+async def test_stop_vm(controller):
     """
     Stop GNS3 VM if configured
     """
+
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
         "when_exit": "stop",
         "vmname": "GNS3 VM"
     }
+
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.stop") as mock:
-        async_run(controller.stop())
+        await controller.stop()
         assert mock.called
 
 
-def test_suspend_vm(controller, async_run):
+async def test_suspend_vm(controller):
     """
     Suspend GNS3 VM if configured
     """
+
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
         "when_exit": "suspend",
         "vmname": "GNS3 VM"
     }
+
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
-        async_run(controller.stop())
+        await controller.stop()
         assert mock.called
 
 
-def test_keep_vm(controller, async_run):
+async def test_keep_vm(controller):
     """
     Keep GNS3 VM if configured
     """
+
     controller.gns3vm.settings = {
         "enable": True,
         "engine": "vmware",
         "when_exit": "keep",
         "vmname": "GNS3 VM"
     }
+
     controller.gns3vm.current_engine().running = True
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.suspend") as mock:
-        async_run(controller.stop())
+        await controller.stop()
         assert not mock.called
 
 
-def test_get_free_project_name(controller, async_run):
+async def test_get_free_project_name(controller):
 
-    async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test"))
+    await controller.add_project(project_id=str(uuid.uuid4()), name="Test")
     assert controller.get_free_project_name("Test") == "Test-1"
-    async_run(controller.add_project(project_id=str(uuid.uuid4()), name="Test-1"))
+    await controller.add_project(project_id=str(uuid.uuid4()), name="Test-1")
     assert controller.get_free_project_name("Test") == "Test-2"
     assert controller.get_free_project_name("Hello") == "Hello"
 
 
-def test_load_base_files(controller, config, tmpdir):
-    config.set_section_config("Server", {"configs_path": str(tmpdir)})
+async def test_load_base_files(controller, config, tmpdir):
 
+    config.set_section_config("Server", {"configs_path": str(tmpdir)})
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
         f.write('test')
 
@@ -375,7 +394,8 @@ def test_load_base_files(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
-def test_appliances(controller, async_run, tmpdir):
+def test_appliances(controller, tmpdir):
+
     my_appliance = {
         "name": "My Appliance",
         "status": "stable"
@@ -406,6 +426,7 @@ def test_appliances(controller, async_run, tmpdir):
 
 
 def test_load_templates(controller):
+
     controller._settings = {}
     controller.template_manager.load_templates()
 
@@ -430,10 +451,11 @@ def test_load_templates(controller):
             assert cloud_uuid == template.id
 
 
-def test_autoidlepc(controller, async_run):
+async def test_autoidlepc(controller):
+
     controller._computes["local"] = AsyncioMagicMock()
     node_mock = AsyncioMagicMock()
     with asyncio_patch("gns3server.controller.Project.add_node", return_value=node_mock):
-        async_run(controller.autoidlepc("local", "c7200", "test.bin", 512))
+        await controller.autoidlepc("local", "c7200", "test.bin", 512)
     assert node_mock.dynamips_auto_idlepc.called
     assert len(controller.projects) == 0

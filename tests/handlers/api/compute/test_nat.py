@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,125 +16,128 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import sys
-import os
+
 from tests.utils import asyncio_patch
-from unittest.mock import patch
 
 
 @pytest.fixture(scope="function")
-def vm(http_compute, project, on_gns3vm):
-    response = http_compute.post("/projects/{project_id}/nat/nodes".format(project_id=project.id), {"name": "Nat 1"})
+async def vm(compute_api, compute_project, ubridge_path, on_gns3vm):
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._start_ubridge"):
+        response = await compute_api.post("/projects/{project_id}/nat/nodes".format(project_id=compute_project.id), {"name": "Nat 1"})
     assert response.status == 201
     return response.json
 
 
-@pytest.yield_fixture(autouse=True)
-def mock_ubridge():
-    """
-    Avoid all interaction with ubridge
-    """
+async def test_nat_create(compute_api, compute_project, on_gns3vm):
+
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._start_ubridge"):
-        with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._add_ubridge_connection"):
-            with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._delete_ubridge_connection"):
-                yield
-
-
-def test_nat_create(http_compute, project, on_gns3vm):
-    response = http_compute.post("/projects/{project_id}/nat/nodes".format(project_id=project.id), {"name": "Nat 1"}, example=True)
+        response = await compute_api.post("/projects/{project_id}/nat/nodes".format(project_id=compute_project.id), {"name": "Nat 1"})
     assert response.status == 201
     assert response.route == "/projects/{project_id}/nat/nodes"
     assert response.json["name"] == "Nat 1"
-    assert response.json["project_id"] == project.id
+    assert response.json["project_id"] == compute_project.id
 
 
-def test_nat_get(http_compute, project, vm):
-    response = http_compute.get("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+async def test_nat_get(compute_api, compute_project, vm):
+
+    response = await compute_api.get("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status == 200
     assert response.route == "/projects/{project_id}/nat/nodes/{node_id}"
     assert response.json["name"] == "Nat 1"
-    assert response.json["project_id"] == project.id
+    assert response.json["project_id"] == compute_project.id
     assert response.json["status"] == "started"
 
 
-def test_nat_nio_create_udp(http_compute, vm):
+async def test_nat_nio_create_udp(compute_api, vm):
+
+    params = {
+        "type": "nio_udp",
+        "lport": 4242,
+        "rport": 4343,
+        "rhost": "127.0.0.1"
+    }
+
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.add_nio"):
-        response = http_compute.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                                      "lport": 4242,
-                                                                                                                                                                      "rport": 4343,
-                                                                                                                                                                      "rhost": "127.0.0.1"},
-                                     example=True)
+        response = await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
     assert response.status == 201
     assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
-def test_nat_nio_update_udp(http_compute, vm):
-    http_compute.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                       "lport": 4242,
-                                                                                                                                                       "rport": 4343,
-                                                                                                                                                       "rhost": "127.0.0.1"})
-    response = http_compute.put("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]),
-                                {
-                                    "type": "nio_udp",
-                                    "lport": 4242,
-                                    "rport": 4343,
-                                    "rhost": "127.0.0.1",
-                                    "filters": {}},
-                                example=True)
+async def test_nat_nio_update_udp(compute_api, vm):
+
+    params = {
+        "type": "nio_udp",
+        "lport": 4242,
+        "rport": 4343,
+        "rhost": "127.0.0.1"
+    }
+
+    await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+    params["filters"] = {}
+    response = await compute_api.put("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
     assert response.status == 201, response.body.decode()
     assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
 
 
-def test_nat_delete_nio(http_compute, vm):
+async def test_nat_delete_nio(compute_api, vm):
+
+    params = {
+        "type": "nio_udp",
+        "lport": 4242,
+        "rport": 4343,
+        "rhost": "127.0.0.1"
+    }
+
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.add_nio"):
-        http_compute.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"type": "nio_udp",
-                                                                                                                                                           "lport": 4242,
-                                                                                                                                                           "rport": 4343,
-                                                                                                                                                           "rhost": "127.0.0.1"})
-    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.remove_nio") as mock_remove_nio:
-        response = http_compute.delete("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
-        assert mock_remove_nio.called
+        await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.remove_nio") as mock:
+        response = await compute_api.delete("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        assert mock.called
     assert response.status == 204
     assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
 
 
-def test_nat_delete(http_compute, vm):
-    response = http_compute.delete("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+async def test_nat_delete(compute_api, vm):
+
+    response = await compute_api.delete("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status == 204
 
 
-def test_nat_update(http_compute, vm, tmpdir):
-    response = http_compute.put("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {
-        "name": "test"
-    },
-        example=True)
+async def test_nat_update(compute_api, vm):
+
+    response = await compute_api.put("/projects/{project_id}/nat/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), {"name": "test"})
     assert response.status == 200
     assert response.json["name"] == "test"
 
 
-def test_nat_start_capture(http_compute, vm):
+async def test_nat_start_capture(compute_api, vm):
 
-    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.start_capture") as start_capture:
-        params = {"capture_file_name": "test.pcap", "data_link_type": "DLT_EN10MB"}
-        response = http_compute.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params, example=True)
+    params = {
+        "capture_file_name": "test.pcap",
+        "data_link_type": "DLT_EN10MB"
+    }
+
+    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.start_capture") as mock:
+        response = await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params)
         assert response.status == 200
-        assert start_capture.called
+        assert mock.called
         assert "test.pcap" in response.json["pcap_file_path"]
 
 
-def test_nat_stop_capture(http_compute, vm):
+async def test_nat_stop_capture(compute_api, vm):
 
-    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.stop_capture") as stop_capture:
-        response = http_compute.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), example=True)
+    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.stop_capture") as mock:
+        response = await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]))
         assert response.status == 204
-        assert stop_capture.called
+        assert mock.called
 
 
-def test_nat_pcap(http_compute, vm, project):
+async def test_nat_pcap(compute_api, vm, compute_project):
 
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.get_nio"):
         with asyncio_patch("gns3server.compute.builtin.Builtin.stream_pcap_file"):
-            response = http_compute.get("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=project.id, node_id=vm["node_id"]), raw=True)
+            response = await compute_api.get("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]), raw=True)
             assert response.status == 200

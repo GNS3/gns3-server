@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,57 +17,58 @@
 
 import pytest
 import asyncio
-from tests.utils import asyncio_patch
 
 from gns3server.compute.vmware.vmware_vm import VMwareVM
-from gns3server.compute.vmware.vmware_error import VMwareError
 from gns3server.compute.vmware import VMware
 
 
 @pytest.fixture
-def manager(port_manager):
+async def manager(loop, port_manager):
+
     m = VMware.instance()
     m.port_manager = port_manager
     return m
 
 
 @pytest.fixture(scope="function")
-def vm(project, manager, tmpdir):
+async def vm(compute_project, manager, tmpdir):
+
     fake_vmx = str(tmpdir / "test.vmx")
     open(fake_vmx, "w+").close()
+    return VMwareVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, fake_vmx, False)
 
-    return VMwareVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager, fake_vmx, False)
 
+async def test_vm(vm):
 
-def test_vm(project, manager, vm):
     assert vm.name == "test"
     assert vm.id == "00010203-0405-0607-0809-0a0b0c0d0e0f"
 
 
-def test_json(vm, tmpdir, project):
+async def test_json(vm, tmpdir, compute_project):
+
     assert vm.__json__()["node_directory"] is not None
-    project._path = str(tmpdir)
+    compute_project._path = str(tmpdir)
     vm._linked_clone = True
     assert vm.__json__()["node_directory"] is not None
 
 
-def test_start_capture(vm, tmpdir, manager, free_console_port, loop):
+async def test_start_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     vm.adapters = 1
-    loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(0, nio)))
-    loop.run_until_complete(asyncio.ensure_future(vm.start_capture(0, output_file)))
+    await vm.adapter_add_nio_binding(0, nio)
+    await vm.start_capture(0, output_file)
     assert vm._ethernet_adapters[0].get_nio(0).capturing
 
 
-def test_stop_capture(vm, tmpdir, manager, free_console_port, loop):
+async def test_stop_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     vm.adapters = 1
-    loop.run_until_complete(asyncio.ensure_future(vm.adapter_add_nio_binding(0, nio)))
-    loop.run_until_complete(vm.start_capture(0, output_file))
+    await vm.adapter_add_nio_binding(0, nio)
+    await vm.start_capture(0, output_file)
     assert vm._ethernet_adapters[0].get_nio(0).capturing
-    loop.run_until_complete(asyncio.ensure_future(vm.stop_capture(0)))
+    await asyncio.ensure_future(vm.stop_capture(0))
     assert vm._ethernet_adapters[0].get_nio(0).capturing is False

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 from gns3server.utils import *
 
 
@@ -23,8 +22,8 @@ def test_force_unix_path():
     assert force_unix_path("a/b") == "a/b"
     assert force_unix_path("a\\b") == "a/b"
     assert force_unix_path("a\\b\\..\\c") == "a/c"
-    assert force_unix_path("C:\Temp") == "C:/Temp"
-    assert force_unix_path(force_unix_path("C:\Temp")) == "C:/Temp"
+    assert force_unix_path(r"C:\Temp") == r"C:/Temp"
+    assert force_unix_path(force_unix_path(r"C:\Temp")) == r"C:/Temp"
     assert force_unix_path("a//b") == "a/b"
 
 

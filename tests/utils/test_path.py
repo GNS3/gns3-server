@@ -24,6 +24,7 @@ from gns3server.utils.path import check_path_allowed, get_default_project_direct
 
 
 def test_check_path_allowed(config, tmpdir):
+
     config.set("Server", "local", False)
     config.set("Server", "projects_path", str(tmpdir))
     with pytest.raises(aiohttp.web.HTTPForbidden):
@@ -37,7 +38,6 @@ def test_check_path_allowed(config, tmpdir):
 def test_get_default_project_directory(config):
 
     config.clear()
-
     path = os.path.normpath(os.path.expanduser("~/GNS3/projects"))
     assert get_default_project_directory() == path
     assert os.path.exists(path)

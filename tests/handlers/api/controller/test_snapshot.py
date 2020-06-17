@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,40 +21,46 @@ import pytest
 
 
 @pytest.fixture
-def project(http_controller, controller):
-    u = str(uuid.uuid4())
-    query = {"name": "test", "project_id": u}
-    response = http_controller.post("/projects", query)
-    project = controller.get_project(u)
+async def project(controller_api, controller):
 
+    u = str(uuid.uuid4())
+    params = {"name": "test", "project_id": u}
+    await controller_api.post("/projects", params)
+    project = controller.get_project(u)
     return project
 
 
 @pytest.fixture
-def snapshot(project, async_run):
-    snapshot = async_run(project.snapshot("test"))
+async def snapshot(project):
+
+    snapshot = await project.snapshot("test")
     return snapshot
 
 
-def test_list_snapshots(http_controller, project, snapshot):
-    response = http_controller.get("/projects/{}/snapshots".format(project.id), example=True)
+async def test_list_snapshots(controller_api, project, snapshot):
+
+    assert snapshot.name == "test"
+    response = await controller_api.get("/projects/{}/snapshots".format(project.id))
     assert response.status == 200
     assert len(response.json) == 1
 
 
-def test_delete_snapshot(http_controller, project, snapshot):
-    response = http_controller.delete("/projects/{}/snapshots/{}".format(project.id, snapshot.id), example=True)
+async def test_delete_snapshot(controller_api, project, snapshot):
+
+    response = await controller_api.delete("/projects/{}/snapshots/{}".format(project.id, snapshot.id))
     assert response.status == 204
     assert not os.path.exists(snapshot.path)
 
 
-def test_restore_snapshot(http_controller, project, snapshot):
-    response = http_controller.post("/projects/{}/snapshots/{}/restore".format(project.id, snapshot.id), example=True)
+async def test_restore_snapshot(controller_api, project, snapshot):
+
+    response = await controller_api.post("/projects/{}/snapshots/{}/restore".format(project.id, snapshot.id))
     assert response.status == 201
     assert response.json["name"] == project.name
 
 
-def test_create_snapshot(http_controller, project):
-    response = http_controller.post("/projects/{}/snapshots".format(project.id), {"name": "snap1"}, example=True)
+async def test_create_snapshot(controller_api, project):
+
+    response = await controller_api.post("/projects/{}/snapshots".format(project.id), {"name": "snap1"})
     assert response.status == 201
     assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 1

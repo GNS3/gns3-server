@@ -25,17 +25,18 @@ from gns3server.controller.snapshot import Snapshot
 from tests.utils import AsyncioMagicMock
 
 
-@pytest.fixture
-def project(controller):
-    project = Project(controller=controller, name="Test")
-    controller._projects[project.id] = project
-    return project
+# @pytest.fixture
+# def project(controller):
+#     project = Project(controller=controller, name="Test")
+#     controller._projects[project.id] = project
+#     return project
 
 
 def test_snapshot_name(project):
     """
     Test create a snapshot object with a name
     """
+
     snapshot = Snapshot(project, name="test1")
     assert snapshot.name == "test1"
     assert snapshot._created_at > 0
@@ -51,6 +52,7 @@ def test_snapshot_filename(project):
     """
     Test create a snapshot object with a filename
     """
+
     snapshot = Snapshot(project, filename="test1_260716_100439.gns3project")
     assert snapshot.name == "test1"
     assert snapshot._created_at == 1469527479.0
@@ -58,6 +60,7 @@ def test_snapshot_filename(project):
 
 
 def test_json(project):
+
     snapshot = Snapshot(project, filename="test1_260716_100439.gns3project")
     assert snapshot.__json__() == {
         "snapshot_id": snapshot._id,
@@ -67,7 +70,8 @@ def test_json(project):
     }
 
 
-def test_restore(project, controller, async_run):
+async def test_restore(project, controller):
+
     compute = AsyncioMagicMock()
     compute.id = "local"
     controller._computes["local"] = compute
@@ -75,12 +79,11 @@ def test_restore(project, controller, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    async_run(project.add_node(compute, "test1", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
-
-    snapshot = async_run(project.snapshot(name="test"))
+    await project.add_node(compute, "test1", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+    snapshot = await project.snapshot(name="test")
 
     # We add a node after the snapshots
-    async_run(project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    await project.add_node(compute, "test2", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
 
     # project-files should be reset when reimporting
     test_file = os.path.join(project.path, "project-files", "test.txt")
@@ -92,7 +95,7 @@ def test_restore(project, controller, async_run):
 
     controller._notification = MagicMock()
     with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        async_run(snapshot.restore())
+        await snapshot.restore()
 
     assert "snapshot.restored" in [c[0][0] for c in controller.notification.project_emit.call_args_list]
     # project.closed notification should not be send when restoring snapshots

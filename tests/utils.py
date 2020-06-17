@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,32 +34,19 @@ class _asyncio_patch:
     """
 
     def __init__(self, function, *args, **kwargs):
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
+
+        self._function = function
+        self._aync_magic_mock = AsyncioMagicMock(*args, **kwargs)
 
     def __enter__(self):
         """Used when enter in the with block"""
-        self._patcher = unittest.mock.patch(self.function, return_value=self._fake_anwser())
+        self._patcher = unittest.mock.patch(self._function, new=self._aync_magic_mock)
         mock_class = self._patcher.start()
         return mock_class
 
     def __exit__(self, *exc_info):
         """Used when leaving the with block"""
         self._patcher.stop()
-
-    def _fake_anwser(self):
-        future = asyncio.Future()
-        if "return_value" in self.kwargs:
-            future.set_result(self.kwargs["return_value"])
-        elif "side_effect" in self.kwargs:
-            if isinstance(self.kwargs["side_effect"], Exception):
-                future.set_exception(self.kwargs["side_effect"])
-            else:
-                raise NotImplementedError
-        else:
-            future.set_result(True)
-        return future
 
 
 def asyncio_patch(function, *args, **kwargs):
@@ -77,12 +64,13 @@ class AsyncioMagicMock(unittest.mock.MagicMock):
     """
     Magic mock returning coroutine
     """
+
     try:
         __class__ = types.CoroutineType
     except AttributeError:  # Not supported with Python 3.4
         __class__ = types.GeneratorType
 
-    def __init__(self, return_value=None, return_values=None, **kwargs):
+    def __init__(self, return_value=None, **kwargs):
         """
         :return_values: Array of return value at each call will return the next
         """

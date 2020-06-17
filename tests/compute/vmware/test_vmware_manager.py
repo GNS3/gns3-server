@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,26 +17,20 @@
 
 
 import pytest
-import tempfile
-import os
-import stat
-import asyncio
-
-
-from unittest.mock import patch
 
 from gns3server.compute.vmware import VMware
-from tests.utils import asyncio_patch
 
 
 @pytest.fixture
-def manager(port_manager):
+async def manager(loop, port_manager):
+
     m = VMware.instance()
     m.port_manager = port_manager
     return m
 
 
-def test_parse_vmware_file(manager, tmpdir):
+def test_parse_vmware_file(tmpdir):
+
     path = str(tmpdir / "test.vmx")
     with open(path, "w+") as f:
         f.write('displayname = "GNS3 VM"\nguestOS = "ubuntu-64"')

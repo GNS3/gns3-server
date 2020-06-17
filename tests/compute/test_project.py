@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,9 @@
 
 import os
 import uuid
-import json
 import asyncio
 import pytest
 import aiohttp
-import zipfile
 from uuid import uuid4
 from unittest.mock import patch
 
@@ -34,24 +32,27 @@ from gns3server.config import Config
 
 
 @pytest.fixture(scope="function")
-def manager(port_manager):
+async def manager(loop, port_manager):
+
     m = VPCS.instance()
     m.port_manager = port_manager
     return m
 
 
 @pytest.fixture(scope="function")
-def node(project, manager, loop):
-    node = manager.create_node("test", project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
-    return loop.run_until_complete(asyncio.ensure_future(node))
+async def node(compute_project, manager):
+
+    node = manager.create_node("test", compute_project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
+    return await asyncio.ensure_future(node)
 
 
-def test_affect_uuid():
+async def test_affect_uuid():
+
     p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
-def test_clean_tmp_directory(async_run):
+async def test_clean_tmp_directory():
     """
     The tmp directory should be clean at project open and close
     """
@@ -59,7 +60,7 @@ def test_clean_tmp_directory(async_run):
     p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     path = p.tmp_working_directory()
     os.makedirs(path)
-    async_run(p.close())
+    await p.close()
     assert not os.path.exists(path)
 
     os.makedirs(path)
@@ -67,10 +68,9 @@ def test_clean_tmp_directory(async_run):
     assert not os.path.exists(path)
 
 
-def test_path(tmpdir):
+async def test_path(projects_dir):
 
-    directory = Config.instance().get_section_config("Server").get("projects_path")
-
+    directory = projects_dir
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
             p = Project(project_id=str(uuid4()))
@@ -78,27 +78,30 @@ def test_path(tmpdir):
             assert os.path.exists(os.path.join(directory, p.id))
 
 
-def test_init_path(tmpdir):
+async def test_init_path(tmpdir):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(path=str(tmpdir), project_id=str(uuid4()))
         assert p.path == str(tmpdir)
 
 
-def test_changing_path_not_allowed(tmpdir):
+async def test_changing_path_not_allowed(tmpdir):
+
     with patch("gns3server.compute.project.Project.is_local", return_value=False):
         with pytest.raises(aiohttp.web.HTTPForbidden):
             p = Project(project_id=str(uuid4()))
             p.path = str(tmpdir)
 
 
-def test_variables(tmpdir):
+async def test_variables():
+
     variables = [{"name": "VAR1", "value": "VAL1"}]
     p = Project(project_id=str(uuid4()), variables=variables)
     assert p.variables == variables
 
 
-def test_json(tmpdir):
+async def test_json():
+
     p = Project(project_id=str(uuid4()))
     assert p.__json__() == {
         "name": p.name,
@@ -107,7 +110,8 @@ def test_json(tmpdir):
     }
 
 
-def test_json_with_variables(tmpdir):
+async def test_json_with_variables():
+
     variables = [{"name": "VAR1", "value": "VAL1"}]
     p = Project(project_id=str(uuid4()), variables=variables)
     assert p.__json__() == {
@@ -117,18 +121,18 @@ def test_json_with_variables(tmpdir):
     }
 
 
-def test_node_working_directory(tmpdir, node):
-    directory = Config.instance().get_section_config("Server").get("projects_path")
+async def test_node_working_directory(node, projects_dir):
 
+    directory = projects_dir
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(project_id=str(uuid4()))
         assert p.node_working_directory(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
         assert os.path.exists(p.node_working_directory(node))
 
 
-def test_node_working_path(tmpdir, node):
-    directory = Config.instance().get_section_config("Server").get("projects_path")
+async def test_node_working_path(node, projects_dir):
 
+    directory = projects_dir
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
         p = Project(project_id=str(uuid4()))
         assert p.node_working_path(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
@@ -136,40 +140,43 @@ def test_node_working_path(tmpdir, node):
         assert not os.path.exists(p.node_working_path(node))
 
 
-def test_project_delete(loop):
+async def test_project_delete():
+
     project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
-    loop.run_until_complete(asyncio.ensure_future(project.delete()))
+    await project.delete()
     assert os.path.exists(directory) is False
 
 
-def test_project_delete_permission_issue(loop):
+async def test_project_delete_permission_issue():
+
     project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
     os.chmod(directory, 0)
     with pytest.raises(aiohttp.web.HTTPInternalServerError):
-        loop.run_until_complete(asyncio.ensure_future(project.delete()))
+        await asyncio.ensure_future(project.delete())
     os.chmod(directory, 700)
 
 
-def test_project_add_node(manager):
+async def test_project_add_node(manager):
+
     project = Project(project_id=str(uuid4()))
     node = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", project, manager)
     project.add_node(node)
     assert len(project.nodes) == 1
 
 
-def test_project_close(loop, node, project):
+async def test_project_close(node, compute_project):
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.close") as mock:
-        loop.run_until_complete(asyncio.ensure_future(project.close()))
+        await compute_project.close()
         assert mock.called
     assert node.id not in node.manager._nodes
 
 
-def test_list_files(tmpdir, loop):
+async def test_list_files(tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = Project(project_id=str(uuid4()))
@@ -181,7 +188,7 @@ def test_list_files(tmpdir, loop):
         with open(os.path.join(path, "test.txt"), "w+") as f:
             f.write("test2")
 
-        files = loop.run_until_complete(asyncio.ensure_future(project.list_files()))
+        files = await project.list_files()
 
         assert files == [
             {
@@ -195,20 +202,21 @@ def test_list_files(tmpdir, loop):
         ]
 
 
-def test_emit(async_run):
+async def test_emit():
 
     with NotificationManager.instance().queue() as queue:
-        (action, event, context) = async_run(queue.get(0.5))  #  Ping
+        await queue.get(0.5)  #  Ping
 
         project = Project(project_id=str(uuid4()))
         project.emit("test", {})
-        (action, event, context) = async_run(queue.get(0.5))
+        (action, event, context) = await queue.get(0.5)
         assert action == "test"
         assert context["project_id"] == project.id
 
 
-def test_update_project(loop):
+async def test_update_project():
+
     variables = [{"name": "TEST", "value": "VAL"}]
     project = Project(project_id=str(uuid.uuid4()))
-    loop.run_until_complete(asyncio.ensure_future(project.update(variables=variables)))
+    await project.update(variables=variables)
     assert project.variables == variables

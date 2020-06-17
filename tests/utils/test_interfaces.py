@@ -21,6 +21,7 @@ from gns3server.utils.interfaces import interfaces, is_interface_up, has_netmask
 
 
 def test_interfaces():
+
     # This test should pass on all platforms without crash
     interface_list = interfaces()
     assert isinstance(interface_list, list)
@@ -39,6 +40,7 @@ def test_interfaces():
 
 
 def test_has_netmask():
+
     if sys.platform.startswith("win"):
         # No loopback
         pass
@@ -49,6 +51,7 @@ def test_has_netmask():
 
 
 def test_is_interface_up():
+
     if sys.platform.startswith("win"):
         # is_interface_up() always returns True on Windows
         pass

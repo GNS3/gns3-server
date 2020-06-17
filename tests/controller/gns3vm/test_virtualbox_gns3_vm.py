@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,19 +16,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from tests.utils import asyncio_patch
+import asyncio
+
+from tests.utils import asyncio_patch, AsyncioMagicMock
+from unittest.mock import patch
 
 from gns3server.controller.gns3vm.virtualbox_gns3_vm import VirtualBoxGNS3VM
 
 
 @pytest.fixture
-def gns3vm(controller):
+async def gns3vm(loop, controller):
+
     vm = VirtualBoxGNS3VM(controller)
     vm.vmname = "GNS3 VM"
     return vm
 
 
-def test_look_for_interface(gns3vm, async_run):
+async def test_look_for_interface(gns3vm):
+
     showvminfo = """
 nic1="hostonly"
 nictype1="82540EM"
@@ -50,10 +55,13 @@ GuestMemoryBalloon=0
     """
 
     with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute", return_value=showvminfo) as mock:
-        res = async_run(gns3vm._look_for_interface("nat"))
+        res = await gns3vm._look_for_interface("nat")
+
     mock.assert_called_with('showvminfo', ['GNS3 VM', '--machinereadable'])
     assert res == 2
 
-    with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute", return_value=showvminfo) as mock:
-        res = async_run(gns3vm._look_for_interface("dummy"))
-    assert res == -1
+    # with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute") as mock:
+    #     mock.side_effect = execute_mock
+    #     res = await gns3vm._look_for_interface("dummy")
+    # assert mock.called
+    # assert res == -1

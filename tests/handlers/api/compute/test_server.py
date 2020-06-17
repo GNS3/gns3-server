@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,30 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /version endpoint
-It's also used for unittest the HTTP implementation.
-"""
-
-from gns3server.config import Config
 
 from gns3server.version import __version__
 
 
-def test_version_output(http_compute):
-    config = Config.instance()
-    config.set("Server", "local", "true")
+async def test_version_output(compute_api, config):
 
-    response = http_compute.get('/version', example=True)
+    config.set("Server", "local", "true")
+    response = await compute_api.get('/version')
     assert response.status == 200
     assert response.json == {'local': True, 'version': __version__}
 
 
-def test_debug_output(http_compute):
-    response = http_compute.get('/debug')
+async def test_debug_output(compute_api):
+
+    response = await compute_api.get('/debug')
     assert response.status == 200
 
 
-def test_statistics_output(http_compute):
-    response = http_compute.get('/statistics')
+async def test_statistics_output(compute_api):
+
+    response = await compute_api.get('/statistics')
     assert response.status == 200

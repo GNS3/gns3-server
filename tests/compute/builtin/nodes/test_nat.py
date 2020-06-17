@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,18 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
-import pytest
 from unittest.mock import MagicMock, patch
 
 from gns3server.compute.builtin.nodes.nat import Nat
 
 
-def test_json_gns3vm(on_gns3vm, project):
-    nat = Nat("nat1", str(uuid.uuid4()), project, MagicMock())
+def test_json_gns3vm(on_gns3vm, compute_project):
+
+    nat = Nat("nat1", str(uuid.uuid4()), compute_project, MagicMock())
     assert nat.__json__() == {
         "name": "nat1",
         "node_id": nat.id,
-        "project_id": project.id,
+        "project_id": compute_project.id,
         "status": "started",
         "ports_mapping": [
             {
@@ -40,15 +40,16 @@ def test_json_gns3vm(on_gns3vm, project):
     }
 
 
-def test_json_darwin(darwin_platform, project):
+def test_json_darwin(darwin_platform, compute_project):
+
     with patch("gns3server.utils.interfaces.interfaces", return_value=[
             {"name": "eth0", "special": False, "type": "ethernet"},
             {"name": "vmnet8", "special": True, "type": "ethernet"}]):
-        nat = Nat("nat1", str(uuid.uuid4()), project, MagicMock())
+        nat = Nat("nat1", str(uuid.uuid4()), compute_project, MagicMock())
     assert nat.__json__() == {
         "name": "nat1",
         "node_id": nat.id,
-        "project_id": project.id,
+        "project_id": compute_project.id,
         "status": "started",
         "ports_mapping": [
             {

@@ -26,6 +26,7 @@ from gns3server.utils.images import md5sum, remove_checksum, images_directories,
 
 
 def test_images_directories(tmpdir):
+
     path1 = tmpdir / "images1" / "QEMU" / "test1.bin"
     path1.write("1", ensure=True)
     path1 = force_unix_path(str(path1))
@@ -48,6 +49,7 @@ def test_images_directories(tmpdir):
 
 
 def test_md5sum(tmpdir):
+
     fake_img = str(tmpdir / 'hello载')
 
     with open(fake_img, 'w+') as f:
@@ -59,6 +61,7 @@ def test_md5sum(tmpdir):
 
 
 def test_md5sum_stopped_event(tmpdir):
+
     fake_img = str(tmpdir / 'hello_stopped')
     with open(fake_img, 'w+') as f:
         f.write('hello')
@@ -71,6 +74,7 @@ def test_md5sum_stopped_event(tmpdir):
 
 
 def test_md5sum_existing_digest(tmpdir):
+
     fake_img = str(tmpdir / 'hello')
 
     with open(fake_img, 'w+') as f:
@@ -83,6 +87,7 @@ def test_md5sum_existing_digest(tmpdir):
 
 
 def test_md5sum_existing_digest_but_missing_image(tmpdir):
+
     fake_img = str(tmpdir / 'hello')
 
     with open(str(tmpdir / 'hello.md5sum'), 'w+') as f:
@@ -92,6 +97,7 @@ def test_md5sum_existing_digest_but_missing_image(tmpdir):
 
 
 def test_md5sum_none(tmpdir):
+
     assert md5sum(None) is None
 
 
@@ -107,6 +113,7 @@ def test_remove_checksum(tmpdir):
 
 
 def test_list_images(tmpdir):
+
     path1 = tmpdir / "images1" / "IOS" / "test1.image"
     path1.write(b'\x7fELF\x01\x02\x01', ensure=True)
     path1 = force_unix_path(str(path1))

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-def test_appliances_list(http_controller, controller, async_run):
+async def test_appliances_list(controller_api):
 
-    controller.appliance_manager.load_appliances()
-    response = http_controller.get("/appliances", example=True)
+    response = await controller_api.get("/appliances")
     assert response.status == 200
     assert len(response.json) > 0

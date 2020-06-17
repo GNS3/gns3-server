@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,60 +25,60 @@ from gns3server.utils.get_resource import get_resource
 
 
 def get_static(filename):
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(os.path.abspath(os.path.join(current_dir, '..', '..', 'gns3server', 'static')), filename)
 
 
-def test_debug(http_root):
-    response = http_root.get('/debug')
+async def test_debug(http_client):
+
+    response = await http_client.get('/debug')
     assert response.status == 200
-    html = response.html
+    html = await response.text()
     assert "Website" in html
     assert __version__ in html
 
 
-def test_controller(http_root, async_run):
-    project = async_run(Controller.instance().add_project(name="test"))
-    response = http_root.get('/controller')
-    assert "test" in response.html
+async def test_controller(http_client, controller):
+
+    await controller.add_project(name="test")
+    response = await http_client.get('/controller')
+    assert "test" in await response.text()
     assert response.status == 200
 
 
-def test_compute(http_root):
-    response = http_root.get('/compute')
+async def test_compute(http_client):
+
+    response = await http_client.get('/compute')
     assert response.status == 200
 
 
-def test_project(http_root, async_run):
-    project = async_run(Controller.instance().add_project(name="test"))
-    response = http_root.get('/projects/{}'.format(project.id))
+async def test_project(http_client, controller):
+
+    project = await controller.add_project(name="test")
+    response = await http_client.get('/projects/{}'.format(project.id))
     assert response.status == 200
 
 
-def test_web_ui(http_root, tmpdir):
+async def test_web_ui(http_client):
+
+    response = await http_client.get('/static/web-ui/index.html')
+    assert response.status == 200
+
+
+async def test_web_ui_not_found(http_client, tmpdir):
+
     with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
-        os.makedirs(str(tmpdir / 'web-ui'))
-        tmpfile = get_static('web-ui/testing.txt')
-        with open(tmpfile, 'w+') as f:
-            f.write('world')
-        response = http_root.get('/static/web-ui/testing.txt')
-        assert response.status == 200
-    os.remove(get_static('web-ui/testing.txt'))
-
-
-def test_web_ui_not_found(http_root, tmpdir):
-    with patch('gns3server.utils.get_resource.get_resource') as mock:
-        mock.return_value = str(tmpdir)
-
-        response = http_root.get('/static/web-ui/not-found.txt')
+        response = await http_client.get('/static/web-ui/not-found.txt')
         # should serve web-ui/index.html
         assert response.status == 200
 
 
-def test_v1(http_root):
+async def test_v1(http_client):
     """
-    The old api v1 raise a 429
+    The old API v1 raises a 429
     """
-    response = http_root.get('/v1/version')
+
+    response = await http_client.get('/v1/version')
     assert response.status == 200

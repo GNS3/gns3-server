@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,41 +24,42 @@ from gns3server.utils.file_watcher import FileWatcher
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
-def test_file_watcher(async_run, tmpdir, strategy):
+async def test_file_watcher(tmpdir, strategy):
+
     file = tmpdir / "test"
     file.write("a")
     callback = MagicMock()
-    fw = FileWatcher(file, callback, delay=0.5, strategy=strategy)
-    async_run(asyncio.sleep(1))
+    FileWatcher(file, callback, delay=0.1, strategy=strategy)
+    await asyncio.sleep(0.5)
     assert not callback.called
     file.write("b")
-    async_run(asyncio.sleep(1.5))
+    await asyncio.sleep(0.5)
     callback.assert_called_with(str(file))
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
-def test_file_watcher_not_existing(async_run, tmpdir, strategy):
+async def test_file_watcher_not_existing(tmpdir, strategy):
+
     file = tmpdir / "test"
     callback = MagicMock()
-    fw = FileWatcher(file, callback, delay=0.5, strategy=strategy)
-    async_run(asyncio.sleep(1))
+    FileWatcher(file, callback, delay=0.1, strategy=strategy)
+    await asyncio.sleep(0.5)
     assert not callback.called
     file.write("b")
-    async_run(asyncio.sleep(1.5))
+    await asyncio.sleep(0.5)
     callback.assert_called_with(str(file))
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
-def test_file_watcher_list(async_run, tmpdir, strategy):
+async def test_file_watcher_list(tmpdir, strategy):
+
     file = tmpdir / "test"
     file.write("a")
-
     file2 = tmpdir / "test2"
-
     callback = MagicMock()
-    fw = FileWatcher([file, file2], callback, delay=0.5, strategy=strategy)
-    async_run(asyncio.sleep(1))
+    FileWatcher([file, file2], callback, delay=0.1, strategy=strategy)
+    await asyncio.sleep(0.5)
     assert not callback.called
     file2.write("b")
-    async_run(asyncio.sleep(1.5))
+    await asyncio.sleep(0.5)
     callback.assert_called_with(str(file2))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /project endpoint
-"""
-
+import pytest
 import uuid
 import os
 
@@ -29,123 +26,128 @@ from gns3server.handlers.api.compute.project_handler import ProjectHandler
 from gns3server.compute.project_manager import ProjectManager
 
 
-def test_create_project_with_path(http_compute, tmpdir):
+@pytest.fixture
+def base_params(tmpdir):
+    """Return standard parameters"""
+
+    params = {
+        "name": "test",
+        "path": str(tmpdir),
+        "project_id": str(uuid.uuid4())
+    }
+    return params
+
+
+async def test_create_project_with_path(compute_api, base_params):
+
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = http_compute.post("/projects", {"name": "test", "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f"})
+        response = await compute_api.post("/projects", base_params)
         assert response.status == 201
-        assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+        assert response.json["project_id"] == base_params["project_id"]
 
 
-def test_create_project_with_path_and_empty_variables(http_compute, tmpdir):
+async def test_create_project_with_path_and_empty_variables(compute_api, base_params):
+
+    base_params["variables"] = None
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = http_compute.post("/projects", {
-            "name": "test",
-            "path": str(tmpdir), "project_id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
-            "variables": None})
+
+        response = await compute_api.post("/projects", base_params)
         assert response.status == 201
-        assert response.json["project_id"] == "00010203-0405-0607-0809-0a0b0c0d0e0f"
+        assert response.json["project_id"] == base_params["project_id"]
 
 
-def test_create_project_without_dir(http_compute):
-    query = {"name": "test", "project_id": "10010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_compute.post("/projects", query, example=True)
+async def test_create_project_without_dir(compute_api, base_params):
+
+    del base_params["path"]
+    response = await compute_api.post("/projects", base_params)
     assert response.status == 201
-    assert response.json["project_id"] == "10010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["name"] == "test"
+    assert response.json["project_id"] == base_params["project_id"]
+    assert response.json["name"] == base_params["name"]
 
 
-def test_create_project_with_uuid(http_compute):
-    query = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_compute.post("/projects", query)
+async def test_show_project(compute_api, base_params):
+
+    response = await compute_api.post("/projects", base_params)
     assert response.status == 201
-    assert response.json["project_id"] == "30010203-0405-0607-0809-0a0b0c0d0e0f"
-    assert response.json["name"] == "test"
-
-
-def test_show_project(http_compute):
-    query = {"name": "test", "project_id": "40010203-0405-0607-0809-0a0b0c0d0e02"}
-    response = http_compute.post("/projects", query)
-    assert response.status == 201
-    response = http_compute.get("/projects/40010203-0405-0607-0809-0a0b0c0d0e02", example=True)
+    response = await compute_api.get("/projects/{project_id}".format(project_id=base_params["project_id"]))
     assert len(response.json.keys()) == 3
-    assert response.json["project_id"] == "40010203-0405-0607-0809-0a0b0c0d0e02"
-    assert response.json["name"] == "test"
+    assert response.json["project_id"] == base_params["project_id"]
+    assert response.json["name"] == base_params["name"]
     assert response.json["variables"] is None
 
 
-def test_show_project_invalid_uuid(http_compute):
-    response = http_compute.get("/projects/50010203-0405-0607-0809-0a0b0c0d0e42")
+async def test_show_project_invalid_uuid(compute_api):
+
+    response = await compute_api.get("/projects/50010203-0405-0607-0809-0a0b0c0d0e42")
     assert response.status == 404
 
 
-def test_list_projects(http_compute):
+async def test_list_projects(compute_api):
+
     ProjectManager.instance()._projects = {}
 
-    query = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_compute.post("/projects", query)
+    params = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
+    response = await compute_api.post("/projects", params)
     assert response.status == 201
-    query = {"name": "test", "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"}
-    response = http_compute.post("/projects", query)
+    params = {"name": "test", "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"}
+    response = await compute_api.post("/projects", params)
     assert response.status == 201
 
-    response = http_compute.get("/projects", example=True)
+    response = await compute_api.get("/projects")
     assert response.status == 200
     assert len(response.json) == 2
     assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json]
 
 
-def test_delete_project(http_compute, project):
+async def test_delete_project(compute_api, compute_project):
+
     with asyncio_patch("gns3server.compute.project.Project.delete", return_value=True) as mock:
-        response = http_compute.delete("/projects/{project_id}".format(project_id=project.id), example=True)
+        response = await compute_api.delete("/projects/{project_id}".format(project_id=compute_project.id))
         assert response.status == 204
         assert mock.called
 
 
-def test_update_project(http_compute):
-    query = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = http_compute.post("/projects", query)
+async def test_update_project(compute_api, base_params):
+
+    response = await compute_api.post("/projects", base_params)
     assert response.status == 201
 
-    query = {
-        "variables": [{"name": "TEST1", "value": "VAL1"}]
-    }
-    response = http_compute.put(
-        "/projects/{project_id}".format(project_id="51010203-0405-0607-0809-0a0b0c0d0e0f"),
-        query,
-        example=True
-    )
+    params = {"variables": [{"name": "TEST1", "value": "VAL1"}]}
+    response = await compute_api.put("/projects/{project_id}".format(project_id=base_params["project_id"]), params)
     assert response.status == 200
     assert response.json["variables"] == [{"name": "TEST1", "value": "VAL1"}]
 
 
-def test_delete_project_invalid_uuid(http_compute):
-    response = http_compute.delete("/projects/{project_id}".format(project_id=uuid.uuid4()))
+async def test_delete_project_invalid_uuid(compute_api):
+
+    response = await compute_api.delete("/projects/{project_id}".format(project_id=uuid.uuid4()))
     assert response.status == 404
 
 
-def test_close_project(http_compute, project):
+async def test_close_project(compute_api, compute_project):
+
     with asyncio_patch("gns3server.compute.project.Project.close", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
+        response = await compute_api.post("/projects/{project_id}/close".format(project_id=compute_project.id))
         assert response.status == 204
         assert mock.called
 
 
-def test_close_project_two_client_connected(http_compute, project):
+async def test_close_project_two_client_connected(compute_api, compute_project):
 
-    ProjectHandler._notifications_listening = {project.id: 2}
-
+    ProjectHandler._notifications_listening = {compute_project.id: 2}
     with asyncio_patch("gns3server.compute.project.Project.close", return_value=True) as mock:
-        response = http_compute.post("/projects/{project_id}/close".format(project_id=project.id), example=True)
+        response = await compute_api.post("/projects/{project_id}/close".format(project_id=compute_project.id))
         assert response.status == 204
         assert not mock.called
 
 
-def test_close_project_invalid_uuid(http_compute):
-    response = http_compute.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
+async def test_close_project_invalid_uuid(compute_api):
+
+    response = await compute_api.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
     assert response.status == 404
 
 
-def test_get_file(http_compute, tmpdir):
+async def test_get_file(compute_api, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
@@ -153,33 +155,33 @@ def test_get_file(http_compute, tmpdir):
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")
 
-    response = http_compute.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.body == b"world"
 
-    response = http_compute.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
     assert response.status == 404
 
-    response = http_compute.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
     assert response.status == 404
 
 
-def test_write_file(http_compute, tmpdir):
+async def test_write_file(compute_api, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
-    response = http_compute.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
+    response = await compute_api.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
     assert response.status == 200
 
     with open(os.path.join(project.path, "hello")) as f:
         assert f.read() == "world"
 
-    response = http_compute.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    response = await compute_api.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
     assert response.status == 404
 
 
-def test_stream_file(http_compute, tmpdir):
+async def test_stream_file(compute_api, tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
@@ -187,12 +189,12 @@ def test_stream_file(http_compute, tmpdir):
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")
 
-    response = http_compute.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
     assert response.status == 200
     assert response.body == b"world"
 
-    response = http_compute.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
     assert response.status == 404
 
-    response = http_compute.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
+    response = await compute_api.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
     assert response.status == 404

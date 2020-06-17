@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,14 +33,16 @@ from gns3server.utils.asyncio import aiozipstream
 
 
 @pytest.fixture
-def project(controller):
+async def project(loop, controller):
+
     p = Project(controller=controller, name="test")
     p.dump = MagicMock()
     return p
 
 
 @pytest.fixture
-def node(controller, project, async_run):
+async def node(controller, project):
+
     compute = MagicMock()
     compute.id = "local"
 
@@ -48,7 +50,7 @@ def node(controller, project, async_run):
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node = async_run(project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"}))
+    node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     return node
 
 
@@ -60,6 +62,7 @@ async def write_file(path, z):
 
 
 def test_exportable_files():
+
     assert _is_exportable("hello/world")
     assert not _is_exportable("project-files/tmp")
     assert not _is_exportable("project-files/test_log.txt")
@@ -69,7 +72,8 @@ def test_exportable_files():
     assert not _is_exportable("test/project-files/snapshots/test.gns3p")
 
 
-def test_export(tmpdir, project, async_run):
+async def test_export(tmpdir, project):
+
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))
 
@@ -113,8 +117,8 @@ def test_export(tmpdir, project, async_run):
 
     with aiozipstream.ZipFile() as z:
         with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-            async_run(export_project(z, project, str(tmpdir), include_images=False))
-            async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+            await export_project(z, project, str(tmpdir), include_images=False)
+            await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         with myzip.open("vm-1/dynamips/test") as myfile:
@@ -134,7 +138,7 @@ def test_export(tmpdir, project, async_run):
             assert topo["computes"] == []
 
 
-def test_export_vm(tmpdir, project, async_run):
+async def test_export_vm(tmpdir, project):
     """
     If data is on a remote server export it locally before
     sending it in the archive.
@@ -147,7 +151,7 @@ def test_export_vm(tmpdir, project, async_run):
     # Fake file that will be download from the vm
     mock_response = AsyncioMagicMock()
     mock_response.content = AsyncioBytesIO()
-    async_run(mock_response.content.write(b"HELLO"))
+    await mock_response.content.write(b"HELLO")
     mock_response.content.seek(0)
     compute.download_file = AsyncioMagicMock(return_value=mock_response)
 
@@ -161,9 +165,9 @@ def test_export_vm(tmpdir, project, async_run):
         f.write("{}")
 
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir)))
+        await export_project(z, project, str(tmpdir))
         assert compute.list_files.called
-        async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+        await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         with myzip.open("vm-1/dynamips/test") as myfile:
@@ -171,7 +175,7 @@ def test_export_vm(tmpdir, project, async_run):
             assert content == b"HELLO"
 
 
-def test_export_disallow_running(tmpdir, project, node, async_run):
+async def test_export_disallow_running(tmpdir, project, node):
     """
     Disallow export when a node is running
     """
@@ -194,10 +198,10 @@ def test_export_disallow_running(tmpdir, project, node, async_run):
     node._status = "started"
     with pytest.raises(aiohttp.web.HTTPConflict):
         with aiozipstream.ZipFile() as z:
-            async_run(export_project(z, project, str(tmpdir)))
+            await export_project(z, project, str(tmpdir))
 
 
-def test_export_disallow_some_type(tmpdir, project, async_run):
+async def test_export_disallow_some_type(tmpdir, project):
     """
     Disallow export for some node type
     """
@@ -219,9 +223,9 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
 
     with pytest.raises(aiohttp.web.HTTPConflict):
         with aiozipstream.ZipFile() as z:
-            async_run(export_project(z, project, str(tmpdir)))
+            await export_project(z, project, str(tmpdir))
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir), allow_all_nodes=True))
+        await export_project(z, project, str(tmpdir), allow_all_nodes=True)
 
     # VirtualBox is always disallowed
     topology = {
@@ -240,10 +244,10 @@ def test_export_disallow_some_type(tmpdir, project, async_run):
         json.dump(topology, f)
     with pytest.raises(aiohttp.web.HTTPConflict):
         with aiozipstream.ZipFile() as z:
-            async_run(export_project(z, project, str(tmpdir), allow_all_nodes=True))
+            await export_project(z, project, str(tmpdir), allow_all_nodes=True)
 
 
-def test_export_fix_path(tmpdir, project, async_run):
+async def test_export_fix_path(tmpdir, project):
     """
     Fix absolute image path, except for Docker
     """
@@ -273,8 +277,8 @@ def test_export_fix_path(tmpdir, project, async_run):
         json.dump(topology, f)
 
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir)))
-        async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+        await export_project(z, project, str(tmpdir))
+        await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         with myzip.open("project.gns3") as myfile:
@@ -284,7 +288,7 @@ def test_export_fix_path(tmpdir, project, async_run):
     assert topology["topology"]["nodes"][1]["properties"]["image"] == "gns3/webterm:lastest"
 
 
-def test_export_with_images(tmpdir, project, async_run):
+async def test_export_with_images(tmpdir, project):
     """
     Fix absolute image path
     """
@@ -312,14 +316,14 @@ def test_export_with_images(tmpdir, project, async_run):
 
     with aiozipstream.ZipFile() as z:
         with patch("gns3server.compute.Dynamips.get_images_directory", return_value=str(tmpdir / "IOS"),):
-            async_run(export_project(z, project, str(tmpdir), include_images=True))
-            async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+            await export_project(z, project, str(tmpdir), include_images=True)
+            await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         myzip.getinfo("images/IOS/test.image")
 
 
-def test_export_keep_compute_id(tmpdir, project, async_run):
+async def test_export_keep_compute_id(tmpdir, project):
     """
     If we want to restore the same computes we could ask to keep them
     in the file
@@ -348,8 +352,8 @@ def test_export_keep_compute_id(tmpdir, project, async_run):
         json.dump(data, f)
 
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir), keep_compute_id=True))
-        async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+        await export_project(z, project, str(tmpdir), keep_compute_id=True)
+        await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         with myzip.open("project.gns3") as myfile:
@@ -358,7 +362,7 @@ def test_export_keep_compute_id(tmpdir, project, async_run):
             assert len(topo["computes"]) == 1
 
 
-def test_export_images_from_vm(tmpdir, project, async_run):
+async def test_export_images_from_vm(tmpdir, project):
     """
     If data is on a remote server export it locally before
     sending it in the archive.
@@ -366,22 +370,19 @@ def test_export_images_from_vm(tmpdir, project, async_run):
 
     compute = MagicMock()
     compute.id = "vm"
-    compute.list_files = AsyncioMagicMock(return_value=[
-        {"path": "vm-1/dynamips/test"}
-    ])
+    compute.list_files = AsyncioMagicMock(return_value=[{"path": "vm-1/dynamips/test"}])
 
     # Fake file that will be download from the vm
     mock_response = AsyncioMagicMock()
     mock_response.content = AsyncioBytesIO()
-    async_run(mock_response.content.write(b"HELLO"))
+    await mock_response.content.write(b"HELLO")
     mock_response.content.seek(0)
     mock_response.status = 200
     compute.download_file = AsyncioMagicMock(return_value=mock_response)
 
-
     mock_response = AsyncioMagicMock()
     mock_response.content = AsyncioBytesIO()
-    async_run(mock_response.content.write(b"IMAGE"))
+    await mock_response.content.write(b"IMAGE")
     mock_response.content.seek(0)
     mock_response.status = 200
     compute.download_image = AsyncioMagicMock(return_value=mock_response)
@@ -411,9 +412,9 @@ def test_export_images_from_vm(tmpdir, project, async_run):
         f.write(json.dumps(topology))
 
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir), include_images=True))
+        await export_project(z, project, str(tmpdir), include_images=True)
         assert compute.list_files.called
-        async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+        await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         with myzip.open("vm-1/dynamips/test") as myfile:
@@ -425,7 +426,8 @@ def test_export_images_from_vm(tmpdir, project, async_run):
             assert content == b"IMAGE"
 
 
-def test_export_with_ignoring_snapshots(tmpdir, project, async_run):
+async def test_export_with_ignoring_snapshots(tmpdir, project):
+
     with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
         data = {
             "topology": {
@@ -454,8 +456,8 @@ def test_export_with_ignoring_snapshots(tmpdir, project, async_run):
     Path(os.path.join(snapshots_dir, 'snap.gns3project')).touch()
 
     with aiozipstream.ZipFile() as z:
-        async_run(export_project(z, project, str(tmpdir), keep_compute_id=True))
-        async_run(write_file(str(tmpdir / 'zipfile.zip'), z))
+        await export_project(z, project, str(tmpdir), keep_compute_id=True)
+        await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
         assert not os.path.join('snapshots', 'snap.gns3project') in [f.filename for f in myzip.filelist]

@@ -17,7 +17,6 @@
 
 import os
 import stat
-import asyncio
 import sys
 import pytest
 import platform
@@ -25,6 +24,7 @@ import platform
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
 from tests.utils import asyncio_patch
+
 from unittest.mock import patch, MagicMock
 
 
@@ -38,18 +38,19 @@ def fake_qemu_img_binary(tmpdir):
     return bin_path
 
 
-def test_get_qemu_version(loop):
+async def test_get_qemu_version():
 
-    with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
-        version = loop.run_until_complete(asyncio.ensure_future(Qemu.get_qemu_version("/tmp/qemu-test")))
+    with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard"):
+        version = await Qemu.get_qemu_version("/tmp/qemu-test")
         if sys.platform.startswith("win"):
             assert version == ""
         else:
             assert version == "2.2.0"
 
 
-def test_binary_list(loop):
+async def test_binary_list(monkeypatch, tmpdir):
 
+    monkeypatch.setenv("PATH", str(tmpdir))
     files_to_create = ["qemu-system-x86", "qemu-system-x42", "qemu-kvm", "hello", "qemu-system-x86_64-spice"]
 
     for file_to_create in files_to_create:
@@ -64,7 +65,7 @@ def test_binary_list(loop):
         else:
             version = "2.2.0"
 
-        qemus = loop.run_until_complete(asyncio.ensure_future(Qemu.binary_list()))
+        qemus = await Qemu.binary_list()
 
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} in qemus
@@ -72,14 +73,14 @@ def test_binary_list(loop):
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86_64-spice"), "version": version} not in qemus
 
-        qemus = loop.run_until_complete(asyncio.ensure_future(Qemu.binary_list(["x86"])))
+        qemus = await Qemu.binary_list(["x86"])
 
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} not in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
-        qemus = loop.run_until_complete(asyncio.ensure_future(Qemu.binary_list(["x86", "x42"])))
+        qemus = await Qemu.binary_list(["x86", "x42"])
 
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} not in qemus
@@ -87,8 +88,9 @@ def test_binary_list(loop):
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
 
-def test_img_binary_list(loop):
+async def test_img_binary_list(monkeypatch, tmpdir):
 
+    monkeypatch.setenv("PATH", str(tmpdir))
     files_to_create = ["qemu-img", "qemu-io", "qemu-system-x86", "qemu-system-x42", "qemu-kvm", "hello"]
 
     for file_to_create in files_to_create:
@@ -98,7 +100,7 @@ def test_img_binary_list(loop):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="qemu-img version 2.2.0, Copyright (c) 2004-2008 Fabrice Bellard") as mock:
-        qemus = loop.run_until_complete(asyncio.ensure_future(Qemu.img_binary_list()))
+        qemus = await Qemu.img_binary_list()
 
         version = "2.2.0"
 
@@ -115,7 +117,8 @@ def test_get_legacy_vm_workdir():
     assert Qemu.get_legacy_vm_workdir(42, "bla") == os.path.join("qemu", "vm-42")
 
 
-def test_create_image_abs_path(loop, tmpdir, fake_qemu_img_binary):
+async def test_create_image_abs_path(tmpdir, fake_qemu_img_binary):
+
     options = {
         "format": "qcow2",
         "preallocation": "metadata",
@@ -125,7 +128,7 @@ def test_create_image_abs_path(loop, tmpdir, fake_qemu_img_binary):
         "size": 100
     }
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
-        loop.run_until_complete(asyncio.ensure_future(Qemu.instance().create_disk(fake_qemu_img_binary, str(tmpdir / "hda.qcow2"), options)))
+        await Qemu.instance().create_disk(fake_qemu_img_binary, str(tmpdir / "hda.qcow2"), options)
         args, kwargs = process.call_args
         assert args == (
             fake_qemu_img_binary,
@@ -145,14 +148,15 @@ def test_create_image_abs_path(loop, tmpdir, fake_qemu_img_binary):
         )
 
 
-def test_create_image_relative_path(loop, tmpdir, fake_qemu_img_binary):
+async def test_create_image_relative_path(tmpdir, fake_qemu_img_binary):
+
     options = {
         "format": "raw",
         "size": 100
     }
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         with patch("gns3server.compute.qemu.Qemu.get_images_directory", return_value=str(tmpdir)):
-            loop.run_until_complete(asyncio.ensure_future(Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)))
+            await Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)
             args, kwargs = process.call_args
             assert args == (
                 fake_qemu_img_binary,
@@ -164,9 +168,9 @@ def test_create_image_relative_path(loop, tmpdir, fake_qemu_img_binary):
             )
 
 
-def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
-    open(str(tmpdir / "hda.qcow2"), "w+").close()
+async def test_create_image_exist(tmpdir, fake_qemu_img_binary):
 
+    open(str(tmpdir / "hda.qcow2"), "w+").close()
     options = {
         "format": "raw",
         "size": 100
@@ -174,11 +178,12 @@ def test_create_image_exist(loop, tmpdir, fake_qemu_img_binary):
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process:
         with patch("gns3server.compute.qemu.Qemu.get_images_directory", return_value=str(tmpdir)):
             with pytest.raises(QemuError):
-                loop.run_until_complete(asyncio.ensure_future(Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)))
+                await Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)
                 assert not process.called
 
 
-def test_create_image_with_not_supported_characters_by_filesystem(loop, tmpdir, fake_qemu_img_binary):
+async def test_create_image_with_not_supported_characters_by_filesystem(tmpdir, fake_qemu_img_binary):
+
     open(str(tmpdir / "hda.qcow2"), "w+").close()
 
     options = {
@@ -193,20 +198,19 @@ def test_create_image_with_not_supported_characters_by_filesystem(loop, tmpdir, 
             patch("os.makedirs"):
 
         with pytest.raises(QemuError):
-            loop.run_until_complete(asyncio.ensure_future(Qemu.instance().create_disk(
-                fake_qemu_img_binary, "hda.qcow2", options)))
+            await Qemu.instance().create_disk(fake_qemu_img_binary, "hda.qcow2", options)
             assert not process.called
 
 
-def test_get_kvm_archs_kvm_ok(loop):
+async def test_get_kvm_archs_kvm_ok():
 
     with patch("os.path.exists", return_value=True):
-        archs = loop.run_until_complete(asyncio.ensure_future(Qemu.get_kvm_archs()))
+        archs = await Qemu.get_kvm_archs()
         if platform.machine() == 'x86_64':
             assert archs == ['x86_64', 'i386']
         else:
             assert archs == [platform.machine()]
 
     with patch("os.path.exists", return_value=False):
-        archs = loop.run_until_complete(asyncio.ensure_future(Qemu.get_kvm_archs()))
+        archs = await Qemu.get_kvm_archs()
         assert archs == []

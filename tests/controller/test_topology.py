@@ -28,7 +28,8 @@ from gns3server.controller.topology import project_to_topology, load_topology, G
 from gns3server.version import __version__
 
 
-def test_project_to_topology_empty(tmpdir):
+async def test_project_to_topology_empty(tmpdir):
+
     project = Project(name="Test")
     topo = project_to_topology(project)
     assert topo == {
@@ -60,21 +61,22 @@ def test_project_to_topology_empty(tmpdir):
     }
 
 
-def test_basic_topology(tmpdir, async_run, controller):
+async def test_basic_topology(controller):
+
     project = Project(name="Test", controller=controller)
     compute = Compute("my_compute", controller)
     compute.http_query = MagicMock()
 
     with asyncio_patch("gns3server.controller.node.Node.create"):
-        node1 = async_run(project.add_node(compute, "Node 1", str(uuid.uuid4()), node_type="qemu"))
-        node2 = async_run(project.add_node(compute, "Node 2", str(uuid.uuid4()), node_type="qemu"))
+        node1 = await project.add_node(compute, "Node 1", str(uuid.uuid4()), node_type="qemu")
+        node2 = await project.add_node(compute, "Node 2", str(uuid.uuid4()), node_type="qemu")
 
-    link = async_run(project.add_link())
-    async_run(link.add_node(node1, 0, 0))
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock_udp_create:
-        async_run(link.add_node(node2, 0, 0))
+    link = await project.add_link()
+    await link.add_node(node1, 0, 0)
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
+        await link.add_node(node2, 0, 0)
 
-    drawing = async_run(project.add_drawing(svg="<svg></svg>"))
+    drawing = await project.add_drawing(svg="<svg></svg>")
 
     topo = project_to_topology(project)
     assert len(topo["topology"]["nodes"]) == 2
@@ -84,7 +86,8 @@ def test_basic_topology(tmpdir, async_run, controller):
     assert topo["topology"]["drawings"][0] == drawing.__json__(topology_dump=True)
 
 
-def test_project_to_topology(tmpdir, controller):
+async def test_project_to_topology(controller):
+
     variables = [
         {"name": "TEST1"},
         {"name": "TEST2", "value": "value1"}
@@ -105,6 +108,7 @@ def test_project_to_topology(tmpdir, controller):
 
 
 def test_load_topology(tmpdir):
+
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
@@ -126,19 +130,21 @@ def test_load_topology(tmpdir):
 
 
 def test_load_topology_file_error(tmpdir):
+
     path = str(tmpdir / "test.gns3")
     with pytest.raises(aiohttp.web.HTTPConflict):
-        topo = load_topology(path)
+        load_topology(path)
 
 
 def test_load_topology_file_error_schema_error(tmpdir):
+
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
         json.dump({
             "revision": GNS3_FILE_FORMAT_REVISION
         }, f)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        topo = load_topology(path)
+        load_topology(path)
 
 
 def test_load_newer_topology(tmpdir):
@@ -146,6 +152,7 @@ def test_load_newer_topology(tmpdir):
     If a topology is design for a more recent GNS3 version
     we disallow the loading.
     """
+
     data = {
         "project_id": "69f26504-7aa3-48aa-9f29-798d44841211",
         "name": "Test",
@@ -159,10 +166,11 @@ def test_load_newer_topology(tmpdir):
     with open(path, "w+") as f:
         json.dump(data, f)
     with pytest.raises(aiohttp.web.HTTPConflict):
-        topo = load_topology(path)
+        load_topology(path)
 
 
 def test_load_topology_with_variables(tmpdir):
+
     variables = [
         {"name": "TEST1"},
         {"name": "TEST2", "value": "value1"}
@@ -189,6 +197,7 @@ def test_load_topology_with_variables(tmpdir):
 
 
 def test_load_topology_with_supplier(tmpdir):
+
     supplier = {
         'logo': 'logo.png',
         'url': 'http://example.com'

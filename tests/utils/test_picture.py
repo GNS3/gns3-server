@@ -20,6 +20,7 @@ from gns3server.utils.picture import get_size
 
 
 def test_get_size():
+
     with open("tests/resources/nvram_iou", "rb") as f:
         res = get_size(f.read(), default_width=100, default_height=50)
         assert res == (100, 50, None)

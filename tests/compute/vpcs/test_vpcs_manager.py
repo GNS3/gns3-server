@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ from gns3server.compute.vpcs.vpcs_error import VPCSError
 from gns3server.compute.project_manager import ProjectManager
 
 
-def test_get_mac_id(loop, project, port_manager):
+async def test_get_mac_id(compute_project, port_manager):
+
     # Cleanup the VPCS object
     VPCS._instance = None
     vpcs = VPCS.instance()
@@ -33,17 +34,18 @@ def test_get_mac_id(loop, project, port_manager):
     vm1_id = str(uuid.uuid4())
     vm2_id = str(uuid.uuid4())
     vm3_id = str(uuid.uuid4())
-    loop.run_until_complete(vpcs.create_node("PC 1", project.id, vm1_id))
-    loop.run_until_complete(vpcs.create_node("PC 2", project.id, vm2_id))
+    await vpcs.create_node("PC 1", compute_project.id, vm1_id)
+    await vpcs.create_node("PC 2", compute_project.id, vm2_id)
     assert vpcs.get_mac_id(vm1_id) == 0
     assert vpcs.get_mac_id(vm1_id) == 0
     assert vpcs.get_mac_id(vm2_id) == 1
-    loop.run_until_complete(vpcs.delete_node(vm1_id))
-    loop.run_until_complete(vpcs.create_node("PC 3", project.id, vm3_id))
+    await vpcs.delete_node(vm1_id)
+    await vpcs.create_node("PC 3", compute_project.id, vm3_id)
     assert vpcs.get_mac_id(vm3_id) == 0
 
 
-def test_get_mac_id_multiple_project(loop, port_manager):
+async def test_get_mac_id_multiple_project(port_manager):
+
     # Cleanup the VPCS object
     VPCS._instance = None
     vpcs = VPCS.instance()
@@ -53,15 +55,16 @@ def test_get_mac_id_multiple_project(loop, port_manager):
     vm3_id = str(uuid.uuid4())
     project1 = ProjectManager.instance().create_project(project_id=str(uuid.uuid4()))
     project2 = ProjectManager.instance().create_project(project_id=str(uuid.uuid4()))
-    loop.run_until_complete(vpcs.create_node("PC 1", project1.id, vm1_id))
-    loop.run_until_complete(vpcs.create_node("PC 2", project1.id, vm2_id))
-    loop.run_until_complete(vpcs.create_node("PC 2", project2.id, vm3_id))
+    await vpcs.create_node("PC 1", project1.id, vm1_id)
+    await vpcs.create_node("PC 2", project1.id, vm2_id)
+    await vpcs.create_node("PC 2", project2.id, vm3_id)
     assert vpcs.get_mac_id(vm1_id) == 0
     assert vpcs.get_mac_id(vm2_id) == 1
     assert vpcs.get_mac_id(vm3_id) == 0
 
 
-def test_get_mac_id_no_id_available(loop, project, port_manager):
+async def test_get_mac_id_no_id_available(compute_project, port_manager):
+
     # Cleanup the VPCS object
     VPCS._instance = None
     vpcs = VPCS.instance()
@@ -69,5 +72,5 @@ def test_get_mac_id_no_id_available(loop, project, port_manager):
     with pytest.raises(VPCSError):
         for i in range(0, 256):
             node_id = str(uuid.uuid4())
-            loop.run_until_complete(vpcs.create_node("PC {}".format(i), project.id, node_id))
+            await vpcs.create_node("PC {}".format(i), compute_project.id, node_id)
             assert vpcs.get_mac_id(node_id) == i

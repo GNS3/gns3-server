@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,45 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-This test suite check /project endpoint
-"""
-
-import asyncio
-import aiohttp
 import pytest
-
 
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from gns3server.controller import Controller
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.link import Link, FILTERS
 
 
 @pytest.fixture
-def compute(http_controller, async_run):
-    compute = MagicMock()
-    compute.id = "example.com"
-    Controller.instance()._computes = {"example.com": compute}
-    return compute
+async def nodes(compute, project):
 
-
-@pytest.fixture
-def project(http_controller, async_run):
-    return async_run(Controller.instance().add_project(name="Test"))
-
-
-def test_create_link(http_controller, tmpdir, project, compute, async_run):
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1 = await project.add_node(compute, "node1", None, node_type="qemu")
     node1._ports = [EthernetPort("E0", 0, 0, 3)]
-    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
+    node2 = await project.add_node(compute, "node2", None, node_type="qemu")
     node2._ports = [EthernetPort("E0", 0, 2, 4)]
+    return node1, node2
+
+
+async def test_create_link(controller_api, project, nodes):
+
+    node1, node2 = nodes
 
     filters = {
         "latency": [10],
@@ -61,7 +48,7 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     }
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        response = http_controller.post("/projects/{}/links".format(project.id), {
+        response = await controller_api.post("/projects/{}/links".format(project.id), {
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -80,7 +67,8 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
                 }
             ],
             "filters": filters
-        }, example=True)
+        })
+
     assert mock.called
     assert response.status == 201
     assert response.json["link_id"] is not None
@@ -90,56 +78,49 @@ def test_create_link(http_controller, tmpdir, project, compute, async_run):
     assert list(project.links.values())[0].filters == filters
 
 
-def test_create_link_failure(http_controller, tmpdir, project, compute, async_run):
+async def test_create_link_failure(controller_api, compute, project):
     """
-    Make sure the link is deleted if we failed to create the link.
+    Make sure the link is deleted if we failed to create it.
 
-    The failure is trigger by connecting the link to himself
+    The failure is triggered by connecting the link to itself
     """
+
     response = MagicMock()
     response.json = {"console": 2048}
     compute.post = AsyncioMagicMock(return_value=response)
 
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
+    node1 = await project.add_node(compute, "node1", None, node_type="qemu")
     node1._ports = [EthernetPort("E0", 0, 0, 3), EthernetPort("E0", 0, 0, 4)]
 
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
-        response = http_controller.post("/projects/{}/links".format(project.id), {
-            "nodes": [
-                {
-                    "node_id": node1.id,
-                    "adapter_number": 0,
-                    "port_number": 3,
-                    "label": {
-                        "text": "Text",
-                        "x": 42,
-                        "y": 0
-                    }
-                },
-                {
-                    "node_id": node1.id,
-                    "adapter_number": 0,
-                    "port_number": 4
+    response = await controller_api.post("/projects/{}/links".format(project.id), {
+        "nodes": [
+            {
+                "node_id": node1.id,
+                "adapter_number": 0,
+                "port_number": 3,
+                "label": {
+                    "text": "Text",
+                    "x": 42,
+                    "y": 0
                 }
-            ]
-        }, example=True)
-    #assert mock.called
+            },
+            {
+                "node_id": node1.id,
+                "adapter_number": 0,
+                "port_number": 4
+            }
+        ]
+    })
+
     assert response.status == 409
     assert len(project.links) == 0
 
 
-def test_get_link(http_controller, tmpdir, project, compute, async_run):
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
+async def test_get_link(controller_api, project, nodes):
 
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
-    node1._ports = [EthernetPort("E0", 0, 0, 3)]
-    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
-    node2._ports = [EthernetPort("E0", 0, 2, 4)]
-
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
-        response = http_controller.post("/projects/{}/links".format(project.id), {
+    node1, node2 = nodes
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = await controller_api.post("/projects/{}/links".format(project.id), {
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -158,25 +139,20 @@ def test_get_link(http_controller, tmpdir, project, compute, async_run):
                 }
             ]
         })
+
+    assert mock.called
     link_id = response.json["link_id"]
     assert response.json["nodes"][0]["label"]["x"] == 42
-    response = http_controller.get("/projects/{}/links/{}".format(project.id, link_id), example=True)
+    response = await controller_api.get("/projects/{}/links/{}".format(project.id, link_id))
     assert response.status == 200
     assert response.json["nodes"][0]["label"]["x"] == 42
 
 
-def test_update_link_suspend(http_controller, tmpdir, project, compute, async_run):
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
+async def test_update_link_suspend(controller_api, project, nodes):
 
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
-    node1._ports = [EthernetPort("E0", 0, 0, 3)]
-    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
-    node2._ports = [EthernetPort("E0", 0, 2, 4)]
-
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
-        response = http_controller.post("/projects/{}/links".format(project.id), {
+    node1, node2 = nodes
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = await controller_api.post("/projects/{}/links".format(project.id), {
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -195,9 +171,12 @@ def test_update_link_suspend(http_controller, tmpdir, project, compute, async_ru
                 }
             ]
         })
+
+    assert mock.called
     link_id = response.json["link_id"]
     assert response.json["nodes"][0]["label"]["x"] == 42
-    response = http_controller.put("/projects/{}/links/{}".format(project.id, link_id), {
+
+    response = await controller_api.put("/projects/{}/links/{}".format(project.id, link_id), {
         "nodes": [
             {
                 "node_id": node1.id,
@@ -217,29 +196,23 @@ def test_update_link_suspend(http_controller, tmpdir, project, compute, async_ru
         ],
         "suspend": True
     })
+
     assert response.status == 201
     assert response.json["nodes"][0]["label"]["x"] == 64
     assert response.json["suspend"]
     assert response.json["filters"] == {}
 
 
-def test_update_link(http_controller, tmpdir, project, compute, async_run):
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
-    node1._ports = [EthernetPort("E0", 0, 0, 3)]
-    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
-    node2._ports = [EthernetPort("E0", 0, 2, 4)]
+async def test_update_link(controller_api, project, nodes):
 
     filters = {
         "latency": [10],
         "frequency_drop": [50]
     }
 
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
-        response = http_controller.post("/projects/{}/links".format(project.id), {
+    node1, node2 = nodes
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        response = await controller_api.post("/projects/{}/links".format(project.id), {
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -258,9 +231,12 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
                 }
             ]
         })
+
+    assert mock.called
     link_id = response.json["link_id"]
     assert response.json["nodes"][0]["label"]["x"] == 42
-    response = http_controller.put("/projects/{}/links/{}".format(project.id, link_id), {
+
+    response = await controller_api.put("/projects/{}/links/{}".format(project.id, link_id), {
         "nodes": [
             {
                 "node_id": node1.id,
@@ -279,26 +255,21 @@ def test_update_link(http_controller, tmpdir, project, compute, async_run):
             }
         ],
         "filters": filters
-    }, example=True)
+    })
+
     assert response.status == 201
     assert response.json["nodes"][0]["label"]["x"] == 64
     assert list(project.links.values())[0].filters == filters
 
 
-def test_list_link(http_controller, tmpdir, project, compute, async_run):
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    node1 = async_run(project.add_node(compute, "node1", None, node_type="qemu"))
-    node1._ports = [EthernetPort("E0", 0, 0, 3)]
-    node2 = async_run(project.add_node(compute, "node2", None, node_type="qemu"))
-    node2._ports = [EthernetPort("E0", 0, 2, 4)]
+async def test_list_link(controller_api, project, nodes):
 
     filters = {
         "latency": [10],
         "frequency_drop": [50]
     }
+
+    node1, node2 = nodes
     nodes = [
         {
             "node_id": node1.id,
@@ -311,40 +282,45 @@ def test_list_link(http_controller, tmpdir, project, compute, async_run):
             "port_number": 4
         }
     ]
-    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create"):
-        response = http_controller.post("/projects/{}/links".format(project.id), {
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
+        await controller_api.post("/projects/{}/links".format(project.id), {
             "nodes": nodes,
             "filters": filters
         })
-    response = http_controller.get("/projects/{}/links".format(project.id), example=True)
+
+    assert mock.called
+    response = await controller_api.get("/projects/{}/links".format(project.id))
     assert response.status == 200
     assert len(response.json) == 1
     assert response.json[0]["filters"] == filters
 
 
-def test_start_capture(http_controller, tmpdir, project, compute, async_run):
+async def test_start_capture(controller_api, project):
+
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.start_capture") as mock:
-        response = http_controller.post("/projects/{}/links/{}/start_capture".format(project.id, link.id), example=True)
+        response = await controller_api.post("/projects/{}/links/{}/start_capture".format(project.id, link.id))
     assert mock.called
     assert response.status == 201
 
 
-def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
+async def test_stop_capture(controller_api, project):
+
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
-        response = http_controller.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id), example=True)
+        response = await controller_api.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id))
     assert mock.called
     assert response.status == 201
 
 
-# def test_pcap(http_controller, tmpdir, project, compute, async_run):
+# async def test_pcap(controller_api, http_client, project):
 #
-#     async def go():
-#         async with aiohttp.request("GET", http_controller.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id))) as response:
+#     async def pcap_capture():
+#         async with http_client.get(controller_api.get_url("/projects/{}/links/{}/pcap".format(project.id, link.id))) as response:
 #             response.body = await response.content.read(5)
+#             print("READ", response.body)
 #             return response
 #
 #     with asyncio_patch("gns3server.controller.link.Link.capture_node") as mock:
@@ -354,27 +330,28 @@ def test_stop_capture(http_controller, tmpdir, project, compute, async_run):
 #         with open(link.capture_file_path, "w+") as f:
 #             f.write("hello")
 #         project._links = {link.id: link}
-#         response = async_run(asyncio.ensure_future(go()))
+#         response = await pcap_capture()
+#         assert mock.called
 #         assert response.status == 200
 #         assert b'hello' == response.body
 
 
-def test_delete_link(http_controller, tmpdir, project, compute, async_run):
+async def test_delete_link(controller_api, project):
 
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.delete") as mock:
-        response = http_controller.delete("/projects/{}/links/{}".format(project.id, link.id), example=True)
+        response = await controller_api.delete("/projects/{}/links/{}".format(project.id, link.id))
     assert mock.called
     assert response.status == 204
 
 
-def test_list_filters(http_controller, tmpdir, project, async_run):
+async def test_list_filters(controller_api, project):
 
     link = Link(project)
     project._links = {link.id: link}
     with patch("gns3server.controller.link.Link.available_filters", return_value=FILTERS) as mock:
-        response = http_controller.get("/projects/{}/links/{}/available_filters".format(project.id, link.id), example=True)
+        response = await controller_api.get("/projects/{}/links/{}/available_filters".format(project.id, link.id))
     assert mock.called
     assert response.status == 200
     assert response.json == FILTERS

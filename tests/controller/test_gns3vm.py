@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import sys
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.gns3vm import GNS3VM
@@ -24,6 +25,7 @@ from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 
 @pytest.fixture
 def dummy_engine():
+
     engine = AsyncioMagicMock()
     engine.running = False
     engine.ip_address = "vm.local"
@@ -36,6 +38,7 @@ def dummy_engine():
 
 @pytest.fixture
 def dummy_gns3vm(controller, dummy_engine):
+
     vm = GNS3VM(controller)
     vm._settings["engine"] = "dummy"
     vm._settings["vmname"] = "Test VM"
@@ -44,46 +47,51 @@ def dummy_gns3vm(controller, dummy_engine):
     return vm
 
 
-def test_list(async_run, controller):
-    vm = GNS3VM(controller)
+async def test_list(loop, controller):
 
+    vm = GNS3VM(controller)
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.list", return_value=[{"vmname": "test", "vmx_path": "test"}]):
-        res = async_run(vm.list("vmware"))
-        assert res == [{"vmname": "test"}]  # Informations specific to vmware are stripped
+        res = await vm.list("vmware")
+        assert res == [{"vmname": "test"}]  # Information specific to VMware is stripped
     with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM.list", return_value=[{"vmname": "test"}]):
-        res = async_run(vm.list("virtualbox"))
+        res = await vm.list("virtualbox")
         assert res == [{"vmname": "test"}]
     with pytest.raises(NotImplementedError):
-        async_run(vm.list("hyperv"))
+        await vm.list("hyperv")
 
 
-def test_json(controller):
+async def test_json(loop, controller):
+
     vm = GNS3VM(controller)
     assert vm.__json__() == vm._settings
 
 
-def test_update_settings(controller, async_run):
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
+async def test_update_settings(loop, controller):
+
     vm = GNS3VM(controller)
     vm.settings = {
         "enable": True,
         "engine": "vmware",
         "vmname": "GNS3 VM"
     }
+
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.start"):
-        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
-            async_run(vm.auto_start_vm())
+        with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
+            await vm.auto_start_vm()
     assert "vm" in controller.computes
-    async_run(vm.update_settings({"enable": False}))
+    await vm.update_settings({"enable": False})
     assert "vm" not in controller.computes
 
 
-def test_auto_start(async_run, controller, dummy_gns3vm, dummy_engine):
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
+async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     """
     When start the compute should be add to the controller
     """
 
-    with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network") as mock_check_network:
-        async_run(dummy_gns3vm.auto_start_vm())
+    with asyncio_patch("gns3server.controller.gns3vm.GNS3VM._check_network"):
+        await dummy_gns3vm.auto_start_vm()
     assert dummy_engine.start.called
     assert controller.computes["vm"].name == "GNS3 VM (Test VM)"
     assert controller.computes["vm"].host == "vm.local"
@@ -93,9 +101,10 @@ def test_auto_start(async_run, controller, dummy_gns3vm, dummy_engine):
     assert controller.computes["vm"].password == "world"
 
 
-def test_auto_start_with_error(async_run, controller, dummy_gns3vm, dummy_engine):
-    dummy_engine.start.side_effect = GNS3VMError("Dummy error")
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
+async def test_auto_start_with_error(controller, dummy_gns3vm, dummy_engine):
 
-    async_run(dummy_gns3vm.auto_start_vm())
+    dummy_engine.start.side_effect = GNS3VMError("Dummy error")
+    await dummy_gns3vm.auto_start_vm()
     assert dummy_engine.start.called
     assert controller.computes["vm"].name == "GNS3 VM (Test VM)"

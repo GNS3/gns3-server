@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,25 +23,30 @@ from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 
 @pytest.fixture
 def gns3vm(controller):
+
     return RemoteGNS3VM(controller)
 
 
-def test_list(async_run, gns3vm, controller):
-    async_run(controller.add_compute("r1", name="R1", host="r1.local", connect=False))
-    res = async_run(gns3vm.list())
+async def test_list(gns3vm, controller):
+
+    await controller.add_compute("r1", name="R1", host="r1.local", connect=False)
+    res = await gns3vm.list()
     assert res == [{"vmname": "R1"}]
 
 
-def test_start(async_run, gns3vm, controller):
-    async_run(controller.add_compute("r1", name="R1",
-                                     protocol="https",
-                                     host="r1.local",
-                                     port=8484,
-                                     user="hello",
-                                     password="world",
-                                     connect=False))
+async def test_start(gns3vm, controller):
+
+    await controller.add_compute("r1",
+                                 name="R1",
+                                 protocol="https",
+                                 host="r1.local",
+                                 port=8484,
+                                 user="hello",
+                                 password="world",
+                                 connect=False)
+
     gns3vm.vmname = "R1"
-    res = async_run(gns3vm.start())
+    await gns3vm.start()
     assert gns3vm.running
     assert gns3vm.protocol == "https"
     assert gns3vm.ip_address == "r1.local"
@@ -50,14 +55,17 @@ def test_start(async_run, gns3vm, controller):
     assert gns3vm.password == "world"
 
 
-def test_start_invalid_vm(async_run, gns3vm, controller):
-    async_run(controller.add_compute("r1", name="R1",
-                                     protocol="https",
-                                     host="r1.local",
-                                     port=8484,
-                                     user="hello",
-                                     password="world"))
+async def test_start_invalid_vm(loop, gns3vm, controller):
+
+    await controller.add_compute("r1",
+                                 name="R1",
+                                 protocol="https",
+                                 host="r1.local",
+                                 port=8484,
+                                 user="hello",
+                                 password="world")
+
     gns3vm.vmname = "R2"
     with pytest.raises(GNS3VMError):
-        res = async_run(gns3vm.start())
+        await gns3vm.start()
     assert not gns3vm.running

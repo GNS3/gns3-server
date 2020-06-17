@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,69 +20,73 @@ import uuid
 from gns3server.compute.notification_manager import NotificationManager
 
 
-def test_queue(async_run):
+async def test_queue():
+
     NotificationManager.reset()
     notifications = NotificationManager.instance()
     with notifications.queue() as queue:
         assert len(notifications._listeners) == 1
 
-        res = async_run(queue.get(5))
+        res = await queue.get(5)
         assert res[0] == "ping"
 
         notifications.emit("test", {"a": 1})
-        res = async_run(queue.get(5))
+        res = await queue.get(5)
         assert res == ('test', {"a": 1}, {})
 
     assert len(notifications._listeners) == 0
 
 
-def test_queue_json(async_run):
+async def test_queue_json():
+
     NotificationManager.reset()
     notifications = NotificationManager.instance()
     with notifications.queue() as queue:
         assert len(notifications._listeners) == 1
 
-        res = async_run(queue.get(5))
+        res = await queue.get(5)
         assert "ping" in res
 
         notifications.emit("test", {"a": 1})
-        res = async_run(queue.get_json(5))
+        res = await queue.get_json(5)
         assert res == '{"action": "test", "event": {"a": 1}}'
 
     assert len(notifications._listeners) == 0
 
 
-def test_queue_json_meta(async_run):
+async def test_queue_json_meta():
+
     NotificationManager.reset()
     project_id = str(uuid.uuid4())
     notifications = NotificationManager.instance()
     with notifications.queue() as queue:
         assert len(notifications._listeners) == 1
 
-        res = async_run(queue.get(5))
+        res = await queue.get(5)
         assert "ping" in res
 
         notifications.emit("test", {"a": 1}, project_id=project_id)
-        res = async_run(queue.get_json(5))
+        res = await queue.get_json(5)
         assert res == '{"action": "test", "event": {"a": 1}, "project_id": "' + project_id + '"}'
 
     assert len(notifications._listeners) == 0
 
 
-def test_queue_ping(async_run):
+async def test_queue_ping():
     """
     If we don't send a message during a long time (0.5 seconds)
     a ping is send
     """
+
     NotificationManager.reset()
     notifications = NotificationManager.instance()
     with notifications.queue() as queue:
         assert len(notifications._listeners) == 1
 
-        res = async_run(queue.get(5))
+        res = await queue.get(5)
         assert res[0] == "ping"
 
-        res = async_run(queue.get(0.5))
+        res = await queue.get(0.5)
         assert res[0] == "ping"
         assert res[1]["cpu_usage_percent"] is not None
     assert len(notifications._listeners) == 0
