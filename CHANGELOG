@@ -1,5 +1,19 @@
 # Change Log
 
+## 2.2.10 18/06/2020
+
+* Add pytest-aiohttp to tests_require in setup.py
+* Don't require hardware acceleration. Fixes #1780
+* Release Web-Ui version 2020.2.0-beta.5
+* Tests can be run with Python 3.8
+* Wait longer for x11 socket file to be created. Ref #1761
+* Allow Hyper-V to run on AMD when Windows 10 build 19640 or later is detected. Fixes #1777
+* Show error message if IPv6 is not enabled when using SPICE console. Fixes #1772
+* Move jsonschema 2.6.0 requirement in build repository.
+* Only use jsonschema 2.6.0 on Windows and macOS.
+* Disable default integrations for sentry sdk.
+* Remove unused bytes2human function.
+
 ## 2.2.9 04/06/2020
 
 * Release Web-Ui version 2020.2.0-beta.4
