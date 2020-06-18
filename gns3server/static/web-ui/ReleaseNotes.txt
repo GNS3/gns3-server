@@ -1,6 +1,25 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: GNS3 Web UI 2020.2.0-beta.4
+Current version: 2020.2.0-beta.5
+
+Bug Fixes
+
+- Bug in symbol selection
+- Same question is asked after going back to project
+- Cannot read property 'forEach' of undefined
+- Error when selecting existing Docker image
+- Invalid property when adding VMware VM template
+- Invalid type for adapters field when adding Docker template
+- Prevent user to move to another step when adding template
+- Web UI cannot set flag "Leave this project running in the background after closing"
+
+What's new
+- Default values in templates
+- New option for Qemu VMs
+- Ability to quickly change Hostname from right click
+- Progress bar for node creation
+
+GNS3 Web UI 2020.2.0-beta.4
 
 Bug Fixes
 - New port setting for GNS3 VM preferences
