@@ -43,7 +43,7 @@ async def manager(loop, port_manager):
 async def node(compute_project, manager):
 
     node = manager.create_node("test", compute_project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
-    return await asyncio.ensure_future(node)
+    return await node
 
 
 async def test_affect_uuid():
@@ -156,7 +156,7 @@ async def test_project_delete_permission_issue():
     assert os.path.exists(directory)
     os.chmod(directory, 0)
     with pytest.raises(aiohttp.web.HTTPInternalServerError):
-        await asyncio.ensure_future(project.delete())
+        await project.delete()
     os.chmod(directory, 700)
 
 

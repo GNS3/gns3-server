@@ -187,10 +187,10 @@ async def test_upload_image(compute_api, images_dir):
 async def test_upload_image_permission_denied(compute_api, tmpdir, images_dir):
 
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
-    with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
+    with open(os.path.join(images_dir, "IOS", "test3.tmp"), "w+") as f:
         f.write("")
-    os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
+    os.chmod(os.path.join(images_dir, "IOS", "test3.tmp"), 0)
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.post("/dynamips/images/test2", body="TEST", raw=True)
+        response = await compute_api.post("/dynamips/images/test3", "TEST", raw=True)
         assert response.status == 409

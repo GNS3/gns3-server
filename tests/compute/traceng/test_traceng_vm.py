@@ -171,7 +171,7 @@ async def test_add_nio_binding_udp(vm):
 async def test_port_remove_nio_binding(vm):
 
     nio = TraceNG.instance().create_nio({"type": "nio_udp", "lport": 4242, "rport": 4243, "rhost": "127.0.0.1"})
-    await asyncio.ensure_future(vm.port_add_nio_binding(0, nio))
+    await vm.port_add_nio_binding(0, nio)
     await vm.port_remove_nio_binding(0)
     assert vm._ethernet_adapter.ports[0] is None
 

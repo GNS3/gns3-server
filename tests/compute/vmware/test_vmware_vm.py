@@ -70,5 +70,5 @@ async def test_stop_capture(vm, tmpdir, manager, free_console_port):
     await vm.adapter_add_nio_binding(0, nio)
     await vm.start_capture(0, output_file)
     assert vm._ethernet_adapters[0].get_nio(0).capturing
-    await asyncio.ensure_future(vm.stop_capture(0))
+    await vm.stop_capture(0)
     assert vm._ethernet_adapters[0].get_nio(0).capturing is False

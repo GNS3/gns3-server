@@ -317,12 +317,12 @@ async def test_upload_image_forbiden_location(compute_api, tmpdir):
 
 async def test_upload_image_permission_denied(compute_api, tmpdir):
 
-    with open(str(tmpdir / "test2.tmp"), "w+") as f:
+    with open(str(tmpdir / "test3.tmp"), "w+") as f:
         f.write("")
-    os.chmod(str(tmpdir / "test2.tmp"), 0)
+    os.chmod(str(tmpdir / "test3.tmp"), 0)
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.post("/qemu/images/test2", body="TEST", raw=True)
+        response = await compute_api.post("/qemu/images/test3", "TEST", raw=True)
         assert response.status == 409
 
 
