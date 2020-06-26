@@ -38,6 +38,7 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
+
 dependencies = open("requirements.txt", "r").read().splitlines()
 
 setup(

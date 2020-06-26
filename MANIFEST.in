@@ -2,7 +2,6 @@ include README.rst
 include AUTHORS
 include LICENSE
 include MANIFEST.in
-include tox.ini
 include requirements.txt
 recursive-include tests *
 recursive-exclude docs *
