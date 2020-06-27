@@ -7,6 +7,9 @@ GNS3-server
 .. image:: https://img.shields.io/pypi/v/gns3-server.svg
     :target: https://pypi.python.org/pypi/gns3-server
 
+.. image:: https://snyk.io/test/github/GNS3/gns3-server/badge.svg
+    :target: https://snyk.io/test/github/GNS3/gns3-server
+
 This is the GNS3 server repository.
 
 The GNS3 server manages emulators such as Dynamips, VirtualBox or Qemu/KVM.
