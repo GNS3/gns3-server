@@ -46,7 +46,6 @@ from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
-from ...utils.get_resource import get_resource
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
 
@@ -130,31 +129,19 @@ class QemuVM(BaseNode):
         self.adapters = 1  # creates 1 adapter by default
 
         # config disk
-        config_disk_name = "config.img"
-        self.config_disk_name = ""
+        self.config_disk_name = self.manager.config_disk
         self.config_disk_image = ""
         if not shutil.which("mcopy"):
             log.warning("Config disk: 'mtools' are not installed.")
+            self.config_disk_name = ""
         else:
             try:
                 self.config_disk_image = self.manager.get_abs_image_path(
-                    config_disk_name, self.project.path)
-                self.config_disk_name = config_disk_name
+                    self.config_disk_name)
             except (NodeError, ImageMissingError) as e:
-                config_disk_zip = get_resource("compute/qemu/resources/{}.zip"
-                                               .format(config_disk_name))
-                if config_disk_zip and os.path.exists(config_disk_zip):
-                    directory = self.manager.get_images_directory()
-                    try:
-                        unpack_zip(config_disk_zip, directory)
-                        self.config_disk_image = os.path.join(directory,
-                                                              config_disk_name)
-                        self.config_disk_name = config_disk_name
-                    except OSError as e:
-                        log.warning("Config disk creation: {}".format(e))
-                else:
-                    log.warning("Config disk: image '{}' missing"
-                                .format(config_disk_name))
+                log.warning("Config disk: image '{}' missing"
+                            .format(self.config_disk_name))
+                self.config_disk_name = ""
 
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
