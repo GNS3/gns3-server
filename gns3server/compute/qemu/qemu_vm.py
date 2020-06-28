@@ -1649,12 +1649,10 @@ class QemuVM(BaseNode):
                 mbr = img_file.read(512)
             part_type, offset, signature = struct.unpack("<450xB3xL52xH", mbr)
             if signature != 0xAA55:
-                log.error("mcopy failure: {}: invalid MBR".format(image))
-                return 1
+                raise OSError("mcopy failure: {}: invalid MBR".format(image))
             if part_type not in (1, 4, 6, 11, 12, 14):
-                log.error("mcopy failure: {}: invalid partition type {:02X}"
-                          .format(image, part_type))
-                return 1
+                raise OSError("mcopy failure: {}: invalid partition type {:02X}"
+                              .format(image, part_type))
             part_image = image + "@@{}S".format(offset)
 
             process = await asyncio.create_subprocess_exec(
@@ -1665,15 +1663,13 @@ class QemuVM(BaseNode):
             (stdout, _) = await process.communicate()
             retcode = process.returncode
         except (OSError, subprocess.SubprocessError) as e:
-            log.error("mcopy failure: {}".format(e))
-            return 1
+            raise OSError("mcopy failure: {}".format(e))
         if retcode != 0:
             stdout = stdout.decode("utf-8").rstrip()
             if stdout:
-                log.error("mcopy failure: {}".format(stdout))
+                raise OSError("mcopy failure: {}".format(stdout))
             else:
-                log.error("mcopy failure: return code {}".format(retcode))
-        return retcode
+                raise OSError("mcopy failure: return code {}".format(retcode))
 
     async def _export_config(self):
         disk_name = getattr(self, "config_disk_name")
@@ -1689,10 +1685,11 @@ class QemuVM(BaseNode):
             os.mkdir(config_dir)
             if os.path.exists(zip_file):
                 os.remove(zip_file)
-            if await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir) == 0:
-                pack_zip(zip_file, config_dir)
+            await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir)
+            pack_zip(zip_file, config_dir)
         except OSError as e:
-            log.error("Can't export config: {}".format(e))
+            log.warning("Can't export config: {}".format(e))
+            self.project.emit("log.warning", {"message": "{}: Can't export config: {}".format(self._name, e)})
         finally:
             shutil.rmtree(config_dir, ignore_errors=True)
 
@@ -1711,11 +1708,12 @@ class QemuVM(BaseNode):
             config_files = [os.path.join(config_dir, fname)
                             for fname in os.listdir(config_dir)]
             if config_files:
-                if await self._mcopy(disk, "-s", "-m", "-o", "--", *config_files, "::/") != 0:
-                    os.remove(disk)
-                    os.remove(zip_file)
+                await self._mcopy(disk, "-s", "-m", "-o", "--", *config_files, "::/")
         except OSError as e:
-            log.error("Can't import config: {}".format(e))
+            log.warning("Can't import config: {}".format(e))
+            self.project.emit("log.warning", {"message": "{}: Can't import config: {}".format(self._name, e)})
+            if os.path.exists(disk):
+                os.remove(disk)
             os.remove(zip_file)
         finally:
             shutil.rmtree(config_dir, ignore_errors=True)
