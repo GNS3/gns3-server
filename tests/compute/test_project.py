@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import uuid
 import asyncio
 import pytest
@@ -149,6 +150,7 @@ async def test_project_delete():
     assert os.path.exists(directory) is False
 
 
+@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any project")
 async def test_project_delete_permission_issue():
 
     project = Project(project_id=str(uuid4()))

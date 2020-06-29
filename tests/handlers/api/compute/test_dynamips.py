@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import sys
 import os
 import stat
 from unittest.mock import patch
@@ -184,13 +185,13 @@ async def test_upload_image(compute_api, images_dir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-async def test_upload_image_permission_denied(compute_api, tmpdir, images_dir):
+@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
+async def test_upload_image_permission_denied(compute_api, images_dir):
 
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
     with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
-    with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.post("/dynamips/images/test2", body="TEST", raw=True)
-        assert response.status == 409
+    response = await compute_api.post("/dynamips/images/test2", body="TEST", raw=True)
+    assert response.status == 409

@@ -315,15 +315,15 @@ async def test_upload_image_forbiden_location(compute_api, tmpdir):
         assert response.status == 404
 
 
-async def test_upload_image_permission_denied(compute_api, tmpdir):
+@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
+async def test_upload_image_permission_denied(compute_api, images_dir):
 
-    with open(str(tmpdir / "test2.tmp"), "w+") as f:
+    with open(os.path.join(images_dir, "QEMU", "test2.tmp"), "w+") as f:
         f.write("")
-    os.chmod(str(tmpdir / "test2.tmp"), 0)
+    os.chmod(os.path.join(images_dir, "QEMU", "test2.tmp"), 0)
 
-    with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.post("/qemu/images/test2", body="TEST", raw=True)
-        assert response.status == 409
+    response = await compute_api.post("/qemu/images/test2", body="TEST", raw=True)
+    assert response.status == 409
 
 
 async def test_create_img_relative(compute_api):
