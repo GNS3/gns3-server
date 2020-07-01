@@ -24,9 +24,19 @@
     "images": [
         {
             "filename": "rtr.qcow2",
-            "version": "stable",
-            "download_url": "http://freerouter.nop.hu/".
+            "version": "20.7.1",
+            "md5sum": "4707415d15d20ced92423d90e52eedcd",
+            "filesize": 254767616,
+            "download_url": "http://freerouter.nop.hu/",
             "direct_download_url": "http://dl.nop.hu/rtr.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "20.7.1",
+            "images": {
+                "hda_disk_image": "rtr.qcow2"
+            }
         }
     ]
 }
