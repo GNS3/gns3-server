@@ -1,0 +1,32 @@
+{
+    "name": "freeRouter",
+    "category": "router",
+    "description": "networking swiss army knife - it speaks routing protocols, and (re)encapsulates packets on interfaces",
+    "vendor_name": "freeRouter",
+    "vendor_url": "http://freerouter.nop.hu/",
+    "documentation_url": "http://freerouter.nop.hu/",
+    "product_name": "freeRouter",
+    "product_url": "http://freerouter.nop.hu/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "There is no default password and enable password. A default configuration is present.",
+    "port_name_format": "ethernet{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 8,
+        "ram": 2048,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "rtr.qcow2",
+            "version": "stable",
+            "download_url": "http://freerouter.nop.hu/".
+            "direct_download_url": "http://dl.nop.hu/rtr.qcow2"
+        }
+    ]
+}
