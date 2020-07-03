@@ -1668,17 +1668,15 @@ class QemuVM(BaseNode):
         config_dir = os.path.join(self.working_dir, "configs")
         zip_file = os.path.join(self.working_dir, "config.zip")
         try:
-            shutil.rmtree(config_dir, ignore_errors=True)
             os.mkdir(config_dir)
+            await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir)
             if os.path.exists(zip_file):
                 os.remove(zip_file)
-            await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir)
             pack_zip(zip_file, config_dir)
         except OSError as e:
             log.warning("Can't export config: {}".format(e))
             self.project.emit("log.warning", {"message": "{}: Can't export config: {}".format(self._name, e)})
-        finally:
-            shutil.rmtree(config_dir, ignore_errors=True)
+        shutil.rmtree(config_dir, ignore_errors=True)
 
     async def _import_config(self):
         disk_name = getattr(self, "config_disk_name")
@@ -1687,23 +1685,23 @@ class QemuVM(BaseNode):
             return
         config_dir = os.path.join(self.working_dir, "configs")
         disk = os.path.join(self.working_dir, disk_name)
+        disk_tmp = disk + ".tmp"
         try:
-            shutil.rmtree(config_dir, ignore_errors=True)
             os.mkdir(config_dir)
+            shutil.copyfile(getattr(self, "config_disk_image"), disk_tmp)
             unpack_zip(zip_file, config_dir)
-            shutil.copyfile(getattr(self, "config_disk_image"), disk)
             config_files = [os.path.join(config_dir, fname)
                             for fname in os.listdir(config_dir)]
             if config_files:
-                await self._mcopy(disk, "-s", "-m", "-o", "--", *config_files, "::/")
+                await self._mcopy(disk_tmp, "-s", "-m", "-o", "--", *config_files, "::/")
+            os.replace(disk_tmp, disk)
         except OSError as e:
             log.warning("Can't import config: {}".format(e))
             self.project.emit("log.warning", {"message": "{}: Can't import config: {}".format(self._name, e)})
-            if os.path.exists(disk):
-                os.remove(disk)
-            os.remove(zip_file)
-        finally:
-            shutil.rmtree(config_dir, ignore_errors=True)
+            if os.path.exists(disk_tmp):
+                os.remove(disk_tmp)
+                os.remove(zip_file)
+        shutil.rmtree(config_dir, ignore_errors=True)
 
     def _disk_interface_options(self, disk, disk_index, interface, format=None):
         options = []
@@ -1808,12 +1806,15 @@ class QemuVM(BaseNode):
                 if interface == "ide":
                     interface = getattr(self, "hda_disk_interface", "none")
                 await self._import_config()
-                if not os.path.exists(disk):
+                disk_exists = os.path.exists(disk)
+                if not disk_exists:
                     try:
                         shutil.copyfile(disk_image, disk)
+                        disk_exists = True
                     except OSError as e:
-                        raise QemuError("Could not create '{}' disk image: {}".format(disk_name, e))
-                options.extend(self._disk_interface_options(disk, 3, interface, "raw"))
+                        log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
+                if disk_exists:
+                    options.extend(self._disk_interface_options(disk, 3, interface, "raw"))
 
         return options
 
