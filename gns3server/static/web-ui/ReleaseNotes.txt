@@ -1,5 +1,20 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
+Current version: 2020.3.0-beta.1
+
+Bug Fixes & enhancements
+- refreshing list of templates after adding new template from project map 
+- link to preferences from project page 
+- disallow user to create Qemu template when binary is not selected 
+- extending the time for notification to appear 
+- open first settings menu at start 
+- the menu for the map rearranged 
+- restyling SystemStatus page 
+- marking files which already exist in appliance wizard
+
+What's new
+- Option to import appliances
+
 Current version: 2020.2.0-beta.5
 
 Bug Fixes
