@@ -26,7 +26,6 @@ import sys
 import os
 import re
 import glob
-import shlex
 import base64
 import shutil
 import binascii
@@ -805,12 +804,12 @@ class Router(BaseNode):
         :ghost_file: path to ghost file
         """
 
-        await self._hypervisor.send('vm set_ghost_file "{name}" {ghost_file}'.format(name=self._name,
-                                                                                     ghost_file=shlex.quote(ghost_file)))
+        await self._hypervisor.send('vm set_ghost_file "{name}" "{ghost_file}"'.format(name=self._name,
+                                                                                       ghost_file=ghost_file))
 
-        log.info('Router "{name}" [{id}]: ghost file set to {ghost_file}'.format(name=self._name,
-                                                                                 id=self._id,
-                                                                                 ghost_file=ghost_file))
+        log.info('Router "{name}" [{id}]: ghost file set to "{ghost_file}"'.format(name=self._name,
+                                                                                   id=self._id,
+                                                                                   ghost_file=ghost_file))
 
         self._ghost_file = ghost_file
 
