@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.11 09/07/2020
+
+* Fix crash when project sets 'auto_open' option and a remote GNS3 VM is used. Fixes https://github.com/GNS3/gns3-gui/issues/3014
+* Fix Dynamips ghost image support when project contains a space. Fixes #3015
+* Release Web-Ui version 2020.3.0-beta.1
+* Fix issue when cannot skip slots for Dynamips routers. Fixes https://github.com/GNS3/gns3-gui/issues/3000
+* Allow tests to be run by root. Fixes #1784
+* Update classifiers in setup.py
+
 ## 2.2.10 18/06/2020
 
 * Add pytest-aiohttp to tests_require in setup.py
