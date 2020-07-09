@@ -133,7 +133,7 @@ class CrashReport:
                 for key, value in extra_context.items():
                     scope.set_extra(key, value)
 
-    def capture_exception(self, request):
+    def capture_exception(self, request=None):
 
         if not SENTRY_SDK_AVAILABLE:
             return

@@ -99,11 +99,13 @@ class Controller:
                 await self.add_compute(**c)
             except (aiohttp.web.HTTPError, KeyError):
                 pass  # Skip not available servers at loading
-        await self.load_projects()
+
         try:
             await self.gns3vm.auto_start_vm()
         except GNS3VMError as e:
             log.warning(str(e))
+
+        await self.load_projects()
         await self._project_auto_open()
 
     def _update_config(self):
@@ -238,7 +240,7 @@ class Controller:
                         if file.endswith(".gns3"):
                             try:
                                 await self.load_project(os.path.join(project_dir, file), load=False)
-                            except (aiohttp.web.HTTPConflict, NotImplementedError):
+                            except (aiohttp.web.HTTPConflict, aiohttp.web.HTTPNotFound, NotImplementedError):
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))

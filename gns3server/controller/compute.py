@@ -427,7 +427,7 @@ class Compute:
         ws_url = self._getUrl("/notifications/ws")
         try:
             async with self._session().ws_connect(ws_url, auth=self._auth, heartbeat=10) as ws:
-                log.info("Connected to compute WebSocket '{}'".format(ws_url))
+                log.info("Connected to compute '{}' WebSocket '{}'".format(self._id, ws_url))
                 async for response in ws:
                     if response.type == aiohttp.WSMsgType.TEXT:
                         msg = json.loads(response.data)
@@ -445,15 +445,15 @@ class Compute:
                         if response.type == aiohttp.WSMsgType.CLOSE:
                             await ws.close()
                         elif response.type == aiohttp.WSMsgType.ERROR:
-                            log.error("Error received on compute WebSocket '{}': {}".format(ws_url, ws.exception()))
+                            log.error("Error received on compute '{}' WebSocket '{}': {}".format(self._id, ws_url, ws.exception()))
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
                         break
         except aiohttp.client_exceptions.ClientResponseError as e:
-            log.error("Client response error received on compute WebSocket '{}': {}".format(ws_url,e))
+            log.error("Client response error received on compute '{}' WebSocket '{}': {}".format(self._id, ws_url,e))
         finally:
             self._connected = False
-            log.info("Connection closed to compute WebSocket '{}'".format(ws_url))
+            log.info("Connection closed to compute '{}' WebSocket '{}'".format(self._id, ws_url))
 
         # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
