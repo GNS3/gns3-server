@@ -1,0 +1,69 @@
+{
+    "name": "macOS",
+    "category": "guest",
+    "description": "macOS",
+    "vendor_name": "Apple",
+    "vendor_url": "https://www.apple.com/mac/",
+    "documentation_url": "https://www.nicksherlock.com/2020/04/installing-macos-catalina-on-proxmox-with-opencore/",
+    "product_name": "macOS",
+    "product_url": "https://www.apple.com/mac/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "qemu-convert BaseSystem.dmg -O raw Catalina-installer.iso\n- gzip -d OpenCore.iso.gz\n\nTo have appliance working, please remove HDC(Secondary Mater) & HDD(Secondary Slave) from template.\nThen install Mac OS\nAt reboot, select MacOS installer to select your MacOS partition to boot on\n\nTo install the boot on the HD, pop open Terminal and run 'diskutil list' to see what drives we have available.\nThen use 'sudo dd if=<source> of=<dest>' to copy the 'EFI' partition from the OpenCore CD (the small disk ~150MB) and overwrite the EFI partition on the hard disk (the one with the large Apple_APFS 'Container' partition on it.\n\nTo end, remove the OpenCore drive and define the SATA one as boot. You're done :-)\nFinally, dont define an iCloud account until your SMBIOS uuid is the final one.\n\nOnce your Mac is booting, remove the references to Catalina-Installer.iso from the advanced args line: '  -drive file=/home/gns3/GNS3/images/QEMU/Catalina-installer.iso,if=none,id=drive-ide0,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.0,unit=0,drive=drive-ide0,id=ide0' to boot faster.\n",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 1,
+        "ram": 4096,
+        "cpus": 4,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "sata",
+        "options": "-machine q35,accel=kvm -cpu Penryn,kvm=on -device isa-applesmc,osk='ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'  -smbios type=2 -usb -device usb-kbd -device usb-tablet -drive file=/home/gns3/GNS3/images/QEMU/OpenCore.iso,if=none,id=drive-ide2,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.1,unit=0,drive=drive-ide2,id=ide2,bootindex=101 -drive file=/home/gns3/GNS3/images/QEMU/Catalina-installer.iso,if=none,id=drive-ide0,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.0,unit=0,drive=drive-ide0,id=ide0",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "dc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "empty30G.qcow2",
+            "version": "Catalina",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        },
+        {
+            "filename": "OVMF_CODE_2.202002-1.fd",
+            "version": "Catalina",
+            "md5sum": "94470f80fb1da3053a4aea96f46e0e72",
+            "filesize": 1966080,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF_CODE_2.202002-1.fd/download"
+        },
+        {
+            "filename": "OpenCore.iso",
+            "version": "Catalina",
+            "md5sum": "84fb7be0ebe80e746c07f8dc464b3234",
+            "filesize": 157286400,
+            "download_url": "https://github.com/thenickdude/KVM-Opencore/releases/download/v4/OpenCore.iso.gz"
+        },
+        {
+            "filename": "Catalina-installer.iso",
+            "version": "Catalina",
+            "md5sum": "fadfcfe48d1a4e21736665ae91d35561",
+            "filesize": 2146168832,
+            "download_url": "http://swcdn.apple.com/content/downloads/59/18/001-15219-A_EE9FN7UHJA/efuz3h0zlmx4qlinf4bxlguigo9jvhcr55/BaseSystem.dmg"
+        }
+    ],
+    "versions": [
+        {
+            "name": "Catalina",
+            "images": {
+                "bios_image": "OVMF_CODE_2.202002-1.fd",
+                "hdb_disk_image": "empty30G.qcow2",
+                "hdc_disk_image": "OpenCore.iso",
+                "hdd_disk_image": "Catalina-installer.iso"
+            }
+        }
+    ]
+}
