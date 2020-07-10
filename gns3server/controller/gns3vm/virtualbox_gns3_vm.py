@@ -92,7 +92,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             raise VirtualBoxError("Can't access to VirtualBox API version:\n{}".format(self._system_properties))
         from cpuinfo import get_cpu_info
         cpu_info = await wait_run_in_executor(get_cpu_info)
-        vendor_id = cpu_info['vendor_id']
+        vendor_id = cpu_info.get('vendor_id_raw')
         if vendor_id == "GenuineIntel":
             if parse_version(self._system_properties["API version"]) < parse_version("6_1"):
                 raise VirtualBoxError("VirtualBox version 6.1 or above is required to run the GNS3 VM with nested virtualization enabled on Intel processors")

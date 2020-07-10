@@ -19,6 +19,7 @@ import pytest
 import asyncio
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
+from gns3server.utils.asyncio import wait_run_in_executor
 from unittest.mock import patch
 
 from gns3server.controller.gns3vm.virtualbox_gns3_vm import VirtualBoxGNS3VM
@@ -65,3 +66,11 @@ GuestMemoryBalloon=0
     #     res = await gns3vm._look_for_interface("dummy")
     # assert mock.called
     # assert res == -1
+
+
+async def test_cpu_vendor_id(gns3vm):
+
+    from cpuinfo import get_cpu_info
+    cpu_info = await wait_run_in_executor(get_cpu_info)
+    vendor_id = cpu_info.get('vendor_id_raw')
+    assert vendor_id  # vendor id should not be empty
