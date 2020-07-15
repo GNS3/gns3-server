@@ -28,6 +28,10 @@ NAT_OBJECT_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the Nat instance",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "type": "string",

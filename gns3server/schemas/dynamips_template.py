@@ -30,11 +30,6 @@ DYNAMIPS_TEMPLATE_PROPERTIES = {
         "type": "string",
         "minLength": 1
     },
-    "usage": {
-        "description": "How to use the Dynamips VM",
-        "type": "string",
-        "default": ""
-    },
     "mmap": {
         "description": "MMAP feature",
         "type": "boolean",

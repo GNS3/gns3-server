@@ -85,6 +85,7 @@ class Cloud(BaseNode):
                                     "special": interface["special"]})
 
         return {"name": self.name,
+                "usage": self.usage,
                 "node_id": self.id,
                 "project_id": self.project.id,
                 "remote_console_host": self.remote_console_host,

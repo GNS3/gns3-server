@@ -46,6 +46,10 @@ ETHERNET_HUB_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the hub",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -97,6 +101,10 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
             "description": "Ethernet hub name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the hub",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

@@ -51,6 +51,7 @@ async def test_json_with_ports(on_gns3vm, compute_project, manager):
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, manager, ports=ports)
     assert cloud.__json__() == {
         "name": "cloud1",
+        "usage": "",
         "node_id": cloud.id,
         "project_id": compute_project.id,
         "remote_console_host": "",
@@ -83,6 +84,7 @@ def test_json_without_ports(on_gns3vm, compute_project, manager):
     cloud = Cloud("cloud1", str(uuid.uuid4()), compute_project, manager, ports=None)
     assert cloud.__json__() == {
         "name": "cloud1",
+        "usage": "",
         "node_id": cloud.id,
         "project_id": compute_project.id,
         "remote_console_host": "",

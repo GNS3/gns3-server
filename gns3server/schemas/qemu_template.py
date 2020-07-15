@@ -27,11 +27,6 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "string",
         "default": ""
     },
-    "usage": {
-        "description": "How to use the Qemu VM",
-        "type": "string",
-        "default": ""
-    },
     "platform": {
         "description": "Platform to emulate",
         "enum": QEMU_PLATFORMS,

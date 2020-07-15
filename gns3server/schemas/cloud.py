@@ -53,6 +53,10 @@ CLOUD_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the cloud",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -112,6 +116,10 @@ CLOUD_OBJECT_SCHEMA = {
             "description": "Cloud name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the cloud",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

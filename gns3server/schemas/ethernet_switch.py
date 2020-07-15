@@ -58,6 +58,10 @@ ETHERNET_SWITCH_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the switch",
+            "type": "string",
+        },
         "console": {
             "description": "Console TCP port",
             "minimum": 1,
@@ -131,6 +135,10 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
             "description": "Ethernet switch name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the switch",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

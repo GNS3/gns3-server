@@ -27,6 +27,10 @@ ATM_SWITCH_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the ATM switch",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -54,6 +58,10 @@ ATM_SWITCH_OBJECT_SCHEMA = {
             "description": "ATM switch name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the ATM switch",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

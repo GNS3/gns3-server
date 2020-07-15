@@ -59,6 +59,7 @@ class ATMSwitch(Device):
             mappings[source] = destination
 
         return {"name": self.name,
+                "usage": self.usage,
                 "node_id": self.id,
                 "project_id": self.project.id,
                 "mappings": mappings,

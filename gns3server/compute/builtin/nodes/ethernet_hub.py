@@ -41,6 +41,7 @@ class EthernetHub(BaseNode):
     def __json__(self):
 
         return {"name": self.name,
+                "usage": self.usage,
                 "node_id": self.id,
                 "project_id": self.project.id}
 

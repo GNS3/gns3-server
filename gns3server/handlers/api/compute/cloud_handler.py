@@ -53,17 +53,17 @@ class CloudHandler:
 
         builtin_manager = Builtin.instance()
         node = await builtin_manager.create_node(request.json.pop("name"),
-                                                      request.match_info["project_id"],
-                                                      request.json.get("node_id"),
-                                                      node_type="cloud",
-                                                      ports=request.json.get("ports_mapping"))
+                                                 request.match_info["project_id"],
+                                                 request.json.get("node_id"),
+                                                 node_type="cloud",
+                                                 ports=request.json.get("ports_mapping"))
 
         # add the remote console settings
         node.remote_console_host = request.json.get("remote_console_host", node.remote_console_host)
         node.remote_console_port = request.json.get("remote_console_port", node.remote_console_port)
         node.remote_console_type = request.json.get("remote_console_type", node.remote_console_type)
         node.remote_console_http_path = request.json.get("remote_console_http_path", node.remote_console_http_path)
-
+        node.usage = request.json.get("usage", "")
         response.set_status(201)
         response.json(node)
 

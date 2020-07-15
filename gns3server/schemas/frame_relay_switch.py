@@ -27,6 +27,10 @@ FRAME_RELAY_SWITCH_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the Frame Relay switch",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -54,6 +58,10 @@ FRAME_RELAY_SWITCH_OBJECT_SCHEMA = {
             "description": "Frame Relay switch name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the Frame Relay switch",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

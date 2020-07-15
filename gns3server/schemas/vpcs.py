@@ -26,6 +26,10 @@ VPCS_CREATE_SCHEMA = {
             "type": "string",
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the VPCS VM",
+            "type": "string",
+        },
         "node_id": {
             "description": "Node UUID",
             "oneOf": [
@@ -65,6 +69,10 @@ VPCS_UPDATE_SCHEMA = {
             "type": ["string", "null"],
             "minLength": 1,
         },
+        "usage": {
+            "description": "How to use the VPCS VM",
+            "type": "string",
+        },
         "console": {
             "description": "Console TCP port",
             "minimum": 1,
@@ -88,6 +96,10 @@ VPCS_OBJECT_SCHEMA = {
             "description": "VPCS VM name",
             "type": "string",
             "minLength": 1,
+        },
+        "usage": {
+            "description": "How to use the VPCS VM",
+            "type": "string",
         },
         "node_id": {
             "description": "Node UUID",

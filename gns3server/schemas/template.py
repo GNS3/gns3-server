@@ -35,6 +35,11 @@ BASE_TEMPLATE_PROPERTIES = {
         "type": "string",
         "minLength": 1,
     },
+    "usage": {
+        "description": "How to use this template",
+        "type": "string",
+        "default": ""
+    },
     "compute_id": {
         "description": "Compute identifier",
         "type": ["null", "string"]

@@ -109,6 +109,7 @@ class EthernetSwitch(Device):
     def __json__(self):
 
         ethernet_switch_info = {"name": self.name,
+                                "usage": self.usage,
                                 "console": self.console,
                                 "console_type": self.console_type,
                                 "node_id": self.id,
