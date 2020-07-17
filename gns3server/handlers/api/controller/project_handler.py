@@ -331,9 +331,11 @@ class ProjectHandler:
 
         try:
             begin = time.time()
-            with tempfile.TemporaryDirectory() as tmp_dir:
+            # use the parent directory as a temporary working dir
+            working_dir = os.path.abspath(os.path.join(project.path, os.pardir))
+            with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 with aiozipstream.ZipFile(compression=compression) as zstream:
-                    await export_project(zstream, project, tmp_dir, include_snapshots=include_snapshots, include_images=include_images, reset_mac_addresses=reset_mac_addresses)
+                    await export_project(zstream, project, tmpdir, include_snapshots=include_snapshots, include_images=include_images, reset_mac_addresses=reset_mac_addresses)
 
                     # We need to do that now because export could failed and raise an HTTP error
                     # that why response start need to be the later possible
@@ -380,7 +382,9 @@ class ProjectHandler:
         # It could be more optimal to stream this but it is not implemented in Python.
         try:
             begin = time.time()
-            with tempfile.TemporaryDirectory() as tmpdir:
+            # use the parent directory as a temporary working dir
+            working_dir = os.path.abspath(os.path.join(path, os.pardir))
+            with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 temp_project_path = os.path.join(tmpdir, "project.zip")
                 async with aiofiles.open(temp_project_path, 'wb') as f:
                     while True:

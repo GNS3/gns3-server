@@ -95,7 +95,7 @@ class Snapshot:
 
         try:
             begin = time.time()
-            with tempfile.TemporaryDirectory() as tmpdir:
+            with tempfile.TemporaryDirectory(dir=snapshot_directory) as tmpdir:
                 # Do not compress the snapshots
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
                     await export_project(zstream, self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
