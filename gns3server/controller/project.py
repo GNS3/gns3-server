@@ -1020,7 +1020,16 @@ class Project:
         assert self._status != "closed"
         try:
             begin = time.time()
-            with tempfile.TemporaryDirectory() as tmpdir:
+
+            # use the parent directory of the project we are duplicating as a
+            # temporary directory to avoid no space left issues when '/tmp'
+            # is location on another partition.
+            if location:
+                working_dir = os.path.abspath(os.path.join(location, os.pardir))
+            else:
+                working_dir = os.path.abspath(os.path.join(self.path, os.pardir))
+
+            with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 # Do not compress the exported project when duplicating
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
                     await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=reset_mac_addresses)
