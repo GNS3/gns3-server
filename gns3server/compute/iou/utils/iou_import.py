@@ -35,100 +35,82 @@ optional arguments:
                         create NVRAM file, size in kByte
 """
 
-import argparse
-import sys
-
-
-# extract 16 bit unsigned int from data
-def get_uint16(data, off):
-    return data[off] << 8 | data[off + 1]
-
-
-# extract 32 bit unsigned int from data
-def get_uint32(data, off):
-    return data[off] << 24 | data[off + 1] << 16 | data[off + 2] << 8 | data[off + 3]
-
-
-# insert 16 bit unsigned int into data
-def put_uint16(data, off, value):
-    data[off] = (value >> 8) & 0xff
-    data[off + 1] = value & 0xff
-
-
-# insert 32 bit unsigned int into data
-def put_uint32(data, off, value):
-    data[off] = (value >> 24) & 0xff
-    data[off + 1] = (value >> 16) & 0xff
-    data[off + 2] = (value >> 8) & 0xff
-    data[off + 3] = value & 0xff
+import struct
 
 
 # calculate padding
-def padding(off, ios, nvram_len):
-    pad = (4 - off % 4) % 4             # padding to alignment of 4
-    # add 4 if IOS <= 15.0 or NVRAM area >= 64KB
-    if (ios <= 0x0F00 or nvram_len >= 64 * 1024) and pad != 0:
+def padding(length, start_address):
+    pad = -length % 4                   # padding to alignment of 4
+    # extra padding if pad != 0 and big start_address
+    if pad != 0 and (start_address & 0x80000000) != 0:
         pad += 4
     return pad
 
 
 # update checksum
 def checksum(data, start, end):
-    put_uint16(data, start + 4, 0)      # set checksum to 0
-
     chk = 0
-    idx = start
-    while idx < end - 1:
-        chk += get_uint16(data, idx)
-        idx += 2
-    if idx < end:
-        chk += data[idx] << 8
+    # calculate checksum of first two words
+    for word in struct.unpack_from('>2H', data, start):
+        chk += word
 
+    # add remaining words, ignoring old checksum at offset 4
+    struct_format = '>{:d}H'.format((end - start - 6) // 2)
+    for word in struct.unpack_from(struct_format, data, start+6):
+        chk += word
+
+    # handle 16 bit overflow
     while chk >> 16:
         chk = (chk & 0xffff) + (chk >> 16)
-
     chk = chk ^ 0xffff
-    put_uint16(data, start + 4, chk)    # set checksum
+
+    # save checksum
+    struct.pack_into('>H', data, start+4, chk)
 
 
 # import IOU NVRAM
+# NVRAM format: https://github.com/ehlers/IOUtools/blob/master/NVRAM.md
 def nvram_import(nvram, startup, private, size):
-    BASE_ADDRESS = 0x10000000
-    DEFAULT_IOS = 0x0F04               # IOS 15.4
+    DEFAULT_IOS  = 0x0F04               # IOS 15.4
+    base_address = 0x10000000
 
     # check size parameter
     if size is not None and (size < 8 or size > 1024):
         raise ValueError('invalid size')
 
     # create new nvram if nvram is empty or has wrong size
-    if nvram is None or (size is not None and len(nvram) != size * 1024):
-        nvram = bytearray([0] * (size * 1024))
+    if nvram is None or (size is not None and len(nvram) != size*1024):
+        nvram = bytearray([0] * (size*1024))
     else:
         nvram = bytearray(nvram)
 
     # check nvram size
     nvram_len = len(nvram)
-    if nvram_len < 8 * 1024 or nvram_len > 1024 * 1024 or nvram_len % 1024 != 0:
+    if nvram_len < 8*1024 or nvram_len > 1024*1024 or nvram_len % 1024 != 0:
         raise ValueError('invalid NVRAM length')
     nvram_len = nvram_len // 2
 
     # get size of current config
     config_len = 0
-    ios = None
     try:
-        if get_uint16(nvram, 0) == 0xABCD:
-            ios = get_uint16(nvram, 6)
-            config_len = 36 + get_uint32(nvram, 16)
-            config_len += padding(config_len, ios, nvram_len)
-            if get_uint16(nvram, config_len) == 0xFEDC:
-                config_len += 16 + get_uint32(nvram, config_len + 12)
-    except IndexError:
+        (magic, _, _, ios, start_addr, _, length, _, _, _, _, _) = \
+            struct.unpack_from('>HHHHIIIIIHHI', nvram, offset=0)
+        if magic == 0xABCD:
+            base_address = start_addr - 36
+            config_len = 36 + length + padding(length, base_address)
+            (magic, _, _, _, length) = \
+                struct.unpack_from('>HHIII', nvram, offset=config_len)
+            if magic == 0xFEDC:
+                config_len += 16 + length
+        else:
+            ios = None
+    except struct.error:
         raise ValueError('unknown nvram format')
     if config_len > nvram_len:
         raise ValueError('unknown nvram format')
 
     # calculate max. config size
-    max_config = nvram_len - 2 * 1024             # reserve 2k for files
+    max_config = nvram_len - 2*1024             # reserve 2k for files
     idx = max_config
     empty_sector = bytearray([0] * 1024)
     while True:
@@ -136,45 +118,43 @@ def nvram_import(nvram, startup, private, size):
         if idx < config_len:
             break
         # if valid file header:
-        if get_uint16(nvram, idx + 0) == 0xDCBA and \
-           get_uint16(nvram, idx + 4) < 8 and \
-           get_uint16(nvram, idx + 6) <= 992:
+        (magic, _, flags, length, _) = \
+            struct.unpack_from('>HHHH24s', nvram, offset=idx)
+        if magic == 0xDCBA and flags < 8 and length <= 992:
             max_config = idx
-        elif nvram[idx:idx + 1024] != empty_sector:
+        elif nvram[idx:idx+1024] != empty_sector:
             break
 
     # import startup config
-    startup = bytearray(startup)
+    new_nvram = bytearray()
     if ios is None:
         # Target IOS version is unknown. As some IOU don't work nicely with
         # the padding of a different version, the startup config is padded
         # with '\n' to the alignment of 4.
         ios = DEFAULT_IOS
-        startup.extend([ord('\n')] * ((4 - len(startup) % 4) % 4))
-    new_nvram = bytearray([0] * 36)                             # startup hdr
-    put_uint16(new_nvram, 0, 0xABCD)                           # magic
-    put_uint16(new_nvram, 2, 1)                                # raw data
-    put_uint16(new_nvram, 6, ios)                              # IOS version
-    put_uint32(new_nvram, 8, BASE_ADDRESS + 36)                  # start address
-    put_uint32(new_nvram, 12, BASE_ADDRESS + 36 + len(startup))   # end address
-    put_uint32(new_nvram, 16, len(startup))                     # length
+        startup += b'\n' * (-len(startup) % 4)
+    new_nvram.extend(struct.pack('>HHHHIIIIIHHI',
+        0xABCD,                             # magic
+        1,                                  # raw data
+        0,                                  # checksum, not yet calculated
+        ios,                                # IOS version
+        base_address + 36,                  # start address
+        base_address + 36 + len(startup),   # end address
+        len(startup),                       # length
+        0, 0, 0, 0, 0))
     new_nvram.extend(startup)
-    new_nvram.extend([0] * padding(len(new_nvram), ios, nvram_len))
+    new_nvram.extend([0] * padding(len(new_nvram), base_address))
 
     # import private config
     if private is None:
-        private = bytearray()
-    else:
-        private = bytearray(private)
+        private = b''
     offset = len(new_nvram)
-    new_nvram.extend([0] * 16)                                  # private hdr
-    put_uint16(new_nvram, 0 + offset, 0xFEDC)                  # magic
-    put_uint16(new_nvram, 2 + offset, 1)                       # raw data
-    put_uint32(new_nvram, 4 + offset,
-               BASE_ADDRESS + offset + 16)                      # start address
-    put_uint32(new_nvram, 8 + offset,
-               BASE_ADDRESS + offset + 16 + len(private))       # end address
-    put_uint32(new_nvram, 12 + offset, len(private))            # length
+    new_nvram.extend(struct.pack('>HHIII',
+        0xFEDC,                             # magic
+        1,                                  # raw data
+        base_address + offset + 16,         # start address
+        base_address + offset + 16 + len(private),  # end address
+        len(private) ))                     # length
     new_nvram.extend(private)
 
     # add rest
@@ -190,6 +170,8 @@ def nvram_import(nvram, startup, private, size):
 
 if __name__ == '__main__':
     # Main program
+    import argparse
+    import sys
 
     def check_size(string):
         try:

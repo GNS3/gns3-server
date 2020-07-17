@@ -37,19 +37,19 @@ optional arguments:
   -h, --help      show this help message and exit
 """
 
-import argparse
-import sys
+import struct
 
 
-# Uncompress data in .Z file format.
-# Ported from dynamips' fs_nvram.c to python
-# Adapted from 7zip's ZDecoder.cpp, which is licensed under LGPL 2.1.
+# Uncompress data in LZC format, .Z file format
+# LZC uses the LZW compression algorithm with a variable dictionary size
+# For LZW see https://en.wikipedia.org/wiki/Lempel–Ziv–Welch
+# Performance: about 1 MByte/sec, 15-50 times slower than C implementation
 def uncompress_LZC(data):
     LZC_NUM_BITS_MIN = 9
     LZC_NUM_BITS_MAX = 16
 
-    in_data = bytearray(data)
-    in_len = len(in_data)
+    in_data  = bytearray(data)
+    in_len   = len(in_data)
     out_data = bytearray()
 
     if in_len == 0:
@@ -59,143 +59,144 @@ def uncompress_LZC(data):
     if in_data[0] != 0x1F or in_data[1] != 0x9D:
         raise ValueError('invalid header')
 
-    maxbits = in_data[2] & 0x1F
-    numItems = 1 << maxbits
-    blockMode = (in_data[2] & 0x80) != 0
-    if maxbits < LZC_NUM_BITS_MIN or maxbits > LZC_NUM_BITS_MAX:
+    max_bits = in_data[2] & 0x1F
+    if max_bits < LZC_NUM_BITS_MIN or max_bits > LZC_NUM_BITS_MAX:
         raise ValueError('not supported')
+    num_items = 1 << max_bits
+    blockmode = (in_data[2] & 0x80) != 0
 
-    parents = [0] * numItems
-    suffixes = [0] * numItems
-
-    in_pos = 3
-    numBits = LZC_NUM_BITS_MIN
-    head = 256
-    if blockMode:
+    in_pos    = 3
+    start_pos = in_pos
+    num_bits  = LZC_NUM_BITS_MIN
+    dict_size = 1 << num_bits
+    head      = 256
+    if blockmode:
         head += 1
+    first_sym = True
 
-    needPrev = 0
-    bitPos = 0
-    numBufBits = 0
+    # initialize dictionary
+    comp_dict = [None] * num_items
+    for i in range(0, 256):
+        comp_dict[i] = bytes(bytearray([i]))
 
-    parents[256] = 0
-    suffixes[256] = 0
-
-    buf_extend = bytearray([0] * 3)
-
-    while True:
-        # fill buffer, when empty
-        if numBufBits == bitPos:
-            buf_len = min(in_len - in_pos, numBits)
-            buf = in_data[in_pos:in_pos + buf_len] + buf_extend
-            numBufBits = buf_len << 3
-            bitPos = 0
-            in_pos += buf_len
-
-        # extract next symbol
-        bytePos = bitPos >> 3
-        symbol = buf[bytePos] | buf[bytePos + 1] << 8 | buf[bytePos + 2] << 16
-        symbol >>= bitPos & 7
-        symbol &= (1 << numBits) - 1
-        bitPos += numBits
-
-        # check for special conditions: end, bad data, re-initialize dictionary
-        if bitPos > numBufBits:
-            break
-        if symbol >= head:
+    buf = buf_bits = 0
+    while in_pos < in_len:
+        # get next symbol
+        try:
+            while buf_bits < num_bits:
+                buf |= in_data[in_pos] << buf_bits
+                buf_bits += 8
+                in_pos += 1
+            buf, symbol = divmod(buf, dict_size)
+            buf_bits -= num_bits
+        except IndexError:
             raise ValueError('invalid data')
-        if blockMode and symbol == 256:
-            numBufBits = bitPos = 0
-            numBits = LZC_NUM_BITS_MIN
+
+        # re-initialize dictionary
+        if blockmode and symbol == 256:
+            # skip to next buffer boundary
+            buf = buf_bits = 0
+            in_pos += (start_pos - in_pos) % num_bits
+            # reset to LZC_NUM_BITS_MIN
             head = 257
-            needPrev = 0
+            num_bits = LZC_NUM_BITS_MIN
+            dict_size = 1 << num_bits
+            start_pos = in_pos
+            first_sym = True
             continue
 
-        # convert symbol to string
-        stack = []
-        cur = symbol
-        while cur >= 256:
-            stack.append(suffixes[cur])
-            cur = parents[cur]
-        stack.append(cur)
-        if needPrev:
-            suffixes[head - 1] = cur
-            if symbol == head - 1:
-                stack[0] = cur
-        stack.reverse()
-        out_data.extend(stack)
+        # first symbol
+        if first_sym:
+            first_sym = False
+            if symbol >= 256:
+                raise ValueError('invalid data')
+            prev = symbol
+            out_data.extend(comp_dict[symbol])
+            continue
 
-        # update parents, check for numBits change
-        if head < numItems:
-            needPrev = 1
-            parents[head] = symbol
-            head += 1
-            if head > (1 << numBits):
-                if numBits < maxbits:
-                    numBufBits = bitPos = 0
-                    numBits += 1
+        # dictionary full
+        if head >= num_items:
+            out_data.extend(comp_dict[symbol])
+            continue
+
+        # update compression dictionary
+        if symbol < head:
+            comp_dict[head] = comp_dict[prev] + comp_dict[symbol][0:1]
+        elif symbol == head:
+            comp_dict[head] = comp_dict[prev] + comp_dict[prev][0:1]
         else:
-            needPrev = 0
+            raise ValueError('invalid data')
+        prev = symbol
+
+        # output symbol
+        out_data.extend(comp_dict[symbol])
+
+        # update head, check for num_bits change
+        head += 1
+        if head >= dict_size and num_bits < max_bits:
+            num_bits += 1
+            dict_size = 1 << num_bits
+            start_pos = in_pos
 
     return out_data
 
 
-# extract 16 bit unsigned int from data
-def get_uint16(data, off):
-    return data[off] << 8 | data[off + 1]
-
-
-# extract 32 bit unsigned int from data
-def get_uint32(data, off):
-    return data[off] << 24 | data[off + 1] << 16 | data[off + 2] << 8 | data[off + 3]
-
-
 # export IOU NVRAM
+# NVRAM format: https://github.com/ehlers/IOUtools/blob/master/NVRAM.md
 def nvram_export(nvram):
     nvram = bytearray(nvram)
 
-    # extract startup config
     offset = 0
-    if len(nvram) < offset + 36:
+    # extract startup config
+    try:
+        (magic, data_format, _, _, _, _, length, _, _, _, _, _) = \
+            struct.unpack_from('>HHHHIIIIIHHI', nvram, offset=offset)
+        offset += 36
+        if magic != 0xABCD:
+            raise ValueError('no startup config')
+        if len(nvram) < offset+length:
+            raise ValueError('invalid length')
+        startup = nvram[offset:offset+length]
+    except struct.error:
         raise ValueError('invalid length')
-    if get_uint16(nvram, offset + 0) != 0xABCD:
-        raise ValueError('no startup config')
-    format = get_uint16(nvram, offset + 2)
-    length = get_uint32(nvram, offset + 16)
-    offset += 36
-    if len(nvram) < offset + length:
-        raise ValueError('invalid length')
-    startup = nvram[offset:offset + length]
 
-    # compressed startup config
-    if format == 2:
+    # uncompress startup config
+    if data_format == 2:
         try:
             startup = uncompress_LZC(startup)
         except ValueError as err:
             raise ValueError('uncompress startup: ' + str(err))
 
-    offset += length
-    # alignment to multiple of 4
-    offset = (offset + 3) & ~3
-    # check for additonal offset of 4
-    if len(nvram) >= offset + 8 and \
-       get_uint16(nvram, offset + 4) == 0xFEDC and \
-       get_uint16(nvram, offset + 6) == 1:
-        offset += 4
-
-    # extract private config
     private = None
-    if len(nvram) >= offset + 16 and get_uint16(nvram, offset + 0) == 0xFEDC:
-        length = get_uint32(nvram, offset + 12)
+    try:
+        # calculate offset of private header
+        length += (4 - length % 4) % 4          # alignment to multiple of 4
+        offset += length
+        # check for additonal offset of 4
+        (magic, data_format) = struct.unpack_from('>HH', nvram, offset=offset+4)
+        if magic == 0xFEDC and data_format == 1:
+            offset += 4
+
+        # extract private config
+        (magic, data_format, _, _, length) = \
+            struct.unpack_from('>HHIII', nvram, offset=offset)
         offset += 16
-        if len(nvram) >= offset + length:
-            private = nvram[offset:offset + length]
+        if magic == 0xFEDC and data_format == 1:
+            if len(nvram) < offset+length:
+                raise ValueError('invalid length')
+            private = nvram[offset:offset+length]
+
+    # missing private header is not an error
+    except struct.error:
+        pass
 
     return (startup, private)
 
 
 if __name__ == '__main__':
     # Main program
+    import argparse
+    import sys
 
     parser = argparse.ArgumentParser(description='%(prog)s exports startup/private configuration from IOU NVRAM file.')
     parser.add_argument('nvram', metavar='NVRAM',
