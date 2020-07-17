@@ -382,8 +382,11 @@ class ProjectHandler:
         # It could be more optimal to stream this but it is not implemented in Python.
         try:
             begin = time.time()
-            # use the parent directory as a temporary working dir
-            working_dir = os.path.abspath(os.path.join(path, os.pardir))
+            # use the parent directory or projects dir as a temporary working dir
+            if path:
+                working_dir = os.path.abspath(os.path.join(path, os.pardir))
+            else:
+                working_dir = controller.projects_directory()
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 temp_project_path = os.path.join(tmpdir, "project.zip")
                 async with aiofiles.open(temp_project_path, 'wb') as f:
