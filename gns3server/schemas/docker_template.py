@@ -82,6 +82,16 @@ DOCKER_TEMPLATE_PROPERTIES = {
         "type": "array",
         "default": []
     },
+    "memory": {
+        "description": "Maximum amount of memory the container can use in MB",
+        "type": "integer",
+        "default": 0
+    },
+    "cpus": {
+        "description": "Maximum amount of CPU resources the container can use",
+        "type": "number",
+        "default": 0
+    },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 

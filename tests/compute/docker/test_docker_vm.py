@@ -66,6 +66,8 @@ def test_json(vm, compute_project):
         'console_http_path': '/',
         'extra_hosts': None,
         'extra_volumes': [],
+        'memory': 0,
+        'cpus': 0,
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -104,7 +106,9 @@ async def test_create(compute_project, manager):
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -143,7 +147,9 @@ async def test_create_with_tag(compute_project, manager):
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -186,7 +192,9 @@ async def test_create_vnc(compute_project, manager):
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             '/tmp/.X11-unix/:/tmp/.X11-unix/'
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -301,7 +309,9 @@ async def test_create_start_cmd(compute_project, manager):
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "Entrypoint": ["/gns3/init.sh"],
@@ -400,7 +410,9 @@ async def test_create_image_not_available(compute_project, manager):
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -444,7 +456,9 @@ async def test_create_with_user(compute_project, manager):
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -528,7 +542,9 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -568,7 +584,9 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -608,7 +626,9 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -648,7 +668,9 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -687,7 +709,9 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -726,7 +750,9 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -773,7 +799,9 @@ async def test_create_with_extra_volumes(compute_project, manager):
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                             "{}:/gns3volumes/vol/2".format(os.path.join(vm.working_dir, "vol", "2")),
                         ],
-                        "Privileged": True
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 0
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
@@ -996,7 +1024,9 @@ async def test_update(vm):
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
-            "Privileged": True
+            "Privileged": True,
+            "Memory": 0,
+            "NanoCpus": 0
         },
         "Volumes": {},
         "NetworkDisabled": True,
@@ -1065,7 +1095,9 @@ async def test_update_running(vm):
                 "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
-            "Privileged": True
+            "Privileged": True,
+            "Memory": 0,
+            "NanoCpus": 0
         },
         "Volumes": {},
         "NetworkDisabled": True,
@@ -1422,3 +1454,85 @@ async def test_read_console_output_with_binary_mode(vm):
     with asyncio_patch('gns3server.compute.docker.docker_vm.DockerVM.stop'):
         await vm._read_console_output(input_stream, output_stream)
         output_stream.feed_data.assert_called_once_with(b"test")
+
+
+async def test_cpus(compute_project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", cpus=0.5)
+            await vm.create()
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
+                        "Privileged": True,
+                        "Memory": 0,
+                        "NanoCpus": 500000000
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
+
+
+async def test_memory(compute_project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", memory=32)
+            await vm.create()
+            mock.assert_called_with("POST", "containers/create", data={
+                "Tty": True,
+                "OpenStdin": True,
+                "StdinOnce": False,
+                "HostConfig":
+                    {
+                        "CapAdd": ["ALL"],
+                        "Binds": [
+                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        ],
+                        "Privileged": True,
+                        "Memory": 33554432,  # 32MB in bytes
+                        "NanoCpus": 0
+                    },
+                "Volumes": {},
+                "NetworkDisabled": True,
+                "Name": "test",
+                "Hostname": "test",
+                "Image": "ubuntu:latest",
+                "Env": [
+                    "container=docker",
+                    "GNS3_MAX_ETHERNET=eth0",
+                    "GNS3_VOLUMES=/etc/network"
+                    ],
+                "Entrypoint": ["/gns3/init.sh"],
+                "Cmd": ["/bin/sh"]
+            })
+        assert vm._cid == "e90e34656806"
