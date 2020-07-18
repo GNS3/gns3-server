@@ -49,20 +49,22 @@ class DockerHandler:
     async def create(request, response):
         docker_manager = Docker.instance()
         container = await docker_manager.create_node(request.json.pop("name"),
-                                                          request.match_info["project_id"],
-                                                          request.json.get("node_id"),
-                                                          image=request.json.pop("image"),
-                                                          start_command=request.json.get("start_command"),
-                                                          environment=request.json.get("environment"),
-                                                          adapters=request.json.get("adapters"),
-                                                          console=request.json.get("console"),
-                                                          console_type=request.json.get("console_type"),
-                                                          console_resolution=request.json.get("console_resolution", "1024x768"),
-                                                          console_http_port=request.json.get("console_http_port", 80),
-                                                          console_http_path=request.json.get("console_http_path", "/"),
-                                                          aux=request.json.get("aux"),
-                                                          extra_hosts=request.json.get("extra_hosts"),
-                                                          extra_volumes=request.json.get("extra_volumes"))
+                                                     request.match_info["project_id"],
+                                                     request.json.get("node_id"),
+                                                     image=request.json.pop("image"),
+                                                     start_command=request.json.get("start_command"),
+                                                     environment=request.json.get("environment"),
+                                                     adapters=request.json.get("adapters"),
+                                                     console=request.json.get("console"),
+                                                     console_type=request.json.get("console_type"),
+                                                     console_resolution=request.json.get("console_resolution", "1024x768"),
+                                                     console_http_port=request.json.get("console_http_port", 80),
+                                                     console_http_path=request.json.get("console_http_path", "/"),
+                                                     aux=request.json.get("aux"),
+                                                     extra_hosts=request.json.get("extra_hosts"),
+                                                     extra_volumes=request.json.get("extra_volumes"),
+                                                     memory=request.json.get("memory", 0),
+                                                     cpus=request.json.get("cpus", 0))
         for name, value in request.json.items():
             if name != "node_id":
                 if hasattr(container, name) and getattr(container, name) != value:
@@ -317,7 +319,8 @@ class DockerHandler:
         props = [
             "name", "console", "aux", "console_type", "console_resolution",
             "console_http_port", "console_http_path", "start_command",
-            "environment", "adapters", "extra_hosts", "extra_volumes"
+            "environment", "adapters", "extra_hosts", "extra_volumes",
+            "memory", "cpus"
         ]
 
         changed = False

@@ -71,7 +71,7 @@ class DockerVM(BaseNode):
 
     def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
-                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[]):
+                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[], memory=0, cpus=0):
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
@@ -94,6 +94,8 @@ class DockerVM(BaseNode):
         self._console_websocket = None
         self._extra_hosts = extra_hosts
         self._extra_volumes = extra_volumes or []
+        self._memory = memory
+        self._cpus = cpus
         self._permissions_fixed = False
         self._display = None
         self._closing = False
@@ -132,6 +134,8 @@ class DockerVM(BaseNode):
             "node_directory": self.working_path,
             "extra_hosts": self.extra_hosts,
             "extra_volumes": self.extra_volumes,
+            "memory": self.memory,
+            "cpus": self.cpus
         }
 
     def _get_free_display_port(self):
@@ -210,6 +214,22 @@ class DockerVM(BaseNode):
     @extra_volumes.setter
     def extra_volumes(self, extra_volumes):
         self._extra_volumes = extra_volumes
+
+    @property
+    def memory(self):
+        return self._memory
+
+    @memory.setter
+    def memory(self, memory):
+        self._memory = memory
+
+    @property
+    def cpus(self):
+        return self._cpus
+
+    @cpus.setter
+    def cpus(self, cpus):
+        self._cpus = cpus
 
     async def _get_container_state(self):
         """
@@ -328,6 +348,10 @@ class DockerVM(BaseNode):
         if image_infos is None:
             raise DockerError("Cannot get information for image '{}', please try again.".format(self._image))
 
+        available_cpus = psutil.cpu_count(logical=True)
+        if self._cpus > available_cpus:
+            raise DockerError("You have allocated too many CPUs for the Docker container (max available is {} CPUs)".format(available_cpus))
+
         params = {
             "Hostname": self._name,
             "Name": self._name,
@@ -340,6 +364,8 @@ class DockerVM(BaseNode):
                 "CapAdd": ["ALL"],
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
+                "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
+                "NanoCpus": int(self._cpus * 1e9)  # convert cpus to nano cpus
             },
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573

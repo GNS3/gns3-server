@@ -103,6 +103,14 @@ DOCKER_CREATE_SCHEMA = {
                 "type": "string"
             }
         },
+        "memory": {
+            "description": "Maximum amount of memory the container can use in MB",
+            "type": "integer",
+        },
+        "cpus": {
+            "description": "Maximum amount of CPU resources the container can use",
+            "type": "number",
+        },
         "container_id": {
             "description": "Docker container ID Read only",
             "type": "string",
@@ -213,6 +221,14 @@ DOCKER_OBJECT_SCHEMA = {
             "items": {
                 "type": "string",
             }
+        },
+        "memory": {
+            "description": "Maximum amount of memory the container can use in MB",
+            "type": "integer",
+        },
+        "cpus": {
+            "description": "Maximum amount of CPU resources the container can use",
+            "type": "number",
         },
         "node_directory": {
             "description": "Path to the node working directory  Read only",
