@@ -237,7 +237,8 @@ Processus:
         data += "\n\nProjects"
         for project in Controller.instance().projects.values():
             data += "\n\nProject name: {}\nProject ID: {}\n".format(project.name, project.id)
-            for link in project.links.values():
-                data += "Link {}: {}".format(link.id, link.debug_link_data)
+            if project.status != "closed":
+                for link in project.links.values():
+                    data += "Link {}: {}".format(link.id, link.debug_link_data)
 
         return data
