@@ -99,10 +99,13 @@ class Symbols:
                     if filename.startswith('.'):
                         continue
                     symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace('\\', '/')
+                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    if not theme:
+                        theme = "Custom symbols"
                     symbols.append({'symbol_id': symbol_file,
                                     'filename': filename,
                                     'builtin': False,
-                                    'theme': "Custom symbols"})
+                                    'theme': theme})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])
