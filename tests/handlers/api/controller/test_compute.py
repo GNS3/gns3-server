@@ -133,9 +133,13 @@ async def test_compute_list(controller_api):
                 'name': 'My super server',
                 'cpu_usage_percent': None,
                 'memory_usage_percent': None,
+                'disk_usage_percent': None,
                 'last_error': None,
                 'capabilities': {
                     'version': None,
+                    'cpus': None,
+                    'memory': None,
+                    'disk_size': None,
                     'node_types': []
                 }
             }

@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import psutil
 
 from gns3server.web.route import Route
 from gns3server.schemas.capabilities import CAPABILITIES_SCHEMA
 from gns3server.version import __version__
 from gns3server.compute import MODULES
+from gns3server.utils.path import get_default_project_directory
 
 
 class CapabilitiesHandler:
@@ -38,5 +40,8 @@ class CapabilitiesHandler:
         response.json({
             "version": __version__,
             "platform": sys.platform,
+            "cpus": psutil.cpu_count(logical=True),
+            "memory": psutil.virtual_memory().total,
+            "disk_size": psutil.disk_usage(get_default_project_directory()).total,
             "node_types": node_types
         })

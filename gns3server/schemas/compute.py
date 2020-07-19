@@ -104,6 +104,12 @@ COMPUTE_OBJECT_SCHEMA = {
             "maximum": 100,
             "minimum": 0
         },
+        "disk_usage_percent": {
+            "description": "Disk usage of the compute. Read only",
+            "type": ["number", "null"],
+            "maximum": 100,
+            "minimum": 0
+        },
         "last_error": {
             "description": "Last error on the compute",
             "type": ["string", "null"]

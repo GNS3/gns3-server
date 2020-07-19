@@ -53,7 +53,7 @@ def write_config(tmpdir, settings):
     return path
 
 
-def test_get_section_config(tmpdir):
+def test_get_section_config(loop, tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
@@ -63,7 +63,7 @@ def test_get_section_config(tmpdir):
     assert dict(config.get_section_config("Server")) == {"host": "127.0.0.1"}
 
 
-def test_set_section_config(tmpdir):
+def test_set_section_config(loop, tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
@@ -77,7 +77,7 @@ def test_set_section_config(tmpdir):
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1", "local": "true"}
 
 
-def test_set(tmpdir):
+def test_set(loop, tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {
@@ -90,7 +90,7 @@ def test_set(tmpdir):
     assert dict(config.get_section_config("Server")) == {"host": "192.168.1.1"}
 
 
-def test_reload(tmpdir):
+def test_reload(loop, tmpdir):
 
     config = load_config(tmpdir, {
         "Server": {

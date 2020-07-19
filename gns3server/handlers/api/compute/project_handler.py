@@ -20,12 +20,12 @@ import asyncio
 import json
 import os
 import psutil
-import tempfile
 
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute import MODULES
 from gns3server.utils.cpu_percent import CpuPercent
+from gns3server.utils.path import get_default_project_directory
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
@@ -211,6 +211,7 @@ class ProjectHandler:
         # Non blocking call in order to get cpu usage. First call will return 0
         stats["cpu_usage_percent"] = CpuPercent.get(interval=None)
         stats["memory_usage_percent"] = psutil.virtual_memory().percent
+        stats["disk_usage_percent"] = psutil.disk_usage(get_default_project_directory()).percent
         return {"action": "ping", "event": stats}
 
     @Route.get(

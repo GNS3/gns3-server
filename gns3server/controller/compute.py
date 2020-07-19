@@ -80,9 +80,13 @@ class Compute:
         self._set_auth(user, password)
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
+        self._disk_usage_percent = None
         self._last_error = None
         self._capabilities = {
             "version": None,
+            "cpus": None,
+            "memory": None,
+            "disk_size": None,
             "node_types": []
         }
         self.name = name
@@ -270,6 +274,10 @@ class Compute:
     def memory_usage_percent(self):
         return self._memory_usage_percent
 
+    @property
+    def disk_usage_percent(self):
+        return self._disk_usage_percent
+
     def __json__(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
@@ -292,6 +300,7 @@ class Compute:
             "connected": self._connected,
             "cpu_usage_percent": self._cpu_usage_percent,
             "memory_usage_percent": self._memory_usage_percent,
+            "disk_usage_percent": self._disk_usage_percent,
             "capabilities": self._capabilities,
             "last_error": self._last_error
         }
@@ -437,6 +446,7 @@ class Compute:
                         if action == "ping":
                             self._cpu_usage_percent = event["cpu_usage_percent"]
                             self._memory_usage_percent = event["memory_usage_percent"]
+                            self._disk_usage_percent = event["disk_usage_percent"]
                             #FIXME: slow down number of compute events
                             self._controller.notification.controller_emit("compute.updated", self.__json__())
                         else:
@@ -461,6 +471,7 @@ class Compute:
 
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
+        self._disk_usage_percent = None
         self._controller.notification.controller_emit("compute.updated", self.__json__())
 
     def _getUrl(self, path):

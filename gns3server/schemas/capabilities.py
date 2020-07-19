@@ -36,7 +36,19 @@ CAPABILITIES_SCHEMA = {
         "platform": {
             "type": "string",
             "description": "Platform where the compute is running"
-        }
+        },
+        "cpus": {
+            "description": "Number of CPUs on this compute. Read only",
+            "type": ["integer", "null"],
+        },
+        "memory": {
+            "description": "Amount of memory on this compute. Read only",
+            "type": ["integer", "null"],
+        },
+        "disk_size": {
+            "description": "Disk size on this compute. Read only",
+            "type": ["integer", "null"],
+        },
     },
     "additionalProperties": False
 }

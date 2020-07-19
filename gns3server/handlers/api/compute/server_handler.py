@@ -25,6 +25,7 @@ from gns3server.schemas.server_statistics import SERVER_STATISTICS_SCHEMA
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.version import __version__
+from gns3server.utils.path import get_default_project_directory
 from aiohttp.web import HTTPConflict
 
 
@@ -61,7 +62,7 @@ class ServerHandler:
             load_average_percent = [int(x / psutil.cpu_count() * 100) for x in psutil.getloadavg()]
             memory_percent = int(psutil.virtual_memory().percent)
             swap_percent = int(psutil.swap_memory().percent)
-            disk_usage_percent = int(psutil.disk_usage('/').percent)
+            disk_usage_percent = int(psutil.disk_usage(get_default_project_directory()).percent)
         except psutil.Error as e:
             raise HTTPConflict(text="Psutil error detected: {}".format(e))
         response.json({"memory_total": memory_total,

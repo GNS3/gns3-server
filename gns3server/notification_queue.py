@@ -20,6 +20,7 @@ import json
 import psutil
 
 from gns3server.utils.cpu_percent import CpuPercent
+from gns3server.utils.path import get_default_project_directory
 
 
 class NotificationQueue(asyncio.Queue):
@@ -55,6 +56,7 @@ class NotificationQueue(asyncio.Queue):
         # Non blocking call in order to get cpu usage. First call will return 0
         msg["cpu_usage_percent"] = CpuPercent.get(interval=None)
         msg["memory_usage_percent"] = psutil.virtual_memory().percent
+        msg["disk_usage_percent"] = psutil.disk_usage(get_default_project_directory()).percent
         return msg
 
     async def get_json(self, timeout):
