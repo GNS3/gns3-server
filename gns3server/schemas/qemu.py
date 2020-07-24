@@ -145,6 +145,12 @@ QEMU_CREATE_SCHEMA = {
             "minimum": 1,
             "maximum": 255,
         },
+        "maxcpus": {
+            "description": "Maximum number of hotpluggable vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
+        },
         "adapters": {
             "description": "Number of adapters",
             "type": ["integer", "null"],
@@ -331,6 +337,12 @@ QEMU_UPDATE_SCHEMA = {
         },
         "cpus": {
             "description": "Number of vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
+        },
+        "maxcpus": {
+            "description": "Maximum number of hotpluggable vCPUs",
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 255,
@@ -528,6 +540,12 @@ QEMU_OBJECT_SCHEMA = {
             "minimum": 1,
             "maximum": 255,
         },
+        "maxcpus": {
+            "description": "Maximum number of hotpluggable vCPUs",
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 255,
+        },
         "adapters": {
             "description": "Number of adapters",
             "type": "integer",
@@ -642,6 +660,7 @@ QEMU_OBJECT_SCHEMA = {
                  "boot_priority",
                  "ram",
                  "cpus",
+                 "maxcpus",
                  "adapters",
                  "adapter_type",
                  "mac_address",

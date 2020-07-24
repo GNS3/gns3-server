@@ -111,6 +111,7 @@ class QemuVM(BaseNode):
         self._options = ""
         self._ram = 256
         self._cpus = 1
+        self._maxcpus = 1
         self._ethernet_adapters = []
         self._adapter_type = "e1000"
         self._initrd = ""
@@ -751,6 +752,27 @@ class QemuVM(BaseNode):
 
         log.info('QEMU VM "{name}" [{id}] has set the number of vCPUs to {cpus}'.format(name=self._name, id=self._id, cpus=cpus))
         self._cpus = cpus
+
+    @property
+    def maxcpus(self):
+        """
+        Returns the maximum number of hotpluggable vCPUs for this QEMU VM.
+
+        :returns: maximum number of hotpluggable vCPUs.
+        """
+
+        return self._maxcpus
+
+    @maxcpus.setter
+    def maxcpus(self, maxcpus):
+        """
+        Sets the maximum number of hotpluggable vCPUs for this QEMU VM.
+
+        :param maxcpus: maximum number of hotpluggable vCPUs
+        """
+
+        log.info('QEMU VM "{name}" [{id}] has set maximum number of hotpluggable vCPUs to {maxcpus}'.format(name=self._name, id=self._id, maxcpus=maxcpus))
+        self._maxcpus = maxcpus
 
     @property
     def options(self):
@@ -2013,7 +2035,11 @@ class QemuVM(BaseNode):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
-        command.extend(["-smp", "cpus={}".format(self._cpus)])
+        # set the maximum number of the hotpluggable CPUs to match the number of CPUs to avoid issues.
+        maxcpus = self._maxcpus
+        if self._cpus > maxcpus:
+            maxcpus = self._cpus
+        command.extend(["-smp", "cpus={},maxcpus={}".format(self._cpus, maxcpus)])
         if (await self._run_with_hardware_acceleration(self.qemu_path, self._options)):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])

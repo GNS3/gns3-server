@@ -49,6 +49,13 @@ QEMU_TEMPLATE_PROPERTIES = {
         "maximum": 255,
         "default": 1
     },
+    "maxcpus": {
+        "description": "Maximum number of hotpluggable vCPUs",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 255,
+        "default": 1
+    },
     "adapters": {
         "description": "Number of adapters",
         "type": "integer",
