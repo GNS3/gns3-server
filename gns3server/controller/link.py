@@ -305,6 +305,13 @@ class Link:
                 n["port"].link = None
                 n["node"].remove_link(self)
 
+    async def reset(self):
+        """
+        Reset a link
+        """
+
+        raise NotImplementedError
+
     async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """
         Start capture on the link

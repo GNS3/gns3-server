@@ -141,7 +141,7 @@ class UDPLink(Link):
             return
         try:
             await node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
-        # If the node is already delete (user selected multiple element and delete all in the same time)
+        # If the node is already deleted (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
 
@@ -153,10 +153,19 @@ class UDPLink(Link):
             return
         try:
             await node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), timeout=120)
-        # If the node is already delete (user selected multiple element and delete all in the same time)
+        # If the node is already deleted (user selected multiple element and delete all in the same time)
         except aiohttp.web.HTTPNotFound:
             pass
         await super().delete()
+
+    async def reset(self):
+        """
+        Reset the link.
+        """
+
+        # recreate the link on the compute
+        await self.delete()
+        await self.create()
 
     async def start_capture(self, data_link_type="DLT_EN10MB", capture_file_name=None):
         """

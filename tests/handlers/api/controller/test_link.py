@@ -22,6 +22,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.link import Link, FILTERS
+from gns3server.controller.udp_link import UDPLink
 
 
 @pytest.fixture
@@ -293,6 +294,18 @@ async def test_list_link(controller_api, project, nodes):
     assert response.status == 200
     assert len(response.json) == 1
     assert response.json[0]["filters"] == filters
+
+
+async def test_reset_link(controller_api, project):
+
+    link = UDPLink(project)
+    project._links = {link.id: link}
+    with asyncio_patch("gns3server.controller.udp_link.UDPLink.delete") as delete_mock:
+        with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as create_mock:
+            response = await controller_api.post("/projects/{}/links/{}/reset".format(project.id, link.id))
+            assert delete_mock.called
+            assert create_mock.called
+            assert response.status == 201
 
 
 async def test_start_capture(controller_api, project):

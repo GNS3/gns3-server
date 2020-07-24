@@ -200,6 +200,26 @@ class LinkHandler:
         await project.delete_link(request.match_info["link_id"])
         response.set_status(204)
 
+    @Route.post(
+        r"/projects/{project_id}/links/{link_id}/reset",
+        parameters={
+            "project_id": "Project UUID",
+            "link_id": "Link UUID"
+        },
+        status_codes={
+            201: "Link reset",
+            400: "Invalid request"
+        },
+        description="Reset link instance",
+        output=LINK_OBJECT_SCHEMA)
+    async def reset(request, response):
+
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        link = project.get_link(request.match_info["link_id"])
+        await link.reset()
+        response.set_status(201)
+        response.json(link)
+
     @Route.get(
         r"/projects/{project_id}/links/{link_id}/pcap",
         parameters={
