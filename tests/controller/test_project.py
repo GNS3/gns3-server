@@ -829,6 +829,22 @@ async def test_suspend_all(project):
     assert len(compute.post.call_args_list) == 10
 
 
+async def test_console_reset_all(project):
+
+    compute = MagicMock()
+    compute.id = "local"
+    response = MagicMock()
+    response.json = {"console": 2048, "console_type": "telnet"}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    for node_i in range(0, 10):
+        await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
+
+    compute.post = AsyncioMagicMock()
+    await project.reset_console_all()
+    assert len(compute.post.call_args_list) == 10
+
+
 async def test_node_name(project):
 
     compute = MagicMock()
