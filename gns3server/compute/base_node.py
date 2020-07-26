@@ -397,6 +397,14 @@ class BaseNode:
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
 
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        await self.stop_wrap_console()
+        await self.start_wrap_console()
+
     async def start_websocket_console(self, request):
         """
         Connect to console using Websocket.

@@ -506,3 +506,40 @@ class NodeHandler:
             request.app['websockets'].discard(ws)
 
         return ws
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/console/reset",
+        parameters={
+            "project_id": "Project UUID"
+        },
+        status_codes={
+            204: "All nodes successfully reset consoles",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Reset console for all nodes belonging to the project",
+        output=NODE_OBJECT_SCHEMA)
+    async def reset_console_all(request, response):
+
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        await project.reset_console_all()
+        response.set_status(204)
+
+    @Route.post(
+        r"/projects/{project_id}/nodes/{node_id}/console/reset",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID"
+        },
+        status_codes={
+            204: "Console reset",
+            400: "Invalid request",
+            404: "Instance doesn't exist"
+        },
+        description="Reload a node instance")
+    async def console_reset(request, response):
+
+        project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        node = project.get_node(request.match_info["node_id"])
+        await node.post("/console/reset", request.json)
+        response.set_status(204)

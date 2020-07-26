@@ -1125,6 +1125,17 @@ class Project:
         await pool.join()
 
     @open_required
+    async def reset_console_all(self):
+        """
+        Reset console for all nodes
+        """
+
+        pool = Pool(concurrency=3)
+        for node in self.nodes.values():
+            pool.append(node.reset_console)
+        await pool.join()
+
+    @open_required
     async def duplicate_node(self, node, x, y, z):
         """
         Duplicate a node

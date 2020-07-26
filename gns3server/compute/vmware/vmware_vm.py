@@ -891,6 +891,14 @@ class VMwareVM(BaseNode):
             self._remote_pipe.close()
             self._telnet_server = None
 
+    async def reset_console(self):
+        """
+        Reset the console.
+        """
+
+        await self._stop_remote_console()
+        await self._start_console()
+
     @BaseNode.console_type.setter
     def console_type(self, new_console_type):
         """

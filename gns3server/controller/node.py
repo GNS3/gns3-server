@@ -539,6 +539,17 @@ class Node:
         except asyncio.TimeoutError:
             raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
 
+    async def reset_console(self):
+        """
+        Reset the console
+        """
+
+        if self._console and self._console_type == "telnet":
+            try:
+                await self.post("/console/reset", timeout=240)
+            except asyncio.TimeoutError:
+                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reset console {}".format(self._name))
+
     async def post(self, path, data=None, **kwargs):
         """
         HTTP post on the node

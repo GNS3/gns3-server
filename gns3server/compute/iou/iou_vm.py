@@ -569,16 +569,38 @@ class IOUVM(BaseNode):
                 log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
                 raise IOUError("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
 
-            if self.console and self.console_type == "telnet":
-                server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True)
-                try:
-                    self._telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
-                except OSError as e:
-                    await self.stop()
-                    raise IOUError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e))
+            await self.start_console()
 
             # configure networking support
             await self._networking()
+
+    async def start_console(self):
+        """
+        Start the Telnet server to provide console access.
+        """
+
+        if self.console and self.console_type == "telnet":
+            server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True,
+                                         echo=True)
+            try:
+                self._telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host,
+                                                                 self.console)
+            except OSError as e:
+                await self.stop()
+                raise IOUError(
+                    "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host,
+                                                                               self.console, e))
+
+    async def reset_console(self):
+        """
+        Reset the console.
+        """
+
+        if self._telnet_server:
+            self._telnet_server.close()
+            await self._telnet_server.wait_closed()
+            self._telnet_server = None
+        await self.start_console()
 
     @locking
     async def _networking(self):

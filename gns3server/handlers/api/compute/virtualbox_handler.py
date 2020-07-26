@@ -437,3 +437,23 @@ class VirtualBoxHandler:
         virtualbox_manager = VirtualBox.instance()
         vm = virtualbox_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
         return await vm.start_websocket_console(request)
+
+    @Route.post(
+        r"/projects/{project_id}/virtualbox/nodes/{node_id}/console/reset",
+        description="Reset console",
+        parameters={
+            "project_id": "Project UUID",
+            "node_id": "Node UUID",
+        },
+        status_codes={
+            204: "Console has been reset",
+            400: "Invalid request",
+            404: "Instance doesn't exist",
+            409: "Container not started"
+        })
+    async def reset_console(request, response):
+
+        virtualbox_manager = VirtualBox.instance()
+        vm = virtualbox_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
+        await vm.reset_console()
+        response.set_status(204)

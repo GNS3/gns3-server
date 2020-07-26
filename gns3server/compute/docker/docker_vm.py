@@ -743,6 +743,14 @@ class DockerVM(BaseNode):
                 break
         await self.stop()
 
+    async def reset_console(self):
+        """
+        Reset the console.
+        """
+
+        await self._clean_servers()
+        await self._start_console()
+
     async def is_running(self):
         """
         Checks if the container is running.

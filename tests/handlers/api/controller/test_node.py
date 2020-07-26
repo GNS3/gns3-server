@@ -140,6 +140,13 @@ async def test_reload_all_nodes(controller_api, project, compute):
     assert response.status == 204
 
 
+async def test_reset_console_all_nodes(controller_api, project, compute):
+
+    compute.post = AsyncioMagicMock()
+    response = await controller_api.post("/projects/{}/nodes/console/reset".format(project.id))
+    assert response.status == 204
+
+
 async def test_start_node(controller_api, project, node, compute):
 
     compute.post = AsyncioMagicMock()
