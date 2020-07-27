@@ -63,7 +63,7 @@ class Router(BaseNode):
 
     def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, console_type="telnet", aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, allocate_aux=aux)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, allocate_aux=True)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
         try:
