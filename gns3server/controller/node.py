@@ -401,8 +401,8 @@ class Node:
                 if prop == "properties":
                     compute_properties = kwargs[prop]
                 else:
-                    if prop == "name" and self.node_type == "dynamips" and self.status == "started":
-                        raise aiohttp.web.HTTPConflict(text="Sorry, it is not possible rename of a Dynamips node that is already powered on")
+                    if prop == "name" and self.status == "started" and self._node_type not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch"):
+                        raise aiohttp.web.HTTPConflict(text="Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
         if compute_properties and "custom_adapters" in compute_properties:

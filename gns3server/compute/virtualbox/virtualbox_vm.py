@@ -651,11 +651,11 @@ class VirtualBoxVM(BaseNode):
 
         if self.linked_clone:
             if self.status == "started":
-                raise VirtualBoxError("You can't change the name of running VM {}".format(self._name))
+                raise VirtualBoxError("Cannot change the name of running VM {}".format(self._name))
             # We can't rename a VM to name that already exists
             vms = await self.manager.list_vms(allow_clone=True)
             if vmname in [vm["vmname"] for vm in vms]:
-                raise VirtualBoxError("You can't change the name to {} it's already use in VirtualBox".format(vmname))
+                raise VirtualBoxError("Cannot change the name to {}, it is already used in VirtualBox".format(vmname))
             await self._modify_vm('--name "{}"'.format(vmname))
 
         log.info("VirtualBox VM '{name}' [{id}] has set the VM name to '{vmname}'".format(name=self.name, id=self.id, vmname=vmname))
