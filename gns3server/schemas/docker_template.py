@@ -48,6 +48,11 @@ DOCKER_TEMPLATE_PROPERTIES = {
         "enum": ["telnet", "vnc", "http", "https", "none"],
         "default": "telnet"
     },
+    "aux_type": {
+        "description": "Auxiliary console type",
+        "enum": ["telnet", "none"],
+        "default": "none"
+    },
     "console_auto_start": {
         "description": "Automatically start the console when the node has started",
         "type": "boolean",

@@ -61,6 +61,7 @@ class DockerHandler:
                                                      console_http_port=request.json.get("console_http_port", 80),
                                                      console_http_path=request.json.get("console_http_path", "/"),
                                                      aux=request.json.get("aux"),
+                                                     aux_type=request.json.pop("aux_type", "none"),
                                                      extra_hosts=request.json.get("extra_hosts"),
                                                      extra_volumes=request.json.get("extra_volumes"),
                                                      memory=request.json.get("memory", 0),
@@ -317,7 +318,7 @@ class DockerHandler:
         container = docker_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
 
         props = [
-            "name", "console", "aux", "console_type", "console_resolution",
+            "name", "console", "console_type", "aux", "aux_type", "console_resolution",
             "console_http_port", "console_http_path", "start_command",
             "environment", "adapters", "extra_hosts", "extra_volumes",
             "memory", "cpus"
