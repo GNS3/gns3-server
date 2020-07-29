@@ -44,9 +44,8 @@ async def manager(loop, port_manager):
 @pytest.fixture(scope="function")
 async def vm(loop, compute_project, manager):
 
-    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="telnet")
+    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="none")
     vm._cid = "e90e34656842"
-    vm.allocate_aux = False
     return vm
 
 
@@ -61,7 +60,7 @@ def test_json(vm, compute_project):
         'adapters': 1,
         'console': vm.console,
         'console_type': 'telnet',
-        'aux_type': 'telnet',
+        'aux_type': 'none',
         'console_resolution': '1024x768',
         'console_http_port': 80,
         'console_http_path': '/',
@@ -886,7 +885,7 @@ async def test_start(vm, manager, free_console_port):
     assert vm.status != "started"
     vm.adapters = 1
 
-    vm.allocate_aux = True
+    vm.aux_type = "telnet"
     vm._start_aux = AsyncioMagicMock()
 
     vm._get_container_state = AsyncioMagicMock(return_value="stopped")
