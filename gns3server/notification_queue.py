@@ -21,6 +21,9 @@ import psutil
 
 from gns3server.utils.cpu_percent import CpuPercent
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NotificationQueue(asyncio.Queue):
     """
@@ -51,10 +54,14 @@ class NotificationQueue(asyncio.Queue):
         """
         Return the content of the ping notification
         """
-        msg = {}
+        msg = {"cpu_usage_percent": 0,
+               "memory_usage_percent": 0}
         # Non blocking call in order to get cpu usage. First call will return 0
-        msg["cpu_usage_percent"] = CpuPercent.get(interval=None)
-        msg["memory_usage_percent"] = psutil.virtual_memory().percent
+        try:
+            msg["cpu_usage_percent"] = CpuPercent.get(interval=None)
+            msg["memory_usage_percent"] = psutil.virtual_memory().percent
+        except OSError as e:
+            log.warning("Could not get CPU and memory usage from psutil: {}".format(e))
         return msg
 
     async def get_json(self, timeout):
