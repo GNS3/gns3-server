@@ -1,41 +1,39 @@
 {
     "name": "FRR",
     "category": "router",
-    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nFRR’s seamless integration with the native Linux/Unix IP networking stacks makes it applicable to a wide variety of use cases including connecting hosts/VMs/containers to the network, advertising network services, LAN switching and routing, Internet access routers, and Internet peering.\n\nThis is an unofficial VM or FRR.",
+    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nFRR’s seamless integration with the native Linux/Unix IP networking stacks makes it applicable to a wide variety of use cases including connecting hosts/VMs/containers to the network, advertising network services, LAN switching and routing, Internet access routers, and Internet peering.\n\nThis is an unofficial VM of FRR.",
     "vendor_name": "FRRouting Project",
     "vendor_url": "https://frrouting.org",
     "product_name": "FRR",
     "registry_version": 3,
     "status": "stable",
-    "maintainer": "Andras Dosztal",
+    "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Credentials: frradmin / frr\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
-    "port_name_format": "ens{port3}",
+    "usage": "Credentials: root / root\nIf you exit from the router CLI, you can get back by typing 'vtysh' to the console.",
+    "port_name_format": "eth{0}",
     "qemu": {
-        "adapter_type": "virtio-net-pci",
+        "adapter_type": "e1000",
         "adapters": 8,
-        "ram": 512,
-        "hda_disk_interface": "virtio",
+        "ram": 256,
         "arch": "x86_64",
         "console_type": "telnet",
-        "kvm": "require"
+        "kvm": "allow"
     },
     "images": [
         {
-            "filename": "frr7.1-vm0.4.qcow2",
-            "version": "7.1 - VM0.4",
-            "md5sum": "08390f257203126e5edffb9710e47974",
-            "filesize": 2051801088,
-            "download_url": "https://sourceforge.net/projects/frr/files/",
-            "direct_download_url": "https://sourceforge.net/projects/frr/files/frr7.1-vm0.4.qcow2.bz2/download",
-            "compression": "bzip2"
+            "filename": "frr-7.3.1.qcow2",
+            "version": "7.3.1",
+            "md5sum": "e6bd9591a5c630bfe2c8688dc043b20b",
+            "filesize": 47348224,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/frr-7.3.1.qcow2"
         }
     ],
     "versions": [
         {
-            "name": "7.1 - VM0.4",
+            "name": "7.3.1",
             "images": {
-                "hda_disk_image": "frr7.1-vm0.4.qcow2"
+                "hda_disk_image": "frr-7.3.1.qcow2"
             }
         }
     ]
