@@ -42,7 +42,9 @@ class C2600(Router):
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
     :param console: console port
+    :param console_type: console type
     :param aux: auxiliary console port
+    :param aux_type: auxiliary console type
     :param chassis: chassis for this router:
     2610, 2611, 2620, 2621, 2610XM, 2611XM
     2620XM, 2621XM, 2650XM or 2651XM (default = 2610).
@@ -61,9 +63,9 @@ class C2600(Router):
                            "2650XM": C2600_MB_1FE,
                            "2651XM": C2600_MB_2FE}
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, chassis="2610"):
+    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, aux_type="none", chassis="2610"):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, platform="c2600")
+        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, aux_type, platform="c2600")
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 64

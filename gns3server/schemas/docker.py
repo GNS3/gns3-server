@@ -65,6 +65,10 @@ DOCKER_CREATE_SCHEMA = {
             "maximum": 65535,
             "type": ["integer", "null"]
         },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "none"]
+        },
         "usage": {
             "description": "How to use the Docker container",
             "type": "string",
@@ -145,7 +149,7 @@ DOCKER_OBJECT_SCHEMA = {
             "description": "Auxiliary TCP port",
             "minimum": 1,
             "maximum": 65535,
-            "type": "integer"
+            "type": ["integer", "null"]
         },
         "console": {
             "description": "Console TCP port",
@@ -161,6 +165,10 @@ DOCKER_OBJECT_SCHEMA = {
         "console_type": {
             "description": "Console type",
             "enum": ["telnet", "vnc", "http", "https", "none"]
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "none"]
         },
         "console_http_port": {
             "description": "Internal port in the container for the HTTP server",
