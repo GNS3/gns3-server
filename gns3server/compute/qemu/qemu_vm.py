@@ -131,17 +131,17 @@ class QemuVM(BaseNode):
         # config disk
         self.config_disk_name = self.manager.config_disk
         self.config_disk_image = ""
-        if not shutil.which("mcopy"):
-            log.warning("Config disk: 'mtools' are not installed.")
-            self.config_disk_name = ""
-        else:
-            try:
-                self.config_disk_image = self.manager.get_abs_image_path(
-                    self.config_disk_name)
-            except (NodeError, ImageMissingError) as e:
-                log.warning("Config disk: image '{}' missing"
-                            .format(self.config_disk_name))
+        if self.config_disk_name:
+            if not shutil.which("mcopy"):
+                log.warning("Config disk: 'mtools' are not installed.")
                 self.config_disk_name = ""
+            else:
+                try:
+                    self.config_disk_image = self.manager.get_abs_image_path(self.config_disk_name)
+                except (NodeError, ImageMissingError) as e:
+                    log.warning("Config disk: image '{}' missing"
+                                .format(self.config_disk_name))
+                    self.config_disk_name = ""
 
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 

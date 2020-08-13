@@ -48,6 +48,7 @@ class Qemu(BaseManager):
 
         super().__init__()
         self._guest_cid_lock = asyncio.Lock()
+        self.config_disk = "config.img"
         self._init_config_disk()
 
     async def create_node(self, *args, **kwargs):
@@ -353,12 +354,10 @@ class Qemu(BaseManager):
         Initialize the default config disk
         """
 
-        self.config_disk = "config.img"
         try:
             self.get_abs_image_path(self.config_disk)
-        except (NodeError, ImageMissingError) as e:
-            config_disk_zip = get_resource("compute/qemu/resources/{}.zip"
-                                           .format(self.config_disk))
+        except (NodeError, ImageMissingError):
+            config_disk_zip = get_resource("compute/qemu/resources/{}.zip".format(self.config_disk))
             if config_disk_zip and os.path.exists(config_disk_zip):
                 directory = self.get_images_directory()
                 try:
@@ -366,5 +365,4 @@ class Qemu(BaseManager):
                 except OSError as e:
                     log.warning("Config disk creation: {}".format(e))
             else:
-                log.warning("Config disk: image '{}' missing"
-                            .format(self.config_disk))
+                log.warning("Config disk: image '{}' missing".format(self.config_disk))
