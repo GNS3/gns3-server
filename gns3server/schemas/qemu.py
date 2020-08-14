@@ -190,6 +190,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "Replicate the network connection state for links in Qemu",
             "type": ["boolean", "null"],
         },
+        "create_config_disk": {
+            "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
+            "type": ["boolean", "null"],
+        },
         "on_close": {
             "description": "Action to execute on the VM is closed",
             "enum": ["power_off", "shutdown_signal", "save_vm_state"],
@@ -378,6 +382,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "replicate_network_connection_state": {
             "description": "Replicate the network connection state for links in Qemu",
+            "type": ["boolean", "null"],
+        },
+        "create_config_disk": {
+            "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
             "type": ["boolean", "null"],
         },
         "on_close": {
@@ -583,6 +591,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Replicate the network connection state for links in Qemu",
             "type": "boolean",
         },
+        "create_config_disk": {
+            "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
+            "type": ["boolean", "null"],
+        },
         "on_close": {
             "description": "Action to execute on the VM is closed",
             "enum": ["power_off", "shutdown_signal", "save_vm_state"],
@@ -653,6 +665,7 @@ QEMU_OBJECT_SCHEMA = {
                  "kernel_command_line",
                  "legacy_networking",
                  "replicate_network_connection_state",
+                 "create_config_disk",
                  "on_close",
                  "cpu_throttling",
                  "process_priority",
