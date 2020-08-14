@@ -122,6 +122,7 @@ class QemuVM(BaseNode):
         self._kernel_command_line = ""
         self._legacy_networking = False
         self._replicate_network_connection_state = True
+        self._create_config_disk = False
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
@@ -139,9 +140,8 @@ class QemuVM(BaseNode):
             else:
                 try:
                     self.config_disk_image = self.manager.get_abs_image_path(self.config_disk_name)
-                except (NodeError, ImageMissingError) as e:
-                    log.warning("Config disk: image '{}' missing"
-                                .format(self.config_disk_name))
+                except (NodeError, ImageMissingError):
+                    log.warning("Config disk: image '{}' missing".format(self.config_disk_name))
                     self.config_disk_name = ""
 
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
@@ -670,6 +670,30 @@ class QemuVM(BaseNode):
         else:
             log.info('QEMU VM "{name}" [{id}] has disabled network connection state replication'.format(name=self._name, id=self._id))
         self._replicate_network_connection_state = replicate_network_connection_state
+
+    @property
+    def create_config_disk(self):
+        """
+        Returns whether a config disk is automatically created on HDD disk interface (secondary slave)
+
+        :returns: boolean
+        """
+
+        return self._create_config_disk
+
+    @create_config_disk.setter
+    def create_config_disk(self, create_config_disk):
+        """
+        Sets whether a config disk is automatically created on HDD disk interface (secondary slave)
+
+        :param replicate_network_connection_state: boolean
+        """
+
+        if create_config_disk:
+            log.info('QEMU VM "{name}" [{id}] has enabled the config disk creation feature'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled the config disk creation feature'.format(name=self._name, id=self._id))
+        self._create_config_disk = create_config_disk
 
     @property
     def on_close(self):
@@ -1818,7 +1842,7 @@ class QemuVM(BaseNode):
 
         # config disk
         disk_image = getattr(self, "config_disk_image")
-        if disk_image:
+        if disk_image and self._create_config_disk:
             if getattr(self, "_hdd_disk_image"):
                 log.warning("Config disk: blocked by disk image 'hdd'")
             else:
@@ -1837,6 +1861,7 @@ class QemuVM(BaseNode):
                         log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
                 if disk_exists:
                     options.extend(self._disk_interface_options(disk, 3, interface, "raw"))
+                    self.hdd_disk_image = disk
 
         return options
 
