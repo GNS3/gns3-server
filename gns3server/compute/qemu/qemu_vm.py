@@ -1766,7 +1766,8 @@ class QemuVM(BaseNode):
             interface = getattr(self, "hd{}_disk_interface".format(drive))
             # fail-safe: use "ide" if there is a disk image and no interface type has been explicitly configured
             if interface == "none":
-                setattr(self, "hd{}_disk_interface".format(drive), "ide")
+                interface = "ide"
+                setattr(self, "hd{}_disk_interface".format(drive), interface)
 
             disk_name = "hd" + drive
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
