@@ -117,8 +117,8 @@ def images_dir(config):
 
     path = config.get_section_config("Server").get("images_path")
     os.makedirs(path, exist_ok=True)
-    os.makedirs(os.path.join(path, "QEMU"))
-    os.makedirs(os.path.join(path, "IOU"))
+    os.makedirs(os.path.join(path, "QEMU"), exist_ok=True)
+    os.makedirs(os.path.join(path, "IOU"), exist_ok=True)
     return path
 
 
