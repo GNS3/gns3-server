@@ -104,10 +104,10 @@ class QemuVM(BaseNode):
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
         self._hdd_disk_image = ""
-        self._hda_disk_interface = "ide"
-        self._hdb_disk_interface = "ide"
-        self._hdc_disk_interface = "ide"
-        self._hdd_disk_interface = "ide"
+        self._hda_disk_interface = "none"
+        self._hdb_disk_interface = "none"
+        self._hdc_disk_interface = "none"
+        self._hdd_disk_interface = "none"
         self._cdrom_image = ""
         self._bios_image = ""
         self._boot_priority = "c"
@@ -1782,13 +1782,15 @@ class QemuVM(BaseNode):
 
         for disk_index, drive in enumerate(drives):
             disk_image = getattr(self, "_hd{}_disk_image".format(drive))
-            interface = getattr(self, "hd{}_disk_interface".format(drive))
-
             if not disk_image:
                 continue
 
-            disk_name = "hd" + drive
+            interface = getattr(self, "hd{}_disk_interface".format(drive))
+            # fail-safe: use "ide" if there is a disk image and no interface type has been explicitly configured
+            if interface == "none":
+                setattr(self, "hd{}_disk_interface".format(drive), "ide")
 
+            disk_name = "hd" + drive
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
                 if os.path.islink(disk_image):
                     raise QemuError("{} disk image '{}' linked to '{}' is not accessible".format(disk_name, disk_image, os.path.realpath(disk_image)))
@@ -1848,9 +1850,9 @@ class QemuVM(BaseNode):
             else:
                 disk_name = getattr(self, "config_disk_name")
                 disk = os.path.join(self.working_dir, disk_name)
-                interface = getattr(self, "hdd_disk_interface", "ide")
-                if interface == "ide":
-                    interface = getattr(self, "hda_disk_interface", "none")
+                if self.hdd_disk_interface == "none":
+                    # use the HDA interface type if none has been configured for HDD
+                    self.hdd_disk_interface = getattr(self, "hda_disk_interface", "none")
                 await self._import_config()
                 disk_exists = os.path.exists(disk)
                 if not disk_exists:
@@ -1860,8 +1862,7 @@ class QemuVM(BaseNode):
                     except OSError as e:
                         log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
                 if disk_exists:
-                    options.extend(self._disk_interface_options(disk, 3, interface, "raw"))
-                    self.hdd_disk_image = disk
+                    options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
 
