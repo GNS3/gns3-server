@@ -193,7 +193,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     "create_config_disk": {
         "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
         "type": "boolean",
-        "default": True
+        "default": False
     },
     "on_close": {
         "description": "Action to execute on the VM is closed",
