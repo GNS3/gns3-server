@@ -1811,6 +1811,10 @@ class QemuVM(BaseNode):
         drives = ["a", "b", "c", "d"]
 
         for disk_index, drive in enumerate(drives):
+            # prioritize config disk over harddisk d
+            if drive == 'd' and self._create_config_disk:
+                continue
+
             disk_image = getattr(self, "_hd{}_disk_image".format(drive))
             if not disk_image:
                 continue
@@ -1876,24 +1880,21 @@ class QemuVM(BaseNode):
         # config disk
         disk_image = getattr(self, "config_disk_image")
         if disk_image and self._create_config_disk:
-            if getattr(self, "_hdd_disk_image"):
-                log.warning("Config disk: blocked by disk image 'hdd'")
-            else:
-                disk_name = getattr(self, "config_disk_name")
-                disk = os.path.join(self.working_dir, disk_name)
-                if self.hdd_disk_interface == "none":
-                    # use the HDA interface type if none has been configured for HDD
-                    self.hdd_disk_interface = getattr(self, "hda_disk_interface", "none")
-                await self._import_config()
-                disk_exists = os.path.exists(disk)
-                if not disk_exists:
-                    try:
-                        shutil.copyfile(disk_image, disk)
-                        disk_exists = True
-                    except OSError as e:
-                        log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
-                if disk_exists:
-                    options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
+            disk_name = getattr(self, "config_disk_name")
+            disk = os.path.join(self.working_dir, disk_name)
+            if self.hdd_disk_interface == "none":
+                # use the HDA interface type if none has been configured for HDD
+                self.hdd_disk_interface = getattr(self, "hda_disk_interface", "none")
+            await self._import_config()
+            disk_exists = os.path.exists(disk)
+            if not disk_exists:
+                try:
+                    shutil.copyfile(disk_image, disk)
+                    disk_exists = True
+                except OSError as e:
+                    log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
+            if disk_exists:
+                options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
 
