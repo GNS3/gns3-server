@@ -12,9 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username is admin, no password is set. Silent boot, it might take a while.",
-    "symbol": "loadbalancer.svg",
-    "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
+    "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 10,
@@ -235,14 +234,14 @@
         {
             "name": "5.0.1",
             "images": {
-                "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                "hda_disk_image": "FAD_KVM-V500-build0056-FORTINET.out.kvm-boot.qcow2",
                 "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },
         {
             "name": "5.0.0",
             "images": {
-                "hda_disk_image": "FAD_KVM-V400-build0989-FORTINET.out.kvm-boot.qcow2",
+                "hda_disk_image": "FAD_KVM-V500-build0045-FORTINET.out.kvm-boot.qcow2",
                 "hdb_disk_image": "FAD_KVM-FORTINET.out.kvm-data.qcow2"
             }
         },

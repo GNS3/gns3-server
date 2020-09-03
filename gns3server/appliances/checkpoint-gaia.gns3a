@@ -12,10 +12,11 @@
     "maintainer_email": "developers@gns3.net",
     "usage": "At boot choose the install on disk options. You need to open quickly the terminal after launching the appliance if you want to see the menu. You need a web browser in order to finalize the installation. You can use the firefox appliance for this.",
     "qemu": {
-        "cpus": 2,
         "adapter_type": "e1000",
         "adapters": 8,
         "ram": 4096,
+        "cpus": 2,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "boot_priority": "dc",
@@ -75,6 +76,5 @@
                 "cdrom_image": "Check_Point_R77.20_T124_Install.Gaia.iso"
             }
         }
-
     ]
 }

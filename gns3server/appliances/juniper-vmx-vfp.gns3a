@@ -11,20 +11,28 @@
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "juniper-vmx.svg",
     "usage": "Initial username is root, password is root.\n",
+    "symbol": "juniper-vmx.svg",
     "first_port_name": "Eth0",
     "port_name_format": "Eth{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 12,
         "ram": 4096,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
         "options": "-nographic -enable-kvm -smp cpus=3"
     },
     "images": [
+		{
+            "filename": "vFPC-20200526.img",
+            "version": "20.2R1.10-KVM",
+            "md5sum": "400652d7e450b0bf8ad4cc37db46b78c",
+            "filesize": 2447376384,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
         {
             "filename": "vFPC-20190819.img",
             "version": "19.3R1.8-KVM",
@@ -145,8 +153,13 @@
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
         }
     ],
-
     "versions": [
+		{
+            "name": "20.2R1.10-KVM",
+            "images": {
+                "hda_disk_image": "vFPC-20200526.img"
+            }
+        },
         {
             "name": "19.3R1.8-KVM",
             "images": {
@@ -249,6 +262,5 @@
                 "hda_disk_image": "vFPC-20151203.img"
             }
         }
-
     ]
 }

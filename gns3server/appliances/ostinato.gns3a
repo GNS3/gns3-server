@@ -18,6 +18,7 @@
         "adapter_type": "e1000",
         "adapters": 4,
         "ram": 256,
+        "hda_disk_interface": "ide",
         "arch": "i386",
         "console_type": "vnc",
         "kvm": "allow",

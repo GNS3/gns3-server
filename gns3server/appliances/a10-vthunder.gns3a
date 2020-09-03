@@ -31,7 +31,8 @@
             "version": "4.1.0.P9",
             "md5sum": "6ef0f69ba7a099a7f43b5815c2abc691",
             "filesize": 6311706624,
-            "download_url": "https://www.a10networks.com/vthunder-embed"        },
+            "download_url": "https://www.a10networks.com/vthunder-embed"
+        },
         {
             "filename": "vThunder_410_P3.qcow2",
             "version": "4.1.0.P3",

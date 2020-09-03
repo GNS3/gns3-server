@@ -9,8 +9,8 @@
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "linux_guest.svg",
     "usage": "Root password: gns3",
+    "symbol": "linux_guest.svg",
     "docker": {
         "adapters": 1,
         "image": "adosztal/net_toolbox:latest",

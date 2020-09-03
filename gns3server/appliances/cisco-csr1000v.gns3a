@@ -17,12 +17,13 @@
         "adapter_type": "vmxnet3",
         "adapters": 4,
         "ram": 3072,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
-            {
+        {
             "filename": "csr1000v-universalk9.16.12.03-serial.qcow2",
             "version": "16.12.3",
             "md5sum": "1fc380569ad3cc145fb9cbc993b2eb32",
@@ -49,7 +50,7 @@
             "md5sum": "7a07a182178243c1c107e68f04ecd8b5",
             "filesize": 920518656,
             "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Fuji-16.9.5"
-        },        
+        },
         {
             "filename": "csr1000v-universalk9.16.09.01-serial.qcow2",
             "version": "16.9.1",
@@ -77,7 +78,7 @@
             "md5sum": "2aba82d78091b4603224a13710399447",
             "filesize": 1573322752,
             "download_url": "https://software.cisco.com/download/release.html?mdfid=284364978&flowid=39582&softwareid=282046477&release=Everest-16.6.7"
-        },        
+        },
         {
             "filename": "csr1000v-universalk9.16.06.06-serial.qcow2",
             "version": "16.6.6",
@@ -162,7 +163,7 @@
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.12.03-serial.qcow2"
             }
-        },    
+        },
         {
             "name": "16.12.1a",
             "images": {
@@ -180,7 +181,7 @@
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.09.05-serial.qcow2"
             }
-        },        
+        },
         {
             "name": "16.9.1",
             "images": {
@@ -204,7 +205,7 @@
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.06.07-serial.qcow2"
             }
-        },        
+        },
         {
             "name": "16.6.6",
             "images": {
@@ -253,7 +254,7 @@
                 "hda_disk_image": "csr1000v-universalk9.16.3.1-build2.qcow2"
             }
         },
-       {
+        {
             "name": "16.3.2",
             "images": {
                 "hda_disk_image": "csr1000v-universalk9.16.03.02.qcow2"

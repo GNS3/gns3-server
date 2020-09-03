@@ -16,9 +16,9 @@
         "adapter_type": "e1000",
         "adapters": 6,
         "ram": 2048,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "vnc",
-        "hda_disk_interface": "virtio",
         "kvm": "allow",
         "process_priority": "normal"
     },
@@ -52,7 +52,6 @@
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
-
     ],
     "versions": [
         {

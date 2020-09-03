@@ -15,10 +15,10 @@
     "symbol": "cisco-ise.svg",
     "port_name_format": "GigabitEthernet{0}",
     "qemu": {
-        "cpus": 2,
         "adapter_type": "e1000",
         "adapters": 6,
         "ram": 8192,
+        "cpus": 2,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
@@ -55,7 +55,7 @@
             "filesize": 8174278656,
             "download_url": "https://software.cisco.com/download/home/283801620/type/283802505/release/2.3.0"
         },
-		{
+        {
             "filename": "ise-2.2.0.470.SPA.x86_64.iso",
             "version": "2.2.0.470",
             "md5sum": "7fe5e730d0a51ef66e69d1463717ff3f",
@@ -121,7 +121,7 @@
                 "cdrom_image": "ise-2.3.0.298.SPA.x86_64.iso"
             }
         },
-		{
+        {
             "name": "2.2.0.470",
             "images": {
                 "hda_disk_image": "empty200G.qcow2",

@@ -35,7 +35,7 @@
         },
         {
             "filename": "MSEdge_-_Win10_preview.vmdk",
-            "version": "10 w/ Edge",
+            "version": "10 w/ Edge (Preview)",
             "md5sum": "e06d97b871581d91b7363bf72a81553d",
             "filesize": 10907287552,
             "download_url": "https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/"

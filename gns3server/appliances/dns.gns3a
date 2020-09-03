@@ -9,8 +9,8 @@
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "linux_guest.svg",
     "usage": "You can add records by adding entries to the /etc/hosts file in the following format:\n%IP_ADDRESS% %HOSTNAME%.lab %HOSTNAME%\n\nExample:\n192.168.123.10 router1.lab router1",
+    "symbol": "linux_guest.svg",
     "docker": {
         "adapters": 1,
         "image": "adosztal/dns:latest",

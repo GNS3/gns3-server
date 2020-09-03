@@ -18,11 +18,20 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
         "ram": 512,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "cumulus-linux-4.2.0-vx-amd64-qemu.qcow2",
+            "version": "4.2.0",
+            "md5sum": "b746616189a7d5cc69de4015e5c8b1d4",
+            "filesize": 2322137088,
+            "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+            "direct_download_url": "https://d2cd9e7ca6hntp.cloudfront.net/public/CumulusLinux-4.2.0/cumulus-linux-4.2.0-vx-amd64-qemu.qcow2"
+        },
         {
             "filename": "cumulus-linux-3.7.10-vx-amd64-qemu.qcow2",
             "version": "3.7.10",
@@ -214,47 +223,53 @@
     ],
     "versions": [
         {
+            "name": "4.2.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-4.2.0-vx-amd64-qemu.qcow2"
+            }
+        },
+        {
             "name": "3.7.10",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.7.10-vx-amd64-qemu.qcow2"
             }
-        }, 
+        },
         {
             "name": "3.7.6",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.7.6-vx-amd64-qemu.qcow2"
             }
-        }, 
+        },
         {
             "name": "3.7.3",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.7.3-vx-amd64-qemu.qcow2"
             }
-        },    
+        },
         {
             "name": "3.7.2",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.7.2-vx-amd64-qemu.qcow2"
             }
-        },    
+        },
         {
             "name": "3.7.1",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.7.1-vx-amd64-qemu.qcow2"
             }
-        },    
+        },
         {
             "name": "3.6.2",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.6.2-vx-amd64.qcow2"
             }
-        },    
+        },
         {
             "name": "3.6.1",
             "images": {
                 "hda_disk_image": "cumulus-linux-3.6.1-vx-amd64.qcow2"
             }
-        },    
+        },
         {
             "name": "3.6.0",
             "images": {

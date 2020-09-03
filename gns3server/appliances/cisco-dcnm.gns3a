@@ -1,7 +1,7 @@
 {
     "name": "Cisco DCNM",
     "category": "guest",
-    "description": "Cisco Data Center Network Manager (DCNM) 10 unifies and automates Cisco Nexus and Cisco MDS 9000 Family multitenant infrastructure for data center management across Cisco Nexus 5000, 6000, 7000, and 9000 Series Switches in NX‑OS mode using Cisco NX-OS Software as well as across Cisco MDS 9100 and 9300 Series Multilayer Fabric Switches, 9200 Series Multiservice Switches, and 9500 and 9700 Series Multilayer Directors. Data Center Network Manager 10 lets you manage very large numbers of devices while providing ready-to-use management and automation capabilities plus Virtual Extensible LAN (VXLAN) overlay visibility into Cisco Nexus LAN fabrics.",
+    "description": "Cisco Data Center Network Manager (DCNM) 10 unifies and automates Cisco Nexus and Cisco MDS 9000 Family multitenant infrastructure for data center management across Cisco Nexus 5000, 6000, 7000, and 9000 Series Switches in NX-OS mode using Cisco NX-OS Software as well as across Cisco MDS 9100 and 9300 Series Multilayer Fabric Switches, 9200 Series Multiservice Switches, and 9500 and 9700 Series Multilayer Directors. Data Center Network Manager 10 lets you manage very large numbers of devices while providing ready-to-use management and automation capabilities plus Virtual Extensible LAN (VXLAN) overlay visibility into Cisco Nexus LAN fabrics.",
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com/",
     "documentation_url": "http://www.cisco.com/c/en/us/support/cloud-systems-management/data-center-network-manager-10/model.html",
@@ -12,8 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Default credentials: root / cisco123",
-    "port_name_format": "eth{0}",
     "symbol": "mgmt_station.svg",
+    "port_name_format": "eth{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 3,

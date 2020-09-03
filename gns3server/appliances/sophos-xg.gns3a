@@ -152,7 +152,7 @@
             }
         },
         {
-            "name": "16.05.1 MR1",
+            "name": "16.05.1 RC1",
             "images": {
                 "hda_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-PRIMARY.qcow2",
                 "hdb_disk_image": "VI-SFOS_16.05.0_RC-1.KVM-098-AUXILARY.qcow2"

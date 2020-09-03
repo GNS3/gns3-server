@@ -11,13 +11,14 @@
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "juniper-vqfx.svg",
     "usage": "Initial username is root, password is Juniper (capitol J).\n\nUSAGE INSTRUCTIONS\n\nConnect the first interface (em0) to your admin VLAN. Connect the second interface (em1) directly to the second interface (em1) of the PFE. The switch ports connect here on the RE",
+    "symbol": "juniper-vqfx.svg",
     "port_name_format": "em{0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 12,
         "ram": 1024,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
@@ -25,25 +26,25 @@
     },
     "images": [
         {
-           "filename": "jinstall-vqfx-10-f-18.4R1.8.qcow2",
-           "version": "18.4R1",
-           "md5sum": "1b0dbd9a235f887e56a8506c0b2f684f",
-           "filesize": 549584896,
-           "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+            "filename": "jinstall-vqfx-10-f-18.4R1.8.qcow2",
+            "version": "18.4R1",
+            "md5sum": "1b0dbd9a235f887e56a8506c0b2f684f",
+            "filesize": 549584896,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
         },
         {
-           "filename": "jinstall-vqfx-10-f-17.4R1.16.img",
-           "version": "17.4R1",
-           "md5sum": "dd83313b0f5beaf68488ed3d5e1e5240",
-           "filesize": 553910272,
-           "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+            "filename": "jinstall-vqfx-10-f-17.4R1.16.img",
+            "version": "17.4R1",
+            "md5sum": "dd83313b0f5beaf68488ed3d5e1e5240",
+            "filesize": 553910272,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
         },
         {
-           "filename": "vqfx10k-re-15.1X53-D60.vmdk",
-           "version": "15.1X53-D60",
-           "md5sum": "758669e88213fbd7943f5da7f6d7bd59",
-           "filesize": 355542528,
-           "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+            "filename": "vqfx10k-re-15.1X53-D60.vmdk",
+            "version": "15.1X53-D60",
+            "md5sum": "758669e88213fbd7943f5da7f6d7bd59",
+            "filesize": 355542528,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
         }
     ],
     "versions": [

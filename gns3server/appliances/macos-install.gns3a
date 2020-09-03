@@ -19,11 +19,13 @@
         "cpus": 4,
         "hda_disk_interface": "ide",
         "hdb_disk_interface": "sata",
-        "options": "-machine q35,accel=kvm -cpu Penryn,kvm=on -device isa-applesmc,osk='ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'  -smbios type=2 -usb -device usb-kbd -device usb-tablet -drive file=/home/gns3/GNS3/images/QEMU/OpenCore.iso,if=none,id=drive-ide2,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.1,unit=0,drive=drive-ide2,id=ide2,bootindex=101 -drive file=/home/gns3/GNS3/images/QEMU/Catalina-installer.iso,if=none,id=drive-ide0,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.0,unit=0,drive=drive-ide0,id=ide0",
+        "hdc_disk_interface": "ide",
+        "hdd_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "dc",
-        "kvm": "require"
+        "kvm": "require",
+        "options": "-machine q35,accel=kvm -cpu Penryn,kvm=on -device isa-applesmc,osk='ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc'  -smbios type=2 -usb -device usb-kbd -device usb-tablet -drive file=/home/gns3/GNS3/images/QEMU/OpenCore.iso,if=none,id=drive-ide2,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.1,unit=0,drive=drive-ide2,id=ide2,bootindex=101 -drive file=/home/gns3/GNS3/images/QEMU/Catalina-installer.iso,if=none,id=drive-ide0,cache=unsafe,format=raw,aio=threads,detect-zeroes=on -device ide-hd,bus=ide.0,unit=0,drive=drive-ide0,id=ide0"
     },
     "images": [
         {

@@ -11,20 +11,41 @@
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "juniper-vmx.svg",
     "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nConnect the first interface (fxp0) to your admin VLAN. Connect the second interface (em1) directly to the second interface (eth1) of the vFP.",
+    "symbol": "juniper-vmx.svg",
     "first_port_name": "fxp0",
     "port_name_format": "em{port1}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 2,
         "ram": 1024,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
         "options": "-nographic -enable-kvm"
     },
     "images": [
+		{
+            "filename": "junos-vmx-x86-64-20.2R1.10.qcow2",
+            "version": "20.2R1.10-KVM",
+            "md5sum": "182484474accf07bd403ef17fa2959a9",
+            "filesize": 1413349376
+        },
+        {
+            "filename": "vmxhdd-20.2R1.10.img",
+            "version": "20.2R1.10-KVM",
+            "md5sum": "ae26e0f32605a53a5c85342bad677c9f",
+            "filesize": 197120
+        },
+        {
+            "filename": "metadata-usb-re-20.2R1.10.img",
+            "version": "20.2R1.10-KVM",
+            "md5sum": "25322c2caf542059de72e9adbec1fb68",
+            "filesize": 10485760
+        },
         {
             "filename": "junos-vmx-x86-64-19.3R1.8.qcow2",
             "version": "19.3R1.8-KVM",
@@ -336,6 +357,14 @@
         }
     ],
     "versions": [
+		{
+            "name": "20.2R1.10-KVM",
+            "images": {
+                "hda_disk_image": "junos-vmx-x86-64-20.2R1.10.qcow2",
+                "hdb_disk_image": "vmxhdd-20.2R1.10.img",
+                "hdc_disk_image": "metadata-usb-re-20.2R1.10.img"
+            }
+        },
         {
             "name": "19.3R1.8-KVM",
             "images": {
@@ -465,7 +494,7 @@
             }
         },
         {
-            "name": "15.1F6.9",
+            "name": "15.1F6.9-KVM",
             "images": {
                 "hda_disk_image": "junos-vmx-x86-64-15.1F6.9.qcow2",
                 "hdb_disk_image": "vmxhdd-15.1F6.9.img",

@@ -19,9 +19,9 @@
         "adapter_type": "e1000",
         "adapters": 8,
         "ram": 2048,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "vnc",
-        "hda_disk_interface": "virtio",
         "kvm": "require"
     },
     "images": [
