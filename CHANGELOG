@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.2.13 04/09/2020
+
+* Release Web-Ui 2020.3.0-beta.3
+* Fix issue when resuming Qemu VM. Fixes https://github.com/GNS3/gns3-gui/issues/3027
+
 ## 2.2.12 07/08/2020
 
 * Release Web-Ui version 2020.3.0-beta.2
