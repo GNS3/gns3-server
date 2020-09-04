@@ -1295,6 +1295,7 @@ class QemuVM(BaseNode):
             raise QemuError("Resuming a QEMU VM is not supported")
         elif vm_status == "paused":
             await self._control_vm("cont")
+            self.status = "started"
             log.debug("QEMU VM has been resumed")
         else:
             log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
