@@ -81,12 +81,13 @@ class QemuVM(BaseNode):
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
         self._guest_cid = None
+        self._command_line_changed = False
 
         # QEMU VM settings
         if qemu_path:
             try:
                 self.qemu_path = qemu_path
-            except QemuError as e:
+            except QemuError:
                 # If the binary is not found for topologies 1.4 and later
                 # search via the platform otherwise use the binary name
                 if platform:
@@ -444,7 +445,18 @@ class QemuVM(BaseNode):
         else:
             self._cdrom_image = ""
 
-    async def update_cdrom_image(self):
+    async def update(self, name, value):
+        """
+        Update Qemu VM properties.
+        """
+
+        setattr(self, name, value)
+        if name == "cdrom_image":
+            # let the guest know about the new cdrom image
+            await self._update_cdrom_image()
+        self._command_line_changed = True
+
+    async def _update_cdrom_image(self):
         """
         Update the cdrom image path for the Qemu guest OS
         """
@@ -1007,6 +1019,7 @@ class QemuVM(BaseNode):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir)
                 log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
+                self._command_line_changed = False
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
             except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
@@ -1282,7 +1295,11 @@ class QemuVM(BaseNode):
         Reloads this QEMU VM.
         """
 
-        await self._control_vm("system_reset")
+        if self._command_line_changed:
+            await self.stop()
+            await self.start()
+        else:
+            await self._control_vm("system_reset")
         log.debug("QEMU VM has been reset")
 
     async def resume(self):
@@ -2015,7 +2032,7 @@ class QemuVM(BaseNode):
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
         command.extend(["-smp", "cpus={}".format(self._cpus)])
-        if (await self._run_with_hardware_acceleration(self.qemu_path, self._options)):
+        if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
                 version = await self.manager.get_qemu_version(self.qemu_path)

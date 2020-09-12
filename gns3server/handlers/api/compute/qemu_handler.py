@@ -124,11 +124,7 @@ class QEMUHandler:
         vm.console = request.json.pop("console", vm.console)
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
-                setattr(vm, name, value)
-                if name == "cdrom_image":
-                    # let the guest know about the new cdrom image
-                    await vm.update_cdrom_image()
-
+                await vm.update(name, value)
         vm.updated()
         response.json(vm)
 
