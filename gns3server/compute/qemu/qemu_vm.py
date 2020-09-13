@@ -2031,7 +2031,7 @@ class QemuVM(BaseNode):
         command = [self.qemu_path]
         command.extend(["-name", self._name])
         command.extend(["-m", "{}M".format(self._ram)])
-        command.extend(["-smp", "cpus={}".format(self._cpus)])
+        command.extend(["-smp", "cpus={},sockets=1".format(self._cpus)])
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
