@@ -34,7 +34,8 @@ from unittest.mock import patch, MagicMock, call
 
 
 @pytest.fixture()
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = Docker.instance()
     m.port_manager = port_manager
@@ -42,7 +43,8 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager):
+@pytest.mark.asyncio
+async def vm(compute_project, manager):
 
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="none")
     vm._cid = "e90e34656842"
@@ -85,6 +87,7 @@ def test_start_command(vm):
     assert vm.start_command is None
 
 
+@pytest.mark.asyncio
 async def test_create(compute_project, manager):
 
     response = {
@@ -126,6 +129,7 @@ async def test_create(compute_project, manager):
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_tag(compute_project, manager):
 
     response = {
@@ -167,6 +171,7 @@ async def test_create_with_tag(compute_project, manager):
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_vnc(compute_project, manager):
 
     response = {
@@ -216,6 +221,7 @@ async def test_create_vnc(compute_project, manager):
         assert vm._console_type == "vnc"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_hosts(compute_project, manager):
 
     extra_hosts = "test:199.199.199.1\ntest2:199.199.199.1"
@@ -233,6 +239,7 @@ async def test_create_with_extra_hosts(compute_project, manager):
         assert vm._extra_hosts == extra_hosts
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_hosts_wrong_format(compute_project, manager):
     extra_hosts = "test"
 
@@ -248,6 +255,7 @@ async def test_create_with_extra_hosts_wrong_format(compute_project, manager):
                 await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_create_with_empty_extra_hosts(compute_project, manager):
     extra_hosts = "test:\n"
 
@@ -264,6 +272,7 @@ async def test_create_with_empty_extra_hosts(compute_project, manager):
             assert len([ e for e in called_kwargs["data"]["Env"] if "GNS3_EXTRA_HOSTS" in e]) == 0
 
 
+@pytest.mark.asyncio
 async def test_create_with_project_variables(compute_project, manager):
     response = {
         "Id": "e90e34656806",
@@ -287,6 +296,7 @@ async def test_create_with_project_variables(compute_project, manager):
     compute_project.variables = None
 
 
+@pytest.mark.asyncio
 async def test_create_start_cmd(compute_project, manager):
 
     response = {
@@ -329,6 +339,7 @@ async def test_create_start_cmd(compute_project, manager):
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_environment(compute_project, manager):
     """
     Allow user to pass an environment. User can't override our
@@ -353,6 +364,7 @@ async def test_create_environment(compute_project, manager):
             ]
 
 
+@pytest.mark.asyncio
 async def test_create_environment_with_last_new_line_character(compute_project, manager):
     """
     Allow user to pass an environment. User can't override our
@@ -377,6 +389,7 @@ async def test_create_environment_with_last_new_line_character(compute_project, 
             ]
 
 
+@pytest.mark.asyncio
 async def test_create_image_not_available(compute_project, manager):
 
     call = 0
@@ -431,6 +444,7 @@ async def test_create_image_not_available(compute_project, manager):
         mock_pull.assert_called_with("ubuntu:latest")
 
 
+@pytest.mark.asyncio
 async def test_create_with_user(compute_project, manager):
 
     response = {
@@ -476,6 +490,8 @@ async def test_create_with_user(compute_project, manager):
             })
         assert vm._cid == "e90e34656806"
 
+
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_invalid_format_1(compute_project, manager):
 
     response = {
@@ -489,6 +505,7 @@ async def test_create_with_extra_volumes_invalid_format_1(compute_project, manag
                 await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_invalid_format_2(compute_project, manager):
 
     response = {
@@ -502,6 +519,7 @@ async def test_create_with_extra_volumes_invalid_format_2(compute_project, manag
                 await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_invalid_format_3(compute_project, manager):
 
     response = {
@@ -515,6 +533,7 @@ async def test_create_with_extra_volumes_invalid_format_3(compute_project, manag
                 await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_1_image(compute_project, manager):
 
     response = {
@@ -562,6 +581,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manager):
 
     response = {
@@ -604,6 +624,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, manager):
 
     response = {
@@ -646,6 +667,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, manager):
 
     response = {
@@ -688,6 +710,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_project, manager):
 
     response = {
@@ -729,6 +752,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_project, manager):
 
     response = {
@@ -770,6 +794,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_create_with_extra_volumes(compute_project, manager):
 
     response = {
@@ -819,6 +844,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_get_container_state(vm):
 
     response = {
@@ -848,6 +874,7 @@ async def test_get_container_state(vm):
         assert await vm._get_container_state() == "exited"
 
 
+@pytest.mark.asyncio
 async def test_is_running(vm):
 
     response = {
@@ -864,6 +891,7 @@ async def test_is_running(vm):
         assert await vm.is_running() is True
 
 
+@pytest.mark.asyncio
 async def test_pause(vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
@@ -873,6 +901,7 @@ async def test_pause(vm):
     assert vm.status == "suspended"
 
 
+@pytest.mark.asyncio
 async def test_unpause(vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
@@ -880,6 +909,7 @@ async def test_unpause(vm):
     mock.assert_called_with("POST", "containers/e90e34656842/unpause")
 
 
+@pytest.mark.asyncio
 async def test_start(vm, manager, free_console_port):
 
     assert vm.status != "started"
@@ -908,6 +938,7 @@ async def test_start(vm, manager, free_console_port):
     assert vm.status == "started"
 
 
+@pytest.mark.asyncio
 async def test_start_namespace_failed(vm, manager, free_console_port):
 
     assert vm.status != "started"
@@ -932,6 +963,7 @@ async def test_start_namespace_failed(vm, manager, free_console_port):
     assert vm.status == "stopped"
 
 
+@pytest.mark.asyncio
 async def test_start_without_nio(vm):
     """
     If no nio exists we will create one.
@@ -955,6 +987,7 @@ async def test_start_without_nio(vm):
     assert vm.status == "started"
 
 
+@pytest.mark.asyncio
 async def test_start_unpause(vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
@@ -964,6 +997,7 @@ async def test_start_unpause(vm):
     assert vm.status == "started"
 
 
+@pytest.mark.asyncio
 async def test_restart(vm):
 
     with asyncio_patch("gns3server.compute.docker.Docker.query") as mock:
@@ -971,6 +1005,7 @@ async def test_restart(vm):
     mock.assert_called_with("POST", "containers/e90e34656842/restart")
 
 
+@pytest.mark.asyncio
 async def test_stop(vm):
 
     mock = MagicMock()
@@ -987,6 +1022,7 @@ async def test_stop(vm):
     assert vm._fix_permissions.called
 
 
+@pytest.mark.asyncio
 async def test_stop_paused_container(vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
@@ -997,6 +1033,7 @@ async def test_stop_paused_container(vm):
                 assert mock_unpause.called
 
 
+@pytest.mark.asyncio
 async def test_update(vm):
 
     response = {
@@ -1045,6 +1082,7 @@ async def test_update(vm):
     assert vm.aux == original_aux
 
 
+@pytest.mark.asyncio
 async def test_update_vnc(vm):
 
     response = {
@@ -1068,6 +1106,7 @@ async def test_update_vnc(vm):
     assert vm.aux == original_aux
 
 
+@pytest.mark.asyncio
 async def test_update_running(vm):
 
     response = {
@@ -1117,6 +1156,7 @@ async def test_update_running(vm):
     assert vm.start.called
 
 
+@pytest.mark.asyncio
 async def test_delete(vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
@@ -1125,6 +1165,7 @@ async def test_delete(vm):
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
 
+@pytest.mark.asyncio
 async def test_close(vm, port_manager):
 
     nio = {"type": "nio_udp",
@@ -1143,6 +1184,7 @@ async def test_close(vm, port_manager):
     assert "4242" not in port_manager.udp_ports
 
 
+@pytest.mark.asyncio
 async def test_close_vnc(vm):
 
     vm._console_type = "vnc"
@@ -1158,6 +1200,7 @@ async def test_close_vnc(vm):
     assert vm._xvfb_process.terminate.called
 
 
+@pytest.mark.asyncio
 async def test_get_namespace(vm):
 
     response = {
@@ -1170,6 +1213,7 @@ async def test_get_namespace(vm):
     mock_query.assert_called_with("GET", "containers/e90e34656842/json")
 
 
+@pytest.mark.asyncio
 async def test_add_ubridge_connection(vm):
 
     nio = {"type": "nio_udp",
@@ -1195,6 +1239,7 @@ async def test_add_ubridge_connection(vm):
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
+@pytest.mark.asyncio
 async def test_add_ubridge_connection_none_nio(vm):
 
     nio = None
@@ -1214,6 +1259,7 @@ async def test_add_ubridge_connection_none_nio(vm):
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
+@pytest.mark.asyncio
 async def test_add_ubridge_connection_invalid_adapter_number(vm):
 
     nio = {"type": "nio_udp",
@@ -1225,6 +1271,7 @@ async def test_add_ubridge_connection_invalid_adapter_number(vm):
         await vm._add_ubridge_connection(nio, 12)
 
 
+@pytest.mark.asyncio
 async def test_add_ubridge_connection_no_free_interface(vm):
 
     nio = {"type": "nio_udp",
@@ -1241,6 +1288,7 @@ async def test_add_ubridge_connection_no_free_interface(vm):
             await vm._add_ubridge_connection(nio, 0)
 
 
+@pytest.mark.asyncio
 async def test_adapter_add_nio_binding_1(vm):
 
     nio = {"type": "nio_udp",
@@ -1252,6 +1300,7 @@ async def test_adapter_add_nio_binding_1(vm):
     assert vm._ethernet_adapters[0].get_nio(0) == nio
 
 
+@pytest.mark.asyncio
 async def test_adapter_udpate_nio_binding_bridge_not_started(vm):
 
     vm._ubridge_apply_filters = AsyncioMagicMock()
@@ -1266,6 +1315,7 @@ async def test_adapter_udpate_nio_binding_bridge_not_started(vm):
     assert vm._ubridge_apply_filters.called is False
 
 
+@pytest.mark.asyncio
 async def test_adapter_add_nio_binding_invalid_adapter(vm):
 
     nio = {"type": "nio_udp",
@@ -1277,6 +1327,7 @@ async def test_adapter_add_nio_binding_invalid_adapter(vm):
         await vm.adapter_add_nio_binding(12, nio)
 
 
+@pytest.mark.asyncio
 async def test_adapter_remove_nio_binding(vm):
 
     vm.ubridge = MagicMock()
@@ -1296,12 +1347,14 @@ async def test_adapter_remove_nio_binding(vm):
         delete_ubridge_mock.assert_any_call('bridge remove_nio_udp bridge0 4242 127.0.0.1 4343')
 
 
+@pytest.mark.asyncio
 async def test_adapter_remove_nio_binding_invalid_adapter(vm):
 
     with pytest.raises(DockerError):
         await vm.adapter_remove_nio_binding(12)
 
 
+@pytest.mark.asyncio
 async def test_start_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
@@ -1311,6 +1364,7 @@ async def test_start_capture(vm, tmpdir, manager, free_console_port):
     assert vm._ethernet_adapters[0].get_nio(0).capturing
 
 
+@pytest.mark.asyncio
 async def test_stop_capture(vm, tmpdir, manager, free_console_port):
 
     output_file = str(tmpdir / "test.pcap")
@@ -1322,6 +1376,7 @@ async def test_stop_capture(vm, tmpdir, manager, free_console_port):
     assert vm._ethernet_adapters[0].get_nio(0).capturing is False
 
 
+@pytest.mark.asyncio
 async def test_get_log(vm):
 
     async def read():
@@ -1335,6 +1390,7 @@ async def test_get_log(vm):
         mock.assert_called_with("GET", "containers/e90e34656842/logs", params={"stderr": 1, "stdout": 1}, data={})
 
 
+@pytest.mark.asyncio
 async def test_get_image_information(compute_project, manager):
 
     response = {}
@@ -1345,6 +1401,7 @@ async def test_get_image_information(compute_project, manager):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+@pytest.mark.asyncio
 async def test_mount_binds(vm):
 
     image_infos = {
@@ -1366,6 +1423,7 @@ async def test_mount_binds(vm):
     assert os.path.exists(dst)
 
 
+@pytest.mark.asyncio
 async def test_start_vnc(vm):
 
     vm.console_resolution = "1280x1024"
@@ -1378,6 +1436,7 @@ async def test_start_vnc(vm):
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 
+@pytest.mark.asyncio
 async def test_start_vnc_missing(vm):
 
     with patch("shutil.which", return_value=None):
@@ -1385,6 +1444,7 @@ async def test_start_vnc_missing(vm):
             await vm._start_vnc()
 
 
+@pytest.mark.asyncio
 async def test_start_aux(vm):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
@@ -1392,6 +1452,7 @@ async def test_start_aux(vm):
     mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do TERM=vt100 /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
 
 
+@pytest.mark.asyncio
 async def test_create_network_interfaces(vm):
 
     vm.adapters = 5
@@ -1407,6 +1468,7 @@ async def test_create_network_interfaces(vm):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+@pytest.mark.asyncio
 async def test_fix_permission(vm):
 
     vm._volumes = ["/etc"]
@@ -1419,6 +1481,7 @@ async def test_fix_permission(vm):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+@pytest.mark.asyncio
 async def test_fix_permission_not_running(vm):
 
     vm._volumes = ["/etc"]
@@ -1432,6 +1495,7 @@ async def test_fix_permission_not_running(vm):
     assert process.wait.called
 
 
+@pytest.mark.asyncio
 async def test_read_console_output_with_binary_mode(vm):
 
     class InputStreamMock(object):
@@ -1456,6 +1520,7 @@ async def test_read_console_output_with_binary_mode(vm):
         output_stream.feed_data.assert_called_once_with(b"test")
 
 
+@pytest.mark.asyncio
 async def test_cpus(compute_project, manager):
 
     response = {
@@ -1497,6 +1562,7 @@ async def test_cpus(compute_project, manager):
         assert vm._cid == "e90e34656806"
 
 
+@pytest.mark.asyncio
 async def test_memory(compute_project, manager):
 
     response = {

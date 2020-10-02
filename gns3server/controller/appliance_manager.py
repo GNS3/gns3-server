@@ -25,6 +25,7 @@ from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
 from ..utils.get_resource import get_resource
+from .controller_error import ControllerError
 
 import logging
 log = logging.getLogger(__name__)
@@ -173,7 +174,7 @@ class ApplianceManager:
                         log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return
                     elif response.status != 200:
-                        raise aiohttp.web.HTTPConflict(text="Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
+                        raise ControllerError("Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
                     etag = response.headers.get("ETag")
                     if etag:
                         self._appliances_etag = etag
@@ -200,9 +201,9 @@ class ApplianceManager:
                                 with open(path, 'wb') as f:
                                     f.write(appliance_data)
                             except OSError as e:
-                                raise aiohttp.web.HTTPConflict(text="Could not write appliance file '{}': {}".format(path, e))
+                                raise ControllerError("Could not write appliance file '{}': {}".format(path, e))
         except ValueError as e:
-            raise aiohttp.web.HTTPConflict(text="Could not read appliances information from GitHub: {}".format(e))
+            raise ControllerError("Could not read appliances information from GitHub: {}".format(e))
 
         # download the custom symbols
         await self.download_custom_symbols()

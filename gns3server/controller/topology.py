@@ -23,7 +23,6 @@ import uuid
 import glob
 import shutil
 import zipfile
-import aiohttp
 import jsonschema
 
 
@@ -32,6 +31,7 @@ from ..schemas.topology import TOPOLOGY_SCHEMA
 from ..schemas import dynamips_vm
 from ..utils.qt import qt_font_to_style
 from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
+from .controller_error import ControllerError
 
 import logging
 log = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def _check_topology_schema(topo):
             e.message,
             json.dumps(e.schema))
         log.critical(error)
-        raise aiohttp.web.HTTPConflict(text=error)
+        raise ControllerError(error)
 
 
 def project_to_topology(project):
@@ -134,10 +134,10 @@ def load_topology(path):
         with open(path, encoding="utf-8") as f:
             topo = json.load(f)
     except (OSError, UnicodeDecodeError, ValueError) as e:
-        raise aiohttp.web.HTTPConflict(text="Could not load topology {}: {}".format(path, str(e)))
+        raise ControllerError("Could not load topology {}: {}".format(path, str(e)))
 
     if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
-        raise aiohttp.web.HTTPConflict(text="This project was created with more recent version of GNS3 (file revision: {}). Please upgrade GNS3 to version {} or later".format(topo["revision"], topo["version"]))
+        raise ControllerError("This project was created with more recent version of GNS3 (file revision: {}). Please upgrade GNS3 to version {} or later".format(topo["revision"], topo["version"]))
 
     changed = False
     if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
@@ -145,7 +145,7 @@ def load_topology(path):
         try:
             shutil.copy(path, path + ".backup{}".format(topo.get("revision", 0)))
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can't write backup of the topology {}: {}".format(path, str(e)))
+            raise ControllerError("Can't write backup of the topology {}: {}".format(path, str(e)))
         changed = True
         # update the version because we converted the topology
         topo["version"] = __version__
@@ -187,7 +187,7 @@ def load_topology(path):
 
     try:
         _check_topology_schema(topo)
-    except aiohttp.web.HTTPConflict as e:
+    except ControllerError as e:
         log.error("Can't load the topology %s", path)
         raise e
 
@@ -196,7 +196,7 @@ def load_topology(path):
             with open(path, "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can't write the topology {}: {}".format(path, str(e)))
+            raise ControllerError("Can't write the topology {}: {}".format(path, str(e)))
     return topo
 
 
@@ -284,7 +284,7 @@ def _convert_2_0_0_beta_2(topo, topo_path):
                 for path in glob.glob(os.path.join(glob.escape(dynamips_dir), "configs", "i{}_*".format(dynamips_id))):
                     shutil.move(path, os.path.join(node_dir, "configs", os.path.basename(path)))
             except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Can't convert project {}: {}".format(topo_path, str(e)))
+                raise ControllerError("Can't convert project {}: {}".format(topo_path, str(e)))
     return topo
 
 
@@ -472,7 +472,7 @@ def _convert_1_3_later(topo, topo_path):
             symbol = old_node.get("symbol", ":/symbols/computer.svg")
             old_node["ports"] = _create_cloud(node, old_node, symbol)
         else:
-            raise aiohttp.web.HTTPConflict(text="Conversion of {} is not supported".format(old_node["type"]))
+            raise ControllerError("Conversion of {} is not supported".format(old_node["type"]))
 
         for prop in old_node.get("properties", {}):
             if prop not in ["console", "name", "console_type", "console_host", "use_ubridge"]:
@@ -671,13 +671,13 @@ def _create_cloud(node, old_node, icon):
         elif old_port["name"].startswith("nio_nat"):
             continue
         else:
-            raise aiohttp.web.HTTPConflict(text="The conversion of cloud with {} is not supported".format(old_port["name"]))
+            raise ControllerError("The conversion of cloud with {} is not supported".format(old_port["name"]))
 
         if port_type == "udp":
             try:
                 _, lport, rhost, rport = old_port["name"].split(":")
             except ValueError:
-                raise aiohttp.web.HTTPConflict(text="UDP tunnel using IPV6 is not supported in cloud")
+                raise ControllerError("UDP tunnel using IPV6 is not supported in cloud")
             port = {
                 "name": "UDP tunnel {}".format(len(ports) + 1),
                 "port_number": len(ports) + 1,

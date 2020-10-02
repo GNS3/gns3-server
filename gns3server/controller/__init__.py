@@ -21,7 +21,6 @@ import json
 import uuid
 import socket
 import shutil
-import aiohttp
 
 from ..config import Config
 from .project import Project
@@ -37,6 +36,7 @@ from .topology import load_topology
 from .gns3vm import GNS3VM
 from ..utils.get_resource import get_resource
 from .gns3vm.gns3_vm_error import GNS3VMError
+from .controller_error import ControllerError, ControllerNotFoundError
 
 import logging
 log = logging.getLogger(__name__)
@@ -90,14 +90,15 @@ class Controller:
                                                         port=port,
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
-                                                        force=True)
-        except aiohttp.web.HTTPConflict:
+                                                        force=True,
+                                                        connect=True)  # FIXME: not connection for now
+        except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
             try:
-                await self.add_compute(**c)
-            except (aiohttp.web.HTTPError, KeyError):
+                await self.add_compute(**c, connect=False)  # FIXME: not connection for now
+            except (ControllerError, KeyError):
                 pass  # Skip not available servers at loading
 
         try:
@@ -127,7 +128,7 @@ class Controller:
             try:
                 await compute.close()
             # We don't care if a compute is down at this step
-            except (ComputeError, aiohttp.web.HTTPError, OSError):
+            except (ComputeError, ControllerError, OSError):
                 pass
         await self.gns3vm.exit_vm()
         #self.save()
@@ -150,9 +151,9 @@ class Controller:
         try:
             os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
             if not os.access(self._config_file, os.W_OK):
-                raise aiohttp.web.HTTPConflict(text="Change rejected, cannot write to controller configuration file '{}'".format(self._config_file))
+                raise ControllerNotFoundError("Change rejected, cannot write to controller configuration file '{}'".format(self._config_file))
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Change rejected: {}".format(e))
+            raise ControllerError("Change rejected: {}".format(e))
 
     def save(self):
         """
@@ -240,7 +241,7 @@ class Controller:
                         if file.endswith(".gns3"):
                             try:
                                 await self.load_project(os.path.join(project_dir, file), load=False)
-                            except (aiohttp.web.HTTPConflict, aiohttp.web.HTTPNotFound, NotImplementedError):
+                            except (ControllerError, NotImplementedError):
                                 pass  # Skip not compatible projects
         except OSError as e:
             log.error(str(e))
@@ -304,7 +305,7 @@ class Controller:
 
             for compute in self._computes.values():
                 if name and compute.name == name and not force:
-                    raise aiohttp.web.HTTPConflict(text='Compute name "{}" already exists'.format(name))
+                    raise ControllerError('Compute name "{}" already exists'.format(name))
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
@@ -349,7 +350,7 @@ class Controller:
 
         try:
             compute = self.get_compute(compute_id)
-        except aiohttp.web.HTTPNotFound:
+        except ControllerNotFoundError:
             return
         await self.close_compute_projects(compute)
         await compute.close()
@@ -382,8 +383,8 @@ class Controller:
             return self._computes[compute_id]
         except KeyError:
             if compute_id == "vm":
-                raise aiohttp.web.HTTPNotFound(text="Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
-            raise aiohttp.web.HTTPNotFound(text="Compute ID {} doesn't exist".format(compute_id))
+                raise ControllerNotFoundError("Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
+            raise ControllerNotFoundError("Compute ID {} doesn't exist".format(compute_id))
 
     def has_compute(self, compute_id):
         """
@@ -405,9 +406,9 @@ class Controller:
             for project in self._projects.values():
                 if name and project.name == name:
                     if path and path == project.path:
-                        raise aiohttp.web.HTTPConflict(text='Project "{}" already exists in location "{}"'.format(name, path))
+                        raise ControllerError('Project "{}" already exists in location "{}"'.format(name, path))
                     else:
-                        raise aiohttp.web.HTTPConflict(text='Project "{}" already exists'.format(name))
+                        raise ControllerError('Project "{}" already exists'.format(name))
             project = Project(project_id=project_id, controller=self, name=name, path=path, **kwargs)
             self._projects[project.id] = project
             return self._projects[project.id]
@@ -421,7 +422,7 @@ class Controller:
         try:
             return self._projects[project_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
+            raise ControllerNotFoundError("Project ID {} doesn't exist".format(project_id))
 
     async def get_loaded_project(self, project_id):
         """
@@ -488,7 +489,7 @@ class Controller:
                 break
             i += 1
             if i > 1000000:
-                raise aiohttp.web.HTTPConflict(text="A project name could not be allocated (node limit reached?)")
+                raise ControllerError("A project name could not be allocated (node limit reached?)")
         return new_name
 
     @property

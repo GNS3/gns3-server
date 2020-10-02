@@ -25,6 +25,7 @@ from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_outp
 from tests.utils import AsyncioMagicMock
 
 
+@pytest.mark.asyncio
 async def test_wait_run_in_executor():
 
     def change_var(param):
@@ -34,6 +35,7 @@ async def test_wait_run_in_executor():
     assert result == "test"
 
 
+@pytest.mark.asyncio
 async def test_exception_wait_run_in_executor():
 
     def raise_exception():
@@ -44,13 +46,15 @@ async def test_exception_wait_run_in_executor():
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-async def test_subprocess_check_output(loop, tmpdir):
+@pytest.mark.asyncio
+async def test_subprocess_check_output(tmpdir):
 
     path = str(tmpdir / "test")
     result = await subprocess_check_output("echo", "-n", path)
     assert result == path
 
 
+@pytest.mark.asyncio
 async def test_lock_decorator():
     """
     The test check if the the second call to method_to_lock wait for the

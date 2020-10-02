@@ -1060,8 +1060,8 @@ class VirtualBoxVM(BaseNode):
         if self.is_running():
             try:
                 await self.update_ubridge_udp_connection("VBOX-{}-{}".format(self._id, adapter_number),
-                                                              self._local_udp_tunnels[adapter_number][1],
-                                                              nio)
+                                                         self._local_udp_tunnels[adapter_number][1],
+                                                         nio)
                 if nio.suspend:
                     await self._control_vm("setlinkstate{} off".format(adapter_number + 1))
                 else:

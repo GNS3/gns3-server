@@ -29,7 +29,8 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = Dynamips.instance()
     m.port_manager = port_manager
@@ -85,6 +86,7 @@ def test_release_dynamips_id(manager):
     manager.release_dynamips_id(project_2, 0)
 
 
+@pytest.mark.asyncio
 async def test_project_closed(manager, compute_project):
 
     manager._dynamips_ids[compute_project.id] = set([1, 2, 3])
@@ -97,6 +99,7 @@ async def test_project_closed(manager, compute_project):
     assert compute_project.id not in manager._dynamips_ids
 
 
+@pytest.mark.asyncio
 async def test_duplicate_node(manager, compute_project):
     """
     Duplicate dynamips do nothing it's manage outside the

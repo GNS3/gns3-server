@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 import uuid
 
 from gns3server.compute.notification_manager import NotificationManager
 
 
+@pytest.mark.asyncio
 async def test_queue():
 
     NotificationManager.reset()
@@ -37,6 +39,7 @@ async def test_queue():
     assert len(notifications._listeners) == 0
 
 
+@pytest.mark.asyncio
 async def test_queue_json():
 
     NotificationManager.reset()
@@ -54,6 +57,7 @@ async def test_queue_json():
     assert len(notifications._listeners) == 0
 
 
+@pytest.mark.asyncio
 async def test_queue_json_meta():
 
     NotificationManager.reset()
@@ -72,6 +76,7 @@ async def test_queue_json_meta():
     assert len(notifications._listeners) == 0
 
 
+@pytest.mark.asyncio
 async def test_queue_ping():
     """
     If we don't send a message during a long time (0.5 seconds)

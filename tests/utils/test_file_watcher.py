@@ -24,6 +24,7 @@ from gns3server.utils.file_watcher import FileWatcher
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.asyncio
 async def test_file_watcher(tmpdir, strategy):
 
     file = tmpdir / "test"
@@ -38,6 +39,7 @@ async def test_file_watcher(tmpdir, strategy):
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.asyncio
 async def test_file_watcher_not_existing(tmpdir, strategy):
 
     file = tmpdir / "test"
@@ -51,6 +53,7 @@ async def test_file_watcher_not_existing(tmpdir, strategy):
 
 
 @pytest.mark.parametrize("strategy", ['mtime', 'hash'])
+@pytest.mark.asyncio
 async def test_file_watcher_list(tmpdir, strategy):
 
     file = tmpdir / "test"

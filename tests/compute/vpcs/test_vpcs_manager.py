@@ -25,6 +25,7 @@ from gns3server.compute.vpcs.vpcs_error import VPCSError
 from gns3server.compute.project_manager import ProjectManager
 
 
+@pytest.mark.asyncio
 async def test_get_mac_id(compute_project, port_manager):
 
     # Cleanup the VPCS object
@@ -44,6 +45,7 @@ async def test_get_mac_id(compute_project, port_manager):
     assert vpcs.get_mac_id(vm3_id) == 0
 
 
+@pytest.mark.asyncio
 async def test_get_mac_id_multiple_project(port_manager):
 
     # Cleanup the VPCS object
@@ -63,6 +65,7 @@ async def test_get_mac_id_multiple_project(port_manager):
     assert vpcs.get_mac_id(vm3_id) == 0
 
 
+@pytest.mark.asyncio
 async def test_get_mac_id_no_id_available(compute_project, port_manager):
 
     # Cleanup the VPCS object

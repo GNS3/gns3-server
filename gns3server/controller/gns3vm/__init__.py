@@ -18,7 +18,6 @@
 import sys
 import copy
 import asyncio
-import aiohttp
 import ipaddress
 
 from ...utils.asyncio import locking
@@ -29,6 +28,7 @@ from .remote_gns3_vm import RemoteGNS3VM
 from .gns3_vm_error import GNS3VMError
 from ...version import __version__
 from ..compute import ComputeError
+from ..controller_error import ControllerError
 
 import logging
 log = logging.getLogger(__name__)
@@ -285,7 +285,7 @@ class GNS3VM:
                                                                  force=True)
                     compute.set_last_error(str(e))
 
-                except aiohttp.web.HTTPConflict:
+                except ControllerError:
                     pass
                 log.error("Cannot start the GNS3 VM: {}".format(e))
 
@@ -376,8 +376,8 @@ class GNS3VM:
                                 self._controller.notification.controller_emit("log.warning", {"message": msg})
         except ComputeError as e:
             log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
-        except aiohttp.web.HTTPConflict as e:
-            log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e.text))
+        except ControllerError as e:
+            log.warning("Could not check the VM is in the same subnet as the local server: {}".format(e))
 
     @locking
     async def _suspend(self):

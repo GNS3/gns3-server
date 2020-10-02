@@ -27,7 +27,8 @@ from gns3server.config import Config
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = Dynamips.instance()
     m.port_manager = port_manager
@@ -64,6 +65,7 @@ def test_convert_project_before_2_0_0_b3(compute_project, manager):
     assert not os.path.exists(os.path.join(wdir, node_id, "c7200_i2_nvram"))
 
 
+@pytest.mark.asyncio
 async def test_router_invalid_dynamips_path(compute_project, manager):
 
     config = Config.instance()

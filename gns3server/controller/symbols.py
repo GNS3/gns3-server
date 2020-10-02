@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import aiohttp
 import posixpath
 
 from .symbol_themes import BUILTIN_SYMBOL_THEMES
+from .controller_error import ControllerNotFoundError
 from ..utils.get_resource import get_resource
 from ..utils.picture import get_size
 from ..config import Config
@@ -54,7 +54,7 @@ class Symbols:
     def theme(self, theme):
 
         if not self._themes.get(theme):
-            raise aiohttp.web.HTTPNotFound(text="Could not find symbol theme '{}'".format(theme))
+            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(theme))
         self._current_theme = theme
 
     def default_symbols(self):
@@ -65,7 +65,7 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            raise aiohttp.web.HTTPNotFound(text="Could not find symbol theme '{}'".format(symbol_theme))
+            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(symbol_theme))
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
             log.warning("Default symbol {} was not found".format(symbol_path))

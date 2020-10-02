@@ -46,7 +46,7 @@ setup(
     version=__import__("gns3server").__version__,
     url="http://github.com/GNS3/gns3-server",
     license="GNU General Public License v3 (GPLv3)",
-    tests_require=["pytest", "pytest-capturelog", "pytest-aiohttp"],
+    tests_require=["pytest", "pytest-capturelog", "pytest-asyncio", "httpx"],
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.rst", "r").read(),

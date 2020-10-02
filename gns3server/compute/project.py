@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import aiohttp
 import shutil
 import asyncio
 import hashlib
 
 from uuid import UUID, uuid4
 
+from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError, ComputeForbiddenError
 from .port_manager import PortManager
 from .notification_manager import NotificationManager
 from ..config import Config
@@ -50,7 +50,7 @@ class Project:
             try:
                 UUID(project_id, version=4)
             except ValueError:
-                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+                raise ComputeError("{} is not a valid UUID".format(project_id))
         else:
             project_id = str(uuid4())
         self._id = project_id
@@ -66,14 +66,14 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+            raise ComputeError("Could not create project directory: {}".format(e))
         self.path = path
 
         try:
             if os.path.exists(self.tmp_working_directory()):
                 shutil.rmtree(self.tmp_working_directory())
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not clean project directory: {}".format(e))
+            raise ComputeError("Could not clean project directory: {}".format(e))
 
         log.info("Project {id} with path '{path}' created".format(path=self._path, id=self._id))
 
@@ -109,7 +109,7 @@ class Project:
 
         if hasattr(self, "_path"):
             if path != self._path and self.is_local() is False:
-                raise aiohttp.web.HTTPForbidden(text="Changing the project directory path is not allowed")
+                raise ComputeForbiddenError("Changing the project directory path is not allowed")
 
         self._path = path
 
@@ -122,7 +122,7 @@ class Project:
     def name(self, name):
 
         if "/" in name or "\\" in name:
-            raise aiohttp.web.HTTPForbidden(text="Project names cannot contain path separators")
+            raise ComputeForbiddenError("Project names cannot contain path separators")
         self._name = name
 
     @property
@@ -192,7 +192,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create module working directory: {}".format(e))
+                raise ComputeError("Could not create module working directory: {}".format(e))
         return workdir
 
     def module_working_path(self, module_name):
@@ -219,7 +219,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
+                raise ComputeError("Could not create the node working directory: {}".format(e))
         return workdir
 
     def node_working_path(self, node):
@@ -249,7 +249,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create the capture working directory: {}".format(e))
+                raise ComputeError("Could not create the capture working directory: {}".format(e))
         return workdir
 
     def add_node(self, node):
@@ -274,13 +274,13 @@ class Project:
         try:
             UUID(node_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="Node ID {} is not a valid UUID".format(node_id))
+            raise ComputeError("Node ID {} is not a valid UUID".format(node_id))
 
         for node in self._nodes:
             if node.id == node_id:
                 return node
 
-        raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
+        raise ComputeNotFoundError("Node ID {} doesn't exist".format(node_id))
 
     async def remove_node(self, node):
         """
@@ -356,7 +356,7 @@ class Project:
                 await wait_run_in_executor(shutil.rmtree, self.path)
                 log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the project directory: {}".format(e))
+                raise ComputeError("Could not delete the project directory: {}".format(e))
         else:
             log.info("Project {id} with path '{path}' closed".format(path=self._path, id=self._id))
 

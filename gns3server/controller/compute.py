@@ -28,7 +28,12 @@ from operator import itemgetter
 
 from ..utils import parse_version
 from ..utils.asyncio import locking
-from ..controller.controller_error import ControllerError
+from ..controller.controller_error import (
+    ControllerError,
+    ControllerNotFoundError,
+    ControllerForbiddenError,
+    ControllerTimeoutError,
+    ControllerUnauthorizedError)
 from ..version import __version__, __version_info__
 
 
@@ -40,7 +45,8 @@ class ComputeError(ControllerError):
     pass
 
 
-class ComputeConflict(aiohttp.web.HTTPConflict):
+# FIXME: broken
+class ComputeConflict(ComputeError):
     """
     Raise when the compute send a 409 that we can handle
 
@@ -48,7 +54,7 @@ class ComputeConflict(aiohttp.web.HTTPConflict):
     """
 
     def __init__(self, response):
-        super().__init__(text=response["message"])
+        super().__init__(response["message"])
         self.response = response
 
 
@@ -78,15 +84,16 @@ class Compute:
         self._closed = False  # Close mean we are destroying the compute node
         self._controller = controller
         self._set_auth(user, password)
-        self._cpu_usage_percent = None
-        self._memory_usage_percent = None
-        self._disk_usage_percent = None
+        self._cpu_usage_percent = 0
+        self._memory_usage_percent = 0
+        self._disk_usage_percent = 0
         self._last_error = None
         self._capabilities = {
-            "version": None,
-            "cpus": None,
-            "memory": None,
-            "disk_size": None,
+            "version": "",
+            "platform": "",
+            "cpus": 0,
+            "memory": 0,
+            "disk_size": 0,
             "node_types": []
         }
         self.name = name
@@ -317,7 +324,7 @@ class Compute:
         url = self._getUrl("/projects/{}/files/{}".format(project.id, path))
         response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
-            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
+            raise ControllerNotFoundError("{} not found on compute".format(path))
         return response
 
     async def download_image(self, image_type, image):
@@ -332,7 +339,7 @@ class Compute:
         url = self._getUrl("/{}/images/{}".format(image_type, image))
         response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
-            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
+            raise ControllerNotFoundError("{} not found on compute".format(image))
         return response
 
     async def http_query(self, method, path, data=None, dont_connect=False, **kwargs):
@@ -355,7 +362,7 @@ class Compute:
         """
         try:
             await self.connect()
-        except aiohttp.web.HTTPConflict:
+        except ControllerError:
             pass
 
     @locking
@@ -383,19 +390,19 @@ class Compute:
                     asyncio.get_event_loop().call_later(5, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
             except aiohttp.web.HTTPNotFound:
-                raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
+                raise ControllerNotFoundError("The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
             except aiohttp.web.HTTPUnauthorized:
-                raise aiohttp.web.HTTPConflict(text="Invalid auth for server {}".format(self._id))
+                raise ControllerUnauthorizedError("Invalid auth for server {}".format(self._id))
             except aiohttp.web.HTTPServiceUnavailable:
-                raise aiohttp.web.HTTPConflict(text="The server {} is unavailable".format(self._id))
+                raise ControllerNotFoundError("The server {} is unavailable".format(self._id))
             except ValueError:
-                raise aiohttp.web.HTTPConflict(text="Invalid server url for server {}".format(self._id))
+                raise ComputeError("Invalid server url for server {}".format(self._id))
 
             if "version" not in response.json:
                 msg = "The server {} is not a GNS3 server".format(self._id)
                 log.error(msg)
                 await self._http_session.close()
-                raise aiohttp.web.HTTPConflict(text=msg)
+                raise ControllerNotFoundError(msg)
             self._capabilities = response.json
 
             if response.json["version"].split("-")[0] != __version__.split("-")[0]:
@@ -411,13 +418,13 @@ class Compute:
                     log.error(msg)
                     await self._http_session.close()
                     self._last_error = msg
-                    raise aiohttp.web.HTTPConflict(text=msg)
+                    raise ControllerError(msg)
                 elif parse_version(__version__)[:2] != parse_version(response.json["version"])[:2]:
                     # We don't allow different major version to interact even with dev build
                     log.error(msg)
                     await self._http_session.close()
                     self._last_error = msg
-                    raise aiohttp.web.HTTPConflict(text=msg)
+                    raise ControllerError(msg)
                 else:
                     msg = "{}\nUsing different versions may result in unexpected problems. Please use at your own risk.".format(msg)
                     self._controller.notification.controller_emit("log.warning", {"message": msg})
@@ -521,7 +528,7 @@ class Compute:
             response = await self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
         except asyncio.TimeoutError:
             raise ComputeError("Timeout error for {} call to {} after {}s".format(method, url, timeout))
-        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, ValueError, KeyError, socket.gaierror) as e:
+        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, aiohttp.ClientResponseError, ValueError, KeyError, socket.gaierror) as e:
             #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
         body = await response.read()
@@ -538,22 +545,20 @@ class Compute:
             else:
                 msg = ""
 
-            if response.status == 400:
-                raise aiohttp.web.HTTPBadRequest(text="Bad request {} {}".format(url, body))
-            elif response.status == 401:
-                raise aiohttp.web.HTTPUnauthorized(text="Invalid authentication for compute {}".format(self.id))
+            if response.status == 401:
+                raise ControllerUnauthorizedError("Invalid authentication for compute {}".format(self.id))
             elif response.status == 403:
-                raise aiohttp.web.HTTPForbidden(text=msg)
+                raise ControllerForbiddenError(msg)
             elif response.status == 404:
-                raise aiohttp.web.HTTPNotFound(text="{} {} not found".format(method, path))
+                raise ControllerNotFoundError("{} {} not found".format(method, path))
             elif response.status == 408 or response.status == 504:
-                raise aiohttp.web.HTTPRequestTimeout(text="{} {} request timeout".format(method, path))
+                raise ControllerTimeoutError("{} {} request timeout".format(method, path))
             elif response.status == 409:
                 try:
                     raise ComputeConflict(json.loads(body))
                 # If the 409 doesn't come from a GNS3 server
                 except ValueError:
-                    raise aiohttp.web.HTTPConflict(text=msg)
+                    raise ControllerError(msg)
             elif response.status == 500:
                 raise aiohttp.web.HTTPInternalServerError(text="Internal server error {}".format(url))
             elif response.status == 503:
@@ -567,7 +572,7 @@ class Compute:
                 try:
                     response.json = json.loads(body)
                 except ValueError:
-                    raise aiohttp.web.HTTPConflict(text="The server {} is not a GNS3 server".format(self._id))
+                    raise ControllerError("The server {} is not a GNS3 server".format(self._id))
         else:
             response.json = {}
             response.body = b""
@@ -585,7 +590,7 @@ class Compute:
         return response
 
     async def delete(self, path, **kwargs):
-        return (await self.http_query("DELETE", path, **kwargs))
+        return await self.http_query("DELETE", path, **kwargs)
 
     async def forward(self, method, type, path, data=None):
         """

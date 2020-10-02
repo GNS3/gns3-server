@@ -16,15 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock
 
 from gns3server.controller.udp_link import UDPLink
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.node import Node
+from gns3server.controller.controller_error import ControllerError
 
 
+@pytest.mark.asyncio
 async def test_create(project):
 
     compute1 = MagicMock()
@@ -90,6 +91,7 @@ async def test_create(project):
     }, timeout=120)
 
 
+@pytest.mark.asyncio
 async def test_create_one_side_failure(project):
 
     compute1 = MagicMock()
@@ -129,13 +131,13 @@ async def test_create_one_side_failure(project):
             response.json = {"udp_port": 2048}
             return response
         elif "/adapters" in path:
-            raise aiohttp.web.HTTPConflict(text="Error when creating the NIO")
+            raise ControllerError("Error when creating the NIO")
 
     compute1.post.side_effect = compute1_callback
     compute1.host = "example.com"
     compute2.post.side_effect = compute2_callback
     compute2.host = "example.org"
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         await link.add_node(node2, 3, 1)
 
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), data={
@@ -159,6 +161,7 @@ async def test_create_one_side_failure(project):
     compute1.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/nio".format(project.id, node1.id), timeout=120)
 
 
+@pytest.mark.asyncio
 async def test_delete(project):
 
     compute1 = MagicMock()
@@ -180,6 +183,7 @@ async def test_delete(project):
     compute2.delete.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/3/ports/1/nio".format(project.id, node2.id), timeout=120)
 
 
+@pytest.mark.asyncio
 async def test_choose_capture_side(project):
     """
     The link capture should run on the optimal node
@@ -230,13 +234,14 @@ async def test_choose_capture_side(project):
     await link.add_node(node_vpcs, 0, 4)
     await link.add_node(node_iou, 3, 1)
 
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         link._choose_capture_side()
     # If you start a node you can capture on it
     node_vpcs._status = "started"
     assert link._choose_capture_side()["node"] == node_vpcs
 
 
+@pytest.mark.asyncio
 async def test_capture(project):
     compute1 = MagicMock()
 
@@ -265,6 +270,7 @@ async def test_capture(project):
     compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/stop_capture".format(project.id, node_vpcs.id))
 
 
+@pytest.mark.asyncio
 async def test_node_updated(project):
     """
     If a node stop when capturing we stop the capture
@@ -286,6 +292,7 @@ async def test_node_updated(project):
     assert link.stop_capture.called
 
 
+@pytest.mark.asyncio
 async def test_update(project):
 
     compute1 = MagicMock()
@@ -365,6 +372,7 @@ async def test_update(project):
     }, timeout=120)
 
 
+@pytest.mark.asyncio
 async def test_update_suspend(project):
     compute1 = MagicMock()
     compute2 = MagicMock()

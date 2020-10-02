@@ -70,6 +70,7 @@ def test_json(project):
     }
 
 
+@pytest.mark.asyncio
 async def test_restore(project, controller):
 
     compute = AsyncioMagicMock()

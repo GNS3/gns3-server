@@ -16,9 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import aiohttp
-
-
+from .controller_error import ControllerError, ControllerNotFoundError
 from .link import Link
 
 
@@ -52,7 +50,7 @@ class UDPLink(Link):
         try:
             (node1_host, node2_host) = await node1.compute.get_ip_on_same_subnet(node2.compute)
         except ValueError as e:
-            raise aiohttp.web.HTTPConflict(text="Cannot get an IP address on same subnet: {}".format(e))
+            raise ControllerError("Cannot get an IP address on same subnet: {}".format(e))
 
         # Reserve a UDP port on both side
         response = await node1.compute.post("/projects/{}/ports/udp".format(self._project.id))
@@ -142,7 +140,7 @@ class UDPLink(Link):
         try:
             await node1.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number1, port_number=port_number1), timeout=120)
         # If the node is already deleted (user selected multiple element and delete all in the same time)
-        except aiohttp.web.HTTPNotFound:
+        except ControllerNotFoundError:
             pass
 
         try:
@@ -154,7 +152,7 @@ class UDPLink(Link):
         try:
             await node2.delete("/adapters/{adapter_number}/ports/{port_number}/nio".format(adapter_number=adapter_number2, port_number=port_number2), timeout=120)
         # If the node is already deleted (user selected multiple element and delete all in the same time)
-        except aiohttp.web.HTTPNotFound:
+        except ControllerNotFoundError:
             pass
         await super().delete()
 
@@ -216,7 +214,7 @@ class UDPLink(Link):
             if node["node"].node_type and node["node"].status == "started":
                 return node
 
-        raise aiohttp.web.HTTPConflict(text="Cannot capture because there is no running device on this link")
+        raise ControllerError("Cannot capture because there is no running device on this link")
 
     async def node_updated(self, node):
         """

@@ -68,6 +68,7 @@ def test_json(project):
     }
 
 
+@pytest.mark.asyncio
 async def test_update(drawing, project, controller):
 
     controller._notification = AsyncioMagicMock()

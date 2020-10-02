@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
-
+from gns3server.controller.controller_error import ControllerError
 from gns3server.utils import macaddress_to_int, int_to_macaddress
 from .atm_port import ATMPort
 from .frame_relay_port import FrameRelayPort
@@ -25,6 +24,7 @@ from .fastethernet_port import FastEthernetPort
 from .ethernet_port import EthernetPort
 from .serial_port import SerialPort
 from .pos_port import POSPort
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class StandardPortFactory:
                             adapter=adapter_number,
                             **cls._generate_replacement(interface_number, segment_number))
                     except (IndexError, ValueError, KeyError) as e:
-                        raise aiohttp.web.HTTPConflict(text="Invalid port name format {}: {}".format(port_name_format, str(e)))
+                        raise ControllerError("Invalid port name format {}: {}".format(port_name_format, str(e)))
 
                     port_name = custom_adapter_settings.get("port_name", port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")

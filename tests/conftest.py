@@ -2,25 +2,40 @@ import pytest
 import asyncio
 import tempfile
 import shutil
-import weakref
+import sys
+import os
 
-from aiohttp import web
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
-from gns3server.web.route import Route
 from gns3server.controller import Controller
 from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-# this import will register all handlers
-from gns3server.handlers import *
 
-from .handlers.api.base import Query
+
+from .endpoints.base import Query
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
+
+from fastapi.testclient import TestClient
+from gns3server.app import app
+
+from httpx import AsyncClient
+
+
+# @pytest.fixture
+# async def client(controller):
+#
+#     async with AsyncClient(app=app, base_url="http://test") as ac:
+#         response = await ac.get("/")
+#
+#     assert response.status_code == 200
+#     assert response.json() == {"message": "Tomato"}
+#
+#     return TestClient(app)
 
 
 if sys.platform.startswith("win"):
@@ -35,13 +50,9 @@ if sys.platform.startswith("win"):
 
 
 @pytest.fixture(scope='function')
-async def http_client(aiohttp_client):
+def http_client():
 
-    app = web.Application()
-    app['websockets'] = weakref.WeakSet()
-    for method, route, handler in Route.get_routes():
-        app.router.add_route(method, route, handler)
-    return await aiohttp_client(app)
+    return AsyncClient(app=app, base_url="http://test-api")
 
 
 @pytest.fixture
@@ -72,7 +83,8 @@ def compute(controller):
 
 
 @pytest.fixture
-async def project(loop, tmpdir, controller):
+@pytest.mark.asyncio
+async def project(tmpdir, controller):
 
     return await controller.add_project(name="Test")
 

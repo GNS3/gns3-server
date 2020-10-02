@@ -29,7 +29,7 @@ from tests.utils import asyncio_patch
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+async def manager(port_manager):
 
     m = VirtualBox.instance()
     m.port_manager = port_manager
@@ -72,6 +72,7 @@ def test_vboxmanage_path(manager, tmpdir):
         assert manager.find_vboxmanage() == path
 
 
+@pytest.mark.asyncio
 async def test_list_vms(manager):
 
     vm_list = ['"Windows 8.1" {27b4d095-ff5f-4ac4-bb9d-5f2c7861c1f1}',

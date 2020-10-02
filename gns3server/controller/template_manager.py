@@ -17,9 +17,9 @@
 
 import copy
 import uuid
-import aiohttp
 import jsonschema
 
+from .controller_error import ControllerError, ControllerNotFoundError
 from .template import Template
 
 import logging
@@ -85,14 +85,14 @@ class TemplateManager:
 
         template_id = settings.get("template_id", "")
         if template_id in self._templates:
-            raise aiohttp.web.HTTPConflict(text="Template ID '{}' already exists".format(template_id))
+            raise ControllerError("Template ID '{}' already exists".format(template_id))
         else:
             template_id = settings.setdefault("template_id", str(uuid.uuid4()))
         try:
             template = Template(template_id, settings)
         except jsonschema.ValidationError as e:
             message = "JSON schema error adding template with JSON data '{}': {}".format(settings, e.message)
-            raise aiohttp.web.HTTPBadRequest(text=message)
+            raise ControllerError(message)
 
         from . import Controller
         Controller.instance().check_can_write_config()
@@ -112,7 +112,7 @@ class TemplateManager:
 
         template = self._templates.get(template_id)
         if not template:
-            raise aiohttp.web.HTTPNotFound(text="Template ID {} doesn't exist".format(template_id))
+            raise ControllerNotFoundError("Template ID {} doesn't exist".format(template_id))
         return template
 
     def delete_template(self, template_id):
@@ -124,7 +124,7 @@ class TemplateManager:
 
         template = self.get_template(template_id)
         if template.builtin:
-            raise aiohttp.web.HTTPConflict(text="Template ID {} cannot be deleted because it is a builtin".format(template_id))
+            raise ControllerError("Template ID {} cannot be deleted because it is a builtin".format(template_id))
         from . import Controller
         Controller.instance().check_can_write_config()
         self._templates.pop(template_id)
@@ -140,7 +140,7 @@ class TemplateManager:
 
         template = self.get_template(template_id)
         if template.builtin:
-            raise aiohttp.web.HTTPConflict(text="Template ID {} cannot be duplicated because it is a builtin".format(template_id))
+            raise ControllerError("Template ID {} cannot be duplicated because it is a builtin".format(template_id))
         template_settings = copy.deepcopy(template.settings)
         del template_settings["template_id"]
         return self.add_template(template_settings)

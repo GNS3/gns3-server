@@ -361,7 +361,7 @@ class Dynamips(BaseManager):
                 else:
                     ethernet_device = npf_interface
             if not is_interface_up(ethernet_device):
-                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} is down".format(ethernet_device))
+                raise DynamipsError("Ethernet interface {} is down".format(ethernet_device))
             nio = NIOGenericEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_linux_ethernet":
             if sys.platform.startswith("win"):
@@ -373,7 +373,7 @@ class Dynamips(BaseManager):
             nio = NIOTAP(node.hypervisor, tap_device)
             if not is_interface_up(tap_device):
                 # test after the TAP interface has been created (if it doesn't exist yet)
-                raise aiohttp.web.HTTPConflict(text="TAP interface {} is down".format(tap_device))
+                raise DynamipsError("TAP interface {} is down".format(tap_device))
         elif nio_settings["type"] == "nio_unix":
             local_file = nio_settings["local_file"]
             remote_file = nio_settings["remote_file"]
@@ -385,7 +385,7 @@ class Dynamips(BaseManager):
         elif nio_settings["type"] == "nio_null":
             nio = NIONull(node.hypervisor)
         else:
-            raise aiohttp.web.HTTPConflict(text="NIO of type {} is not supported".format(nio_settings["type"]))
+            raise DynamipsError("NIO of type {} is not supported".format(nio_settings["type"]))
 
         await nio.create()
         return nio

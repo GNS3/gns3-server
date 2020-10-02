@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,10 @@ import sys
 import json
 import asyncio
 import aiofiles
-import aiohttp
 import zipfile
 import tempfile
+
+from .controller_error import ControllerError, ControllerNotFoundError, ControllerTimeoutError
 
 from datetime import datetime
 
@@ -51,13 +52,13 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
 
     # To avoid issue with data not saved we disallow the export of a running project
     if project.is_running():
-        raise aiohttp.web.HTTPConflict(text="Project must be stopped in order to export it")
+        raise ControllerError("Project must be stopped in order to export it")
 
     # Make sure we save the project
     project.dump()
 
     if not os.path.exists(project._path):
-        raise aiohttp.web.HTTPNotFound(text="Project could not be found at '{}'".format(project._path))
+        raise ControllerNotFoundError("Project could not be found at '{}'".format(project._path))
 
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
@@ -99,7 +100,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                             try:
                                 data = await response.content.read(CHUNK_SIZE)
                             except asyncio.TimeoutError:
-                                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
+                                raise ControllerTimeoutError("Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
                             if not data:
                                 break
                             await f.write(data)
@@ -175,7 +176,7 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
         with open(path) as f:
             topology = json.load(f)
     except (OSError, ValueError) as e:
-        raise aiohttp.web.HTTPConflict(text="Project file '{}' cannot be read: {}".format(path, e))
+        raise ControllerError("Project file '{}' cannot be read: {}".format(path, e))
 
     if "topology" in topology:
         if "nodes" in topology["topology"]:
@@ -183,9 +184,9 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
                 compute_id = node.get('compute_id', 'local')
 
                 if node["node_type"] == "virtualbox" and node.get("properties", {}).get("linked_clone"):
-                    raise aiohttp.web.HTTPConflict(text="Projects with a linked {} clone node cannot not be exported. Please use Qemu instead.".format(node["node_type"]))
+                    raise ControllerError("Projects with a linked {} clone node cannot not be exported. Please use Qemu instead.".format(node["node_type"]))
                 if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware"]:
-                    raise aiohttp.web.HTTPConflict(text="Projects with a {} node cannot be exported".format(node["node_type"]))
+                    raise ControllerError("Projects with a {} node cannot be exported".format(node["node_type"]))
 
                 if not keep_compute_id:
                     node["compute_id"] = "local"  # To make project portable all node by default run on local
@@ -272,11 +273,11 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
     try:
         compute = [compute for compute in project.computes if compute.id == compute_id][0]
     except IndexError:
-        raise aiohttp.web.HTTPConflict(text="Cannot export image from '{}' compute. Compute doesn't exist.".format(compute_id))
+        raise ControllerNotFoundError("Cannot export image from '{}' compute. Compute doesn't exist.".format(compute_id))
 
     response = await compute.download_image(image_type, image)
     if response.status != 200:
-        raise aiohttp.web.HTTPConflict(text="Cannot export image from compute '{}'. Compute returned status code {}.".format(compute_id, response.status))
+        raise ControllerError("Cannot export image from compute '{}'. Compute returned status code {}.".format(compute_id, response.status))
 
     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
     async with aiofiles.open(fd, 'wb') as f:
@@ -284,7 +285,7 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
             try:
                 data = await response.content.read(CHUNK_SIZE)
             except asyncio.TimeoutError:
-                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
+                raise ControllerTimeoutError("Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
             if not data:
                 break
             await f.write(data)

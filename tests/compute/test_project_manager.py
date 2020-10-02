@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import pytest
 
+from gns3server.compute.compute_error import ComputeNotFoundError
 from gns3server.compute.project_manager import ProjectManager
 
 
@@ -31,5 +31,5 @@ def test_create_project():
 def test_project_not_found():
 
     pm = ProjectManager.instance()
-    with pytest.raises(aiohttp.web.HTTPNotFound):
+    with pytest.raises(ComputeNotFoundError):
         pm.get_project('00010203-0405-0607-0809-000000000000')

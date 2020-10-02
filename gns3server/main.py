@@ -32,6 +32,7 @@ import os
 import sys
 import types
 
+
 # To avoid strange bug later we switch the event loop before any other operation
 if sys.platform.startswith("win"):
     import asyncio

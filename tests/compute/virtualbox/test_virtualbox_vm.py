@@ -25,7 +25,8 @@ from gns3server.compute.virtualbox import VirtualBox
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = VirtualBox.instance()
     m.port_manager = port_manager
@@ -33,11 +34,13 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
+@pytest.mark.asyncio
 async def vm(compute_project, manager):
 
     return VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "test", False)
 
 
+@pytest.mark.asyncio
 async def test_vm(compute_project, manager):
 
     vm = VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "test", False)
@@ -46,6 +49,7 @@ async def test_vm(compute_project, manager):
     assert vm.vmname == "test"
 
 
+@pytest.mark.asyncio
 async def test_rename_vmname(compute_project, manager):
     """
     Rename a VM is not allowed when using a running linked clone
@@ -75,6 +79,7 @@ async def test_rename_vmname(compute_project, manager):
     assert vm._modify_vm.called
 
 
+@pytest.mark.asyncio
 async def test_vm_valid_virtualbox_api_version(compute_project, manager):
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_3"]):
@@ -83,6 +88,7 @@ async def test_vm_valid_virtualbox_api_version(compute_project, manager):
         await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_vm_invalid_virtualbox_api_version(compute_project, manager):
 
     with asyncio_patch("gns3server.compute.virtualbox.VirtualBox.execute", return_value=["API version:  4_2"]):
@@ -91,6 +97,7 @@ async def test_vm_invalid_virtualbox_api_version(compute_project, manager):
             await vm.create()
 
 
+@pytest.mark.asyncio
 async def test_vm_adapter_add_nio_binding_adapter_not_exist(vm, manager, free_console_port):
 
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})

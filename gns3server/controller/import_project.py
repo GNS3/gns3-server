@@ -21,11 +21,11 @@ import json
 import uuid
 import shutil
 import zipfile
-import aiohttp
 import aiofiles
 import itertools
 import tempfile
 
+from .controller_error import ControllerError
 from .topology import load_topology
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio import aiozipstream
@@ -55,15 +55,15 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     """
 
     if location and ".gns3" in location:
-        raise aiohttp.web.HTTPConflict(text="The destination path should not contain .gns3")
+        raise ControllerError("The destination path should not contain .gns3")
 
     try:
         with zipfile.ZipFile(stream) as zip_file:
             project_file = zip_file.read("project.gns3").decode()
     except zipfile.BadZipFile:
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, not a GNS3 project (invalid zip)")
+        raise ControllerError("Cannot import project, not a GNS3 project (invalid zip)")
     except KeyError:
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, project.gns3 file could not be found")
+        raise ControllerError("Cannot import project, project.gns3 file could not be found")
 
     try:
         topology = json.loads(project_file)
@@ -77,7 +77,7 @@ async def import_project(controller, project_id, stream, location=None, name=Non
             else:
                 project_name = controller.get_free_project_name(topology["name"])
     except (ValueError, KeyError):
-        raise aiohttp.web.HTTPConflict(text="Cannot import project, the project.gns3 file is corrupted")
+        raise ControllerError("Cannot import project, the project.gns3 file is corrupted")
 
     if location:
         path = location
@@ -87,13 +87,13 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     try:
         os.makedirs(path, exist_ok=True)
     except UnicodeEncodeError:
-        raise aiohttp.web.HTTPConflict(text="The project name contain non supported or invalid characters")
+        raise ControllerError("The project name contain non supported or invalid characters")
 
     try:
         with zipfile.ZipFile(stream) as zip_file:
             await wait_run_in_executor(zip_file.extractall, path)
     except zipfile.BadZipFile:
-        raise aiohttp.web.HTTPConflict(text="Cannot extract files from GNS3 project (invalid zip)")
+        raise ControllerError("Cannot extract files from GNS3 project (invalid zip)")
 
     topology = load_topology(os.path.join(path, "project.gns3"))
     topology["name"] = project_name
@@ -257,9 +257,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                     with zipfile.ZipFile(f) as zip_file:
                         await wait_run_in_executor(zip_file.extractall, tmpdir)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Cannot open snapshot '{}': {}".format(os.path.basename(snapshot), e))
+                raise ControllerError("Cannot open snapshot '{}': {}".format(os.path.basename(snapshot), e))
             except zipfile.BadZipFile:
-                raise aiohttp.web.HTTPConflict(text="Cannot extract files from snapshot '{}': not a GNS3 project (invalid zip)".format(os.path.basename(snapshot)))
+                raise ControllerError("Cannot extract files from snapshot '{}': not a GNS3 project (invalid zip)".format(os.path.basename(snapshot)))
 
             # patch the topology with the correct project name and ID
             try:
@@ -272,9 +272,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the project.gns3 file cannot be modified: {}".format(os.path.basename(snapshot), e))
+                raise ControllerError("Cannot update snapshot '{}': the project.gns3 file cannot be modified: {}".format(os.path.basename(snapshot), e))
             except (ValueError, KeyError):
-                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the project.gns3 file is corrupted".format(os.path.basename(snapshot)))
+                raise ControllerError("Cannot update snapshot '{}': the project.gns3 file is corrupted".format(os.path.basename(snapshot)))
 
             # write everything back to the original snapshot file
             try:
@@ -287,4 +287,4 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                         async for chunk in zstream:
                             await f.write(chunk)
             except OSError as e:
-                raise aiohttp.web.HTTPConflict(text="Cannot update snapshot '{}': the snapshot cannot be recreated: {}".format(os.path.basename(snapshot), e))
+                raise ControllerError("Cannot update snapshot '{}': the snapshot cannot be recreated: {}".format(os.path.basename(snapshot), e))

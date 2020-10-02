@@ -27,6 +27,7 @@ def gns3vm(controller):
     return RemoteGNS3VM(controller)
 
 
+@pytest.mark.asyncio
 async def test_list(gns3vm, controller):
 
     await controller.add_compute("r1", name="R1", host="r1.local", connect=False)
@@ -34,6 +35,7 @@ async def test_list(gns3vm, controller):
     assert res == [{"vmname": "R1"}]
 
 
+@pytest.mark.asyncio
 async def test_start(gns3vm, controller):
 
     await controller.add_compute("r1",
@@ -55,7 +57,8 @@ async def test_start(gns3vm, controller):
     assert gns3vm.password == "world"
 
 
-async def test_start_invalid_vm(loop, gns3vm, controller):
+@pytest.mark.asyncio
+async def test_start_invalid_vm(gns3vm, controller):
 
     await controller.add_compute("r1",
                                  name="R1",

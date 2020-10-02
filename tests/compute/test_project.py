@@ -19,21 +19,21 @@
 import os
 import sys
 import uuid
-import asyncio
 import pytest
-import aiohttp
 from uuid import uuid4
 from unittest.mock import patch
 
 from tests.utils import asyncio_patch
 from gns3server.compute.project import Project
 from gns3server.compute.notification_manager import NotificationManager
+from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError
 from gns3server.compute.vpcs import VPCS, VPCSVM
 from gns3server.config import Config
 
 
 @pytest.fixture(scope="function")
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = VPCS.instance()
     m.port_manager = port_manager
@@ -41,18 +41,21 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
+@pytest.mark.asyncio
 async def node(compute_project, manager):
 
     node = manager.create_node("test", compute_project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")
     return await node
 
 
+@pytest.mark.asyncio
 async def test_affect_uuid():
 
     p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f')
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
+@pytest.mark.asyncio
 async def test_clean_tmp_directory():
     """
     The tmp directory should be clean at project open and close
@@ -69,6 +72,7 @@ async def test_clean_tmp_directory():
     assert not os.path.exists(path)
 
 
+@pytest.mark.asyncio
 async def test_path(projects_dir):
 
     directory = projects_dir
@@ -79,6 +83,7 @@ async def test_path(projects_dir):
             assert os.path.exists(os.path.join(directory, p.id))
 
 
+@pytest.mark.asyncio
 async def test_init_path(tmpdir):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
@@ -86,14 +91,16 @@ async def test_init_path(tmpdir):
         assert p.path == str(tmpdir)
 
 
+@pytest.mark.asyncio
 async def test_changing_path_not_allowed(tmpdir):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=False):
-        with pytest.raises(aiohttp.web.HTTPForbidden):
+        with pytest.raises(ComputeForbiddenError):
             p = Project(project_id=str(uuid4()))
             p.path = str(tmpdir)
 
 
+@pytest.mark.asyncio
 async def test_variables():
 
     variables = [{"name": "VAR1", "value": "VAL1"}]
@@ -101,6 +108,7 @@ async def test_variables():
     assert p.variables == variables
 
 
+@pytest.mark.asyncio
 async def test_json():
 
     p = Project(project_id=str(uuid4()))
@@ -111,6 +119,7 @@ async def test_json():
     }
 
 
+@pytest.mark.asyncio
 async def test_json_with_variables():
 
     variables = [{"name": "VAR1", "value": "VAL1"}]
@@ -122,6 +131,7 @@ async def test_json_with_variables():
     }
 
 
+@pytest.mark.asyncio
 async def test_node_working_directory(node, projects_dir):
 
     directory = projects_dir
@@ -131,6 +141,7 @@ async def test_node_working_directory(node, projects_dir):
         assert os.path.exists(p.node_working_directory(node))
 
 
+@pytest.mark.asyncio
 async def test_node_working_path(node, projects_dir):
 
     directory = projects_dir
@@ -141,6 +152,7 @@ async def test_node_working_path(node, projects_dir):
         assert not os.path.exists(p.node_working_path(node))
 
 
+@pytest.mark.asyncio
 async def test_project_delete():
 
     project = Project(project_id=str(uuid4()))
@@ -151,17 +163,19 @@ async def test_project_delete():
 
 
 @pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any project")
+@pytest.mark.asyncio
 async def test_project_delete_permission_issue():
 
     project = Project(project_id=str(uuid4()))
     directory = project.path
     assert os.path.exists(directory)
     os.chmod(directory, 0)
-    with pytest.raises(aiohttp.web.HTTPInternalServerError):
+    with pytest.raises(ComputeError):
         await project.delete()
     os.chmod(directory, 700)
 
 
+@pytest.mark.asyncio
 async def test_project_add_node(manager):
 
     project = Project(project_id=str(uuid4()))
@@ -170,6 +184,7 @@ async def test_project_add_node(manager):
     assert len(project.nodes) == 1
 
 
+@pytest.mark.asyncio
 async def test_project_close(node, compute_project):
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.close") as mock:
@@ -178,6 +193,7 @@ async def test_project_close(node, compute_project):
     assert node.id not in node.manager._nodes
 
 
+@pytest.mark.asyncio
 async def test_list_files(tmpdir):
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
@@ -204,6 +220,7 @@ async def test_list_files(tmpdir):
         ]
 
 
+@pytest.mark.asyncio
 async def test_emit():
 
     with NotificationManager.instance().queue() as queue:
@@ -216,6 +233,7 @@ async def test_emit():
         assert context["project_id"] == project.id
 
 
+@pytest.mark.asyncio
 async def test_update_project():
 
     variables = [{"name": "TEST", "value": "VAL"}]

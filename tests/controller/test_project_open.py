@@ -18,7 +18,6 @@
 
 import json
 import pytest
-import aiohttp
 
 from tests.utils import asyncio_patch
 
@@ -146,7 +145,8 @@ def demo_topology():
     }
 
 
-# async def test_load_project(controller, tmpdir, demo_topology, http_client):
+# @pytest.mark.asyncio
+#async def test_load_project(controller, tmpdir, demo_topology, http_client):
 #
 #     with open(str(tmpdir / "demo.gns3"), "w+") as f:
 #         json.dump(demo_topology, f)
@@ -170,6 +170,7 @@ def demo_topology():
 #     assert project.scene_width == 700
 
 
+@pytest.mark.asyncio
 async def test_open(controller, tmpdir):
 
     simple_topology = {
@@ -208,7 +209,8 @@ async def test_open(controller, tmpdir):
     assert project.scene_width == 700
 
 
-# async def test_open_missing_compute(controller, tmpdir, demo_topology, http_client):
+# @pytest.mark.asyncio
+#async def test_open_missing_compute(controller, tmpdir, demo_topology, http_client):
 #     """
 #     If a compute is missing the project should not be open and the .gns3 should
 #     be the one before opening the project

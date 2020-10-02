@@ -18,16 +18,17 @@
 import json
 import uuid
 import pytest
-import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import asyncio_patch
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute
 from gns3server.controller.topology import project_to_topology, load_topology, GNS3_FILE_FORMAT_REVISION
+from gns3server.controller.controller_error import ControllerError
 from gns3server.version import __version__
 
 
+@pytest.mark.asyncio
 async def test_project_to_topology_empty(tmpdir):
 
     project = Project(name="Test")
@@ -61,6 +62,7 @@ async def test_project_to_topology_empty(tmpdir):
     }
 
 
+@pytest.mark.asyncio
 async def test_basic_topology(controller):
 
     project = Project(name="Test", controller=controller)
@@ -86,6 +88,7 @@ async def test_basic_topology(controller):
     assert topo["topology"]["drawings"][0] == drawing.__json__(topology_dump=True)
 
 
+@pytest.mark.asyncio
 async def test_project_to_topology(controller):
 
     variables = [
@@ -132,7 +135,7 @@ def test_load_topology(tmpdir):
 def test_load_topology_file_error(tmpdir):
 
     path = str(tmpdir / "test.gns3")
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         load_topology(path)
 
 
@@ -143,7 +146,7 @@ def test_load_topology_file_error_schema_error(tmpdir):
         json.dump({
             "revision": GNS3_FILE_FORMAT_REVISION
         }, f)
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         load_topology(path)
 
 
@@ -165,7 +168,7 @@ def test_load_newer_topology(tmpdir):
     path = str(tmpdir / "test.gns3")
     with open(path, "w+") as f:
         json.dump(data, f)
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         load_topology(path)
 
 

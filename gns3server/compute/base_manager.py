@@ -22,7 +22,6 @@ import stat
 import asyncio
 import aiofiles
 
-import aiohttp
 import socket
 import shutil
 import re
@@ -30,6 +29,7 @@ import re
 import logging
 
 from gns3server.utils.asyncio import cancellable_wait_run_in_executor
+from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -168,15 +168,15 @@ class BaseManager:
         try:
             UUID(node_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="Node ID {} is not a valid UUID".format(node_id))
+            raise ComputeError("Node ID {} is not a valid UUID".format(node_id))
 
         if node_id not in self._nodes:
-            raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
+            raise ComputeNotFoundError("Node ID {} doesn't exist".format(node_id))
 
         node = self._nodes[node_id]
         if project_id:
             if node.project.id != project.id:
-                raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't belong to node {}".format(project_id, node.name))
+                raise ComputeNotFoundError("Project ID {} doesn't belong to node {}".format(project_id, node.name))
 
         return node
 
@@ -201,8 +201,8 @@ class BaseManager:
                 log.info('Moving "{}" to "{}"'.format(legacy_project_files_path, new_project_files_path))
                 await wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
-                                                                                                                            new_project_files_path, e))
+                raise ComputeError("Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
+                                                                                                new_project_files_path, e))
 
         if project.is_local() is False:
             legacy_remote_project_path = os.path.join(project.location, project.name, self.module_name.lower())
@@ -214,8 +214,8 @@ class BaseManager:
                     log.info('Moving "{}" to "{}"'.format(legacy_remote_project_path, new_remote_project_path))
                     await wait_run_in_executor(shutil.move, legacy_remote_project_path, new_remote_project_path)
                 except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move directory: {} to {} {}".format(legacy_remote_project_path,
-                                                                                                                  new_remote_project_path, e))
+                    raise ComputeError("Could not move directory: {} to {} {}".format(legacy_remote_project_path,
+                                                                                      new_remote_project_path, e))
 
         if hasattr(self, "get_legacy_vm_workdir"):
             # rename old project node working dir
@@ -228,8 +228,8 @@ class BaseManager:
                     log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
                     await wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
                 except OSError as e:
-                    raise aiohttp.web.HTTPInternalServerError(text="Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
-                                                                                                                             new_vm_working_path, e))
+                    raise ComputeError("Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
+                                                                                                 new_vm_working_path, e))
 
         return new_id
 
@@ -284,7 +284,7 @@ class BaseManager:
             shutil.rmtree(destination_dir)
             shutil.copytree(source_node.working_dir, destination_dir, symlinks=True, ignore_dangling_symlinks=True)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data: {}".format(e))
+            raise ComputeError("Cannot duplicate node data: {}".format(e))
 
         # We force a refresh of the name. This forces the rewrite
         # of some configuration files
@@ -405,13 +405,13 @@ class BaseManager:
             try:
                 info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
                 if not info:
-                    raise aiohttp.web.HTTPInternalServerError(text="getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                    raise ComputeError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
                 for res in info:
                     af, socktype, proto, _, sa = res
                     with socket.socket(af, socktype, proto) as sock:
                         sock.connect(sa)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
+                raise ComputeError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
             nio = NIOUDP(lport, rhost, rport)
             nio.filters = nio_settings.get("filters", {})
             nio.suspend = nio_settings.get("suspend", False)
@@ -426,48 +426,42 @@ class BaseManager:
         elif nio_settings["type"] in ("nio_generic_ethernet", "nio_ethernet"):
             ethernet_device = nio_settings["ethernet_device"]
             if not is_interface_up(ethernet_device):
-                raise aiohttp.web.HTTPConflict(text="Ethernet interface {} does not exist or is down".format(ethernet_device))
+                raise ComputeError("Ethernet interface {} does not exist or is down".format(ethernet_device))
             nio = NIOEthernet(ethernet_device)
         assert nio is not None
         return nio
 
-    async def stream_pcap_file(self, nio, project_id, request, response):
+    async def stream_pcap_file(self, nio, project_id):
         """
         Streams a PCAP file.
 
         :param nio: NIO object
         :param project_id: Project identifier
-        :param request: request object
-        :param response: response object
         """
 
         if not nio.capturing:
-            raise aiohttp.web.HTTPConflict(text="Nothing to stream because there is no packet capture active")
+            raise ComputeError("Nothing to stream because there is no packet capture active")
 
         project = ProjectManager.instance().get_project(project_id)
         path = os.path.normpath(os.path.join(project.capture_working_directory(), nio.pcap_output_file))
-        # Raise an error if user try to escape
-        #if path[0] == ".":
-        #    raise aiohttp.web.HTTPForbidden()
-        #path = os.path.join(project.path, path)
 
-        response.content_type = "application/vnd.tcpdump.pcap"
-        response.set_status(200)
-        response.enable_chunked_encoding()
+        # Raise an error if user try to escape
+        if path[0] == ".":
+            raise ComputeForbiddenError("Cannot stream PCAP file outside the capture working directory")
 
         try:
             with open(path, "rb") as f:
-                await response.prepare(request)
                 while nio.capturing:
                     data = f.read(CHUNK_SIZE)
                     if not data:
                         await asyncio.sleep(0.1)
                         continue
-                    await response.write(data)
+                    yield data
         except FileNotFoundError:
-            raise aiohttp.web.HTTPNotFound()
+            raise ComputeNotFoundError("File '{}' not found".format(path))
         except PermissionError:
-            raise aiohttp.web.HTTPForbidden()
+            raise ComputeForbiddenError("File '{}' cannot be accessed".format(path))
+
 
     def get_abs_image_path(self, path, extra_dir=None):
         """
@@ -584,7 +578,7 @@ class BaseManager:
         try:
             return list_images(self._NODE_TYPE)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Can not list images {}".format(e))
+            raise ComputeError("Can not list images {}".format(e))
 
     def get_images_directory(self):
         """
@@ -600,7 +594,7 @@ class BaseManager:
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
         if os.path.commonprefix([directory, path]) != directory:
-            raise aiohttp.web.HTTPForbidden(text="Could not write image: {}, {} is forbidden".format(filename, path))
+            raise ComputeForbiddenError("Could not write image: {}, {} is forbidden".format(filename, path))
         log.info("Writing image file to '{}'".format(path))
         try:
             remove_checksum(path)
@@ -608,16 +602,13 @@ class BaseManager:
             tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
             async with aiofiles.open(tmp_path, 'wb') as f:
-                while True:
-                    chunk = await stream.read(CHUNK_SIZE)
-                    if not chunk:
-                        break
+                async for chunk in stream:
                     await f.write(chunk)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
             shutil.move(tmp_path, path)
             await cancellable_wait_run_in_executor(md5sum, path)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Could not write image: {} because {}".format(filename, e))
+            raise ComputeError("Could not write image: {} because {}".format(filename, e))
 
     def reset(self):
         """

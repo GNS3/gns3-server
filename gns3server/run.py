@@ -27,10 +27,15 @@ import sys
 import locale
 import argparse
 import psutil
+import sys
+import asyncio
+import signal
+import functools
+import uvicorn
 
-
-from gns3server.web.web_server import WebServer
-from gns3server.web.logger import init_logger
+from gns3server.controller import Controller
+from gns3server.compute.port_manager import PortManager
+from gns3server.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
@@ -199,6 +204,44 @@ def kill_ghosts():
             pass
 
 
+async def reload_server():
+    """
+    Reload the server.
+    """
+
+    await Controller.instance().reload()
+
+
+def signal_handling():
+
+    def signal_handler(signame, *args):
+
+        try:
+            if signame == "SIGHUP":
+                log.info("Server has got signal {}, reloading...".format(signame))
+                asyncio.ensure_future(reload_server())
+            else:
+                log.info("Server has got signal {}, exiting...".format(signame))
+                os.kill(os.getpid(), signal.SIGTERM)
+        except asyncio.CancelledError:
+            pass
+
+    signals = []  # SIGINT and SIGTERM are already registered by uvicorn
+    if sys.platform.startswith("win"):
+        signals.extend(["SIGBREAK"])
+    else:
+        signals.extend(["SIGHUP", "SIGQUIT"])
+
+    for signal_name in signals:
+        callback = functools.partial(signal_handler, signal_name)
+        if sys.platform.startswith("win"):
+            # add_signal_handler() is not yet supported on Windows
+            signal.signal(getattr(signal, signal_name), callback)
+        else:
+            loop = asyncio.get_event_loop()
+            loop.add_signal_handler(getattr(signal, signal_name), callback)
+
+
 def run():
     args = parse_arguments(sys.argv[1:])
 
@@ -256,9 +299,17 @@ def run():
     host = server_config["host"]
     port = int(server_config["port"])
 
-    server = WebServer.instance(host, port)
+    PortManager.instance().console_host = host
+    signal_handling()
+
     try:
-        server.run()
+        log.info("Starting server on {}:{}".format(host, port))
+        #uvicorn.run("app:app", host=host, port=port, log_level="info")#, reload=True)
+        config = uvicorn.Config("gns3server.app:app", host=host, port=port, access_log=True)
+        server = uvicorn.Server(config)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(server.serve())
+
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
         if not sys.platform.startswith("win") and not e.winerror == 0:

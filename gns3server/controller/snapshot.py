@@ -23,9 +23,9 @@ import tempfile
 import aiofiles
 import zipfile
 import time
-import aiohttp.web
 from datetime import datetime, timezone
 
+from .controller_error import ControllerError
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio import aiozipstream
 from .export_project import export_project
@@ -85,13 +85,13 @@ class Snapshot:
         """
 
         if os.path.exists(self.path):
-            raise aiohttp.web.HTTPConflict(text="The snapshot file '{}' already exists".format(self.name))
+            raise ControllerError("The snapshot file '{}' already exists".format(self.name))
 
         snapshot_directory = os.path.join(self._project.path, "snapshots")
         try:
             os.makedirs(snapshot_directory, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create the snapshot directory '{}': {}".format(snapshot_directory, e))
+            raise ControllerError("Could not create the snapshot directory '{}': {}".format(snapshot_directory, e))
 
         try:
             begin = time.time()
@@ -104,7 +104,7 @@ class Snapshot:
                             await f.write(chunk)
             log.info("Snapshot '{}' created in {:.4f} seconds".format(self.name, time.time() - begin))
         except (ValueError, OSError, RuntimeError) as e:
-            raise aiohttp.web.HTTPConflict(text="Could not create snapshot file '{}': {}".format(self.path, e))
+            raise ControllerError("Could not create snapshot file '{}': {}".format(self.path, e))
 
     async def restore(self):
         """
@@ -123,7 +123,7 @@ class Snapshot:
             with open(self._path, "rb") as f:
                 project = await import_project(self._project.controller, self._project.id, f, location=self._project.path)
         except (OSError, PermissionError) as e:
-            raise aiohttp.web.HTTPConflict(text=str(e))
+            raise ControllerError(str(e))
         await project.open()
         self._project.emit_notification("snapshot.restored", self.__json__())
         return self._project

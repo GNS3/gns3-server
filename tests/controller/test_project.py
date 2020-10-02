@@ -20,7 +20,6 @@ import os
 import sys
 import uuid
 import pytest
-import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
@@ -30,10 +29,12 @@ from gns3server.controller.project import Project
 from gns3server.controller.template import Template
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ControllerForbiddenError
 from gns3server.config import Config
 
 
 @pytest.fixture
+@pytest.mark.asyncio
 async def node(controller, project):
 
     compute = MagicMock()
@@ -45,6 +46,7 @@ async def node(controller, project):
     return node
 
 
+@pytest.mark.asyncio
 async def test_affect_uuid():
 
     p = Project(name="Test")
@@ -53,6 +55,7 @@ async def test_affect_uuid():
     assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
+@pytest.mark.asyncio
 async def test_json():
 
     p = Project(name="Test")
@@ -80,6 +83,7 @@ async def test_json():
     }
 
 
+@pytest.mark.asyncio
 async def test_update(controller):
 
     project = Project(controller=controller, name="Hello")
@@ -90,6 +94,7 @@ async def test_update(controller):
     project.emit_notification.assert_any_call("project.updated", project.__json__())
 
 
+@pytest.mark.asyncio
 async def test_update_on_compute(controller):
 
     variables = [{"name": "TEST", "value": "VAL1"}]
@@ -102,6 +107,7 @@ async def test_update_on_compute(controller):
     compute.put.assert_any_call('/projects/{}'.format(project.id), {"variables": variables})
 
 
+@pytest.mark.asyncio
 async def test_path(projects_dir):
 
     directory = projects_dir
@@ -118,10 +124,11 @@ def test_path_exist(tmpdir):
     """
 
     os.makedirs(str(tmpdir / "demo"))
-    with pytest.raises(aiohttp.web.HTTPForbidden):
+    with pytest.raises(ControllerForbiddenError):
         Project(name="Test", path=str(tmpdir / "demo"))
 
 
+@pytest.mark.asyncio
 async def test_init_path(tmpdir):
 
     p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
@@ -129,13 +136,15 @@ async def test_init_path(tmpdir):
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+@pytest.mark.asyncio
 async def test_changing_path_with_quote_not_allowed(tmpdir):
 
-    with pytest.raises(aiohttp.web.HTTPForbidden):
+    with pytest.raises(ControllerForbiddenError):
         p = Project(project_id=str(uuid4()), name="Test")
         p.path = str(tmpdir / "project\"53")
 
 
+@pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
     p = Project(path=str(tmpdir / "capturestest"), name="Test")
@@ -143,6 +152,7 @@ async def test_captures_directory(tmpdir):
     assert os.path.exists(p.captures_directory)
 
 
+@pytest.mark.asyncio
 async def test_add_node_local(controller):
     """
     For a local server we send the project path
@@ -174,6 +184,7 @@ async def test_add_node_local(controller):
     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
+@pytest.mark.asyncio
 async def test_add_node_non_local(controller):
     """
     For a non local server we do not send the project path
@@ -201,6 +212,7 @@ async def test_add_node_non_local(controller):
     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
+@pytest.mark.asyncio
 async def test_add_node_iou(controller):
     """
     Test if an application ID is allocated for IOU nodes
@@ -222,6 +234,7 @@ async def test_add_node_iou(controller):
     assert node3.properties["application_id"] == 3
 
 
+@pytest.mark.asyncio
 async def test_add_node_iou_with_multiple_projects(controller):
     """
     Test if an application ID is allocated for IOU nodes with different projects already opened
@@ -274,6 +287,7 @@ async def test_add_node_iou_with_multiple_projects(controller):
     assert node12.properties["application_id"] == 3
 
 
+@pytest.mark.asyncio
 async def test_add_node_iou_with_multiple_projects_different_computes(controller):
     """
     Test if an application ID is allocated for IOU nodes with different projects already opened
@@ -309,6 +323,7 @@ async def test_add_node_iou_with_multiple_projects_different_computes(controller
     assert node6.properties["application_id"] == 4
 
 
+@pytest.mark.asyncio
 async def test_add_node_iou_no_id_available(controller):
     """
     Test if an application ID is allocated for IOU nodes
@@ -321,13 +336,14 @@ async def test_add_node_iou_no_id_available(controller):
     response = MagicMock()
     compute.post = AsyncioMagicMock(return_value=response)
 
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         for i in range(1, 513):
             prop = {"properties": {"application_id": i}}
             project._nodes[i] = Node(project, compute, "Node{}".format(i), node_id=i, node_type="iou", **prop)
         await project.add_node(compute, "test1", None, node_type="iou")
 
 
+@pytest.mark.asyncio
 async def test_add_node_from_template(controller):
     """
     For a local server we send the project path
@@ -361,6 +377,7 @@ async def test_add_node_from_template(controller):
     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
+@pytest.mark.asyncio
 async def test_add_builtin_node_from_template(controller):
     """
     For a local server we send the project path
@@ -394,6 +411,7 @@ async def test_add_builtin_node_from_template(controller):
     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
+@pytest.mark.asyncio
 async def test_delete_node(controller):
     """
     For a local server we send the project path
@@ -415,6 +433,7 @@ async def test_delete_node(controller):
     project.emit_notification.assert_any_call("node.deleted", node.__json__())
 
 
+@pytest.mark.asyncio
 async def test_delete_locked_node(controller):
     """
     For a local server we send the project path
@@ -431,10 +450,11 @@ async def test_delete_locked_node(controller):
     node = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     assert node.id in project._nodes
     node.locked = True
-    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
+    with pytest.raises(ControllerError):
         await project.delete_node(node.id)
 
 
+@pytest.mark.asyncio
 async def test_delete_node_delete_link(controller):
     """
     Delete a node delete all the node connected
@@ -461,6 +481,7 @@ async def test_delete_node_delete_link(controller):
     project.emit_notification.assert_any_call("link.deleted", link.__json__())
 
 
+@pytest.mark.asyncio
 async def test_get_node(controller):
 
     compute = MagicMock()
@@ -473,15 +494,16 @@ async def test_get_node(controller):
     vm = await project.add_node(compute, "test", None, node_type="vpcs", properties={"startup_config": "test.cfg"})
     assert project.get_node(vm.id) == vm
 
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         project.get_node("test")
 
     # Raise an error if the project is not opened
     await project.close()
-    with pytest.raises(aiohttp.web.HTTPForbidden):
+    with pytest.raises(ControllerForbiddenError):
         project.get_node(vm.id)
 
 
+@pytest.mark.asyncio
 async def test_list_nodes(controller):
 
     compute = MagicMock()
@@ -500,6 +522,7 @@ async def test_list_nodes(controller):
     assert isinstance(project.nodes, dict)
 
 
+@pytest.mark.asyncio
 async def test_add_link(project):
 
     compute = MagicMock()
@@ -522,6 +545,7 @@ async def test_add_link(project):
     project.emit_notification.assert_any_call("link.created", link.__json__())
 
 
+@pytest.mark.asyncio
 async def test_list_links(project):
 
     compute = MagicMock()
@@ -536,6 +560,7 @@ async def test_list_links(project):
     assert len(project.links) == 1
 
 
+@pytest.mark.asyncio
 async def test_get_link(project):
 
     compute = MagicMock()
@@ -546,10 +571,11 @@ async def test_get_link(project):
     link = await project.add_link()
     assert project.get_link(link.id) == link
 
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         project.get_link("test")
 
 
+@pytest.mark.asyncio
 async def test_delete_link(project):
 
     compute = MagicMock()
@@ -566,6 +592,7 @@ async def test_delete_link(project):
     assert len(project._links) == 0
 
 
+@pytest.mark.asyncio
 async def test_add_drawing(project):
 
     project.emit_notification = MagicMock()
@@ -574,15 +601,17 @@ async def test_add_drawing(project):
     project.emit_notification.assert_any_call("drawing.created", drawing.__json__())
 
 
+@pytest.mark.asyncio
 async def test_get_drawing(project):
 
     drawing = await project.add_drawing(None)
     assert project.get_drawing(drawing.id) == drawing
 
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         project.get_drawing("test")
 
 
+@pytest.mark.asyncio
 async def test_list_drawing(project):
 
     await project.add_drawing(None)
@@ -592,6 +621,7 @@ async def test_list_drawing(project):
     assert len(project.drawings) == 1
 
 
+@pytest.mark.asyncio
 async def test_delete_drawing(project):
 
     assert len(project._drawings) == 0
@@ -603,6 +633,7 @@ async def test_delete_drawing(project):
     assert len(project._drawings) == 0
 
 
+@pytest.mark.asyncio
 async def test_clean_pictures(project):
     """
     When a project is close old pictures should be removed
@@ -617,6 +648,7 @@ async def test_clean_pictures(project):
     assert not os.path.exists(os.path.join(project.pictures_directory, "test2.png"))
 
 
+@pytest.mark.asyncio
 async def test_clean_pictures_and_keep_supplier_logo(project):
     """
     When a project is close old pictures should be removed
@@ -638,6 +670,7 @@ async def test_clean_pictures_and_keep_supplier_logo(project):
     assert os.path.exists(os.path.join(project.pictures_directory, "logo.png"))
 
 
+@pytest.mark.asyncio
 async def test_delete(project):
 
     assert os.path.exists(project.path)
@@ -645,6 +678,7 @@ async def test_delete(project):
     assert not os.path.exists(project.path)
 
 
+@pytest.mark.asyncio
 async def test_dump(projects_dir):
 
     directory = projects_dir
@@ -656,6 +690,7 @@ async def test_dump(projects_dir):
             assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content
 
 
+@pytest.mark.asyncio
 async def test_open_close(controller):
 
     project = Project(controller=controller, name="Test")
@@ -671,6 +706,7 @@ async def test_open_close(controller):
     project.emit_notification.assert_any_call("project.closed", project.__json__())
 
 
+@pytest.mark.asyncio
 async def test_open_auto_start(controller):
 
     project = Project(controller=controller, name="Test", auto_start=True)
@@ -691,6 +727,7 @@ def test_is_running(project, node):
     assert project.is_running() is True
 
 
+@pytest.mark.asyncio
 async def test_duplicate(project, controller):
     """
     Duplicate a project, the node should remain on the remote server
@@ -743,10 +780,11 @@ def test_get_snapshot(project):
     snapshot = list(project.snapshots.values())[0]
     assert project.get_snapshot(snapshot.id) == snapshot
 
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         project.get_snapshot("BLU")
 
 
+@pytest.mark.asyncio
 async def test_delete_snapshot(project):
 
     os.makedirs(os.path.join(project.path, "snapshots"))
@@ -758,12 +796,13 @@ async def test_delete_snapshot(project):
 
     await project.delete_snapshot(snapshot.id)
 
-    with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         project.get_snapshot(snapshot.id)
 
     assert not os.path.exists(os.path.join(project.path, "snapshots", "test1.gns3project"))
 
 
+@pytest.mark.asyncio
 async def test_snapshot(project):
     """
     Create a snapshot
@@ -777,10 +816,11 @@ async def test_snapshot(project):
     assert list(project.snapshots.values())[0].name == "test1"
 
     # Raise a conflict if name is already use
-    with pytest.raises(aiohttp.web_exceptions.HTTPConflict):
+    with pytest.raises(ControllerError):
         snapshot = await project.snapshot("test1")
 
 
+@pytest.mark.asyncio
 async def test_start_all(project):
 
     compute = MagicMock()
@@ -797,6 +837,7 @@ async def test_start_all(project):
     assert len(compute.post.call_args_list) == 10
 
 
+@pytest.mark.asyncio
 async def test_stop_all(project):
 
     compute = MagicMock()
@@ -813,6 +854,7 @@ async def test_stop_all(project):
     assert len(compute.post.call_args_list) == 10
 
 
+@pytest.mark.asyncio
 async def test_suspend_all(project):
 
     compute = MagicMock()
@@ -829,6 +871,7 @@ async def test_suspend_all(project):
     assert len(compute.post.call_args_list) == 10
 
 
+@pytest.mark.asyncio
 async def test_console_reset_all(project):
 
     compute = MagicMock()
@@ -845,6 +888,7 @@ async def test_console_reset_all(project):
     assert len(compute.post.call_args_list) == 10
 
 
+@pytest.mark.asyncio
 async def test_node_name(project):
 
     compute = MagicMock()
@@ -870,6 +914,7 @@ async def test_node_name(project):
     assert node.name == "R3"
 
 
+@pytest.mark.asyncio
 async def test_duplicate_node(project):
 
     compute = MagicMock()

@@ -101,6 +101,7 @@ def test_empty_properties(compute, project):
     assert "category" not in node.properties  # Controller only
 
 
+@pytest.mark.asyncio
 async def test_eq(compute, project, node, controller):
 
     assert node == Node(project, compute, "demo1", node_id=node.id, node_type="qemu")
@@ -186,6 +187,7 @@ def test_init_without_uuid(project, compute):
     assert node.id is not None
 
 
+@pytest.mark.asyncio
 async def test_create(node, compute):
 
     node._console = 2048
@@ -206,6 +208,7 @@ async def test_create(node, compute):
     assert node._properties == {"startup_script": "echo test"}
 
 
+@pytest.mark.asyncio
 async def test_create_image_missing(node, compute):
 
     node._console = 2048
@@ -228,6 +231,7 @@ async def test_create_image_missing(node, compute):
     #assert node._upload_missing_image.called is True
 
 
+@pytest.mark.asyncio
 async def test_create_base_script(node, config, compute, tmpdir):
 
     config.set_section_config("Server", {"configs_path": str(tmpdir)})
@@ -303,6 +307,7 @@ def test_label_with_default_label_font(node):
     assert node.label["style"] == None #"font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #ff0000;fill-opacity: 1.0;"
 
 
+@pytest.mark.asyncio
 async def test_update(node, compute, project, controller):
 
     response = MagicMock()
@@ -326,6 +331,7 @@ async def test_update(node, compute, project, controller):
     assert project.dump.called
 
 
+@pytest.mark.asyncio
 async def test_update_properties(node, compute, controller):
     """
     properties will be updated by the answer from compute
@@ -354,6 +360,7 @@ async def test_update_properties(node, compute, controller):
     #controller._notification.emit.assert_called_with("node.updated", node_notif)
 
 
+@pytest.mark.asyncio
 async def test_update_only_controller(node, compute):
     """
     When updating property used only on controller we don't need to
@@ -374,6 +381,7 @@ async def test_update_only_controller(node, compute):
     assert not node._project.emit_notification.called
 
 
+@pytest.mark.asyncio
 async def test_update_no_changes(node, compute):
     """
     We don't call the compute node if all compute properties has not changed
@@ -391,6 +399,7 @@ async def test_update_no_changes(node, compute):
     assert node.x == 43
 
 
+@pytest.mark.asyncio
 async def test_start(node, compute):
 
     compute.post = AsyncioMagicMock()
@@ -399,6 +408,7 @@ async def test_start(node, compute):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/start".format(node.project.id, node.id), timeout=240)
 
 
+@pytest.mark.asyncio
 async def test_start_iou(compute, project, controller):
 
     node = Node(project, compute, "demo",
@@ -415,6 +425,7 @@ async def test_start_iou(compute, project, controller):
     compute.post.assert_called_with("/projects/{}/iou/nodes/{}/start".format(node.project.id, node.id), timeout=240, data={"license_check": True, "iourc_content": "aa"})
 
 
+@pytest.mark.asyncio
 async def test_stop(node, compute):
 
     compute.post = AsyncioMagicMock()
@@ -423,6 +434,7 @@ async def test_stop(node, compute):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/stop".format(node.project.id, node.id), timeout=240, dont_connect=True)
 
 
+@pytest.mark.asyncio
 async def test_suspend(node, compute):
 
     compute.post = AsyncioMagicMock()
@@ -430,6 +442,7 @@ async def test_suspend(node, compute):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/suspend".format(node.project.id, node.id), timeout=240)
 
 
+@pytest.mark.asyncio
 async def test_reload(node, compute):
 
     compute.post = AsyncioMagicMock()
@@ -437,6 +450,7 @@ async def test_reload(node, compute):
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/reload".format(node.project.id, node.id), timeout=240)
 
 
+@pytest.mark.asyncio
 async def test_create_without_console(node, compute):
     """
     None properties should be send. Because it can mean the emulator doesn't support it
@@ -458,24 +472,28 @@ async def test_create_without_console(node, compute):
     assert node._properties == {"test_value": "success", "startup_script": "echo test"}
 
 
+@pytest.mark.asyncio
 async def test_delete(node, compute):
 
     await node.destroy()
     compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}".format(node.project.id, node.id))
 
 
+@pytest.mark.asyncio
 async def test_post(node, compute):
 
     await node.post("/test", {"a": "b"})
     compute.post.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id), data={"a": "b"})
 
 
+@pytest.mark.asyncio
 async def test_delete(node, compute):
 
     await node.delete("/test")
     compute.delete.assert_called_with("/projects/{}/vpcs/nodes/{}/test".format(node.project.id, node.id))
 
 
+@pytest.mark.asyncio
 async def test_dynamips_idle_pc(node, compute):
 
     node._node_type = "dynamips"
@@ -486,6 +504,7 @@ async def test_dynamips_idle_pc(node, compute):
     compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/auto_idlepc".format(node.project.id, node.id), timeout=240)
 
 
+@pytest.mark.asyncio
 async def test_dynamips_idlepc_proposals(node, compute):
 
     node._node_type = "dynamips"
@@ -496,6 +515,7 @@ async def test_dynamips_idlepc_proposals(node, compute):
     compute.get.assert_called_with("/projects/{}/dynamips/nodes/{}/idlepc_proposals".format(node.project.id, node.id), timeout=240)
 
 
+@pytest.mark.asyncio
 async def test_upload_missing_image(compute, controller, images_dir):
 
     project = Project(str(uuid.uuid4()), controller=controller)
@@ -535,6 +555,7 @@ def test_get_port(node):
     assert port is None
 
 
+@pytest.mark.asyncio
 async def test_parse_node_response(node):
     """
     When a node is updated we notify the links connected to it

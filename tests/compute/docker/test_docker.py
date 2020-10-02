@@ -24,7 +24,8 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Err
 
 
 @pytest.fixture
-async def vm(loop):
+@pytest.mark.asyncio
+async def vm():
 
     vm = Docker()
     vm._connected = True
@@ -33,6 +34,7 @@ async def vm(loop):
     return vm
 
 
+@pytest.mark.asyncio
 async def test_query_success(vm):
 
     response = MagicMock()
@@ -55,6 +57,7 @@ async def test_query_success(vm):
     assert data == {"c": False}
 
 
+@pytest.mark.asyncio
 async def test_query_error(vm):
 
     response = MagicMock()
@@ -75,6 +78,7 @@ async def test_query_error(vm):
                                            timeout=300)
 
 
+@pytest.mark.asyncio
 async def test_query_error_json(vm):
 
     response = MagicMock()
@@ -95,6 +99,7 @@ async def test_query_error_json(vm):
                                            timeout=300)
 
 
+@pytest.mark.asyncio
 async def test_list_images():
 
     response = [
@@ -134,6 +139,7 @@ async def test_list_images():
     assert {"image": "ubuntu:quantal"} in images
 
 
+@pytest.mark.asyncio
 async def test_pull_image():
 
     class Response:
@@ -162,6 +168,7 @@ async def test_pull_image():
             mock.assert_called_with("POST", "images/create", params={"fromImage": "ubuntu"}, timeout=None)
 
 
+@pytest.mark.asyncio
 async def test_docker_check_connection_docker_minimum_version(vm):
 
     response = {
@@ -176,6 +183,7 @@ async def test_docker_check_connection_docker_minimum_version(vm):
             await vm._check_connection()
 
 
+@pytest.mark.asyncio
 async def test_docker_check_connection_docker_preferred_version_against_newer(vm):
 
     response = {
@@ -189,6 +197,7 @@ async def test_docker_check_connection_docker_preferred_version_against_newer(vm
         assert vm._api_version == DOCKER_PREFERRED_API_VERSION
 
 
+@pytest.mark.asyncio
 async def test_docker_check_connection_docker_preferred_version_against_older(vm):
 
     response = {

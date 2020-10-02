@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import asyncio
 import html
 import copy
@@ -23,6 +22,7 @@ import uuid
 import os
 
 from .compute import ComputeConflict, ComputeError
+from .controller_error import ControllerError, ControllerTimeoutError
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
 from ..utils.qt import qt_font_to_style
@@ -420,7 +420,7 @@ class Node:
                     compute_properties = kwargs[prop]
                 else:
                     if prop == "name" and self.status == "started" and self._node_type not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch"):
-                        raise aiohttp.web.HTTPConflict(text="Sorry, it is not possible to rename a node that is already powered on")
+                        raise ControllerError("Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
         if compute_properties and "custom_adapters" in compute_properties:
@@ -532,7 +532,7 @@ class Node:
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when starting {}".format(self._name))
+            raise ControllerTimeoutError("Timeout when starting {}".format(self._name))
 
     async def stop(self):
         """
@@ -541,10 +541,10 @@ class Node:
         try:
             await self.post("/stop", timeout=240, dont_connect=True)
         # We don't care if a node is down at this step
-        except (ComputeError, aiohttp.ClientError, aiohttp.web.HTTPError):
+        except (ComputeError, ControllerError):
             pass
         except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when stopping {}".format(self._name))
+            raise ControllerTimeoutError("Timeout when stopping {}".format(self._name))
 
     async def suspend(self):
         """
@@ -553,7 +553,7 @@ class Node:
         try:
             await self.post("/suspend", timeout=240)
         except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
+            raise ControllerTimeoutError("Timeout when reloading {}".format(self._name))
 
     async def reload(self):
         """
@@ -562,7 +562,7 @@ class Node:
         try:
             await self.post("/reload", timeout=240)
         except asyncio.TimeoutError:
-            raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reloading {}".format(self._name))
+            raise ControllerTimeoutError("Timeout when reloading {}".format(self._name))
 
     async def reset_console(self):
         """
@@ -573,7 +573,7 @@ class Node:
             try:
                 await self.post("/console/reset", timeout=240)
             except asyncio.TimeoutError:
-                raise aiohttp.web.HTTPRequestTimeout(text="Timeout when reset console {}".format(self._name))
+                raise ControllerTimeoutError("Timeout when reset console {}".format(self._name))
 
     async def post(self, path, data=None, **kwargs):
         """
@@ -602,15 +602,17 @@ class Node:
         HTTP post on the node
         """
         if path is None:
-            return (await self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs))
+            return await self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs)
         else:
-            return (await self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
+            return await self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs)
 
     async def _upload_missing_image(self, type, img):
         """
         Search an image on local computer and upload it to remote compute
         if the image exists
         """
+
+        print("UPLOAD MISSING IMAGE")
         for directory in images_directories(type):
             image = os.path.join(directory, img)
             if os.path.exists(image):
@@ -619,7 +621,7 @@ class Node:
                     with open(image, 'rb') as f:
                         await self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
                 except OSError as e:
-                    raise aiohttp.web.HTTPConflict(text="Can't upload {}: {}".format(image, str(e)))
+                    raise ControllerError("Can't upload {}: {}".format(image, str(e)))
                 self.project.emit_notification("log.info", {"message": "Upload finished for {}".format(img)})
                 return True
         return False

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
+from gns3server.compute.compute_error import ComputeError
 
 import logging
 log = logging.getLogger(__name__)
@@ -43,4 +43,4 @@ def get_next_application_id(projects, compute):
     try:
         return (pool - used).pop()
     except KeyError:
-        raise aiohttp.web.HTTPConflict(text="Cannot create a new IOU node (limit of 512 nodes across all opened projects using compute {} reached".format(compute.name))
+        raise ComputeError("Cannot create a new IOU node (limit of 512 nodes across all opened projects using compute {} reached".format(compute.name))

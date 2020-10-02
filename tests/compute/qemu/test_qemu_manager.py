@@ -38,6 +38,7 @@ def fake_qemu_img_binary(tmpdir):
     return bin_path
 
 
+@pytest.mark.asyncio
 async def test_get_qemu_version():
 
     with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard"):
@@ -48,6 +49,7 @@ async def test_get_qemu_version():
             assert version == "2.2.0"
 
 
+@pytest.mark.asyncio
 async def test_binary_list(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
@@ -88,6 +90,7 @@ async def test_binary_list(monkeypatch, tmpdir):
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
 
 
+@pytest.mark.asyncio
 async def test_img_binary_list(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
@@ -117,6 +120,7 @@ def test_get_legacy_vm_workdir():
     assert Qemu.get_legacy_vm_workdir(42, "bla") == os.path.join("qemu", "vm-42")
 
 
+@pytest.mark.asyncio
 async def test_create_image_abs_path(tmpdir, fake_qemu_img_binary):
 
     options = {
@@ -148,6 +152,7 @@ async def test_create_image_abs_path(tmpdir, fake_qemu_img_binary):
         )
 
 
+@pytest.mark.asyncio
 async def test_create_image_relative_path(tmpdir, fake_qemu_img_binary):
 
     options = {
@@ -168,6 +173,7 @@ async def test_create_image_relative_path(tmpdir, fake_qemu_img_binary):
             )
 
 
+@pytest.mark.asyncio
 async def test_create_image_exist(tmpdir, fake_qemu_img_binary):
 
     open(str(tmpdir / "hda.qcow2"), "w+").close()
@@ -182,6 +188,7 @@ async def test_create_image_exist(tmpdir, fake_qemu_img_binary):
                 assert not process.called
 
 
+@pytest.mark.asyncio
 async def test_create_image_with_not_supported_characters_by_filesystem(tmpdir, fake_qemu_img_binary):
 
     open(str(tmpdir / "hda.qcow2"), "w+").close()
@@ -202,6 +209,7 @@ async def test_create_image_with_not_supported_characters_by_filesystem(tmpdir, 
             assert not process.called
 
 
+@pytest.mark.asyncio
 async def test_get_kvm_archs_kvm_ok():
 
     with patch("os.path.exists", return_value=True):

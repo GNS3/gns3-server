@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 class ControllerError(Exception):
 
-    def __init__(self, message):
+    def __init__(self, message: str):
         super().__init__(message)
         self._message = message
 
@@ -27,3 +27,27 @@ class ControllerError(Exception):
 
     def __str__(self):
         return self._message
+
+
+class ControllerNotFoundError(ControllerError):
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ControllerUnauthorizedError(ControllerError):
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ControllerForbiddenError(ControllerError):
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ControllerTimeoutError(ControllerError):
+
+    def __init__(self, message: str):
+        super().__init__(message)

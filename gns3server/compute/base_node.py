@@ -29,6 +29,7 @@ import re
 
 from aiohttp.web import WebSocketResponse
 from gns3server.utils.interfaces import interfaces
+from gns3server.compute.compute_error import ComputeError
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor, locking
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
@@ -308,7 +309,7 @@ class BaseNode:
             try:
                 await wait_run_in_executor(shutil.rmtree, directory, onerror=set_rw)
             except OSError as e:
-                raise aiohttp.web.HTTPInternalServerError(text="Could not delete the node working directory: {}".format(e))
+                raise ComputeError("Could not delete the node working directory: {}".format(e))
 
     def start(self):
         """

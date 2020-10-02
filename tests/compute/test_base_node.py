@@ -30,7 +30,8 @@ from gns3server.compute.nios.nio_udp import NIOUDP
 
 
 @pytest.fixture(scope="function")
-async def manager(loop, port_manager):
+@pytest.mark.asyncio
+async def manager(port_manager):
 
     m = VPCS.instance()
     m.port_manager = port_manager
@@ -78,6 +79,7 @@ def test_console_vnc_invalid(compute_project, manager):
         node.console = 2012
 
 
+@pytest.mark.asyncio
 async def test_close(node, port_manager):
 
     assert node.console is not None
@@ -132,6 +134,7 @@ def test_change_aux_port(compute_project, manager, port_manager):
     port_manager.reserve_tcp_port(port1, node.project)
 
 
+@pytest.mark.asyncio
 async def test_update_ubridge_udp_connection(node):
 
     filters = {
@@ -146,6 +149,7 @@ async def test_update_ubridge_udp_connection(node):
     mock.assert_called_with("VPCS-10", filters)
 
 
+@pytest.mark.asyncio
 async def test_ubridge_apply_filters(node):
 
     filters = OrderedDict((
@@ -158,6 +162,7 @@ async def test_ubridge_apply_filters(node):
     node._ubridge_send.assert_any_call("bridge add_packet_filter VPCS-10 filter0 latency 10")
 
 
+@pytest.mark.asyncio
 async def test_ubridge_apply_bpf_filters(node):
 
     filters = {

@@ -23,7 +23,6 @@ import copy
 import shutil
 import time
 import asyncio
-import aiohttp
 import aiofiles
 import tempfile
 import zipfile
@@ -44,6 +43,7 @@ from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
 from .export_project import export_project
 from .import_project import import_project
+from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 
 import logging
 log = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ def open_required(func):
 
     def wrapper(self, *args, **kwargs):
         if self._status == "closed":
-            raise aiohttp.web.HTTPForbidden(text="The project is not opened")
+            raise ControllerForbiddenError("The project is not opened")
         return func(self, *args, **kwargs)
     return wrapper
 
@@ -100,7 +100,7 @@ class Project:
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
             if os.path.exists(path):
-                raise aiohttp.web.HTTPForbidden(text="The path {} already exist.".format(path))
+                raise ControllerForbiddenError("The path {} already exist.".format(path))
 
         if project_id is None:
             self._id = str(uuid4())
@@ -108,7 +108,7 @@ class Project:
             try:
                 UUID(project_id, version=4)
             except ValueError:
-                raise aiohttp.web.HTTPBadRequest(text="{} is not a valid UUID".format(project_id))
+                raise ControllerError("{} is not a valid UUID".format(project_id))
             self._id = project_id
 
         if path is None:
@@ -404,10 +404,10 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+            raise ControllerError("Could not create project directory: {}".format(e))
 
         if '"' in path:
-            raise aiohttp.web.HTTPForbidden(text="You are not allowed to use \" in the project directory path. Not supported by Dynamips.")
+            raise ControllerForbiddenError("You are not allowed to use \" in the project directory path. Not supported by Dynamips.")
 
         self._path = path
 
@@ -472,9 +472,9 @@ class Project:
                 try:
                     name = base_name.format(number, id=number, name="Node")
                 except KeyError as e:
-                    raise aiohttp.web.HTTPConflict(text="{" + e.args[0] + "} is not a valid replacement string in the node name")
+                    raise ControllerError("{" + e.args[0] + "} is not a valid replacement string in the node name")
                 except (ValueError, IndexError) as e:
-                    raise aiohttp.web.HTTPConflict(text="{} is not a valid replacement string in the node name".format(base_name))
+                    raise ControllerError("{} is not a valid replacement string in the node name".format(base_name))
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
                     return name
@@ -488,7 +488,7 @@ class Project:
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
                     return name
-        raise aiohttp.web.HTTPConflict(text="A node name could not be allocated (node limit reached?)")
+        raise ControllerError("A node name could not be allocated (node limit reached?)")
 
     def update_node_name(self, node, new_name):
 
@@ -507,7 +507,7 @@ class Project:
         except KeyError:
             msg = "Template {} doesn't exist".format(template_id)
             log.error(msg)
-            raise aiohttp.web.HTTPNotFound(text=msg)
+            raise ControllerNotFoundError(msg)
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")
@@ -599,7 +599,7 @@ class Project:
     async def delete_node(self, node_id):
         node = self.get_node(node_id)
         if node.locked:
-            raise aiohttp.web.HTTPConflict(text="Node {} cannot be deleted because it is locked".format(node.name))
+            raise ControllerError("Node {} cannot be deleted because it is locked".format(node.name))
         await self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
@@ -615,7 +615,7 @@ class Project:
         try:
             return self._nodes[node_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Node ID {} doesn't exist".format(node_id))
+            raise ControllerNotFoundError("Node ID {} doesn't exist".format(node_id))
 
     def _get_closed_data(self, section, id_key):
         """
@@ -631,7 +631,7 @@ class Project:
             with open(path, "r") as f:
                 topology = json.load(f)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not load topology: {}".format(e))
+            raise ControllerError("Could not load topology: {}".format(e))
 
         try:
             data = {}
@@ -639,7 +639,7 @@ class Project:
                 data[elem[id_key]] = elem
             return data
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Section {} not found in the topology".format(section))
+            raise ControllerNotFoundError("Section {} not found in the topology".format(section))
 
     @property
     def nodes(self):
@@ -684,13 +684,13 @@ class Project:
         try:
             return self._drawings[drawing_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Drawing ID {} doesn't exist".format(drawing_id))
+            raise ControllerNotFoundError("Drawing ID {} doesn't exist".format(drawing_id))
 
     @open_required
     async def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
         if drawing.locked:
-            raise aiohttp.web.HTTPConflict(text="Drawing ID {} cannot be deleted because it is locked".format(drawing_id))
+            raise ControllerError("Drawing ID {} cannot be deleted because it is locked".format(drawing_id))
         del self._drawings[drawing.id]
         self.dump()
         self.emit_notification("drawing.deleted", drawing.__json__())
@@ -730,7 +730,7 @@ class Project:
         try:
             return self._links[link_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Link ID {} doesn't exist".format(link_id))
+            raise ControllerNotFoundError("Link ID {} doesn't exist".format(link_id))
 
     @property
     def links(self):
@@ -756,7 +756,7 @@ class Project:
         try:
             return self._snapshots[snapshot_id]
         except KeyError:
-            raise aiohttp.web.HTTPNotFound(text="Snapshot ID {} doesn't exist".format(snapshot_id))
+            raise ControllerNotFoundError("Snapshot ID {} doesn't exist".format(snapshot_id))
 
     @open_required
     async def snapshot(self, name):
@@ -767,7 +767,7 @@ class Project:
         """
 
         if name in [snap.name for snap in self._snapshots.values()]:
-            raise aiohttp.web.HTTPConflict(text="The snapshot name {} already exists".format(name))
+            raise ControllerError("The snapshot name {} already exists".format(name))
         snapshot = Snapshot(self, name=name)
         await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
@@ -792,7 +792,7 @@ class Project:
             try:
                 await compute.post("/projects/{}/close".format(self._id), dont_connect=True)
             # We don't care if a compute is down at this step
-            except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
+            except (ComputeError, ControllerError, TimeoutError):
                 pass
         self._clean_pictures()
         self._status = "closed"
@@ -839,18 +839,18 @@ class Project:
         if self._status != "opened":
             try:
                 await self.open()
-            except aiohttp.web.HTTPConflict as e:
+            except ControllerError as e:
                 # ignore missing images or other conflicts when deleting a project
-                log.warning("Conflict while deleting project: {}".format(e.text))
+                log.warning("Conflict while deleting project: {}".format(e))
         await self.delete_on_computes()
         await self.close()
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:
-                raise aiohttp.web.HTTPConflict(text="Project '{}' cannot be deleted because it is not in the default project directory: '{}'".format(self._name, project_directory))
+                raise ControllerError("Project '{}' cannot be deleted because it is not in the default project directory: '{}'".format(self._name, project_directory))
             shutil.rmtree(self.path)
         except OSError as e:
-            raise aiohttp.web.HTTPConflict(text="Cannot delete project directory {}: {}".format(self.path, str(e)))
+            raise ControllerError("Cannot delete project directory {}: {}".format(self.path, str(e)))
 
     async def delete_on_computes(self):
         """
@@ -874,7 +874,7 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+            raise ControllerError("Could not create project directory: {}".format(e))
         return path
 
     def _topology_file(self):
@@ -887,7 +887,7 @@ class Project:
         """
 
         if self._closing is True:
-            raise aiohttp.web.HTTPConflict(text="Project is closing, please try again in a few seconds...")
+            raise ControllerError("Project is closing, please try again in a few seconds...")
 
         if self._status == "opened":
             return
@@ -966,7 +966,7 @@ class Project:
                 try:
                     await compute.post("/projects/{}/close".format(self._id))
                 # We don't care if a compute is down at this step
-                except (ComputeError, aiohttp.web.HTTPNotFound, aiohttp.web.HTTPConflict, aiohttp.ServerDisconnectedError):
+                except ComputeError:
                     pass
             try:
                 if os.path.exists(path + ".backup"):
@@ -976,7 +976,7 @@ class Project:
             self._status = "closed"
             self._loading = False
             if isinstance(e, ComputeError):
-                raise aiohttp.web.HTTPConflict(text=str(e))
+                raise ControllerError(str(e))
             else:
                 raise e
         try:
@@ -1047,7 +1047,7 @@ class Project:
 
             log.info("Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - begin))
         except (ValueError, OSError, UnicodeEncodeError) as e:
-            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
+            raise ControllerError("Cannot duplicate project: {}".format(str(e)))
 
         if previous_status == "closed":
             await self.close()
@@ -1076,7 +1076,7 @@ class Project:
                 json.dump(topo, f, indent=4, sort_keys=True)
             shutil.move(path + ".tmp", path)
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not write topology: {}".format(e))
+            raise ControllerError("Could not write topology: {}".format(e))
 
     @open_required
     async def start_all(self):
@@ -1131,7 +1131,7 @@ class Project:
         :returns: New node
         """
         if node.status != "stopped" and not node.is_always_running():
-            raise aiohttp.web.HTTPConflict(text="Cannot duplicate node data while the node is running")
+            raise ControllerError("Cannot duplicate node data while the node is running")
 
         data = copy.deepcopy(node.__json__(topology_dump=True))
         # Some properties like internal ID should not be duplicated
@@ -1161,10 +1161,10 @@ class Project:
             await node.post("/duplicate", timeout=None, data={
                 "destination_node_id": new_node_uuid
             })
-        except aiohttp.web.HTTPNotFound as e:
+        except ControllerNotFoundError:
             await self.delete_node(new_node_uuid)
-            raise aiohttp.web.HTTPConflict(text="This node type cannot be duplicated")
-        except aiohttp.web.HTTPConflict as e:
+            raise ControllerError("This node type cannot be duplicated")
+        except ControllerError as e:
             await self.delete_node(new_node_uuid)
             raise e
         return new_node

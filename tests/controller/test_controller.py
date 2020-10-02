@@ -20,11 +20,11 @@ import uuid
 import json
 import pytest
 import socket
-import aiohttp
 from unittest.mock import MagicMock, patch
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
 from gns3server.controller.compute import Compute
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from gns3server.version import __version__
 
 
@@ -110,6 +110,7 @@ def test_import_computes_1_x(controller, controller_config_path):
             assert compute.password is None
 
 
+@pytest.mark.asyncio
 async def test_load_projects(controller, projects_dir):
 
     controller.save()
@@ -121,6 +122,7 @@ async def test_load_projects(controller, projects_dir):
     mock_load_project.assert_called_with(os.path.join(projects_dir, "project1", "project1.gns3"), load=False)
 
 
+@pytest.mark.asyncio
 async def test_add_compute(controller):
 
     controller._notification = MagicMock()
@@ -134,15 +136,17 @@ async def test_add_compute(controller):
     assert len(controller.computes) == 2
 
 
+@pytest.mark.asyncio
 async def test_addDuplicateCompute(controller):
 
     controller._notification = MagicMock()
     c = await controller.add_compute(compute_id="test1", name="Test", connect=False)
     assert len(controller.computes) == 1
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         await controller.add_compute(compute_id="test2", name="Test", connect=False)
 
 
+@pytest.mark.asyncio
 async def test_deleteCompute(controller, controller_config_path):
 
     c = await controller.add_compute(compute_id="test1", connect=False)
@@ -158,6 +162,7 @@ async def test_deleteCompute(controller, controller_config_path):
     assert c.connected is False
 
 
+@pytest.mark.asyncio
 async def test_deleteComputeProjectOpened(controller, controller_config_path):
     """
     When you delete a compute the project using it are close
@@ -190,6 +195,7 @@ async def test_deleteComputeProjectOpened(controller, controller_config_path):
     assert project2.status == "opened"
 
 
+@pytest.mark.asyncio
 async def test_addComputeConfigFile(controller, controller_config_path):
 
     await controller.add_compute(compute_id="test1", name="Test", connect=False)
@@ -209,14 +215,16 @@ async def test_addComputeConfigFile(controller, controller_config_path):
         ]
 
 
+@pytest.mark.asyncio
 async def test_getCompute(controller):
 
     compute = await controller.add_compute(compute_id="test1", connect=False)
     assert controller.get_compute("test1") == compute
-    with pytest.raises(aiohttp.web.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         assert controller.get_compute("dsdssd")
 
 
+@pytest.mark.asyncio
 async def test_has_compute(controller):
 
     await controller.add_compute(compute_id="test1", connect=False)
@@ -224,6 +232,7 @@ async def test_has_compute(controller):
     assert not controller.has_compute("test2")
 
 
+@pytest.mark.asyncio
 async def test_add_project(controller):
 
     uuid1 = str(uuid.uuid4())
@@ -236,16 +245,18 @@ async def test_add_project(controller):
     assert len(controller.projects) == 2
 
 
+@pytest.mark.asyncio
 async def test_addDuplicateProject(controller):
 
     uuid1 = str(uuid.uuid4())
     uuid2 = str(uuid.uuid4())
     await controller.add_project(project_id=uuid1, name="Test")
     assert len(controller.projects) == 1
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(ControllerError):
         await controller.add_project(project_id=uuid2, name="Test")
 
 
+@pytest.mark.asyncio
 async def test_remove_project(controller):
 
     uuid1 = str(uuid.uuid4())
@@ -255,6 +266,7 @@ async def test_remove_project(controller):
     assert len(controller.projects) == 0
 
 
+@pytest.mark.asyncio
 async def test_addProject_with_compute(controller):
 
     uuid1 = str(uuid.uuid4())
@@ -264,15 +276,17 @@ async def test_addProject_with_compute(controller):
     await controller.add_project(project_id=uuid1, name="Test")
 
 
+@pytest.mark.asyncio
 async def test_getProject(controller):
 
     uuid1 = str(uuid.uuid4())
     project = await controller.add_project(project_id=uuid1, name="Test")
     assert controller.get_project(uuid1) == project
-    with pytest.raises(aiohttp.web.HTTPNotFound):
+    with pytest.raises(ControllerNotFoundError):
         assert controller.get_project("dsdssd")
 
 
+@pytest.mark.asyncio
 async def test_start(controller):
 
     controller.gns3vm.settings = {
@@ -288,6 +302,7 @@ async def test_start(controller):
     assert controller.computes["local"].name == socket.gethostname()
 
 
+@pytest.mark.asyncio
 async def test_start_vm(controller):
     """
     Start the controller with a GNS3 VM
@@ -309,6 +324,7 @@ async def test_start_vm(controller):
     assert len(controller.computes) == 2  # Local compute and vm are created
 
 
+@pytest.mark.asyncio
 async def test_stop(controller):
 
     c = await controller.add_compute(compute_id="test1", connect=False)
@@ -317,6 +333,7 @@ async def test_stop(controller):
     assert c.connected is False
 
 
+@pytest.mark.asyncio
 async def test_stop_vm(controller):
     """
     Stop GNS3 VM if configured
@@ -335,6 +352,7 @@ async def test_stop_vm(controller):
         assert mock.called
 
 
+@pytest.mark.asyncio
 async def test_suspend_vm(controller):
     """
     Suspend GNS3 VM if configured
@@ -353,6 +371,7 @@ async def test_suspend_vm(controller):
         assert mock.called
 
 
+@pytest.mark.asyncio
 async def test_keep_vm(controller):
     """
     Keep GNS3 VM if configured
@@ -371,6 +390,7 @@ async def test_keep_vm(controller):
         assert not mock.called
 
 
+@pytest.mark.asyncio
 async def test_get_free_project_name(controller):
 
     await controller.add_project(project_id=str(uuid.uuid4()), name="Test")
@@ -380,6 +400,7 @@ async def test_get_free_project_name(controller):
     assert controller.get_free_project_name("Hello") == "Hello"
 
 
+@pytest.mark.asyncio
 async def test_load_base_files(controller, config, tmpdir):
 
     config.set_section_config("Server", {"configs_path": str(tmpdir)})
@@ -451,6 +472,7 @@ def test_load_templates(controller):
             assert cloud_uuid == template.id
 
 
+@pytest.mark.asyncio
 async def test_autoidlepc(controller):
 
     controller._computes["local"] = AsyncioMagicMock()

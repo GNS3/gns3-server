@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import aiohttp
 from contextlib import contextmanager
 
 from ..notification_queue import NotificationQueue
+from .controller_error import ControllerError
 
 
 class Notification:
@@ -106,9 +106,8 @@ class Notification:
                 project = self._controller.get_project(event["project_id"])
                 node = project.get_node(event["node_id"])
                 await node.parse_node_response(event)
-
                 self.project_emit("node.updated", node.__json__())
-            except (aiohttp.web.HTTPNotFound, aiohttp.web.HTTPForbidden):  # Project closing
+            except ControllerError:  # Project closing
                 return
         elif action == "ping":
              event["compute_id"] = compute_id

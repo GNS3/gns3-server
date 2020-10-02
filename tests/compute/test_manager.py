@@ -29,7 +29,8 @@ from gns3server.utils import force_unix_path
 
 
 @pytest.fixture(scope="function")
-async def vpcs(loop, port_manager):
+@pytest.mark.asyncio
+async def vpcs(port_manager):
 
     VPCS._instance = None
     vpcs = VPCS.instance()
@@ -38,7 +39,8 @@ async def vpcs(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def qemu(loop, port_manager):
+@pytest.mark.asyncio
+async def qemu(port_manager):
 
     Qemu._instance = None
     Qemu._init_config_disk = MagicMock()  # do not create the config.img image
@@ -47,6 +49,7 @@ async def qemu(loop, port_manager):
     return qemu
 
 
+@pytest.mark.asyncio
 async def test_create_node_new_topology(compute_project, vpcs):
 
     node_id = str(uuid.uuid4())
@@ -54,6 +57,7 @@ async def test_create_node_new_topology(compute_project, vpcs):
     assert node in compute_project.nodes
 
 
+@pytest.mark.asyncio
 async def test_create_twice_same_node_new_topology(compute_project, vpcs):
 
     compute_project._nodes = set()
@@ -65,6 +69,7 @@ async def test_create_twice_same_node_new_topology(compute_project, vpcs):
     assert len(compute_project.nodes) == 1
 
 
+@pytest.mark.asyncio
 async def test_create_node_new_topology_without_uuid(compute_project, vpcs):
 
     node = await vpcs.create_node("PC 1", compute_project.id, None)
@@ -72,6 +77,7 @@ async def test_create_node_new_topology_without_uuid(compute_project, vpcs):
     assert len(node.id) == 36
 
 
+@pytest.mark.asyncio
 async def test_create_node_old_topology(compute_project, tmpdir, vpcs):
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
@@ -232,6 +238,7 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     assert qemu.get_relative_image_path(path5) == path5
 
 
+@pytest.mark.asyncio
 async def test_list_images(qemu, tmpdir):
 
     fake_images = ["a.qcow2", "b.qcow2", ".blu.qcow2", "a.qcow2.md5sum"]
@@ -248,6 +255,7 @@ async def test_list_images(qemu, tmpdir):
         ]
 
 
+@pytest.mark.asyncio
 async def test_list_images_recursives(qemu, tmpdir):
 
     tmp_images_dir = os.path.join(tmpdir, "images")
@@ -271,18 +279,21 @@ async def test_list_images_recursives(qemu, tmpdir):
         ]
 
 
+@pytest.mark.asyncio
 async def test_list_images_empty(qemu, tmpdir):
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
         assert await qemu.list_images() == []
 
 
+@pytest.mark.asyncio
 async def test_list_images_directory_not_exist(qemu):
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value="/bla"):
         assert await qemu.list_images() == []
 
 
+@pytest.mark.asyncio
 async def test_delete_node(vpcs, compute_project):
 
     compute_project._nodes = set()
@@ -295,6 +306,7 @@ async def test_delete_node(vpcs, compute_project):
     assert node not in compute_project.nodes
 
 
+@pytest.mark.asyncio
 async def test_duplicate_vpcs(vpcs, compute_project):
 
     source_node_id = str(uuid.uuid4())
@@ -309,6 +321,7 @@ async def test_duplicate_vpcs(vpcs, compute_project):
         assert startup == "set pcname PC-2\nip dhcp\n".strip()
 
 
+@pytest.mark.asyncio
 async def test_duplicate_ethernet_switch(compute_project):
 
     with asyncio_patch('gns3server.compute.dynamips.nodes.ethernet_switch.EthernetSwitch.create'):

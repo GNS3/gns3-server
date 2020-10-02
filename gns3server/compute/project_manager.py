@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
-import asyncio
+
 import psutil
 import platform
 from .project import Project
 from uuid import UUID
+
+from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError
 
 import logging
 log = logging.getLogger(__name__)
@@ -70,10 +71,10 @@ class ProjectManager:
         try:
             UUID(project_id, version=4)
         except ValueError:
-            raise aiohttp.web.HTTPBadRequest(text="Project ID {} is not a valid UUID".format(project_id))
+            raise ComputeError("Project ID {} is not a valid UUID".format(project_id))
 
         if project_id not in self._projects:
-            raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
+            raise ComputeNotFoundError("Project ID {} doesn't exist".format(project_id))
         return self._projects[project_id]
 
     def _check_available_disk_space(self, project):
@@ -118,7 +119,7 @@ class ProjectManager:
         """
 
         if project_id not in self._projects:
-            raise aiohttp.web.HTTPNotFound(text="Project ID {} doesn't exist".format(project_id))
+            raise ComputeNotFoundError("Project ID {} doesn't exist".format(project_id))
         del self._projects[project_id]
 
     def check_hardware_virtualization(self, source_node):

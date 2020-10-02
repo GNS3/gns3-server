@@ -17,11 +17,11 @@
 
 import json
 import pytest
-import aiohttp
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute, ComputeConflict
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
@@ -78,6 +78,7 @@ def test_name():
     assert c.name == "https://azertyuiopq...@example.com:84"
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQuery(compute):
 
     response = MagicMock()
@@ -89,6 +90,7 @@ async def test_compute_httpQuery(compute):
         assert compute._auth is None
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryAuth(compute):
 
     response = MagicMock()
@@ -104,7 +106,8 @@ async def test_compute_httpQueryAuth(compute):
         assert compute._auth.password == "toor"
 
 
-# async def test_compute_httpQueryNotConnected(compute, controller):
+# @pytest.mark.asyncio
+#async def test_compute_httpQueryNotConnected(compute, controller):
 #
 #     controller._notification = MagicMock()
 #     compute._connected = False
@@ -121,7 +124,8 @@ async def test_compute_httpQueryAuth(compute):
 #     await compute.close()
 
 
-# async def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller):
+# @pytest.mark.asyncio
+#async def test_compute_httpQueryNotConnectedGNS3vmNotRunning(compute, controller):
 #     """
 #     We are not connected to the remote and it's a GNS3 VM. So we need to start it
 #     """
@@ -147,6 +151,7 @@ async def test_compute_httpQueryAuth(compute):
 #     await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryNotConnectedInvalidVersion(compute):
 
     compute._connected = False
@@ -154,12 +159,13 @@ async def test_compute_httpQueryNotConnectedInvalidVersion(compute):
     response.read = AsyncioMagicMock(return_value=json.dumps({"version": "1.42.4"}).encode())
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(aiohttp.web.HTTPConflict):
+        with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=20)
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryNotConnectedNonGNS3Server(compute):
 
     compute._connected = False
@@ -167,12 +173,13 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server(compute):
     response.read = AsyncioMagicMock(return_value=b'Blocked by super antivirus')
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(aiohttp.web.HTTPConflict):
+        with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=20)
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryNotConnectedNonGNS3Server2(compute):
 
     compute._connected = False
@@ -180,22 +187,24 @@ async def test_compute_httpQueryNotConnectedNonGNS3Server2(compute):
     response.read = AsyncioMagicMock(return_value=b'{}')
     response.status = 200
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(aiohttp.web.HTTPConflict):
+        with pytest.raises(ControllerError):
             await compute.post("/projects", {"a": "b"})
         mock.assert_any_call("GET", "https://example.com:84/v2/compute/capabilities", headers={'content-type': 'application/json'}, data=None, auth=None, chunked=None, timeout=20)
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryError(compute):
 
     response = MagicMock()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         response.status = 404
-        with pytest.raises(aiohttp.web.HTTPNotFound):
+        with pytest.raises(ControllerNotFoundError):
             await compute.post("/projects", {"a": "b"})
         assert mock.called
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQueryConflictError(compute):
 
     response = MagicMock()
@@ -208,6 +217,7 @@ async def test_compute_httpQueryConflictError(compute):
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_compute_httpQuery_project(compute):
 
     response = MagicMock()
@@ -219,12 +229,14 @@ async def test_compute_httpQuery_project(compute):
         await compute.close()
 
 # FIXME: https://github.com/aio-libs/aiohttp/issues/2525
-# async def test_connectNotification(compute):
+# @pytest.mark.asyncio
+#async def test_connectNotification(compute):
 #
 #     ws_mock = AsyncioMagicMock()
 #     call = 0
 #
-#     async def receive():
+#     @pytest.mark.asyncio
+#async def receive():
 #         nonlocal call
 #         call += 1
 #         if call == 1:
@@ -256,7 +268,8 @@ async def test_compute_httpQuery_project(compute):
 #
 #     call = 0
 #
-#     async def receive():
+#     @pytest.mark.asyncio
+#async def receive():
 #         nonlocal call
 #         call += 1
 #         if call == 1:
@@ -280,6 +293,7 @@ async def test_compute_httpQuery_project(compute):
 #     assert args[1]["memory_usage_percent"] == 80.7
 #     assert args[1]["cpu_usage_percent"] == 35.7
 
+@pytest.mark.asyncio
 async def test_json(compute):
 
     compute.user = "test"
@@ -290,16 +304,17 @@ async def test_json(compute):
         "host": "example.com",
         "port": 84,
         "user": "test",
-        "cpu_usage_percent": None,
-        "memory_usage_percent": None,
-        "disk_usage_percent": None,
+        "cpu_usage_percent": 0,
+        "memory_usage_percent": 0,
+        "disk_usage_percent": 0,
         "connected": True,
         "last_error": None,
         "capabilities": {
-            "version": None,
-            "cpus": None,
-            "memory": None,
-            "disk_size": None,
+            "version": "",
+            "platform": "",
+            "cpus": 0,
+            "memory": 0,
+            "disk_size": 0,
             "node_types": []
         }
     }
@@ -312,6 +327,7 @@ async def test_json(compute):
     }
 
 
+@pytest.mark.asyncio
 async def test_downloadFile(project, compute):
 
     response = MagicMock()
@@ -322,6 +338,7 @@ async def test_downloadFile(project, compute):
     await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_close(compute):
 
     assert compute.connected is True
@@ -329,6 +346,7 @@ async def test_close(compute):
     assert compute.connected is False
 
 
+@pytest.mark.asyncio
 async def test_update(compute, controller):
 
     compute._controller._notification = MagicMock()
@@ -344,6 +362,7 @@ async def test_update(compute, controller):
     assert compute._controller.save.called
 
 
+@pytest.mark.asyncio
 async def test_forward_get(compute):
 
     response = MagicMock()
@@ -354,17 +373,19 @@ async def test_forward_get(compute):
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_forward_404(compute):
 
     response = MagicMock()
     response.status = 404
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        with pytest.raises(aiohttp.web_exceptions.HTTPNotFound):
+        with pytest.raises(ControllerNotFoundError):
             await compute.forward("GET", "qemu", "images")
         assert mock.called
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_forward_post(compute):
 
     response = MagicMock()
@@ -375,6 +396,7 @@ async def test_forward_post(compute):
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_images(compute):
     """
     Will return image on compute
@@ -397,6 +419,7 @@ async def test_images(compute):
     ]
 
 
+@pytest.mark.asyncio
 async def test_list_files(project, compute):
 
     res = [{"path": "test"}]
@@ -409,6 +432,7 @@ async def test_list_files(project, compute):
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_interfaces(compute):
 
     res = [
@@ -430,6 +454,7 @@ async def test_interfaces(compute):
         await compute.close()
 
 
+@pytest.mark.asyncio
 async def test_get_ip_on_same_subnet(controller):
 
     compute1 = Compute("compute1", host="192.168.1.1", controller=controller)
