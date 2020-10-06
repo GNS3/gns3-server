@@ -124,7 +124,7 @@ class QEMUHandler:
         vm.console = request.json.pop("console", vm.console)
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
-                await vm.update(name, value)
+                await vm.update_property(name, value)
         vm.updated()
         response.json(vm)
 

@@ -445,7 +445,7 @@ class QemuVM(BaseNode):
         else:
             self._cdrom_image = ""
 
-    async def update(self, name, value):
+    async def update_property(self, name, value):
         """
         Update Qemu VM properties.
         """
