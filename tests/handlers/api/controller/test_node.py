@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import sys
 import pytest
 
 from unittest.mock import MagicMock
@@ -242,6 +242,7 @@ async def test_post_file(controller_api, project, node, compute):
     assert response.status == 404
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Does not work on Windows")
 async def test_get_and_post_with_nested_paths_normalization(controller_api, project, node, compute):
 
     response = MagicMock()

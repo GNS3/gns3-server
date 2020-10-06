@@ -280,6 +280,7 @@ async def test_images(compute_api, fake_qemu_vm):
     assert response.json == [{"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}]
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Does not work on Windows")
 async def test_upload_image(compute_api, tmpdir):
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
