@@ -94,6 +94,7 @@ class Symbols:
 
         directory = self.symbols_path()
         if directory:
+            log.info("Searching for custom symbols in '{}'".format(directory))
             for root, _, files in os.walk(directory):
                 for filename in files:
                     if filename.startswith('.'):
