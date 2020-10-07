@@ -18,6 +18,7 @@
 import os
 import aiohttp
 import asyncio
+import urllib.parse
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -52,8 +53,9 @@ class SymbolHandler:
     async def raw(request, response):
 
         controller = Controller.instance()
+        symbol_id = urllib.parse.unquote(request.match_info["symbol_id"])
         try:
-            await response.stream_file(controller.symbols.get_path(request.match_info["symbol_id"]))
+            await response.stream_file(controller.symbols.get_path(symbol_id))
         except (KeyError, OSError) as e:
             log.warning("Could not get symbol file: {}".format(e))
             response.set_status(404)
@@ -66,8 +68,10 @@ class SymbolHandler:
         },
         raw=True)
     async def upload(request, response):
+
         controller = Controller.instance()
-        path = os.path.join(controller.symbols.symbols_path(), os.path.basename(request.match_info["symbol_id"]))
+        symbol_id = urllib.parse.unquote(request.match_info["symbol_id"])
+        path = os.path.join(controller.symbols.symbols_path(), os.path.basename(symbol_id))
         try:
             with open(path, "wb") as f:
                 while True:

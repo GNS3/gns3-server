@@ -132,7 +132,7 @@ class Symbols:
                     return symbol
                 else:
                     # return the default computer symbol
-                    log.warning("Could not retrieve symbol '{}'".format(symbol_id))
+                    log.warning("Could not retrieve symbol '{}', returning default symbol...".format(symbol_id))
                     return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):
