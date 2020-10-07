@@ -28,7 +28,7 @@
         "options": "-nographic -enable-kvm"
     },
     "images": [
-		{
+        {
             "filename": "junos-vmx-x86-64-20.2R1.10.qcow2",
             "version": "20.2R1.10-KVM",
             "md5sum": "182484474accf07bd403ef17fa2959a9",
@@ -357,7 +357,7 @@
         }
     ],
     "versions": [
-		{
+        {
             "name": "20.2R1.10-KVM",
             "images": {
                 "hda_disk_image": "junos-vmx-x86-64-20.2R1.10.qcow2",

@@ -1,0 +1,52 @@
+{
+    "name": "Juniper vRR",
+    "category": "router",
+    "description": "The vRR is a full-featured, carrier-grade virtual route reflector software that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm.",
+    "vendor_name": "Juniper",
+    "vendor_url": "https://www.juniper.net/us/en/",
+    "documentation_url": "https://www.juniper.net/documentation/product/en_US/virtual-route-reflector",
+    "product_name": "Juniper vRR",
+    "product_url": "https://www.juniper.net/us/en/products-services/nos/junos/",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "none",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nConnect the first interface (em0) to your admin VLAN.",
+    "symbol": "juniper-vmx.svg",
+    "first_port_name": "em0",
+    "port_name_format": "em{port1}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 2,
+        "ram": 8192,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic -enable-kvm"
+    },
+    "images": [
+        {
+            "filename": "junos-x86-64-20.3R1.8.img",
+            "version": "20.3R1.8-KVM",
+            "md5sum": "5cd41a792daae2b3fefac1928f2a1894",
+            "filesize": 2761162752
+        },
+        {
+            "filename": "metadata.img",
+            "version": "20.3R1.8-KVM",
+            "md5sum": "ae4e3562aa389929476d82420c79d511",
+            "filesize": 393216
+        }
+    ],
+    "versions": [
+        {
+            "name": "20.3R1.8-KVM",
+            "images": {
+                "hda_disk_image": "junos-x86-64-20.3R1.8.img",
+                "hdb_disk_image": "metadata.img"
+            }
+        }
+    ]
+}

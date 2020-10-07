@@ -26,7 +26,7 @@
         "options": "-nographic -enable-kvm -smp cpus=3"
     },
     "images": [
-		{
+        {
             "filename": "vFPC-20200526.img",
             "version": "20.2R1.10-KVM",
             "md5sum": "400652d7e450b0bf8ad4cc37db46b78c",
@@ -154,7 +154,7 @@
         }
     ],
     "versions": [
-		{
+        {
             "name": "20.2R1.10-KVM",
             "images": {
                 "hda_disk_image": "vFPC-20200526.img"

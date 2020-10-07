@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "vyos-1.2.6-amd64.iso",
+            "version": "1.2.6",
+            "md5sum": "dbf5335c16967cd5f768d1ca927666db",
+            "filesize": 428867584,
+            "download_url": "https://downloads.vyos.io/?dir=release/current/1.2.6"
+        },
+        {
             "filename": "vyos-1.3-rolling-202005040117-amd64.iso",
             "version": "1.3-rolling-202005040117",
             "md5sum": "0500d5138cd05239b50f93fb24ac8b55",
@@ -75,6 +82,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.2.6",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.2.6-amd64.iso"
+            }
+        },
         {
             "name": "1.3-rolling-202005040117",
             "images": {

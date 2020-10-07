@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "dcnm-va.11.4.1.iso",
+            "version": "11.4.1",
+            "md5sum": "37b30d7a13b2fd436478e0e3049e4da6",
+            "filesize": 5378867680,
+            "download_url": "https://software.cisco.com/download/home/281722751/type/282088134/release/11.4%25281%2529"
+        },
+        {
             "filename": "dcnm-va.11.2.1.iso",
             "version": "11.2.1",
             "md5sum": "2e50e0a4ea72875c54edf593b7c93a66",
@@ -56,6 +63,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "11.4.1",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "dcnm-va.11.4.1.iso"
+            }
+        },
         {
             "name": "11.2.1",
             "images": {

@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "xrv9k-fullk9-x-7.1.1.qcow2",
+            "version": "7.1.1",
+            "md5sum": "dcf241e3f8df0151fec2c7bfac9d96ac",
+            "filesize": 1443758080,
+            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/7.1.1"
+        },
+        {
             "filename": "xrv9k-fullk9-x-7.0.1.qcow2",
             "version": "7.0.1",
             "md5sum": "ca2817767fa546e303c3c536e211d33e",
@@ -97,6 +104,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.1.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-7.1.1.qcow2"
+            }
+        },
         {
             "name": "7.0.1",
             "images": {

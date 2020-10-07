@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "vqfx-20.2R1.10-re-qemu.qcow2",
+            "version": "20.2R1",
+            "md5sum": "20220bfa3d387184fce957936eeeb4ec",
+            "filesize": 675020800,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/"
+        },
+        {
             "filename": "jinstall-vqfx-10-f-18.4R1.8.qcow2",
             "version": "18.4R1",
             "md5sum": "1b0dbd9a235f887e56a8506c0b2f684f",
@@ -48,6 +55,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "20.2R1",
+            "images": {
+                "hda_disk_image": "vqfx-20.2R1.10-re-qemu.qcow2"
+            }
+        },
         {
             "name": "18.4R1",
             "images": {
