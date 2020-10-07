@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.15 07/10/2020
+
+* Fix symbol retrieval issue. Ref #1824
+* Fixes update() missing 2 required positional arguments: 'name' and 'value'. Fixes #1821 #1825
+* Fix Hyper-V based GNS3 VM WMI issue. Fixes #1822
+* Release Web-Ui version 2020.4.0-beta.1
+
 ## 2.2.14 14/09/2020
 
 * Release Web-Ui version 2020.3.0-beta.4
