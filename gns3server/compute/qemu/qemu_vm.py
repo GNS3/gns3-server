@@ -1691,6 +1691,10 @@ class QemuVM(BaseNode):
             else:
                 disk = disk_image
 
+            # From Qemu man page: if the filename contains comma, you must double it
+            # (for instance, "file=my,,file" to use file "my,file").
+            disk = disk.replace(",", ",,")
+
             if interface == "sata":
                 # special case, sata controller doesn't exist in Qemu
                 options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
