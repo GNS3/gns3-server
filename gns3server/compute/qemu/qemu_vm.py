@@ -1741,7 +1741,7 @@ class QemuVM(BaseNode):
                     raise QemuError("cdrom image '{}' is not accessible".format(self._cdrom_image))
             if self._hdc_disk_image:
                 raise QemuError("You cannot use a disk image on hdc disk and a CDROM image at the same time")
-            options.extend(["-cdrom", self._cdrom_image])
+            options.extend(["-cdrom", self._cdrom_image.replace(",", ",,")])
         return options
 
     def _bios_option(self):
@@ -1753,7 +1753,7 @@ class QemuVM(BaseNode):
                     raise QemuError("bios image '{}' linked to '{}' is not accessible".format(self._bios_image, os.path.realpath(self._bios_image)))
                 else:
                     raise QemuError("bios image '{}' is not accessible".format(self._bios_image))
-            options.extend(["-bios", self._bios_image])
+            options.extend(["-bios", self._bios_image.replace(",", ",,")])
         return options
 
     def _linux_boot_options(self):
@@ -1765,14 +1765,14 @@ class QemuVM(BaseNode):
                     raise QemuError("initrd file '{}' linked to '{}' is not accessible".format(self._initrd, os.path.realpath(self._initrd)))
                 else:
                     raise QemuError("initrd file '{}' is not accessible".format(self._initrd))
-            options.extend(["-initrd", self._initrd])
+            options.extend(["-initrd", self._initrd.replace(",", ",,")])
         if self._kernel_image:
             if not os.path.isfile(self._kernel_image) or not os.path.exists(self._kernel_image):
                 if os.path.islink(self._kernel_image):
                     raise QemuError("kernel image '{}' linked to '{}' is not accessible".format(self._kernel_image, os.path.realpath(self._kernel_image)))
                 else:
                     raise QemuError("kernel image '{}' is not accessible".format(self._kernel_image))
-            options.extend(["-kernel", self._kernel_image])
+            options.extend(["-kernel", self._kernel_image.replace(",", ",,")])
         if self._kernel_command_line:
             options.extend(["-append", self._kernel_command_line])
 
@@ -2012,7 +2012,7 @@ class QemuVM(BaseNode):
                                 log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
                                                                                                                               id=self.id,
                                                                                                                               snapshot=snapshot_name))
-                                return ["-loadvm", snapshot_name]
+                                return ["-loadvm", snapshot_name.replace(",", ",,")]
 
             except subprocess.SubprocessError as e:
                 raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
@@ -2024,16 +2024,18 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        vm_name = self._name.replace(",", ",,")
+        project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
-        additional_options = additional_options.replace("%vm-name%", '"' + self._name.replace('"', '\\"') + '"')
+        additional_options = additional_options.replace("%vm-name%", '"' + vm_name.replace('"', '\\"') + '"')
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
-        additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
+        additional_options = additional_options.replace("%project-path%", '"' + project_path.replace('"', '\\"') + '"')
         additional_options = additional_options.replace("%guest-cid%", str(self._guest_cid))
         if self._console_type != "none" and self._console:
             additional_options = additional_options.replace("%console-port%", str(self._console))
         command = [self.qemu_path]
-        command.extend(["-name", self._name])
+        command.extend(["-name", vm_name])
         command.extend(["-m", "{}M".format(self._ram)])
         command.extend(["-smp", "cpus={},sockets=1".format(self._cpus)])
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
