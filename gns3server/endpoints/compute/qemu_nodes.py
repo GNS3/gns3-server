@@ -92,11 +92,7 @@ async def update_qemu_node(project_id: UUID, node_id: UUID, node_data: schemas.Q
     vm.console = node_data.pop("console", vm.console)
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
-            setattr(vm, name, value)
-            if name == "cdrom_image":
-                # let the guest know about the new cdrom image
-                await vm.update_cdrom_image()
-
+            await vm.update_property(name, value)
     vm.updated()
     return vm.__json__()
 
