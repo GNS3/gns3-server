@@ -26,7 +26,6 @@
         "options": "-vga qxl"
     },
     "images": [
-
         {
             "filename": "CentOS 7-18.10 (64bit).vmdk",
             "version": "7-1810",
@@ -34,7 +33,6 @@
             "filesize": 4886233088,
             "download_url": "http://www.osboxes.org/centos/"
         },
-
         {
             "filename": "CentOS 7-1804 (64bit).vmdk",
             "version": "7-1804",
@@ -42,7 +40,6 @@
             "filesize": 4701356032,
             "download_url": "http://www.osboxes.org/centos/"
         },
-
         {
             "filename": "CentOS 7-1611 (64bit).vmdk",
             "version": "7-1611",
@@ -58,14 +55,12 @@
                 "hda_disk_image": "CentOS 7-18.10 (64bit).vmdk"
             }
         },
-
         {
             "name": "7-1804",
             "images": {
                 "hda_disk_image": "CentOS 7-1804 (64bit).vmdk"
             }
         },
-
         {
             "name": "7-1611",
             "images": {

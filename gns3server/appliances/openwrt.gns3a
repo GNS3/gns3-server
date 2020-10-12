@@ -16,11 +16,21 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
         "ram": 128,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "openwrt-19.07.4-x86-64-combined-ext4.img",
+            "version": "19.07.4",
+            "md5sum": "e8bde404ab527ab40ef9643bca9f7432",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/19.07.4/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/19.07.4/targets/x86/64/openwrt-19.07.4-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
         {
             "filename": "openwrt-19.07.3-x86-64-combined-ext4.img",
             "version": "19.07.3",
@@ -40,15 +50,6 @@
             "compression": "gzip"
         },
         {
-            "filename": "openwrt-18.06.8-x86-64-combined-ext4.img",
-            "version": "18.06.8",
-            "md5sum": "8b235443df9d1a236b147c1c29a97083",
-            "filesize": 285736960,
-            "download_url": "https://downloads.openwrt.org/releases/18.06.8/targets/x86/64/",
-            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.8/targets/x86/64/openwrt-18.06.8-x86-64-combined-ext4.img.gz",
-            "compression": "gzip"
-        },
-        {
             "filename": "openwrt-19.07.1-x86-64-combined-ext4.img",
             "version": "19.07.1",
             "md5sum": "2d36f48bcc37edf3c5cfc28fed44b533",
@@ -58,21 +59,30 @@
             "compression": "gzip"
         },
         {
-            "filename": "openwrt-18.06.7-x86-64-combined-ext4.img",
-            "version": "18.06.7",
-            "md5sum": "f463f38cccf89e1a2229f74a4c42d3ef",
-            "filesize": 285736960,
-            "download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/",
-            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/openwrt-18.06.7-x86-64-combined-ext4.img.gz",
-            "compression": "gzip"
-        },
-        {
             "filename": "openwrt-19.07.0-x86-64-combined-ext4.img",
             "version": "19.07.0",
             "md5sum": "cf2a353d10e017b9e71cd3761f7aa724",
             "filesize": 285736960,
             "download_url": "https://downloads.openwrt.org/releases/19.07.0/targets/x86/64/",
             "direct_download_url": "https://downloads.openwrt.org/releases/19.07.0/targets/x86/64/openwrt-19.07.0-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-18.06.8-x86-64-combined-ext4.img",
+            "version": "18.06.8",
+            "md5sum": "8b235443df9d1a236b147c1c29a97083",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.8/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.8/targets/x86/64/openwrt-18.06.8-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-18.06.7-x86-64-combined-ext4.img",
+            "version": "18.06.7",
+            "md5sum": "f463f38cccf89e1a2229f74a4c42d3ef",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/18.06.7/targets/x86/64/openwrt-18.06.7-x86-64-combined-ext4.img.gz",
             "compression": "gzip"
         },
         {
@@ -101,7 +111,7 @@
             "download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/",
             "direct_download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/openwrt-18.06.2-x86-64-combined-ext4.img.gz",
             "compression": "gzip"
-        }, 
+        },
         {
             "filename": "openwrt-18.06.1-x86-64-combined-ext4.img",
             "version": "18.06.1",
@@ -132,6 +142,12 @@
     ],
     "versions": [
         {
+            "name": "19.07.4",
+            "images": {
+                "hda_disk_image": "openwrt-19.07.4-x86-64-combined-ext4.img"
+            }
+        },
+        {
             "name": "19.07.3",
             "images": {
                 "hda_disk_image": "openwrt-19.07.3-x86-64-combined-ext4.img"
@@ -144,27 +160,27 @@
             }
         },
         {
-            "name": "18.06.8",
-            "images": {
-                "hda_disk_image": "openwrt-18.06.8-x86-64-combined-ext4.img"
-            }
-        },
-        {
             "name": "19.07.1",
             "images": {
                 "hda_disk_image": "openwrt-19.07.1-x86-64-combined-ext4.img"
             }
         },
         {
-            "name": "18.06.7",
-            "images": {
-                "hda_disk_image": "openwrt-18.06.7-x86-64-combined-ext4.img"
-            }
-        },
-        {
             "name": "19.07.0",
             "images": {
                 "hda_disk_image": "openwrt-19.07.0-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "18.06.8",
+            "images": {
+                "hda_disk_image": "openwrt-18.06.8-x86-64-combined-ext4.img"
+            }
+        },
+        {
+            "name": "18.06.7",
+            "images": {
+                "hda_disk_image": "openwrt-18.06.7-x86-64-combined-ext4.img"
             }
         },
         {
@@ -180,25 +196,25 @@
             }
         },
         {
-            "name": "openwrt 18.06.2",
+            "name": "18.06.2",
             "images": {
                 "hda_disk_image": "openwrt-18.06.2-x86-64-combined-ext4.img"
             }
         },
-        { 
-            "name": "openwrt 18.06.1",
+        {
+            "name": "18.06.1",
             "images": {
                 "hda_disk_image": "openwrt-18.06.1-x86-64-combined-ext4.img"
             }
         },
         {
-            "name": "openwrt/lede 17.01.6",
+            "name": "17.01.6",
             "images": {
                 "hda_disk_image": "lede-17.01.6-x86-64-combined-ext4.img"
             }
         },
         {
-            "name": "openwrt 15.05.1",
+            "name": "15.05.1",
             "images": {
                 "hda_disk_image": "openwrt-15.05.1-x86-64-combined-ext4.img"
             }

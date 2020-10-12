@@ -16,6 +16,8 @@
         "adapter_type": "vmxnet3",
         "adapters": 6,
         "ram": 32768,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
@@ -50,16 +52,14 @@
             "name": "19.2.0",
             "images": {
                 "hda_disk_image": "viptela-vmanage-19.2.0-genericx86-64.qcow2",
-								"hdb_disk_image": "empty30G.qcow2"
-
+                "hdb_disk_image": "empty30G.qcow2"
             }
         },
         {
             "name": "18.3.7",
             "images": {
                 "hda_disk_image": "viptela-vmanage-genericx86-64-disk1.vmdk",
-								"hdb_disk_image": "empty30G.qcow2"
-
+                "hdb_disk_image": "empty30G.qcow2"
             }
         }
     ]

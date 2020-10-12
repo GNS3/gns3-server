@@ -1,0 +1,51 @@
+{
+    "name": "IP Cop",
+    "category": "firewall",
+    "description": "The IPCop Firewall is a Linux firewall distribution. It is geared towards home and SOHO users. The IPCop web-interface is very user-friendly and makes usage easy.",
+    "vendor_name": "IP Cop",
+    "vendor_url": "https://www.kali.org/",
+    "documentation_url": "http://www.ipcop.org/docs.html",
+    "product_name": "IP Cop",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Brent Stewart",
+    "maintainer_email": "brent@stewart.tc",
+    "usage": "",
+    "symbol": "shieldedtux.png",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 3,
+        "ram": 1024,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "ipcop-2.1.8-install-cd.i486.iso",
+            "version": "2.1.9",
+            "md5sum": "1394a7bd4e5c6fe8db70007278826101",
+            "filesize": 65011712,
+            "download_url": "http://www.ipcop.org/download.html",
+            "direct_download_url": "https://sourceforge.net/projects/ipcop/files/IPCop/IPCop%202.1.8/ipcop-2.1.8-install-cd.i486.iso"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.1.9",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "ipcop-2.1.8-install-cd.i486.iso"
+            }
+        }
+    ]
+}

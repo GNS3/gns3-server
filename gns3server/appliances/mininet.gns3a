@@ -1,29 +1,29 @@
 {
+    "name": "Mininet",
     "category": "guest",
+    "description": "Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native), in seconds, with a single command.",
+    "vendor_name": "Mininet Team",
+    "vendor_url": "http://mininet.org/",
+    "documentation_url": "http://mininet.org/walkthrough/",
+    "product_name": "Mininet",
+    "product_url": "http://mininet.org/",
+    "registry_version": 4,
     "status": "stable",
+    "availability": "free",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "description": "Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native), in seconds, with a single command.",
-    "product_name": "Mininet",
-    "registry_version": 4,
-    "product_url": "http://mininet.org/",
-    "documentation_url": "http://mininet.org/walkthrough/",
-    "first_port_name": "eth0",
     "usage": "Username: mininet\nPassword: mininet",
+    "first_port_name": "eth0",
     "port_name_format": "eth{0}",
-    "vendor_name": "Mininet Team",
     "qemu": {
-        "adapters": 1,
         "adapter_type": "virtio-net-pci",
-        "arch": "x86_64",
+        "adapters": 1,
         "ram": 2048,
-        "console_type": "vnc",
         "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "vnc",
         "kvm": "allow"
     },
-    "availability": "free",
-    "vendor_url": "http://mininet.org/",
-    "name": "Mininet",
     "images": [
         {
             "filename": "mininet-vm-x86_64.vmdk",
@@ -37,10 +37,10 @@
     ],
     "versions": [
         {
+            "name": "2.2.2",
             "images": {
                 "hda_disk_image": "mininet-vm-x86_64.vmdk"
-            },
-            "name": "2.2.2"
+            }
         }
     ]
 }

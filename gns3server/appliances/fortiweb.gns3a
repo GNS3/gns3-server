@@ -12,8 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username is admin, no password is set. Console keeps sending 'access uuid file failed, error number 2' messages; ignore it.",
-    "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
+    "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
@@ -118,7 +118,6 @@
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
         }
-
     ],
     "versions": [
         {

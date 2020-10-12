@@ -12,8 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "The system reboots twice during the initial setup; this is normal.\nDefault username is admin, no password is set.",
-    "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
+    "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 10,

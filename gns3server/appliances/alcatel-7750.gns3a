@@ -18,6 +18,7 @@
         "adapter_type": "e1000",
         "adapters": 6,
         "ram": 2048,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",

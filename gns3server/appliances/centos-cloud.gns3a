@@ -27,7 +27,7 @@
     "images": [
         {
             "filename": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
-            "version": "7-1809",
+            "version": "7 (1809)",
             "md5sum": "da79108d1324b27bd1759362b82fbe40",
             "filesize": 914948096,
             "download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1809.qcow2"

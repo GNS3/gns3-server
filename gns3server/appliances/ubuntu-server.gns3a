@@ -27,7 +27,7 @@
     "images": [
         {
             "filename": "Ubuntu Server 18.04.3 LTS (64bit).vmdk",
-            "version": "18.04.3",
+            "version": "18.04.3 LTS Server",
             "md5sum": "435f15a54f7f673e302ad26f05226e0e",
             "filesize": 2707814912,
             "download_url": "https://www.ictkin.com/gns3-appliance/"

@@ -18,9 +18,9 @@
         "adapter_type": "vmxnet3",
         "adapters": 5,
         "ram": 2048,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
-        "hda_disk_interface": "virtio",
         "kvm": "require",
         "options": "-cpu host"
     },
@@ -39,7 +39,6 @@
             "filesize": 328400896,
             "download_url": "http://www.cisco.com/"
         }
-				
     ],
     "versions": [
         {

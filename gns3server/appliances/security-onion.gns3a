@@ -1,7 +1,7 @@
 {
     "name": "Security Onion",
     "category": "guest",
-    "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It’s based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",
+    "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It's based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",
     "vendor_name": "Security Onion Solutions, LLC",
     "vendor_url": "https://securityonion.net/",
     "documentation_url": "https://github.com/Security-Onion-Solutions/security-onion/wiki",
@@ -17,26 +17,27 @@
         "adapter_type": "e1000",
         "adapters": 2,
         "ram": 3072,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
         "kvm": "allow"
     },
     "images": [
         {
+            "filename": "securityonion-16.04.7.1.iso",
+            "version": "16.04.7.1",
+            "md5sum": "6bd811a05c1ec7973b8fca5c34cec13e",
+            "filesize": 2132803584,
+            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/",
+            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v16.04.7.1_20181010/securityonion-16.04.7.1.iso"
+        },
+        {
             "filename": "securityonion-16.04.6.1.iso",
             "version": "16.04.6.1",
             "md5sum": "ca835cef92c2c0daafa16e789c343d1d",
             "filesize": 2020605952,
             "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/",
-            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v16.04.5.3_20181010/securityonion-16.04.6.1.iso"
-        },
-        {
-            "filename": "securityonion-16.04.5.3.iso",
-            "version": "16.04.5.3",
-            "md5sum": "886b369548c9c3841bc820cc3ab02bd9",
-            "filesize": 1895825408,
-            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/",
-            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v16.04.5.3_20181010/securityonion-16.04.5.3.iso"
+            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v16.04.6.1_20181010/securityonion-16.04.6.1.iso"
         },
         {
             "filename": "securityonion-14.04.5.4.iso",
@@ -47,14 +48,6 @@
             "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso"
         },
         {
-            "filename": "securityonion-14.04.5.3.iso",
-            "version": "14.04.5.3",
-            "md5sum": "fb80ccb2d3c0f3f511823fa5858f87d1",
-            "filesize": 1889533952,
-            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/",
-            "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.3.iso"
-        },
-        {
             "filename": "empty30G.qcow2",
             "version": "1.0",
             "md5sum": "3411a599e822f2ac6be560a26405821a",
@@ -62,20 +55,20 @@
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
         }
-    
     ],
     "versions": [
+        {
+            "name": "16.04.7.1",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "securityonion-16.04.7.1.iso"
+            }
+        },
         {
             "name": "16.04.6.1",
             "images": {
                 "hda_disk_image": "empty30G.qcow2",
                 "cdrom_image": "securityonion-16.04.6.1.iso"
-            }
-        },        {
-            "name": "16.04.5.3",
-            "images": {
-                "hda_disk_image": "empty30G.qcow2",
-                "cdrom_image": "securityonion-16.04.5.3.iso"
             }
         },
         {
@@ -84,14 +77,6 @@
                 "hda_disk_image": "empty30G.qcow2",
                 "cdrom_image": "securityonion-14.04.5.4.iso"
             }
-        },
-        {
-            "name": "14.04.5.3",
-            "images": {
-                "hda_disk_image": "empty30G.qcow2",
-                "cdrom_image": "securityonion-14.04.5.3.iso"
-            }
         }
-        
-]
+    ]
 }

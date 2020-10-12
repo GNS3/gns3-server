@@ -1,7 +1,7 @@
 {
     "name": "FRR",
     "category": "router",
-    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nFRR’s seamless integration with the native Linux/Unix IP networking stacks makes it applicable to a wide variety of use cases including connecting hosts/VMs/containers to the network, advertising network services, LAN switching and routing, Internet access routers, and Internet peering.\n\nThis is an unofficial VM of FRR.",
+    "description": "FRRouting (FRR) is an IP routing protocol suite for Linux and Unix platforms which includes protocol daemons for BGP, IS-IS, LDP, OSPF, PIM, and RIP.\n\nFRR's seamless integration with the native Linux/Unix IP networking stacks makes it applicable to a wide variety of use cases including connecting hosts/VMs/containers to the network, advertising network services, LAN switching and routing, Internet access routers, and Internet peering.\n\nThis is an unofficial VM of FRR.",
     "vendor_name": "FRRouting Project",
     "vendor_url": "https://frrouting.org",
     "product_name": "FRR",
@@ -15,6 +15,7 @@
         "adapter_type": "e1000",
         "adapters": 8,
         "ram": 256,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "allow"

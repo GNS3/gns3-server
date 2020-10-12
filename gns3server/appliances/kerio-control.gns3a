@@ -77,14 +77,16 @@
             "md5sum": "0405890e323e29a4808ec288600875ba",
             "filesize": 254364160,
             "download_url": "http://www.kerio.com/support/kerio-control",
-            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.1-2019/kerio-control-appliance-9.2.1-2019-vmware-disk1.vmdk"        },
+            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.2.1-2019/kerio-control-appliance-9.2.1-2019-vmware-disk1.vmdk"
+        },
         {
             "filename": "kerio-control-appliance-9.1.4-1535-vmware.vmdk",
             "version": "9.1.4",
             "md5sum": "5ea5a7f103b1f008d4c24444400333ec",
             "filesize": 483459072,
             "download_url": "http://www.kerio.com/support/kerio-control",
-            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.1.4-1535/kerio-control-appliance-9.1.4-1535-vmware.vmdk"        }
+            "direct_download_url": "http://cdn.kerio.com/dwn/control/control-9.1.4-1535/kerio-control-appliance-9.1.4-1535-vmware.vmdk"
+        }
     ],
     "versions": [
         {

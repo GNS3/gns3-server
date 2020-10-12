@@ -17,10 +17,10 @@
         "adapter_type": "e1000",
         "adapters": 1,
         "ram": 96,
+        "hda_disk_interface": "virtio",
         "arch": "i386",
         "console_type": "vnc",
         "kvm": "allow",
-        "hda_disk_interface": "virtio",
         "options": "-vga std -usbdevice tablet"
     },
     "images": [
@@ -34,7 +34,7 @@
         },
         {
             "filename": "linux-tinycore-6.4-2.img",
-            "version": "6.4",
+            "version": "6.4~2",
             "md5sum": "dcbb5318c3e18ab085088d4474d8de85",
             "filesize": 36503552,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
@@ -42,7 +42,7 @@
         },
         {
             "filename": "linux-tinycore-6.4.img",
-            "version": "6.4",
+            "version": "6.4~1",
             "md5sum": "e3de478780c0acb76ef92f872fe734c4",
             "filesize": 22544384,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",

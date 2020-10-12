@@ -12,8 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Default username is admin, no password is set.",
-    "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
+    "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
@@ -180,6 +180,13 @@
             "name": "6.0.6",
             "images": {
                 "hda_disk_image": "FMG_VM64_KVM-v6-build0349-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.0.3",
+            "images": {
+                "hda_disk_image": "FMG_VM64_KVM-v6-build0255-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

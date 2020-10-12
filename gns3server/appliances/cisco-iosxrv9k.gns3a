@@ -18,12 +18,20 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
         "ram": 16384,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
         "options": "-smp 4 -cpu host"
     },
     "images": [
+        {
+            "filename": "xrv9k-fullk9-x-7.1.1.qcow2",
+            "version": "7.1.1",
+            "md5sum": "dcf241e3f8df0151fec2c7bfac9d96ac",
+            "filesize": 1443758080,
+            "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/7.1.1"
+        },
         {
             "filename": "xrv9k-fullk9-x-7.0.1.qcow2",
             "version": "7.0.1",
@@ -66,7 +74,8 @@
             "filesize": 1311703040,
             "download_url": "https://software.cisco.com/download/home/286288939/type/280805694/release/6.4.2"
         },
-        {   "filename": "xrv9k-fullk9-x-6.4.1.qcow2",
+        {
+            "filename": "xrv9k-fullk9-x-6.4.1.qcow2",
             "version": "6.4.1",
             "md5sum": "9c56b684e307706005a503e289cb9317",
             "filesize": 1304887296,
@@ -95,6 +104,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.1.1",
+            "images": {
+                "hda_disk_image": "xrv9k-fullk9-x-7.1.1.qcow2"
+            }
+        },
         {
             "name": "7.0.1",
             "images": {

@@ -12,9 +12,9 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "Console credentials: root/default\nWebUI credentials: admin/admin\nThe boot process might take a few minutes without providing any output to the console. Please be patient (or set console to vnc to see tty outputs).",
+    "symbol": "mgmt_station.svg",
     "first_port_name": "mgmt",
     "port_name_format": "1.{port1}",
-    "symbol": "mgmt_station.svg",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 2,

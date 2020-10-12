@@ -35,7 +35,7 @@
     ],
     "versions": [
         {
-            "name": "Debian 10.2.0",
+            "name": "10.2.0",
             "images": {
                 "hda_disk_image": "debian10-gns3.qcow2"
             }

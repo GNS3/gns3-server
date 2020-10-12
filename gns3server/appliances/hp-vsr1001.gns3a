@@ -15,8 +15,8 @@
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 16,
-        "hda_disk_interface": "virtio",
         "ram": 1024,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "c",

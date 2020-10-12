@@ -11,18 +11,13 @@
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",
-    "symbol": "juniper-vmx.svg",
     "usage": "Initial username is root, no password.\n\nTIPS:\n* Use the 'show chassis fpc pic-status' command to check that PIC 0 is online and shows 'Virtual 10x1GE PIC'\n* Use the second adapter (em2) and above to connect to other nodes (the first two interfaces are for internal purposes).",
+    "symbol": "juniper-vmx.svg",
     "first_port_name": "fxp0",
     "port_name_format": "em{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 12,
-        "ram": 1024,
-        "arch": "x86_64",
-        "console_type": "telnet",
-        "kvm": "require",
-        "options": "-nographic",
         "custom_adapters": [
             {
                 "adapter_number": 0,
@@ -32,7 +27,13 @@
                 "adapter_number": 1,
                 "adapter_type": "e1000"
             }
-        ]
+        ],
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic"
     },
     "images": [
         {

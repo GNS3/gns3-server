@@ -223,6 +223,24 @@ class HyperVGNS3VM(BaseGNS3VM):
         elif ret != 0 or ret != 32775:
             raise GNS3VMError("Failed to change state to {}".format(state))
 
+    async def _is_vm_network_active(self):
+        """
+        Check if WMI is updated with VM virtual network adapters
+        and wait until their count becomes > 0
+        ProtocolIFType  Unknown (0)
+                        Other (1)
+                        IPv4 (4096)
+                        IPv6 (4097)
+                        IPv4/v6 (4098)
+        """
+
+        wql = "SELECT * FROM Msvm_GuestNetworkAdapterConfiguration WHERE InstanceID like \
+               'Microsoft:GuestNetwork\\" + self._vm.Name + "%' and ProtocolIFType > 0 "
+        nic_count = len(self._conn.query(wql))
+        while nic_count == 0:
+            await asyncio.sleep(0.1)  # 100ms
+            nic_count = len(self._conn.query(wql))
+
     async def start(self):
         """
         Starts the GNS3 VM.
@@ -243,6 +261,9 @@ class HyperVGNS3VM(BaseGNS3VM):
             except GNS3VMError as e:
                 raise GNS3VMError("Failed to start the GNS3 VM: {}".format(e))
             log.info("GNS3 VM has been started")
+
+        # check if VM network is active
+        await self._is_vm_network_active()
 
         # Get the guest IP address
         # LIS (Linux Integration Services) must be installed on the guest

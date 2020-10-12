@@ -84,12 +84,13 @@ class QemuVM(BaseNode):
         self._execute_lock = asyncio.Lock()
         self._local_udp_tunnels = {}
         self._guest_cid = None
+        self._command_line_changed = False
 
         # QEMU VM settings
         if qemu_path:
             try:
                 self.qemu_path = qemu_path
-            except QemuError as e:
+            except QemuError:
                 # If the binary is not found for topologies 1.4 and later
                 # search via the platform otherwise use the binary name
                 if platform:
@@ -464,7 +465,18 @@ class QemuVM(BaseNode):
         else:
             self._cdrom_image = ""
 
-    async def update_cdrom_image(self):
+    async def update_property(self, name, value):
+        """
+        Update Qemu VM properties.
+        """
+
+        setattr(self, name, value)
+        if name == "cdrom_image":
+            # let the guest know about the new cdrom image
+            await self._update_cdrom_image()
+        self._command_line_changed = True
+
+    async def _update_cdrom_image(self):
         """
         Update the cdrom image path for the Qemu guest OS
         """
@@ -1072,6 +1084,7 @@ class QemuVM(BaseNode):
                                                                               stderr=subprocess.STDOUT,
                                                                               cwd=self.working_dir)
                 log.info('QEMU VM "{}" started PID={}'.format(self._name, self._process.pid))
+                self._command_line_changed = False
                 self.status = "started"
                 monitor_process(self._process, self._termination_callback)
             except (OSError, subprocess.SubprocessError, UnicodeEncodeError) as e:
@@ -1348,7 +1361,11 @@ class QemuVM(BaseNode):
         Reloads this QEMU VM.
         """
 
-        await self._control_vm("system_reset")
+        if self._command_line_changed:
+            await self.stop()
+            await self.start()
+        else:
+            await self._control_vm("system_reset")
         log.debug("QEMU VM has been reset")
 
     async def resume(self):
@@ -1361,6 +1378,7 @@ class QemuVM(BaseNode):
             raise QemuError("Resuming a QEMU VM is not supported")
         elif vm_status == "paused":
             await self._control_vm("cont")
+            self.status = "started"
             log.debug("QEMU VM has been resumed")
         else:
             log.info("QEMU VM is not paused to be resumed, current status is {}".format(vm_status))
@@ -1785,6 +1803,10 @@ class QemuVM(BaseNode):
         if format:
             extra_drive_options += ",format={}".format(format)
 
+        # From Qemu man page: if the filename contains comma, you must double it
+        # (for instance, "file=my,,file" to use file "my,file").
+        disk = disk.replace(",", ",,")
+
         if interface == "sata":
             # special case, sata controller doesn't exist in Qemu
             options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
@@ -1924,7 +1946,7 @@ class QemuVM(BaseNode):
                     raise QemuError("cdrom image '{}' is not accessible".format(self._cdrom_image))
             if self._hdc_disk_image:
                 raise QemuError("You cannot use a disk image on hdc disk and a CDROM image at the same time")
-            options.extend(["-cdrom", self._cdrom_image])
+            options.extend(["-cdrom", self._cdrom_image.replace(",", ",,")])
         return options
 
     def _bios_option(self):
@@ -1936,7 +1958,7 @@ class QemuVM(BaseNode):
                     raise QemuError("bios image '{}' linked to '{}' is not accessible".format(self._bios_image, os.path.realpath(self._bios_image)))
                 else:
                     raise QemuError("bios image '{}' is not accessible".format(self._bios_image))
-            options.extend(["-bios", self._bios_image])
+            options.extend(["-bios", self._bios_image.replace(",", ",,")])
         return options
 
     def _linux_boot_options(self):
@@ -1948,14 +1970,14 @@ class QemuVM(BaseNode):
                     raise QemuError("initrd file '{}' linked to '{}' is not accessible".format(self._initrd, os.path.realpath(self._initrd)))
                 else:
                     raise QemuError("initrd file '{}' is not accessible".format(self._initrd))
-            options.extend(["-initrd", self._initrd])
+            options.extend(["-initrd", self._initrd.replace(",", ",,")])
         if self._kernel_image:
             if not os.path.isfile(self._kernel_image) or not os.path.exists(self._kernel_image):
                 if os.path.islink(self._kernel_image):
                     raise QemuError("kernel image '{}' linked to '{}' is not accessible".format(self._kernel_image, os.path.realpath(self._kernel_image)))
                 else:
                     raise QemuError("kernel image '{}' is not accessible".format(self._kernel_image))
-            options.extend(["-kernel", self._kernel_image])
+            options.extend(["-kernel", self._kernel_image.replace(",", ",,")])
         if self._kernel_command_line:
             options.extend(["-append", self._kernel_command_line])
 
@@ -2195,7 +2217,7 @@ class QemuVM(BaseNode):
                                 log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
                                                                                                                               id=self.id,
                                                                                                                               snapshot=snapshot_name))
-                                return ["-loadvm", snapshot_name]
+                                return ["-loadvm", snapshot_name.replace(",", ",,")]
 
             except subprocess.SubprocessError as e:
                 raise QemuError("Error while looking for the Qemu VM saved state snapshot: {}".format(e))
@@ -2207,22 +2229,24 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        vm_name = self._name.replace(",", ",,")
+        project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
-        additional_options = additional_options.replace("%vm-name%", '"' + self._name.replace('"', '\\"') + '"')
+        additional_options = additional_options.replace("%vm-name%", '"' + vm_name.replace('"', '\\"') + '"')
         additional_options = additional_options.replace("%vm-id%", self._id)
         additional_options = additional_options.replace("%project-id%", self.project.id)
-        additional_options = additional_options.replace("%project-path%", '"' + self.project.path.replace('"', '\\"') + '"')
+        additional_options = additional_options.replace("%project-path%", '"' + project_path.replace('"', '\\"') + '"')
         additional_options = additional_options.replace("%guest-cid%", str(self._guest_cid))
         if self._console_type != "none" and self._console:
             additional_options = additional_options.replace("%console-port%", str(self._console))
         command = [self.qemu_path]
-        command.extend(["-name", self._name])
+        command.extend(["-name", vm_name])
         command.extend(["-m", "{}M".format(self._ram)])
         # set the maximum number of the hotpluggable CPUs to match the number of CPUs to avoid issues.
         maxcpus = self._maxcpus
         if self._cpus > maxcpus:
             maxcpus = self._cpus
-        command.extend(["-smp", "cpus={},maxcpus={}".format(self._cpus, maxcpus)])
+        command.extend(["-smp", "cpus={},maxcpus={},sockets=1".format(self._cpus, maxcpus)])
         if (await self._run_with_hardware_acceleration(self.qemu_path, self._options)):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])

@@ -17,6 +17,7 @@
         "adapter_type": "e1000",
         "adapters": 1,
         "ram": 512,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
         "kvm": "require",
@@ -39,6 +40,5 @@
                 "hda_disk_image": "opennac_3711_img.qcow2"
             }
         }
-        
-]
+    ]
 }

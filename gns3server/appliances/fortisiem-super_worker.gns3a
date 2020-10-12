@@ -12,8 +12,8 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "This is the Super/Worker component. Default credentials:\n- admin / admin*1\n - root / ProspectHills\n\nIf you get a 503 error on the WebUI, run /opt/phoenix/deployment/jumpbox/phinitsuper as root.\n\nMake sure that Super, Worker(s), Collector(s) and Report Server can connect to FortiSIEM hosted CentOS repo on https port 443 under the URLs below. Otherwise, some packages may not install and 5.0.0 binaries will not run.\n- https://os-pkgs-cdn.fortisiem.fortinet.com/centos6/\n- https://os-pkgs.fortisiem.fortinet.com/centos6/",
-    "port_name_format": "Port{port1}",
     "symbol": "fortinet.svg",
+    "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 2,

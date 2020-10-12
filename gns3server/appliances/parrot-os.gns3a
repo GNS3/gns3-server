@@ -17,6 +17,7 @@
         "adapter_type": "e1000",
         "adapters": 1,
         "ram": 2048,
+        "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
         "kvm": "require"
@@ -46,7 +47,6 @@
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
         }
-    
     ],
     "versions": [
         {
@@ -63,6 +63,5 @@
                 "cdrom_image": "Parrot-security-3.11_amd64.iso"
             }
         }
-        
-]
+    ]
 }

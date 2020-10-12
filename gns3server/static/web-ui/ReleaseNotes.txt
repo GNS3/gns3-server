@@ -1,6 +1,29 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: 2020.3.0-beta.1
+Current version: 2020.4.0-beta.1
+
+Bug Fixes & enhancements
+- symbol is not properly selected in change symbol dialog
+- issue when using the scroll wheel on the web console
+- missing settings for Docker nodes
+- error on servers page
+
+What's new
+- double click nodes to open the console
+
+Current version: 2020.3.0-beta.3
+
+Bug Fixes & enhancements
+- direct download URL in template dialog
+- fix for issues with suspnded nodes
+- fix for bug with deleting templates
+- fix for importing images
+
+What's new
+- Option to resize console
+- Improvements in creating templates
+
+GNS3 Web UI 2020.3.0-beta.1
 
 Bug Fixes & enhancements
 - refreshing list of templates after adding new template from project map 
@@ -15,7 +38,7 @@ Bug Fixes & enhancements
 What's new
 - Option to import appliances
 
-Current version: 2020.2.0-beta.5
+GNS3 Web UI 2020.2.0-beta.5
 
 Bug Fixes
 

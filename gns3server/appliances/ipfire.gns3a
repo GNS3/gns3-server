@@ -117,7 +117,13 @@
     ],
     "versions": [
         {
-            "name": "2.23",
+            "name": "2.23.136",
+            "images": {
+                "hda_disk_image": "ipfire-2.23.2gb-ext4.x86_64-full-core136.img"
+            }
+        },
+        {
+            "name": "2.23.131",
             "images": {
                 "hda_disk_image": "ipfire-2.23.2gb-ext4.x86_64-full-core131.img"
             }
