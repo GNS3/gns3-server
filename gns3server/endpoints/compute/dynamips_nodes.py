@@ -22,24 +22,38 @@ API endpoints for Dynamips nodes.
 import os
 import sys
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import List
 from uuid import UUID
 
 from gns3server.compute.dynamips import Dynamips
+from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
-from gns3server.compute.project_manager import ProjectManager
 from gns3server.endpoints import schemas
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}
+}
 
 DEFAULT_CHASSIS = {
     "c1700": "1720",
     "c2600": "2610",
     "c3600": "3640"
 }
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    dynamips_manager = Dynamips.instance()
+    node = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -74,169 +88,148 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate):
 
 @router.get("/{node_id}",
             response_model=schemas.Dynamips,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_router(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_router(node: Router = Depends(dep_node)):
     """
     Return Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    return vm.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.Dynamips,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_router(project_id: UUID, node_id: UUID, node_data: schemas.DynamipsUpdate):
+            responses=responses)
+async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depends(dep_node)):
     """
     Update a Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await dynamips_manager.update_vm_settings(vm, jsonable_encoder(node_data, exclude_unset=True))
-    vm.updated()
-    return vm.__json__()
+    await Dynamips.instance().update_vm_settings(node, jsonable_encoder(node_data, exclude_unset=True))
+    node.updated()
+    return node.__json__()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_router(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_router(node: Router = Depends(dep_node)):
     """
     Delete a Dynamips router.
     """
 
-    # check the project_id exists
-    ProjectManager.instance().get_project(str(project_id))
-    await Dynamips.instance().delete_node(str(node_id))
+    await Dynamips.instance().delete_node(node.id)
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_router(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def start_router(node: Router = Depends(dep_node)):
     """
     Start a Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
     try:
-        await dynamips_manager.ghost_ios_support(vm)
+        await Dynamips.instance().ghost_ios_support(node)
     except GeneratorExit:
         pass
-    await vm.start()
+    await node.start()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_router(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_router(node: Router = Depends(dep_node)):
     """
     Stop a Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_router(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_router(node: Router = Depends(dep_node)):
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.suspend()
+    await node.suspend()
 
 
 @router.post("/{node_id}/resume",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def resume_router(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def resume_router(node: Router = Depends(dep_node)):
     """
     Resume a suspended Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.resume()
+    await node.resume()
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_router(node: Router = Depends(dep_node)):
     """
     Reload a suspended Dynamips router.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reload()
+    await node.reload()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+             responses=responses)
+async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: Router = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = await dynamips_manager.create_nio(vm, jsonable_encoder(nio_data, exclude_unset=True))
-    await vm.slot_add_nio_binding(adapter_number, port_number, nio)
+    nio = await Dynamips.instance().create_nio(node, jsonable_encoder(nio_data, exclude_unset=True))
+    await node.slot_add_nio_binding(adapter_number, port_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+            responses=responses)
+async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: Router = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number, port_number)
+    nio = node.get_nio(adapter_number, port_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
-    await vm.slot_update_nio_binding(adapter_number, port_number, nio)
+    await node.slot_update_nio_binding(adapter_number, port_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = await vm.slot_remove_nio_binding(adapter_number, port_number)
+    nio = await node.slot_remove_nio_binding(adapter_number, port_number)
     await nio.delete()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: Router = Depends(dep_node)):
     """
     Start a packet capture on the node.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(vm.project.capture_working_directory(), node_capture_data.capture_file_name)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
 
     if sys.platform.startswith('win'):
         # FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
@@ -245,72 +238,64 @@ async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, po
         except UnicodeEncodeError:
             raise DynamipsError('The capture file path "{}" must only contain ASCII (English) characters'.format(pcap_file_path))
 
-    await vm.start_capture(adapter_number, port_number, pcap_file_path, node_capture_data.data_link_type)
+    await node.start_capture(adapter_number, port_number, pcap_file_path, node_capture_data.data_link_type)
     return {"pcap_file_path": pcap_file_path}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop_capture(adapter_number, port_number)
+    await node.stop_capture(adapter_number, port_number)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Stream the pcap capture file.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number, port_number)
-    stream = dynamips_manager.stream_pcap_file(nio, vm.project.id)
+    nio = node.get_nio(adapter_number, port_number)
+    stream = Dynamips.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
 @router.get("/{node_id}/idlepc_proposals",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def get_idlepcs(project_id: UUID, node_id: UUID) -> List[str]:
+            responses=responses)
+async def get_idlepcs(node: Router = Depends(dep_node)) -> List[str]:
     """
     Retrieve Dynamips idle-pc proposals
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.set_idlepc("0x0")
-    return await vm.get_idle_pc_prop()
+    await node.set_idlepc("0x0")
+    return await node.get_idle_pc_prop()
 
 
 @router.get("/{node_id}/auto_idlepc",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def get_auto_idlepc(project_id: UUID, node_id: UUID) -> dict:
+            responses=responses)
+async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
     """
     Get an automatically guessed best idle-pc value.
     """
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    idlepc = await dynamips_manager.auto_idlepc(vm)
+    idlepc = await Dynamips.instance().auto_idlepc(node)
     return {"idlepc": idlepc}
 
 
 @router.post("/{node_id}/duplicate",
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_router(project_id: UUID, node_id: UUID, destination_node_id: UUID):
+             responses=responses)
+async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep_node)):
     """
     Duplicate a router.
     """
 
-    new_node = await Dynamips.instance().duplicate_node(str(node_id), str(destination_node_id))
+    new_node = await Dynamips.instance().duplicate_node(node.id, str(destination_node_id))
     return new_node.__json__()
 
 
@@ -330,9 +315,7 @@ async def duplicate_router(project_id: UUID, node_id: UUID, destination_node_id:
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: Router = Depends(dep_node)):
 
-    dynamips_manager = Dynamips.instance()
-    vm = dynamips_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reset_console()
+    await node.reset_console()

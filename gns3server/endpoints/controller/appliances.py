@@ -25,8 +25,11 @@ from typing import Optional
 router = APIRouter()
 
 
-@router.get("/", summary="List of appliances")
-async def list_appliances(update: Optional[bool] = None, symbol_theme:  Optional[str] = "Classic"):
+@router.get("/")
+async def get_appliances(update: Optional[bool] = None, symbol_theme:  Optional[str] = "Classic"):
+    """
+    Return all appliances known by the controller.
+    """
 
     from gns3server.controller import Controller
     controller = Controller.instance()

@@ -124,13 +124,13 @@ def statistics() -> dict:
 
 
 @router.get("/qemu/binaries")
-async def list_binaries(archs: Optional[List[str]] = Body(None, embed=True)):
+async def get_binaries(archs: Optional[List[str]] = Body(None, embed=True)):
 
     return await Qemu.binary_list(archs)
 
 
 @router.get("/qemu/img-binaries")
-async def list_img_binaries():
+async def get_img_binaries():
 
     return await Qemu.img_binary_list()
 

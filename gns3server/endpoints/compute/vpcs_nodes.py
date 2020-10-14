@@ -21,7 +21,7 @@ API endpoints for VPCS nodes.
 
 import os
 
-from fastapi import APIRouter, Body, status
+from fastapi import APIRouter, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -29,9 +29,23 @@ from uuid import UUID
 from gns3server.endpoints import schemas
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.project_manager import ProjectManager
-
+from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}
+}
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    vpcs_manager = VPCS.instance()
+    node = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -57,215 +71,190 @@ async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate):
 
 @router.get("/{node_id}",
             response_model=schemas.VPCS,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_vpcs_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Return a VPCS node.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    return vm.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.VPCS,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def update_vpcs_node(project_id: UUID, node_id: UUID, node_data: schemas.VPCSUpdate):
+            responses=responses)
+def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)):
     """
     Update a VPCS node.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    vm.name = node_data.get("name", vm.name)
-    vm.console = node_data.get("console", vm.console)
-    vm.console_type = node_data.get("console_type", vm.console_type)
-    vm.updated()
-    return vm.__json__()
+    node.name = node_data.get("name", node.name)
+    node.console = node_data.get("console", node.console)
+    node.console_type = node_data.get("console_type", node.console_type)
+    node.updated()
+    return node.__json__()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_vpcs_node(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Delete a VPCS node.
     """
 
-    # check the project_id exists
-    ProjectManager.instance().get_project(str(project_id))
-    await VPCS.instance().delete_node(str(node_id))
+    await VPCS.instance().delete_node(node.id)
 
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.VPCS,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_vpcs_node(project_id: UUID, node_id: UUID, destination_node_id: UUID = Body(..., embed=True)):
+             responses=responses)
+async def duplicate_vpcs_node(destination_node_id: UUID = Body(..., embed=True), node: VPCSVM = Depends(dep_node)):
     """
     Duplicate a VPCS node.
     """
 
-    new_node = await VPCS.instance().duplicate_node(str(node_id), str(destination_node_id))
+    new_node = await VPCS.instance().duplicate_node(node.id, str(destination_node_id))
     return new_node.__json__()
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_vpcs_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def start_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Start a VPCS node.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.start()
+    await node.start()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_vpcs_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Stop a VPCS node.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_vpcs_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Suspend a VPCS node.
     Does nothing, suspend is not supported by VPCS.
     """
 
-    vpcs_manager = VPCS.instance()
-    vpcs_manager.get_node(str(node_id), project_id=str(project_id))
+    pass
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload_vpcs_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Reload a VPCS node.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reload()
+    await node.reload()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+             responses=responses)
+async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VPCSVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the VPCS node is always 0.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vpcs_manager.create_nio(jsonable_encoder(nio_data, exclude_unset=True))
-    await vm.port_add_nio_binding(port_number, nio)
+    nio = VPCS.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
+    await node.port_add_nio_binding(port_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+            responses=responses)
+async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VPCSVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The adapter number on the VPCS node is always 0.
     """
 
-
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(port_number)
+    nio = node.get_nio(port_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
-    await vm.port_update_nio_binding(port_number, nio)
+    await node.port_update_nio_binding(port_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the VPCS node is always 0.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.port_remove_nio_binding(port_number)
+    await node.port_remove_nio_binding(port_number)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: VPCSVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The adapter number on the VPCS node is always 0.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(vm.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await vm.start_capture(adapter_number, pcap_file_path)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
+    await node.start_capture(adapter_number, pcap_file_path)
     return {"pcap_file_path": pcap_file_path}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The adapter number on the VPCS node is always 0.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop_capture(port_number)
+    await node.stop_capture(port_number)
 
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: VPCSVM = Depends(dep_node)):
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reset_console()
+    await node.reset_console()
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
     The adapter number on the VPCS node is always 0.
     """
 
-    vpcs_manager = VPCS.instance()
-    vm = vpcs_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(port_number)
-    stream = vpcs_manager.stream_pcap_file(nio, vm.project.id)
+    nio = node.get_nio(port_number)
+    stream = VPCS.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2016 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,8 @@ API endpoints for symbols.
 """
 
 import os
-import shutil
 
-from fastapi import APIRouter, Request, status, File, UploadFile
+from fastapi import APIRouter, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.controller import Controller
@@ -37,7 +36,7 @@ router = APIRouter()
 
 
 @router.get("/")
-def list_symbols():
+def get_symbols():
 
     controller = Controller.instance()
     return controller.symbols.list()
@@ -46,6 +45,9 @@ def list_symbols():
 @router.get("/{symbol_id:path}/raw",
             responses={404: {"model": ErrorMessage, "description": "Could not find symbol"}})
 async def get_symbol(symbol_id: str):
+    """
+    Download a symbol file.
+    """
 
     controller = Controller.instance()
     try:
@@ -76,9 +78,9 @@ async def upload_symbol(symbol_id: str, request: Request):
 
 
 @router.get("/default_symbols")
-def list_default_symbols():
+def get_default_symbols():
     """
-    Return list of default symbols.
+    Return all default symbols.
     """
 
     controller = Controller.instance()

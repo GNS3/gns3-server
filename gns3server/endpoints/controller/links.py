@@ -19,7 +19,7 @@
 API endpoints for links.
 """
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import List
@@ -27,36 +27,47 @@ from uuid import UUID
 
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
+from gns3server.controller.link import Link
 from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints.schemas.links import Link
-
-import aiohttp
-import multidict
-
+from gns3server.endpoints import schemas
 
 router = APIRouter()
 
+responses = {
+    404: {"model": ErrorMessage, "description": "Could not find project or link"}
+}
 
-@router.get("/projects/{project_id}/links",
-            summary="List of all links",
-            response_model=List[Link],
-            response_description="List of links",
+
+async def dep_link(project_id: UUID, link_id: UUID):
+    """
+    Dependency to retrieve a link.
+    """
+
+    project = await Controller.instance().get_loaded_project(str(project_id))
+    link = project.get_link(str(link_id))
+    return link
+
+
+@router.get("/",
+            response_model=List[schemas.Link],
             response_model_exclude_unset=True)
-async def list_links(project_id: UUID):
+async def get_links(project_id: UUID):
+    """
+    Return all links for a given project.
+    """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     return [v.__json__() for v in project.links.values()]
 
 
-@router.post("/projects/{project_id}/links",
-             summary="Create a new link",
+@router.post("/",
              status_code=status.HTTP_201_CREATED,
-             response_model=Link,
+             response_model=schemas.Link,
              responses={404: {"model": ErrorMessage, "description": "Could not find project"},
                         409: {"model": ErrorMessage, "description": "Could not create link"}})
-async def create_link(project_id: UUID, link_data: Link):
+async def create_link(project_id: UUID, link_data: schemas.Link):
     """
-    Create a new link on the controller.
+    Create a new link.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -78,42 +89,37 @@ async def create_link(project_id: UUID, link_data: Link):
     return link.__json__()
 
 
-@router.get("/projects/{project_id}/links/{link_id}/available_filters",
-            summary="List of filters",
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or link"}})
-async def list_filters(project_id: UUID, link_id: UUID):
+@router.get("/{link_id}/available_filters",
+            responses=responses)
+async def get_filters(link: Link = Depends(dep_link)):
     """
-    Return the list of filters available for this link.
+    Return all filters available for a given link.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     return link.available_filters()
 
 
-@router.get("/projects/{project_id}/links/{link_id}",
-            summary="Get a link",
-            response_model=Link,
-            response_description="Link data",
+@router.get("/{link_id}",
+            response_model=schemas.Link,
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or link"}})
-async def get_link(project_id: UUID, link_id: UUID):
+            responses=responses)
+async def get_link(link: Link = Depends(dep_link)):
+    """
+    Return a link.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     return link.__json__()
 
 
-@router.put("/projects/{project_id}/links/{link_id}",
-            summary="Update a link",
-            response_model=Link,
-            response_description="Updated link",
+@router.put("/{link_id}",
+            response_model=schemas.Link,
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-async def update_link(project_id: UUID, link_id: UUID, link_data: Link):
+            responses=responses)
+async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
+    """
+    Update a link.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     link_data = jsonable_encoder(link_data, exclude_unset=True)
     if "filters" in link_data:
         await link.update_filters(link_data["filters"])
@@ -124,60 +130,53 @@ async def update_link(project_id: UUID, link_id: UUID, link_data: Link):
     return link.__json__()
 
 
-@router.post("/projects/{project_id}/links/{link_id}/start_capture",
-             summary="Start a packet capture",
+@router.post("/{link_id}/start_capture",
              status_code=status.HTTP_201_CREATED,
-             response_model=Link,
-             responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-async def start_capture(project_id: UUID, link_id: UUID, capture_data: dict):
+             response_model=schemas.Link,
+             responses=responses)
+async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
     """
     Start packet capture on the link.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
                              capture_file_name=capture_data.get("capture_file_name"))
     return link.__json__()
 
 
-@router.post("/projects/{project_id}/links/{link_id}/stop_capture",
-             summary="Stop a packet capture",
+@router.post("/{link_id}/stop_capture",
              status_code=status.HTTP_201_CREATED,
-             response_model=Link,
-             responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-async def stop_capture(project_id: UUID, link_id: UUID):
+             response_model=schemas.Link,
+             responses=responses)
+async def stop_capture(link: Link = Depends(dep_link)):
     """
     Stop packet capture on the link.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     await link.stop_capture()
     return link.__json__()
 
 
-@router.delete("/projects/{project_id}/links/{link_id}",
-             summary="Delete a link",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-async def delete(project_id: UUID, link_id: UUID):
+@router.delete("/{link_id}",
+               status_code=status.HTTP_204_NO_CONTENT,
+               responses=responses)
+async def delete_link(project_id: UUID, link: Link = Depends(dep_link)):
     """
-    Delete link from the project.
+    Delete a link.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
-    await project.delete_link(str(link_id))
+    await project.delete_link(link.id)
 
 
-@router.post("/projects/{project_id}/links/{link_id}/reset",
-             summary="Reset a link",
-             response_model=Link,
-             responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-async def reset(project_id: UUID, link_id: UUID):
+@router.post("/{link_id}/reset",
+             response_model=schemas.Link,
+             responses=responses)
+async def reset_link(link: Link = Depends(dep_link)):
+    """
+    Reset a link.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    link = project.get_link(str(link_id))
     await link.reset()
     return link.__json__()
 

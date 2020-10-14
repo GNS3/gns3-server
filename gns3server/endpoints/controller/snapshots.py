@@ -19,75 +19,81 @@
 API endpoints for snapshots.
 """
 
-from fastapi import APIRouter, status
+
+import logging
+log = logging.getLogger()
+
+from fastapi import APIRouter, Depends, status
 from typing import List
 from uuid import UUID
 
+from gns3server.controller.project import Project
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
 from gns3server.controller import Controller
 
 router = APIRouter()
 
-import logging
-log = logging.getLogger()
+responses = {
+    404: {"model": ErrorMessage, "description": "Could not find project or snapshot"}
+}
 
 
-@router.post("/projects/{project_id}/snapshots",
+def dep_project(project_id: UUID):
+    """
+    Dependency to retrieve a project.
+    """
+
+    project = Controller.instance().get_project(str(project_id))
+    return project
+
+
+@router.post("/",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Snapshot,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-async def create_snapshot(project_id: UUID, snapshot_data: schemas.SnapshotCreate):
+             responses=responses)
+async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Project = Depends(dep_project)):
     """
-    Create a new snapshot of the project.
+    Create a new snapshot of a project.
     """
 
-    controller = Controller.instance()
-    project = controller.get_project(str(project_id))
     snapshot = await project.snapshot(snapshot_data.name)
     return snapshot.__json__()
 
 
-@router.get("/projects/{project_id}/snapshots",
+@router.get("/",
             response_model=List[schemas.Snapshot],
-            response_description="List of snapshots",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-def list_snapshots(project_id: UUID):
+            responses=responses)
+def get_snapshots(project: Project = Depends(dep_project)):
     """
-    Return a list of snapshots belonging to the project.
+    Return all snapshots belonging to a given project.
     """
 
-    controller = Controller.instance()
-    project = controller.get_project(str(project_id))
     snapshots = [s for s in project.snapshots.values()]
     return [s.__json__() for s in sorted(snapshots, key=lambda s: (s.created_at, s.name))]
 
 
-@router.delete("/projects/{project_id}/snapshots/{snapshot_id}",
+@router.delete("/{snapshot_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": ErrorMessage, "description": "Could not find project or snapshot"}})
-async def delete_snapshot(project_id: UUID, snapshot_id: UUID):
+               responses=responses)
+async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
     """
-    Delete a snapshot belonging to the project.
+    Delete a snapshot.
     """
 
-    controller = Controller.instance()
-    project = controller.get_project(str(project_id))
     await project.delete_snapshot(str(snapshot_id))
 
 
-@router.post("/projects/{project_id}/snapshots/{snapshot_id}/restore",
+@router.post("/{snapshot_id}/restore",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Project,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or snapshot"}})
-async def restore_snapshot(project_id: UUID, snapshot_id: UUID):
+             responses=responses)
+async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
     """
-    Restore a snapshot from the project.
+    Restore a snapshot.
     """
 
-    controller = Controller.instance()
-    project = controller.get_project(str(project_id))
     snapshot = project.get_snapshot(str(snapshot_id))
     project = await snapshot.restore()
     return project.__json__()

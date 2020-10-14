@@ -21,7 +21,7 @@ API endpoints for IOU nodes.
 
 import os
 
-from fastapi import APIRouter, Body, status
+from fastapi import APIRouter, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union
@@ -29,8 +29,23 @@ from uuid import UUID
 
 from gns3server.endpoints import schemas
 from gns3server.compute.iou import IOU
+from gns3server.compute.iou.iou_vm import IOUVM
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}
+}
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    iou_manager = IOU.instance()
+    node = iou_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -68,229 +83,204 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
 
 @router.get("/{node_id}",
             response_model=schemas.IOU,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_iou_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Return an IOU node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    return vm.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.IOU,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_iou_node(project_id: UUID, node_id: UUID, node_data: schemas.IOUUpdate):
+            responses=responses)
+async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(dep_node)):
     """
     Update an IOU node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     for name, value in node_data.items():
-        if hasattr(vm, name) and getattr(vm, name) != value:
+        if hasattr(node, name) and getattr(node, name) != value:
             if name == "application_id":
                 continue  # we must ignore this to avoid overwriting the application_id allocated by the IOU manager
-            setattr(vm, name, value)
+            setattr(node, name, value)
 
-    if vm.use_default_iou_values:
+    if node.use_default_iou_values:
         # update the default IOU values in case the image or use_default_iou_values have changed
         # this is important to have the correct NVRAM amount in order to correctly push the configs to the NVRAM
-        await vm.update_default_iou_values()
-    vm.updated()
-    return vm.__json__()
+        await node.update_default_iou_values()
+    node.updated()
+    return node.__json__()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_iou_node(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Delete an IOU node.
     """
 
-    await IOU.instance().delete_node(str(node_id))
+    await IOU.instance().delete_node(node.id)
 
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.IOU,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_iou_node(project_id: UUID, node_id: UUID, destination_node_id: UUID = Body(..., embed=True)):
+             responses=responses)
+async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), node: IOUVM = Depends(dep_node)):
     """
     Duplicate an IOU node.
     """
 
-    new_node = await IOU.instance().duplicate_node(str(node_id), str(destination_node_id))
+    new_node = await IOU.instance().duplicate_node(node.id, str(destination_node_id))
     return new_node.__json__()
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_iou_node(project_id: UUID, node_id: UUID, start_data: schemas.IOUStart):
+             responses=responses)
+async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep_node)):
     """
     Start an IOU node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
     start_data = jsonable_encoder(start_data, exclude_unset=True)
     for name, value in start_data.items():
-        if hasattr(vm, name) and getattr(vm, name) != value:
-            setattr(vm, name, value)
+        if hasattr(node, name) and getattr(node, name) != value:
+            setattr(node, name, value)
 
-    await vm.start()
-    return vm.__json__()
+    await node.start()
+    return node.__json__()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop(node: IOUVM = Depends(dep_node)):
     """
     Stop an IOU node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def suspend_iou_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+def suspend_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Suspend an IOU node.
     Does nothing since IOU doesn't support being suspended.
     """
 
-    iou_manager = IOU.instance()
-    iou_manager.get_node(str(node_id), project_id=str(project_id))
+    pass
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload_iou_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Reload an IOU node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reload()
+    await node.reload()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID,
-                     node_id: UUID,
-                     adapter_number: int,
+             responses=responses)
+async def create_nio(adapter_number: int,
                      port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]):
+                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                     node: IOUVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = iou_manager.create_nio(jsonable_encoder(nio_data, exclude_unset=True))
-    await vm.adapter_add_nio_binding(adapter_number, port_number, nio)
+    nio = IOU.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
+    await node.adapter_add_nio_binding(adapter_number, port_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID,
-                     node_id: UUID,
-                     adapter_number: int,
+            responses=responses)
+async def update_nio(adapter_number: int,
                      port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO]):
+                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                     node: IOUVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number, port_number)
+    nio = node.get_nio(adapter_number, port_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
-    await vm.adapter_update_nio_binding(adapter_number, port_number, nio)
-    return nio.__json__()
+    await node.adapter_update_nio_binding(adapter_number, port_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.adapter_remove_nio_binding(adapter_number, port_number)
+    await node.adapter_remove_nio_binding(adapter_number, port_number)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: IOUVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(vm.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await vm.start_capture(adapter_number, pcap_file_path)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
+    await node.start_capture(adapter_number, pcap_file_path)
     return {"pcap_file_path": str(pcap_file_path)}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop_capture(adapter_number, port_number)
+    await node.stop_capture(adapter_number, port_number)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
     """
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number, port_number)
-    stream = iou_manager.stream_pcap_file(nio, vm.project.id)
+    nio = node.get_nio(adapter_number, port_number)
+    stream = IOU.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: IOUVM = Depends(dep_node)):
 
-    iou_manager = IOU.instance()
-    vm = iou_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reset_console()
+    await node.reset_console()
 
 
 # @Route.get(

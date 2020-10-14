@@ -37,7 +37,6 @@ router = APIRouter()
 
 
 @router.post("/shutdown",
-             summary="Shutdown the local server",
              status_code=status.HTTP_204_NO_CONTENT,
              responses={403: {"model": ErrorMessage, "description": "Server shutdown not allowed"}})
 async def shutdown():
@@ -75,7 +74,7 @@ async def shutdown():
             response_model=schemas.Version)
 def version():
     """
-    Retrieve the server version number.
+    Return the server version number.
     """
 
     config = Config.instance()
@@ -106,7 +105,7 @@ def check_version(version: schemas.Version):
             response_model=schemas.IOULicense)
 def get_iou_license():
     """
-    Get the IOU license settings
+    Return the IOU license settings
     """
 
     return Controller.instance().iou_license
@@ -130,7 +129,7 @@ async def update_iou_license(iou_license: schemas.IOULicense):
 @router.get("/statistics")
 async def statistics():
     """
-    Retrieve server statistics.
+    Return server statistics.
     """
 
     compute_statistics = []

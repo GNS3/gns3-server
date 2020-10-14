@@ -28,9 +28,8 @@ from gns3server.endpoints.schemas.gns3vm import GNS3VM
 router = APIRouter()
 
 
-@router.get("/engines",
-            summary="List of engines")
-async def list_engines():
+@router.get("/engines")
+async def get_engines():
     """
     Return the list of supported engines for the GNS3VM.
     """
@@ -39,11 +38,10 @@ async def list_engines():
     return gns3_vm.engine_list()
 
 
-@router.get("/engines/{engine}/vms",
-            summary="List of VMs")
+@router.get("/engines/{engine}/vms")
 async def get_vms(engine: str):
     """
-    Get all the available VMs for a specific virtualization engine.
+    Return all the available VMs for a specific virtualization engine.
     """
 
     vms = await Controller.instance().gns3vm.list(engine)
@@ -51,19 +49,22 @@ async def get_vms(engine: str):
 
 
 @router.get("/",
-            summary="Get GNS3 VM settings",
             response_model=GNS3VM)
 async def get_gns3vm_settings():
+    """
+    Return the GNS3 VM settings.
+    """
 
     return Controller.instance().gns3vm.__json__()
 
 
 @router.put("/",
-            summary="Update GNS3 VM settings",
             response_model=GNS3VM,
-            response_description="Updated GNS3 VM settings",
             response_model_exclude_unset=True)
 async def update_gns3vm_settings(gns3vm_data: GNS3VM):
+    """
+    Update the GNS3 VM settings.
+    """
 
     controller = Controller().instance()
     gns3_vm = controller.gns3vm

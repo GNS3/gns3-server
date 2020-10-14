@@ -30,13 +30,15 @@ from gns3server.endpoints.schemas.drawings import Drawing
 
 router = APIRouter()
 
+responses = {
+    404: {"model": ErrorMessage, "description": "Project or drawing not found"}
+}
 
-@router.get("/projects/{project_id}/drawings",
-            summary="List of all drawings",
+
+@router.get("/",
             response_model=List[Drawing],
-            response_description="List of drawings",
             response_model_exclude_unset=True)
-async def list_drawings(project_id: UUID):
+async def get_drawings(project_id: UUID):
     """
     Return the list of all drawings for a given project.
     """
@@ -45,27 +47,27 @@ async def list_drawings(project_id: UUID):
     return [v.__json__() for v in project.drawings.values()]
 
 
-@router.post("/projects/{project_id}/drawings",
-             summary="Create a new drawing",
+@router.post("/",
              status_code=status.HTTP_201_CREATED,
              response_model=Drawing,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
+             responses=responses)
 async def create_drawing(project_id: UUID, drawing_data: Drawing):
+    """
+    Create a new drawing.
+    """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     drawing = await project.add_drawing(**jsonable_encoder(drawing_data, exclude_unset=True))
     return drawing.__json__()
 
 
-@router.get("/projects/{project_id}/drawings/{drawing_id}",
-            summary="Get a drawing",
+@router.get("/{drawing_id}",
             response_model=Drawing,
-            response_description="Drawing data",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Project or drawing not found"}})
+            responses=responses)
 async def get_drawing(project_id: UUID, drawing_id: UUID):
     """
-    Get drawing data for a given project from the controller.
+    Return a drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -73,15 +75,13 @@ async def get_drawing(project_id: UUID, drawing_id: UUID):
     return drawing.__json__()
 
 
-@router.put("/projects/{project_id}/drawings/{drawing_id}",
-            summary="Update a drawing",
+@router.put("/{drawing_id}",
             response_model=Drawing,
-            response_description="Updated drawing",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Project or drawing not found"}})
+            responses=responses)
 async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: Drawing):
     """
-    Update a drawing for a given project on the controller.
+    Update a drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -90,13 +90,12 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: Drawi
     return drawing.__json__()
 
 
-@router.delete("/projects/{project_id}/drawings/{drawing_id}",
-               summary="Delete a drawing",
+@router.delete("/{drawing_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": ErrorMessage, "description": "Project or drawing not found"}})
+               responses=responses)
 async def delete_drawing(project_id: UUID, drawing_id: UUID):
     """
-    Update a drawing for a given project from the controller.
+    Delete a drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))

@@ -21,15 +21,30 @@ API endpoints for Docker nodes.
 
 import os
 
-from fastapi import APIRouter, Body, status
+from fastapi import APIRouter, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
 from gns3server.endpoints import schemas
 from gns3server.compute.docker import Docker
+from gns3server.compute.docker.docker_vm import DockerVM
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}
+}
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    docker_manager = Docker.instance()
+    node = docker_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -71,27 +86,22 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate):
 
 @router.get("/{node_id}",
             response_model=schemas.Docker,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_docker_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Return a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    return container.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.Docker,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_docker(project_id: UUID, node_id: UUID, node_data: schemas.DockerUpdate):
+            responses=responses)
+async def update_docker(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)):
     """
     Update a Docker node.
     """
-
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
 
     props = [
         "name", "console", "console_type", "aux", "aux_type", "console_resolution",
@@ -103,222 +113,201 @@ async def update_docker(project_id: UUID, node_id: UUID, node_data: schemas.Dock
     changed = False
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     for prop in props:
-        if prop in node_data and node_data[prop] != getattr(container, prop):
-            setattr(container, prop, node_data[prop])
+        if prop in node_data and node_data[prop] != getattr(node, prop):
+            setattr(node, prop, node_data[prop])
             changed = True
     # We don't call container.update for nothing because it will restart the container
     if changed:
-        await container.update()
-    container.updated()
-    return container.__json__()
+        await node.update()
+    node.updated()
+    return node.__json__()
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def start_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Start a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.start()
+    await node.start()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Stop a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Suspend a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.pause()
+    await node.pause()
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Reload a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.restart()
+    await node.restart()
 
 
 @router.post("/{node_id}/pause",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def pause_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def pause_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Pause a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.pause()
+    await node.pause()
 
 
 @router.post("/{node_id}/unpause",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def unpause_docker_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def unpause_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Unpause a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.unpause()
+    await node.unpause()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_docker_node(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Delete a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.delete()
+    await node.delete()
 
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.Docker,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_docker_node(project_id: UUID, node_id: UUID, destination_node_id: UUID = Body(..., embed=True)):
+             responses=responses)
+async def duplicate_docker_node(destination_node_id: UUID = Body(..., embed=True), node: DockerVM = Depends(dep_node)):
     """
     Duplicate a Docker node.
     """
 
-    docker_manager = Docker.instance()
-    new_node = await docker_manager.duplicate_node(str(node_id), str(destination_node_id))
+    new_node = await Docker.instance().duplicate_node(node.id, str(destination_node_id))
     return new_node.__json__()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+             responses=responses)
+async def create_nio(adapter_number: int,
+                     port_number: int,
+                     nio_data: schemas.UDPNIO,
+                     node: DockerVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = docker_manager.create_nio(jsonable_encoder(nio_data, exclude_unset=True))
-    await container.adapter_add_nio_binding(adapter_number, nio)
+    nio = Docker.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
+    await node.adapter_add_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+            responses=responses)
+async def update_nio(adapter_number: int,
+                     port_number: int, nio_data: schemas.UDPNIO,
+                     node: DockerVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = container.get_nio(adapter_number)
+    nio = node.get_nio(adapter_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
-    await container.adapter_update_nio_binding(adapter_number, nio)
+    await node.adapter_update_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.adapter_remove_nio_binding(adapter_number)
+    await node.adapter_remove_nio_binding(adapter_number)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: DockerVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(container.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await container.start_capture(adapter_number, pcap_file_path)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
+    await node.start_capture(adapter_number, pcap_file_path)
     return {"pcap_file_path": str(pcap_file_path)}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.stop_capture(adapter_number)
+    await node.stop_capture(adapter_number)
 
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: DockerVM = Depends(dep_node)):
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    await container.reset_console()
+    await node.reset_console()
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
     The port number on the Docker node is always 0.
     """
 
-    docker_manager = Docker.instance()
-    container = docker_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = container.get_nio(adapter_number)
-    stream = docker_manager.stream_pcap_file(nio, container.project.id)
+    nio = node.get_nio(adapter_number)
+    stream = Docker.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 # @Route.get(

@@ -21,7 +21,7 @@ API endpoints for VirtualBox nodes.
 
 import os
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -30,8 +30,23 @@ from gns3server.endpoints import schemas
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.project_manager import ProjectManager
+from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VirtualBox node"}
+}
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    vbox_manager = VirtualBox.instance()
+    node = vbox_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -69,250 +84,228 @@ async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBox
 
 @router.get("/{node_id}",
             response_model=schemas.VirtualBox,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_virtualbox_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Return a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    return vm.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.VirtualBox,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_virtualbox_node(project_id: UUID, node_id: UUID, node_data: schemas.VirtualBoxUpdate):
+            responses=responses)
+async def update_virtualbox_node(node_data: schemas.VirtualBoxUpdate, node: VirtualBoxVM = Depends(dep_node)):
     """
     Update a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-
     if "name" in node_data:
         name = node_data.pop("name")
         vmname = node_data.pop("vmname", None)
-        if name != vm.name:
-            oldname = vm.name
-            vm.name = name
-            if vm.linked_clone:
+        if name != node.name:
+            oldname = node.name
+            node.name = name
+            if node.linked_clone:
                 try:
-                    await vm.set_vmname(vm.name)
+                    await node.set_vmname(node.name)
                 except VirtualBoxError as e:  # In case of error we rollback (we can't change the name when running)
-                    vm.name = oldname
-                    vm.updated()
+                    node.name = oldname
+                    node.updated()
                     raise e
 
     if "adapters" in node_data:
         adapters = node_data.pop("adapters")
-        if adapters != vm.adapters:
-            await vm.set_adapters(adapters)
+        if adapters != node.adapters:
+            await node.set_adapters(adapters)
 
     if "ram" in node_data:
         ram = node_data.pop("ram")
-        if ram != vm.ram:
-            await vm.set_ram(ram)
+        if ram != node.ram:
+            await node.set_ram(ram)
 
     # update the console first to avoid issue if updating console type
-    vm.console = node_data.pop("console", vm.console)
+    node.console = node_data.pop("console", node.console)
 
     for name, value in node_data.items():
-        if hasattr(vm, name) and getattr(vm, name) != value:
-            setattr(vm, name, value)
+        if hasattr(node, name) and getattr(node, name) != value:
+            setattr(node, name, value)
 
-    vm.updated()
-    return vm.__json__()
+    node.updated()
+    return node.__json__()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_virtualbox_node(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Delete a VirtualBox node.
     """
 
-    # check the project_id exists
-    ProjectManager.instance().get_project(str(project_id))
-    await VirtualBox.instance().delete_node(str(node_id))
+    await VirtualBox.instance().delete_node(node.id)
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_virtualbox_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def start_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Start a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    if await vm.check_hw_virtualization():
+    if await node.check_hw_virtualization():
         pm = ProjectManager.instance()
-        if pm.check_hardware_virtualization(vm) is False:
-            pass # FIXME: check this
+        if pm.check_hardware_virtualization(node) is False:
+            pass  # FIXME: check this
             #raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
-    await vm.start()
+    await node.start()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_virtualbox_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Stop a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_virtualbox_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Suspend a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.suspend()
+    await node.suspend()
 
 
 @router.post("/{node_id}/resume",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def resume_virtualbox_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def resume_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Resume a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.resume()
+    await node.resume()
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload_virtualbox_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Reload a VirtualBox node.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reload()
+    await node.reload()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+             responses=responses)
+async def create_nio(adapter_number: int,
+                     port_number: int,
+                     nio_data: schemas.UDPNIO,
+                     node: VirtualBoxVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the VirtualBox node is always 0.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vbox_manager.create_nio(jsonable_encoder(nio_data, exclude_unset=True))
-    await vm.adapter_add_nio_binding(adapter_number, nio)
+    nio = VirtualBox.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
+    await node.adapter_add_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+            responses=responses)
+async def update_nio(adapter_number: int,
+                     port_number: int,
+                     nio_data: schemas.UDPNIO,
+                     node: VirtualBoxVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the VirtualBox node is always 0.
     """
 
-    virtualbox_manager = VirtualBox.instance()
-    vm = virtualbox_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number)
+    nio = node.get_nio(adapter_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
     if nio_data.suspend:
         nio.suspend = nio_data.suspend
-    await vm.adapter_update_nio_binding(adapter_number, nio)
+    await node.adapter_update_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the VirtualBox node is always 0.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.adapter_remove_nio_binding(adapter_number)
+    await node.adapter_remove_nio_binding(adapter_number)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: VirtualBoxVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The port number on the VirtualBox node is always 0.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(vm.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await vm.start_capture(adapter_number, pcap_file_path)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
+    await node.start_capture(adapter_number, pcap_file_path)
     return {"pcap_file_path": str(pcap_file_path)}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The port number on the VirtualBox node is always 0.
     """
 
-    vbox_manager = VirtualBox.instance()
-    vm = vbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop_capture(adapter_number)
+    await node.stop_capture(adapter_number)
 
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: VirtualBoxVM = Depends(dep_node)):
 
-    virtualbox_manager = VirtualBox.instance()
-    vm = virtualbox_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reset_console()
+    await node.reset_console()
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
     The port number on the VirtualBox node is always 0.
     """
 
-    virtualbox_manager = VirtualBox.instance()
-    vm = virtualbox_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number)
-    stream = virtualbox_manager.stream_pcap_file(nio, vm.project.id)
+    nio = node.get_nio(adapter_number)
+    stream = VirtualBox.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 

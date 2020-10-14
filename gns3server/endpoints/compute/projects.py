@@ -20,28 +20,37 @@ API endpoints for projects.
 """
 
 import shutil
+import aiohttp
+import os
 
-from fastapi import APIRouter, HTTPException, Request, status
+import logging
+log = logging.getLogger()
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from typing import List
 from uuid import UUID
 
+from gns3server.compute.project_manager import ProjectManager
+from gns3server.compute.project import Project
 from gns3server.endpoints import schemas
+
 
 router = APIRouter()
 
-import aiohttp
-import os
-
-from gns3server.compute.project_manager import ProjectManager
-
-import logging
-log = logging.getLogger()
-
-
 # How many clients have subscribed to notifications
 _notifications_listening = {}
+
+
+def dep_project(project_id: UUID):
+    """
+    Dependency to retrieve a project.
+    """
+
+    pm = ProjectManager.instance()
+    project = pm.get_project(str(project_id))
+    return project
 
 
 @router.get("/projects", response_model=List[schemas.Project])
@@ -73,41 +82,35 @@ def create_project(project_data: schemas.ProjectCreate):
 
 @router.put("/projects/{project_id}",
              response_model=schemas.Project)
-async def update_project(project_id: UUID, project_data: schemas.ProjectUpdate):
+async def update_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
     """
     Update project on the compute.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     await project.update(variables=project_data.variables)
     return project.__json__()
 
 
 @router.get("/projects/{project_id}",
             response_model=schemas.Project)
-def get_project(project_id: UUID):
+def get_project(project: Project = Depends(dep_project)):
     """
     Return a project from the compute.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     return project.__json__()
 
 
 @router.post("/projects/{project_id}/close",
              status_code=status.HTTP_204_NO_CONTENT)
-async def close_project(project_id: UUID):
+async def close_project(project: Project = Depends(dep_project)):
     """
     Close a project on the compute.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     if _notifications_listening.setdefault(project.id, 0) <= 1:
         await project.close()
-        pm.remove_project(project.id)
+        ProjectManager.instance().remove_project(project.id)
         try:
             del _notifications_listening[project.id]
         except KeyError:
@@ -118,15 +121,13 @@ async def close_project(project_id: UUID):
 
 @router.delete("/projects/{project_id}",
                status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project_id: UUID):
+async def delete_project(project: Project = Depends(dep_project)):
     """
     Delete project from the compute.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     await project.delete()
-    pm.remove_project(project.id)
+    ProjectManager.instance().remove_project(project.id)
 
 # @Route.get(
 #     r"/projects/{project_id}/notifications",
@@ -184,24 +185,20 @@ async def delete_project(project_id: UUID):
 
 @router.get("/projects/{project_id}/files",
             response_model=List[schemas.ProjectFile])
-async def get_project_files(project_id: UUID):
+async def get_project_files(project: Project = Depends(dep_project)):
     """
     Return files belonging to a project.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     return await project.list_files()
 
 
 @router.get("/projects/{project_id}/files/{file_path:path}")
-async def get_file(project_id: UUID, file_path: str):
+async def get_file(file_path: str, project: Project = Depends(dep_project)):
     """
     Get a file from a project.
     """
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
@@ -217,10 +214,8 @@ async def get_file(project_id: UUID, file_path: str):
 
 @router.post("/projects/{project_id}/files/{file_path:path}",
              status_code=status.HTTP_204_NO_CONTENT)
-async def write_file(project_id: UUID, file_path: str, request: Request):
+async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)):
 
-    pm = ProjectManager.instance()
-    project = pm.get_project(str(project_id))
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape

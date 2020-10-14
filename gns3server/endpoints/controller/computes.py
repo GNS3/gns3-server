@@ -30,9 +30,12 @@ from gns3server.endpoints import schemas
 
 router = APIRouter()
 
+responses = {
+    404: {"model": ErrorMessage, "description": "Compute not found"}
+}
+
 
 @router.post("/",
-             summary="Create a new compute",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Compute,
              responses={404: {"model": ErrorMessage, "description": "Could not connect to compute"},
@@ -49,14 +52,12 @@ async def create_compute(compute_data: schemas.ComputeCreate):
 
 
 @router.get("/{compute_id}",
-            summary="Get a compute",
             response_model=schemas.Compute,
-            response_description="Compute data",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Compute not found"}})
+            responses=responses)
 def get_compute(compute_id: Union[str, UUID]):
     """
-    Get compute data from the controller.
+    Return a compute from the controller.
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
@@ -64,13 +65,11 @@ def get_compute(compute_id: Union[str, UUID]):
 
 
 @router.get("/",
-            summary="List of all computes",
             response_model=List[schemas.Compute],
-            response_description="List of computes",
             response_model_exclude_unset=True)
-async def list_computes():
+async def get_computes():
     """
-    Return the list of all computes known by the controller.
+    Return all computes known by the controller.
     """
 
     controller = Controller.instance()
@@ -78,11 +77,9 @@ async def list_computes():
 
 
 @router.put("/{compute_id}",
-            summary="Update a compute",
             response_model=schemas.Compute,
-            response_description="Updated compute",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Compute not found"}})
+            responses=responses)
 async def update_compute(compute_id: Union[str, UUID], compute_data: schemas.ComputeUpdate):
     """
     Update a compute on the controller.
@@ -95,9 +92,8 @@ async def update_compute(compute_id: Union[str, UUID], compute_data: schemas.Com
 
 
 @router.delete("/{compute_id}",
-               summary="Delete a compute",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+               responses=responses)
 async def delete_compute(compute_id: Union[str, UUID]):
     """
     Delete a compute from the controller.
@@ -107,10 +103,8 @@ async def delete_compute(compute_id: Union[str, UUID]):
 
 
 @router.get("/{compute_id}/{emulator}/images",
-            summary="List images",
-            response_description="List of images",
-            responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
-async def list_images(compute_id: Union[str, UUID], emulator: str):
+            responses=responses)
+async def get_images(compute_id: Union[str, UUID], emulator: str):
     """
     Return the list of images available on a compute for a given emulator type.
     """
@@ -121,23 +115,24 @@ async def list_images(compute_id: Union[str, UUID], emulator: str):
 
 
 @router.get("/{compute_id}/{emulator}/{endpoint_path:path}",
-            summary="Forward GET request to a compute",
-            responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+            responses=responses)
 async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str):
     """
-    Forward GET request to a compute. Read the full compute API documentation for available endpoints.
+    Forward a GET request to a compute.
+    Read the full compute API documentation for available endpoints.
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
     result = await compute.forward("GET", emulator, endpoint_path)
     return result
 
+
 @router.post("/{compute_id}/{emulator}/{endpoint_path:path}",
-             summary="Forward POST request to a compute",
-             responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+             responses=responses)
 async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
     """
-    Forward POST request to a compute. Read the full compute API documentation for available endpoints.
+    Forward a POST request to a compute.
+    Read the full compute API documentation for available endpoints.
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
@@ -145,11 +140,11 @@ async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_pat
 
 
 @router.put("/{compute_id}/{emulator}/{endpoint_path:path}",
-            summary="Forward PUT request to a compute",
-            responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+            responses=responses)
 async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
     """
-    Forward PUT request to a compute. Read the full compute API documentation for available endpoints.
+    Forward a PUT request to a compute.
+    Read the full compute API documentation for available endpoints.
     """
 
     compute = Controller.instance().get_compute(str(compute_id))
@@ -157,11 +152,10 @@ async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path
 
 
 @router.post("/{compute_id}/auto_idlepc",
-             summary="Find a new IDLE-PC value",
-             responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+             responses=responses)
 async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC):
     """
-    Find a suitable Idle-PC value for a given IOS image. This may take some time.
+    Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
     """
 
     controller = Controller.instance()
@@ -172,12 +166,11 @@ async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdl
 
 
 @router.get("/{compute_id}/ports",
-            summary="Get ports used by a compute",
             deprecated=True,
-            responses={404: {"model": ErrorMessage, "description": "Compute was not found"}})
+            responses=responses)
 async def ports(compute_id: Union[str, UUID]):
     """
-    Get ports information for a given compute.
+    Return ports information for a given compute.
     """
 
     return await Controller.instance().compute_ports(str(compute_id))

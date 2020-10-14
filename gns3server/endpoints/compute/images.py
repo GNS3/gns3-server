@@ -125,7 +125,7 @@ async def download_iou_image(filename: str):
 
 
 @router.get("/qemu/images")
-async def list_qemu_images() -> List[str]:
+async def get_qemu_images() -> List[str]:
 
     qemu_manager = Qemu.instance()
     return await qemu_manager.list_images()

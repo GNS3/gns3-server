@@ -22,7 +22,7 @@ API endpoints for Qemu nodes.
 import os
 import sys
 
-from fastapi import APIRouter, Body, status
+from fastapi import APIRouter, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -31,8 +31,23 @@ from gns3server.endpoints import schemas
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.qemu import Qemu
+from gns3server.compute.qemu.qemu_vm import QemuVM
 
 router = APIRouter()
+
+responses = {
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}
+}
+
+
+def dep_node(project_id: UUID, node_id: UUID):
+    """
+    Dependency to retrieve a node.
+    """
+
+    qemu_manager = Qemu.instance()
+    node = qemu_manager.get_node(str(node_id), project_id=str(project_id))
+    return node
 
 
 @router.post("/",
@@ -66,250 +81,224 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate):
 
 @router.get("/{node_id}",
             response_model=schemas.Qemu,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-def get_qemu_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Return a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    return vm.__json__()
+    return node.__json__()
 
 
 @router.put("/{node_id}",
             response_model=schemas.Qemu,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_qemu_node(project_id: UUID, node_id: UUID, node_data: schemas.QemuUpdate):
+            responses=responses)
+async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends(dep_node)):
     """
     Update a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     # update the console first to avoid issue if updating console type
-    vm.console = node_data.pop("console", vm.console)
+    node.console = node_data.pop("console", node.console)
     for name, value in node_data.items():
-        if hasattr(vm, name) and getattr(vm, name) != value:
-            await vm.update_property(name, value)
-    vm.updated()
-    return vm.__json__()
+        if hasattr(node, name) and getattr(node, name) != value:
+            await node.update_property(name, value)
+    node.updated()
+    return node.__json__()
 
 
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_qemu_node(project_id: UUID, node_id: UUID):
+               responses=responses)
+async def delete_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Delete a Qemu node.
     """
 
-    await Qemu.instance().delete_node(str(node_id))
+    await Qemu.instance().delete_node(node.id)
 
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.Qemu,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_qemu_node(project_id: UUID, node_id: UUID, destination_node_id: UUID = Body(..., embed=True)):
+             responses=responses)
+async def duplicate_qemu_node(destination_node_id: UUID = Body(..., embed=True), node: QemuVM = Depends(dep_node)):
     """
     Duplicate a Qemu node.
     """
 
-    new_node = await Qemu.instance().duplicate_node(str(node_id), str(destination_node_id))
+    new_node = await Qemu.instance().duplicate_node(node.id, str(destination_node_id))
     return new_node.__json__()
 
 
 @router.post("/{node_id}/resize_disk",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def resize_qemu_node_disk(project_id: UUID, node_id: UUID, node_data: schemas.QemuDiskResize):
+             responses=responses)
+async def resize_qemu_node_disk(node_data: schemas.QemuDiskResize, node: QemuVM = Depends(dep_node)):
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.resize_disk(node_data.drive_name, node_data.extend)
+    await node.resize_disk(node_data.drive_name, node_data.extend)
 
 
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_qemu_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def start_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Start a Qemu node.
     """
 
     qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
     hardware_accel = qemu_manager.config.get_section_config("Qemu").getboolean("enable_hardware_acceleration", True)
     if sys.platform.startswith("linux"):
         # the enable_kvm option was used before version 2.0 and has priority
         enable_kvm = qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm")
         if enable_kvm is not None:
             hardware_accel = enable_kvm
-    if hardware_accel and "-no-kvm" not in vm.options and "-no-hax" not in vm.options:
+    if hardware_accel and "-no-kvm" not in node.options and "-no-hax" not in node.options:
         pm = ProjectManager.instance()
-        if pm.check_hardware_virtualization(vm) is False:
+        if pm.check_hardware_virtualization(node) is False:
             pass  #FIXME: check this
             #raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
-    await vm.start()
+    await node.start()
 
 
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_qemu_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Stop a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop()
+    await node.stop()
 
 
 @router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reload_qemu_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Reload a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reload()
+    await node.reload()
 
 
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_qemu_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Suspend a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.suspend()
+    await node.suspend()
 
 
 @router.post("/{node_id}/resume",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def resume_qemu_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def resume_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Resume a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.resume()
+    await node.resume()
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def create_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+             responses=responses)
+async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: QemuVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = qemu_manager.create_nio(jsonable_encoder(nio_data, exclude_unset=True))
-    await vm.adapter_add_nio_binding(adapter_number, nio)
+    nio = Qemu.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
+    await node.adapter_add_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def update_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, nio_data: schemas.UDPNIO):
+            responses=responses)
+async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: QemuVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number)
+    nio = node.get_nio(adapter_number)
     if nio_data.filters:
         nio.filters = nio_data.filters
     if nio_data.suspend:
         nio.suspend = nio_data.suspend
-    await vm.adapter_update_nio_binding(adapter_number, nio)
+    await node.adapter_update_nio_binding(adapter_number, nio)
     return nio.__json__()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def delete_nio(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+               responses=responses)
+async def delete_nio(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.adapter_remove_nio_binding(adapter_number)
+    await node.adapter_remove_nio_binding(adapter_number)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def start_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture):
+             responses=responses)
+async def start_capture(adapter_number: int,
+                        port_number: int,
+                        node_capture_data: schemas.NodeCapture,
+                        node: QemuVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    pcap_file_path = os.path.join(vm.project.capture_working_directory(), node_capture_data.capture_file_name)
-    await vm.start_capture(adapter_number, pcap_file_path)
+    pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
+    await node.start_capture(adapter_number, pcap_file_path)
     return {"pcap_file_path": str(pcap_file_path)}
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stop_capture(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+             responses=responses)
+async def stop_capture(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.stop_capture(adapter_number)
+    await node.stop_capture(adapter_number)
 
 
 @router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reset_console(node: QemuVM = Depends(dep_node)):
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    await vm.reset_console()
+    await node.reset_console()
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}})
-async def stream_pcap_file(project_id: UUID, node_id: UUID, adapter_number: int, port_number: int):
+            responses=responses)
+async def stream_pcap_file(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
     The port number on the Qemu node is always 0.
     """
 
-    qemu_manager = Qemu.instance()
-    vm = qemu_manager.get_node(str(node_id), project_id=str(project_id))
-    nio = vm.get_nio(adapter_number)
-    stream = qemu_manager.stream_pcap_file(nio, vm.project.id)
+    nio = node.get_nio(adapter_number)
+    stream = Qemu.instance().stream_pcap_file(nio, node.project.id)
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 

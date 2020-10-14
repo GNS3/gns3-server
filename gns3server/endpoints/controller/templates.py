@@ -22,6 +22,9 @@ API endpoints for templates.
 import hashlib
 import json
 
+import logging
+log = logging.getLogger(__name__)
+
 from fastapi import APIRouter, Request, Response, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from typing import Union, List
@@ -33,8 +36,10 @@ from gns3server.controller import Controller
 
 router = APIRouter()
 
-import logging
-log = logging.getLogger(__name__)
+responses = {
+    404: {"model": ErrorMessage, "description": "Could not find template"}
+}
+
 
 #template_create_models = Union[schemas.VPCSTemplateCreate, schemas.CloudTemplateCreate, schemas.IOUTemplateCreate]
 #template_update_models = Union[schemas.VPCSTemplateUpdate, schemas.CloudTemplateUpdate, schemas.IOUTemplateUpdate]
@@ -45,6 +50,9 @@ log = logging.getLogger(__name__)
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Template)
 def create_template(template_data: schemas.TemplateCreate):
+    """
+    Create a new template.
+    """
 
     controller = Controller.instance()
     template = controller.template_manager.add_template(jsonable_encoder(template_data, exclude_unset=True))
@@ -54,11 +62,13 @@ def create_template(template_data: schemas.TemplateCreate):
 
 
 @router.get("/templates/{template_id}",
-            summary="List of all nodes",
             response_model=schemas.Template,
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Could not find template"}})
+            responses=responses)
 def get_template(template_id: UUID, request: Request, response: Response):
+    """
+    Return a template.
+    """
 
     request_etag = request.headers.get("If-None-Match", "")
     controller = Controller.instance()
@@ -75,8 +85,11 @@ def get_template(template_id: UUID, request: Request, response: Response):
 @router.put("/templates/{template_id}",
             response_model=schemas.Template,
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Template not found"}})
+            responses=responses)
 def update_template(template_id: UUID, template_data: schemas.TemplateUpdate):
+    """
+    Update a template.
+    """
 
     controller = Controller.instance()
     template = controller.template_manager.get_template(str(template_id))
@@ -86,8 +99,11 @@ def update_template(template_id: UUID, template_data: schemas.TemplateUpdate):
 
 @router.delete("/templates/{template_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": ErrorMessage, "description": "Could not find template"}})
+               responses=responses)
 def delete_template(template_id: UUID):
+    """
+    Delete a template.
+    """
 
     controller = Controller.instance()
     controller.template_manager.delete_template(str(template_id))
@@ -95,9 +111,11 @@ def delete_template(template_id: UUID):
 
 @router.get("/templates",
             response_model=List[schemas.Template],
-            response_description="List of templates",
             response_model_exclude_unset=True)
-def list_templates():
+def get_templates():
+    """
+    Return all templates.
+    """
 
     controller = Controller.instance()
     return [c.__json__() for c in controller.template_manager.templates.values()]
@@ -106,8 +124,11 @@ def list_templates():
 @router.post("/templates/{template_id}/duplicate",
              response_model=schemas.Template,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": ErrorMessage, "description": "Could not find template"}})
+             responses=responses)
 async def duplicate_template(template_id: UUID):
+    """
+    Duplicate a template.
+    """
 
     controller = Controller.instance()
     template = controller.template_manager.duplicate_template(str(template_id))
@@ -119,6 +140,9 @@ async def duplicate_template(template_id: UUID):
              status_code=status.HTTP_201_CREATED,
              responses={404: {"model": ErrorMessage, "description": "Could not find project or template"}})
 async def create_node_from_template(project_id: UUID, template_id: UUID, template_usage: schemas.TemplateUsage):
+    """
+    Create a new node from a template.
+    """
 
     controller = Controller.instance()
     project = controller.get_project(str(project_id))

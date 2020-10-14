@@ -21,28 +21,28 @@ API endpoints for nodes.
 
 import asyncio
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
 from typing import List, Callable
 from uuid import UUID
 
 from gns3server.controller import Controller
+from gns3server.controller.node import Node
+from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
 from gns3server.controller.controller_error import ControllerForbiddenError
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
-
-import aiohttp
 
 node_locks = {}
 
 
 class NodeConcurrency(APIRoute):
     """
-    To avoid strange effect we prevent concurrency
+    To avoid strange effects, we prevent concurrency
     between the same instance of the node
-    (excepting when streaming a PCAP file and WebSocket consoles).
+    (excepting when streaming a PCAP file and for WebSocket consoles).
     """
 
     def get_route_handler(self) -> Callable:
@@ -74,25 +74,41 @@ class NodeConcurrency(APIRoute):
 
 router = APIRouter(route_class=NodeConcurrency)
 
-# # dependency to retrieve a node
-# async def get_node(project_id: UUID, node_id: UUID):
-#
-#     project = await Controller.instance().get_loaded_project(str(project_id))
-#     node = project.get_node(str(node_id))
-#     return node
+responses = {
+    404: {"model": ErrorMessage, "description": "Could not find project or node"}
+}
 
 
-@router.post("/projects/{project_id}/nodes",
-             summary="Create a new node",
+async def dep_project(project_id: UUID):
+    """
+    Dependency to retrieve a project.
+    """
+
+    project = await Controller.instance().get_loaded_project(str(project_id))
+    return project
+
+
+async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
+    """
+    Dependency to retrieve a node.
+    """
+
+    node = project.get_node(str(node_id))
+    return node
+
+
+@router.post("/",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Node,
              responses={404: {"model": ErrorMessage, "description": "Could not find project"},
                         409: {"model": ErrorMessage, "description": "Could not create node"}})
-async def create_node(project_id: UUID, node_data: schemas.Node):
+async def create_node(node_data: schemas.Node, project: Project = Depends(dep_project)):
+    """
+    Create a new node.
+    """
 
     controller = Controller.instance()
     compute = controller.get_compute(str(node_data.compute_id))
-    project = await controller.get_loaded_project(str(project_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     node = await project.add_node(compute,
                                   node_data.pop("name"),
@@ -101,91 +117,82 @@ async def create_node(project_id: UUID, node_data: schemas.Node):
     return node.__json__()
 
 
-@router.get("/projects/{project_id}/nodes",
-            summary="List of all nodes",
+@router.get("/",
             response_model=List[schemas.Node],
-            response_description="List of nodes",
             response_model_exclude_unset=True)
-async def list_nodes(project_id: UUID):
+async def get_nodes(project: Project = Depends(dep_project)):
+    """
+    Return all nodes belonging to a given project.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     return [v.__json__() for v in project.nodes.values()]
 
 
-@router.post("/projects/{project_id}/nodes/start",
-             summary="Start all nodes",
+@router.post("/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-async def start_all_nodes(project_id: UUID):
+             responses=responses)
+async def start_all_nodes(project: Project = Depends(dep_project)):
     """
-    Start all nodes belonging to the project
+    Start all nodes belonging to a given project.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.start_all()
 
 
-@router.post("/projects/{project_id}/nodes/stop",
-             summary="Stop all nodes",
+@router.post("/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-async def stop_all_nodes(project_id: UUID):
+             responses=responses)
+async def stop_all_nodes(project: Project = Depends(dep_project)):
     """
-    Stop all nodes belonging to the project
+    Stop all nodes belonging to a given project.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.stop_all()
 
 
-@router.post("/projects/{project_id}/nodes/suspend",
-             summary="Stop all nodes",
+@router.post("/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-async def suspend_all_nodes(project_id: UUID):
+             responses=responses)
+async def suspend_all_nodes(project: Project = Depends(dep_project)):
     """
-    Suspend all nodes belonging to the project
+    Suspend all nodes belonging to a given project.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.suspend_all()
 
 
-@router.post("/projects/{project_id}/nodes/reload",
-             summary="Reload all nodes",
+@router.post("/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-async def reload_all_nodes(project_id: UUID):
+             responses=responses)
+async def reload_all_nodes(project: Project = Depends(dep_project)):
     """
-    Reload all nodes belonging to the project
+    Reload all nodes belonging to a given project.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.stop_all()
     await project.start_all()
 
 
-@router.get("/projects/{project_id}/nodes/{node_id}",
-            summary="Get a node",
+@router.get("/{node_id}",
             response_model=schemas.Node,
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-def get_node(project_id: UUID, node_id: UUID):
+            responses=responses)
+def get_node(node: Node = Depends(dep_node)):
+    """
+    Return a node from a given project.
+    """
 
-    project = Controller.instance().get_project(str(project_id))
-    node = project.get_node(str(node_id))
     return node.__json__()
 
 
-@router.put("/projects/{project_id}/nodes/{node_id}",
-            summary="Update a node",
+@router.put("/{node_id}",
             response_model=schemas.Node,
-            response_description="Updated node",
             response_model_exclude_unset=True,
-            responses={404: {"model": ErrorMessage, "description": "Project or node not found"}})
-async def update_node(project_id: UUID, node_id: UUID, node_data: schemas.NodeUpdate):
+            responses=responses)
+async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)):
+    """
+    Update a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
 
     # Ignore these because we only use them when creating a node
@@ -197,139 +204,129 @@ async def update_node(project_id: UUID, node_id: UUID, node_data: schemas.NodeUp
     return node.__json__()
 
 
-@router.delete("/projects/{project_id}/nodes/{node_id}",
-               summary="Delete a node",
+@router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
-               responses={404: {"model": ErrorMessage, "description": "Could not find project or node"},
+               responses={**responses,
                           409: {"model": ErrorMessage, "description": "Cannot delete node"}})
-async def delete_node(project_id: UUID, node_id: UUID):
+async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
+    """
+    Delete a node from a project.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.delete_node(str(node_id))
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/duplicate",
-             summary="Duplicate a node",
+@router.post("/{node_id}/duplicate",
              response_model=schemas.Node,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def duplicate_node(project_id: UUID, node_id: UUID, duplicate_data: schemas.NodeDuplicate):
+             responses=responses)
+async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)):
+    """
+    Duplicate a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
-    new_node = await project.duplicate_node(node,
-                                            duplicate_data.x,
-                                            duplicate_data.y,
-                                            duplicate_data.z)
+    new_node = await node.project.duplicate_node(node,
+                                                 duplicate_data.x,
+                                                 duplicate_data.y,
+                                                 duplicate_data.z)
     return new_node.__json__()
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/start",
-             summary="Start a node",
+@router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def start_node(project_id: UUID, node_id: UUID, start_data: dict):
+             responses=responses)
+async def start_node(start_data: dict, node: Node = Depends(dep_node)):
+    """
+    Start a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     await node.start(data=start_data)
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/stop",
-             summary="Stop a node",
+@router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def stop_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def stop_node(node: Node = Depends(dep_node)):
+    """
+    Stop a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     await node.stop()
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/suspend",
-             summary="Suspend a node",
+@router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def suspend_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def suspend_node(node: Node = Depends(dep_node)):
+    """
+    Suspend a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     await node.suspend()
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/reload",
-             summary="Reload a node",
+@router.post("/{node_id}/reload",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def reload_node(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def reload_node(node: Node = Depends(dep_node)):
+    """
+    Reload a node.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     await node.reload()
 
 
-@router.get("/projects/{project_id}/nodes/{node_id}/links",
-            summary="List of all node links",
+@router.get("/{node_id}/links",
             response_model=List[schemas.Link],
-            response_description="List of links",
             response_model_exclude_unset=True)
-async def node_links(project_id: UUID, node_id: UUID):
+async def get_node_links(node: Node = Depends(dep_node)):
     """
-    Return all the links connected to the node.
+    Return all the links connected to a node.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     links = []
     for link in node.links:
         links.append(link.__json__())
     return links
 
 
-@router.get("/projects/{project_id}/nodes/{node_id}/dynamips/auto_idlepc",
-            summary="Compute an Idle-PC",
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def auto_idlepc(project_id: UUID, node_id: UUID):
+@router.get("/{node_id}/dynamips/auto_idlepc",
+            responses=responses)
+async def auto_idlepc(node: Node = Depends(dep_node)):
     """
     Compute an Idle-PC value for a Dynamips node
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     return await node.dynamips_auto_idlepc()
 
 
-@router.get("/projects/{project_id}/nodes/{node_id}/dynamips/idlepc_proposals",
-            summary="Compute list of Idle-PC values",
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def idlepc_proposals(project_id: UUID, node_id: UUID):
+@router.get("/{node_id}/dynamips/idlepc_proposals",
+            responses=responses)
+async def idlepc_proposals(node: Node = Depends(dep_node)):
     """
     Compute a list of potential idle-pc values for a Dynamips node
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     return await node.dynamips_idlepc_proposals()
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/resize_disk",
-             summary="Resize a disk",
+@router.post("/{node_id}/resize_disk",
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def resize_disk(project_id: UUID, node_id: UUID, resize_data: dict):
-
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
+             responses=responses)
+async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)):
+    """
+    Resize a disk image.
+    """
     await node.post("/resize_disk", **resize_data)
 
 
-@router.get("/projects/{project_id}/nodes/{node_id}/files/{file_path:path}",
-            summary="Get a file in the node directory",
-            responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def get_file(project_id: UUID, node_id: UUID, file_path: str):
+@router.get("/{node_id}/files/{file_path:path}",
+            responses=responses)
+async def get_file(file_path: str, node: Node = Depends(dep_node)):
+    """
+    Return a file in the node directory
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     path = force_unix_path(file_path)
 
     # Raise error if user try to escape
@@ -339,18 +336,20 @@ async def get_file(project_id: UUID, node_id: UUID, file_path: str):
     node_type = node.node_type
     path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
 
-    res = await node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
+    res = await node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=node.project.id, path=path),
+                                        timeout=None,
+                                        raw=True)
     return Response(res.body, media_type="application/octet-stream")
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/files/{file_path:path}",
-             summary="Write a file in the node directory",
+@router.post("/{node_id}/files/{file_path:path}",
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def post_file(project_id: UUID, node_id: UUID, file_path: str, request: Request):
+             responses=responses)
+async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
+    """
+    Write a file in the node directory.
+    """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     path = force_unix_path(file_path)
 
     # Raise error if user try to escape
@@ -362,7 +361,10 @@ async def post_file(project_id: UUID, node_id: UUID, file_path: str, request: Re
 
     data = await request.body()  #FIXME: are we handling timeout or large files correctly?
 
-    await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
+    await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=node.project.id, path=path),
+                                  data=data,
+                                  timeout=None,
+                                  raw=True)
 
 
 # @Route.get(
@@ -420,23 +422,20 @@ async def post_file(project_id: UUID, node_id: UUID, file_path: str, request: Re
 #     return ws
 
 
-@router.post("/projects/{project_id}/nodes/console/reset",
+@router.post("/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def reset_console_all(project_id: UUID):
+             responses=responses)
+async def reset_console_all(project: Project = Depends(dep_project)):
     """
     Reset console for all nodes belonging to the project.
     """
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
     await project.reset_console_all()
 
 
-@router.post("/projects/{project_id}/nodes/{node_id}/console/reset",
+@router.post("/{node_id}/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or node"}})
-async def console_reset(project_id: UUID, node_id: UUID):
+             responses=responses)
+async def console_reset(node: Node = Depends(dep_node)):
 
-    project = await Controller.instance().get_loaded_project(str(project_id))
-    node = project.get_node(str(node_id))
     await node.post("/console/reset")#, request.json)
