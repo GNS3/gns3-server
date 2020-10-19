@@ -29,12 +29,13 @@ import time
 import logging
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, Body, Query, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, FileResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
-from typing import List
+from typing import List, Optional
 from uuid import UUID
+from pathlib import Path
 
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
@@ -307,19 +308,15 @@ async def export_project(project: Project = Depends(dep_project),
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Project,
              responses=responses)
-async def import_project(project_id: UUID, request: Request):
+async def import_project(project_id: UUID, request: Request, path: Optional[Path] = None, name: Optional[str] = None):
     """
     Import a project from a portable archive.
     """
 
     controller = Controller.instance()
     config = Config.instance()
-    if config.get_section_config("Server").getboolean("local", False) is False:
+    if not config.get_section_config("Server").getboolean("local", False):
         raise ControllerForbiddenError("The server is not local")
-
-    #FIXME: broken
-    path = None
-    name = "test"
 
     # We write the content to a temporary location and after we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.

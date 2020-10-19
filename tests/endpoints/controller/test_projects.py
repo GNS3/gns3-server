@@ -21,10 +21,8 @@ import pytest
 import zipfile
 import json
 
-from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
-from gns3server.app import app
 
 
 @pytest.fixture
@@ -362,22 +360,22 @@ async def test_write_and_get_file_with_leading_slashes_in_filename(controller_ap
     assert response.content == b"world"
 
 
-# @pytest.mark.asyncio
-# async def test_import(controller_api, tmpdir, controller):
-#
-#     with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
-#         myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
-#         myzip.writestr("demo", b"hello")
-#
-#     project_id = str(uuid.uuid4())
-#     with open(str(tmpdir / "test.zip"), "rb") as f:
-#         response = await controller_api.post("/projects/{project_id}/import".format(project_id=project_id), body=f.read(), raw=True)
-#     assert response.status_code == 201
-#
-#     project = controller.get_project(project_id)
-#     with open(os.path.join(project.path, "demo")) as f:
-#         content = f.read()
-#     assert content == "hello"
+@pytest.mark.asyncio
+async def test_import(controller_api, tmpdir, controller):
+
+    with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
+        myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
+        myzip.writestr("demo", b"hello")
+
+    project_id = str(uuid.uuid4())
+    with open(str(tmpdir / "test.zip"), "rb") as f:
+        response = await controller_api.post("/projects/{project_id}/import".format(project_id=project_id), body=f.read(), raw=True)
+    assert response.status_code == 201
+
+    project = controller.get_project(project_id)
+    with open(os.path.join(project.path, "demo")) as f:
+        content = f.read()
+    assert content == "hello"
 
 
 @pytest.mark.asyncio
