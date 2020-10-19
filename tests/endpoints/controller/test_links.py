@@ -335,7 +335,7 @@ async def test_stop_capture(controller_api, project):
     with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
         response = await controller_api.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id))
     assert mock.called
-    assert response.status_code == 201
+    assert response.status_code == 204
 
 
 # async def test_pcap(controller_api, http_client, project):
