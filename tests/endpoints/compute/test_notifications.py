@@ -21,20 +21,18 @@ import json
 from gns3server.compute.notification_manager import NotificationManager
 
 
-# @pytest.mark.asyncio
-# async def test_notification_ws(compute_api, http_client):
-#
-#     ws = await http_client.ws_connect(compute_api.get_url("/notifications/ws"))
-#     answer = await ws.receive()
-#     answer = json.loads(answer.data)
-#
-#     assert answer["action"] == "ping"
-#
-#     NotificationManager.instance().emit("test", {})
-#
-#     answer = await ws.receive()
-#     answer = json.loads(answer.data)
-#     assert answer["action"] == "test"
-#
-#     if not ws.closed:
-#         await ws.close()
+@pytest.mark.asyncio
+async def test_notification_ws(compute_api):
+
+    with compute_api.ws("/notifications/ws") as ws:
+
+        answer = ws.receive_text()
+        answer = json.loads(answer)
+
+        assert answer["action"] == "ping"
+
+        NotificationManager.instance().emit("test", {})
+
+        answer = ws.receive_text()
+        answer = json.loads(answer)
+        assert answer["action"] == "test"

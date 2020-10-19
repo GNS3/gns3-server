@@ -28,13 +28,14 @@ class Query:
     Helper to make queries against the test server
     """
 
-    def __init__(self, http_client, prefix='', api_version=None):
+    def __init__(self, http_client, ws_client, prefix='', api_version=None):
         """
         :param prefix: Prefix added before path (ex: /compute)
         :param api_version: Version of the API
         """
 
         self._http_client = http_client
+        self._ws_client = ws_client
         self._prefix = prefix
         self._api_version = api_version
 
@@ -52,6 +53,10 @@ class Query:
 
     def patch(self, path, **kwargs):
         return self._request("PATCH", path, **kwargs)
+
+    def ws(self, path):
+
+        return self._ws_client.websocket_connect(self.get_url(path))
 
     def get_url(self, path):
 

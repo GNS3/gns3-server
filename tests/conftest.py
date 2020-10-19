@@ -22,20 +22,7 @@ sys.original_platform = sys.platform
 
 from fastapi.testclient import TestClient
 from gns3server.app import app
-
 from httpx import AsyncClient
-
-
-# @pytest.fixture
-# async def client(controller):
-#
-#     async with AsyncClient(app=app, base_url="http://test") as ac:
-#         response = await ac.get("/")
-#
-#     assert response.status_code == 200
-#     assert response.json() == {"message": "Tomato"}
-#
-#     return TestClient(app)
 
 
 if sys.platform.startswith("win"):
@@ -53,6 +40,12 @@ if sys.platform.startswith("win"):
 def http_client():
 
     return AsyncClient(app=app, base_url="http://test-api")
+
+
+@pytest.fixture(scope='function')
+def ws_client():
+
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -96,21 +89,21 @@ def compute_project(tmpdir):
 
 
 @pytest.fixture
-def compute_api(http_client):
+def compute_api(http_client, ws_client):
     """
     Return an helper allowing you to call the hypervisor API via HTTP
     """
 
-    return Query(http_client, prefix="/compute", api_version=2)
+    return Query(http_client, ws_client, prefix="/compute", api_version=2)
 
 
 @pytest.fixture
-def controller_api(http_client, controller):
+def controller_api(http_client, ws_client, controller):
     """
     Return an helper allowing you to call the server API without any prefix
     """
 
-    return Query(http_client, api_version=2)
+    return Query(http_client, ws_client, api_version=2)
 
 
 @pytest.fixture
