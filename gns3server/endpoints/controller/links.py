@@ -148,7 +148,7 @@ async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
 
 
 @router.post("/{link_id}/stop_capture",
-             status_code=status.HTTP_201_CREATED,
+             status_code=status.HTTP_204_NO_CONTENT,
              response_model=schemas.Link,
              responses=responses)
 async def stop_capture(link: Link = Depends(dep_link)):
@@ -157,7 +157,6 @@ async def stop_capture(link: Link = Depends(dep_link)):
     """
 
     await link.stop_capture()
-    return link.__json__()
 
 
 @router.delete("/{link_id}",
@@ -201,7 +200,7 @@ async def pcap(request: Request, link: Link = Depends(dep_link)):
     headers['Router-Host'] = request.client.host
     body = await request.body()
 
-    async def compute_pcpa_stream():
+    async def compute_pcap_stream():
 
         connector = aiohttp.TCPConnector(limit=None, force_close=True)
         async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
@@ -211,4 +210,4 @@ async def pcap(request: Request, link: Link = Depends(dep_link)):
                         break
                     yield data
 
-    return StreamingResponse(compute_pcpa_stream(), media_type="application/vnd.tcpdump.pcap")
+    return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")

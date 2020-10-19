@@ -1,6 +1,4 @@
-# Dockerfile for GNS3 server development
-
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -12,12 +10,13 @@ ENV LC_ALL en_US.UTF-8
 RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:gns3/ppa
 RUN apt-get update && apt-get install -y \
+    git \
     locales \
     python3-pip \
     python3-dev \ 
     qemu-system-x86 \
     qemu-kvm \
-    libvirt-bin \
+    libvirt-daemon-system \
     x11vnc 
 
 RUN locale-gen en_US.UTF-8

@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -112,7 +111,7 @@ async def image_missing_error_handler(request: Request, exc: ImageMissingError):
 
 
 @compute_api.exception_handler(NodeError)
-async def image_missing_error_handler(request: Request, exc: NodeError):
+async def node_error_handler(request: Request, exc: NodeError):
     return JSONResponse(
         status_code=409,
         content={"message": str(exc), "exception": exc.__class__.__name__},
@@ -120,20 +119,11 @@ async def image_missing_error_handler(request: Request, exc: NodeError):
 
 
 @compute_api.exception_handler(UbridgeError)
-async def image_missing_error_handler(request: Request, exc: UbridgeError):
+async def ubridge_error_handler(request: Request, exc: UbridgeError):
     return JSONResponse(
         status_code=409,
         content={"message": str(exc), "exception": exc.__class__.__name__},
     )
-
-
-@compute_api.exception_handler(asyncio.CancelledError)
-async def image_missing_error_handler(request: Request, exc: asyncio.CancelledError):
-    return JSONResponse(
-        status_code=408,
-        content={"message": "Request for '{}' cancelled".format(request.url.path)},
-    )
-
 
 compute_api.include_router(capabilities.router, tags=["Capabilities"])
 compute_api.include_router(compute.router, tags=["Compute"])
