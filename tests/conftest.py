@@ -25,15 +25,19 @@ from gns3server.app import app
 from httpx import AsyncClient
 
 
-if sys.platform.startswith("win"):
-    @pytest.yield_fixture(scope="session")
-    def loop(request):
-        """Return an event loop and destroy it at the end of test"""
+@pytest.yield_fixture(scope="session")
+def event_loop(request):
+    """
+    Overwrite pytest_asyncio event loop.
+    """
 
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)  # Replace main loop to avoid conflict between tests
-        yield loop
-        asyncio.set_event_loop(None)
+    # As of Python 3.8, the default event loop on Windows is Proactor
+    if sys.platform.startswith("win") and sys.version_info < (3, 8):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    asyncio.set_event_loop(loop)
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope='function')
