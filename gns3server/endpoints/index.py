@@ -16,7 +16,7 @@
 
 import os
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, status
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
@@ -30,7 +30,7 @@ templates = Jinja2Templates(directory=os.path.join("gns3server", "templates"))
 @router.get("/")
 async def root():
 
-    return RedirectResponse("/static/web-ui/bundled", status_code=308)
+    return RedirectResponse("/static/web-ui/bundled", status_code=308)  # permanent redirect
 
 
 @router.get("/debug",
@@ -54,7 +54,7 @@ async def web_ui(file_path: str):
 
     # Raise error if user try to escape
     if file_path[0] == ".":
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     static = get_resource(file_path)
 

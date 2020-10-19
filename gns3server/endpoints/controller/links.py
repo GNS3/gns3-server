@@ -19,9 +19,12 @@
 API endpoints for links.
 """
 
+import aiohttp
+import multidict
+
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
+from fastapi.encoders import jsonable_encoder
 from typing import List
 from uuid import UUID
 
@@ -181,37 +184,31 @@ async def reset_link(link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-# @router.post("/projects/{project_id}/links/{link_id}/pcap",
-#              summary="Stream a packet capture",
-#              responses={404: {"model": ErrorMessage, "description": "Project or link not found"}})
-# async def pcap(project_id: UUID, link_id: UUID, request: Request):
-#     """
-#     Stream the PCAP capture file from compute.
-#     """
-#
-#     project = await Controller.instance().get_loaded_project(str(project_id))
-#     link = project.get_link(str(link_id))
-#     if not link.capturing:
-#         raise ControllerError("This link has no active packet capture")
-#
-#     compute = link.compute
-#     pcap_streaming_url = link.pcap_streaming_url()
-#     headers = multidict.MultiDict(request.headers)
-#     headers['Host'] = compute.host
-#     headers['Router-Host'] = request.client.host
-#     body = await request.body()
-#
-#     connector = aiohttp.TCPConnector(limit=None, force_close=True)
-#     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-#         async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
-#             proxied_response = aiohttp.web.Response(headers=response.headers, status=response.status)
-#             if response.headers.get('Transfer-Encoding', '').lower() == 'chunked':
-#                 proxied_response.enable_chunked_encoding()
-#
-#             await proxied_response.prepare(request)
-#             async for data in response.content.iter_any():
-#                 if not data:
-#                     break
-#                 await proxied_response.write(data)
-#
-#     #return StreamingResponse(file_like, media_type="video/mp4"))
+@router.get("/{link_id}/pcap",
+            responses=responses)
+async def pcap(request: Request, link: Link = Depends(dep_link)):
+    """
+    Stream the PCAP capture file from compute.
+    """
+
+    if not link.capturing:
+        raise ControllerError("This link has no active packet capture")
+
+    compute = link.compute
+    pcap_streaming_url = link.pcap_streaming_url()
+    headers = multidict.MultiDict(request.headers)
+    headers['Host'] = compute.host
+    headers['Router-Host'] = request.client.host
+    body = await request.body()
+
+    async def compute_pcpa_stream():
+
+        connector = aiohttp.TCPConnector(limit=None, force_close=True)
+        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+            async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as compute_response:
+                async for data in compute_response.content.iter_any():
+                    if not data:
+                        break
+                    yield data
+
+    return StreamingResponse(compute_pcpa_stream(), media_type="application/vnd.tcpdump.pcap")
