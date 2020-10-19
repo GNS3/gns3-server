@@ -1722,11 +1722,21 @@ class QemuVM(BaseNode):
 
     async def _import_config(self):
         disk_name = getattr(self, "config_disk_name")
+        if not disk_name:
+            return
+        disk = os.path.join(self.working_dir, disk_name)
         zip_file = os.path.join(self.working_dir, "config.zip")
-        if not disk_name or not os.path.exists(zip_file):
+        startup_config = self.hdd_disk_image
+        if startup_config and startup_config.lower().endswith(".zip") and \
+           not os.path.exists(zip_file) and not os.path.exists(disk):
+            try:
+                shutil.copyfile(startup_config, zip_file)
+            except OSError as e:
+                log.warning("Can't access startup config: {}".format(e))
+                self.project.emit("log.warning", {"message": "{}: Can't access startup config: {}".format(self._name, e)})
+        if not os.path.exists(zip_file):
             return
         config_dir = os.path.join(self.working_dir, "configs")
-        disk = os.path.join(self.working_dir, disk_name)
         disk_tmp = disk + ".tmp"
         try:
             os.mkdir(config_dir)
