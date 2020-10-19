@@ -2,9 +2,13 @@ name: testing
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - 3.0
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - 3.0
 
 jobs:
   build:
