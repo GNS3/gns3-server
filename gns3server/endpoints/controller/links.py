@@ -149,7 +149,6 @@ async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
 
 @router.post("/{link_id}/stop_capture",
              status_code=status.HTTP_204_NO_CONTENT,
-             response_model=schemas.Link,
              responses=responses)
 async def stop_capture(link: Link = Depends(dep_link)):
     """
