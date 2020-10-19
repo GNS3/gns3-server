@@ -48,7 +48,7 @@ async def dep_link(project_id: UUID, link_id: UUID):
     return link
 
 
-@router.get("/",
+@router.get("",
             response_model=List[schemas.Link],
             response_model_exclude_unset=True)
 async def get_links(project_id: UUID):
@@ -60,7 +60,7 @@ async def get_links(project_id: UUID):
     return [v.__json__() for v in project.links.values()]
 
 
-@router.post("/",
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Link,
              responses={404: {"model": ErrorMessage, "description": "Could not find project"},

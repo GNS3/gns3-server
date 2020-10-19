@@ -19,9 +19,10 @@
 API endpoints for nodes.
 """
 
+import aiohttp
 import asyncio
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
 from typing import List, Callable
@@ -34,6 +35,9 @@ from gns3server.utils import force_unix_path
 from gns3server.controller.controller_error import ControllerForbiddenError
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
+
+import logging
+log = logging.getLogger(__name__)
 
 node_locks = {}
 
@@ -97,7 +101,7 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
     return node
 
 
-@router.post("/",
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Node,
              responses={404: {"model": ErrorMessage, "description": "Could not find project"},
@@ -117,7 +121,7 @@ async def create_node(node_data: schemas.Node, project: Project = Depends(dep_pr
     return node.__json__()
 
 
-@router.get("/",
+@router.get("",
             response_model=List[schemas.Node],
             response_model_exclude_unset=True)
 async def get_nodes(project: Project = Depends(dep_project)):
@@ -367,59 +371,47 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
                                   raw=True)
 
 
-# @Route.get(
-#     r"/projects/{project_id}/nodes/{node_id}/console/ws",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID"
-#     },
-#     description="Connect to WebSocket console",
-#     status_codes={
-#         200: "File returned",
-#         403: "Permission denied",
-#         404: "The file doesn't exist"
-#     })
-# async def ws_console(request, response):
-#
-#     project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
-#     node = project.get_node(request.match_info["node_id"])
-#     compute = node.compute
-#     ws = aiohttp.web.WebSocketResponse()
-#     await ws.prepare(request)
-#     request.app['websockets'].add(ws)
-#
-#     ws_console_compute_url = "ws://{compute_host}:{compute_port}/v2/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/ws".format(compute_host=compute.host,
-#                                                                                                                                                  compute_port=compute.port,
-#                                                                                                                                                  project_id=project.id,
-#                                                                                                                                                  node_type=node.node_type,
-#                                                                                                                                                  node_id=node.id)
-#
-#     async def ws_forward(ws_client):
-#         async for msg in ws:
-#             if msg.type == aiohttp.WSMsgType.TEXT:
-#                 await ws_client.send_str(msg.data)
-#             elif msg.type == aiohttp.WSMsgType.BINARY:
-#                 await ws_client.send_bytes(msg.data)
-#             elif msg.type == aiohttp.WSMsgType.ERROR:
-#                 break
-#
-#     try:
-#         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True)) as session:
-#             async with session.ws_connect(ws_console_compute_url) as ws_client:
-#                 asyncio.ensure_future(ws_forward(ws_client))
-#                 async for msg in ws_client:
-#                     if msg.type == aiohttp.WSMsgType.TEXT:
-#                         await ws.send_str(msg.data)
-#                     elif msg.type == aiohttp.WSMsgType.BINARY:
-#                         await ws.send_bytes(msg.data)
-#                     elif msg.type == aiohttp.WSMsgType.ERROR:
-#                         break
-#     finally:
-#         if not ws.closed:
-#             await ws.close()
-#         request.app['websockets'].discard(ws)
-#
-#     return ws
+@router.websocket("/{node_id}/console/ws")
+async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
+    """
+    WebSocket console.
+    """
+
+    compute = node.compute
+    await websocket.accept()
+    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket")
+    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v2/compute/projects/" \
+                             f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
+
+    async def ws_receive(ws_console_compute):
+        """
+        Receive WebSocket data from client and forward to compute console WebSocket.
+        """
+
+        try:
+            while True:
+                data = await websocket.receive_text()
+                if data:
+                    await ws_console_compute.send_str(data)
+        except WebSocketDisconnect:
+            await ws_console_compute.close()
+            log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+                     f" console WebSocket")
+
+    try:
+        # receive WebSocket data from compute console WebSocket and forward to client.
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True)) as session:
+            async with session.ws_connect(ws_console_compute_url) as ws_console_compute:
+                asyncio.ensure_future(ws_receive(ws_console_compute))
+                async for msg in ws_console_compute:
+                    if msg.type == aiohttp.WSMsgType.TEXT:
+                        await websocket.send_text(msg.data)
+                    elif msg.type == aiohttp.WSMsgType.BINARY:
+                        await websocket.send_bytes(msg.data)
+                    elif msg.type == aiohttp.WSMsgType.ERROR:
+                        break
+    except aiohttp.client_exceptions.ClientResponseError as e:
+        log.error(f"Client response error received when forwarding to compute console WebSocket: {e}")
 
 
 @router.post("/console/reset",

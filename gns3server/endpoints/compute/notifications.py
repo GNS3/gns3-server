@@ -19,11 +19,10 @@
 API endpoints for compute notifications.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from websockets.exceptions import WebSocketException
-from typing import List
-
+import asyncio
+from fastapi import APIRouter, WebSocket
 from gns3server.compute.notification_manager import NotificationManager
+from starlette.endpoints import WebSocketEndpoint
 
 import logging
 log = logging.getLogger(__name__)
@@ -31,48 +30,63 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
+@router.websocket_route("/notifications/ws")
+class ComputeWebSocketNotifications(WebSocketEndpoint):
+    """
+    Receive compute notifications about the controller from WebSocket stream.
+    """
 
-    async def connect(self, websocket: WebSocket):
+    async def on_connect(self, websocket: WebSocket) -> None:
+
         await websocket.accept()
-        self.active_connections.append(websocket)
+        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
+        self._notification_task = asyncio.ensure_future(self._stream_notifications(websocket))
 
-    def disconnect(self, websocket: WebSocket):
+    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
 
-        self.active_connections.remove(websocket)
+        self._notification_task.cancel()
+        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket"
+                 f" with close code {close_code}")
 
-    async def close_active_connections(self):
+    async def _stream_notifications(self, websocket: WebSocket) -> None:
 
-        for websocket in self.active_connections:
-            await websocket.close()
-
-    async def send_text(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
-
-
-@router.websocket("/notifications/ws")
-async def compute_notifications(websocket: WebSocket):
-
-    log.info("Client has disconnected from compute WebSocket")
-    notifications = NotificationManager.instance()
-    await manager.connect(websocket)
-    try:
-        log.info("New client has connected to compute WebSocket")
-        with notifications.queue() as queue:
+        with NotificationManager.instance().queue() as queue:
             while True:
                 notification = await queue.get_json(5)
-                await manager.send_text(notification, websocket)
-    except (WebSocketException, WebSocketDisconnect) as e:
-        log.info("Client has disconnected from compute WebSocket: {}".format(e))
-    finally:
-        await websocket.close()
-        manager.disconnect(websocket)
+                await websocket.send_text(notification)
+
+
+if __name__ == '__main__':
+
+    import uvicorn
+    from fastapi import FastAPI
+    from starlette.responses import HTMLResponse
+
+    app = FastAPI()
+    app.include_router(router)
+
+    html = """
+    <!DOCTYPE html>
+    <html>
+        <body>
+            <ul id='messages'>
+            </ul>
+            <script>
+                var ws = new WebSocket("ws://localhost:8000/notifications/ws");        
+                ws.onmessage = function(event) {
+                    var messages = document.getElementById('messages')
+                    var message = document.createElement('li')
+                    var content = document.createTextNode(event.data)
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                };
+            </script>
+        </body>
+    </html>
+    """
+
+    @app.get("/")
+    async def get() -> HTMLResponse:
+        return HTMLResponse(html)
+
+    uvicorn.run(app, host="localhost", port=8000)

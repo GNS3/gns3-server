@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 def get_symbols():
 
     controller = Controller.instance()

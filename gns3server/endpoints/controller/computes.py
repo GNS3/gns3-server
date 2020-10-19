@@ -35,7 +35,7 @@ responses = {
 }
 
 
-@router.post("/",
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Compute,
              responses={404: {"model": ErrorMessage, "description": "Could not connect to compute"},
@@ -64,7 +64,7 @@ def get_compute(compute_id: Union[str, UUID]):
     return compute.__json__()
 
 
-@router.get("/",
+@router.get("",
             response_model=List[schemas.Compute],
             response_model_exclude_unset=True)
 async def get_computes():

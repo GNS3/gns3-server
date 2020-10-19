@@ -22,7 +22,7 @@ API endpoints for Dynamips nodes.
 import os
 import sys
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, WebSocket, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import List
@@ -56,7 +56,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.Dynamips,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Dynamips node"}})
@@ -299,18 +299,13 @@ async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep
     return new_node.__json__()
 
 
-# @Route.get(
-#     r"/projects/{project_id}/dynamips/nodes/{node_id}/console/ws",
-#     description="WebSocket for console",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID",
-#     })
-# async def console_ws(request, response):
-#
-#     dynamips_manager = Dynamips.instance()
-#     vm = dynamips_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-#     return await vm.start_websocket_console(request)
+@router.websocket("/{node_id}/console/ws")
+async def console_ws(websocket: WebSocket, node: Router = Depends(dep_node)):
+    """
+    Console WebSocket.
+    """
+
+    await node.start_websocket_console(websocket)
 
 
 @router.post("/{node_id}/console/reset",

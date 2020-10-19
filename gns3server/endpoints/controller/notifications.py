@@ -19,51 +19,58 @@
 API endpoints for controller notifications.
 """
 
+import asyncio
 
-from fastapi import APIRouter, Request, Response, WebSocket, WebSocketDisconnect
-from websockets.exceptions import WebSocketException
+from fastapi import APIRouter, WebSocket
+from fastapi.responses import StreamingResponse
+from starlette.endpoints import WebSocketEndpoint
+
 from gns3server.controller import Controller
-
-router = APIRouter()
 
 import logging
 log = logging.getLogger(__name__)
 
-
-# @router.get("/")
-# async def notification(request: Request):
-#     """
-#     Receive notifications about the controller from HTTP
-#     """
-#
-#     controller = Controller.instance()
-#
-#     await response.prepare(request)
-#     response = Response(content, media_type="application/json")
-#
-#     with controller.notification.controller_queue() as queue:
-#         while True:
-#             msg = await queue.get_json(5)
-#             await response.write(("{}\n".format(msg)).encode("utf-8"))
-#
-#
-#             await response(scope, receive, send)
+router = APIRouter()
 
 
-@router.websocket("/ws")
-async def notification_ws(websocket: WebSocket):
+@router.get("")
+async def http_notification():
     """
-    Receive notifications about the controller from a Websocket
+    Receive controller notifications about the controller from HTTP stream.
     """
 
-    controller = Controller.instance()
-    await websocket.accept()
-    log.info("New client has connected to controller WebSocket")
-    try:
-        with controller.notification.controller_queue() as queue:
+    async def event_stream():
+
+        with Controller.instance().notification.controller_queue() as queue:
+            while True:
+                msg = await queue.get_json(5)
+                yield ("{}\n".format(msg)).encode("utf-8")
+
+    return StreamingResponse(event_stream(), media_type="application/json")
+
+
+@router.websocket_route("/ws")
+class ControllerWebSocketNotifications(WebSocketEndpoint):
+    """
+    Receive controller notifications about the controller from WebSocket stream.
+    """
+
+    async def on_connect(self, websocket: WebSocket) -> None:
+
+        await websocket.accept()
+        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
+
+        self._notification_task = asyncio.ensure_future(self._stream_notifications(websocket=websocket))
+
+    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
+
+        self._notification_task.cancel()
+        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket"
+                 f" with close code {close_code}")
+
+    async def _stream_notifications(self, websocket: WebSocket) -> None:
+
+        with Controller.instance().notifications.queue() as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
-    except (WebSocketException, WebSocketDisconnect):
-        log.info("Client has disconnected from controller WebSocket")
-        await websocket.close()

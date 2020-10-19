@@ -25,7 +25,7 @@ from typing import Optional
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 async def get_appliances(update: Optional[bool] = None, symbol_theme:  Optional[str] = "Classic"):
     """
     Return all appliances known by the controller.

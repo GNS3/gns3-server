@@ -47,7 +47,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.FrameRelaySwitch,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Frame Relay switch node"}})

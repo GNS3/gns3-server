@@ -18,8 +18,6 @@
 import sys
 import os
 import stat
-import logging
-import aiohttp
 import shutil
 import asyncio
 import tempfile
@@ -27,7 +25,7 @@ import psutil
 import platform
 import re
 
-from aiohttp.web import WebSocketResponse
+from fastapi import WebSocketDisconnect
 from gns3server.utils.interfaces import interfaces
 from gns3server.compute.compute_error import ComputeError
 from ..compute.port_manager import PortManager
@@ -38,7 +36,7 @@ from ..ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
 from .error import NodeError
 
-
+import logging
 log = logging.getLogger(__name__)
 
 
@@ -414,7 +412,7 @@ class BaseNode:
         await self.stop_wrap_console()
         await self.start_wrap_console()
 
-    async def start_websocket_console(self, request):
+    async def start_websocket_console(self, websocket):
         """
         Connect to console using Websocket.
 
@@ -428,47 +426,45 @@ class BaseNode:
             raise NodeError("Node {} console type is not telnet".format(self.name))
 
         try:
-            (telnet_reader, telnet_writer) = await asyncio.open_connection(self._manager.port_manager.console_host, self.console)
+            (telnet_reader, telnet_writer) = await asyncio.open_connection(self._manager.port_manager.console_host,
+                                                                           self.console)
         except ConnectionError as e:
             raise NodeError("Cannot connect to node {} telnet server: {}".format(self.name, e))
 
         log.info("Connected to Telnet server")
 
-        ws = WebSocketResponse()
-        await ws.prepare(request)
-        request.app['websockets'].add(ws)
-
-        log.info("New client has connected to console WebSocket")
+        await websocket.accept()
+        log.info(f"New client {websocket.client.host}:{websocket.client.port}  has connected to compute"
+                 f" console WebSocket")
 
         async def ws_forward(telnet_writer):
 
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.TEXT:
-                    telnet_writer.write(msg.data.encode())
-                    await telnet_writer.drain()
-                elif msg.type == aiohttp.WSMsgType.BINARY:
-                    await telnet_writer.write(msg.data)
-                    await telnet_writer.drain()
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    log.debug("Websocket connection closed with exception {}".format(ws.exception()))
+            try:
+                while True:
+                    data = await websocket.receive_text()
+                    if data:
+                        telnet_writer.write(data.encode())
+                        await telnet_writer.drain()
+            except WebSocketDisconnect:
+                log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute"
+                         f" console WebSocket")
 
         async def telnet_forward(telnet_reader):
 
-            while not ws.closed and not telnet_reader.at_eof():
+            while not telnet_reader.at_eof():
                 data = await telnet_reader.read(1024)
                 if data:
-                    await ws.send_bytes(data)
+                    await websocket.send_bytes(data)
 
-        try:
-            # keep forwarding websocket data in both direction
-            await asyncio.wait([ws_forward(telnet_writer), telnet_forward(telnet_reader)], return_when=asyncio.FIRST_COMPLETED)
-        finally:
-            log.info("Client has disconnected from console WebSocket")
-            if not ws.closed:
-                await ws.close()
-            request.app['websockets'].discard(ws)
+        # keep forwarding WebSocket data in both direction
+        done, pending = await asyncio.wait([ws_forward(telnet_writer), telnet_forward(telnet_reader)],
+                                            return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            if task.exception():
+                log.warning(f"Exception while forwarding WebSocket data to Telnet server {task.exception()}")
 
-        return ws
+        for task in pending:
+            task.cancel()
 
     @property
     def aux(self):

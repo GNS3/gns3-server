@@ -32,7 +32,7 @@ log = logging.getLogger()
 from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, FileResponse
-from websockets.exceptions import WebSocketException
+from websockets.exceptions import ConnectionClosed, WebSocketException
 from typing import List
 from uuid import UUID
 
@@ -66,7 +66,19 @@ def dep_project(project_id: UUID):
 CHUNK_SIZE = 1024 * 8  # 8KB
 
 
-@router.post("/",
+@router.get("",
+            response_model=List[schemas.Project],
+            response_model_exclude_unset=True)
+def get_projects():
+    """
+    Return all projects.
+    """
+
+    controller = Controller.instance()
+    return [p.__json__() for p in controller.projects.values()]
+
+
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Project,
              response_model_exclude_unset=True,
@@ -78,20 +90,7 @@ async def create_project(project_data: schemas.ProjectCreate):
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
-    print(project.__json__()["variables"])
     return project.__json__()
-
-
-@router.get("/",
-            response_model=List[schemas.Project],
-            response_model_exclude_unset=True)
-def get_projects():
-    """
-    Return all projects.
-    """
-
-    controller = Controller.instance()
-    return [p.__json__() for p in controller.projects.values()]
 
 
 @router.get("/{project_id}",
@@ -193,52 +192,57 @@ async def load_project(path: str = Body(..., embed=True)):
     return project.__json__()
 
 
-# @router.get("/projects/{project_id}/notifications",
-#             summary="Receive notifications about projects",
-#             responses={404: {"model": ErrorMessage, "description": "Could not find project"}})
-# async def notification(project_id: UUID):
-#
-#     controller = Controller.instance()
-#     project = controller.get_project(str(project_id))
-#     #response.content_type = "application/json"
-#     #response.set_status(200)
-#     #response.enable_chunked_encoding()
-#     #await response.prepare(request)
-#     log.info("New client has connected to the notification stream for project ID '{}' (HTTP long-polling method)".format(project.id))
-#
-#     try:
-#         with controller.notification.project_queue(project.id) as queue:
-#             while True:
-#                 msg = await queue.get_json(5)
-#                 await response.write(("{}\n".format(msg)).encode("utf-8"))
-#     finally:
-#         log.info("Client has disconnected from notification for project ID '{}' (HTTP long-polling method)".format(project.id))
-#         if project.auto_close:
-#             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
-#             # if someone else is not connected
-#             await asyncio.sleep(5)
-#             if not controller.notification.project_has_listeners(project.id):
-#                 log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
-#                 await project.close()
+@router.get("/{project_id}/notifications")
+async def notification(project_id: UUID):
+    """
+    Receive project notifications about the controller from HTTP stream.
+    """
+
+    controller = Controller.instance()
+    project = controller.get_project(str(project_id))
+
+    log.info("New client has connected to the notification stream for project ID '{}' (HTTP steam method)".format(project.id))
+
+    async def event_stream():
+
+        try:
+            with controller.notification.project_queue(project.id) as queue:
+                while True:
+                    msg = await queue.get_json(5)
+                    yield ("{}\n".format(msg)).encode("utf-8")
+        finally:
+            log.info("Client has disconnected from notification for project ID '{}' (HTTP stream method)".format(project.id))
+            if project.auto_close:
+                # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
+                # if someone else is not connected
+                await asyncio.sleep(5)
+                if not controller.notification.project_has_listeners(project.id):
+                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    await project.close()
+
+    return StreamingResponse(event_stream(), media_type="application/json")
 
 
 @router.websocket("/{project_id}/notifications/ws")
 async def notification_ws(project_id: UUID, websocket: WebSocket):
+    """
+    Receive project notifications about the controller from WebSocket.
+    """
 
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
     await websocket.accept()
 
-    #request.app['websockets'].add(ws)
-    #asyncio.ensure_future(process_websocket(ws))
     log.info("New client has connected to the notification stream for project ID '{}' (WebSocket method)".format(project.id))
     try:
         with controller.notification.project_queue(project.id) as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
-    except (WebSocketException, WebSocketDisconnect):
+    except (ConnectionClosed, WebSocketDisconnect):
         log.info("Client has disconnected from notification stream for project ID '{}' (WebSocket method)".format(project.id))
+    except WebSocketException as e:
+        log.warning("Error while sending to project event to WebSocket client: '{}'".format(e))
     finally:
         await websocket.close()
         if project.auto_close:

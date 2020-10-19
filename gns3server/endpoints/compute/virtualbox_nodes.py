@@ -21,7 +21,7 @@ API endpoints for VirtualBox nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, WebSocket, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -49,7 +49,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.VirtualBox,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VirtualBox node"}})
@@ -288,14 +288,6 @@ async def stop_capture(adapter_number: int, port_number: int, node: VirtualBoxVM
     await node.stop_capture(adapter_number)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
-async def reset_console(node: VirtualBoxVM = Depends(dep_node)):
-
-    await node.reset_console()
-
-
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
@@ -309,15 +301,18 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: VirtualB
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-# @Route.get(
-#     r"/projects/{project_id}/virtualbox/nodes/{node_id}/console/ws",
-#     description="WebSocket for console",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID",
-#     })
-# async def console_ws(request, response):
-#
-#     virtualbox_manager = VirtualBox.instance()
-#     vm = virtualbox_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-#     return await vm.start_websocket_console(request)
+@router.websocket("/{node_id}/console/ws")
+async def console_ws(websocket: WebSocket, node: VirtualBoxVM = Depends(dep_node)):
+    """
+    Console WebSocket.
+    """
+
+    await node.start_websocket_console(websocket)
+
+
+@router.post("/{node_id}/console/reset",
+             status_code=status.HTTP_204_NO_CONTENT,
+             responses=responses)
+async def reset_console(node: VirtualBoxVM = Depends(dep_node)):
+
+    await node.reset_console()

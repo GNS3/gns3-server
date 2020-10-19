@@ -19,7 +19,6 @@
 API endpoints for snapshots.
 """
 
-
 import logging
 log = logging.getLogger()
 
@@ -48,7 +47,7 @@ def dep_project(project_id: UUID):
     return project
 
 
-@router.post("/",
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Snapshot,
              responses=responses)
@@ -61,7 +60,7 @@ async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Projec
     return snapshot.__json__()
 
 
-@router.get("/",
+@router.get("",
             response_model=List[schemas.Snapshot],
             response_model_exclude_unset=True,
             responses=responses)

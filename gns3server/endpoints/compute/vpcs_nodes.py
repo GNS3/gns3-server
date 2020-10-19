@@ -21,14 +21,13 @@ API endpoints for VPCS nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
 from gns3server.endpoints import schemas
 from gns3server.compute.vpcs import VPCS
-from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 
 router = APIRouter()
@@ -48,7 +47,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.VPCS,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VMware node"}})
@@ -258,15 +257,10 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM =
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-# @Route.get(
-#     r"/projects/{project_id}/vpcs/nodes/{node_id}/console/ws",
-#     description="WebSocket for console",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID",
-#     })
-# async def console_ws(request, response):
-#
-#     vpcs_manager = VPCS.instance()
-#     vm = vpcs_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-#     return await vm.start_websocket_console(request)
+@router.websocket("/{node_id}/console/ws")
+async def console_ws(websocket: WebSocket, node: VPCSVM = Depends(dep_node)):
+    """
+    Console WebSocket.
+    """
+
+    await node.start_websocket_console(websocket)

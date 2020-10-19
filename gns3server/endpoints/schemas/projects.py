@@ -94,9 +94,10 @@ class ProjectUpdate(ProjectBase):
 
 class Project(ProjectBase):
 
+    project_id: UUID
     name: Optional[str] = None
-    project_id = UUID
     status: Optional[ProjectStatus] = None
+    filename: Optional[str] = None
 
 
 class ProjectFile(BaseModel):

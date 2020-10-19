@@ -19,8 +19,6 @@
 API endpoints for projects.
 """
 
-import shutil
-import aiohttp
 import os
 
 import logging
@@ -108,6 +106,7 @@ async def close_project(project: Project = Depends(dep_project)):
     Close a project on the compute.
     """
 
+    # FIXME
     if _notifications_listening.setdefault(project.id, 0) <= 1:
         await project.close()
         ProjectManager.instance().remove_project(project.id)
@@ -234,6 +233,6 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
             pass  # FIXME
 
     except FileNotFoundError:
-        raise aiohttp.web.HTTPNotFound()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     except PermissionError:
-        raise aiohttp.web.HTTPForbidden()
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)

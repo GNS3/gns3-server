@@ -22,14 +22,13 @@ API endpoints for Qemu nodes.
 import os
 import sys
 
-from fastapi import APIRouter, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
 from gns3server.endpoints import schemas
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.compute.compute_error import ComputeError
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
 
@@ -50,7 +49,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.Qemu,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Qemu node"}})
@@ -281,14 +280,6 @@ async def stop_capture(adapter_number: int, port_number: int, node: QemuVM = Dep
     await node.stop_capture(adapter_number)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
-async def reset_console(node: QemuVM = Depends(dep_node)):
-
-    await node.reset_console()
-
-
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
@@ -302,16 +293,18 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: QemuVM =
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-# @Route.get(
-#     r"/projects/{project_id}/qemu/nodes/{node_id}/console/ws",
-#     description="WebSocket for console",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID",
-#     })
-# async def console_ws(request, response):
-#
-#     qemu_manager = Qemu.instance()
-#     vm = qemu_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-#     return await vm.start_websocket_console(request)
+@router.websocket("/{node_id}/console/ws")
+async def console_ws(websocket: WebSocket, node: QemuVM = Depends(dep_node)):
+    """
+    Console WebSocket.
+    """
 
+    await node.start_websocket_console(websocket)
+
+
+@router.post("/{node_id}/console/reset",
+             status_code=status.HTTP_204_NO_CONTENT,
+             responses=responses)
+async def reset_console(node: QemuVM = Depends(dep_node)):
+
+    await node.reset_console()

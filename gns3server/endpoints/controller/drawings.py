@@ -35,7 +35,7 @@ responses = {
 }
 
 
-@router.get("/",
+@router.get("",
             response_model=List[Drawing],
             response_model_exclude_unset=True)
 async def get_drawings(project_id: UUID):
@@ -47,7 +47,7 @@ async def get_drawings(project_id: UUID):
     return [v.__json__() for v in project.drawings.values()]
 
 
-@router.post("/",
+@router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=Drawing,
              responses=responses)

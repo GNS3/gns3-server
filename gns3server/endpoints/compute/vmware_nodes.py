@@ -21,7 +21,7 @@ API endpoints for VMware nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, WebSocket, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -48,7 +48,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("/",
+@router.post("",
              response_model=schemas.VMware,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VMware node"}})
@@ -253,14 +253,6 @@ async def stop_capture(adapter_number: int, port_number: int, node: VMwareVM = D
     await node.stop_capture(adapter_number)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
-async def reset_console(node: VMwareVM = Depends(dep_node)):
-
-    await node.reset_console()
-
-
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
@@ -289,16 +281,18 @@ def allocate_vmnet(node: VMwareVM = Depends(dep_node)) -> dict:
     return {"vmnet": vmnet}
 
 
-# @Route.get(
-#     r"/projects/{project_id}/vmware/nodes/{node_id}/console/ws",
-#     description="WebSocket for console",
-#     parameters={
-#         "project_id": "Project UUID",
-#         "node_id": "Node UUID",
-#     })
-# async def console_ws(request, response):
-#
-#     vmware_manager = VMware.instance()
-#     vm = vmware_manager.get_node(request.match_info["node_id"], project_id=request.match_info["project_id"])
-#     return await vm.start_websocket_console(request)
-#
+@router.websocket("/{node_id}/console/ws")
+async def console_ws(websocket: WebSocket, node: VMwareVM = Depends(dep_node)):
+    """
+    Console WebSocket.
+    """
+
+    await node.start_websocket_console(websocket)
+
+
+@router.post("/{node_id}/console/reset",
+             status_code=status.HTTP_204_NO_CONTENT,
+             responses=responses)
+async def reset_console(node: VMwareVM = Depends(dep_node)):
+
+    await node.reset_console()
