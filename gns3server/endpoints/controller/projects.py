@@ -318,8 +318,8 @@ async def import_project(project_id: UUID, request: Request):
         raise ControllerForbiddenError("The server is not local")
 
     #FIXME: broken
-    #path = None
-    #name = "test"
+    path = None
+    name = "test"
 
     # We write the content to a temporary location and after we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.
