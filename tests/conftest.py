@@ -36,7 +36,7 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
         yield loop
-        loop.close()
+        asyncio.set_event_loop(None)
 
 
 @pytest.fixture(scope='function')
