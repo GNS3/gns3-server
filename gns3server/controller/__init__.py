@@ -21,6 +21,7 @@ import json
 import uuid
 import socket
 import shutil
+import asyncio
 
 from ..config import Config
 from .project import Project
@@ -91,7 +92,7 @@ class Controller:
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
                                                         force=True,
-                                                        connect=False)
+                                                        connect=True)
         except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
@@ -311,7 +312,7 @@ class Controller:
             self._computes[compute.id] = compute
             self.save()
             if connect:
-                await compute.connect()
+                asyncio.ensure_future(compute.connect())
             self.notification.controller_emit("compute.created", compute.__json__())
             return compute
         else:

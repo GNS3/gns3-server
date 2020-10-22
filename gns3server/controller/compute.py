@@ -105,7 +105,7 @@ class Compute:
 
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
-            connector = aiohttp.TCPConnector(force_close=True)
+            connector = aiohttp.TCPConnector(limit=None, force_close=True)
             self._http_session = aiohttp.ClientSession(connector=connector)
         return self._http_session
 
@@ -464,7 +464,7 @@ class Compute:
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
                         break
-        except aiohttp.ClientError as e:
+        except aiohttp.client_exceptions.ClientResponseError as e:
             log.error("Client response error received on compute '{}' WebSocket '{}': {}".format(self._id, ws_url,e))
         finally:
             self._connected = False
@@ -594,8 +594,8 @@ class Compute:
         """
         Forward a call to the emulator on compute
         """
+        action = "/{}/{}".format(type, path)
         try:
-            action = "/{}/{}".format(type, path)
             res = await self.http_query(method, action, data=data, timeout=None)
         except aiohttp.ServerDisconnectedError:
             raise ControllerError(f"Connection lost to {self._id} during {method} {action}")

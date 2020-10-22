@@ -23,7 +23,6 @@ Start the program. Use main.py to load it.
 
 import os
 import datetime
-import sys
 import locale
 import argparse
 import psutil
@@ -257,14 +256,19 @@ def run():
     if args.debug:
         level = logging.DEBUG
 
-    user_log = init_logger(level, logfile=args.log, max_bytes=int(args.logmaxsize), backup_count=int(args.logbackupcount),
-                           compression=args.logcompression, quiet=args.quiet)
-    user_log.info("GNS3 server version {}".format(__version__))
+    stream_handler = init_logger(level,
+                                 logfile=args.log,
+                                 max_bytes=int(args.logmaxsize),
+                                 backup_count=int(args.logbackupcount),
+                                 compression=args.logcompression,
+                                 quiet=args.quiet)
+
+    log.info("GNS3 server version {}".format(__version__))
     current_year = datetime.date.today().year
-    user_log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+    log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
 
     for config_file in Config.instance().get_config_files():
-        user_log.info("Config file {} loaded".format(config_file))
+        log.info("Config file {} loaded".format(config_file))
 
     set_config(args)
     server_config = Config.instance().get_section_config("Server")
@@ -283,8 +287,10 @@ def run():
     if sys.version_info < (3, 6, 0):
         raise SystemExit("Python 3.6 or higher is required")
 
-    user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0], minor=sys.version_info[1],
-                                                                                         micro=sys.version_info[2], pid=os.getpid()))
+    log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0],
+                                                                                    minor=sys.version_info[1],
+                                                                                    micro=sys.version_info[2],
+                                                                                    pid=os.getpid()))
 
     # check for the correct locale (UNIX/Linux only)
     locale_check()
@@ -304,8 +310,25 @@ def run():
 
     try:
         log.info("Starting server on {}:{}".format(host, port))
-        #uvicorn.run("app:app", host=host, port=port, log_level="info")#, reload=True)
-        config = uvicorn.Config("gns3server.app:app", host=host, port=port, access_log=True)
+
+        # only show uvicorn access logs in debug mode
+        access_log = False
+        if log.getEffectiveLevel() == logging.DEBUG:
+            access_log = True
+
+        config = uvicorn.Config("gns3server.app:app", host=host, port=port, access_log=access_log)
+
+        # overwrite uvicorn loggers with our own logger
+        for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):
+            uvicorn_logger = logging.getLogger(uvicorn_logger_name)
+            uvicorn_logger.handlers = [stream_handler]
+            uvicorn_logger.propagate = False
+
+        if access_log:
+            uvicorn_logger = logging.getLogger("uvicorn.access")
+            uvicorn_logger.handlers = [stream_handler]
+            uvicorn_logger.propagate = False
+
         server = uvicorn.Server(config)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(server.serve())

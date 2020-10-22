@@ -57,6 +57,11 @@ class ColouredFormatter(logging.Formatter):
             colour = self.RESET
 
         message = message.replace("#RESET#", self.RESET)
+
+        # do not show uvicorn filename and line number in logs
+        if record.name.startswith("uvicorn"):
+            message = message.replace(f"{record.name}:{record.lineno}", "uvicorn")
+
         message = '{colour}{message}{reset}'.format(colour=colour, message=message, reset=self.RESET)
 
         return message
@@ -108,7 +113,7 @@ class LogFilter:
     This filter some noise from the logs
     """
     def filter(record):
-        if record.name == "aiohttp.access" and "/settings" in record.msg and "200" in record.msg:
+        if "/settings" in record.msg and "200" in record.msg:
             return 0
         return 1
 
@@ -150,11 +155,11 @@ def init_logger(level, logfile=None, max_bytes=10000000, backup_count=10, compre
         stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
     else:
         stream_handler = ColouredStreamHandler(sys.stdout)
-        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
+        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {name}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
     if quiet:
         stream_handler.addFilter(logging.Filter(name="user_facing"))
-        logging.getLogger('user_facing').propagate = False
+        logging.getLogger("user_facing").propagate = False
     if level > logging.DEBUG:
         stream_handler.addFilter(LogFilter)
     logging.basicConfig(level=level, handlers=[stream_handler])
-    return logging.getLogger('user_facing')
+    return stream_handler
