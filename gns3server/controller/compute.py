@@ -63,7 +63,9 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None, console_host=None):
+    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None,
+                 password=None, name=None, console_host=None):
+
         self._http_session = None
         assert controller is not None
         log.info("Create compute %s", compute_id)
@@ -103,13 +105,9 @@ class Compute:
 
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
-            self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True))
+            connector = aiohttp.TCPConnector(force_close=True)
+            self._http_session = aiohttp.ClientSession(connector=connector)
         return self._http_session
-
-    #def __del__(self):
-    #
-    #   if self._http_session:
-    #       self._http_session.close()
 
     def _set_auth(self, user, password):
         """
@@ -466,7 +464,7 @@ class Compute:
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
                         break
-        except aiohttp.client_exceptions.ClientResponseError as e:
+        except aiohttp.ClientError as e:
             log.error("Client response error received on compute '{}' WebSocket '{}': {}".format(self._id, ws_url,e))
         finally:
             self._connected = False
@@ -503,8 +501,7 @@ class Compute:
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with async_timeout.timeout(timeout):
             url = self._getUrl(path)
-            headers = {}
-            headers['content-type'] = 'application/json'
+            headers = {'content-type': 'application/json'}
             chunked = None
             if data == {}:
                 data = None
@@ -579,7 +576,7 @@ class Compute:
         return response
 
     async def get(self, path, **kwargs):
-        return (await self.http_query("GET", path, **kwargs))
+        return await self.http_query("GET", path, **kwargs)
 
     async def post(self, path, data={}, **kwargs):
         response = await self.http_query("POST", path, data, **kwargs)
@@ -600,15 +597,13 @@ class Compute:
             action = "/{}/{}".format(type, path)
             res = await self.http_query(method, action, data=data, timeout=None)
         except aiohttp.ServerDisconnectedError:
-            log.error("Connection lost to %s during %s %s", self._id, method, action)
-            raise aiohttp.web.HTTPGatewayTimeout()
+            raise ControllerError(f"Connection lost to {self._id} during {method} {action}")
         return res.json
 
     async def images(self, type):
         """
         Return the list of images available for this type on the compute node.
         """
-        images = []
 
         res = await self.http_query("GET", "/{}/images".format(type), timeout=None)
         images = res.json
@@ -641,11 +636,11 @@ class Compute:
         :returns: Tuple (ip_for_this_compute, ip_for_other_compute)
         """
         if other_compute == self:
-            return (self.host_ip, self.host_ip)
+            return self.host_ip, self.host_ip
 
         # Perhaps the user has correct network gateway, we trust him
-        if (self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1')):
-            return (self.host_ip, other_compute.host_ip)
+        if self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1'):
+            return self.host_ip, other_compute.host_ip
 
         this_compute_interfaces = await self.interfaces()
         other_compute_interfaces = await other_compute.interfaces()
@@ -675,6 +670,6 @@ class Compute:
 
                 other_network = ipaddress.ip_network("{}/{}".format(other_interface["ip_address"], other_interface["netmask"]), strict=False)
                 if this_network.overlaps(other_network):
-                    return (this_interface["ip_address"], other_interface["ip_address"])
+                    return this_interface["ip_address"], other_interface["ip_address"]
 
         raise ValueError("No common subnet for compute {} and {}".format(self.name, other_compute.name))

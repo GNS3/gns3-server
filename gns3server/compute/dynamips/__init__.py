@@ -19,7 +19,6 @@
 Dynamips server module.
 """
 
-import aiohttp
 import sys
 import os
 import shutil

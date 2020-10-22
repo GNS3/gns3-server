@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import aiohttp
 
+from fastapi import HTTPException, status
 from ..config import Config
 
 
@@ -33,7 +33,7 @@ def get_default_project_directory():
     try:
         os.makedirs(path, exist_ok=True)
     except OSError as e:
-        raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Could not create project directory: {e}")
     return path
 
 
@@ -52,4 +52,4 @@ def check_path_allowed(path):
         return
 
     if "local" in config and config.getboolean("local") is False:
-        raise aiohttp.web.HTTPForbidden(text="The path is not allowed")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The path is not allowed")

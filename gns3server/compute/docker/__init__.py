@@ -60,9 +60,8 @@ class Docker(BaseManager):
         if not self._connected:
             try:
                 self._connected = True
-                connector = self.connector()
                 version = await self.query("GET", "version")
-            except (aiohttp.ClientOSError, FileNotFoundError):
+            except (aiohttp.ClientError, FileNotFoundError):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
 
@@ -70,8 +69,8 @@ class Docker(BaseManager):
 
             if docker_version < parse_version(DOCKER_MINIMUM_API_VERSION):
                 raise DockerError(
-                    "Docker version is {}. GNS3 requires a minimum version of {}".format(
-                        version["Version"], DOCKER_MINIMUM_VERSION))
+                    "Docker version is {}. GNS3 requires a minimum version of {}".format(version["Version"],
+                                                                                         DOCKER_MINIMUM_VERSION))
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
             if docker_version >= preferred_api_version:
@@ -84,7 +83,7 @@ class Docker(BaseManager):
                 raise DockerError("Docker is supported only on Linux")
             try:
                 self._connector = aiohttp.connector.UnixConnector(self._server_url, limit=None)
-            except (aiohttp.ClientOSError, FileNotFoundError):
+            except (aiohttp.ClientError, FileNotFoundError):
                 raise DockerError("Can't connect to docker daemon")
         return self._connector
 
@@ -150,7 +149,7 @@ class Docker(BaseManager):
                                                    data=data,
                                                    headers={"content-type": "application/json", },
                                                    timeout=timeout)
-        except (aiohttp.ClientResponseError, aiohttp.ClientOSError) as e:
+        except aiohttp.ClientError as e:
             raise DockerError("Docker has returned an error: {}".format(str(e)))
         except (asyncio.TimeoutError):
             raise DockerError("Docker timeout " + method + " " + path)

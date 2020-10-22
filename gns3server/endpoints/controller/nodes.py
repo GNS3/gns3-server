@@ -32,6 +32,7 @@ from gns3server.controller import Controller
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
+from gns3server.utils.http_client import HTTPClient
 from gns3server.controller.controller_error import ControllerForbiddenError
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
@@ -400,18 +401,17 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
 
     try:
         # receive WebSocket data from compute console WebSocket and forward to client.
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True)) as session:
-            async with session.ws_connect(ws_console_compute_url) as ws_console_compute:
-                asyncio.ensure_future(ws_receive(ws_console_compute))
-                async for msg in ws_console_compute:
-                    if msg.type == aiohttp.WSMsgType.TEXT:
-                        await websocket.send_text(msg.data)
-                    elif msg.type == aiohttp.WSMsgType.BINARY:
-                        await websocket.send_bytes(msg.data)
-                    elif msg.type == aiohttp.WSMsgType.ERROR:
-                        break
-    except aiohttp.client_exceptions.ClientResponseError as e:
-        log.error(f"Client response error received when forwarding to compute console WebSocket: {e}")
+        async with HTTPClient.get_client().ws_connect(ws_console_compute_url) as ws_console_compute:
+            asyncio.ensure_future(ws_receive(ws_console_compute))
+            async for msg in ws_console_compute:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    await websocket.send_text(msg.data)
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    await websocket.send_bytes(msg.data)
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    break
+    except aiohttp.ClientError as e:
+        log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
 
 @router.post("/console/reset",

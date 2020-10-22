@@ -41,6 +41,7 @@ from gns3server.controller.controller_error import (
 from gns3server.endpoints import controller
 from gns3server.endpoints import index
 from gns3server.endpoints.compute import compute_api
+from gns3server.utils.http_client import HTTPClient
 from gns3server.version import __version__
 
 import logging
@@ -76,6 +77,7 @@ app.mount("/v2/compute", compute_api)
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
+    log.error(f"Controller error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc)},
@@ -84,6 +86,7 @@ async def controller_error_handler(request: Request, exc: ControllerError):
 
 @app.exception_handler(ControllerTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ControllerTimeoutError):
+    log.error(f"Controller timeout error: {exc}")
     return JSONResponse(
         status_code=408,
         content={"message": str(exc)},
@@ -92,6 +95,7 @@ async def controller_timeout_error_handler(request: Request, exc: ControllerTime
 
 @app.exception_handler(ControllerUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ControllerUnauthorizedError):
+    log.error(f"Controller unauthorized error: {exc}")
     return JSONResponse(
         status_code=401,
         content={"message": str(exc)},
@@ -100,6 +104,7 @@ async def controller_unauthorized_error_handler(request: Request, exc: Controlle
 
 @app.exception_handler(ControllerForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ControllerForbiddenError):
+    log.error(f"Controller forbidden error: {exc}")
     return JSONResponse(
         status_code=403,
         content={"message": str(exc)},
@@ -108,6 +113,7 @@ async def controller_forbidden_error_handler(request: Request, exc: ControllerFo
 
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
+    log.error(f"Controller not found error: {exc}")
     return JSONResponse(
         status_code=404,
         content={"message": str(exc)},
@@ -164,13 +170,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
 
-    # close websocket connections
-    # websocket_connections = set(self._app['websockets'])
-    # if websocket_connections:
-    #     log.info("Closing {} websocket connections...".format(len(websocket_connections)))
-    # for ws in websocket_connections:
-    #     await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY, message='Server shutdown')
-
+    await HTTPClient.close_session()
     await Controller.instance().stop()
 
     for module in MODULES:

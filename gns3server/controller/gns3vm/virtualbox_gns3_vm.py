@@ -24,6 +24,7 @@ import socket
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
 from gns3server.utils import parse_version
+from gns3server.utils.http_client import HTTPClient
 from gns3server.utils.asyncio import wait_run_in_executor
 
 from ...compute.virtualbox import (
@@ -305,24 +306,24 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         second to a GNS3 endpoint in order to get the list of the interfaces and
         their IP and after that match it with VirtualBox host only.
         """
+
         remaining_try = 300
         while remaining_try > 0:
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get('http://127.0.0.1:{}/v2/compute/network/interfaces'.format(api_port)) as resp:
-                        if resp.status < 300:
-                            try:
-                                json_data = await resp.json()
-                                if json_data:
-                                    for interface in json_data:
-                                        if "name" in interface and interface["name"] == "eth{}".format(
-                                                hostonly_interface_number - 1):
-                                            if "ip_address" in interface and len(interface["ip_address"]) > 0:
-                                                return interface["ip_address"]
-                            except ValueError:
-                                pass
-                except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
-                    pass
+            try:
+                async with HTTPClient.get(f"http://127.0.0.1:{api_port}/v2/compute/network/interfaces") as resp:
+                    if resp.status < 300:
+                        try:
+                            json_data = await resp.json()
+                            if json_data:
+                                for interface in json_data:
+                                    if "name" in interface and interface["name"] == "eth{}".format(
+                                            hostonly_interface_number - 1):
+                                        if "ip_address" in interface and len(interface["ip_address"]) > 0:
+                                            return interface["ip_address"]
+                        except ValueError:
+                            pass
+            except (OSError, aiohttp.ClientError, TimeoutError, asyncio.TimeoutError):
+                pass
             remaining_try -= 1
             await asyncio.sleep(1)
         raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))

@@ -74,8 +74,6 @@ async def test_compute_get(controller_api):
 
     response = await controller_api.get("/computes/my_compute_id")
     assert response.status_code == 200
-    print(response.json)
-    #assert response.json["protocol"] == "http"
 
 
 @pytest.mark.asyncio

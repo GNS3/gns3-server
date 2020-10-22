@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiohttp
 import pytest
 import uuid
+
+from fastapi import HTTPException
 from unittest.mock import patch
 
 from gns3server.compute.port_manager import PortManager
@@ -94,7 +95,7 @@ def test_reserve_udp_port():
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
     pm.reserve_udp_port(20000, project)
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(HTTPException):
         pm.reserve_udp_port(20000, project)
 
 
@@ -102,7 +103,7 @@ def test_reserve_udp_port_outside_range():
 
     pm = PortManager()
     project = Project(project_id=str(uuid.uuid4()))
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(HTTPException):
         pm.reserve_udp_port(80, project)
 
 
@@ -123,7 +124,7 @@ def test_find_unused_port():
 
 def test_find_unused_port_invalid_range():
 
-    with pytest.raises(aiohttp.web.HTTPConflict):
+    with pytest.raises(HTTPException):
         p = PortManager().find_unused_port(10000, 1000)
 
 

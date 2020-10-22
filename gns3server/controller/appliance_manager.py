@@ -19,12 +19,12 @@ import os
 import json
 import uuid
 import asyncio
-import aiohttp
 
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
 from ..utils.get_resource import get_resource
+from ..utils.http_client import HTTPClient
 from .controller_error import ControllerError
 
 import logging
@@ -142,20 +142,19 @@ class ApplianceManager:
         """
 
         symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(symbol_url) as response:
-                if response.status != 200:
-                    log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
-                else:
-                    try:
-                        symbol_data = await response.read()
-                        log.info("Saving {} symbol to {}".format(symbol, destination_path))
-                        with open(destination_path, 'wb') as f:
-                            f.write(symbol_data)
-                    except asyncio.TimeoutError:
-                        log.warning("Timeout while downloading '{}'".format(symbol_url))
-                    except OSError as e:
-                        log.warning("Could not write appliance symbol '{}': {}".format(destination_path, e))
+        async with HTTPClient.get(symbol_url) as response:
+            if response.status != 200:
+                log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
+            else:
+                try:
+                    symbol_data = await response.read()
+                    log.info("Saving {} symbol to {}".format(symbol, destination_path))
+                    with open(destination_path, 'wb') as f:
+                        f.write(symbol_data)
+                except asyncio.TimeoutError:
+                    log.warning("Timeout while downloading '{}'".format(symbol_url))
+                except OSError as e:
+                    log.warning("Could not write appliance symbol '{}': {}".format(destination_path, e))
 
     @locking
     async def download_appliances(self):
@@ -168,40 +167,40 @@ class ApplianceManager:
             if self._appliances_etag:
                 log.info("Checking if appliances are up-to-date (ETag {})".format(self._appliances_etag))
                 headers["If-None-Match"] = self._appliances_etag
-            async with aiohttp.ClientSession() as session:
-                async with session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
-                    if response.status == 304:
-                        log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
-                        return
-                    elif response.status != 200:
-                        raise ControllerError("Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
-                    etag = response.headers.get("ETag")
-                    if etag:
-                        self._appliances_etag = etag
-                        from . import Controller
-                        Controller.instance().save()
-                    json_data = await response.json()
-                appliances_dir = get_resource('appliances')
-                for appliance in json_data:
-                    if appliance["type"] == "file":
-                        appliance_name = appliance["name"]
-                        log.info("Download appliance file from '{}'".format(appliance["download_url"]))
-                        async with session.get(appliance["download_url"]) as response:
-                            if response.status != 200:
-                                log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
-                                continue
-                            try:
-                                appliance_data = await response.read()
-                            except asyncio.TimeoutError:
-                                log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
-                                continue
-                            path = os.path.join(appliances_dir, appliance_name)
-                            try:
-                                log.info("Saving {} file to {}".format(appliance_name, path))
-                                with open(path, 'wb') as f:
-                                    f.write(appliance_data)
-                            except OSError as e:
-                                raise ControllerError("Could not write appliance file '{}': {}".format(path, e))
+
+            async with HTTPClient.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
+                if response.status == 304:
+                    log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
+                    return
+                elif response.status != 200:
+                    raise ControllerError("Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
+                etag = response.headers.get("ETag")
+                if etag:
+                    self._appliances_etag = etag
+                    from . import Controller
+                    Controller.instance().save()
+                json_data = await response.json()
+            appliances_dir = get_resource('appliances')
+            for appliance in json_data:
+                if appliance["type"] == "file":
+                    appliance_name = appliance["name"]
+                    log.info("Download appliance file from '{}'".format(appliance["download_url"]))
+                    async with HTTPClient.get(appliance["download_url"]) as response:
+                        if response.status != 200:
+                            log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
+                            continue
+                        try:
+                            appliance_data = await response.read()
+                        except asyncio.TimeoutError:
+                            log.warning("Timeout while downloading '{}'".format(appliance["download_url"]))
+                            continue
+                        path = os.path.join(appliances_dir, appliance_name)
+                        try:
+                            log.info("Saving {} file to {}".format(appliance_name, path))
+                            with open(path, 'wb') as f:
+                                f.write(appliance_data)
+                        except OSError as e:
+                            raise ControllerError("Could not write appliance file '{}': {}".format(path, e))
         except ValueError as e:
             raise ControllerError("Could not read appliances information from GitHub: {}".format(e))
 

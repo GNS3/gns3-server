@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-from aiohttp.web import HTTPConflict
+from fastapi import HTTPException, status
 from gns3server.config import Config
 
 import logging
@@ -48,12 +48,12 @@ class PortManager:
         console_start_port_range = server_config.getint("console_start_port_range", 5000)
         console_end_port_range = server_config.getint("console_end_port_range", 10000)
         self._console_port_range = (console_start_port_range, console_end_port_range)
-        log.debug("Console port range is {}-{}".format(console_start_port_range, console_end_port_range))
+        log.debug(f"Console port range is {console_start_port_range}-{console_end_port_range}")
 
         udp_start_port_range = server_config.getint("udp_start_port_range", 20000)
         udp_end_port_range = server_config.getint("udp_end_port_range", 30000)
         self._udp_port_range = (udp_start_port_range, udp_end_port_range)
-        log.debug("UDP port range is {}-{}".format(udp_start_port_range, udp_end_port_range))
+        log.debug(f"UDP port range is {udp_start_port_range}-{udp_end_port_range}")
 
     @classmethod
     def instance(cls):
@@ -149,7 +149,8 @@ class PortManager:
         """
 
         if end_port < start_port:
-            raise HTTPConflict(text="Invalid port range {}-{}".format(start_port, end_port))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=f"Invalid port range {start_port}-{end_port}")
 
         last_exception = None
         for port in range(start_port, end_port + 1):
@@ -168,10 +169,9 @@ class PortManager:
                 else:
                     continue
 
-        raise HTTPConflict(text="Could not find a free port between {} and {} on host {}, last exception: {}".format(start_port,
-                                                                                                                     end_port,
-                                                                                                                     host,
-                                                                                                                     last_exception))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Could not find a free port between {start_port} and {end_port} on host {host},"
+                                   f" last exception: {last_exception}")
 
     @staticmethod
     def _check_port(host, port, socket_type):
@@ -212,7 +212,7 @@ class PortManager:
 
         self._used_tcp_ports.add(port)
         project.record_tcp_port(port)
-        log.debug("TCP port {} has been allocated".format(port))
+        log.debug(f"TCP port {port} has been allocated")
         return port
 
     def reserve_tcp_port(self, port, project, port_range_start=None, port_range_end=None):
@@ -235,13 +235,14 @@ class PortManager:
         if port in self._used_tcp_ports:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
+            msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
             log.debug(msg)
             return port
         if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = "TCP port {} is outside the range {}-{} on host {}. Port has been replaced by {}".format(old_port, port_range_start, port_range_end, self._console_host, port)
+            msg = f"TCP port {old_port} is outside the range {port_range_start}-{port_range_end} on host " \
+                  f"{self._console_host}. Port has been replaced by {port}"
             log.debug(msg)
             return port
         try:
@@ -249,13 +250,13 @@ class PortManager:
         except OSError:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = "TCP port {} already in use on host {}. Port has been replaced by {}".format(old_port, self._console_host, port)
+            msg = f"TCP port {old_port} already in use on host {self._console_host}. Port has been replaced by {port}"
             log.debug(msg)
             return port
 
         self._used_tcp_ports.add(port)
         project.record_tcp_port(port)
-        log.debug("TCP port {} has been reserved".format(port))
+        log.debug(f"TCP port {port} has been reserved")
         return port
 
     def release_tcp_port(self, port, project):
@@ -269,7 +270,7 @@ class PortManager:
         if port in self._used_tcp_ports:
             self._used_tcp_ports.remove(port)
             project.remove_tcp_port(port)
-            log.debug("TCP port {} has been released".format(port))
+            log.debug(f"TCP port {port} has been released")
 
     def get_free_udp_port(self, project):
         """
@@ -285,7 +286,7 @@ class PortManager:
 
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
-        log.debug("UDP port {} has been allocated".format(port))
+        log.debug(f"UDP port {port} has been allocated")
         return port
 
     def reserve_udp_port(self, port, project):
@@ -297,9 +298,12 @@ class PortManager:
         """
 
         if port in self._used_udp_ports:
-            raise HTTPConflict(text="UDP port {} already in use on host {}".format(port, self._console_host))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=f"UDP port {port} already in use on host {self._console_host}")
         if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
-            raise HTTPConflict(text="UDP port {} is outside the range {}-{}".format(port, self._udp_port_range[0], self._udp_port_range[1]))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=f"UDP port {port} is outside the range "
+                                       f"{self._udp_port_range[0]}-{self._udp_port_range[1]}")
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
         log.debug("UDP port {} has been reserved".format(port))
@@ -315,4 +319,4 @@ class PortManager:
         if port in self._used_udp_ports:
             self._used_udp_ports.remove(port)
             project.remove_udp_port(port)
-            log.debug("UDP port {} has been released".format(port))
+            log.debug(f"UDP port {port} has been released")

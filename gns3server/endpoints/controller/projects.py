@@ -29,7 +29,7 @@ import time
 import logging
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, Request, Body, Query, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, FileResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException

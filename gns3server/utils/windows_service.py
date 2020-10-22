@@ -19,7 +19,7 @@
 Check for Windows service.
 """
 
-import aiohttp
+from gns3server.compute.compute_error import ComputeError
 
 
 def check_windows_service_is_running(service_name):
@@ -35,5 +35,5 @@ def check_windows_service_is_running(service_name):
         if e.winerror == 1060:
             return False
         else:
-            raise aiohttp.web.HTTPInternalServerError(text="Could not check if the {} service is running: {}".format(service_name, e.strerror))
+            raise ComputeError(f"Could not check if the {service_name} service is running: {e.strerror}")
     return True

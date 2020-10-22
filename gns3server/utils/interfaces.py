@@ -18,12 +18,12 @@
 
 import os
 import sys
-import aiohttp
 import socket
 import struct
 import psutil
 
 from .windows_service import check_windows_service_is_running
+from gns3server.compute.compute_error import ComputeError
 from gns3server.config import Config
 
 if psutil.version_info < (3, 0, 0):
@@ -162,7 +162,7 @@ def is_interface_up(interface):
                     return True
             return False
         except OSError as e:
-            raise aiohttp.web.HTTPInternalServerError(text="Exception when checking if {} is up: {}".format(interface, e))
+            raise ComputeError(f"Exception when checking if {interface} is up: {e}")
     else:
         # TODO: Windows & OSX support
         return True
@@ -221,13 +221,13 @@ def interfaces():
                 results = get_windows_interfaces()
         except ImportError:
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"
-            raise aiohttp.web.HTTPInternalServerError(text=message)
+            raise ComputeError(message)
         except Exception as e:
             log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
-            raise aiohttp.web.HTTPInternalServerError(text="uncaught exception: {}".format(e))
+            raise ComputeError(f"uncaught exception: {e}")
 
         if service_installed is False:
-            raise aiohttp.web.HTTPInternalServerError(text="The Winpcap or Npcap is not installed or running")
+            raise ComputeError("The Winpcap or Npcap is not installed or running")
 
     # This interface have special behavior
     for result in results:

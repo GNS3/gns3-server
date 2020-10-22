@@ -19,8 +19,8 @@
 API endpoints for links.
 """
 
-import aiohttp
 import multidict
+import aiohttp
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import StreamingResponse
@@ -31,8 +31,12 @@ from uuid import UUID
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.link import Link
+from gns3server.utils.http_client import HTTPClient
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
+
+import logging
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -201,12 +205,13 @@ async def pcap(request: Request, link: Link = Depends(dep_link)):
 
     async def compute_pcap_stream():
 
-        connector = aiohttp.TCPConnector(limit=None, force_close=True)
-        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-            async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as compute_response:
-                async for data in compute_response.content.iter_any():
+        try:
+            async with HTTPClient.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
+                async for data in response.content.iter_any():
                     if not data:
                         break
                     yield data
+        except aiohttp.ClientError as e:
+            raise ControllerError(f"Client error received when receiving pcap stream from compute: {e}")
 
     return StreamingResponse(compute_pcap_stream(), media_type="application/vnd.tcpdump.pcap")
