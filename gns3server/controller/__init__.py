@@ -91,13 +91,13 @@ class Controller:
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
                                                         force=True,
-                                                        connect=True)  # FIXME: not connection for now
+                                                        connect=False)
         except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
         for c in computes:
             try:
-                await self.add_compute(**c, connect=False)  # FIXME: not connection for now
+                await self.add_compute(**c, connect=False)
             except (ControllerError, KeyError):
                 pass  # Skip not available servers at loading
 

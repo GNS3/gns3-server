@@ -501,7 +501,8 @@ class Compute:
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with async_timeout.timeout(timeout):
             url = self._getUrl(path)
-            headers = {'content-type': 'application/json'}
+            headers = {}
+            headers['content-type'] = 'application/json'
             chunked = None
             if data == {}:
                 data = None
