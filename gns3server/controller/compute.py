@@ -25,6 +25,7 @@ import uuid
 import sys
 import io
 from operator import itemgetter
+from aiohttp import web
 
 from ..utils import parse_version
 from ..utils.asyncio import locking
@@ -389,11 +390,11 @@ class Compute:
                         await self._controller.close_compute_projects(self)
                     asyncio.get_event_loop().call_later(5, lambda: asyncio.ensure_future(self._try_reconnect()))
                 return
-            except aiohttp.web.HTTPNotFound:
+            except web.HTTPNotFound:
                 raise ControllerNotFoundError("The server {} is not a GNS3 server or it's a 1.X server".format(self._id))
-            except aiohttp.web.HTTPUnauthorized:
+            except web.HTTPUnauthorized:
                 raise ControllerUnauthorizedError("Invalid auth for server {}".format(self._id))
-            except aiohttp.web.HTTPServiceUnavailable:
+            except web.HTTPServiceUnavailable:
                 raise ControllerNotFoundError("The server {} is unavailable".format(self._id))
             except ValueError:
                 raise ComputeError("Invalid server url for server {}".format(self._id))
