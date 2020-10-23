@@ -23,7 +23,8 @@ jobs:
         python setup.py install
     - name: Generate the API documentation
       run: |
-        python3 ./scripts/publish_api_documentation.py
+        cd scripts
+        python3 publish_api_documentation.py
     - name: Publish the API documentation
       run: |
         git config user.name github-actions
