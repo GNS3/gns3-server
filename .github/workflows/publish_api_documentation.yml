@@ -1,8 +1,10 @@
 name: publish-api-documentation
 
 on:
-  push:
-    branches: [ 3.0 ]
+  schedule:
+    - cron: "0 0 * * *"
+  tags:
+    - v3.*
 
 jobs:
   build:
