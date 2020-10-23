@@ -3,8 +3,9 @@ name: publish-api-documentation
 on:
   schedule:
     - cron: "0 0 * * *"
-  tags:
-    - v3.*
+  push:
+    tags:
+      - v3.*
 
 jobs:
   build:
