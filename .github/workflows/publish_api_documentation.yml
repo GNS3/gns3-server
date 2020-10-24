@@ -38,5 +38,5 @@ jobs:
         git status
         git commit -m "Publish API documentation"
         git checkout gh-pages
-        git merge 3.0
+        git merge 3.0 -X theirs
         git push
