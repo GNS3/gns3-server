@@ -37,6 +37,5 @@ jobs:
         git add docs
         git status
         git commit -m "Publish API documentation"
-        git checkout gh-pages
-        git merge 3.0
+        git checkout --theirs gh-pages
         git push
