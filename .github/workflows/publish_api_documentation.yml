@@ -3,6 +3,8 @@ name: publish-api-documentation
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 3.0
     tags:
       - v3.*
 
@@ -13,6 +15,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: "3.0"
     - uses: actions/setup-python@v2
       with:
         python-version: 3.6
