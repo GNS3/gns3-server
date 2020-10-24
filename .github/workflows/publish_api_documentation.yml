@@ -3,6 +3,8 @@ name: publish-api-documentation
 on:
   workflow_dispatch:
   push:
+    branches:
+      - 3.0
     tags:
       - v3.*
 
