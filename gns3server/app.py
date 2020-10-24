@@ -70,7 +70,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(index.router, tags=["controller"])
+app.include_router(index.router, tags=["Index"])
 app.include_router(controller.router, prefix="/v2")
 app.mount("/v2/compute", compute_api)
 
