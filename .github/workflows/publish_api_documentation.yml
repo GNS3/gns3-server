@@ -1,9 +1,10 @@
 name: publish-api-documentation
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  workflow_dispatch:
   push:
+    branches:
+      - 3.0
     tags:
       - v3.*
 
@@ -14,6 +15,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: "3.0"
     - uses: actions/setup-python@v2
       with:
         python-version: 3.6
@@ -32,6 +36,7 @@ jobs:
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
+        git checkout gh-pages
         git add docs
         git status
         git commit -m "Publish API documentation"
