@@ -21,7 +21,7 @@ jobs:
         python-version: 3.6
     - name: Merge changes from 3.0 branch
       run: |
-        git merge 3.0 -X theirs
+        git merge origin/3.0 -X theirs
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
