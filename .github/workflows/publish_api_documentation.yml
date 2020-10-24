@@ -21,6 +21,8 @@ jobs:
         python-version: 3.6
     - name: Merge changes from 3.0 branch
       run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
         git merge origin/3.0 -X theirs
     - name: Install dependencies
       run: |
@@ -35,8 +37,6 @@ jobs:
         python3 publish_api_documentation.py
     - name: Publish the API documentation
       run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
         git add docs
         git status
         git commit -m "Publish API documentation"
