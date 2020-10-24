@@ -3,8 +3,6 @@ name: publish-api-documentation
 on:
   workflow_dispatch:
   push:
-    branches:
-      - 3.0
     tags:
       - v3.*
 
@@ -36,8 +34,9 @@ jobs:
       run: |
         git config user.name github-actions
         git config user.email github-actions@github.com
-        git checkout gh-pages
         git add docs
         git status
         git commit -m "Publish API documentation"
+        git checkout gh-pages
+        git merge 3.0
         git push
