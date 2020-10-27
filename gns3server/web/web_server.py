@@ -64,6 +64,7 @@ class WebServer:
         self._start_time = time.time()
         self._running = False
         self._closing = False
+        self._ssl_context = None
 
     @staticmethod
     def instance(host=None, port=None):
@@ -88,14 +89,12 @@ class WebServer:
             return False
         return True
 
-
     async def reload_server(self):
         """
         Reload the server.
         """
 
         await Controller.instance().reload()
-
 
     async def shutdown_server(self):
         """
@@ -146,6 +145,13 @@ class WebServer:
                 pass
 
         self._loop.stop()
+
+    def ssl_context(self):
+        """
+        Returns the SSL context for the server.
+        """
+
+        return self._ssl_context
 
     def _signal_handling(self):
 
@@ -255,12 +261,12 @@ class WebServer:
 
         server_config = Config.instance().get_section_config("Server")
 
-        ssl_context = None
+        self._ssl_context = None
         if server_config.getboolean("ssl"):
             if sys.platform.startswith("win"):
                 log.critical("SSL mode is not supported on Windows")
                 raise SystemExit
-            ssl_context = self._create_ssl_context(server_config)
+            self._ssl_context = self._create_ssl_context(server_config)
 
         self._loop = asyncio.get_event_loop()
 
@@ -307,7 +313,7 @@ class WebServer:
         log.info("Starting server on {}:{}".format(self._host, self._port))
 
         self._handler = self._app.make_handler()
-        if self._run_application(self._handler, ssl_context) is False:
+        if self._run_application(self._handler, self._ssl_context) is False:
             self._loop.stop()
             sys.exit(1)
 

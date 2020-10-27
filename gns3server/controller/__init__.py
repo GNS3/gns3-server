@@ -81,16 +81,23 @@ class Controller:
             name = "Main server"
 
         computes = self._load_controller_settings()
+        from gns3server.web.web_server import WebServer
+        ssl_context = WebServer.instance().ssl_context()
+        protocol = server_config.get("protocol", "http")
+        if ssl_context and protocol != "https":
+            log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
+            protocol = "https"
         try:
             self._local_server = await self.add_compute(compute_id="local",
                                                         name=name,
-                                                        protocol=server_config.get("protocol", "http"),
+                                                        protocol=protocol,
                                                         host=host,
                                                         console_host=console_host,
                                                         port=port,
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
-                                                        force=True)
+                                                        force=True,
+                                                        ssl_context=ssl_context)
         except aiohttp.web.HTTPConflict:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)

@@ -57,7 +57,8 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost", port=3080, user=None, password=None, name=None, console_host=None):
+    def __init__(self, compute_id, controller=None, protocol="http", host="localhost",
+                 port=3080, user=None, password=None, name=None, console_host=None, ssl_context=None):
         self._http_session = None
         assert controller is not None
         log.info("Create compute %s", compute_id)
@@ -81,6 +82,7 @@ class Compute:
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
         self._last_error = None
+        self._ssl_context = ssl_context
         self._capabilities = {
             "version": None,
             "node_types": []
@@ -92,7 +94,9 @@ class Compute:
 
     def _session(self):
         if self._http_session is None or self._http_session.closed is True:
-            self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True))
+            self._http_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None,
+                                                                                      force_close=True,
+                                                                                      ssl_context=self._ssl_context))
         return self._http_session
 
     #def __del__(self):
