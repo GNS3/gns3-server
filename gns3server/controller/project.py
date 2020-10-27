@@ -174,6 +174,7 @@ class Project:
         self._links = {}
         self._drawings = {}
         self._snapshots = {}
+        self._computes = []
 
         # List the available snapshots
         snapshot_dir = os.path.join(self.path, "snapshots")
@@ -564,6 +565,9 @@ class Project:
         if node_id in self._nodes:
             return self._nodes[node_id]
 
+        if compute.id not in self._computes:
+            self._computes.append(compute.id)
+
         if node_type == "iou":
             async with self._iou_id_lock:
                 # wait for a IOU node to be completely created before adding a new one
@@ -571,10 +575,10 @@ class Project:
                 # to generate MAC addresses) when creating multiple IOU node at the same time
                 if "properties" in kwargs.keys():
                     # allocate a new application id for nodes loaded from the project
-                    kwargs.get("properties")["application_id"] = get_next_application_id(self._controller.projects, compute)
+                    kwargs.get("properties")["application_id"] = get_next_application_id(self._controller.projects, self._computes)
                 elif "application_id" not in kwargs.keys() and not kwargs.get("properties"):
                     # allocate a new application id for nodes added to the project
-                    kwargs["application_id"] = get_next_application_id(self._controller.projects, compute)
+                    kwargs["application_id"] = get_next_application_id(self._controller.projects, self._computes)
                 node = await self._create_node(compute, name, node_id, node_type, **kwargs)
         else:
             node = await self._create_node(compute, name, node_id, node_type, **kwargs)
@@ -604,6 +608,8 @@ class Project:
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
         await node.destroy()
+        # refresh the compute IDs list
+        self._computes = [n.compute.id for n in self.nodes.values()]
         self.dump()
         self.emit_notification("node.deleted", node.__json__())
 
@@ -931,6 +937,14 @@ class Project:
             topology = project_data["topology"]
             for compute in topology.get("computes", []):
                 await self.controller.add_compute(**compute)
+
+            # Get all compute used in the project
+            # used to allocate application IDs for IOU nodes.
+            for node in topology.get("nodes", []):
+                compute_id = node.get("compute_id")
+                if compute_id not in self._computes:
+                    self._computes.append(compute_id)
+
             for node in topology.get("nodes", []):
                 compute = self.controller.get_compute(node.pop("compute_id"))
                 name = node.pop("name")

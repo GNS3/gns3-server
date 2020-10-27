@@ -21,26 +21,27 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get_next_application_id(projects, compute):
+def get_next_application_id(projects, computes):
     """
     Calculates free application_id from given nodes
 
     :param projects: all projects managed by controller
-    :param compute: Compute instance
+    :param computes: all computes used by the project
     :raises HTTPConflict when exceeds number
     :return: integer first free id
     """
 
     nodes = []
 
-    # look for application id for in all nodes across all opened projects that share the same compute
+    # look for application id for in all nodes across all opened projects that share the same computes
     for project in projects.values():
-        if project.status == "opened" and compute in project.computes:
+        if project.status == "opened":
             nodes.extend(list(project.nodes.values()))
 
-    used = set([n.properties["application_id"] for n in nodes if n.node_type == "iou"])
+    used = set([n.properties["application_id"] for n in nodes if n.node_type == "iou" and n.compute.id in computes])
     pool = set(range(1, 512))
     try:
-        return (pool - used).pop()
+        application_id = (pool - used).pop()
+        return application_id
     except KeyError:
-        raise aiohttp.web.HTTPConflict(text="Cannot create a new IOU node (limit of 512 nodes across all opened projects using compute {} reached".format(compute.name))
+        raise aiohttp.web.HTTPConflict(text="Cannot create a new IOU node (limit of 512 nodes across all opened projects using the same computes)")
