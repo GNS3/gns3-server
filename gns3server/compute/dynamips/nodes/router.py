@@ -1182,13 +1182,17 @@ class Router(BaseNode):
         if not adapter.wic_slot_available(wic_slot_number):
             raise DynamipsError("WIC slot {wic_slot_number} is already occupied by another WIC".format(wic_slot_number=wic_slot_number))
 
+        if await self.is_running():
+            raise DynamipsError('WIC "{wic}" cannot be added while router "{name}" is running'.format(wic=wic,
+                                                                                                      name=self._name))
+
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_number = 16 * (wic_slot_number + 1)
         await self._hypervisor.send('vm slot_add_binding "{name}" {slot_number} {wic_slot_number} {wic}'.format(name=self._name,
-                                                                                                                     slot_number=slot_number,
-                                                                                                                     wic_slot_number=internal_wic_slot_number,
-                                                                                                                     wic=wic))
+                                                                                                                slot_number=slot_number,
+                                                                                                                wic_slot_number=internal_wic_slot_number,
+                                                                                                                wic=wic))
 
         log.info('Router "{name}" [{id}]: {wic} inserted into WIC slot {wic_slot_number}'.format(name=self._name,
                                                                                                  id=self._id,
@@ -1217,12 +1221,16 @@ class Router(BaseNode):
         if adapter.wic_slot_available(wic_slot_number):
             raise DynamipsError("No WIC is installed in WIC slot {wic_slot_number}".format(wic_slot_number=wic_slot_number))
 
+        if await self.is_running():
+            raise DynamipsError('WIC cannot be removed from slot {wic_slot_number} while router "{name}" is running'.format(wic_slot_number=wic_slot_number,
+                                                                                                                            name=self._name))
+
         # Dynamips WICs slot IDs start on a multiple of 16
         # WIC1 = 16, WIC2 = 32 and WIC3 = 48
         internal_wic_slot_number = 16 * (wic_slot_number + 1)
         await self._hypervisor.send('vm slot_remove_binding "{name}" {slot_number} {wic_slot_number}'.format(name=self._name,
-                                                                                                                  slot_number=slot_number,
-                                                                                                                  wic_slot_number=internal_wic_slot_number))
+                                                                                                             slot_number=slot_number,
+                                                                                                             wic_slot_number=internal_wic_slot_number))
 
         log.info('Router "{name}" [{id}]: {wic} removed from WIC slot {wic_slot_number}'.format(name=self._name,
                                                                                                 id=self._id,
