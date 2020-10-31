@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.dynamips_nodes import (
+from .templates import Category, TemplateBase
+from .dynamips_nodes import (
     DynamipsConsoleType,
     DynamipsPlatform,
     DynamipsAdapters,

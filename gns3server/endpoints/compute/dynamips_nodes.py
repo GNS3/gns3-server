@@ -31,7 +31,7 @@ from uuid import UUID
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 router = APIRouter()
 

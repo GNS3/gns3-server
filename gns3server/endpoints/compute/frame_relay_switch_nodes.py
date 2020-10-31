@@ -26,7 +26,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.frame_relay_switch import FrameRelaySwitch
 

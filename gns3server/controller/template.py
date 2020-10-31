@@ -20,7 +20,7 @@ import uuid
 
 from pydantic import ValidationError
 from fastapi.encoders import jsonable_encoder
-from gns3server.controller import schemas
+from gns3server import schemas
 
 import logging
 log = logging.getLogger(__name__)

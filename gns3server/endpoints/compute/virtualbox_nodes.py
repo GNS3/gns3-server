@@ -26,7 +26,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.project_manager import ProjectManager

@@ -23,7 +23,7 @@ from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 
 from gns3server.controller import Controller
-from gns3server.endpoints.schemas.gns3vm import GNS3VM
+from gns3server import schemas
 
 router = APIRouter()
 
@@ -48,7 +48,7 @@ async def get_vms(engine: str):
     return vms
 
 
-@router.get("", response_model=GNS3VM)
+@router.get("", response_model=schemas.GNS3VM)
 async def get_gns3vm_settings():
     """
     Return the GNS3 VM settings.
@@ -57,8 +57,8 @@ async def get_gns3vm_settings():
     return Controller.instance().gns3vm.__json__()
 
 
-@router.put("", response_model=GNS3VM, response_model_exclude_unset=True)
-async def update_gns3vm_settings(gns3vm_data: GNS3VM):
+@router.put("", response_model=schemas.GNS3VM, response_model_exclude_unset=True)
+async def update_gns3vm_settings(gns3vm_data: schemas.GNS3VM):
     """
     Update the GNS3 VM settings.
     """

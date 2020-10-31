@@ -32,8 +32,7 @@ from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.link import Link
 from gns3server.utils.http_client import HTTPClient
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 import logging
 log = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find project or link"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}
 }
 
 
@@ -70,8 +69,8 @@ async def get_links(project_id: UUID):
 @router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Link,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"},
-                        409: {"model": ErrorMessage, "description": "Could not create link"}})
+             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+                        409: {"model": schemas.ErrorMessage, "description": "Could not create link"}})
 async def create_link(project_id: UUID, link_data: schemas.Link):
     """
     Create a new link.

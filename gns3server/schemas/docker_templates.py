@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.nodes import CustomAdapter
-from gns3server.endpoints.schemas.docker_nodes import ConsoleType, AuxType
+from .templates import Category, TemplateBase
+from .nodes import CustomAdapter
+from .docker_nodes import ConsoleType, AuxType
 
 from pydantic import Field
 from typing import Optional, List

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2020 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,40 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .node import NODE_TYPE_SCHEMA
+
+from pydantic import BaseModel, Field
+from typing import List
+
+from .nodes import NodeType
 
 
-CAPABILITIES_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Get what a server support",
-    "type": "object",
-    "required": ["version", "node_types"],
-    "properties": {
-        "version": {
-            "description": "Version number",
-            "type": ["string", "null"],
-        },
-        "node_types": {
-            "type": "array",
-            "items": NODE_TYPE_SCHEMA,
-            "description": "Node type supported by the compute"
-        },
-        "platform": {
-            "type": "string",
-            "description": "Platform where the compute is running"
-        },
-        "cpus": {
-            "description": "Number of CPUs on this compute. Read only",
-            "type": ["integer", "null"],
-        },
-        "memory": {
-            "description": "Amount of memory on this compute. Read only",
-            "type": ["integer", "null"],
-        },
-        "disk_size": {
-            "description": "Disk size on this compute. Read only",
-            "type": ["integer", "null"],
-        },
-    },
-    "additionalProperties": False
-}
+class Capabilities(BaseModel):
+    """
+    Capabilities properties.
+    """
+
+    version: str = Field(..., description="Compute version number")
+    node_types: List[NodeType] = Field(..., description="Node types supported by the compute")
+    platform: str = Field(..., description="Platform where the compute is running")
+    cpus: int = Field(..., description="Number of CPUs on this compute")
+    memory: int = Field(..., description="Amount of memory on this compute")
+    disk_size: int = Field(..., description="Disk size on this compute")

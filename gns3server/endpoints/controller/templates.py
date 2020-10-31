@@ -30,15 +30,14 @@ from fastapi.encoders import jsonable_encoder
 from typing import List
 from uuid import UUID
 
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.controller import Controller
 
 
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find template"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find template"}
 }
 
 
@@ -134,7 +133,7 @@ async def duplicate_template(template_id: UUID):
 @router.post("/projects/{project_id}/templates/{template_id}",
              response_model=schemas.Node,
              status_code=status.HTTP_201_CREATED,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project or template"}})
+             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or template"}})
 async def create_node_from_template(project_id: UUID, template_id: UUID, template_usage: schemas.TemplateUsage):
     """
     Create a new node from a template.

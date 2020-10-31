@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.ethernet_switch_nodes import EthernetSwitchPort
+from .templates import Category, TemplateBase
+from .ethernet_switch_nodes import EthernetSwitchPort
 
 from pydantic import Field
 from typing import Optional, List

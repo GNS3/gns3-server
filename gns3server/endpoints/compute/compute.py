@@ -33,7 +33,7 @@ from gns3server.utils.interfaces import interfaces
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.vmware import VMware
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 from fastapi import APIRouter, HTTPException, Body, status
 from fastapi.encoders import jsonable_encoder

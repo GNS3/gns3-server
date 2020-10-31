@@ -31,8 +31,8 @@ from ..utils.qt import qt_font_to_style
 from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
 from .controller_error import ControllerError
 
-from gns3server.controller.schemas.topology import Topology
-from gns3server.endpoints.schemas.dynamips_nodes import DynamipsCreate, NodeStatus
+from gns3server.schemas.topology import Topology
+from gns3server.schemas.dynamips_nodes import DynamipsCreate
 
 import logging
 log = logging.getLogger(__name__)

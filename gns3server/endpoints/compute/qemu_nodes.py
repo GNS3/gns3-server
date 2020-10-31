@@ -27,7 +27,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
 
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM

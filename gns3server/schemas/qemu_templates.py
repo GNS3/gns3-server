@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.qemu_nodes import (
+from .templates import Category, TemplateBase
+from .qemu_nodes import (
     QemuConsoleType,
     QemuPlatform,
     QemuAdapterType,

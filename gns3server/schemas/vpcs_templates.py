@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.vpcs_nodes import ConsoleType
+from .templates import Category, TemplateBase
+from .vpcs_nodes import ConsoleType
 
 from pydantic import Field
 from typing import Optional

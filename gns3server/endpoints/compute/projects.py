@@ -32,7 +32,7 @@ from uuid import UUID
 
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.project import Project
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 
 router = APIRouter()

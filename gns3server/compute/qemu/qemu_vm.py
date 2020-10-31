@@ -44,11 +44,11 @@ from ..error import NodeError, ImageMissingError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
-from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
 
+from gns3server.schemas.qemu_nodes import Qemu, QemuPlatform
 
 import logging
 log = logging.getLogger(__name__)
@@ -216,7 +216,10 @@ class QemuVM(BaseNode):
                 self._platform = "i386"
             else:
                 self._platform = re.sub(r'^qemu-system-(.*)$', r'\1', qemu_bin, re.IGNORECASE)
-        if self._platform.split(".")[0] not in QEMU_PLATFORMS:
+
+        try:
+            QemuPlatform(self._platform.split(".")[0])
+        except ValueError:
             raise QemuError("Platform {} is unknown".format(self._platform))
         log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
                                                                                        id=self._id,
@@ -2288,7 +2291,7 @@ class QemuVM(BaseNode):
             "node_directory": self.working_path
         }
         # Qemu has a long list of options. The JSON schema is the single source of information
-        for field in QEMU_OBJECT_SCHEMA["required"]:
+        for field in Qemu.schema()["properties"]:
             if field not in answer:
                 try:
                     answer[field] = getattr(self, field)

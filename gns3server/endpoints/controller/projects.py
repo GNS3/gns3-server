@@ -37,8 +37,7 @@ from typing import List, Optional
 from uuid import UUID
 from pathlib import Path
 
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
@@ -51,7 +50,7 @@ from gns3server.config import Config
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find project"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project"}
 }
 
 
@@ -83,7 +82,7 @@ def get_projects():
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Project,
              response_model_exclude_unset=True,
-             responses={409: {"model": ErrorMessage, "description": "Could not create project"}})
+             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}})
 async def create_project(project_data: schemas.ProjectCreate):
     """
     Create a new project.
@@ -145,7 +144,7 @@ def get_project_stats(project: Project = Depends(dep_project)):
              status_code=status.HTTP_204_NO_CONTENT,
              responses={
                  **responses,
-                 409: {"model": ErrorMessage, "description": "Could not close project"}
+                 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}
              })
 async def close_project(project: Project = Depends(dep_project)):
     """
@@ -160,7 +159,7 @@ async def close_project(project: Project = Depends(dep_project)):
              response_model=schemas.Project,
              responses={
                  **responses,
-                 409: {"model": ErrorMessage, "description": "Could not open project"}
+                 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}
              })
 async def open_project(project: Project = Depends(dep_project)):
     """
@@ -176,7 +175,7 @@ async def open_project(project: Project = Depends(dep_project)):
              response_model=schemas.Project,
              responses={
                  **responses,
-                 409: {"model": ErrorMessage, "description": "Could not load project"}
+                 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}
              })
 async def load_project(path: str = Body(..., embed=True)):
     """
@@ -346,7 +345,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
              response_model=schemas.Project,
              responses={
                  **responses,
-                 409: {"model": ErrorMessage, "description": "Could not duplicate project"}
+                 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}
              })
 async def duplicate(project_data: schemas.ProjectDuplicate, project: Project = Depends(dep_project)):
     """

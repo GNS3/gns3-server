@@ -27,14 +27,13 @@ from typing import List
 from uuid import UUID
 
 from gns3server.controller.project import Project
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.controller import Controller
 
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find project or snapshot"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}
 }
 
 

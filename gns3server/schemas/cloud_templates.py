@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from gns3server.endpoints.schemas.templates import Category, TemplateBase
-from gns3server.endpoints.schemas.cloud_nodes import EthernetPort, TAPPort, UDPPort, CloudConsoleType
+from .templates import Category, TemplateBase
+from .cloud_nodes import EthernetPort, TAPPort, UDPPort, CloudConsoleType
 
 from pydantic import Field
 from typing import Optional, Union, List

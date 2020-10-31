@@ -27,7 +27,7 @@ from fastapi.responses import StreamingResponse
 from typing import Union
 from uuid import UUID
 
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.cloud import Cloud
 

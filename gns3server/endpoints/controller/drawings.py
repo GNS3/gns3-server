@@ -25,18 +25,17 @@ from typing import List
 from uuid import UUID
 
 from gns3server.controller import Controller
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints.schemas.drawings import Drawing
+from gns3server import schemas
 
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Project or drawing not found"}
+    404: {"model": schemas.ErrorMessage, "description": "Project or drawing not found"}
 }
 
 
 @router.get("",
-            response_model=List[Drawing],
+            response_model=List[schemas.Drawing],
             response_model_exclude_unset=True)
 async def get_drawings(project_id: UUID):
     """
@@ -49,9 +48,9 @@ async def get_drawings(project_id: UUID):
 
 @router.post("",
              status_code=status.HTTP_201_CREATED,
-             response_model=Drawing,
+             response_model=schemas.Drawing,
              responses=responses)
-async def create_drawing(project_id: UUID, drawing_data: Drawing):
+async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing):
     """
     Create a new drawing.
     """
@@ -62,7 +61,7 @@ async def create_drawing(project_id: UUID, drawing_data: Drawing):
 
 
 @router.get("/{drawing_id}",
-            response_model=Drawing,
+            response_model=schemas.Drawing,
             response_model_exclude_unset=True,
             responses=responses)
 async def get_drawing(project_id: UUID, drawing_id: UUID):
@@ -76,10 +75,10 @@ async def get_drawing(project_id: UUID, drawing_id: UUID):
 
 
 @router.put("/{drawing_id}",
-            response_model=Drawing,
+            response_model=schemas.Drawing,
             response_model_exclude_unset=True,
             responses=responses)
-async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: Drawing):
+async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing):
     """
     Update a drawing.
     """

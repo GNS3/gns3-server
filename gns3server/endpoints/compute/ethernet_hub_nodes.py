@@ -28,7 +28,7 @@ from uuid import UUID
 
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.ethernet_hub import EthernetHub
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 router = APIRouter()
 
