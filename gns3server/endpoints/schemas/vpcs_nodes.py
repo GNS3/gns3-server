@@ -23,7 +23,7 @@ from uuid import UUID
 from .nodes import NodeStatus, CustomAdapter
 
 
-class VPCSConsoleType(str, Enum):
+class ConsoleType(str, Enum):
     """
     Supported console types.
     """
@@ -41,7 +41,7 @@ class VPCSBase(BaseModel):
     node_id: Optional[UUID]
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
-    console_type: Optional[VPCSConsoleType] = Field(None, description="Console type")
+    console_type: Optional[ConsoleType] = Field(None, description="Console type")
     startup_script: Optional[str] = Field(None, description="Content of the VPCS startup script")
 
 

@@ -27,23 +27,19 @@ log = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Request, Response, HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from typing import Union, List
+from typing import List
 from uuid import UUID
 
 from gns3server.endpoints.schemas.common import ErrorMessage
 from gns3server.endpoints import schemas
 from gns3server.controller import Controller
 
+
 router = APIRouter()
 
 responses = {
     404: {"model": ErrorMessage, "description": "Could not find template"}
 }
-
-
-#template_create_models = Union[schemas.VPCSTemplateCreate, schemas.CloudTemplateCreate, schemas.IOUTemplateCreate]
-#template_update_models = Union[schemas.VPCSTemplateUpdate, schemas.CloudTemplateUpdate, schemas.IOUTemplateUpdate]
-#template_response_models = Union[schemas.VPCSTemplate, schemas.CloudTemplate, schemas.IOUTemplate]
 
 
 @router.post("/templates",

@@ -17,7 +17,7 @@
 
 import copy
 import uuid
-import jsonschema
+import pydantic
 
 from .controller_error import ControllerError, ControllerNotFoundError
 from .template import Template
@@ -53,8 +53,8 @@ class TemplateManager:
                 try:
                     template = Template(template_settings.get("template_id"), template_settings)
                     self._templates[template.id] = template
-                except jsonschema.ValidationError as e:
-                    message = "Cannot load template with JSON data '{}': {}".format(template_settings, e.message)
+                except pydantic.ValidationError as e:
+                    message = "Cannot load template with JSON data '{}': {}".format(template_settings, e)
                     log.warning(message)
                     continue
 
@@ -90,8 +90,8 @@ class TemplateManager:
             template_id = settings.setdefault("template_id", str(uuid.uuid4()))
         try:
             template = Template(template_id, settings)
-        except jsonschema.ValidationError as e:
-            message = "JSON schema error adding template with JSON data '{}': {}".format(settings, e.message)
+        except pydantic.ValidationError as e:
+            message = "JSON schema error adding template with JSON data '{}': {}".format(settings, e)
             raise ControllerError(message)
 
         from . import Controller

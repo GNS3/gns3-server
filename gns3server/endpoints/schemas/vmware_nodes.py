@@ -43,6 +43,21 @@ class VMwareOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
+class VMwareAdapterType(str, Enum):
+    """
+    Supported VMware VM adapter types.
+    """
+
+    default = "default"
+    e1000 = "e1000"
+    e1000e = "e1000e"
+    flexible = "flexible"
+    vlance = "vlance"
+    vmxnet = "vmxnet"
+    vmxnet2 = "vmxnet2"
+    vmxnet3 = "vmxnet3"
+
+
 class VMwareBase(BaseModel):
     """
     Common VMware node properties.
@@ -59,7 +74,7 @@ class VMwareBase(BaseModel):
     on_close: Optional[VMwareOnCloseAction] = Field(None, description="Action to execute on the VM is closed")
     # 10 adapters is the maximum supported by VMware VMs.
     adapters: Optional[int] = Field(None, ge=0, le=10, description="Number of adapters")
-    adapter_type: Optional[str] = Field(None, description="VMware adapter type")
+    adapter_type: Optional[VMwareAdapterType] = Field(None, description="VMware adapter type")
     use_any_adapter: Optional[bool] = Field(None, description="Allow GNS3 to use any VMware adapter")
     custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adpaters")
 

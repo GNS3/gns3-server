@@ -45,8 +45,8 @@ class TemplateBase(BaseModel):
     symbol: Optional[str] = None
     builtin: Optional[bool] = None
     template_type: Optional[NodeType] = None
-    usage: Optional[str] = None
     compute_id: Optional[str] = None
+    usage: Optional[str] = ""
 
     class Config:
         extra = "allow"

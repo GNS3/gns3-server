@@ -908,7 +908,12 @@ async def test_cloud_template_create(controller_api):
                          "compute_id": "local",
                          "default_name_format": "Cloud{0}",
                          "name": "Cloud template",
-                         "symbol": ":/symbols/cloud.svg"}
+                         "ports_mapping": [],
+                         "symbol": ":/symbols/cloud.svg",
+                         "remote_console_host": "127.0.0.1",
+                         "remote_console_port": 23,
+                         "remote_console_type": "none",
+                         "remote_console_http_path": "/"}
 
     for item, value in expected_response.items():
         assert response.json.get(item) == value

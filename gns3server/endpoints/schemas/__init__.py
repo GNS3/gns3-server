@@ -40,6 +40,3 @@ from .qemu_nodes import QemuCreate, QemuUpdate, Qemu, QemuDiskResize, QemuImageC
 from .virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
 from .vmware_nodes import VMwareCreate, VMwareUpdate, VMware
 from .vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
-from .vpcs_templates import VPCSTemplateCreate, VPCSTemplateUpdate, VPCSTemplate
-from .cloud_templates import CloudTemplateCreate, CloudTemplateUpdate, CloudTemplate
-from .iou_templates import IOUTemplateCreate, IOUTemplateUpdate, IOUTemplate

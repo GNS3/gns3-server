@@ -42,6 +42,16 @@ class VirtualBoxOnCloseAction(str, Enum):
     save_vm_state = "save_vm_state"
 
 
+class VirtualBoxAdapterType(str, Enum):
+
+    pcnet_pci_ii = "PCnet-PCI II (Am79C970A)",
+    pcnet_fast_iii = "PCNet-FAST III (Am79C973)",
+    intel_pro_1000_mt_desktop = "Intel PRO/1000 MT Desktop (82540EM)",
+    intel_pro_1000_t_server = "Intel PRO/1000 T Server (82543GC)",
+    intel_pro_1000_mt_server = "Intel PRO/1000 MT Server (82545EM)",
+    paravirtualized_network = "Paravirtualized Network (virtio-net)"
+
+
 class VirtualBoxBase(BaseModel):
     """
     Common VirtualBox node properties.
@@ -54,14 +64,14 @@ class VirtualBoxBase(BaseModel):
     usage: Optional[str] = Field(None, description="How to use the node")
     # 36 adapters is the maximum given by the ICH9 chipset in VirtualBox
     adapters: Optional[int] = Field(None, ge=0, le=36, description="Number of adapters")
-    adapter_type: Optional[str] = Field(None, description="VirtualBox adapter type")
+    adapter_type: Optional[VirtualBoxAdapterType] = Field(None, description="VirtualBox adapter type")
     use_any_adapter: Optional[bool] = Field(None, description="Allow GNS3 to use any VirtualBox adapter")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[VirtualBoxConsoleType] = Field(None, description="Console type")
     ram: Optional[int] = Field(None, ge=0, le=65535, description="Amount of RAM in MB")
     headless: Optional[bool] = Field(None, description="Headless mode")
     on_close: Optional[VirtualBoxOnCloseAction] = Field(None, description="Action to execute on the VM is closed")
-    custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adpaters")
+    custom_adapters: Optional[List[CustomAdapter]] = Field(None, description="Custom adapters")
 
 
 class VirtualBoxCreate(VirtualBoxBase):

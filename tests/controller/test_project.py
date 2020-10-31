@@ -655,7 +655,8 @@ async def test_clean_pictures_and_keep_supplier_logo(project):
     """
 
     project.supplier = {
-        'logo': 'logo.png'
+        'logo': 'logo.png',
+        'url': 'http://acme.com'
     }
 
     drawing = await project.add_drawing()

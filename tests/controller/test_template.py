@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import jsonschema
+import pydantic
 
 from gns3server.controller.template import Template
 
@@ -39,7 +39,7 @@ def test_template_json():
 
 def test_template_json_with_not_known_category():
 
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(pydantic.ValidationError):
         Template(None, {
             "node_type": "qemu",
             "name": "Test",

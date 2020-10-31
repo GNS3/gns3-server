@@ -16,53 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from .templates import Category, TemplateBase
+from gns3server.endpoints.schemas.templates import Category, TemplateBase
+from gns3server.endpoints.schemas.vpcs_nodes import ConsoleType
 
 from pydantic import Field
-from typing import Optional, Union
-from enum import Enum
-
-from .nodes import NodeType
+from typing import Optional
 
 
-class ConsoleType(str, Enum):
-    """
-    Supported console types for VPCS nodes
-    """
-
-    none = "none"
-    telnet = "telnet"
-
-
-class VPCSTemplateBase(TemplateBase):
+class VPCSTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "PC{0}"
     symbol: Optional[str] = ":/symbols/vpcs_guest.svg"
-
     base_script_file: Optional[str] = Field("vpcs_base_config.txt", description="Script file")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
     console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
-
-
-class VPCSTemplateCreate(VPCSTemplateBase):
-
-    name: str
-    template_type: NodeType
-    compute_id: str
-
-
-class VPCSTemplateUpdate(VPCSTemplateBase):
-
-    pass
-
-
-class VPCSTemplate(VPCSTemplateBase):
-
-    template_id: str
-    name: str
-    category: Category
-    symbol: str
-    builtin: bool
-    template_type: NodeType
-    compute_id: Union[str, None]

@@ -25,6 +25,20 @@ from uuid import UUID
 from .nodes import NodeStatus
 
 
+class DynamipsPlatform(str, Enum):
+    """
+    Supported Dynamips Platforms.
+    """
+
+    c7200 = "c7200"
+    c3725 = "c3725"
+    c3745 = "c3745"
+    c3600 = "c3600"
+    c2691 = "c2691"
+    c2600 = "c2600"
+    c1700 = "c1700"
+
+
 class DynamipsAdapters(str, Enum):
     """
     Supported Dynamips Network Modules.
@@ -55,6 +69,7 @@ class DynamipsAdapters(str, Enum):
     c1700_mb_wic1 = "C1700-MB-WIC1"
     gt96100_fe = "GT96100-FE"
     leopard_2fe = "Leopard-2FE"
+
 
 class DynamipsWics(str, Enum):
     """
@@ -108,7 +123,7 @@ class DynamipsBase(BaseModel):
     node_id: Optional[UUID] = None
     name: Optional[str] = None
     dynamips_id: Optional[int] = Field(None, description="Dynamips internal ID")
-    platform: Optional[str] = Field(None, description="Cisco router platform", regex="^c[0-9]{4}$")
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     ram: Optional[int] = Field(None, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, description="Amount of NVRAM in KB")
     image: Optional[Path] = Field(None, description="Path to the IOS image")
@@ -133,16 +148,16 @@ class DynamipsBase(BaseModel):
     aux_type: Optional[DynamipsConsoleType] = Field(None, description="Auxiliary console type")
     mac_addr: Optional[str] = Field(None, description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$")
     system_id: Optional[str] = Field(None, description="System ID")
-    slot0: Optional[str] = Field(None, description="Network module slot 0")
-    slot1: Optional[str] = Field(None, description="Network module slot 1")
-    slot2: Optional[str] = Field(None, description="Network module slot 2")
-    slot3: Optional[str] = Field(None, description="Network module slot 3")
-    slot4: Optional[str] = Field(None, description="Network module slot 4")
-    slot5: Optional[str] = Field(None, description="Network module slot 5")
-    slot6: Optional[str] = Field(None, description="Network module slot 6")
-    wic0: Optional[str] = Field(None, description="Network module WIC slot 0")
-    wic1: Optional[str] = Field(None, description="Network module WIC slot 1")
-    wic2: Optional[str] = Field(None, description="Network module WIC slot 2")
+    slot0: Optional[DynamipsAdapters] = Field(None, description="Network module slot 0")
+    slot1: Optional[DynamipsAdapters] = Field(None, description="Network module slot 1")
+    slot2: Optional[DynamipsAdapters] = Field(None, description="Network module slot 2")
+    slot3: Optional[DynamipsAdapters] = Field(None, description="Network module slot 3")
+    slot4: Optional[DynamipsAdapters] = Field(None, description="Network module slot 4")
+    slot5: Optional[DynamipsAdapters] = Field(None, description="Network module slot 5")
+    slot6: Optional[DynamipsAdapters] = Field(None, description="Network module slot 6")
+    wic0: Optional[DynamipsWics] = Field(None, description="Network module WIC slot 0")
+    wic1: Optional[DynamipsWics] = Field(None, description="Network module WIC slot 1")
+    wic2: Optional[DynamipsWics] = Field(None, description="Network module WIC slot 2")
     npe: Optional[DynamipsNPE] = Field(None, description="NPE model")
     midplane: Optional[DynamipsMidplane] = Field(None, description="Midplane model")
     sensors: Optional[List] = Field(None, description="Temperature sensors")

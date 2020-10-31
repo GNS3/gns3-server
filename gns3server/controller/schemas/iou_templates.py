@@ -16,31 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from .templates import Category, TemplateBase
+from gns3server.endpoints.schemas.templates import Category, TemplateBase
+from gns3server.endpoints.schemas.iou_nodes import ConsoleType
 
 from pydantic import Field
 from pathlib import Path
-from typing import Optional, Union
-from enum import Enum
-
-from .nodes import NodeType
+from typing import Optional
 
 
-class ConsoleType(str, Enum):
-    """
-    Supported console types for IOU nodes
-    """
-
-    none = "none"
-    telnet = "telnet"
-
-
-class IOUTemplateBase(TemplateBase):
+class IOUTemplate(TemplateBase):
 
     category: Optional[Category] = "router"
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = ":/symbols/multilayer_switch.svg"
-
     path: Path = Field(..., description="Path of IOU executable")
     ethernet_adapters: Optional[int] = Field(2, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, description="Number of serial adapters")
@@ -53,25 +41,3 @@ class IOUTemplateBase(TemplateBase):
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
     console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
 
-
-class IOUTemplateCreate(IOUTemplateBase):
-
-    name: str
-    template_type: NodeType
-    compute_id: str
-
-
-class IOUTemplateUpdate(IOUTemplateBase):
-
-    pass
-
-
-class IOUTemplate(IOUTemplateBase):
-
-    template_id: str
-    name: str
-    category: Category
-    symbol: str
-    builtin: bool
-    template_type: NodeType
-    compute_id: Union[str, None]
