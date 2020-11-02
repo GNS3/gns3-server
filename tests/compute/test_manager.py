@@ -77,30 +77,6 @@ async def test_create_node_new_topology_without_uuid(compute_project, vpcs):
     assert len(node.id) == 36
 
 
-@pytest.mark.asyncio
-async def test_create_node_old_topology(compute_project, tmpdir, vpcs):
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        # Create an old topology directory
-        project_dir = str(tmpdir / "testold")
-        node_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
-        compute_project.path = project_dir
-        compute_project.name = "testold"
-        os.makedirs(node_dir, exist_ok=True)
-        with open(os.path.join(node_dir, "startup.vpc"), "w+") as f:
-            f.write("1")
-
-        node_id = 1
-        node = await vpcs.create_node("PC 1", compute_project.id, node_id)
-        assert len(node.id) == 36
-
-        assert os.path.exists(os.path.join(project_dir, "testold-files")) is False
-
-        node_dir = os.path.join(project_dir, "project-files", "vpcs", node.id)
-        with open(os.path.join(node_dir, "startup.vpc")) as f:
-            assert f.read() == "1"
-
-
 def test_get_abs_image_path(qemu, tmpdir, config):
 
     os.makedirs(str(tmpdir / "QEMU"))
