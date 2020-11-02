@@ -592,9 +592,10 @@ async def test_dynamips_template_create_wrong_platform(controller_api):
 @pytest.mark.asyncio
 async def test_iou_template_create(controller_api):
 
+    image_path = str(Path("/path/to/i86bi_linux-ipbase-ms-12.4.bin"))
     params = {"name": "IOU template",
               "compute_id": "local",
-              "path": str(Path("/path/to/i86bi_linux-ipbase-ms-12.4.bin")),
+              "path": image_path,
               "template_type": "iou"}
 
     response = await controller_api.post("/templates", params)
@@ -611,7 +612,7 @@ async def test_iou_template_create(controller_api):
                          "ethernet_adapters": 2,
                          "name": "IOU template",
                          "nvram": 128,
-                         "path": "/path/to/i86bi_linux-ipbase-ms-12.4.bin",
+                         "path": image_path,
                          "private_config": "",
                          "ram": 256,
                          "serial_adapters": 2,
@@ -722,10 +723,11 @@ async def test_qemu_template_create(controller_api):
 @pytest.mark.asyncio
 async def test_vmware_template_create(controller_api):
 
+    vmx_path = str(Path("/path/to/vm.vmx"))
     params = {"name": "VMware template",
               "compute_id": "local",
               "template_type": "vmware",
-              "vmx_path": str(Path("/path/to/vm.vmx"))}
+              "vmx_path": vmx_path}
 
     response = await controller_api.post("/templates", params)
     assert response.status_code == 201
@@ -749,7 +751,7 @@ async def test_vmware_template_create(controller_api):
                          "port_segment_size": 0,
                          "symbol": ":/symbols/vmware_guest.svg",
                          "use_any_adapter": False,
-                         "vmx_path": "/path/to/vm.vmx",
+                         "vmx_path": vmx_path,
                          "custom_adapters": []}
 
     for item, value in expected_response.items():
