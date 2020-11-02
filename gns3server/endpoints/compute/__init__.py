@@ -17,6 +17,7 @@
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 from gns3server.compute.error import ImageMissingError, NodeError
 from gns3server.ubridge.ubridge_error import UbridgeError
@@ -124,6 +125,16 @@ async def ubridge_error_handler(request: Request, exc: UbridgeError):
         status_code=409,
         content={"message": str(exc), "exception": exc.__class__.__name__},
     )
+
+
+# make sure the content key is "message", not "detail" per default
+@compute_api.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},
+    )
+
 
 compute_api.include_router(capabilities.router, tags=["Capabilities"])
 compute_api.include_router(compute.router, tags=["Compute"])

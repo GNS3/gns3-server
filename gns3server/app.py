@@ -24,6 +24,7 @@ import asyncio
 import time
 
 from fastapi import FastAPI, Request
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -117,6 +118,15 @@ async def controller_not_found_error_handler(request: Request, exc: ControllerNo
     return JSONResponse(
         status_code=404,
         content={"message": str(exc)},
+    )
+
+
+# make sure the content key is "message", not "detail" per default
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},
     )
 
 

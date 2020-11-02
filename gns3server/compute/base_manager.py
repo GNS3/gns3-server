@@ -180,59 +180,6 @@ class BaseManager:
 
         return node
 
-    async def convert_old_project(self, project, legacy_id, name):
-        """
-        Convert projects made before version 1.3
-
-        :param project: Project instance
-        :param legacy_id: old identifier
-        :param name: node name
-
-        :returns: new identifier
-        """
-
-        new_id = str(uuid4())
-        legacy_project_files_path = os.path.join(project.path, "{}-files".format(project.name))
-        new_project_files_path = os.path.join(project.path, "project-files")
-        if os.path.exists(legacy_project_files_path) and not os.path.exists(new_project_files_path):
-            # move the project files
-            log.info("Converting old project...")
-            try:
-                log.info('Moving "{}" to "{}"'.format(legacy_project_files_path, new_project_files_path))
-                await wait_run_in_executor(shutil.move, legacy_project_files_path, new_project_files_path)
-            except OSError as e:
-                raise ComputeError("Could not move project files directory: {} to {} {}".format(legacy_project_files_path,
-                                                                                                new_project_files_path, e))
-
-        if project.is_local() is False:
-            legacy_remote_project_path = os.path.join(project.location, project.name, self.module_name.lower())
-            new_remote_project_path = os.path.join(project.path, "project-files", self.module_name.lower())
-            if os.path.exists(legacy_remote_project_path) and not os.path.exists(new_remote_project_path):
-                # move the legacy remote project (remote servers only)
-                log.info("Converting old remote project...")
-                try:
-                    log.info('Moving "{}" to "{}"'.format(legacy_remote_project_path, new_remote_project_path))
-                    await wait_run_in_executor(shutil.move, legacy_remote_project_path, new_remote_project_path)
-                except OSError as e:
-                    raise ComputeError("Could not move directory: {} to {} {}".format(legacy_remote_project_path,
-                                                                                      new_remote_project_path, e))
-
-        if hasattr(self, "get_legacy_vm_workdir"):
-            # rename old project node working dir
-            log.info("Converting old node working directory...")
-            legacy_vm_dir = self.get_legacy_vm_workdir(legacy_id, name)
-            legacy_vm_working_path = os.path.join(new_project_files_path, legacy_vm_dir)
-            new_vm_working_path = os.path.join(new_project_files_path, self.module_name.lower(), new_id)
-            if os.path.exists(legacy_vm_working_path) and not os.path.exists(new_vm_working_path):
-                try:
-                    log.info('Moving "{}" to "{}"'.format(legacy_vm_working_path, new_vm_working_path))
-                    await wait_run_in_executor(shutil.move, legacy_vm_working_path, new_vm_working_path)
-                except OSError as e:
-                    raise ComputeError("Could not move vm working directory: {} to {} {}".format(legacy_vm_working_path,
-                                                                                                 new_vm_working_path, e))
-
-        return new_id
-
     async def create_node(self, name, project_id, node_id, *args, **kwargs):
         """
         Create a new node
@@ -246,11 +193,6 @@ class BaseManager:
             return self._nodes[node_id]
 
         project = ProjectManager.instance().get_project(project_id)
-        if node_id and isinstance(node_id, int):
-            # old project
-            async with BaseManager._convert_lock:
-                node_id = await self.convert_old_project(project, node_id, name)
-
         if not node_id:
             node_id = str(uuid4())
 
