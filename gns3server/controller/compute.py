@@ -497,7 +497,7 @@ class Compute:
                 host = "[{}]".format(host)
             elif host == "0.0.0.0":
                 host = "127.0.0.1"
-        return "{}://{}:{}/v2/compute{}".format(self._protocol, host, self._port, path)
+        return "{}://{}:{}/v3/compute{}".format(self._protocol, host, self._port, path)
 
     def get_url(self, path):
         """ Returns URL for specific path at Compute"""

@@ -18,6 +18,7 @@
 import pytest
 import uuid
 
+from pathlib import Path
 from tests.utils import asyncio_patch
 
 from gns3server.controller.template import Template
@@ -593,7 +594,7 @@ async def test_iou_template_create(controller_api):
 
     params = {"name": "IOU template",
               "compute_id": "local",
-              "path": "/path/to/i86bi_linux-ipbase-ms-12.4.bin",
+              "path": str(Path("/path/to/i86bi_linux-ipbase-ms-12.4.bin")),
               "template_type": "iou"}
 
     response = await controller_api.post("/templates", params)
@@ -724,7 +725,7 @@ async def test_vmware_template_create(controller_api):
     params = {"name": "VMware template",
               "compute_id": "local",
               "template_type": "vmware",
-              "vmx_path": "/path/to/vm.vmx"}
+              "vmx_path": str(Path("/path/to/vm.vmx"))}
 
     response = await controller_api.post("/templates", params)
     assert response.status_code == 201

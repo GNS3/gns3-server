@@ -51,7 +51,7 @@ from . import vpcs_nodes
 
 compute_api = FastAPI(title="GNS3 compute API",
                       description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
-                      version="v2")
+                      version="v3")
 
 
 @compute_api.exception_handler(ComputeError)

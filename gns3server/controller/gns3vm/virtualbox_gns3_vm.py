@@ -310,7 +310,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         remaining_try = 300
         while remaining_try > 0:
             try:
-                async with HTTPClient.get(f"http://127.0.0.1:{api_port}/v2/compute/network/interfaces") as resp:
+                async with HTTPClient.get(f"http://127.0.0.1:{api_port}/v3/compute/network/interfaces") as resp:
                     if resp.status < 300:
                         try:
                             json_data = await resp.json()

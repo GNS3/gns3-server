@@ -252,7 +252,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: QemuVM = Depen
     await node.adapter_remove_nio_binding(adapter_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
 async def start_capture(adapter_number: int,
                         port_number: int,
@@ -268,7 +268,7 @@ async def start_capture(adapter_number: int,
     return {"pcap_file_path": str(pcap_file_path)}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
 async def stop_capture(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
@@ -280,7 +280,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: QemuVM = Dep
     await node.stop_capture(adapter_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """

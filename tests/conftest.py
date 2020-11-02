@@ -97,7 +97,7 @@ def compute_api(http_client, ws_client):
     Return an helper allowing you to call the hypervisor API via HTTP
     """
 
-    return Query(http_client, ws_client, prefix="/compute", api_version=2)
+    return Query(http_client, ws_client, prefix="/compute", api_version=3)
 
 
 @pytest.fixture
@@ -106,7 +106,7 @@ def controller_api(http_client, ws_client, controller):
     Return an helper allowing you to call the server API without any prefix
     """
 
-    return Query(http_client, ws_client, api_version=2)
+    return Query(http_client, ws_client, api_version=3)
 
 
 @pytest.fixture

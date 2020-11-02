@@ -185,7 +185,7 @@ async def test_virtualbox_start_capture(compute_api, vm):
 
     with patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.start_capture") as mock:
-            response = await compute_api.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/start_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+            response = await compute_api.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/capture/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
             assert response.status_code == 200
             assert mock.called
             assert "test.pcap" in response.json["pcap_file_path"]
@@ -196,7 +196,7 @@ async def test_virtualbox_stop_capture(compute_api, vm):
 
     with patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.stop_capture") as mock:
-            response = await compute_api.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/stop_capture".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+            response = await compute_api.post("/projects/{project_id}/virtualbox/nodes/{node_id}/adapters/0/ports/0/capture/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
             assert response.status_code == 204
             assert mock.called
 

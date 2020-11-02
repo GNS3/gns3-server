@@ -208,7 +208,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: VPCSVM = Depen
     await node.port_remove_nio_binding(port_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
 async def start_capture(adapter_number: int,
                         port_number: int,
@@ -224,7 +224,7 @@ async def start_capture(adapter_number: int,
     return {"pcap_file_path": pcap_file_path}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
 async def stop_capture(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
@@ -244,7 +244,7 @@ async def reset_console(node: VPCSVM = Depends(dep_node)):
     await node.reset_console()
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """

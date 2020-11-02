@@ -380,7 +380,7 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
     compute = node.compute
     await websocket.accept()
     log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket")
-    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v2/compute/projects/" \
+    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v3/compute/projects/" \
                              f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
 
     async def ws_receive(ws_console_compute):

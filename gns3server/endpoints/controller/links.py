@@ -136,31 +136,6 @@ async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.post("/{link_id}/start_capture",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Link,
-             responses=responses)
-async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
-    """
-    Start packet capture on the link.
-    """
-
-    await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
-                             capture_file_name=capture_data.get("capture_file_name"))
-    return link.__json__()
-
-
-@router.post("/{link_id}/stop_capture",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
-async def stop_capture(link: Link = Depends(dep_link)):
-    """
-    Stop packet capture on the link.
-    """
-
-    await link.stop_capture()
-
-
 @router.delete("/{link_id}",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
@@ -185,9 +160,34 @@ async def reset_link(link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.get("/{link_id}/pcap",
+@router.post("/{link_id}/capture/start",
+             status_code=status.HTTP_201_CREATED,
+             response_model=schemas.Link,
+             responses=responses)
+async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
+    """
+    Start packet capture on the link.
+    """
+
+    await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
+                             capture_file_name=capture_data.get("capture_file_name"))
+    return link.__json__()
+
+
+@router.post("/{link_id}/capture/stop",
+             status_code=status.HTTP_204_NO_CONTENT,
+             responses=responses)
+async def stop_capture(link: Link = Depends(dep_link)):
+    """
+    Stop packet capture on the link.
+    """
+
+    await link.stop_capture()
+
+
+@router.get("/{link_id}/capture/stream",
             responses=responses)
-async def pcap(request: Request, link: Link = Depends(dep_link)):
+async def stream_pcap(request: Request, link: Link = Depends(dep_link)):
     """
     Stream the PCAP capture file from compute.
     """
