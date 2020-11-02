@@ -260,7 +260,7 @@ Conflicts=shutdown.target
 User=gns3
 Group=gns3
 PermissionsStartOnly=true
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+EnvironmentFile=/etc/environment
 ExecStartPre=/bin/mkdir -p /var/log/gns3 /var/run/gns3
 ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
 ExecStart=/usr/bin/gns3server --log /var/log/gns3/gns3.log
