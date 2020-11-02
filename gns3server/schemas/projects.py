@@ -35,7 +35,7 @@ class ProjectStatus(str, Enum):
 class Supplier(BaseModel):
 
     logo: str = Field(..., description="Path to the project supplier logo")
-    url: HttpUrl = Field(..., description="URL to the project supplier site")
+    url: Optional[HttpUrl] = Field(None, description="URL to the project supplier site")
 
 
 class Variable(BaseModel):

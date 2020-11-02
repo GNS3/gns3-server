@@ -26,8 +26,7 @@ from gns3server.config import Config
 from gns3server.controller import Controller
 from gns3server.version import __version__
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 
 import logging
@@ -38,7 +37,7 @@ router = APIRouter()
 
 @router.post("/shutdown",
              status_code=status.HTTP_204_NO_CONTENT,
-             responses={403: {"model": ErrorMessage, "description": "Server shutdown not allowed"}})
+             responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}})
 async def shutdown():
     """
     Shutdown the local server
@@ -85,7 +84,7 @@ def version():
 @router.post("/version",
              response_model=schemas.Version,
              response_model_exclude_defaults=True,
-             responses={409: {"model": ErrorMessage, "description": "Invalid version"}})
+             responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}})
 def check_version(version: schemas.Version):
     """
     Check if version is the same as the server.

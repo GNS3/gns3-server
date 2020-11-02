@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 
 app = FastAPI(title="GNS3 controller API",
               description="This page describes the public controller API for GNS3",
-              version="v2")
+              version="v3")
 
 origins = [
     "http://127.0.0.1",
@@ -71,8 +71,8 @@ app.add_middleware(
 )
 
 app.include_router(index.router, tags=["Index"])
-app.include_router(controller.router, prefix="/v2")
-app.mount("/v2/compute", compute_api)
+app.include_router(controller.router, prefix="/v3")
+app.mount("/v3/compute", compute_api)
 
 
 @app.exception_handler(ControllerError)

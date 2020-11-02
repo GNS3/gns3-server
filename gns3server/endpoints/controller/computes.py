@@ -25,22 +25,21 @@ from typing import List, Union
 from uuid import UUID
 
 from gns3server.controller import Controller
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Compute not found"}
+    404: {"model": schemas.ErrorMessage, "description": "Compute not found"}
 }
 
 
 @router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Compute,
-             responses={404: {"model": ErrorMessage, "description": "Could not connect to compute"},
-                        409: {"model": ErrorMessage, "description": "Could not create compute"},
-                        401: {"model": ErrorMessage, "description": "Invalid authentication for compute"}})
+             responses={404: {"model": schemas.ErrorMessage, "description": "Could not connect to compute"},
+                        409: {"model": schemas.ErrorMessage, "description": "Could not create compute"},
+                        401: {"model": schemas.ErrorMessage, "description": "Invalid authentication for compute"}})
 async def create_compute(compute_data: schemas.ComputeCreate):
     """
     Create a new compute on the controller.

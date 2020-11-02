@@ -322,7 +322,7 @@ async def test_start_capture(controller_api, project):
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.start_capture") as mock:
-        response = await controller_api.post("/projects/{}/links/{}/start_capture".format(project.id, link.id))
+        response = await controller_api.post("/projects/{}/links/{}/capture/start".format(project.id, link.id))
     assert mock.called
     assert response.status_code == 201
 
@@ -333,7 +333,7 @@ async def test_stop_capture(controller_api, project):
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
-        response = await controller_api.post("/projects/{}/links/{}/stop_capture".format(project.id, link.id))
+        response = await controller_api.post("/projects/{}/links/{}/capture/stop".format(project.id, link.id))
     assert mock.called
     assert response.status_code == 204
 

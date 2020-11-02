@@ -17,29 +17,13 @@
 
 
 from .templates import Category, TemplateBase
-from .cloud_nodes import EthernetPort, TAPPort, UDPPort
+from .cloud_nodes import EthernetPort, TAPPort, UDPPort, CloudConsoleType
 
 from pydantic import Field
 from typing import Optional, Union, List
-from enum import Enum
-
-from .nodes import NodeType
 
 
-class RemoteConsoleType(str, Enum):
-    """
-    Supported remote console types for cloud nodes.
-    """
-
-    none = "none"
-    telnet = "telnet"
-    vnc = "vnc"
-    spice = "spice"
-    http = "http"
-    https = "https"
-
-
-class CloudTemplateBase(TemplateBase):
+class CloudTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "Cloud{0}"
@@ -47,28 +31,5 @@ class CloudTemplateBase(TemplateBase):
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]] = []
     remote_console_host: Optional[str] = Field("127.0.0.1", description="Remote console host or IP")
     remote_console_port: Optional[int] = Field(23, gt=0, le=65535, description="Remote console TCP port")
-    remote_console_type: Optional[RemoteConsoleType] = Field("none", description="Remote console type")
-    remote_console_path: Optional[str] = Field("/", description="Path of the remote web interface")
-
-
-class CloudTemplateCreate(CloudTemplateBase):
-
-    name: str
-    template_type: NodeType
-    compute_id: str
-
-
-class CloudTemplateUpdate(CloudTemplateBase):
-
-    pass
-
-
-class CloudTemplate(CloudTemplateBase):
-
-    template_id: str
-    name: str
-    category: Category
-    symbol: str
-    builtin: bool
-    template_type: NodeType
-    compute_id: Union[str, None]
+    remote_console_type: Optional[CloudConsoleType] = Field("none", description="Remote console type")
+    remote_console_http_path: Optional[str] = Field("/", description="Path of the remote web interface")

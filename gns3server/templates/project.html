@@ -2,7 +2,7 @@
 
 {% block head %}
 <script>
-var socket = new WebSocket("ws://" + location.host + "/v2/projects/{{project.id}}/notifications/ws");
+var socket = new WebSocket("ws://" + location.host + "/v3/projects/{{project.id}}/notifications/ws");
 socket.onopen = function (event) {
     document.getElementById("notifications").innerText = "Connected";
 };
@@ -60,7 +60,7 @@ in futur GNS3 versions.
         {% endif %}
     </td>
     <td>{{link.capturing}}</td>
-    <td><a href="/v2/projects/{{project.id}}/links/{{link.id}}/pcap">Download</a></td>
+    <td><a href="/v3/projects/{{project.id}}/links/{{link.id}}/pcap">Download</a></td>
 </tr>
 {% endfor %}
 </table>

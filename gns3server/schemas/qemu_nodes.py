@@ -104,6 +104,54 @@ class QemuProcessPriority(str, Enum):
     very_low = "very low"
 
 
+class QemuAdapterType(str, Enum):
+    """
+    Supported Qemu VM adapter types.
+    """
+
+    e1000 = "e1000"
+    e1000_82544gc = "e1000-82544gc"
+    e1000_82545em = "e1000-82545em"
+    e1000e = "e1000e"
+    i82550 = "i82550"
+    i82551 = "i82551"
+    i82557a = "i82557a"
+    i82557b = "i82557b"
+    i82557c = "i82557c"
+    i82558a = "i82558a"
+    i82558b = "i82558b"
+    i82559a = "i82559a"
+    i82559b = "i82559b"
+    i82559c = "i82559c"
+    i82559er = "i82559er"
+    i82562 = "i82562"
+    i82801 = "i82801"
+    ne2k_pci = "ne2k_pci"
+    pcnet = "pcnet"
+    rocker = "rocker"
+    rtl8139 = "rtl8139"
+    virtio = "virtio"
+    virtio_net_pci = "virtio-net-pci"
+    vmxnet3 = "vmxnet3"
+
+
+class QemuDiskInterfaceType(str, Enum):
+    """
+    Supported Qemu VM disk interface types.
+    """
+
+    ide = "ide"
+    sate = "sata"
+    nvme = "nvme"
+    scsi = "scsi"
+    sd = "sd"
+    mtd = "mtd"
+    floppy = "floppy"
+    pflash = "pflash"
+    virtio = "virtio"
+    none = "none"
+
+
 class QemuBase(BaseModel):
     """
     Common Qemu node properties.
@@ -121,16 +169,16 @@ class QemuBase(BaseModel):
     aux_type: Optional[QemuConsoleType] = Field(None, description="Auxiliary console type")
     hda_disk_image: Optional[Path] = Field(None, description="QEMU hda disk image path")
     hda_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hda disk image checksum")
-    hda_disk_image_interface: Optional[str] = Field(None, description="QEMU hda interface")
+    hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hda interface")
     hdb_disk_image: Optional[Path] = Field(None, description="QEMU hdb disk image path")
     hdb_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdb disk image checksum")
-    hdb_disk_image_interface: Optional[str] = Field(None, description="QEMU hdb interface")
+    hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdb interface")
     hdc_disk_image: Optional[Path] = Field(None, description="QEMU hdc disk image path")
     hdc_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdc disk image checksum")
-    hdc_disk_image_interface: Optional[str] = Field(None, description="QEMU hdc interface")
+    hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdc interface")
     hdd_disk_image: Optional[Path] = Field(None, description="QEMU hdd disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
-    hdd_disk_image_interface: Optional[str] = Field(None, description="QEMU hdd interface")
+    hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
     cdrom_image: Optional[Path] = Field(None, description="QEMU cdrom image path")
     cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU cdrom image checksum")
     bios_image: Optional[Path] = Field(None, description="QEMU bios image path")
@@ -140,12 +188,12 @@ class QemuBase(BaseModel):
     kernel_image: Optional[Path] = Field(None, description="QEMU kernel image path")
     kernel_image_md5sum: Optional[str] = Field(None, description="QEMU kernel image checksum")
     kernel_command_line: Optional[str] = Field(None, description="QEMU kernel command line")
-    boot_priotiry: Optional[QemuBootPriority] = Field(None, description="QEMU boot priority")
+    boot_priority: Optional[QemuBootPriority] = Field(None, description="QEMU boot priority")
     ram: Optional[int] = Field(None, description="Amount of RAM in MB")
     cpus: Optional[int] = Field(None, ge=1, le=255, description="Number of vCPUs")
     maxcpus: Optional[int] = Field(None, ge=1, le=255, description="Maximum number of hotpluggable vCPUs")
     adapters: Optional[int] = Field(None, ge=0, le=275, description="Number of adapters")
-    adapter_type: Optional[str] = Field(None, description="QEMU adapter type")
+    adapter_type: Optional[QemuAdapterType] = Field(None, description="QEMU adapter type")
     mac_address: Optional[str] = Field(None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
     legacy_networking: Optional[bool] = Field(None, description="Use QEMU legagy networking commands (-net syntax)")
     replicate_network_connection_state: Optional[bool] = Field(None, description="Replicate the network connection state for links in Qemu")

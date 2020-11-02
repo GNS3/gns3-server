@@ -2,7 +2,7 @@
 
 {% block head %}
 <script>
-var socket = new WebSocket("ws://" + location.host + "/v2/compute/notifications/ws");
+var socket = new WebSocket("ws://" + location.host + "/v3/compute/notifications/ws");
 socket.onopen = function (event) {
     document.getElementById("notifications").innerText = "Connected";
 };

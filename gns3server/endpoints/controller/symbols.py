@@ -25,7 +25,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import FileResponse
 
 from gns3server.controller import Controller
-from gns3server.endpoints.schemas.common import ErrorMessage
+from gns3server import schemas
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 
 import logging
@@ -43,7 +43,7 @@ def get_symbols():
 
 
 @router.get("/{symbol_id:path}/raw",
-            responses={404: {"model": ErrorMessage, "description": "Could not find symbol"}})
+            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}})
 async def get_symbol(symbol_id: str):
     """
     Download a symbol file.

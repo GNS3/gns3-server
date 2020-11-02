@@ -32,11 +32,11 @@ if __name__ == "__main__":
                                        title=app.title + " - Swagger UI",
                                        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url)
 
-    with open("../docs/swagger.html", "w") as fd:
+    with open("../docs/index.html", "w") as fd:
         fd.write(swagger_html.body.decode())
 
     redoc_html = get_redoc_html(openapi_url="openapi.json",
                                 title=app.title + " - ReDoc")
 
-    with open("../docs/index.html", "w") as fd:
+    with open("../docs/redoc.html", "w") as fd:
         fd.write(redoc_html.body.decode())

@@ -27,7 +27,7 @@ from fastapi.responses import StreamingResponse
 from typing import Union
 from uuid import UUID
 
-from gns3server.endpoints import schemas
+from gns3server import schemas
 from gns3server.compute.iou import IOU
 from gns3server.compute.iou.iou_vm import IOUVM
 
@@ -237,7 +237,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: IOUVM = Depend
     await node.adapter_remove_nio_binding(adapter_number, port_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/start_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
 async def start_capture(adapter_number: int,
                         port_number: int,
@@ -252,7 +252,7 @@ async def start_capture(adapter_number: int,
     return {"pcap_file_path": str(pcap_file_path)}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/stop_capture",
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
 async def stop_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
@@ -263,7 +263,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: IOUVM = Depe
     await node.stop_capture(adapter_number, port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap",
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
             responses=responses)
 async def stream_pcap_file(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """

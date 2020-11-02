@@ -103,12 +103,12 @@ class Compute(ComputeBase):
 
     compute_id: Union[str, UUID]
     name: str
-    connected: bool = Field(..., description="Whether the controller is connected to the compute or not")
-    cpu_usage_percent: float = Field(..., description="CPU usage of the compute", ge=0, le=100)
-    memory_usage_percent: float = Field(..., description="Memory usage of the compute", ge=0, le=100)
-    disk_usage_percent: float = Field(..., description="Disk usage of the compute", ge=0, le=100)
+    connected: Optional[bool] = Field(None, description="Whether the controller is connected to the compute or not")
+    cpu_usage_percent: Optional[float] = Field(None, description="CPU usage of the compute", ge=0, le=100)
+    memory_usage_percent: Optional[float] = Field(None, description="Memory usage of the compute", ge=0, le=100)
+    disk_usage_percent: Optional[float] = Field(None, description="Disk usage of the compute", ge=0, le=100)
     last_error: Optional[str] = Field(None, description="Last error found on the compute")
-    capabilities: Capabilities
+    capabilities: Optional[Capabilities] = None
 
 
 class AutoIdlePC(BaseModel):

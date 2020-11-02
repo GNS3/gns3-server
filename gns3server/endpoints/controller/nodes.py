@@ -34,8 +34,7 @@ from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
 from gns3server.controller.controller_error import ControllerForbiddenError
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 import logging
 log = logging.getLogger(__name__)
@@ -80,7 +79,7 @@ class NodeConcurrency(APIRoute):
 router = APIRouter(route_class=NodeConcurrency)
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find project or node"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}
 }
 
 
@@ -105,8 +104,8 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
 @router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Node,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"},
-                        409: {"model": ErrorMessage, "description": "Could not create node"}})
+             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+                        409: {"model": schemas.ErrorMessage, "description": "Could not create node"}})
 async def create_node(node_data: schemas.Node, project: Project = Depends(dep_project)):
     """
     Create a new node.
@@ -212,7 +211,7 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
                responses={**responses,
-                          409: {"model": ErrorMessage, "description": "Cannot delete node"}})
+                          409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}})
 async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
     """
     Delete a node from a project.
@@ -381,7 +380,7 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
     compute = node.compute
     await websocket.accept()
     log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket")
-    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v2/compute/projects/" \
+    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v3/compute/projects/" \
                              f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
 
     async def ws_receive(ws_console_compute):

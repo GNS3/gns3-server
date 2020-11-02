@@ -345,11 +345,12 @@ class Link:
         node_id = self.capture_node["node"].id
         adapter_number = self.capture_node["adapter_number"]
         port_number = self.capture_node["port_number"]
-        url = "/projects/{project_id}/{node_type}/nodes/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap".format(project_id=self.project.id,
-                                                                                                                             node_type=node_type,
-                                                                                                                             node_id=node_id,
-                                                                                                                             adapter_number=adapter_number,
-                                                                                                                             port_number=port_number)
+        url = "/projects/{project_id}/{node_type}/nodes/{node_id}/adapters/{adapter_number}/" \
+              "ports/{port_number}/capture/stream".format(project_id=self.project.id,
+                                                          node_type=node_type,
+                                                          node_id=node_id,
+                                                          adapter_number=adapter_number,
+                                                          port_number=port_number)
 
         return compute._getUrl(url)
 

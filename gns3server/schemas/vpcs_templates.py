@@ -16,20 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pydantic import BaseModel, Field
-from typing import List
+from .templates import Category, TemplateBase
+from .vpcs_nodes import ConsoleType
 
-from .nodes import NodeType
+from pydantic import Field
+from typing import Optional
 
 
-class Capabilities(BaseModel):
-    """
-    Capabilities properties.
-    """
+class VPCSTemplate(TemplateBase):
 
-    version: str = Field(..., description="Compute version number")
-    node_types: List[NodeType] = Field(..., description="Node types supported by the compute")
-    platform: str = Field(..., description="Platform where the compute is running")
-    cpus: int = Field(..., description="Number of CPUs on this compute")
-    memory: int = Field(..., description="Amount of memory on this compute")
-    disk_size: int = Field(..., description="Disk size on this compute")
+    category: Optional[Category] = "guest"
+    default_name_format: Optional[str] = "PC{0}"
+    symbol: Optional[str] = ":/symbols/vpcs_guest.svg"
+    base_script_file: Optional[str] = Field("vpcs_base_config.txt", description="Script file")
+    console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
+    console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")

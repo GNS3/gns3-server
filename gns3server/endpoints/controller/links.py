@@ -32,8 +32,7 @@ from gns3server.controller import Controller
 from gns3server.controller.controller_error import ControllerError
 from gns3server.controller.link import Link
 from gns3server.utils.http_client import HTTPClient
-from gns3server.endpoints.schemas.common import ErrorMessage
-from gns3server.endpoints import schemas
+from gns3server import schemas
 
 import logging
 log = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 responses = {
-    404: {"model": ErrorMessage, "description": "Could not find project or link"}
+    404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}
 }
 
 
@@ -70,8 +69,8 @@ async def get_links(project_id: UUID):
 @router.post("",
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.Link,
-             responses={404: {"model": ErrorMessage, "description": "Could not find project"},
-                        409: {"model": ErrorMessage, "description": "Could not create link"}})
+             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+                        409: {"model": schemas.ErrorMessage, "description": "Could not create link"}})
 async def create_link(project_id: UUID, link_data: schemas.Link):
     """
     Create a new link.
@@ -137,31 +136,6 @@ async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.post("/{link_id}/start_capture",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Link,
-             responses=responses)
-async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
-    """
-    Start packet capture on the link.
-    """
-
-    await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
-                             capture_file_name=capture_data.get("capture_file_name"))
-    return link.__json__()
-
-
-@router.post("/{link_id}/stop_capture",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
-async def stop_capture(link: Link = Depends(dep_link)):
-    """
-    Stop packet capture on the link.
-    """
-
-    await link.stop_capture()
-
-
 @router.delete("/{link_id}",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
@@ -186,9 +160,34 @@ async def reset_link(link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.get("/{link_id}/pcap",
+@router.post("/{link_id}/capture/start",
+             status_code=status.HTTP_201_CREATED,
+             response_model=schemas.Link,
+             responses=responses)
+async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
+    """
+    Start packet capture on the link.
+    """
+
+    await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
+                             capture_file_name=capture_data.get("capture_file_name"))
+    return link.__json__()
+
+
+@router.post("/{link_id}/capture/stop",
+             status_code=status.HTTP_204_NO_CONTENT,
+             responses=responses)
+async def stop_capture(link: Link = Depends(dep_link)):
+    """
+    Stop packet capture on the link.
+    """
+
+    await link.stop_capture()
+
+
+@router.get("/{link_id}/capture/stream",
             responses=responses)
-async def pcap(request: Request, link: Link = Depends(dep_link)):
+async def stream_pcap(request: Request, link: Link = Depends(dep_link)):
     """
     Stream the PCAP capture file from compute.
     """

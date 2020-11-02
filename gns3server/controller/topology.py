@@ -18,20 +18,21 @@
 import os
 import html
 import json
-import copy
 import uuid
 import glob
 import shutil
 import zipfile
-import jsonschema
+import pydantic
 
+from typing import Optional
 
 from ..version import __version__
-from ..schemas.topology import TOPOLOGY_SCHEMA
-from ..schemas import dynamips_vm
 from ..utils.qt import qt_font_to_style
 from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
 from .controller_error import ControllerError
+
+from gns3server.schemas.topology import Topology
+from gns3server.schemas.dynamips_nodes import DynamipsCreate
 
 import logging
 log = logging.getLogger(__name__)
@@ -40,29 +41,21 @@ log = logging.getLogger(__name__)
 GNS3_FILE_FORMAT_REVISION = 9
 
 
+class DynamipsNodeValidation(DynamipsCreate):
+    name: Optional[str] = None
+
+
 def _check_topology_schema(topo):
     try:
-        jsonschema.validate(topo, TOPOLOGY_SCHEMA)
+        Topology.parse_obj(topo)
 
         # Check the nodes property against compute schemas
         for node in topo["topology"].get("nodes", []):
-            schema = None
             if node["node_type"] == "dynamips":
-                schema = copy.deepcopy(dynamips_vm.VM_CREATE_SCHEMA)
+                DynamipsNodeValidation.parse_obj(node.get("properties", {}))
 
-            if schema:
-                # Properties send to compute but in an other place in topology
-                delete_properties = ["name", "node_id"]
-                for prop in delete_properties:
-                    del schema["properties"][prop]
-                schema["required"] = [p for p in schema["required"] if p not in delete_properties]
-
-                jsonschema.validate(node.get("properties", {}), schema)
-
-    except jsonschema.ValidationError as e:
-        error = "Invalid data in topology file: {} in schema: {}".format(
-            e.message,
-            json.dumps(e.schema))
+    except pydantic.ValidationError as e:
+        error = "Invalid data in topology file: {}".format(e)
         log.critical(error)
         raise ControllerError(error)
 
