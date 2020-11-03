@@ -38,7 +38,7 @@ def get_next_application_id(projects, compute):
         if project.status == "opened" and compute in project.computes:
             nodes.extend(list(project.nodes.values()))
 
-    used = set([n.properties["application_id"] for n in nodes if n.node_type == "iou" and n.compute == compute])
+    used = set([n.properties["application_id"] for n in nodes if (n.node_type == "iou" and n.compute == compute)])
     pool = set(range(1, 512))
     try:
         return (pool - used).pop()
