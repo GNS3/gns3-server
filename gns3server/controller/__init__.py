@@ -82,7 +82,7 @@ class Controller:
 
         computes = self._load_controller_settings()
         from gns3server.web.web_server import WebServer
-        ssl_context = WebServer.instance().ssl_context()
+        ssl_context = WebServer.instance(host=host, port=port).ssl_context()
         protocol = server_config.get("protocol", "http")
         if ssl_context and protocol != "https":
             log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
@@ -273,7 +273,7 @@ class Controller:
         """
 
         server_config = Config.instance().get_section_config("Server")
-        images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
+        images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
 
@@ -283,9 +283,9 @@ class Controller:
         """
 
         server_config = Config.instance().get_section_config("Server")
-        images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
-        os.makedirs(images_path, exist_ok=True)
-        return images_path
+        configs_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/configs"))
+        os.makedirs(configs_path, exist_ok=True)
+        return configs_path
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """

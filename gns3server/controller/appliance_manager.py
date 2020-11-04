@@ -70,7 +70,7 @@ class ApplianceManager:
         """
 
         server_config = Config.instance().get_section_config("Server")
-        appliances_path = os.path.expanduser(server_config.get("appliances_path", "~/GNS3/projects"))
+        appliances_path = os.path.expanduser(server_config.get("appliances_path", "~/GNS3/appliances"))
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
