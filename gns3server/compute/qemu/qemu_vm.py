@@ -1678,9 +1678,9 @@ class QemuVM(BaseNode):
                 mbr = img_file.read(512)
             part_type, offset, signature = struct.unpack("<450xB3xL52xH", mbr)
             if signature != 0xAA55:
-                raise OSError("mcopy failure: {}: invalid MBR".format(image))
+                raise OSError("{}: invalid MBR".format(image))
             if part_type not in (1, 4, 6, 11, 12, 14):
-                raise OSError("mcopy failure: {}: invalid partition type {:02X}"
+                raise OSError("{}: invalid partition type {:02X}"
                               .format(image, part_type))
             part_image = image + "@@{}S".format(offset)
 
