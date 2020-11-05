@@ -28,6 +28,20 @@
     },
     "images": [
         {
+            "filename": "BIGIP-16.0.0.1-0.0.3.qcow2",
+            "version": "16.0.0.1",
+            "md5sum": "95ff618b7d0b53c4252299cd49b0e564",
+            "filesize": 5393088512,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v16.x/16.0.0/english/16.0.0.1_virtual-edition/&sw=BIG-IP&pro=big-ip_v16.x&ver=16.0.0&container=16.0.0.1_Virtual-Edition&file=BIGIP-16.0.0.1-0.0.3.ALL.qcow2.zip"
+        },
+        {
+            "filename": "BIGIP-16.0.0-0.0.12.qcow2",
+            "version": "16.0.0",
+            "md5sum": "c49cd2513e386f3259eb0ee6fe3bb502",
+            "filesize": 5344722944,
+            "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v16.x/16.0.0/english/16.0.0_virtual-edition/&sw=BIG-IP&pro=big-ip_v16.x&ver=16.0.0&container=16.0.0_Virtual-Edition&file=BIGIP-16.0.0-0.0.12.ALL.qcow2.zip"
+        },
+        {
             "filename": "BIGIP-15.1.0.2-0.0.9.qcow2",
             "version": "15.1.0.2",
             "md5sum": "95ff618b7d0b53c4252299cd49b0e564",
@@ -163,6 +177,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "16.0.0.1",
+            "images": {
+                "hda_disk_image": "BIGIP-16.0.0.1-0.0.3.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
+        {
+            "name": "16.0.0",
+            "images": {
+                "hda_disk_image": "BIGIP-16.0.0-0.0.12.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        },
         {
             "name": "15.1.0.2",
             "images": {

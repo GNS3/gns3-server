@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "VOSSGNS3.8.2.0.0.qcow2",
+            "version": "v8.2.0.0",
+            "md5sum": "9a0cd77c08644abbf3a69771c125c011",
+            "filesize": 331808768,
+			"direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_VOSS/VOSSGNS3.8.2.0.0.qcow2"
+        },
+        {
             "filename": "VOSSGNS3.8.1.5.0.qcow2",
             "version": "8.1.5.0",
             "md5sum": "dff95f67fc04f82f627209ff7b7b3860",
@@ -56,6 +63,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "v8.2.0.0",
+            "images": {
+                "hda_disk_image": "VOSSGNS3.8.2.0.0.qcow2"
+            }
+		},
         {
             "name": "8.1.5.0",
             "images": {

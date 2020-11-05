@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "Ubuntu 20.04 (64bit).vmdk",
+            "version": "20.04",
+            "md5sum": "cf619dfe9bb8d89e2b18b067f02e57a0",
+            "filesize": 6629883904,
+            "download_url": "http://www.osboxes.org/ubuntu/"
+        },
+        {
             "filename": "Ubuntu 19.04 (64bit).vmdk",
             "version": "19.04",
             "md5sum": "21535675c54507e9325bf8774a7bd73e",
@@ -55,6 +62,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "20.04",
+            "images": {
+                "hda_disk_image": "Ubuntu 20.04 (64bit).vmdk"
+            }
+        },
         {
             "name": "19.04",
             "images": {
