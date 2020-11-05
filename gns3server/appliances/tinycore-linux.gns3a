@@ -1,7 +1,7 @@
 {
     "name": "Tiny Core Linux",
     "category": "guest",
-    "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt's provide a complete Linux system in few MB.",
+    "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt provides a complete Linux system using only a few MiB." ,
     "vendor_name": "Team Tiny Core",
     "vendor_url": "http://distro.ibiblio.org/tinycorelinux",
     "documentation_url": "http://wiki.tinycorelinux.net/",

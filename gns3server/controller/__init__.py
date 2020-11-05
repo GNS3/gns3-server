@@ -268,7 +268,7 @@ class Controller:
         """
 
         server_config = Config.instance().get_section_config("Server")
-        images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/projects"))
+        images_path = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
         os.makedirs(images_path, exist_ok=True)
         return images_path
 
@@ -278,9 +278,9 @@ class Controller:
         """
 
         server_config = Config.instance().get_section_config("Server")
-        images_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/projects"))
-        os.makedirs(images_path, exist_ok=True)
-        return images_path
+        configs_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/configs"))
+        os.makedirs(configs_path, exist_ok=True)
+        return configs_path
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """

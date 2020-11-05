@@ -51,6 +51,7 @@ class GNS3VM(BaseModel):
     when_exit: Optional[WhenExit] = Field(None, description="Action when the GNS3 VM exits")
     headless: Optional[bool] = Field(None, description="Start the GNS3 VM GUI or not")
     engine: Optional[Engine] = Field(None, description="The engine to use for the GNS3 VM")
+    allocate_vcpus_ram: Optional[bool] = Field(None, description="Allocate vCPUS and RAM settings")
     vcpus: Optional[int] = Field(None, description="Number of CPUs to allocate for the GNS3 VM")
     ram: Optional[int] = Field(None, description="Amount of memory to allocate for the GNS3 VM")
     port: Optional[int] = Field(None, gt=0, le=65535)

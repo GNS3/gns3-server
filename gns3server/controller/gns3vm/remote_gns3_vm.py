@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
-
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
 

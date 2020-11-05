@@ -49,6 +49,7 @@ class GNS3VM:
             "headless": False,
             "enable": False,
             "engine": "vmware",
+            "allocate_vcpus_ram": True,
             "ram": 2048,
             "vcpus": 1,
             "port": 80,
@@ -311,6 +312,7 @@ class GNS3VM:
             if self._settings["vmname"] is None:
                 return
             log.info("Start the GNS3 VM")
+            engine.allocate_vcpus_ram = self._settings["allocate_vcpus_ram"]
             engine.vmname = self._settings["vmname"]
             engine.ram = self._settings["ram"]
             engine.vcpus = self._settings["vcpus"]

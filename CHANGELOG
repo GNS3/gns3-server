@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.16 05/11/2020
+
+* Option to allocate or not the vCPUs and RAM settings for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/3069
+* Release Web UI version 2.2.16
+* Fix wrong defaults for images_path, configs_path, appliances_path. Fixes #1829
+* Use EnvironmentFile for Systemd service. Ref https://github.com/GNS3/gns3-gui/issues/3048
+* Fix SSL support for controller and local compute. Fixes #1826
+* Prevent WIC to be added/removed while Dynamips router is running. Fixes https://github.com/GNS3/gns3-gui/issues/3082
+* Fix bug with application id allocation for IOU nodes. Fixes #3079
+* Allow commas in image paths and VM name for Qemu VMs. Fixes https://github.com/GNS3/gns3-gui/issues/3065
+
 ## 2.2.15 07/10/2020
 
 * Fix symbol retrieval issue. Ref #1824

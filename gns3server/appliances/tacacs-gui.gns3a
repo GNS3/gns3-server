@@ -11,12 +11,12 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Credentials: SSH ---> username: root ---> password: 1234 MySQL DB: ---> username: root --> password: tacacs Web interface: ---> username: tacgui ---> password: abc123",
+    "usage": "Credentials:\nSSH ---> username: root ---> password: 1234\nMySQL DB: ---> username: root --> password: tacacs\nWeb interface: ---> username: tacgui ---> password: abc123\n\nDefault for 0.9.82 or above:\nIP Address: 10.0.0.254\nNetmask: 255.0.0.0\nGateway: 10.0.0.1",
     "port_name_format": "Port{port1}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 1,
-        "ram": 1024,
+        "ram": 4096,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
@@ -24,6 +24,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "tacgui-0.9.82-20201008.qcow2",
+            "version": "0.9.82",
+            "md5sum": "dc0c84aa61d8960a23bf3b309a826f3f",
+            "filesize": 2914844672,
+            "download_url": "https://drive.google.com/open?id=1tlDSyoD5dAWgJu6I76CgYV7BkwhScWSS"
+        },
         {
             "filename": "tac_plus.qcow2",
             "version": "201710201114",
@@ -33,6 +40,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "0.9.82",
+            "images": {
+                "hda_disk_image": "tacgui-0.9.82-20201008.qcow2"
+            }
+        },
         {
             "name": "201710201114",
             "images": {
