@@ -30,6 +30,7 @@ class BaseGNS3VM:
         self._ip_address = None
         self._port = 80  # value not used, will be overwritten
         self._headless = False
+        self._allocate_vcpus_ram = True
         self._vcpus = 1
         self._ram = 1024
         self._user = ""
@@ -202,6 +203,26 @@ class BaseGNS3VM:
         """
 
         self._headless = value
+
+    @property
+    def allocate_vcpus_ram(self):
+        """
+        Returns whether VCPUs and RAM settings should be configured for the GNS3 VM.
+
+        :returns: boolean
+        """
+
+        return self._allocate_vcpus_ram
+
+    @allocate_vcpus_ram.setter
+    def allocate_vcpus_ram(self, value):
+        """
+        Sets whether VCPUs and RAM settings should be configured for the GNS3 VM.
+
+        :param value: boolean
+        """
+
+        self._allocate_vcpus_ram = value
 
     @property
     def vcpus(self):

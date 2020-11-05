@@ -259,9 +259,12 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         log.info('"{}" state is {}'.format(self._vmname, vm_state))
 
         if vm_state == "poweroff":
-            log.info("Update GNS3 VM settings (CPU, RAM and Hardware Virtualization)")
-            await self.set_vcpus(self.vcpus)
-            await self.set_ram(self.ram)
+            if self.allocate_vcpus_ram:
+                log.info("Update GNS3 VM vCPUs and RAM settings")
+                await self.set_vcpus(self.vcpus)
+                await self.set_ram(self.ram)
+
+            log.info("Update GNS3 VM Hardware Virtualization setting")
             await self.enable_nested_hw_virt()
 
         if vm_state in ("poweroff", "saved"):
