@@ -44,4 +44,4 @@ def get_next_application_id(projects, computes):
         application_id = (pool - used).pop()
         return application_id
     except KeyError:
-        raise ComputeError(text="Cannot create a new IOU node (limit of 512 nodes across all opened projects using the same computes)")
+        raise ComputeError("Cannot create a new IOU node (limit of 512 nodes across all opened projects using the same computes)")

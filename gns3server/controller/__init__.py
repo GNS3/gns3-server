@@ -82,17 +82,30 @@ class Controller:
             name = "Main server"
 
         computes = self._load_controller_settings()
+
+        ssl_context = None
+        if server_config.getboolean("ssl"):
+            if sys.platform.startswith("win"):
+                log.critical("SSL mode is not supported on Windows")
+                raise SystemExit
+            ssl_context = self._create_ssl_context(server_config)
+
+        protocol = server_config.get("protocol", "http")
+        if ssl_context and protocol != "https":
+            log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
+            protocol = "https"
         try:
             self._local_server = await self.add_compute(compute_id="local",
                                                         name=name,
-                                                        protocol=server_config.get("protocol", "http"),
+                                                        protocol=protocol,
                                                         host=host,
                                                         console_host=console_host,
                                                         port=port,
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
                                                         force=True,
-                                                        connect=True)
+                                                        connect=True,
+                                                        ssl_context=ssl_context)
         except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
@@ -109,6 +122,22 @@ class Controller:
 
         await self.load_projects()
         await self._project_auto_open()
+
+    def _create_ssl_context(self, server_config):
+
+        import ssl
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        certfile = server_config["certfile"]
+        certkey = server_config["certkey"]
+        try:
+            ssl_context.load_cert_chain(certfile, certkey)
+        except FileNotFoundError:
+            log.critical("Could not find the SSL certfile or certkey")
+            raise SystemExit
+        except ssl.SSLError as e:
+            log.critical("SSL error: {}".format(e))
+            raise SystemExit
+        return ssl_context
 
     def _update_config(self):
         """

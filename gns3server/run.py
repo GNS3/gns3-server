@@ -316,7 +316,22 @@ def run():
         if log.getEffectiveLevel() == logging.DEBUG:
             access_log = True
 
-        config = uvicorn.Config("gns3server.app:app", host=host, port=port, access_log=access_log)
+        certfile = None
+        certkey = None
+        if server_config.getboolean("ssl"):
+            if sys.platform.startswith("win"):
+                log.critical("SSL mode is not supported on Windows")
+                raise SystemExit
+            certfile = server_config["certfile"]
+            certkey = server_config["certkey"]
+            log.info("SSL is enabled")
+
+        config = uvicorn.Config("gns3server.app:app",
+                                host=host,
+                                port=port,
+                                access_log=access_log,
+                                ssl_certfile=certfile,
+                                ssl_keyfile=certkey)
 
         # overwrite uvicorn loggers with our own logger
         for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):
