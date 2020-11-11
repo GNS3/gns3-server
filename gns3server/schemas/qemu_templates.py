@@ -28,7 +28,6 @@ from .qemu_nodes import (
     CustomAdapter
 )
 
-from pathlib import Path
 from pydantic import Field
 from typing import Optional, List
 
@@ -38,7 +37,7 @@ class QemuTemplate(TemplateBase):
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = ":/symbols/qemu_guest.svg"
-    qemu_path: Optional[Path] = Field("", description="Qemu executable path")
+    qemu_path: Optional[str] = Field("", description="Qemu executable path")
     platform: Optional[QemuPlatform] = Field("i386", description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
     ram: Optional[int] = Field(256, description="Amount of RAM in MB")
@@ -54,18 +53,18 @@ class QemuTemplate(TemplateBase):
     console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
     aux_type: Optional[QemuConsoleType] = Field("none", description="Auxiliary console type")
     boot_priority: Optional[QemuBootPriority] = Field("c", description="QEMU boot priority")
-    hda_disk_image: Optional[Path] = Field("", description="QEMU hda disk image path")
+    hda_disk_image: Optional[str] = Field("", description="QEMU hda disk image path")
     hda_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hda interface")
-    hdb_disk_image: Optional[Path] = Field("", description="QEMU hdb disk image path")
+    hdb_disk_image: Optional[str] = Field("", description="QEMU hdb disk image path")
     hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdb interface")
-    hdc_disk_image: Optional[Path] = Field("", description="QEMU hdc disk image path")
+    hdc_disk_image: Optional[str] = Field("", description="QEMU hdc disk image path")
     hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdc interface")
-    hdd_disk_image: Optional[Path] = Field("", description="QEMU hdd disk image path")
+    hdd_disk_image: Optional[str] = Field("", description="QEMU hdd disk image path")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field("none", description="QEMU hdd interface")
-    cdrom_image: Optional[Path] = Field("", description="QEMU cdrom image path")
-    initrd: Optional[Path] = Field("", description="QEMU initrd path")
-    kernel_image: Optional[Path] = Field("", description="QEMU kernel image path")
-    bios_image: Optional[Path] = Field("", description="QEMU bios image path")
+    cdrom_image: Optional[str] = Field("", description="QEMU cdrom image path")
+    initrd: Optional[str] = Field("", description="QEMU initrd path")
+    kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
+    bios_image: Optional[str] = Field("", description="QEMU bios image path")
     kernel_command_line: Optional[str] = Field("", description="QEMU kernel command line")
     legacy_networking: Optional[bool] = Field(False, description="Use QEMU legagy networking commands (-net syntax)")
     replicate_network_connection_state: Optional[bool] = Field(True, description="Replicate the network connection state for links in Qemu")

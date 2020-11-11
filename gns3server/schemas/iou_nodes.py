@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pydantic import BaseModel, Field
-from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
@@ -29,7 +28,7 @@ class IOUBase(BaseModel):
     """
 
     name: str
-    path: Path = Field(..., description="IOU executable path")
+    path: str = Field(..., description="IOU executable path")
     application_id: int = Field(..., description="Application ID for running IOU executable")
     node_id: Optional[UUID]
     usage: Optional[str] = Field(None, description="How to use the node")
@@ -60,7 +59,7 @@ class IOUUpdate(IOUBase):
     """
 
     name: Optional[str]
-    path: Optional[Path] = Field(None, description="IOU executable path")
+    path: Optional[str] = Field(None, description="IOU executable path")
     application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
 
 

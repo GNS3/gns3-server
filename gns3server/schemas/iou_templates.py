@@ -20,7 +20,6 @@ from .templates import Category, TemplateBase
 from .iou_nodes import ConsoleType
 
 from pydantic import Field
-from pathlib import Path
 from typing import Optional
 
 
@@ -29,7 +28,7 @@ class IOUTemplate(TemplateBase):
     category: Optional[Category] = "router"
     default_name_format: Optional[str] = "IOU{0}"
     symbol: Optional[str] = ":/symbols/multilayer_switch.svg"
-    path: Path = Field(..., description="Path of IOU executable")
+    path: str = Field(..., description="Path of IOU executable")
     ethernet_adapters: Optional[int] = Field(2, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, description="Number of serial adapters")
     ram: Optional[int] = Field(256, description="Amount of RAM in MB")

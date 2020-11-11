@@ -17,7 +17,6 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from pathlib import Path
 from enum import Enum
 from uuid import UUID
 
@@ -64,7 +63,7 @@ class VMwareBase(BaseModel):
     """
 
     name: str
-    vmx_path: Path = Field(..., description="Path to the vmx file")
+    vmx_path: str = Field(..., description="Path to the vmx file")
     linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
     node_id: Optional[UUID]
     usage: Optional[str] = Field(None, description="How to use the node")
@@ -93,7 +92,7 @@ class VMwareUpdate(VMwareBase):
     """
 
     name: Optional[str]
-    vmx_path: Optional[Path]
+    vmx_path: Optional[str]
     linked_clone: Optional[bool]
 
 

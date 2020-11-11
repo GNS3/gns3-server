@@ -404,7 +404,6 @@ class BaseManager:
         except PermissionError:
             raise ComputeForbiddenError("File '{}' cannot be accessed".format(path))
 
-
     def get_abs_image_path(self, path, extra_dir=None):
         """
         Get the absolute path of an image
@@ -415,7 +414,7 @@ class BaseManager:
         :returns: file path
         """
 
-        if not path:
+        if not path or path == ".":
             return ""
         orig_path = path
 

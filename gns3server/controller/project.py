@@ -100,7 +100,7 @@ class Project:
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
             if os.path.exists(path):
-                raise ControllerForbiddenError("The path {} already exist.".format(path))
+                raise ControllerForbiddenError("The path {} already exists".format(path))
 
         if project_id is None:
             self._id = str(uuid4())
@@ -128,7 +128,6 @@ class Project:
             self.dump()
 
         self._iou_id_lock = asyncio.Lock()
-
         log.debug('Project "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
 
     def emit_notification(self, action, event):

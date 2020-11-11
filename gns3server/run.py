@@ -242,8 +242,8 @@ def signal_handling():
 
 
 def run():
-    args = parse_arguments(sys.argv[1:])
 
+    args = parse_arguments(sys.argv[1:])
     if args.daemon and sys.platform.startswith("win"):
         log.critical("Daemon is not supported on Windows")
         sys.exit(1)

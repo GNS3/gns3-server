@@ -30,7 +30,7 @@ class Notification:
     def __init__(self, controller):
         self._controller = controller
         self._project_listeners = {}
-        self._controller_listeners = []
+        self._controller_listeners = set()
 
     @contextmanager
     def project_queue(self, project_id):
@@ -39,6 +39,7 @@ class Notification:
 
         Use it with Python with
         """
+
         queue = NotificationQueue()
         self._project_listeners.setdefault(project_id, set())
         self._project_listeners[project_id].add(queue)
@@ -54,8 +55,9 @@ class Notification:
 
         Use it with Python with
         """
+
         queue = NotificationQueue()
-        self._controller_listeners.append(queue)
+        self._controller_listeners.add(queue)
         try:
             yield queue
         finally:
@@ -100,6 +102,7 @@ class Notification:
         :param event: Event to send
         :param compute_id: Compute id of the sender
         """
+
         if action == "node.updated":
             try:
                 # Update controller node data and send the event node.updated

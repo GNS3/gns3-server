@@ -34,11 +34,12 @@ def get_static(filename):
 @pytest.mark.asyncio
 async def test_debug(http_client):
 
-    response = await http_client.get('/debug')
-    assert response.status_code == 200
-    html = response.text
-    assert "Website" in html
-    assert __version__ in html
+    async with http_client as client:
+        response = await client.get('/debug')
+        assert response.status_code == 200
+        html = response.text
+        assert "Website" in html
+        assert __version__ in html
 
 
 # @pytest.mark.asyncio
@@ -68,8 +69,9 @@ async def test_debug(http_client):
 @pytest.mark.asyncio
 async def test_web_ui(http_client):
 
-    response = await http_client.get('/static/web-ui/index.html')
-    assert response.status_code == 200
+    async with http_client as client:
+        response = await client.get('/static/web-ui/index.html')
+        assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -77,6 +79,7 @@ async def test_web_ui_not_found(http_client, tmpdir):
 
     with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
-        response = await http_client.get('/static/web-ui/not-found.txt')
-        # should serve web-ui/index.html
-        assert response.status_code == 200
+        async with http_client as client:
+            response = await client.get('/static/web-ui/not-found.txt')
+            # should serve web-ui/index.html
+            assert response.status_code == 200

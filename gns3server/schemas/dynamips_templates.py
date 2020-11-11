@@ -26,7 +26,6 @@ from .dynamips_nodes import (
 )
 
 from pydantic import Field
-from pathlib import Path
 from typing import Optional
 from enum import Enum
 
@@ -37,7 +36,7 @@ class DynamipsTemplate(TemplateBase):
     default_name_format: Optional[str] = "R{0}"
     symbol: Optional[str] = ":/symbols/router.svg"
     platform: DynamipsPlatform = Field(..., description="Cisco router platform")
-    image: Path = Field(..., description="Path to the IOS image")
+    image: str = Field(..., description="Path to the IOS image")
     exec_area: Optional[int] = Field(64, description="Exec area value")
     mmap: Optional[bool] = Field(True, description="MMAP feature")
     mac_addr: Optional[str] = Field("", description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$")

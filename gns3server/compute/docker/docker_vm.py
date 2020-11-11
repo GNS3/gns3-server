@@ -549,7 +549,7 @@ class DockerVM(BaseNode):
             self._telnet_servers.append((await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)))
         except OSError as e:
             raise DockerError("Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.aux, e))
-        log.debug("Docker container '%s' started listen for auxiliary telnet on %d", self.name, self.aux)
+        log.debug(f"Docker container '{self.name}' started listen for auxiliary telnet on {self.aux}")
 
     async def _fix_permissions(self):
         """

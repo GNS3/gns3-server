@@ -24,7 +24,6 @@ from .vmware_nodes import (
     CustomAdapter
 )
 
-from pathlib import Path
 from pydantic import Field
 from typing import Optional, List
 
@@ -34,7 +33,7 @@ class VMwareTemplate(TemplateBase):
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = ":/symbols/vmware_guest.svg"
-    vmx_path: Path = Field(..., description="Path to the vmx file")
+    vmx_path: str = Field(..., description="Path to the vmx file")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field("Ethernet{0}", description="Optional formatting of the networking port example: eth{0}")

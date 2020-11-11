@@ -1,4 +1,4 @@
-uvicorn==0.12.2
+uvicorn==0.11.8  # force version to 0.11.8 because of https://github.com/encode/uvicorn/issues/841
 fastapi==0.61.2
 websockets==8.1
 python-multipart==0.0.5

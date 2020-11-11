@@ -36,10 +36,13 @@ class NotificationManager:
 
         Use it with Python with
         """
+
         queue = NotificationQueue()
         self._listeners.add(queue)
-        yield queue
-        self._listeners.remove(queue)
+        try:
+            yield queue
+        finally:
+            self._listeners.remove(queue)
 
     def emit(self, action, event, **kwargs):
         """
@@ -49,6 +52,7 @@ class NotificationManager:
         :param event: Event to send
         :param kwargs: Add this meta to the notification (project_id for example)
         """
+
         for listener in self._listeners:
             listener.put_nowait((action, event, kwargs))
 

@@ -19,10 +19,10 @@
 API endpoints for compute notifications.
 """
 
-import asyncio
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from websockets.exceptions import ConnectionClosed, WebSocketException
+
 from gns3server.compute.notification_manager import NotificationManager
-from starlette.endpoints import WebSocketEndpoint
 
 import logging
 log = logging.getLogger(__name__)
@@ -30,30 +30,25 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.websocket_route("/notifications/ws")
-class ComputeWebSocketNotifications(WebSocketEndpoint):
+@router.websocket("/notifications/ws")
+async def notification_ws(websocket: WebSocket):
     """
-    Receive compute notifications about the controller from WebSocket stream.
+    Receive project notifications about the project from WebSocket.
     """
 
-    async def on_connect(self, websocket: WebSocket) -> None:
-
-        await websocket.accept()
-        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
-        self._notification_task = asyncio.ensure_future(self._stream_notifications(websocket))
-
-    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
-
-        self._notification_task.cancel()
-        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket"
-                 f" with close code {close_code}")
-
-    async def _stream_notifications(self, websocket: WebSocket) -> None:
-
+    await websocket.accept()
+    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
+    try:
         with NotificationManager.instance().queue() as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
+    except (ConnectionClosed, WebSocketDisconnect):
+        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
+    except WebSocketException as e:
+        log.warning("Error while sending to controller event to WebSocket client: '{}'".format(e))
+    finally:
+        await websocket.close()
 
 
 if __name__ == '__main__':

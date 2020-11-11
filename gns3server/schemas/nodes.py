@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 from enum import Enum
@@ -51,7 +50,7 @@ class Image(BaseModel):
     """
 
     filename: str
-    path: Path
+    path: str
     md5sum: Optional[str] = None
     filesize: Optional[int] = None
 

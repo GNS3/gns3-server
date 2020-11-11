@@ -19,11 +19,9 @@
 API endpoints for controller notifications.
 """
 
-import asyncio
-
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
-from starlette.endpoints import WebSocketEndpoint
+from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server.controller import Controller
 
@@ -40,7 +38,6 @@ async def http_notification():
     """
 
     async def event_stream():
-
         with Controller.instance().notification.controller_queue() as queue:
             while True:
                 msg = await queue.get_json(5)
@@ -49,28 +46,22 @@ async def http_notification():
     return StreamingResponse(event_stream(), media_type="application/json")
 
 
-@router.websocket_route("/ws")
-class ControllerWebSocketNotifications(WebSocketEndpoint):
+@router.websocket("/ws")
+async def notification_ws(websocket: WebSocket):
     """
-    Receive controller notifications about the controller from WebSocket stream.
+    Receive project notifications about the controller from WebSocket.
     """
 
-    async def on_connect(self, websocket: WebSocket) -> None:
-
-        await websocket.accept()
-        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
-
-        self._notification_task = asyncio.ensure_future(self._stream_notifications(websocket=websocket))
-
-    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
-
-        self._notification_task.cancel()
-        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket"
-                 f" with close code {close_code}")
-
-    async def _stream_notifications(self, websocket: WebSocket) -> None:
-
-        with Controller.instance().notifications.queue() as queue:
+    await websocket.accept()
+    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
+    try:
+        with Controller.instance().notification.controller_queue() as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
+    except (ConnectionClosed, WebSocketDisconnect):
+        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket")
+    except WebSocketException as e:
+        log.warning("Error while sending to controller event to WebSocket client: '{}'".format(e))
+    finally:
+        await websocket.close()
