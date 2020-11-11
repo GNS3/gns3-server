@@ -83,7 +83,7 @@ class Query:
             if response.content is not None:
                 if response.headers.get("content-type") == "application/json":
                     try:
-                        response.json = response.json(encoding="utf-8")
+                        response.json = response.json()
                     except ValueError:
                         response.json = None
                 # else:
