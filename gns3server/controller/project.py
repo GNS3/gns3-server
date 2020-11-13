@@ -101,6 +101,8 @@ class Project:
         if project_id is None and path is not None:
             if os.path.exists(path):
                 raise ControllerForbiddenError("The path {} already exists".format(path))
+            else:
+                raise ControllerForbiddenError("Providing a path to create a new project is deprecated.")
 
         if project_id is None:
             self._id = str(uuid4())
