@@ -147,8 +147,8 @@ async def test_changing_path_with_quote_not_allowed(tmpdir):
 @pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
-    p = Project(path=str(tmpdir / "capturestest"), name="Test")
-    assert p.captures_directory == str(tmpdir / "capturestest" / "project-files" / "captures")
+    p = Project(name="Test")
+    assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
     assert os.path.exists(p.captures_directory)
 
 
