@@ -137,7 +137,12 @@ class WebServer:
         if PortManager.instance().udp_ports:
             log.warning("UDP ports are still used {}".format(PortManager.instance().udp_ports))
 
-        for task in asyncio.Task.all_tasks():
+        try:
+            tasks = asyncio.all_tasks()
+        except AttributeError:
+            tasks = asyncio.Task.all_tasks()
+
+        for task in tasks:
             task.cancel()
             try:
                 await asyncio.wait_for(task, 1)
