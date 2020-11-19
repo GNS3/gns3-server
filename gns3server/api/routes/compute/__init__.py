@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 from gns3server.compute.error import ImageMissingError, NodeError
-from gns3server.ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 from gns3server.compute.compute_error import (
     ComputeError,
