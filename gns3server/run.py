@@ -38,6 +38,7 @@ from gns3server.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
+from gns3server.api.server import app
 
 
 import logging
@@ -326,7 +327,7 @@ def run():
             certkey = server_config["certkey"]
             log.info("SSL is enabled")
 
-        config = uvicorn.Config("gns3server.app:app",
+        config = uvicorn.Config(app,
                                 host=host,
                                 port=port,
                                 access_log=access_log,

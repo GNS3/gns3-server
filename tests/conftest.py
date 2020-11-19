@@ -15,13 +15,13 @@ from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
 
 
-from .endpoints.base import Query
+from tests.api.routes.base import Query
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
 
 from fastapi.testclient import TestClient
-from gns3server.app import app
+from gns3server.api.server import app
 from httpx import AsyncClient
 
 

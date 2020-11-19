@@ -5,6 +5,9 @@ __pycache__
 #py.test
 .cache
 
+# environment file
+.env
+
 # C extensions
 *.so
 

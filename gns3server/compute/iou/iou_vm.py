@@ -40,7 +40,7 @@ from ..nios.nio_udp import NIOUDP
 from ..base_node import BaseNode
 from .utils.iou_import import nvram_import
 from .utils.iou_export import nvram_export
-from gns3server.ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio import locking

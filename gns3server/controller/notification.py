@@ -18,7 +18,7 @@
 import os
 from contextlib import contextmanager
 
-from ..notification_queue import NotificationQueue
+from gns3server.utils.notification_queue import NotificationQueue
 from .controller_error import ControllerError
 
 

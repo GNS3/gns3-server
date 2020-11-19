@@ -35,7 +35,7 @@ from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.get_resource import get_resource
 
-from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from ..base_node import BaseNode
 
 from ..adapters.ethernet_adapter import EthernetAdapter

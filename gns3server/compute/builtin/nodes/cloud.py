@@ -21,7 +21,7 @@ import subprocess
 from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
-from ....ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 import gns3server.utils.interfaces
 import gns3server.utils.asyncio

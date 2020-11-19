@@ -20,7 +20,7 @@
 import json
 
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
-from gns3server.app import app
+from gns3server.api.server import app
 
 
 if __name__ == "__main__":

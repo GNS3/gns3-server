@@ -23,9 +23,9 @@ import sys
 import os
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
+from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp304Error
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker import Docker
 from gns3server.utils.get_resource import get_resource
 

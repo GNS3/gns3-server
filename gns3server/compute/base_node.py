@@ -31,8 +31,8 @@ from gns3server.compute.compute_error import ComputeError
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor, locking
 from ..utils.asyncio.telnet_server import AsyncioTelnetServer
-from ..ubridge.hypervisor import Hypervisor
-from ..ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.hypervisor import Hypervisor
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
 from .error import NodeError
 
