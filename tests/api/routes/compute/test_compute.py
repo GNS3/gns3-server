@@ -18,34 +18,35 @@
 import os
 import pytest
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.version import __version__
+from gns3server.compute.project import Project
+
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
-async def test_udp_allocation(compute_api, compute_project):
+async def test_udp_allocation(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
-    response = await compute_api.post('/projects/{}/ports/udp'.format(compute_project.id), {})
-    assert response.status_code == 201
-    assert response.json['udp_port'] is not None
-
-
-# Netfifaces is not available on Travis
-@pytest.mark.skipif(os.environ.get("TRAVIS", False) is not False, reason="Not supported on Travis")
-@pytest.mark.asyncio
-async def test_interfaces(compute_api):
-
-    response = await compute_api.get('/network/interfaces')
-    assert response.status_code == 200
-    assert isinstance(response.json, list)
+    response = await client.post(app.url_path_for("allocate_udp_port", project_id=compute_project.id), json={})
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()['udp_port'] is not None
 
 
-@pytest.mark.asyncio
-async def test_version_output(compute_api, config):
+async def test_interfaces(app: FastAPI, client: AsyncClient) -> None:
+
+    response = await client.get(app.url_path_for("network_interfaces"))
+    assert response.status_code == status.HTTP_200_OK
+    assert isinstance(response.json(), list)
+
+
+async def test_version_output(app: FastAPI, client: AsyncClient, config) -> None:
 
     config.set("Server", "local", "true")
-    response = await compute_api.get('/version')
-    assert response.status_code == 200
-    assert response.json == {'local': True, 'version': __version__}
+    response = await client.get(app.url_path_for("compute_version"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'local': True, 'version': __version__}
 
 
 # @pytest.mark.asyncio
@@ -55,8 +56,7 @@ async def test_version_output(compute_api, config):
 #     assert response.status_code == 200
 
 
-@pytest.mark.asyncio
-async def test_statistics_output(compute_api):
+async def test_statistics_output(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await compute_api.get('/statistics')
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("compute_statistics"))
+    assert response.status_code == status.HTTP_200_OK

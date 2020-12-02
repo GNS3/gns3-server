@@ -25,7 +25,8 @@ from gns3server.controller import Controller
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
-#from gns3server.db.tasks import connect_to_db, close_db_connection
+from gns3server.db.tasks import connect_to_db
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def create_startup_handler(app: FastAPI) -> Callable:
             loop.set_debug(True)
 
         # connect to the database
-        # await connect_to_db(app)
+        await connect_to_db()
 
         await Controller.instance().start()
         # Because with a large image collection
@@ -88,8 +89,5 @@ def create_shutdown_handler(app: FastAPI) -> Callable:
 
         if PortManager.instance().udp_ports:
             log.warning("UDP ports are still used {}".format(PortManager.instance().udp_ports))
-
-        # close the connection to the database
-        # await close_db_connection(app)
 
     return shutdown_handler

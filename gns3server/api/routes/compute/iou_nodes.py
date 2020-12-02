@@ -159,7 +159,7 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop(node: IOUVM = Depends(dep_node)):
+async def stop_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Stop an IOU node.
     """
@@ -194,10 +194,10 @@ async def reload_iou_node(node: IOUVM = Depends(dep_node)):
              status_code=status.HTTP_201_CREATED,
              response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
              responses=responses)
-async def create_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                     node: IOUVM = Depends(dep_node)):
+async def create_iou_node_nio(adapter_number: int,
+                              port_number: int,
+                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                              node: IOUVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     """
@@ -211,10 +211,10 @@ async def create_nio(adapter_number: int,
             status_code=status.HTTP_201_CREATED,
             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
             responses=responses)
-async def update_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                     node: IOUVM = Depends(dep_node)):
+async def update_iou_node_nio(adapter_number: int,
+                              port_number: int,
+                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                              node: IOUVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     """
@@ -229,7 +229,7 @@ async def update_nio(adapter_number: int,
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
-async def delete_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
+async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     """
@@ -239,10 +239,10 @@ async def delete_nio(adapter_number: int, port_number: int, node: IOUVM = Depend
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
-async def start_capture(adapter_number: int,
-                        port_number: int,
-                        node_capture_data: schemas.NodeCapture,
-                        node: IOUVM = Depends(dep_node)):
+async def start_iou_node_capture(adapter_number: int,
+                                 port_number: int,
+                                 node_capture_data: schemas.NodeCapture,
+                                 node: IOUVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     """
@@ -255,7 +255,7 @@ async def start_capture(adapter_number: int,
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
+async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     """

@@ -52,7 +52,7 @@ def dep_node(project_id: UUID, node_id: UUID):
              response_model=schemas.NAT,
              status_code=status.HTTP_201_CREATED,
              responses={409: {"model": schemas.ErrorMessage, "description": "Could not create NAT node"}})
-async def create_nat(project_id: UUID, node_data: schemas.NATCreate):
+async def create_nat_node(project_id: UUID, node_data: schemas.NATCreate):
     """
     Create a new NAT node.
     """
@@ -72,7 +72,7 @@ async def create_nat(project_id: UUID, node_data: schemas.NATCreate):
 @router.get("/{node_id}",
             response_model=schemas.NAT,
             responses=responses)
-def get_nat(node: Nat = Depends(dep_node)):
+def get_nat_node(node: Nat = Depends(dep_node)):
     """
     Return a NAT node.
     """
@@ -83,7 +83,7 @@ def get_nat(node: Nat = Depends(dep_node)):
 @router.put("/{node_id}",
             response_model=schemas.NAT,
             responses=responses)
-def update_nat(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)):
+def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)):
     """
     Update a NAT node.
     """
@@ -99,7 +99,7 @@ def update_nat(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)):
 @router.delete("/{node_id}",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
-async def delete_nat(node: Nat = Depends(dep_node)):
+async def delete_nat_node(node: Nat = Depends(dep_node)):
     """
     Delete a cloud node.
     """
@@ -110,7 +110,7 @@ async def delete_nat(node: Nat = Depends(dep_node)):
 @router.post("/{node_id}/start",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def start_nat(node: Nat = Depends(dep_node)):
+async def start_nat_node(node: Nat = Depends(dep_node)):
     """
     Start a NAT node.
     """
@@ -121,7 +121,7 @@ async def start_nat(node: Nat = Depends(dep_node)):
 @router.post("/{node_id}/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop_nat(node: Nat = Depends(dep_node)):
+async def stop_nat_node(node: Nat = Depends(dep_node)):
     """
     Stop a NAT node.
     This endpoint results in no action since cloud nodes cannot be stopped.
@@ -133,7 +133,7 @@ async def stop_nat(node: Nat = Depends(dep_node)):
 @router.post("/{node_id}/suspend",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def suspend_nat(node: Nat = Depends(dep_node)):
+async def suspend_nat_node(node: Nat = Depends(dep_node)):
     """
     Suspend a NAT node.
     This endpoint results in no action since NAT nodes cannot be suspended.
@@ -146,10 +146,10 @@ async def suspend_nat(node: Nat = Depends(dep_node)):
              status_code=status.HTTP_201_CREATED,
              response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
              responses=responses)
-async def create_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                     node: Nat = Depends(dep_node)):
+async def create_nat_node_nio(adapter_number: int,
+                              port_number: int,
+                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                              node: Nat = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -164,10 +164,10 @@ async def create_nio(adapter_number: int,
             status_code=status.HTTP_201_CREATED,
             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
             responses=responses)
-async def update_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                     node: Nat = Depends(dep_node)):
+async def update_nat_node_nio(adapter_number: int,
+                              port_number: int,
+                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+                              node: Nat = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -183,7 +183,7 @@ async def update_nio(adapter_number: int,
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
-async def delete_nio(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
+async def delete_nat_node_nio(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
     """
     Remove a NIO (Network Input/Output) from the node.
     The adapter number on the cloud is always 0.
@@ -194,10 +194,10 @@ async def delete_nio(adapter_number: int, port_number: int, node: Nat = Depends(
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
-async def start_capture(adapter_number: int,
-                        port_number: int,
-                        node_capture_data: schemas.NodeCapture,
-                        node: Nat = Depends(dep_node)):
+async def start_nat_node_capture(adapter_number: int,
+                                 port_number: int,
+                                 node_capture_data: schemas.NodeCapture,
+                                 node: Nat = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The adapter number on the cloud is always 0.
@@ -211,7 +211,7 @@ async def start_capture(adapter_number: int,
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop_capture(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
+async def stop_nat_node_capture(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The adapter number on the cloud is always 0.

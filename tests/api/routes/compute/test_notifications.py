@@ -21,11 +21,11 @@ import json
 from gns3server.compute.notification_manager import NotificationManager
 
 
-@pytest.mark.asyncio
-async def test_notification_ws(compute_api):
-
-    # FIXME: how to test websockets
-    pass
+# @pytest.mark.asyncio
+# async def test_notification_ws(compute_api):
+#
+#     # FIXME: how to test websockets
+#     pass
 
     #with compute_api.ws("/notifications/ws") as ws:
 

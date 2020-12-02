@@ -18,11 +18,15 @@
 import pytest
 import os
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from unittest.mock import patch
 
 from gns3server.version import __version__
 from gns3server.controller import Controller
 from gns3server.utils.get_resource import get_resource
+
+pytestmark = pytest.mark.asyncio
 
 
 def get_static(filename):
@@ -31,15 +35,13 @@ def get_static(filename):
     return os.path.join(os.path.abspath(os.path.join(current_dir, '../..', '..', 'gns3server', 'static')), filename)
 
 
-@pytest.mark.asyncio
-async def test_debug(http_client):
+async def test_debug(app: FastAPI, client: AsyncClient) -> None:
 
-    async with http_client as client:
-        response = await client.get('/debug')
-        assert response.status_code == 200
-        html = response.text
-        assert "Website" in html
-        assert __version__ in html
+    response = await client.get(app.url_path_for("debug"))
+    assert response.status_code == status.HTTP_200_OK
+    html = response.read().decode()
+    assert "Website" in html
+    assert __version__ in html
 
 
 # @pytest.mark.asyncio
@@ -66,20 +68,16 @@ async def test_debug(http_client):
 #     assert response.status_code == 200
 
 
-@pytest.mark.asyncio
-async def test_web_ui(http_client):
+async def test_web_ui(app: FastAPI, client: AsyncClient) -> None:
 
-    async with http_client as client:
-        response = await client.get('/static/web-ui/index.html')
-        assert response.status_code == 200
+    response = await client.get(app.url_path_for("web_ui", file_path="index.html"))
+    assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.asyncio
-async def test_web_ui_not_found(http_client, tmpdir):
+async def test_web_ui_not_found(app: FastAPI, client: AsyncClient, tmpdir: str) -> None:
 
     with patch('gns3server.utils.get_resource.get_resource') as mock:
         mock.return_value = str(tmpdir)
-        async with http_client as client:
-            response = await client.get('/static/web-ui/not-found.txt')
-            # should serve web-ui/index.html
-            assert response.status_code == 200
+        response = await client.get(app.url_path_for("web_ui", file_path="not-found.txt"))
+        # should serve web-ui/index.html
+        assert response.status_code == status.HTTP_200_OK

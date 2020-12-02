@@ -78,7 +78,7 @@ def network_ports() -> dict:
 
 
 @router.get("/version")
-def version() -> dict:
+def compute_version() -> dict:
     """
     Retrieve the server version number.
     """
@@ -89,7 +89,7 @@ def version() -> dict:
 
 
 @router.get("/statistics")
-def statistics() -> dict:
+def compute_statistics() -> dict:
     """
     Retrieve the server version number.
     """
@@ -124,19 +124,19 @@ def statistics() -> dict:
 
 
 @router.get("/qemu/binaries")
-async def get_binaries(archs: Optional[List[str]] = Body(None, embed=True)):
+async def get_qemu_binaries(archs: Optional[List[str]] = Body(None, embed=True)):
 
     return await Qemu.binary_list(archs)
 
 
 @router.get("/qemu/img-binaries")
-async def get_img_binaries():
+async def get_image_binaries():
 
     return await Qemu.img_binary_list()
 
 
 @router.get("/qemu/capabilities")
-async def get_capabilities() -> dict:
+async def get_qemu_capabilities() -> dict:
     capabilities = {"kvm": []}
     kvms = await Qemu.get_kvm_archs()
     if kvms:
@@ -147,7 +147,7 @@ async def get_capabilities() -> dict:
 @router.post("/qemu/img",
              status_code=status.HTTP_204_NO_CONTENT,
              responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}})
-async def create_img(image_data: schemas.QemuImageCreate):
+async def create_qemu_image(image_data: schemas.QemuImageCreate):
     """
     Create a Qemu image.
     """
@@ -163,7 +163,7 @@ async def create_img(image_data: schemas.QemuImageCreate):
 @router.put("/qemu/img",
             status_code=status.HTTP_204_NO_CONTENT,
             responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}})
-async def update_img(image_data: schemas.QemuImageUpdate):
+async def update_qemu_image(image_data: schemas.QemuImageUpdate):
     """
     Update a Qemu image.
     """

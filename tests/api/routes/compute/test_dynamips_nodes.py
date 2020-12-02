@@ -19,10 +19,12 @@ import pytest
 import sys
 import os
 import stat
+
 from unittest.mock import patch
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 
-from tests.utils import asyncio_patch
-
+pytestmark = pytest.mark.asyncio
 
 # @pytest.yield_fixture(scope="module")
 # async def vm(compute_api, compute_project, fake_image):
@@ -139,7 +141,7 @@ from tests.utils import asyncio_patch
 
 
 @pytest.fixture
-def fake_image(tmpdir):
+def fake_image(tmpdir) -> str:
     """Create a fake Dynamips image on disk"""
 
     path = str(tmpdir / "7200.bin")
@@ -150,7 +152,7 @@ def fake_image(tmpdir):
 
 
 @pytest.fixture
-def fake_file(tmpdir):
+def fake_file(tmpdir) -> str:
     """Create a fake file disk"""
 
     path = str(tmpdir / "7200.txt")
@@ -160,24 +162,21 @@ def fake_file(tmpdir):
     return path
 
 
-@pytest.mark.asyncio
-async def test_images(compute_api, tmpdir, fake_image, fake_file):
+async def test_images(app: FastAPI, client: AsyncClient, tmpdir, fake_image: str, fake_file: str) -> None:
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.get("/dynamips/images")
-    assert response.status_code == 200
-    assert response.json == [{"filename": "7200.bin",
-                              "path": "7200.bin",
-                              "filesize": 7,
-                              "md5sum": "b0d5aa897d937aced5a6b1046e8f7e2e"
-                              }]
+        response = await client.get(app.url_path_for("get_dynamips_images"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [{"filename": "7200.bin",
+                                "path": "7200.bin",
+                                "filesize": 7,
+                                "md5sum": "b0d5aa897d937aced5a6b1046e8f7e2e"}]
 
 
-@pytest.mark.asyncio
-async def test_upload_image(compute_api, images_dir):
+async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 
-    response = await compute_api.post("/dynamips/images/test2", body=b"TEST", raw=True)
-    assert response.status_code == 204
+    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(os.path.join(images_dir, "IOS", "test2")) as f:
         assert f.read() == "TEST"
@@ -188,13 +187,12 @@ async def test_upload_image(compute_api, images_dir):
 
 
 @pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
-@pytest.mark.asyncio
-async def test_upload_image_permission_denied(compute_api, images_dir):
+async def test_upload_image_permission_denied(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
     with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
-    response = await compute_api.post("/dynamips/images/test2", body=b"TEST", raw=True)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    assert response.status_code == status.HTTP_409_CONFLICT

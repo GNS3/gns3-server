@@ -35,7 +35,7 @@ router = APIRouter()
 @router.get("/capabilities",
             response_model=schemas.Capabilities
 )
-def get_compute_capabilities():
+def get_capabilities():
 
     node_types = []
     for module in MODULES:

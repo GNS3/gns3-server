@@ -16,11 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
+from gns3server.controller import Controller
+
+pytestmark = pytest.mark.asyncio
+
 import unittest
 from tests.utils import asyncio_patch
 
-@pytest.mark.asyncio
-async def test_compute_create_without_id(controller_api, controller):
+
+async def test_compute_create_without_id(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {
         "protocol": "http",
@@ -29,17 +37,17 @@ async def test_compute_create_without_id(controller_api, controller):
         "user": "julien",
         "password": "secure"}
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
-    assert response.json["user"] == "julien"
-    assert response.json["compute_id"] is not None
-    assert "password" not in response.json
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    response_content = response.json()
+    assert response_content["user"] == "julien"
+    assert response_content["compute_id"] is not None
+    assert "password" not in response_content
     assert len(controller.computes) == 1
-    assert controller.computes[response.json["compute_id"]].host == "localhost"
+    assert controller.computes[response_content["compute_id"]].host == "localhost"
 
 
-@pytest.mark.asyncio
-async def test_compute_create_with_id(controller_api, controller):
+async def test_compute_create_with_id(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -49,16 +57,15 @@ async def test_compute_create_with_id(controller_api, controller):
         "user": "julien",
         "password": "secure"}
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
-    assert response.json["user"] == "julien"
-    assert "password" not in response.json
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["user"] == "julien"
+    assert "password" not in response.json()
     assert len(controller.computes) == 1
     assert controller.computes["my_compute_id"].host == "localhost"
 
 
-@pytest.mark.asyncio
-async def test_compute_get(controller_api):
+async def test_compute_get(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -69,15 +76,14 @@ async def test_compute_get(controller_api):
         "password": "secure"
     }
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.get("/computes/my_compute_id")
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("update_compute", compute_id="my_compute_id"))
+    assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.asyncio
-async def test_compute_update(controller_api):
+async def test_compute_update(app: FastAPI, client: AsyncClient) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -88,22 +94,20 @@ async def test_compute_update(controller_api):
         "password": "secure"
     }
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
-
-    response = await controller_api.get("/computes/my_compute_id")
-    assert response.status_code == 200
-    assert response.json["protocol"] == "http"
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    response = await client.get(app.url_path_for("get_compute", compute_id="my_compute_id"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["protocol"] == "http"
 
     params["protocol"] = "https"
-    response = await controller_api.put("/computes/my_compute_id", params)
+    response = await client.put(app.url_path_for("update_compute", compute_id="my_compute_id"), json=params)
 
-    assert response.status_code == 200
-    assert response.json["protocol"] == "https"
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["protocol"] == "https"
 
 
-@pytest.mark.asyncio
-async def test_compute_list(controller_api):
+async def test_compute_list(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -115,13 +119,13 @@ async def test_compute_list(controller_api):
         "name": "My super server"
     }
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
-    assert response.json["user"] == "julien"
-    assert "password" not in response.json
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["user"] == "julien"
+    assert "password" not in response.json()
 
-    response = await controller_api.get("/computes")
-    for compute in response.json:
+    response = await client.get(app.url_path_for("get_computes"))
+    for compute in response.json():
         if compute['compute_id'] != 'local':
             assert compute == {
                 'compute_id': 'my_compute_id',
@@ -146,8 +150,7 @@ async def test_compute_list(controller_api):
             }
 
 
-@pytest.mark.asyncio
-async def test_compute_delete(controller_api):
+async def test_compute_delete(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -157,41 +160,40 @@ async def test_compute_delete(controller_api):
         "user": "julien",
         "password": "secure"
     }
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
 
-    response = await controller_api.get("/computes")
-    assert len(response.json) == 1
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.delete("/computes/my_compute_id")
-    assert response.status_code == 204
+    response = await client.get(app.url_path_for("get_computes"))
+    assert len(response.json()) == 1
 
-    response = await controller_api.get("/computes")
-    assert len(response.json) == 0
+    response = await client.delete(app.url_path_for("delete_compute", compute_id="my_compute_id"))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    response = await client.get(app.url_path_for("get_computes"))
+    assert len(response.json()) == 0
 
 
-@pytest.mark.asyncio
-async def test_compute_list_images(controller_api):
+async def test_compute_list_images(app: FastAPI, client: AsyncClient) -> None:
 
     params = {
-        "compute_id": "my_compute",
+        "compute_id": "my_compute_id",
         "protocol": "http",
         "host": "localhost",
         "port": 84,
         "user": "julien",
         "password": "secure"
     }
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_compute"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
     with asyncio_patch("gns3server.controller.compute.Compute.images", return_value=[{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]) as mock:
-        response = await controller_api.get("/computes/my_compute/qemu/images")
-        assert response.json == [{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]
+        response = await client.get(app.url_path_for("delete_compute", compute_id="my_compute_id") + "/qemu/images")
+        assert response.json() == [{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]
         mock.assert_called_with("qemu")
 
 
-@pytest.mark.asyncio
-async def test_compute_list_vms(controller_api):
+async def test_compute_list_vms(app: FastAPI, client: AsyncClient) -> None:
 
     params = {
         "compute_id": "my_compute",
@@ -201,17 +203,16 @@ async def test_compute_list_vms(controller_api):
         "user": "julien",
         "password": "secure"
     }
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("get_computes"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-        response = await controller_api.get("/computes/my_compute/virtualbox/vms")
+        response = await client.get(app.url_path_for("get_compute", compute_id="my_compute_id") + "/virtualbox/vms")
         mock.assert_called_with("GET", "virtualbox", "vms")
-        assert response.json == []
+        assert response.json() == []
 
 
-@pytest.mark.asyncio
-async def test_compute_create_img(controller_api):
+async def test_compute_create_img(app: FastAPI, client: AsyncClient) -> None:
 
     params = {
         "compute_id": "my_compute",
@@ -222,18 +223,17 @@ async def test_compute_create_img(controller_api):
         "password": "secure"
     }
 
-    response = await controller_api.post("/computes", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("get_computes"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
     params = {"path": "/test"}
     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-        response = await controller_api.post("/computes/my_compute/qemu/img", params)
-        assert response.json == []
+        response = await client.post(app.url_path_for("get_compute", compute_id="my_compute_id") + "/qemu/img", json=params)
+        assert response.json() == []
         mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)
 
 
-@pytest.mark.asyncio
-async def test_compute_autoidlepc(controller_api):
+async def test_compute_autoidlepc(app: FastAPI, client: AsyncClient) -> None:
 
     params = {
         "compute_id": "my_compute_id",
@@ -244,7 +244,7 @@ async def test_compute_autoidlepc(controller_api):
         "password": "secure"
     }
 
-    await controller_api.post("/computes", params)
+    await client.post(app.url_path_for("get_computes"), json=params)
 
     params = {
         "platform": "c7200",
@@ -253,9 +253,9 @@ async def test_compute_autoidlepc(controller_api):
     }
 
     with asyncio_patch("gns3server.controller.Controller.autoidlepc", return_value={"idlepc": "0x606de20c"}) as mock:
-        response = await controller_api.post("/computes/my_compute_id/auto_idlepc", params)
+        response = await client.post(app.url_path_for("get_compute", compute_id="my_compute_id") + "/auto_idlepc", json=params)
     assert mock.called
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
 
 
 # FIXME

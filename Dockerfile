@@ -1,34 +1,22 @@
-FROM ubuntu:20.04
+FROM python:3.6-alpine3.11
 
-ENV DEBIAN_FRONTEND noninteractive
+WORKDIR /gns3server
 
-# Set the locale
-ENV LANG en_US.UTF-8  
-ENV LANGUAGE en_US:en  
-ENV LC_ALL en_US.UTF-8 
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONBUFFERED 1
 
-RUN apt-get update && apt-get install -y software-properties-common
-RUN add-apt-repository ppa:gns3/ppa
-RUN apt-get update && apt-get install -y \
-    git \
-    locales \
-    python3-pip \
-    python3-dev \ 
-    qemu-system-x86 \
-    qemu-kvm \
-    libvirt-daemon-system \
-    x11vnc 
+COPY ./requirements.txt /gns3server/requirements.txt
 
-RUN locale-gen en_US.UTF-8
+RUN set -eux \
+  && apk add --no-cache --virtual .build-deps build-base \
+     gcc libc-dev musl-dev linux-headers python3-dev \
+     vpcs qemu libvirt ubridge \
+  && pip install --upgrade pip setuptools wheel \
+  && pip install -r /gns3server/requirements.txt \
+  && rm -rf /root/.cache/pip
 
-# Install uninstall to install dependencies
-RUN apt-get install -y vpcs ubridge
-
-ADD . /server
-WORKDIR /server
-
-RUN pip3 install -r /server/requirements.txt
-
-EXPOSE 3080
-
-CMD python3 -m gns3server
+COPY . /gns3server
+RUN python3 setup.py install

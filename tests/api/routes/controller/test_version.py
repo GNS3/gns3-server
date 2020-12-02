@@ -17,47 +17,47 @@
 
 import pytest
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.version import __version__
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
-async def test_version_output(controller_api, config):
+
+async def test_version_output(app: FastAPI, client: AsyncClient, config) -> None:
 
     config.set("Server", "local", "true")
-    response = await controller_api.get('/version')
-    assert response.status_code == 200
-    assert response.json == {'local': True, 'version': __version__}
+    response = await client.get(app.url_path_for("get_version"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'local': True, 'version': __version__}
 
 
-@pytest.mark.asyncio
-async def test_version_input(controller_api):
+async def test_version_input(app: FastAPI, client: AsyncClient) -> None:
 
     params = {'version': __version__}
-    response = await controller_api.post('/version', params)
-    assert response.status_code == 200
-    assert response.json == {'version': __version__}
+    response = await client.post(app.url_path_for("check_version"), json=params)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'version': __version__}
 
 
-@pytest.mark.asyncio
-async def test_version_invalid_input(controller_api):
+async def test_version_invalid_input(app: FastAPI, client: AsyncClient) -> None:
 
     params = {'version': "0.4.2"}
-    response = await controller_api.post('/version', params)
-    assert response.status_code == 409
-    assert response.json == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__)}
+    response = await client.post(app.url_path_for("check_version"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {'message': 'Client version 0.4.2 is not the same as server version {}'.format(__version__)}
 
 
-@pytest.mark.asyncio
-async def test_version_invalid_input_schema(controller_api):
+async def test_version_invalid_input_schema(app: FastAPI, client: AsyncClient) -> None:
 
     params = {'version': "0.4.2", "bla": "blu"}
-    response = await controller_api.post('/version', params)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("check_version"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_version_invalid_json(controller_api):
+async def test_version_invalid_json(app: FastAPI, client: AsyncClient) -> None:
 
     params = "BOUM"
-    response = await controller_api.post('/version', params, raw=True)
-    assert response.status_code == 422
+    response = await client.post(app.url_path_for("check_version"), json=params)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

@@ -20,44 +20,49 @@ import pytest
 import os
 import urllib.parse
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 
-@pytest.mark.asyncio
-async def test_symbols(controller_api):
+from gns3server.controller import Controller
 
-    response = await controller_api.get('/symbols')
+pytestmark = pytest.mark.asyncio
 
-    assert response.status_code == 200
+
+async def test_symbols(app: FastAPI, client: AsyncClient) -> None:
+
+    response = await client.get(app.url_path_for("get_symbols"))
+
+    assert response.status_code == status.HTTP_200_OK
     assert {
         'symbol_id': ':/symbols/classic/firewall.svg',
         'filename': 'firewall.svg',
         'builtin': True,
         'theme': 'Classic'
-    } in response.json
+    } in response.json()
 
 
-@pytest.mark.asyncio
-async def test_get(controller_api, controller):
+async def test_get(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     controller.symbols.theme = "Classic"
-    response = await controller_api.get('/symbols/' + urllib.parse.quote(':/symbols/classic/firewall.svg') + '/raw')
-    assert response.status_code == 200
+    url = app.url_path_for("get_symbol", symbol_id=urllib.parse.quote(':/symbols/classic/firewall.svg'))
+    response = await client.get(url)
+    assert response.status_code == status.HTTP_200_OK
     assert response.headers['CONTENT-TYPE'] == 'image/svg+xml'
     assert response.headers['CONTENT-LENGTH'] == '9381'
     assert '</svg>' in response.text
 
     # Reply with the default symbol
-    response = await controller_api.get('/symbols/404.png/raw')
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("get_symbol", symbol_id="404.png"))
+    assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.asyncio
-async def test_upload(controller_api, symbols_dir):
+async def test_upload(app: FastAPI, client: AsyncClient, symbols_dir: str) -> None:
 
-    response = await controller_api.post("/symbols/test2/raw", body=b"TEST", raw=True)
-    assert response.status_code == 204
+    response = await client.post(app.url_path_for("upload_symbol", symbol_id="test2"), content=b"TEST")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(os.path.join(symbols_dir, "test2")) as f:
         assert f.read() == "TEST"
 
-    response = await controller_api.get('/symbols/test2/raw')
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("get_symbol", symbol_id="test2"))
+    assert response.status_code == status.HTTP_200_OK

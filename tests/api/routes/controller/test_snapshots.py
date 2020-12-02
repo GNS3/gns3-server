@@ -19,54 +19,57 @@ import os
 import uuid
 import pytest
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
+from gns3server.controller import Controller
+from gns3server.controller.project import Project
+from gns3server.controller.snapshot import Snapshot
+
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
-@pytest.mark.asyncio
-async def project(controller_api, controller):
+async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
 
     u = str(uuid.uuid4())
     params = {"name": "test", "project_id": u}
-    await controller_api.post("/projects", params)
+    await client.post(app.url_path_for("create_project"), json=params)
     project = controller.get_project(u)
     return project
 
 
 @pytest.fixture
-@pytest.mark.asyncio
-async def snapshot(project):
+async def snapshot(project: Project):
 
     snapshot = await project.snapshot("test")
     return snapshot
 
 
-@pytest.mark.asyncio
-async def test_list_snapshots(controller_api, project, snapshot):
+async def test_list_snapshots(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
 
     assert snapshot.name == "test"
-    response = await controller_api.get("/projects/{}/snapshots".format(project.id))
-    assert response.status_code == 200
-    assert len(response.json) == 1
+    response = await client.get(app.url_path_for("get_snapshots", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 1
 
 
-@pytest.mark.asyncio
-async def test_delete_snapshot(controller_api, project, snapshot):
+async def test_delete_snapshot(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
 
-    response = await controller_api.delete("/projects/{}/snapshots/{}".format(project.id, snapshot.id))
-    assert response.status_code == 204
+    response = await client.delete(app.url_path_for("delete_snapshot", project_id=project.id, snapshot_id=snapshot.id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not os.path.exists(snapshot.path)
 
 
-@pytest.mark.asyncio
-async def test_restore_snapshot(controller_api, project, snapshot):
+async def test_restore_snapshot(app: FastAPI, client: AsyncClient, project: Project, snapshot: Snapshot) -> None:
 
-    response = await controller_api.post("/projects/{}/snapshots/{}/restore".format(project.id, snapshot.id))
-    assert response.status_code == 201
-    assert response.json["name"] == project.name
+    response = await client.post(app.url_path_for("restore_snapshot", project_id=project.id, snapshot_id=snapshot.id))
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["name"] == project.name
 
 
-@pytest.mark.asyncio
-async def test_create_snapshot(controller_api, project):
+async def test_create_snapshot(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
-    response = await controller_api.post("/projects/{}/snapshots".format(project.id), {"name": "snap1"})
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_snapshot", project_id=project.id), json={"name": "snap1"})
+    assert response.status_code == status.HTTP_201_CREATED
     assert len(os.listdir(os.path.join(project.path, "snapshots"))) == 1

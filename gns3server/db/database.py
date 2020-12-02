@@ -15,16 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+import os
 
-from fastapi import FastAPI, status
-from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import declarative_base
 
-pytestmark = pytest.mark.asyncio
+SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URI", "sqlite:///./sql_app.db")
 
-
-async def test_appliances_list(app: FastAPI, client: AsyncClient) -> None:
-
-    response = await client.get(app.url_path_for("get_appliances"))
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) > 0
+engine = create_async_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+Base = declarative_base()

@@ -98,7 +98,7 @@ def get_docker_node(node: DockerVM = Depends(dep_node)):
 @router.put("/{node_id}",
             response_model=schemas.Docker,
             responses=responses)
-async def update_docker(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)):
+async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)):
     """
     Update a Docker node.
     """
@@ -217,10 +217,10 @@ async def duplicate_docker_node(destination_node_id: UUID = Body(..., embed=True
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
              responses=responses)
-async def create_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: schemas.UDPNIO,
-                     node: DockerVM = Depends(dep_node)):
+async def create_docker_node_nio(adapter_number: int,
+                                port_number: int,
+                                nio_data: schemas.UDPNIO,
+                                node: DockerVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Docker node is always 0.
@@ -235,9 +235,9 @@ async def create_nio(adapter_number: int,
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
             responses=responses)
-async def update_nio(adapter_number: int,
-                     port_number: int, nio_data: schemas.UDPNIO,
-                     node: DockerVM = Depends(dep_node)):
+async def update_docker_node_nio(adapter_number: int,
+                                 port_number: int, nio_data: schemas.UDPNIO,
+                                 node: DockerVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Docker node is always 0.
@@ -253,7 +253,7 @@ async def update_nio(adapter_number: int,
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
-async def delete_nio(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
+async def delete_docker_node_nio(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the Docker node is always 0.
@@ -264,10 +264,10 @@ async def delete_nio(adapter_number: int, port_number: int, node: DockerVM = Dep
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
-async def start_capture(adapter_number: int,
-                        port_number: int,
-                        node_capture_data: schemas.NodeCapture,
-                        node: DockerVM = Depends(dep_node)):
+async def start_docker_node_capture(adapter_number: int,
+                                    port_number: int,
+                                    node_capture_data: schemas.NodeCapture,
+                                    node: DockerVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The port number on the Docker node is always 0.
@@ -281,7 +281,7 @@ async def start_capture(adapter_number: int,
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop_capture(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
+async def stop_docker_node_capture(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The port number on the Docker node is always 0.

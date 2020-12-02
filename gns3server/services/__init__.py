@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,16 +15,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
-
-from fastapi import FastAPI, status
-from httpx import AsyncClient
-
-pytestmark = pytest.mark.asyncio
-
-
-async def test_appliances_list(app: FastAPI, client: AsyncClient) -> None:
-
-    response = await client.get(app.url_path_for("get_appliances"))
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) > 0
+from .authentication import AuthService
+auth_service = AuthService()

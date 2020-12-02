@@ -17,17 +17,25 @@
 
 import pytest
 
+from typing import Tuple
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
+from gns3server.controller.project import Project
+from gns3server.controller.compute import Compute
+from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.link import Link, FILTERS
 from gns3server.controller.udp_link import UDPLink
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
-@pytest.mark.asyncio
-async def nodes(compute, project):
+async def nodes(compute: Compute, project: Project) -> Tuple[Node, Node]:
 
     response = MagicMock()
     response.json = {"console": 2048}
@@ -40,8 +48,7 @@ async def nodes(compute, project):
     return node1, node2
 
 
-@pytest.mark.asyncio
-async def test_create_link(controller_api, project, nodes):
+async def test_create_link(app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]) -> None:
 
     node1, node2 = nodes
 
@@ -51,7 +58,7 @@ async def test_create_link(controller_api, project, nodes):
     }
 
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        response = await controller_api.post("/projects/{}/links".format(project.id), {
+        response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -73,16 +80,15 @@ async def test_create_link(controller_api, project, nodes):
         })
 
     assert mock.called
-    assert response.status_code == 201
-    assert response.json["link_id"] is not None
-    assert len(response.json["nodes"]) == 2
-    assert response.json["nodes"][0]["label"]["x"] == 42
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["link_id"] is not None
+    assert len(response.json()["nodes"]) == 2
+    assert response.json()["nodes"][0]["label"]["x"] == 42
     assert len(project.links) == 1
     assert list(project.links.values())[0].filters == filters
 
 
-@pytest.mark.asyncio
-async def test_create_link_failure(controller_api, compute, project):
+async def test_create_link_failure(app: FastAPI, client: AsyncClient, compute: Compute, project: Project) -> None:
     """
     Make sure the link is deleted if we failed to create it.
 
@@ -96,7 +102,7 @@ async def test_create_link_failure(controller_api, compute, project):
     node1 = await project.add_node(compute, "node1", None, node_type="qemu")
     node1._ports = [EthernetPort("E0", 0, 0, 3), EthernetPort("E0", 0, 0, 4)]
 
-    response = await controller_api.post("/projects/{}/links".format(project.id), {
+    response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
         "nodes": [
             {
                 "node_id": node1.id,
@@ -116,16 +122,15 @@ async def test_create_link_failure(controller_api, compute, project):
         ]
     })
 
-    assert response.status_code == 409
+    assert response.status_code == status.HTTP_409_CONFLICT
     assert len(project.links) == 0
 
 
-@pytest.mark.asyncio
-async def test_get_link(controller_api, project, nodes):
+async def test_get_link(app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]) -> None:
 
     node1, node2 = nodes
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        response = await controller_api.post("/projects/{}/links".format(project.id), {
+        response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -146,19 +151,18 @@ async def test_get_link(controller_api, project, nodes):
         })
 
     assert mock.called
-    link_id = response.json["link_id"]
-    assert response.json["nodes"][0]["label"]["x"] == 42
-    response = await controller_api.get("/projects/{}/links/{}".format(project.id, link_id))
-    assert response.status_code == 200
-    assert response.json["nodes"][0]["label"]["x"] == 42
+    link_id = response.json()["link_id"]
+    assert response.json()["nodes"][0]["label"]["x"] == 42
+    response = await client.get(app.url_path_for("get_link", project_id=project.id, link_id=link_id))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["nodes"][0]["label"]["x"] == 42
 
 
-@pytest.mark.asyncio
-async def test_update_link_suspend(controller_api, project, nodes):
+async def test_update_link_suspend(app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]) -> None:
 
     node1, node2 = nodes
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        response = await controller_api.post("/projects/{}/links".format(project.id), {
+        response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -179,10 +183,10 @@ async def test_update_link_suspend(controller_api, project, nodes):
         })
 
     assert mock.called
-    link_id = response.json["link_id"]
-    assert response.json["nodes"][0]["label"]["x"] == 42
+    link_id = response.json()["link_id"]
+    assert response.json()["nodes"][0]["label"]["x"] == 42
 
-    response = await controller_api.put("/projects/{}/links/{}".format(project.id, link_id), {
+    response = await client.put(app.url_path_for("update_link", project_id=project.id, link_id=link_id), json={
         "nodes": [
             {
                 "node_id": node1.id,
@@ -203,14 +207,13 @@ async def test_update_link_suspend(controller_api, project, nodes):
         "suspend": True
     })
 
-    assert response.status_code == 200
-    assert response.json["nodes"][0]["label"]["x"] == 64
-    assert response.json["suspend"]
-    assert response.json["filters"] == {}
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["nodes"][0]["label"]["x"] == 64
+    assert response.json()["suspend"]
+    assert response.json()["filters"] == {}
 
 
-@pytest.mark.asyncio
-async def test_update_link(controller_api, project, nodes):
+async def test_update_link(app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]) -> None:
 
     filters = {
         "latency": [10],
@@ -219,7 +222,7 @@ async def test_update_link(controller_api, project, nodes):
 
     node1, node2 = nodes
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        response = await controller_api.post("/projects/{}/links".format(project.id), {
+        response = await client.post(app.url_path_for("create_link", project_id=project.id), json={
             "nodes": [
                 {
                     "node_id": node1.id,
@@ -240,10 +243,10 @@ async def test_update_link(controller_api, project, nodes):
         })
 
     assert mock.called
-    link_id = response.json["link_id"]
-    assert response.json["nodes"][0]["label"]["x"] == 42
+    link_id = response.json()["link_id"]
+    assert response.json()["nodes"][0]["label"]["x"] == 42
 
-    response = await controller_api.put("/projects/{}/links/{}".format(project.id, link_id), {
+    response = await client.put(app.url_path_for("update_link", project_id=project.id, link_id=link_id), json={
         "nodes": [
             {
                 "node_id": node1.id,
@@ -264,13 +267,12 @@ async def test_update_link(controller_api, project, nodes):
         "filters": filters
     })
 
-    assert response.status_code == 200
-    assert response.json["nodes"][0]["label"]["x"] == 64
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["nodes"][0]["label"]["x"] == 64
     assert list(project.links.values())[0].filters == filters
 
 
-@pytest.mark.asyncio
-async def test_list_link(controller_api, project, nodes):
+async def test_list_link(app: FastAPI, client: AsyncClient, project: Project, nodes: Tuple[Node, Node]) -> None:
 
     filters = {
         "latency": [10],
@@ -291,51 +293,48 @@ async def test_list_link(controller_api, project, nodes):
         }
     ]
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as mock:
-        await controller_api.post("/projects/{}/links".format(project.id), {
+        await client.post(app.url_path_for("create_link", project_id=project.id), json={
             "nodes": nodes,
             "filters": filters
         })
 
     assert mock.called
-    response = await controller_api.get("/projects/{}/links".format(project.id))
-    assert response.status_code == 200
-    assert len(response.json) == 1
-    assert response.json[0]["filters"] == filters
+    response = await client.get(app.url_path_for("get_links", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 1
+    assert response.json()[0]["filters"] == filters
 
 
-@pytest.mark.asyncio
-async def test_reset_link(controller_api, project):
+async def test_reset_link(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     link = UDPLink(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.udp_link.UDPLink.delete") as delete_mock:
         with asyncio_patch("gns3server.controller.udp_link.UDPLink.create") as create_mock:
-            response = await controller_api.post("/projects/{}/links/{}/reset".format(project.id, link.id))
+            response = await client.post(app.url_path_for("reset_link", project_id=project.id, link_id=link.id))
             assert delete_mock.called
             assert create_mock.called
-            assert response.status_code == 200
+            assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.asyncio
-async def test_start_capture(controller_api, project):
+async def test_start_capture(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.start_capture") as mock:
-        response = await controller_api.post("/projects/{}/links/{}/capture/start".format(project.id, link.id))
-    assert mock.called
-    assert response.status_code == 201
+        response = await client.post(app.url_path_for("start_capture", project_id=project.id, link_id=link.id), json={})
+        assert mock.called
+        assert response.status_code == status.HTTP_201_CREATED
 
 
-@pytest.mark.asyncio
-async def test_stop_capture(controller_api, project):
+async def test_stop_capture(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.stop_capture") as mock:
-        response = await controller_api.post("/projects/{}/links/{}/capture/stop".format(project.id, link.id))
-    assert mock.called
-    assert response.status_code == 204
+        response = await client.post(app.url_path_for("stop_capture", project_id=project.id, link_id=link.id))
+        assert mock.called
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 # async def test_pcap(controller_api, http_client, project):
@@ -359,24 +358,22 @@ async def test_stop_capture(controller_api, project):
 #         assert b'hello' == response.body
 
 
-@pytest.mark.asyncio
-async def test_delete_link(controller_api, project):
+async def test_delete_link(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     link = Link(project)
     project._links = {link.id: link}
     with asyncio_patch("gns3server.controller.link.Link.delete") as mock:
-        response = await controller_api.delete("/projects/{}/links/{}".format(project.id, link.id))
+        response = await client.delete(app.url_path_for("delete_link", project_id=project.id, link_id=link.id))
     assert mock.called
-    assert response.status_code == 204
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_list_filters(controller_api, project):
+async def test_list_filters(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     link = Link(project)
     project._links = {link.id: link}
     with patch("gns3server.controller.link.Link.available_filters", return_value=FILTERS) as mock:
-        response = await controller_api.get("/projects/{}/links/{}/available_filters".format(project.id, link.id))
+        response = await client.get(app.url_path_for("get_filters", project_id=project.id, link_id=link.id))
     assert mock.called
-    assert response.status_code == 200
-    assert response.json == FILTERS
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == FILTERS

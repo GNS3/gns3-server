@@ -347,7 +347,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
                  **responses,
                  409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}
              })
-async def duplicate(project_data: schemas.ProjectDuplicate, project: Project = Depends(dep_project)):
+async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Project = Depends(dep_project)):
     """
     Duplicate a project.
     """

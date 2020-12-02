@@ -180,10 +180,10 @@ async def reload_vmware_node(node: VMwareVM = Depends(dep_node)):
              status_code=status.HTTP_201_CREATED,
              response_model=schemas.UDPNIO,
              responses=responses)
-async def create_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: schemas.UDPNIO,
-                     node: VMwareVM = Depends(dep_node)):
+async def create_vmware_node_nio(adapter_number: int,
+                                 port_number: int,
+                                 nio_data: schemas.UDPNIO,
+                                 node: VMwareVM = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the VMware node is always 0.
@@ -198,9 +198,9 @@ async def create_nio(adapter_number: int,
             status_code=status.HTTP_201_CREATED,
             response_model=schemas.UDPNIO,
             responses=responses)
-async def update_nio(adapter_number: int,
-                     port_number: int,
-                     nio_data: schemas.UDPNIO, node: VMwareVM = Depends(dep_node)):
+async def update_vmware_node_nio(adapter_number: int,
+                                 port_number: int,
+                                 nio_data: schemas.UDPNIO, node: VMwareVM = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the VMware node is always 0.
@@ -216,7 +216,7 @@ async def update_nio(adapter_number: int,
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
                status_code=status.HTTP_204_NO_CONTENT,
                responses=responses)
-async def delete_nio(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
+async def delete_vmware_node_nio(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the VMware node is always 0.
@@ -227,10 +227,10 @@ async def delete_nio(adapter_number: int, port_number: int, node: VMwareVM = Dep
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
              responses=responses)
-async def start_capture(adapter_number: int,
-                        port_number: int,
-                        node_capture_data: schemas.NodeCapture,
-                        node: VMwareVM = Depends(dep_node)):
+async def start_vmware_node_capture(adapter_number: int,
+                                    port_number: int,
+                                    node_capture_data: schemas.NodeCapture,
+                                    node: VMwareVM = Depends(dep_node)):
     """
     Start a packet capture on the node.
     The port number on the VMware node is always 0.
@@ -244,7 +244,7 @@ async def start_capture(adapter_number: int,
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def stop_capture(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
+async def stop_vmware_node_capture(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
     The port number on the VMware node is always 0.

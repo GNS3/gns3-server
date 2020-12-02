@@ -26,6 +26,8 @@ from .drawings import Drawing
 from .gns3vm import GNS3VM
 from .nodes import NodeUpdate, NodeDuplicate, NodeCapture, Node
 from .projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
+from .users import UserCreate, UserUpdate, User
+from .tokens import Token
 from .snapshots import SnapshotCreate, Snapshot
 from .capabilities import Capabilities
 from .nios import UDPNIO, TAPNIO, EthernetNIO

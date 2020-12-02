@@ -30,6 +30,7 @@ from fastapi.responses import JSONResponse
 from gns3server.controller.controller_error import (
     ControllerError,
     ControllerNotFoundError,
+    ControllerBadRequestError,
     ControllerTimeoutError,
     ControllerForbiddenError,
     ControllerUnauthorizedError
@@ -115,6 +116,15 @@ async def controller_not_found_error_handler(request: Request, exc: ControllerNo
     log.error(f"Controller not found error: {exc}")
     return JSONResponse(
         status_code=404,
+        content={"message": str(exc)},
+    )
+
+
+@app.exception_handler(ControllerBadRequestError)
+async def controller_bad_request_error_handler(request: Request, exc: ControllerBadRequestError):
+    log.error(f"Controller bad request error: {exc}")
+    return JSONResponse(
+        status_code=400,
         content={"message": str(exc)},
     )
 

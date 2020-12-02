@@ -21,12 +21,17 @@ import os
 
 from unittest.mock import patch
 from tests.utils import asyncio_patch
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 
 from gns3server.compute.project_manager import ProjectManager
+from gns3server.compute.project import Project
+
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-def base_params(tmpdir):
+def base_params(tmpdir) -> dict:
     """Return standard parameters"""
 
     params = {
@@ -37,109 +42,103 @@ def base_params(tmpdir):
     return params
 
 
-@pytest.mark.asyncio
-async def test_create_project_with_path(compute_api, base_params):
+async def test_create_project_with_path(app: FastAPI, client: AsyncClient, base_params: dict) -> None:
 
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = await compute_api.post("/projects", base_params)
-        assert response.status_code == 201
-        assert response.json["project_id"] == base_params["project_id"]
+        response = await client.post(app.url_path_for("create_compute_project"), json=base_params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["project_id"] == base_params["project_id"]
 
 
-@pytest.mark.asyncio
-async def test_create_project_with_path_and_empty_variables(compute_api, base_params):
+async def test_create_project_with_path_and_empty_variables(app: FastAPI,
+                                                            client: AsyncClient,
+                                                            base_params: dict) -> None:
 
     base_params["variables"] = None
     with patch("gns3server.compute.project.Project.is_local", return_value=True):
 
-        response = await compute_api.post("/projects", base_params)
-        assert response.status_code == 201
-        assert response.json["project_id"] == base_params["project_id"]
+        response = await client.post(app.url_path_for("create_compute_project"), json=base_params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["project_id"] == base_params["project_id"]
 
 
-@pytest.mark.asyncio
-async def test_create_project_without_dir(compute_api, base_params):
+async def test_create_project_without_dir(app: FastAPI, client: AsyncClient, base_params: dict) -> None:
 
     del base_params["path"]
-    response = await compute_api.post("/projects", base_params)
-    assert response.status_code == 201
-    assert response.json["project_id"] == base_params["project_id"]
-    assert response.json["name"] == base_params["name"]
+    response = await client.post(app.url_path_for("create_compute_project"), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["project_id"] == base_params["project_id"]
+    assert response.json()["name"] == base_params["name"]
 
 
-@pytest.mark.asyncio
-async def test_show_project(compute_api, base_params):
+async def test_show_project(app: FastAPI, client: AsyncClient, base_params: dict) -> None:
 
-    response = await compute_api.post("/projects", base_params)
-    assert response.status_code == 201
-    response = await compute_api.get("/projects/{project_id}".format(project_id=base_params["project_id"]))
+    response = await client.post(app.url_path_for("create_compute_project"), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
+    response = await client.get(app.url_path_for("get_compute_project", project_id=base_params["project_id"]))
 
-    #print(response.json.keys())
-    #assert len(response.json.keys()) == 3
-    assert response.json["project_id"] == base_params["project_id"]
-    assert response.json["name"] == base_params["name"]
-    assert response.json["variables"] is None
-
-
-@pytest.mark.asyncio
-async def test_show_project_invalid_uuid(compute_api):
-
-    response = await compute_api.get("/projects/50010203-0405-0607-0809-0a0b0c0d0e42")
-    assert response.status_code == 404
+    #print(response.json().keys())
+    #assert len(response.json().keys()) == 3
+    assert response.json()["project_id"] == base_params["project_id"]
+    assert response.json()["name"] == base_params["name"]
+    assert response.json()["variables"] is None
 
 
-@pytest.mark.asyncio
-async def test_list_projects(compute_api):
+async def test_show_project_invalid_uuid(app: FastAPI, client: AsyncClient) -> None:
+
+    response = await client.get(app.url_path_for("get_compute_project",
+                                                 project_id="50010203-0405-0607-0809-0a0b0c0d0e42"))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_list_projects(app: FastAPI, client: AsyncClient) -> dict:
 
     ProjectManager.instance()._projects = {}
 
     params = {"name": "test", "project_id": "51010203-0405-0607-0809-0a0b0c0d0e0f"}
-    response = await compute_api.post("/projects", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_compute_project"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
     params = {"name": "test", "project_id": "52010203-0405-0607-0809-0a0b0c0d0e0b"}
-    response = await compute_api.post("/projects", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_compute_project"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await compute_api.get("/projects")
-    assert response.status_code == 200
-    assert len(response.json) == 2
-    assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json]
+    response = await client.get(app.url_path_for("get_compute_projects"))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 2
+    assert "51010203-0405-0607-0809-0a0b0c0d0e0f" in [p["project_id"] for p in response.json()]
 
 
-@pytest.mark.asyncio
-async def test_delete_project(compute_api, compute_project):
+async def test_delete_project(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
     with asyncio_patch("gns3server.compute.project.Project.delete", return_value=True) as mock:
-        response = await compute_api.delete("/projects/{project_id}".format(project_id=compute_project.id))
-        assert response.status_code == 204
+        response = await client.delete(app.url_path_for("delete_compute_project", project_id=compute_project.id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
         assert mock.called
 
 
-@pytest.mark.asyncio
-async def test_update_project(compute_api, base_params):
+async def test_update_project(app: FastAPI, client: AsyncClient, base_params: dict) -> None:
 
-    response = await compute_api.post("/projects", base_params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_compute_project"), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
 
     params = {"variables": [{"name": "TEST1", "value": "VAL1"}]}
-    response = await compute_api.put("/projects/{project_id}".format(project_id=base_params["project_id"]), params)
-    assert response.status_code == 200
-    assert response.json["variables"] == [{"name": "TEST1", "value": "VAL1"}]
+    response = await client.put(app.url_path_for("update_compute_project", project_id=base_params["project_id"]),
+                                json=params)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["variables"] == [{"name": "TEST1", "value": "VAL1"}]
 
 
-@pytest.mark.asyncio
-async def test_delete_project_invalid_uuid(compute_api):
+async def test_delete_project_invalid_uuid(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await compute_api.delete("/projects/{project_id}".format(project_id=uuid.uuid4()))
-    assert response.status_code == 404
+    response = await client.delete(app.url_path_for("delete_compute_project", project_id=str(uuid.uuid4())))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.asyncio
-async def test_close_project(compute_api, compute_project):
+async def test_close_project(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
     with asyncio_patch("gns3server.compute.project.Project.close", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/close".format(project_id=compute_project.id))
-        assert response.status_code == 204
+        response = await client.post(app.url_path_for("close_compute_project", project_id=compute_project.id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
         assert mock.called
 
 
@@ -148,20 +147,18 @@ async def test_close_project(compute_api, compute_project):
 #
 #     ProjectHandler._notifications_listening = {compute_project.id: 2}
 #     with asyncio_patch("gns3server.compute.project.Project.close", return_value=True) as mock:
-#         response = await compute_api.post("/projects/{project_id}/close".format(project_id=compute_project.id))
-#         assert response.status_code == 204
+#         response = await client.post("/projects/{project_id}/close".format(project_id=compute_project.id))
+#         assert response.status_code == status.HTTP_204_NO_CONTENT
 #         assert not mock.called
 
 
-@pytest.mark.asyncio
-async def test_close_project_invalid_uuid(compute_api):
+async def test_close_project_invalid_uuid(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await compute_api.post("/projects/{project_id}/close".format(project_id=uuid.uuid4()))
-    assert response.status_code == 404
+    response = await client.post(app.url_path_for("close_compute_project", project_id=str(uuid.uuid4())))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.asyncio
-async def test_get_file(compute_api, tmpdir):
+async def test_get_file(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
@@ -169,48 +166,33 @@ async def test_get_file(compute_api, tmpdir):
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")
 
-    response = await compute_api.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("get_compute_project_file", project_id=project.id, file_path="hello"))
+    assert response.status_code == status.HTTP_200_OK
     assert response.content == b"world"
 
-    response = await compute_api.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
-    assert response.status_code == 404
+    response = await client.get(app.url_path_for("get_compute_project_file", project_id=project.id, file_path="false"))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    response = await compute_api.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status_code == 404
+    response = await client.get(app.url_path_for("get_compute_project_file",
+                                                 project_id=project.id,
+                                                 file_path="../hello"))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.asyncio
-async def test_write_file(compute_api, tmpdir):
+async def test_write_file(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
-    response = await compute_api.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
-    assert response.status_code == 204
+    response = await client.post(app.url_path_for("write_compute_project_file",
+                                                  project_id=project.id,
+                                                  file_path="hello"), content=b"world")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(os.path.join(project.path, "hello")) as f:
         assert f.read() == "world"
 
-    response = await compute_api.post("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_stream_file(compute_api, tmpdir):
-
-    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
-        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
-
-    with open(os.path.join(project.path, "hello"), "w+") as f:
-        f.write("world")
-
-    response = await compute_api.get("/projects/{project_id}/files/hello".format(project_id=project.id), raw=True)
-    assert response.status_code == 200
-    assert response.content == b"world"
-
-    response = await compute_api.get("/projects/{project_id}/files/false".format(project_id=project.id), raw=True)
-    assert response.status_code == 404
-
-    response = await compute_api.get("/projects/{project_id}/files/../hello".format(project_id=project.id), raw=True)
-    assert response.status_code == 404
+    response = await client.post(app.url_path_for("write_compute_project_file",
+                                                  project_id=project.id,
+                                                  file_path="../hello"))
+    assert response.status_code == status.HTTP_404_NOT_FOUND

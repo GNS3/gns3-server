@@ -16,26 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.controller.drawing import Drawing
+from gns3server.controller.project import Project
+
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
-async def test_create_drawing(controller_api, project):
-
-    params = {
-        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
-        "x": 10,
-        "y": 20,
-        "z": 0
-    }
-
-    response = await controller_api.post("/projects/{}/drawings".format(project.id), params)
-    assert response.status_code == 201
-    assert response.json["drawing_id"] is not None
-
-
-@pytest.mark.asyncio
-async def test_get_drawing(controller_api, project):
+async def test_create_drawing(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     params = {
         "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
@@ -44,30 +35,31 @@ async def test_get_drawing(controller_api, project):
         "z": 0
     }
 
-    response = await controller_api.post("/projects/{}/drawings".format(project.id), params)
-    response = await controller_api.get("/projects/{}/drawings/{}".format(project.id, response.json["drawing_id"]))
+    response = await client.post(app.url_path_for("create_drawing", project_id=project.id), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["drawing_id"] is not None
+
+
+async def test_get_drawing(app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+    params = {
+        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
+        "x": 10,
+        "y": 20,
+        "z": 0
+    }
+
+    response = await client.post(app.url_path_for("create_drawing", project_id=project.id), json=params)
+    response = await client.get(app.url_path_for(
+        "get_drawing",
+        project_id=project.id,
+        drawing_id=response.json()["drawing_id"])
+    )
     assert response.status_code == 200
-    assert response.json["x"] == 10
+    assert response.json()["x"] == 10
 
 
-@pytest.mark.asyncio
-async def test_update_drawing(controller_api, project):
-
-    params = {
-        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
-        "x": 10,
-        "y": 20,
-        "z": 0
-    }
-
-    response = await controller_api.post("/projects/{}/drawings".format(project.id), params)
-    response = await controller_api.put("/projects/{}/drawings/{}".format(project.id, response.json["drawing_id"]), {"x": 42})
-    assert response.status_code == 200
-    assert response.json["x"] == 42
-
-
-@pytest.mark.asyncio
-async def test_list_drawing(controller_api, project):
+async def test_update_drawing(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     params = {
         "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
@@ -76,17 +68,41 @@ async def test_list_drawing(controller_api, project):
         "z": 0
     }
 
-    await controller_api.post("/projects/{}/drawings".format(project.id), params)
-    response = await controller_api.get("/projects/{}/drawings".format(project.id))
-    assert response.status_code == 200
-    assert len(response.json) == 1
+    response = await client.post(app.url_path_for("create_drawing", project_id=project.id), json=params)
+    response = await client.put(app.url_path_for(
+        "update_drawing",
+        project_id=project.id,
+        drawing_id=response.json()["drawing_id"]),
+        json={"x": 42}
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["x"] == 42
 
 
-@pytest.mark.asyncio
-async def test_delete_drawing(controller_api, project):
+async def test_all_drawings(app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+    params = {
+        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
+        "x": 10,
+        "y": 20,
+        "z": 0
+    }
+
+    await client.post(app.url_path_for("create_drawing", project_id=project.id), json=params)
+    response = await client.get(app.url_path_for("get_drawings", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 1
+
+
+async def test_delete_drawing(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     drawing = Drawing(project)
     project._drawings = {drawing.id: drawing}
-    response = await controller_api.delete("/projects/{}/drawings/{}".format(project.id, drawing.id))
-    assert response.status_code == 204
+    response = await client.delete(app.url_path_for(
+        "delete_drawing",
+        project_id=project.id,
+        drawing_id=drawing.id)
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
     assert drawing.id not in project.drawings

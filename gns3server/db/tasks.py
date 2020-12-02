@@ -15,16 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+from sqlalchemy.exc import SQLAlchemyError
 
-from fastapi import FastAPI, status
-from httpx import AsyncClient
+from .database import engine
+from .models import Base
 
-pytestmark = pytest.mark.asyncio
+import logging
+log = logging.getLogger(__name__)
 
 
-async def test_appliances_list(app: FastAPI, client: AsyncClient) -> None:
+async def connect_to_db() -> None:
 
-    response = await client.get(app.url_path_for("get_appliances"))
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) > 0
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            log.info("Successfully connected to the database")
+    except SQLAlchemyError as e:
+        log.error(f"Error while connecting to the database: {e}")

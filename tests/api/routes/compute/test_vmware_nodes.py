@@ -16,13 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from tests.utils import asyncio_patch
 from unittest.mock import patch
 
+from gns3server.compute.project import Project
+
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture(scope="function")
-@pytest.mark.asyncio
-async def vm(compute_api, compute_project, vmx_path):
+async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, vmx_path: str) -> dict:
 
     params = {
         "name": "VMTEST",
@@ -31,15 +37,15 @@ async def vm(compute_api, compute_project, vmx_path):
     }
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.create", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes".format(project_id=compute_project.id), params)
-    assert mock.called
-    assert response.status_code == 201, response.body.decode()
-    return response.json
+        response = await client.post(app.url_path_for("create_vmware_node", project_id=compute_project.id),
+                                     json=params)
+        assert mock.called
+        assert response.status_code == status.HTTP_201_CREATED
+        return response.json()
 
 
 @pytest.fixture
-@pytest.mark.asyncio
-def vmx_path(tmpdir):
+def vmx_path(tmpdir: str) -> str:
     """
     Return a fake VMX file
     """
@@ -50,8 +56,7 @@ def vmx_path(tmpdir):
     return path
 
 
-@pytest.mark.asyncio
-async def test_vmware_create(compute_api, compute_project, vmx_path):
+async def test_vmware_create(app: FastAPI, client: AsyncClient, compute_project: Project, vmx_path: str) -> None:
 
     params = {
         "name": "VM1",
@@ -60,70 +65,74 @@ async def test_vmware_create(compute_api, compute_project, vmx_path):
     }
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.create", return_value=True):
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes".format(project_id=compute_project.id), params)
-        assert response.status_code == 201, response.body.decode()
-        assert response.json["name"] == "VM1"
-        assert response.json["project_id"] == compute_project.id
+        response = await client.post(app.url_path_for("create_vmware_node", project_id=compute_project.id),
+                                     json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["name"] == "VM1"
+        assert response.json()["project_id"] == compute_project.id
 
 
-@pytest.mark.asyncio
-async def test_vmware_get(compute_api, compute_project, vm):
+async def test_vmware_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await compute_api.get("/projects/{project_id}/vmware/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-    assert response.status_code == 200
-    assert response.json["name"] == "VMTEST"
-    assert response.json["project_id"] == compute_project.id
+    response = await client.get(app.url_path_for("get_vmware_node", project_id=vm["project_id"], node_id=vm["node_id"]))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "VMTEST"
+    assert response.json()["project_id"] == compute_project.id
 
 
-@pytest.mark.asyncio
-async def test_vmware_start(compute_api, vm):
+async def test_vmware_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.check_hw_virtualization", return_value=True) as mock1:
         with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.start", return_value=True) as mock2:
-            response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+            response = await client.post(app.url_path_for("start_vmware_node",
+                                                          project_id=vm["project_id"],
+                                                          node_id=vm["node_id"]))
             assert mock1.called
             assert mock2.called
-            assert response.status_code == 204
+            assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_stop(compute_api, vm):
+async def test_vmware_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.stop", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("stop_vmware_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_suspend(compute_api, vm):
+async def test_vmware_suspend(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.suspend", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/suspend".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("suspend_vmware_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_resume(compute_api, vm):
+async def test_vmware_resume(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.resume", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/resume".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("resume_vmware_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_reload(compute_api, vm):
+async def test_vmware_reload(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.reload", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/reload".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("reload_vmware_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_nio_create_udp(compute_api, vm):
+async def test_vmware_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {
         "type": "nio_udp",
@@ -132,18 +141,24 @@ async def test_vmware_nio_create_udp(compute_api, vm):
         "rhost": "127.0.0.1"
     }
 
+    url = app.url_path_for("create_vmware_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
+
     with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM.adapter_add_nio_binding') as mock:
-        response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+        response = await client.post(url, json=params)
         assert mock.called
         args, kwgars = mock.call_args
         assert args[0] == 0
 
-    assert response.status_code == 201
-    assert response.json["type"] == "nio_udp"
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["type"] == "nio_udp"
 
 
 # @pytest.mark.asyncio
-# async def test_vmware_nio_update_udp(compute_api, vm):
+# async def test_vmware_nio_update_udp(app: FastAPI, client: AsyncClient, vm):
 #
 #     params = {
 #         "type": "nio_udp",
@@ -156,68 +171,84 @@ async def test_vmware_nio_create_udp(compute_api, vm):
 #     with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM._ubridge_send'):
 #         with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM.ethernet_adapters'):
 #             with patch('gns3server.compute.vmware.vmware_vm.VMwareVM._get_vnet') as mock:
-#                 response = await compute_api.put("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-#                 assert response.status_code == 201
-#                 assert response.json["type"] == "nio_udp"
+#                 response = await client.put("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+#                 assert response.status_code == status.HTTP_201_CREATED
+#                 assert response.json()["type"] == "nio_udp"
 
 
-@pytest.mark.asyncio
-async def test_vmware_delete_nio(compute_api, vm):
+async def test_vmware_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> None:
+
+    url = app.url_path_for("delete_vmware_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
 
     with asyncio_patch('gns3server.compute.vmware.vmware_vm.VMwareVM.adapter_remove_nio_binding') as mock:
-        response = await compute_api.delete("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.delete(url)
         assert mock.called
         args, kwgars = mock.call_args
         assert args[0] == 0
 
-    assert response.status_code == 204
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_vmware_update(compute_api, vm, free_console_port):
+async def test_vmware_update(app: FastAPI, client: AsyncClient, vm: dict, free_console_port: int) -> None:
 
     params = {
         "name": "test",
         "console": free_console_port
     }
 
-    response = await compute_api.put("/projects/{project_id}/vmware/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 200
-    assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
+    response = await client.put(app.url_path_for("update_vmware_node",
+                                                 project_id=vm["project_id"],
+                                                 node_id=vm["node_id"]), json=params)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "test"
+    assert response.json()["console"] == free_console_port
 
 
-@pytest.mark.asyncio
-async def test_vmware_start_capture(compute_api, vm):
+async def test_vmware_start_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {
         "capture_file_name": "test.pcap",
         "data_link_type": "DLT_EN10MB"
     }
 
+    url = app.url_path_for("start_vmware_node_capture",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
+
     with patch("gns3server.compute.vmware.vmware_vm.VMwareVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.start_capture") as mock:
 
-            response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/capture/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), body=params)
-            assert response.status_code == 200
+            response = await client.post(url, json=params)
+            assert response.status_code == status.HTTP_200_OK
             assert mock.called
-            assert "test.pcap" in response.json["pcap_file_path"]
+            assert "test.pcap" in response.json()["pcap_file_path"]
 
 
-@pytest.mark.asyncio
-async def test_vmware_stop_capture(compute_api, vm):
+async def test_vmware_stop_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
+
+    url = app.url_path_for("stop_vmware_node_capture",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
 
     with patch("gns3server.compute.vmware.vmware_vm.VMwareVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.stop_capture") as mock:
-            response = await compute_api.post("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/capture/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-            assert response.status_code == 204
+            response = await client.post(url)
+            assert response.status_code == status.HTTP_204_NO_CONTENT
             assert mock.called
 
 
 # @pytest.mark.asyncio
-# async def test_vmware_pcap(compute_api, vm, compute_project):
+# async def test_vmware_pcap(app: FastAPI, client: AsyncClient, vm, compute_project):
 #
 #     with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.get_nio"):
 #         with asyncio_patch("gns3server.compute.vmware.VMware.stream_pcap_file"):
-#             response = await compute_api.get("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]), raw=True)
-#             assert response.status_code == 200
+#             response = await client.get("/projects/{project_id}/vmware/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]), raw=True)
+#             assert response.status_code == status.HTTP_200_OK

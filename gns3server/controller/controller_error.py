@@ -35,6 +35,12 @@ class ControllerNotFoundError(ControllerError):
         super().__init__(message)
 
 
+class ControllerBadRequestError(ControllerError):
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class ControllerUnauthorizedError(ControllerError):
 
     def __init__(self, message: str):

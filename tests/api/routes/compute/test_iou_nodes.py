@@ -21,14 +21,19 @@ import stat
 import sys
 import uuid
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from tests.utils import asyncio_patch
 from unittest.mock import patch
 
-pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+from gns3server.compute.project import Project
+
+pytestmark = [pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows"),
+              pytest.mark.asyncio]
 
 
 @pytest.fixture
-def fake_iou_bin(images_dir):
+def fake_iou_bin(images_dir) -> str:
     """Create a fake IOU image on disk"""
 
     path = os.path.join(images_dir, "IOU", "iou.bin")
@@ -39,44 +44,44 @@ def fake_iou_bin(images_dir):
 
 
 @pytest.fixture
-def base_params(tmpdir, fake_iou_bin):
+def base_params(tmpdir, fake_iou_bin) -> dict:
     """Return standard parameters"""
 
     return {"application_id": 42, "name": "PC TEST 1", "path": "iou.bin"}
 
 
 @pytest.fixture
-@pytest.mark.asyncio
-async def vm(compute_api, compute_project, base_params):
+async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, base_params: dict) -> dict:
 
-    response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), base_params)
-    assert response.status_code == 201
-    return response.json
+    response = await client.post(app.url_path_for("create_iou_node", project_id=compute_project.id), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
+    return response.json()
 
 
-def startup_config_file(compute_project, vm):
+def startup_config_file(compute_project: Project, vm: dict) -> str:
 
     directory = os.path.join(compute_project.path, "project-files", "iou", vm["node_id"])
     os.makedirs(directory, exist_ok=True)
     return os.path.join(directory, "startup-config.cfg")
 
 
-@pytest.mark.asyncio
-async def test_iou_create(compute_api, compute_project, base_params):
+async def test_iou_create(app: FastAPI, client: AsyncClient, compute_project: Project, base_params: dict) -> None:
 
-    response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), base_params)
-    assert response.status_code == 201
-    assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_id"] == compute_project.id
-    assert response.json["serial_adapters"] == 2
-    assert response.json["ethernet_adapters"] == 2
-    assert response.json["ram"] == 256
-    assert response.json["nvram"] == 128
-    assert response.json["l1_keepalives"] is False
+    response = await client.post(app.url_path_for("create_iou_node", project_id=compute_project.id), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["project_id"] == compute_project.id
+    assert response.json()["serial_adapters"] == 2
+    assert response.json()["ethernet_adapters"] == 2
+    assert response.json()["ram"] == 256
+    assert response.json()["nvram"] == 128
+    assert response.json()["l1_keepalives"] is False
 
 
-@pytest.mark.asyncio
-async def test_iou_create_with_params(compute_api, compute_project, base_params):
+async def test_iou_create_with_params(app: FastAPI,
+                                      client: AsyncClient,
+                                      compute_project: Project,
+                                      base_params: dict) -> None:
 
     params = base_params
     params["ram"] = 1024
@@ -87,23 +92,26 @@ async def test_iou_create_with_params(compute_api, compute_project, base_params)
     params["startup_config_content"] = "hostname test"
     params["use_default_iou_values"] = False
 
-    response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), params)
-    assert response.status_code == 201
-    assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_id"] == compute_project.id
-    assert response.json["serial_adapters"] == 4
-    assert response.json["ethernet_adapters"] == 0
-    assert response.json["ram"] == 1024
-    assert response.json["nvram"] == 512
-    assert response.json["l1_keepalives"] is True
-    assert response.json["use_default_iou_values"] is False
+    response = await client.post(app.url_path_for("create_iou_node", project_id=compute_project.id), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["project_id"] == compute_project.id
+    assert response.json()["serial_adapters"] == 4
+    assert response.json()["ethernet_adapters"] == 0
+    assert response.json()["ram"] == 1024
+    assert response.json()["nvram"] == 512
+    assert response.json()["l1_keepalives"] is True
+    assert response.json()["use_default_iou_values"] is False
 
-    with open(startup_config_file(compute_project, response.json)) as f:
+    with open(startup_config_file(compute_project, response.json())) as f:
         assert f.read() == "hostname test"
 
 
-@pytest.mark.asyncio
-async def test_iou_create_startup_config_already_exist(compute_api, compute_project, base_params):
+async def test_iou_create_startup_config_already_exist(
+        app: FastAPI,
+        client: AsyncClient,
+        compute_project: Project,
+        base_params: dict) -> None:
     """We don't erase a startup-config if already exist at project creation"""
 
     node_id = str(uuid.uuid4())
@@ -115,78 +123,78 @@ async def test_iou_create_startup_config_already_exist(compute_api, compute_proj
     params["node_id"] = node_id
     params["startup_config_content"] = "hostname test"
 
-    response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_iou_node", project_id=compute_project.id), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    with open(startup_config_file(compute_project, response.json)) as f:
+    with open(startup_config_file(compute_project, response.json())) as f:
         assert f.read() == "echo hello"
 
 
-@pytest.mark.asyncio
-async def test_iou_get(compute_api, compute_project, vm):
+async def test_iou_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await compute_api.get("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-    assert response.status_code == 200
-    assert response.json["name"] == "PC TEST 1"
-    assert response.json["project_id"] == compute_project.id
-    assert response.json["serial_adapters"] == 2
-    assert response.json["ethernet_adapters"] == 2
-    assert response.json["ram"] == 256
-    assert response.json["nvram"] == 128
-    assert response.json["l1_keepalives"] is False
+    response = await client.get(app.url_path_for("get_iou_node", project_id=vm["project_id"], node_id=vm["node_id"]))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["project_id"] == compute_project.id
+    assert response.json()["serial_adapters"] == 2
+    assert response.json()["ethernet_adapters"] == 2
+    assert response.json()["ram"] == 256
+    assert response.json()["nvram"] == 128
+    assert response.json()["l1_keepalives"] is False
 
 
-@pytest.mark.asyncio
-async def test_iou_start(compute_api, vm):
+async def test_iou_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("start_iou_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]), json={})
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_start_with_iourc(compute_api, vm):
+async def test_iou_start_with_iourc(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {"iourc_content": "test"}
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+        response = await client.post(app.url_path_for("start_iou_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]), json=params)
         assert mock.called
-        assert response.status_code == 204
-
-    response = await compute_api.get("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-    assert response.status_code == 200
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_stop(compute_api, vm):
+async def test_iou_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("stop_iou_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_reload(compute_api, vm):
+async def test_iou_reload(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.reload", return_value=True) as mock:
-        response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/reload".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.post(app.url_path_for("reload_iou_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_delete(compute_api, vm):
+async def test_iou_delete(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.iou.IOU.delete_node", return_value=True) as mock:
-        response = await compute_api.delete("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]))
+        response = await client.delete(app.url_path_for("delete_iou_node",
+                                                        project_id=vm["project_id"],
+                                                        node_id=vm["node_id"]))
         assert mock.called
-        assert response.status_code == 204
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_update(compute_api, vm, free_console_port):
+async def test_iou_update(app: FastAPI, client: AsyncClient, vm: dict, free_console_port: int) -> None:
 
     params = {
         "name": "test",
@@ -199,91 +207,122 @@ async def test_iou_update(compute_api, vm, free_console_port):
         "use_default_iou_values": True,
     }
 
-    response = await compute_api.put("/projects/{project_id}/iou/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 200
-    assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
-    assert response.json["ethernet_adapters"] == 4
-    assert response.json["serial_adapters"] == 0
-    assert response.json["ram"] == 512
-    assert response.json["nvram"] == 2048
-    assert response.json["l1_keepalives"] is True
-    assert response.json["use_default_iou_values"] is True
+    response = await client.put(app.url_path_for("update_iou_node",
+                                                 project_id=vm["project_id"],
+                                                 node_id=vm["node_id"]), json=params)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "test"
+    assert response.json()["console"] == free_console_port
+    assert response.json()["ethernet_adapters"] == 4
+    assert response.json()["serial_adapters"] == 0
+    assert response.json()["ram"] == 512
+    assert response.json()["nvram"] == 2048
+    assert response.json()["l1_keepalives"] is True
+    assert response.json()["use_default_iou_values"] is True
 
 
-@pytest.mark.asyncio
-async def test_iou_nio_create_udp(compute_api, vm):
-
-    params = {"type": "nio_udp",
-              "lport": 4242,
-              "rport": 4343,
-              "rhost": "127.0.0.1"}
-
-    response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 201
-    assert response.json["type"] == "nio_udp"
-
-
-@pytest.mark.asyncio
-async def test_iou_nio_update_udp(compute_api, vm):
+async def test_iou_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {"type": "nio_udp",
               "lport": 4242,
               "rport": 4343,
               "rhost": "127.0.0.1"}
 
-    await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+    response = await client.post(url, json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["type"] == "nio_udp"
 
+
+async def test_iou_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) -> None:
+
+    params = {"type": "nio_udp",
+              "lport": 4242,
+              "rport": 4343,
+              "rhost": "127.0.0.1"}
+
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+
+    await client.post(url, json=params)
     params["filters"] = {}
-    response = await compute_api.put("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 201, response.body.decode()
-    assert response.json["type"] == "nio_udp"
+
+    url = app.url_path_for("update_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+    response = await client.put(url, json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["type"] == "nio_udp"
 
 
-@pytest.mark.asyncio
-async def test_iou_nio_create_ethernet(compute_api, vm, ethernet_device):
-
-    params = {
-        "type": "nio_ethernet",
-        "ethernet_device": ethernet_device
-    }
-
-    response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 201
-    assert response.json["type"] == "nio_ethernet"
-    assert response.json["ethernet_device"] == ethernet_device
-
-
-@pytest.mark.asyncio
-async def test_iou_nio_create_ethernet_different_port(compute_api, vm, ethernet_device):
+async def test_iou_nio_create_ethernet(app: FastAPI, client: AsyncClient, vm: dict, ethernet_device: str) -> None:
 
     params = {
         "type": "nio_ethernet",
         "ethernet_device": ethernet_device
     }
 
-    response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/3/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 201
-    assert response.json["type"] == "nio_ethernet"
-    assert response.json["ethernet_device"] == ethernet_device
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+
+    response = await client.post(url, json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["type"] == "nio_ethernet"
+    assert response.json()["ethernet_device"] == ethernet_device
 
 
-@pytest.mark.asyncio
-async def test_iou_nio_create_tap(compute_api, vm, ethernet_device):
+async def test_iou_nio_create_ethernet_different_port(app: FastAPI,
+                                                      client: AsyncClient,
+                                                      vm: dict,
+                                                      ethernet_device: str) -> None:
+
+    params = {
+        "type": "nio_ethernet",
+        "ethernet_device": ethernet_device
+    }
+
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="3")
+    response = await client.post(url, json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["type"] == "nio_ethernet"
+    assert response.json()["ethernet_device"] == ethernet_device
+
+
+async def test_iou_nio_create_tap(app: FastAPI, client: AsyncClient, vm: dict, ethernet_device: str) -> None:
 
     params = {
         "type": "nio_tap",
         "tap_device": ethernet_device
     }
 
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
     with patch("gns3server.compute.base_manager.BaseManager.has_privileged_access", return_value=True):
-        response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-        assert response.status_code == 201
-        assert response.json["type"] == "nio_tap"
+        response = await client.post(url, json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["type"] == "nio_tap"
 
 
-@pytest.mark.asyncio
-async def test_iou_delete_nio(compute_api, vm):
+async def test_iou_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {
         "type": "nio_udp",
@@ -292,33 +331,57 @@ async def test_iou_delete_nio(compute_api, vm):
         "rhost": "127.0.0.1"
     }
 
-    await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    response = await compute_api.delete("/projects/{project_id}/iou/nodes/{node_id}/adapters/1/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-    assert response.status_code == 204
+    url = app.url_path_for("create_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+
+    await client.post(url, json=params)
+
+    url = app.url_path_for("delete_iou_node_nio",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="1",
+                           port_number="0")
+
+    response = await client.delete(url)
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-@pytest.mark.asyncio
-async def test_iou_start_capture(compute_api, vm):
+async def test_iou_start_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     params = {
         "capture_file_name": "test.pcap",
         "data_link_type": "DLT_EN10MB"
     }
+
+    url = app.url_path_for("start_iou_node_capture",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
+
     with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.start_capture") as mock:
-            response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/capture/start".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-            assert response.status_code == 200
+            response = await client.post(url, json=params)
+            assert response.status_code == status.HTTP_200_OK
             assert mock.called
-            assert "test.pcap" in response.json["pcap_file_path"]
+            assert "test.pcap" in response.json()["pcap_file_path"]
 
 
-@pytest.mark.asyncio
-async def test_iou_stop_capture(compute_api, vm):
+async def test_iou_stop_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
+
+    url = app.url_path_for("stop_iou_node_capture",
+                           project_id=vm["project_id"],
+                           node_id=vm["node_id"],
+                           adapter_number="0",
+                           port_number="0")
 
     with patch("gns3server.compute.iou.iou_vm.IOUVM.is_running", return_value=True):
         with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.stop_capture") as mock:
-            response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/capture/stop".format(project_id=vm["project_id"], node_id=vm["node_id"]))
-            assert response.status_code == 204
+            response = await client.post(url)
+            assert response.status_code == status.HTTP_204_NO_CONTENT
             assert mock.called
 
 
@@ -327,24 +390,22 @@ async def test_iou_stop_capture(compute_api, vm):
 #
 #     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM.get_nio"):
 #         with asyncio_patch("gns3server.compute.iou.IOU.stream_pcap_file"):
-#             response = await compute_api.get("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]), raw=True)
-#             assert response.status_code == 200
+#             response = await client.get("/projects/{project_id}/iou/nodes/{node_id}/adapters/0/ports/0/pcap".format(project_id=compute_project.id, node_id=vm["node_id"]), raw=True)
+#             assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.asyncio
-async def test_images(compute_api, fake_iou_bin):
+async def test_images(app: FastAPI, client: AsyncClient, fake_iou_bin: str) -> None:
 
-    response = await compute_api.get("/iou/images")
-    assert response.status_code == 200
-    assert response.json == [{"filename": "iou.bin", "path": "iou.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c"}]
+    response = await client.get(app.url_path_for("get_iou_images"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [{"filename": "iou.bin", "path": "iou.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c"}]
 
 
-@pytest.mark.asyncio
-async def test_image_vm(compute_api, tmpdir):
+async def test_image_vm(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir)):
-        response = await compute_api.post("/iou/images/test2", body="TEST", raw=True)
-        assert response.status_code == 204
+        response = await client.post(app.url_path_for("download_iou_image", filename="test2"), content=b"TEST")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(str(tmpdir / "test2")) as f:
         assert f.read() == "TEST"
@@ -354,13 +415,15 @@ async def test_image_vm(compute_api, tmpdir):
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-@pytest.mark.asyncio
-async def test_iou_duplicate(compute_api, compute_project, vm, base_params):
+async def test_iou_duplicate(app: FastAPI, client: AsyncClient, vm: dict, base_params: dict) -> None:
 
     # create destination node first
-    response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), base_params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_iou_node", project_id=vm["project_id"]), json=base_params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    params = {"destination_node_id": response.json["node_id"]}
-    response = await compute_api.post("/projects/{project_id}/iou/nodes/{node_id}/duplicate".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status_code == 201
+    params = {"destination_node_id": response.json()["node_id"]}
+
+    response = await client.post(app.url_path_for("duplicate_iou_node",
+                                                  project_id=vm["project_id"],
+                                                  node_id=vm["node_id"]), json=params)
+    assert response.status_code == status.HTTP_201_CREATED

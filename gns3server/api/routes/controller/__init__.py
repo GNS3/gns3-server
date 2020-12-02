@@ -28,9 +28,11 @@ from . import projects
 from . import snapshots
 from . import symbols
 from . import templates
+from . import users
 
 router = APIRouter()
 router.include_router(controller.router, tags=["Controller"])
+router.include_router(users.router, prefix="/users", tags=["Users"])
 router.include_router(appliances.router, prefix="/appliances", tags=["Appliances"])
 router.include_router(computes.router, prefix="/computes", tags=["Computes"])
 router.include_router(drawings.router, prefix="/projects/{project_id}/drawings", tags=["Drawings"])

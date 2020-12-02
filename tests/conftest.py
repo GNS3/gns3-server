@@ -5,6 +5,10 @@ import shutil
 import sys
 import os
 
+from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from asgi_lifespan import LifespanManager
+from httpx import AsyncClient
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
@@ -13,16 +17,23 @@ from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-
-
-from tests.api.routes.base import Query
+from gns3server.db.database import Base
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
 
-from fastapi.testclient import TestClient
-from gns3server.api.server import app
-from httpx import AsyncClient
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+
+engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+
+async def start_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 
 if sys.platform.startswith("win") and sys.version_info < (3, 8):
@@ -39,16 +50,39 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
         asyncio.set_event_loop(None)
 
 
-@pytest.fixture(scope='function')
-def http_client():
+# @pytest.mark.asyncio
+# @pytest.fixture(scope="session", autouse=True)
+# async def database_connection() -> None:
+#
+#     from gns3server.db.tasks import connect_to_db
+#     os.environ["DATABASE_URI"] = "sqlite:///./sql_app_test.db"
+#     await connect_to_db()
+#     yield
 
-    return AsyncClient(app=app, base_url="http://test-api")
+
+@pytest.fixture#(scope="session")
+async def app() -> FastAPI:
+
+    from gns3server.api.server import app as gns3_app
+    gns3_app.add_event_handler("startup", start_db())
+    return gns3_app
 
 
-@pytest.fixture(scope='function')
-def ws_client():
+# Grab a reference to our database when needed
+#@pytest.fixture
+#def db(app: FastAPI) -> Database:
+#    return app.state._db
 
-    return TestClient(app)
+@pytest.fixture
+async def client(app: FastAPI) -> AsyncClient:
+
+    #async with LifespanManager(app):
+    async with AsyncClient(
+            app=app,
+            base_url="http://test-api",
+            headers={"Content-Type": "application/json"}
+    ) as client:
+        yield client
 
 
 @pytest.fixture
@@ -89,24 +123,6 @@ async def project(tmpdir, controller):
 def compute_project(tmpdir):
 
     return ProjectManager.instance().create_project(project_id="a1e920ca-338a-4e9f-b363-aa607b09dd80")
-
-
-@pytest.fixture
-def compute_api(http_client, ws_client):
-    """
-    Return an helper allowing you to call the hypervisor API via HTTP
-    """
-
-    return Query(http_client, ws_client, prefix="/compute", api_version=3)
-
-
-@pytest.fixture
-def controller_api(http_client, ws_client, controller):
-    """
-    Return an helper allowing you to call the server API without any prefix
-    """
-
-    return Query(http_client, ws_client, api_version=3)
 
 
 @pytest.fixture
@@ -285,3 +301,4 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
         shutil.rmtree(tmppath)
     except BaseException:
         pass
+

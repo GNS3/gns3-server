@@ -18,25 +18,29 @@
 import os
 import pytest
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from unittest.mock import MagicMock
 
+from gns3server.config import Config
 
-@pytest.mark.asyncio
-async def test_shutdown_local(controller_api, config):
+pytestmark = pytest.mark.asyncio
+
+
+async def test_shutdown_local(app: FastAPI, client: AsyncClient, config: Config) -> None:
 
     os.kill = MagicMock()
     config.set("Server", "local", True)
-    response = await controller_api.post('/shutdown')
-    assert response.status_code == 204
+    response = await client.post(app.url_path_for("shutdown"))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
     assert os.kill.called
 
 
-@pytest.mark.asyncio
-async def test_shutdown_non_local(controller_api, config):
+async def test_shutdown_non_local(app: FastAPI, client: AsyncClient, config: Config) -> None:
 
     config.set("Server", "local", False)
-    response = await controller_api.post('/shutdown')
-    assert response.status_code == 403
+    response = await client.post(app.url_path_for("shutdown"))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 # @pytest.mark.asyncio
@@ -60,8 +64,7 @@ async def test_shutdown_non_local(controller_api, config):
 #     assert response.status_code == 403
 
 
-@pytest.mark.asyncio
-async def test_statistics_output(controller_api):
+async def test_statistics_output(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await controller_api.get('/statistics')
-    assert response.status_code == 200
+    response = await client.get(app.url_path_for("statistics"))
+    assert response.status_code == status.HTTP_200_OK

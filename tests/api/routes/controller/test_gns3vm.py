@@ -16,39 +16,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from tests.utils import asyncio_patch
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
-async def test_list_vms(controller_api):
+
+async def test_list_vms(app: FastAPI, client: AsyncClient) -> None:
 
     with asyncio_patch("gns3server.controller.gns3vm.vmware_gns3_vm.VMwareGNS3VM.list", return_value=[{"vmname": "test"}]):
-        response = await controller_api.get('/gns3vm/engines/vmware/vms')
-    assert response.status_code == 200
-    assert response.json == [
+        response = await client.get(app.url_path_for("get_vms", engine="vmware"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [
         {
             "vmname": "test"
         }
     ]
 
 
-@pytest.mark.asyncio
-async def test_engines(controller_api):
+async def test_engines(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await controller_api.get('/gns3vm/engines')
-    assert response.status_code == 200
-    assert len(response.json) > 0
-
-
-@pytest.mark.asyncio
-async def test_put_gns3vm(controller_api):
-
-    response = await controller_api.put('/gns3vm', {"vmname": "TEST VM"})
-    assert response.status_code == 200
-    assert response.json["vmname"] == "TEST VM"
+    response = await client.get(app.url_path_for("get_engines"))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) > 0
 
 
-@pytest.mark.asyncio
-async def test_get_gns3vm(controller_api):
-    response = await controller_api.get('/gns3vm')
-    assert response.status_code == 200
+async def test_put_gns3vm(app: FastAPI, client: AsyncClient) -> None:
+
+    response = await client.put(app.url_path_for("update_gns3vm_settings"), json={"vmname": "TEST VM"})
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["vmname"] == "TEST VM"
+
+
+async def test_get_gns3vm(app: FastAPI, client: AsyncClient) -> None:
+    response = await client.get(app.url_path_for("get_gns3vm_settings"))
+    assert response.status_code == status.HTTP_200_OK

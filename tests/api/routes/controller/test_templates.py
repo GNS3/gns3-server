@@ -19,13 +19,16 @@ import pytest
 import uuid
 
 from pathlib import Path
-from tests.utils import asyncio_patch
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 
+from gns3server.controller import Controller
 from gns3server.controller.template import Template
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
-async def test_template_list(controller_api, controller):
+
+async def test_template_list(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     id = str(uuid.uuid4())
     controller.template_manager.load_templates()
@@ -37,13 +40,12 @@ async def test_template_list(controller_api, controller):
         "default_name_format": "{name}-{0}",
         "compute_id": "local"
     })
-    response = await controller_api.get("/templates")
-    assert response.status_code == 200
-    assert len(response.json) > 0
+    response = await client.get(app.url_path_for("get_templates"))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) > 0
 
 
-@pytest.mark.asyncio
-async def test_template_create_without_id(controller_api, controller):
+async def test_template_create_without_id(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {"base_script_file": "vpcs_base_config.txt",
               "category": "guest",
@@ -55,14 +57,13 @@ async def test_template_create_without_id(controller_api, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
     assert len(controller.template_manager.templates) == 1
 
 
-@pytest.mark.asyncio
-async def test_template_create_with_id(controller_api, controller):
+async def test_template_create_with_id(app: FastAPI, client: AsyncClient, controller: Controller):
 
     params = {"template_id": str(uuid.uuid4()),
               "base_script_file": "vpcs_base_config.txt",
@@ -75,14 +76,13 @@ async def test_template_create_with_id(controller_api, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
     assert len(controller.template_manager.templates) == 1
 
 
-@pytest.mark.asyncio
-async def test_template_create_wrong_type(controller_api, controller):
+async def test_template_create_wrong_type(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     params = {"template_id": str(uuid.uuid4()),
               "base_script_file": "vpcs_base_config.txt",
@@ -95,13 +95,12 @@ async def test_template_create_wrong_type(controller_api, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "invalid_template_type"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 422
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(controller.template_manager.templates) == 0
 
 
-@pytest.mark.asyncio
-async def test_template_get(controller_api):
+async def test_template_get(app: FastAPI, client: AsyncClient) -> None:
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -115,16 +114,15 @@ async def test_template_get(controller_api):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.get("/templates/{}".format(template_id))
-    assert response.status_code == 200
-    assert response.json["template_id"] == template_id
+    response = await client.get(app.url_path_for("get_template", template_id=template_id))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["template_id"] == template_id
 
 
-@pytest.mark.asyncio
-async def test_template_update(controller_api):
+async def test_template_update(app: FastAPI, client: AsyncClient) -> None:
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -138,22 +136,21 @@ async def test_template_update(controller_api):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.get("/templates/{}".format(template_id))
-    assert response.status_code == 200
-    assert response.json["template_id"] == template_id
+    response = await client.get(app.url_path_for("get_template", template_id=template_id))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["template_id"] == template_id
 
     params["name"] = "VPCS_TEST_RENAMED"
-    response = await controller_api.put("/templates/{}".format(template_id), params)
+    response = await client.put(app.url_path_for("update_template", template_id=template_id), json=params)
 
-    assert response.status_code == 200
-    assert response.json["name"] == "VPCS_TEST_RENAMED"
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "VPCS_TEST_RENAMED"
 
 
-@pytest.mark.asyncio
-async def test_template_delete(controller_api, controller):
+async def test_template_delete(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -167,23 +164,22 @@ async def test_template_delete(controller_api, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.get("/templates")
-    assert len(response.json) == 1
+    response = await client.get(app.url_path_for("get_templates"))
+    assert len(response.json()) == 1
     assert len(controller.template_manager._templates) == 1
 
-    response = await controller_api.delete("/templates/{}".format(template_id))
-    assert response.status_code == 204
+    response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    response = await controller_api.get("/templates")
-    assert len(response.json) == 0
+    response = await client.get(app.url_path_for("get_templates"))
+    assert len(response.json()) == 0
     assert len(controller.template_manager.templates) == 0
 
 
-@pytest.mark.asyncio
-async def test_template_duplicate(controller_api, controller):
+async def test_template_duplicate(app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
     template_id = str(uuid.uuid4())
     params = {"template_id": template_id,
@@ -197,23 +193,22 @@ async def test_template_duplicate(controller_api, controller):
               "symbol": ":/symbols/vpcs_guest.svg",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    response = await controller_api.post("/templates/{}/duplicate".format(template_id))
-    assert response.status_code == 201
-    assert response.json["template_id"] != template_id
+    response = await client.post(app.url_path_for("duplicate_template", template_id=template_id))
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] != template_id
     params.pop("template_id")
     for param, value in params.items():
-        assert response.json[param] == value
+        assert response.json()[param] == value
 
-    response = await controller_api.get("/templates")
-    assert len(response.json) == 2
+    response = await client.get(app.url_path_for("get_templates"))
+    assert len(response.json()) == 2
     assert len(controller.template_manager.templates) == 2
 
 
-@pytest.mark.asyncio
-async def test_c7200_dynamips_template_create(controller_api):
+async def test_c7200_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c7200 template",
               "platform": "c7200",
@@ -221,9 +216,9 @@ async def test_c7200_dynamips_template_create(controller_api):
               "image": "c7200-adventerprisek9-mz.124-24.T5.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -255,11 +250,10 @@ async def test_c7200_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c3745_dynamips_template_create(controller_api):
+async def test_c3745_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c3745 template",
               "platform": "c3745",
@@ -267,9 +261,9 @@ async def test_c3745_dynamips_template_create(controller_api):
               "image": "c3745-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -300,11 +294,10 @@ async def test_c3745_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c3725_dynamips_template_create(controller_api):
+async def test_c3725_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c3725 template",
               "platform": "c3725",
@@ -312,9 +305,9 @@ async def test_c3725_dynamips_template_create(controller_api):
               "image": "c3725-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -345,11 +338,10 @@ async def test_c3725_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c3600_dynamips_template_create(controller_api):
+async def test_c3600_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c3600 template",
               "platform": "c3600",
@@ -358,9 +350,9 @@ async def test_c3600_dynamips_template_create(controller_api):
               "image": "c3660-a3jk9s-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -392,11 +384,10 @@ async def test_c3600_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c3600_dynamips_template_create_wrong_chassis(controller_api):
+async def test_c3600_dynamips_template_create_wrong_chassis(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c3600 template",
               "platform": "c3600",
@@ -405,12 +396,11 @@ async def test_c3600_dynamips_template_create_wrong_chassis(controller_api):
               "image": "c3660-a3jk9s-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_c2691_dynamips_template_create(controller_api):
+async def test_c2691_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c2691 template",
               "platform": "c2691",
@@ -418,9 +408,9 @@ async def test_c2691_dynamips_template_create(controller_api):
               "image": "c2691-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -451,11 +441,10 @@ async def test_c2691_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c2600_dynamips_template_create(controller_api):
+async def test_c2600_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c2600 template",
               "platform": "c2600",
@@ -464,9 +453,9 @@ async def test_c2600_dynamips_template_create(controller_api):
               "image": "c2600-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -498,11 +487,10 @@ async def test_c2600_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c2600_dynamips_template_create_wrong_chassis(controller_api):
+async def test_c2600_dynamips_template_create_wrong_chassis(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c2600 template",
               "platform": "c2600",
@@ -511,12 +499,11 @@ async def test_c2600_dynamips_template_create_wrong_chassis(controller_api):
               "image": "c2600-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_c1700_dynamips_template_create(controller_api):
+async def test_c1700_dynamips_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c1700 template",
               "platform": "c1700",
@@ -525,9 +512,9 @@ async def test_c1700_dynamips_template_create(controller_api):
               "image": "c1700-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "dynamips",
                          "auto_delete_disks": False,
@@ -559,11 +546,10 @@ async def test_c1700_dynamips_template_create(controller_api):
                          "system_id": "FTX0945W0MY"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_c1700_dynamips_template_create_wrong_chassis(controller_api):
+async def test_c1700_dynamips_template_create_wrong_chassis(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c1700 template",
               "platform": "c1700",
@@ -572,12 +558,11 @@ async def test_c1700_dynamips_template_create_wrong_chassis(controller_api):
               "image": "c1700-adventerprisek9-mz.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_dynamips_template_create_wrong_platform(controller_api):
+async def test_dynamips_template_create_wrong_platform(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cisco c3900 template",
               "platform": "c3900",
@@ -585,12 +570,11 @@ async def test_dynamips_template_create_wrong_platform(controller_api):
               "image": "c3900-test.124-25d.image",
               "template_type": "dynamips"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 409
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_iou_template_create(controller_api):
+async def test_iou_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     image_path = str(Path("/path/to/i86bi_linux-ipbase-ms-12.4.bin"))
     params = {"name": "IOU template",
@@ -598,9 +582,9 @@ async def test_iou_template_create(controller_api):
               "path": image_path,
               "template_type": "iou"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "iou",
                          "builtin": False,
@@ -622,20 +606,19 @@ async def test_iou_template_create(controller_api):
                          "l1_keepalives": False}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_docker_template_create(controller_api):
+async def test_docker_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Docker template",
               "compute_id": "local",
               "image": "gns3/endhost:latest",
               "template_type": "docker"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"adapters": 1,
                          "template_type": "docker",
@@ -657,11 +640,10 @@ async def test_docker_template_create(controller_api):
                          "custom_adapters": []}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_qemu_template_create(controller_api):
+async def test_qemu_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Qemu template",
               "compute_id": "local",
@@ -670,9 +652,9 @@ async def test_qemu_template_create(controller_api):
               "ram": 512,
               "template_type": "qemu"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"adapter_type": "e1000",
                          "adapters": 1,
@@ -717,11 +699,10 @@ async def test_qemu_template_create(controller_api):
                          "custom_adapters": []}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_vmware_template_create(controller_api):
+async def test_vmware_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     vmx_path = str(Path("/path/to/vm.vmx"))
     params = {"name": "VMware template",
@@ -729,9 +710,9 @@ async def test_vmware_template_create(controller_api):
               "template_type": "vmware",
               "vmx_path": vmx_path}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"adapter_type": "e1000",
                          "adapters": 1,
@@ -755,20 +736,19 @@ async def test_vmware_template_create(controller_api):
                          "custom_adapters": []}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_virtualbox_template_create(controller_api):
+async def test_virtualbox_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "VirtualBox template",
               "compute_id": "local",
               "template_type": "virtualbox",
               "vmname": "My VirtualBox VM"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"adapter_type": "Intel PRO/1000 MT Desktop (82540EM)",
                          "adapters": 1,
@@ -793,19 +773,18 @@ async def test_virtualbox_template_create(controller_api):
                          "custom_adapters": []}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_vpcs_template_create(controller_api):
+async def test_vpcs_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "VPCS template",
               "compute_id": "local",
               "template_type": "vpcs"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "vpcs",
                          "base_script_file": "vpcs_base_config.txt",
@@ -819,19 +798,18 @@ async def test_vpcs_template_create(controller_api):
                          "symbol": ":/symbols/vpcs_guest.svg"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_ethernet_switch_template_create(controller_api):
+async def test_ethernet_switch_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Ethernet switch template",
               "compute_id": "local",
               "template_type": "ethernet_switch"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "ethernet_switch",
                          "builtin": False,
@@ -840,49 +818,49 @@ async def test_ethernet_switch_template_create(controller_api):
                          "console_type": "none",
                          "default_name_format": "Switch{0}",
                          "name": "Ethernet switch template",
-                         "ports_mapping": [{"ethertype": "",
+                         "ports_mapping": [{"ethertype": "0x8100",
                                             "name": "Ethernet0",
                                             "port_number": 0,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet1",
                                             "port_number": 1,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet2",
                                             "port_number": 2,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet3",
                                             "port_number": 3,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet4",
                                             "port_number": 4,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet5",
                                             "port_number": 5,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet6",
                                             "port_number": 6,
                                             "type": "access",
                                             "vlan": 1
                                             },
-                                           {"ethertype": "",
+                                           {"ethertype": "0x8100",
                                             "name": "Ethernet7",
                                             "port_number": 7,
                                             "type": "access",
@@ -891,19 +869,18 @@ async def test_ethernet_switch_template_create(controller_api):
                          "symbol": ":/symbols/ethernet_switch.svg"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_cloud_template_create(controller_api):
+async def test_cloud_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Cloud template",
               "compute_id": "local",
               "template_type": "cloud"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"template_type": "cloud",
                          "builtin": False,
@@ -919,19 +896,18 @@ async def test_cloud_template_create(controller_api):
                          "remote_console_http_path": "/"}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
-@pytest.mark.asyncio
-async def test_ethernet_hub_template_create(controller_api):
+async def test_ethernet_hub_template_create(app: FastAPI, client: AsyncClient) -> None:
 
     params = {"name": "Ethernet hub template",
               "compute_id": "local",
               "template_type": "ethernet_hub"}
 
-    response = await controller_api.post("/templates", params)
-    assert response.status_code == 201
-    assert response.json["template_id"] is not None
+    response = await client.post(app.url_path_for("create_template"), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["template_id"] is not None
 
     expected_response = {"ports_mapping": [{"port_number": 0,
                                             "name": "Ethernet0"
@@ -966,7 +942,7 @@ async def test_ethernet_hub_template_create(controller_api):
                          "builtin": False}
 
     for item, value in expected_response.items():
-        assert response.json.get(item) == value
+        assert response.json().get(item) == value
 
 
 # @pytest.mark.asyncio
@@ -982,9 +958,9 @@ async def test_ethernet_hub_template_create(controller_api):
 #         "compute_id": "example.com"
 #     })}
 #     with asyncio_patch("gns3server.controller.project.Project.add_node_from_template", return_value={"name": "test", "node_type": "qemu", "compute_id": "example.com"}) as mock:
-#         response = await controller_api.post("/projects/{}/templates/{}".format(project.id, id), {
+#         response = await client.post("/projects/{}/templates/{}".format(project.id, id), {
 #             "x": 42,
 #             "y": 12
 #         })
 #     mock.assert_called_with(id, x=42, y=12, compute_id=None)
-#     assert response.status_code == 201
+#     assert response.status_code == status.HTTP_201_CREATED

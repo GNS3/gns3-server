@@ -100,12 +100,12 @@ class Template:
             try:
                 template_schema = TEMPLATE_TYPE_TO_SHEMA[self.template_type]
                 template_settings_with_defaults = template_schema.parse_obj(self.__json__())
-                self._settings = template_settings_with_defaults.dict()
+                self._settings = jsonable_encoder(template_settings_with_defaults.dict())
                 if self.template_type == "dynamips":
                     # special case for Dynamips to cover all platform types that contain specific settings
                     dynamips_template_schema = DYNAMIPS_PLATFORM_TO_SHEMA[self._settings["platform"]]
                     dynamips_template_settings_with_defaults = dynamips_template_schema.parse_obj(self.__json__())
-                    self._settings = dynamips_template_settings_with_defaults.dict()
+                    self._settings = jsonable_encoder(dynamips_template_settings_with_defaults.dict())
             except ValidationError as e:
                 print(e) #TODO: handle errors
                 raise

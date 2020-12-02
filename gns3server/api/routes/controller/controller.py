@@ -71,7 +71,7 @@ async def shutdown():
 
 @router.get("/version",
             response_model=schemas.Version)
-def version():
+def get_version():
     """
     Return the server version number.
     """

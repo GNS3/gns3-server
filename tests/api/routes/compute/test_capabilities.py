@@ -20,35 +20,38 @@ import sys
 import pytest
 import psutil
 
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+
 from gns3server.version import __version__
 from gns3server.utils.path import get_default_project_directory
 
-
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-@pytest.mark.asyncio
-async def test_get(compute_api, windows_platform):
-
-    response = await compute_api.get('/capabilities')
-    assert response.status_code == 200
-    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
-                             'version': __version__,
-                             'platform': sys.platform,
-                             'cpus': psutil.cpu_count(logical=True),
-                             'memory': psutil.virtual_memory().total,
-                             'disk_size': psutil.disk_usage(get_default_project_directory()).total,
-                             }
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-@pytest.mark.asyncio
-async def test_get_on_gns3vm(compute_api, on_gns3vm):
+async def test_get(app: FastAPI, client: AsyncClient, windows_platform) -> None:
 
-    response = await compute_api.get('/capabilities')
-    assert response.status_code == 200
-    assert response.json == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
-                             'version': __version__,
-                             'platform': sys.platform,
-                             'cpus': psutil.cpu_count(logical=True),
-                             'memory': psutil.virtual_memory().total,
-                             'disk_size': psutil.disk_usage(get_default_project_directory()).total,
-                             }
+    response = await client.get(app.url_path_for("get_capabilities"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
+                               'version': __version__,
+                               'platform': sys.platform,
+                               'cpus': psutil.cpu_count(logical=True),
+                               'memory': psutil.virtual_memory().total,
+                               'disk_size': psutil.disk_usage(get_default_project_directory()).total,
+                              }
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+async def test_get_on_gns3vm(app: FastAPI, client: AsyncClient, on_gns3vm) -> None:
+
+    response = await client.get(app.url_path_for("get_capabilities"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
+                               'version': __version__,
+                               'platform': sys.platform,
+                               'cpus': psutil.cpu_count(logical=True),
+                               'memory': psutil.virtual_memory().total,
+                               'disk_size': psutil.disk_usage(get_default_project_directory()).total,
+                              }

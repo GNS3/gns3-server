@@ -416,7 +416,7 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
 @router.post("/console/reset",
              status_code=status.HTTP_204_NO_CONTENT,
              responses=responses)
-async def reset_console_all(project: Project = Depends(dep_project)):
+async def reset_console_all_nodes(project: Project = Depends(dep_project)):
     """
     Reset console for all nodes belonging to the project.
     """
