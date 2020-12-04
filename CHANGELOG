@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.17 04/12/2020
+
+* Close and remove projects deleted from disks after SIGHUP signal is received.
+* Release Web Ui 2.2.17
+* New config file options to configure the VNC console port range.
+* Use asyncio.all_tasks instead of deprecated method for Python 3.9 compatibility.
+
 ## 2.2.16 05/11/2020
 
 * Option to allocate or not the vCPUs and RAM settings for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/3069
