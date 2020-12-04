@@ -145,6 +145,14 @@ class Controller:
 
         log.info("Controller is reloading")
         self._load_controller_settings()
+
+        # remove all projects deleted from disk.
+        for project in self._projects.copy().values():
+            if not os.path.exists(project.path):
+                log.info(f"Project '{project.name}' doesn't exist on the disk anymore, closing...")
+                await project.close()
+                self.remove_project(project)
+
         await self.load_projects()
 
     def check_can_write_config(self):
