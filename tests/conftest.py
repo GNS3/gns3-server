@@ -7,7 +7,6 @@ import os
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 from unittest.mock import MagicMock, patch
 from pathlib import Path
@@ -17,23 +16,14 @@ from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.db.database import Base
+from gns3server.db.models import Base, User
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.api.routes.controller.dependencies.database import get_db_session
+from gns3server.schemas.users import UserCreate
+from gns3server.services import auth_service
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
-
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-
-
-async def start_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
 
 
 if sys.platform.startswith("win") and sys.version_info < (3, 8):
@@ -49,40 +39,96 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
         yield loop
         asyncio.set_event_loop(None)
 
+# https://github.com/pytest-dev/pytest-asyncio/issues/68
+# this event_loop is used by pytest-asyncio, and redefining it
+# is currently the only way of changing the scope of this fixture
+@pytest.yield_fixture(scope="session")
+def event_loop(request):
 
-# @pytest.mark.asyncio
-# @pytest.fixture(scope="session", autouse=True)
-# async def database_connection() -> None:
-#
-#     from gns3server.db.tasks import connect_to_db
-#     os.environ["DATABASE_URI"] = "sqlite:///./sql_app_test.db"
-#     await connect_to_db()
-#     yield
-
-
-@pytest.fixture#(scope="session")
-async def app() -> FastAPI:
-
-    from gns3server.api.server import app as gns3_app
-    gns3_app.add_event_handler("startup", start_db())
-    return gns3_app
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
-# Grab a reference to our database when needed
-#@pytest.fixture
-#def db(app: FastAPI) -> Database:
-#    return app.state._db
+@pytest.fixture(scope="session")
+async def app(db_engine) -> FastAPI:
+
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    from gns3server.api.server import app as gns3app
+    yield gns3app
+
+
+@pytest.fixture(scope="session")
+def db_engine():
+
+    db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
+    engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
+    yield engine
+    engine.sync_engine.dispose()
+
+
+@pytest.fixture(scope="class")
+async def db_session(app: FastAPI, db_engine):
+
+    # recreate database tables for each class
+    # preferred and faster way would be to rollback the session/transaction
+    # but it doesn't work for some reason
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    session = AsyncSession(db_engine)
+    try:
+        yield session
+    finally:
+        await session.close()
+
 
 @pytest.fixture
-async def client(app: FastAPI) -> AsyncClient:
+async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 
-    #async with LifespanManager(app):
+    async def _get_test_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db_session] = _get_test_db
+
     async with AsyncClient(
             app=app,
             base_url="http://test-api",
             headers={"Content-Type": "application/json"}
     ) as client:
         yield client
+
+
+@pytest.fixture
+async def test_user(db_session: AsyncSession) -> User:
+
+    new_user = UserCreate(
+        username="user1",
+        email="user1@email.com",
+        password="user1_password",
+    )
+    user_repo = UsersRepository(db_session)
+    existing_user = await user_repo.get_user_by_username(new_user.username)
+    if existing_user:
+        return existing_user
+    return await user_repo.create_user(new_user)
+
+
+@pytest.fixture
+def authorized_client(client: AsyncClient, test_user: User) -> AsyncClient:
+
+    access_token = auth_service.create_access_token(test_user.username)
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {access_token}",
+    }
+    return client
 
 
 @pytest.fixture

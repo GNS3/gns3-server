@@ -15,20 +15,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy.exc import SQLAlchemyError
+import os
 
-from .database import engine
+from fastapi import FastAPI
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import create_async_engine
+
 from .models import Base
 
 import logging
 log = logging.getLogger(__name__)
 
 
-async def connect_to_db() -> None:
+async def connect_to_db(app: FastAPI) -> None:
 
+    db_url = os.environ.get("GNS3_DATABASE_URI", "sqlite:///./sql_app.db")
+    engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
             log.info("Successfully connected to the database")
+        app.state._db_engine = engine
     except SQLAlchemyError as e:
         log.error(f"Error while connecting to the database: {e}")

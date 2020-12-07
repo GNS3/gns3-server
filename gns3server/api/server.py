@@ -45,34 +45,43 @@ import logging
 log = logging.getLogger(__name__)
 
 
-app = FastAPI(title="GNS3 controller API",
-              description="This page describes the public controller API for GNS3",
-              version="v3")
+def get_application() -> FastAPI:
 
-origins = [
-    "http://127.0.0.1",
-    "http://localhost",
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "http://127.0.0.1:3080",
-    "http://localhost:3080",
-    "http://gns3.github.io",
-    "https://gns3.github.io"
-]
+    application = FastAPI(
+        title="GNS3 controller API",
+        description="This page describes the public controller API for GNS3",
+        version="v3"
+    )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    origins = [
+        "http://127.0.0.1",
+        "http://localhost",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+        "http://127.0.0.1:3080",
+        "http://localhost:3080",
+        "http://gns3.github.io",
+        "https://gns3.github.io"
+    ]
 
-app.add_event_handler("startup", tasks.create_startup_handler(app))
-app.add_event_handler("shutdown", tasks.create_shutdown_handler(app))
-app.include_router(index.router, tags=["Index"])
-app.include_router(controller.router, prefix="/v3")
-app.mount("/v3/compute", compute_api)
+    application.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+    application.add_event_handler("startup", tasks.create_startup_handler(application))
+    application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
+    application.include_router(index.router, tags=["Index"])
+    application.include_router(controller.router, prefix="/v3")
+    application.mount("/v3/compute", compute_api)
+
+    return application
+
+
+app = get_application()
 
 
 @app.exception_handler(ControllerError)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,12 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+from typing import Callable, Type
+from fastapi import Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import declarative_base
+from gns3server.db.repositories.base import BaseRepository
 
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URI", "sqlite:///./sql_app.db")
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-Base = declarative_base()
+async def get_db_session(request: Request) -> AsyncSession:
+
+    session = AsyncSession(request.app.state._db_engine)
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+def get_repository(repo: Type[BaseRepository]) -> Callable:
+
+    def get_repo(db_session: AsyncSession = Depends(get_db_session)) -> Type[BaseRepository]:
+        return repo(db_session)
+    return get_repo

@@ -16,14 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..database import engine
 
 
 class BaseRepository:
 
-    async def db(self):
-        session = AsyncSession(engine)
-        try:
-            yield session
-        finally:
-            await session.close()
+    def __init__(self, db_session: AsyncSession) -> None:
+
+        self._db_session = db_session

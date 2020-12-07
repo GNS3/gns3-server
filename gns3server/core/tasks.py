@@ -55,7 +55,7 @@ def create_startup_handler(app: FastAPI) -> Callable:
             loop.set_debug(True)
 
         # connect to the database
-        await connect_to_db()
+        await connect_to_db(app)
 
         await Controller.instance().start()
         # Because with a large image collection

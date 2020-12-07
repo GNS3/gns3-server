@@ -20,7 +20,7 @@ API routes for users.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from uuid import UUID
 from typing import List
 
@@ -30,6 +30,7 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
 
 from .dependencies.authentication import get_current_active_user
+from .dependencies.database import get_repository
 
 import logging
 log = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=List[schemas.User])
-async def get_users(user_repo: UsersRepository = Depends()) -> List[schemas.User]:
+async def get_users(user_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
     """
     Get all users.
     """
@@ -48,7 +49,10 @@ async def get_users(user_repo: UsersRepository = Depends()) -> List[schemas.User
 
 
 @router.post("", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-async def create_user(new_user: schemas.UserCreate, user_repo: UsersRepository = Depends()) -> schemas.User:
+async def create_user(
+        new_user: schemas.UserCreate,
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
     """
     Create a new user.
     """
@@ -63,7 +67,10 @@ async def create_user(new_user: schemas.UserCreate, user_repo: UsersRepository =
 
 
 @router.get("/{user_id}", response_model=schemas.User)
-async def get_user(user_id: UUID, user_repo: UsersRepository = Depends()) -> schemas.User:
+async def get_user(
+        user_id: UUID,
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
     """
     Get an user.
     """
@@ -75,9 +82,11 @@ async def get_user(user_id: UUID, user_repo: UsersRepository = Depends()) -> sch
 
 
 @router.put("/{user_id}", response_model=schemas.User)
-async def update_user(user_id: UUID,
-                      update_user: schemas.UserUpdate,
-                      user_repo: UsersRepository = Depends()) -> schemas.User:
+async def update_user(
+        user_id: UUID,
+        update_user: schemas.UserUpdate,
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
     """
     Update an user.
     """
@@ -89,7 +98,7 @@ async def update_user(user_id: UUID,
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: UUID, user_repo: UsersRepository = Depends()):
+async def delete_user(user_id: UUID, user_repo: UsersRepository = Depends(get_repository(UsersRepository))):
     """
     Delete an user.
     """
@@ -100,8 +109,10 @@ async def delete_user(user_id: UUID, user_repo: UsersRepository = Depends()):
 
 
 @router.post("/login", response_model=schemas.Token)
-async def login(user_repo: UsersRepository = Depends(),
-                form_data: OAuth2PasswordRequestForm = Depends()) -> schemas.Token:
+async def login(
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        form_data: OAuth2PasswordRequestForm = Depends()
+) -> schemas.Token:
     """
     User login.
     """

@@ -23,12 +23,15 @@ from gns3server import schemas
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
 
+from .database import get_repository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")  # FIXME: URL prefix
 
 
-async def get_user_from_token(token: str = Depends(oauth2_scheme),
-                              user_repo: UsersRepository = Depends()) -> schemas.User:
+async def get_user_from_token(
+        token: str = Depends(oauth2_scheme),
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
 
     username = auth_service.get_username_from_token(token)
     user = await user_repo.get_user_by_username(username)

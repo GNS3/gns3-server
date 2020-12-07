@@ -21,7 +21,10 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, f
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
-from .database import Base
+
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
 
 
 class GUID(TypeDecorator):
@@ -68,11 +71,14 @@ class BaseTable(Base):
                         onupdate=func.current_timestamp())
 
 
+def generate_uuid():
+    return str(uuid.uuid4())
+
 class User(BaseTable):
 
     __tablename__ = "users"
 
-    user_id = Column(GUID, primary_key=True, default=str(uuid.uuid4()))
+    user_id = Column(GUID, primary_key=True, default=generate_uuid)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
