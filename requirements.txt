@@ -14,3 +14,5 @@ sqlalchemy==1.4.0b1  # beta version with asyncio support
 passlib[bcrypt]==1.7.2
 python-jose==3.2.0
 email-validator==1.1.2
+async-exit-stack==1.0.1  ; python_version < "3.7"
+async-generator==1.10  ; python_version < "3.7"
