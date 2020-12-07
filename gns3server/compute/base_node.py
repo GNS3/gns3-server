@@ -87,8 +87,13 @@ class BaseNode:
         if self._console is not None:
             # use a previously allocated console port
             if console_type == "vnc":
-                # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project, port_range_start=5900, port_range_end=6000)
+                vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
+                self._console = self._manager.port_manager.reserve_tcp_port(
+                    self._console,
+                    self._project,
+                    port_range_start=vnc_console_start_port_range,
+                    port_range_end=vnc_console_end_port_range,
+                )
             elif console_type == "none":
                 self._console = None
             else:
@@ -107,8 +112,11 @@ class BaseNode:
         if self._console is None:
             # allocate a new console
             if console_type == "vnc":
-                # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project, port_range_start=5900, port_range_end=6000)
+                vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
+                self._console = self._manager.port_manager.get_free_tcp_port(
+                    self._project,
+                    port_range_start=vnc_console_start_port_range,
+                    port_range_end=vnc_console_end_port_range)
             elif console_type != "none":
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 
@@ -360,7 +368,30 @@ class BaseNode:
         self._closed = True
         return True
 
+    def _get_vnc_console_port_range(self):
+        """
+        Returns the VNC console port range.
+        """
+
+        server_config = self._manager.config.get_section_config("Server")
+        vnc_console_start_port_range = server_config.getint("vnc_console_start_port_range", 5900)
+        vnc_console_end_port_range = server_config.getint("vnc_console_end_port_range", 10000)
+
+        if not 5900 <= vnc_console_start_port_range <= 65535:
+            raise NodeError("The VNC console start port range must be between 5900 and 65535")
+        if not 5900 <= vnc_console_end_port_range <= 65535:
+            raise NodeError("The VNC console start port range must be between 5900 and 65535")
+        if vnc_console_start_port_range >= vnc_console_end_port_range:
+            raise NodeError(f"The VNC console start port range value ({vnc_console_start_port_range}) "
+                            f"cannot be above or equal to the end value ({vnc_console_end_port_range})")
+
+        return vnc_console_start_port_range, vnc_console_end_port_range
+
     async def _wrap_telnet_proxy(self, internal_port, external_port):
+        """
+        Start a telnet proxy for the console allowing multiple telnet clients
+        to be connected at the same time
+        """
 
         remaining_trial = 60
         while True:
@@ -533,7 +564,13 @@ class BaseNode:
             self._console = None
         if console is not None:
             if self.console_type == "vnc":
-                self._console = self._manager.port_manager.reserve_tcp_port(console, self._project, port_range_start=5900, port_range_end=6000)
+                vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
+                self._console = self._manager.port_manager.reserve_tcp_port(
+                    console,
+                    self._project,
+                    port_range_start=vnc_console_start_port_range,
+                    port_range_end=vnc_console_end_port_range
+                )
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(console, self._project)
 
