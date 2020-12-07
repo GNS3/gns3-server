@@ -42,7 +42,7 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
 # this event_loop is used by pytest-asyncio, and redefining it
 # is currently the only way of changing the scope of this fixture
-@pytest.yield_fixture(scope="session")
+@pytest.yield_fixture(scope="class")
 def event_loop(request):
 
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -50,17 +50,17 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope="session")
-async def app(db_engine) -> FastAPI:
+@pytest.fixture(scope="class")
+async def app() -> FastAPI:
 
-    async with db_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+    # async with db_engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+    #     await conn.run_sync(Base.metadata.create_all)
     from gns3server.api.server import app as gns3app
     yield gns3app
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def db_engine():
 
     db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
@@ -70,7 +70,7 @@ def db_engine():
 
 
 @pytest.fixture(scope="class")
-async def db_session(app: FastAPI, db_engine):
+async def db_session(db_engine):
 
     # recreate database tables for each class
     # preferred and faster way would be to rollback the session/transaction
