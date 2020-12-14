@@ -337,6 +337,7 @@ def test_set_qemu_path_kvm_binary(vm, fake_qemu_binary):
 
 async def test_set_platform(compute_project, manager):
 
+    manager.config_disk = None  # avoids conflict with config.img support
     with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
         with patch("gns3server.compute.qemu.QemuVM._check_qemu_path"):
             vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, platform="x86_64")

@@ -26,6 +26,7 @@ import re
 import shlex
 import math
 import shutil
+import struct
 import asyncio
 import socket
 import gns3server
@@ -37,7 +38,9 @@ from gns3server.utils import parse_version, shlex_quote
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
+from .utils.ziputils import pack_zip, unpack_zip
 from ..adapters.ethernet_adapter import EthernetAdapter
+from ..error import NodeError, ImageMissingError
 from ..nios.nio_udp import NIOUDP
 from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
@@ -101,10 +104,10 @@ class QemuVM(BaseNode):
         self._hdb_disk_image = ""
         self._hdc_disk_image = ""
         self._hdd_disk_image = ""
-        self._hda_disk_interface = "ide"
-        self._hdb_disk_interface = "ide"
-        self._hdc_disk_interface = "ide"
-        self._hdd_disk_interface = "ide"
+        self._hda_disk_interface = "none"
+        self._hdb_disk_interface = "none"
+        self._hdc_disk_interface = "none"
+        self._hdd_disk_interface = "none"
         self._cdrom_image = ""
         self._bios_image = ""
         self._boot_priority = "c"
@@ -119,12 +122,28 @@ class QemuVM(BaseNode):
         self._kernel_command_line = ""
         self._legacy_networking = False
         self._replicate_network_connection_state = True
+        self._create_config_disk = False
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
         self._process_priority = "low"
 
         self.mac_address = ""  # this will generate a MAC address
         self.adapters = 1  # creates 1 adapter by default
+
+        # config disk
+        self.config_disk_name = self.manager.config_disk
+        self.config_disk_image = ""
+        if self.config_disk_name:
+            if not shutil.which("mcopy"):
+                log.warning("Config disk: 'mtools' are not installed.")
+                self.config_disk_name = ""
+            else:
+                try:
+                    self.config_disk_image = self.manager.get_abs_image_path(self.config_disk_name)
+                except (NodeError, ImageMissingError):
+                    log.warning("Config disk: image '{}' missing".format(self.config_disk_name))
+                    self.config_disk_name = ""
+
         log.info('QEMU VM "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
 
     @property
@@ -653,6 +672,30 @@ class QemuVM(BaseNode):
         self._replicate_network_connection_state = replicate_network_connection_state
 
     @property
+    def create_config_disk(self):
+        """
+        Returns whether a config disk is automatically created on HDD disk interface (secondary slave)
+
+        :returns: boolean
+        """
+
+        return self._create_config_disk
+
+    @create_config_disk.setter
+    def create_config_disk(self, create_config_disk):
+        """
+        Sets whether a config disk is automatically created on HDD disk interface (secondary slave)
+
+        :param replicate_network_connection_state: boolean
+        """
+
+        if create_config_disk:
+            log.info('QEMU VM "{name}" [{id}] has enabled the config disk creation feature'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled the config disk creation feature'.format(name=self._name, id=self._id))
+        self._create_config_disk = create_config_disk
+
+    @property
     def on_close(self):
         """
         Returns the action to execute when the VM is stopped/closed
@@ -1115,6 +1158,7 @@ class QemuVM(BaseNode):
             self._stop_cpulimit()
             if self.on_close != "save_vm_state":
                 await self._clear_save_vm_stated()
+            await self._export_config()
             await super().stop()
 
     async def _open_qemu_monitor_connection_vm(self, timeout=10):
@@ -1627,6 +1671,119 @@ class QemuVM(BaseNode):
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
 
+    async def _mcopy(self, image, *args):
+        try:
+            # read offset of first partition from MBR
+            with open(image, "rb") as img_file:
+                mbr = img_file.read(512)
+            part_type, offset, signature = struct.unpack("<450xB3xL52xH", mbr)
+            if signature != 0xAA55:
+                raise OSError("{}: invalid MBR".format(image))
+            if part_type not in (1, 4, 6, 11, 12, 14):
+                raise OSError("{}: invalid partition type {:02X}"
+                              .format(image, part_type))
+            part_image = image + "@@{}S".format(offset)
+
+            process = await asyncio.create_subprocess_exec(
+                "mcopy", "-i", part_image, *args,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                cwd=self.working_dir)
+            (stdout, _) = await process.communicate()
+            retcode = process.returncode
+        except (OSError, subprocess.SubprocessError) as e:
+            raise OSError("mcopy failure: {}".format(e))
+        if retcode != 0:
+            stdout = stdout.decode("utf-8").rstrip()
+            if stdout:
+                raise OSError("mcopy failure: {}".format(stdout))
+            else:
+                raise OSError("mcopy failure: return code {}".format(retcode))
+
+    async def _export_config(self):
+        disk_name = getattr(self, "config_disk_name")
+        if not disk_name:
+            return
+        disk = os.path.join(self.working_dir, disk_name)
+        if not os.path.exists(disk):
+            return
+        config_dir = os.path.join(self.working_dir, "configs")
+        zip_file = os.path.join(self.working_dir, "config.zip")
+        try:
+            os.mkdir(config_dir)
+            await self._mcopy(disk, "-s", "-m", "-n", "--", "::/", config_dir)
+            if os.path.exists(zip_file):
+                os.remove(zip_file)
+            pack_zip(zip_file, config_dir)
+        except OSError as e:
+            log.warning("Can't export config: {}".format(e))
+            self.project.emit("log.warning", {"message": "{}: Can't export config: {}".format(self._name, e)})
+        shutil.rmtree(config_dir, ignore_errors=True)
+
+    async def _import_config(self):
+        disk_name = getattr(self, "config_disk_name")
+        if not disk_name:
+            return
+        disk = os.path.join(self.working_dir, disk_name)
+        zip_file = os.path.join(self.working_dir, "config.zip")
+        startup_config = self.hdd_disk_image
+        if startup_config and startup_config.lower().endswith(".zip") and \
+           not os.path.exists(zip_file) and not os.path.exists(disk):
+            try:
+                shutil.copyfile(startup_config, zip_file)
+            except OSError as e:
+                log.warning("Can't access startup config: {}".format(e))
+                self.project.emit("log.warning", {"message": "{}: Can't access startup config: {}".format(self._name, e)})
+        if not os.path.exists(zip_file):
+            return
+        config_dir = os.path.join(self.working_dir, "configs")
+        disk_tmp = disk + ".tmp"
+        try:
+            os.mkdir(config_dir)
+            shutil.copyfile(getattr(self, "config_disk_image"), disk_tmp)
+            unpack_zip(zip_file, config_dir)
+            config_files = [os.path.join(config_dir, fname)
+                            for fname in os.listdir(config_dir)]
+            if config_files:
+                await self._mcopy(disk_tmp, "-s", "-m", "-o", "--", *config_files, "::/")
+            os.replace(disk_tmp, disk)
+        except OSError as e:
+            log.warning("Can't import config: {}".format(e))
+            self.project.emit("log.warning", {"message": "{}: Can't import config: {}".format(self._name, e)})
+            if os.path.exists(disk_tmp):
+                os.remove(disk_tmp)
+                os.remove(zip_file)
+        shutil.rmtree(config_dir, ignore_errors=True)
+
+    def _disk_interface_options(self, disk, disk_index, interface, format=None):
+        options = []
+        extra_drive_options = ""
+        if format:
+            extra_drive_options += ",format={}".format(format)
+
+        # From Qemu man page: if the filename contains comma, you must double it
+        # (for instance, "file=my,,file" to use file "my,file").
+        disk = disk.replace(",", ",,")
+
+        if interface == "sata":
+            # special case, sata controller doesn't exist in Qemu
+            options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
+            options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
+            options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
+        elif interface == "nvme":
+            options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
+            options.extend(["-device", 'nvme,drive=drive{},serial={}'.format(disk_index, disk_index)])
+        elif interface == "scsi":
+            options.extend(["-device", 'virtio-scsi-pci,id=scsi{}'.format(disk_index)])
+            options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
+            options.extend(["-device", 'scsi-hd,drive=drive{}'.format(disk_index)])
+        #elif interface == "sd":
+        #    options.extend(["-drive", 'file={},id=drive{},index={}{}'.format(disk, disk_index, disk_index, extra_drive_options)])
+        #    options.extend(["-device", 'sd-card,drive=drive{},id=drive{}'.format(disk_index, disk_index, disk_index)])
+        else:
+            options.extend(["-drive", 'file={},if={},index={},media=disk,id=drive{}{}'.format(disk, interface, disk_index, disk_index, extra_drive_options)])
+        return options
+
     async def _disk_options(self):
         options = []
         qemu_img_path = self._get_qemu_img()
@@ -1634,14 +1791,21 @@ class QemuVM(BaseNode):
         drives = ["a", "b", "c", "d"]
 
         for disk_index, drive in enumerate(drives):
-            disk_image = getattr(self, "_hd{}_disk_image".format(drive))
-            interface = getattr(self, "hd{}_disk_interface".format(drive))
+            # prioritize config disk over harddisk d
+            if drive == 'd' and self._create_config_disk:
+                continue
 
+            disk_image = getattr(self, "_hd{}_disk_image".format(drive))
             if not disk_image:
                 continue
 
-            disk_name = "hd" + drive
+            interface = getattr(self, "hd{}_disk_interface".format(drive))
+            # fail-safe: use "ide" if there is a disk image and no interface type has been explicitly configured
+            if interface == "none":
+                interface = "ide"
+                setattr(self, "hd{}_disk_interface".format(drive), interface)
 
+            disk_name = "hd" + drive
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
                 if os.path.islink(disk_image):
                     raise QemuError("{} disk image '{}' linked to '{}' is not accessible".format(disk_name, disk_image, os.path.realpath(disk_image)))
@@ -1691,27 +1855,26 @@ class QemuVM(BaseNode):
             else:
                 disk = disk_image
 
-            # From Qemu man page: if the filename contains comma, you must double it
-            # (for instance, "file=my,,file" to use file "my,file").
-            disk = disk.replace(",", ",,")
+            options.extend(self._disk_interface_options(disk, disk_index, interface))
 
-            if interface == "sata":
-                # special case, sata controller doesn't exist in Qemu
-                options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
-                options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
-            elif interface == "nvme":
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
-                options.extend(["-device", 'nvme,drive=drive{},serial={}'.format(disk_index, disk_index)])
-            elif interface == "scsi":
-                options.extend(["-device", 'virtio-scsi-pci,id=scsi{}'.format(disk_index)])
-                options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk'.format(disk, disk_index, disk_index)])
-                options.extend(["-device", 'scsi-hd,drive=drive{}'.format(disk_index)])
-            #elif interface == "sd":
-            #    options.extend(["-drive", 'file={},id=drive{},index={}'.format(disk, disk_index, disk_index)])
-            #    options.extend(["-device", 'sd-card,drive=drive{},id=drive{}'.format(disk_index, disk_index, disk_index)])
-            else:
-                options.extend(["-drive", 'file={},if={},index={},media=disk,id=drive{}'.format(disk, interface, disk_index, disk_index)])
+        # config disk
+        disk_image = getattr(self, "config_disk_image")
+        if disk_image and self._create_config_disk:
+            disk_name = getattr(self, "config_disk_name")
+            disk = os.path.join(self.working_dir, disk_name)
+            if self.hdd_disk_interface == "none":
+                # use the HDA interface type if none has been configured for HDD
+                self.hdd_disk_interface = getattr(self, "hda_disk_interface", "none")
+            await self._import_config()
+            disk_exists = os.path.exists(disk)
+            if not disk_exists:
+                try:
+                    shutil.copyfile(disk_image, disk)
+                    disk_exists = True
+                except OSError as e:
+                    log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
+            if disk_exists:
+                options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
 

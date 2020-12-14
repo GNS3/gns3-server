@@ -277,7 +277,8 @@ async def test_images(compute_api, fake_qemu_vm):
 
     response = await compute_api.get("/qemu/images")
     assert response.status == 200
-    assert response.json == [{"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}]
+    assert response.json == [{'filename': 'config.img', 'filesize': 1048576, 'md5sum': '0ab49056760ae1db6c25376446190b47', 'path': 'config.img'},
+                             {"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1}]
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Does not work on Windows")

@@ -27,10 +27,13 @@ import re
 import subprocess
 
 from ...utils.asyncio import subprocess_check_output
+from ...utils.get_resource import get_resource
 from ..base_manager import BaseManager
+from ..error import NodeError, ImageMissingError
 from .qemu_error import QemuError
 from .qemu_vm import QemuVM
 from .utils.guest_cid import get_next_guest_cid
+from .utils.ziputils import unpack_zip
 
 import logging
 log = logging.getLogger(__name__)
@@ -45,6 +48,8 @@ class Qemu(BaseManager):
 
         super().__init__()
         self._guest_cid_lock = asyncio.Lock()
+        self.config_disk = "config.img"
+        self._init_config_disk()
 
     async def create_node(self, *args, **kwargs):
         """
@@ -343,3 +348,21 @@ class Qemu(BaseManager):
             log.info("Qemu disk '{}' extended by {} MB".format(path, extend))
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Could not update disk image {}:{}".format(path, e))
+
+    def _init_config_disk(self):
+        """
+        Initialize the default config disk
+        """
+
+        try:
+            self.get_abs_image_path(self.config_disk)
+        except (NodeError, ImageMissingError):
+            config_disk_zip = get_resource("compute/qemu/resources/{}.zip".format(self.config_disk))
+            if config_disk_zip and os.path.exists(config_disk_zip):
+                directory = self.get_images_directory()
+                try:
+                    unpack_zip(config_disk_zip, directory)
+                except OSError as e:
+                    log.warning("Config disk creation: {}".format(e))
+            else:
+                log.warning("Config disk: image '{}' missing".format(self.config_disk))

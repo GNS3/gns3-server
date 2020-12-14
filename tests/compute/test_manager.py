@@ -18,7 +18,7 @@
 import uuid
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
 from gns3server.compute.vpcs import VPCS
@@ -41,6 +41,7 @@ async def vpcs(loop, port_manager):
 async def qemu(loop, port_manager):
 
     Qemu._instance = None
+    Qemu._init_config_disk = MagicMock()  # do not create the config.img image
     qemu = Qemu.instance()
     qemu.port_manager = port_manager
     return qemu
