@@ -25,7 +25,12 @@ from uuid import UUID
 from typing import List
 
 from gns3server import schemas
-from gns3server.controller.controller_error import ControllerBadRequestError, ControllerNotFoundError
+from gns3server.controller.controller_error import (
+    ControllerBadRequestError,
+    ControllerNotFoundError,
+    ControllerUnauthorizedError
+)
+
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
 
@@ -98,10 +103,17 @@ async def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: UUID, user_repo: UsersRepository = Depends(get_repository(UsersRepository))):
+async def delete_user(
+        user_id: UUID,
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        current_user: schemas.User = Depends(get_current_active_user)
+) -> None:
     """
     Delete an user.
     """
+
+    if current_user.is_superuser:
+        raise ControllerUnauthorizedError("The super user cannot be deleted")
 
     success = await user_repo.delete_user(user_id)
     if not success:

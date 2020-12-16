@@ -17,16 +17,15 @@
 
 import pytest
 
-from typing import Optional, Union
+from typing import Optional
 from fastapi import FastAPI, HTTPException, status
-from starlette.datastructures import Secret
 from httpx import AsyncClient
 from jose import jwt
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
-from gns3server.services.authentication import SECRET_KEY, ALGORITHM
+from gns3server.config import Config
 from gns3server.schemas.users import User
 
 pytestmark = pytest.mark.asyncio
@@ -36,7 +35,7 @@ class TestUserRoutes:
 
     async def test_route_exist(self, app: FastAPI, client: AsyncClient) -> None:
 
-        new_user = {"username": "test_user1", "email": "user1@email.com", "password": "test_password"}
+        new_user = {"username": "user1", "email": "user1@email.com", "password": "test_password"}
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code != status.HTTP_404_NOT_FOUND
 
@@ -48,7 +47,7 @@ class TestUserRoutes:
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        params = {"username": "test_user2", "email": "user2@email.com", "password": "test_password"}
+        params = {"username": "user2", "email": "user2@email.com", "password": "test_password"}
 
         # make sure the user doesn't exist in the database
         user_in_db = await user_repo.get_user_by_username(params["username"])
@@ -72,7 +71,7 @@ class TestUserRoutes:
         "attr, value, status_code",
         (
                 ("email", "user2@email.com", status.HTTP_400_BAD_REQUEST),
-                ("username", "test_user2", status.HTTP_400_BAD_REQUEST),
+                ("username", "user2", status.HTTP_400_BAD_REQUEST),
                 ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_ENTITY),
                 ("password", "short", status.HTTP_422_UNPROCESSABLE_ENTITY),
                 ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_ENTITY),
@@ -101,7 +100,7 @@ class TestUserRoutes:
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        new_user = {"username": "test_user3", "email": "user3@email.com", "password": "test_password"}
+        new_user = {"username": "user3", "email": "user3@email.com", "password": "test_password"}
 
         # send post request to create user and ensure it is successful
         res = await client.post(app.url_path_for("create_user"), json=new_user)
@@ -114,6 +113,12 @@ class TestUserRoutes:
         assert user_in_db.hashed_password != new_user["password"]
         assert auth_service.verify_password(new_user["password"], user_in_db.hashed_password)
 
+    async def test_get_users(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("get_users"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == 3  # user1, user2 and user3 should exist
+
 
 class TestAuthTokens:
 
@@ -124,16 +129,18 @@ class TestAuthTokens:
             test_user: User
     ) -> None:
 
+        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = auth_service.create_access_token(test_user.username)
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
         username = payload.get("sub")
         assert username == test_user.username
 
-    async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
 
+        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = auth_service.create_access_token(None)
         with pytest.raises(jwt.JWTError):
-            jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            jwt.decode(token, secret_key, algorithms=["HS256"])
 
     async def test_can_retrieve_username_from_token(
             self,
@@ -148,10 +155,10 @@ class TestAuthTokens:
 
 
     @pytest.mark.parametrize(
-        "secret, wrong_token",
+        "wrong_secret, wrong_token",
         (
-                (SECRET_KEY, "asdf"),  # use wrong token
-                (SECRET_KEY, ""),  # use wrong token
+                ("use correct secret", "asdf"),  # use wrong token
+                ("use correct secret", ""),  # use wrong token
                 ("ABC123", "use correct token"),  # use wrong secret
         ),
     )
@@ -160,15 +167,17 @@ class TestAuthTokens:
             app: FastAPI,
             client: AsyncClient,
             test_user: User,
-            secret: Union[Secret, str],
+            wrong_secret: str,
             wrong_token: Optional[str],
     ) -> None:
 
         token = auth_service.create_access_token(test_user.username)
+        if wrong_secret == "use correct secret":
+            wrong_secret = auth_service._server_config.get("jwt_secret_key")
         if wrong_token == "use correct token":
             wrong_token = token
         with pytest.raises(HTTPException):
-            auth_service.get_username_from_token(wrong_token, secret_key=str(secret))
+            auth_service.get_username_from_token(wrong_token, secret_key=wrong_secret)
 
 
 class TestUserLogin:
@@ -189,8 +198,9 @@ class TestUserLogin:
         assert res.status_code == status.HTTP_200_OK
 
         # check that token exists in response and has user encoded within it
+        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = res.json().get("access_token")
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
         assert "sub" in payload
         username = payload.get("sub")
         assert username == test_user.username

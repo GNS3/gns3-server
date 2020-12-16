@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import bcrypt
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
@@ -24,18 +23,21 @@ from passlib.context import CryptContext
 from typing import Optional
 from fastapi import HTTPException, status
 from gns3server.schemas.tokens import TokenData
+from gns3server.controller.controller_error import ControllerError
+from gns3server.config import Config
 from pydantic import ValidationError
 
-# FIXME: temporary variables to move to config
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+import logging
+log = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
+
+    def __init__(self):
+
+        self._server_config = Config.instance().get_section_config("Server")
 
     def hash_password(self, password: str) -> str:
 
@@ -45,19 +47,40 @@ class AuthService:
 
         return pwd_context.verify(password, hashed_password)
 
+    def get_secret_key(self):
+        """
+        Should only be used by tests.
+        """
+
+        return self._server_config.get("jwt_secret_key", None)
+
+    def get_algorithm(self):
+        """
+        Should only be used by tests.
+        """
+
+        return self._server_config.get("jwt_algorithm", None)
+
     def create_access_token(
             self,
             username,
-            secret_key: str = SECRET_KEY,
-            expires_in: int = ACCESS_TOKEN_EXPIRE_MINUTES
+            secret_key: str = None,
+            expires_in: int = 0
     ) -> str:
 
+        if not expires_in:
+            expires_in = self._server_config.getint("jwt_access_token_expire_minutes", 1440)
         expire = datetime.utcnow() + timedelta(minutes=expires_in)
         to_encode = {"sub": username, "exp": expire}
-        encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
+        if secret_key is None:
+            secret_key = self._server_config.get("jwt_secret_key", None)
+        if secret_key is None:
+            raise ControllerError("No JWT secret key has been configured")
+        algorithm = self._server_config.get("jwt_algorithm", "HS256")
+        encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
         return encoded_jwt
 
-    def get_username_from_token(self, token: str, secret_key: str = SECRET_KEY) -> Optional[str]:
+    def get_username_from_token(self, token: str, secret_key: str = None) -> Optional[str]:
 
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,7 +88,12 @@ class AuthService:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
-            payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
+            if secret_key is None:
+                secret_key = self._server_config.get("jwt_secret_key", None)
+            if secret_key is None:
+                raise ControllerError("No JWT secret key has been configured")
+            algorithm = self._server_config.get("jwt_algorithm", "HS256")
+            payload = jwt.decode(token, secret_key, algorithms=[algorithm])
             username: str = payload.get("sub")
             if username is None:
                 raise credentials_exception

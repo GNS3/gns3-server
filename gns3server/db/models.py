@@ -74,6 +74,7 @@ class BaseTable(Base):
 def generate_uuid():
     return str(uuid.uuid4())
 
+
 class User(BaseTable):
 
     __tablename__ = "users"

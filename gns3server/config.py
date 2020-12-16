@@ -182,9 +182,21 @@ class Config:
             controller_config_filename = "gns3_controller.conf"
         return os.path.join(self.config_dir, controller_config_filename)
 
+    @property
+    def server_config(self):
+
+        if sys.platform.startswith("win"):
+            server_config_filename = "gns3_server.ini"
+        else:
+            server_config_filename = "gns3_server.conf"
+        return os.path.join(self.config_dir, server_config_filename)
+
     def clear(self):
-        """Restart with a clean config"""
-        self._config = configparser.RawConfigParser()
+        """
+        Restart with a clean config
+        """
+
+        self._config = configparser.ConfigParser(interpolation=None)
         # Override config from command line even if we modify the config file and live reload it.
         self._override_config = {}
 
@@ -230,6 +242,18 @@ class Config:
             for file in parsed_files:
                 log.info("Load configuration file {}".format(file))
                 self._watched_files[file] = os.stat(file).st_mtime
+
+    def write_config(self):
+        """
+        Write the server configuration file.
+        """
+
+        try:
+            os.makedirs(os.path.dirname(self.server_config), exist_ok=True)
+            with open(self.server_config, 'w+') as fd:
+                self._config.write(fd)
+        except OSError as e:
+            log.error("Cannot write server configuration file '{}': {}".format(self.server_config, e))
 
     def get_default_section(self):
         """

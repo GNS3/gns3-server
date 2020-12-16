@@ -31,6 +31,7 @@ import asyncio
 import signal
 import functools
 import uvicorn
+import secrets
 
 from gns3server.controller import Controller
 from gns3server.compute.port_manager import PortManager
@@ -122,7 +123,7 @@ def parse_arguments(argv):
     config = Config.instance().get_section_config("Server")
     defaults = {
         "host": config.get("host", "0.0.0.0"),
-        "port": config.get("port", 3080),
+        "port": config.getint("port", 3080),
         "ssl": config.getboolean("ssl", False),
         "certfile": config.get("certfile", ""),
         "certkey": config.get("certkey", ""),
@@ -132,8 +133,8 @@ def parse_arguments(argv):
         "quiet": config.getboolean("quiet", False),
         "debug": config.getboolean("debug", False),
         "logfile": config.getboolean("logfile", ""),
-        "logmaxsize": config.get("logmaxsize", 10000000),  # default is 10MB
-        "logbackupcount": config.get("logbackupcount", 10),
+        "logmaxsize": config.getint("logmaxsize", 10000000),  # default is 10MB
+        "logbackupcount": config.getint("logbackupcount", 10),
         "logcompression": config.getboolean("logcompression", False)
     }
 
@@ -145,6 +146,13 @@ def set_config(args):
 
     config = Config.instance()
     server_config = config.get_section_config("Server")
+    jwt_secret_key = server_config.get("jwt_secret_key", None)
+    if not jwt_secret_key:
+        log.info("No JWT secret key configured, generating one...")
+        if not config._config.has_section("Server"):
+            config._config.add_section("Server")
+        config._config.set("Server", "jwt_secret_key", secrets.token_hex(32))
+        config.write_config()
     server_config["local"] = str(args.local)
     server_config["allow_remote_console"] = str(args.allow)
     server_config["host"] = args.host

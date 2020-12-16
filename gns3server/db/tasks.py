@@ -22,6 +22,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from .models import Base
+from gns3server.config import Config
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,12 +30,13 @@ log = logging.getLogger(__name__)
 
 async def connect_to_db(app: FastAPI) -> None:
 
-    db_url = os.environ.get("GNS3_DATABASE_URI", "sqlite:///./sql_app.db")
+    db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
+    db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite:///{db_path}")
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            log.info("Successfully connected to the database")
+            log.info(f"Successfully connected to database '{db_url}'")
         app.state._db_engine = engine
     except SQLAlchemyError as e:
-        log.error(f"Error while connecting to the database: {e}")
+        log.error(f"Error while connecting to database '{db_url}: {e}")
