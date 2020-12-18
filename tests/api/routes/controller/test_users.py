@@ -25,6 +25,7 @@ from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 from gns3server.config import Config
 from gns3server.schemas.users import User
 
@@ -129,18 +130,16 @@ class TestAuthTokens:
             test_user: User
     ) -> None:
 
-        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = auth_service.create_access_token(test_user.username)
-        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        payload = jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
         username = payload.get("sub")
         assert username == test_user.username
 
     async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
 
-        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = auth_service.create_access_token(None)
         with pytest.raises(jwt.JWTError):
-            jwt.decode(token, secret_key, algorithms=["HS256"])
+            jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
 
     async def test_can_retrieve_username_from_token(
             self,
@@ -198,9 +197,8 @@ class TestUserLogin:
         assert res.status_code == status.HTTP_200_OK
 
         # check that token exists in response and has user encoded within it
-        secret_key = auth_service._server_config.get("jwt_secret_key")
         token = res.json().get("access_token")
-        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        payload = jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
         assert "sub" in payload
         username = payload.get("sub")
         assert username == test_user.username

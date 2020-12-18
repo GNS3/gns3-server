@@ -23,7 +23,6 @@ from passlib.context import CryptContext
 from typing import Optional
 from fastapi import HTTPException, status
 from gns3server.schemas.tokens import TokenData
-from gns3server.controller.controller_error import ControllerError
 from gns3server.config import Config
 from pydantic import ValidationError
 
@@ -31,6 +30,8 @@ import logging
 log = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+DEFAULT_JWT_SECRET_KEY = "efd08eccec3bd0a1be2e086670e5efa90969c68d07e072d7354a76cea5e33d4e"
 
 
 class AuthService:
@@ -75,7 +76,8 @@ class AuthService:
         if secret_key is None:
             secret_key = self._server_config.get("jwt_secret_key", None)
         if secret_key is None:
-            raise ControllerError("No JWT secret key has been configured")
+            secret_key = DEFAULT_JWT_SECRET_KEY
+            log.error("A JWT secret key must be configured to secure the server, using default key...")
         algorithm = self._server_config.get("jwt_algorithm", "HS256")
         encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
         return encoded_jwt
@@ -91,7 +93,8 @@ class AuthService:
             if secret_key is None:
                 secret_key = self._server_config.get("jwt_secret_key", None)
             if secret_key is None:
-                raise ControllerError("No JWT secret key has been configured")
+                secret_key = DEFAULT_JWT_SECRET_KEY
+                log.error("A JWT secret key must be configured to secure the server, using default key...")
             algorithm = self._server_config.get("jwt_algorithm", "HS256")
             payload = jwt.decode(token, secret_key, algorithms=[algorithm])
             username: str = payload.get("sub")
