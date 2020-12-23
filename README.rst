@@ -59,7 +59,7 @@ You must be connected to the Internet in order to install the dependencies.
 
 Dependencies:
 
-- Python 3.5.3, setuptools and the ones listed `here <https://github.com/GNS3/gns3-server/blob/master/requirements.txt>`_
+- Python 3.6, setuptools and the ones listed `here <https://github.com/GNS3/gns3-server/blob/master/requirements.txt>`_
 
 The following commands will install some of these dependencies:
 
