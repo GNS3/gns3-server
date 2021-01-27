@@ -261,7 +261,7 @@ def run():
         server.run()
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
-        if not sys.platform.startswith("win") and not e.winerror == 0:
+        if not sys.platform.startswith("win") or not e.winerror == 0:
             raise
     except Exception as e:
         log.critical("Critical error while running the server: {}".format(e), exc_info=1)
