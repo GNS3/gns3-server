@@ -1755,7 +1755,7 @@ class QemuVM(BaseNode):
                 os.remove(zip_file)
         shutil.rmtree(config_dir, ignore_errors=True)
 
-    def _disk_interface_options(self, disk, disk_index, interface, format=None):
+    async def _disk_interface_options(self, disk, disk_index, interface, format=None):
         options = []
         extra_drive_options = ""
         if format:
@@ -1769,7 +1769,13 @@ class QemuVM(BaseNode):
             # special case, sata controller doesn't exist in Qemu
             options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
             options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
-            options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
+            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
+            if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
+                # The ‘ide-drive’ device is deprecated since version 4.2.0
+                # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
+                options.extend(["-device", 'ide-hd,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
+            else:
+                options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
         elif interface == "nvme":
             options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
             options.extend(["-device", 'nvme,drive=drive{},serial={}'.format(disk_index, disk_index)])
@@ -1855,7 +1861,7 @@ class QemuVM(BaseNode):
             else:
                 disk = disk_image
 
-            options.extend(self._disk_interface_options(disk, disk_index, interface))
+            options.extend(await self._disk_interface_options(disk, disk_index, interface))
 
         # config disk
         disk_image = getattr(self, "config_disk_image")
@@ -1874,7 +1880,7 @@ class QemuVM(BaseNode):
                 except OSError as e:
                     log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
             if disk_exists:
-                options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
+                options.extend(await self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
 
