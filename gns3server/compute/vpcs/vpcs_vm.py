@@ -260,10 +260,11 @@ class VPCSVM(BaseNode):
 
         if self._started:
             log.info("VPCS process has stopped, return code: %d", returncode)
-            await self._stop_ubridge()
             self._started = False
             self.status = "stopped"
             self._process = None
+            await self._stop_ubridge()
+            await super().stop()
             if returncode != 0:
                 self.project.emit("log.error", {"message": "VPCS process has stopped, return code: {}\n{}".format(returncode, self.read_vpcs_stdout())})
 
