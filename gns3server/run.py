@@ -195,7 +195,7 @@ def kill_ghosts():
             if name in detect_process:
                 proc.kill()
                 log.warning("Killed ghost process %s", name)
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
+        except (OSError, psutil.NoSuchProcess, psutil.AccessDenied):
             pass
 
 

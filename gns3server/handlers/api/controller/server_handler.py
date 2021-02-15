@@ -231,7 +231,7 @@ Processus:
             try:
                 psinfo = proc.as_dict(attrs=["name", "exe"])
                 data += "* {} {}\n".format(psinfo["name"], psinfo["exe"])
-            except psutil.NoSuchProcess:
+            except (OSError, psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
         data += "\n\nProjects"
