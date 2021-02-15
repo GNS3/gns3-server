@@ -72,6 +72,14 @@ PROJECT_CREATE_SCHEMA = {
             "description": "Project auto close",
             "type": "boolean"
         },
+        "auto_open": {
+            "description": "Project open when GNS3 start",
+            "type": "boolean"
+        },
+        "auto_start": {
+            "description": "Project start when opened",
+            "type": "boolean"
+        },
         "project_id": {
             "description": "Project UUID",
             "type": ["string", "null"],
