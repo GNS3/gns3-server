@@ -1671,6 +1671,20 @@ class QemuVM(BaseNode):
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
 
+    async def _create_linked_clone(self, disk_name, disk_image, disk):
+        try:
+            qemu_img_path = self._get_qemu_img()
+            command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+            retcode = await self._qemu_img_exec(command)
+            if retcode:
+                stdout = self.read_qemu_img_stdout()
+                raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
+                                                                                                         retcode,
+                                                                                                         stdout))
+        except (OSError, subprocess.SubprocessError) as e:
+            stdout = self.read_qemu_img_stdout()
+            raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
+
     async def _mcopy(self, image, *args):
         try:
             # read offset of first partition from MBR
@@ -1839,17 +1853,7 @@ class QemuVM(BaseNode):
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
                 if not os.path.exists(disk):
                     # create the disk
-                    try:
-                        command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
-                        retcode = await self._qemu_img_exec(command)
-                        if retcode:
-                            stdout = self.read_qemu_img_stdout()
-                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
-                                                                                                                     retcode,
-                                                                                                                     stdout))
-                    except (OSError, subprocess.SubprocessError) as e:
-                        stdout = self.read_qemu_img_stdout()
-                        raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
+                    await self._create_linked_clone(disk_name, disk_image, disk)
                 else:
                     # The disk exists we check if the clone works
                     try:
@@ -1891,6 +1895,9 @@ class QemuVM(BaseNode):
 
         if self.linked_clone:
             disk_image_path = os.path.join(self.working_dir, "{}_disk.qcow2".format(drive_name))
+            if not os.path.exists(disk_image_path):
+                disk_image = getattr(self, "_{}_disk_image".format(drive_name))
+                await self._create_linked_clone(drive_name, disk_image, disk_image_path)
         else:
             disk_image_path = getattr(self, "{}_disk_image".format(drive_name))
 
