@@ -1726,6 +1726,20 @@ class QemuVM(BaseNode):
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
 
+    async def _create_linked_clone(self, disk_name, disk_image, disk):
+        try:
+            qemu_img_path = self._get_qemu_img()
+            command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+            retcode = await self._qemu_img_exec(command)
+            if retcode:
+                stdout = self.read_qemu_img_stdout()
+                raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
+                                                                                                         retcode,
+                                                                                                         stdout))
+        except (OSError, subprocess.SubprocessError) as e:
+            stdout = self.read_qemu_img_stdout()
+            raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
+
     async def _mcopy(self, image, *args):
         try:
             # read offset of first partition from MBR
@@ -1814,7 +1828,13 @@ class QemuVM(BaseNode):
             # special case, sata controller doesn't exist in Qemu
             options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
             options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
-            options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
+            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
+            if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
+                # The ‘ide-drive’ device is deprecated since version 4.2.0
+                # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
+                options.extend(["-device", 'ide-hd,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
+            else:
+                options.extend(["-device", 'ide-drive,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
         elif interface == "nvme":
             options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
             options.extend(["-device", 'nvme,drive=drive{},serial={}'.format(disk_index, disk_index)])
@@ -1878,17 +1898,7 @@ class QemuVM(BaseNode):
                 disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
                 if not os.path.exists(disk):
                     # create the disk
-                    try:
-                        command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
-                        retcode = await self._qemu_img_exec(command)
-                        if retcode:
-                            stdout = self.read_qemu_img_stdout()
-                            raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
-                                                                                                                     retcode,
-                                                                                                                     stdout))
-                    except (OSError, subprocess.SubprocessError) as e:
-                        stdout = self.read_qemu_img_stdout()
-                        raise QemuError("Could not create '{}' disk image: {}\n{}".format(disk_name, e, stdout))
+                    await self._create_linked_clone(disk_name, disk_image, disk)
                 else:
                     # The disk exists we check if the clone works
                     try:
@@ -1900,7 +1910,7 @@ class QemuVM(BaseNode):
             else:
                 disk = disk_image
 
-            options.extend(self._disk_interface_options(disk, disk_index, interface))
+            options.extend(await self._disk_interface_options(disk, disk_index, interface))
 
         # config disk
         disk_image = getattr(self, "config_disk_image")
@@ -1919,7 +1929,7 @@ class QemuVM(BaseNode):
                 except OSError as e:
                     log.warning("Could not create '{}' disk image: {}".format(disk_name, e))
             if disk_exists:
-                options.extend(self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
+                options.extend(await self._disk_interface_options(disk, 3, self.hdd_disk_interface, "raw"))
 
         return options
 
@@ -1930,6 +1940,9 @@ class QemuVM(BaseNode):
 
         if self.linked_clone:
             disk_image_path = os.path.join(self.working_dir, "{}_disk.qcow2".format(drive_name))
+            if not os.path.exists(disk_image_path):
+                disk_image = getattr(self, "_{}_disk_image".format(drive_name))
+                await self._create_linked_clone(drive_name, disk_image, disk_image_path)
         else:
             disk_image_path = getattr(self, "{}_disk_image".format(drive_name))
 

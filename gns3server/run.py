@@ -208,7 +208,7 @@ def kill_ghosts():
             if name in detect_process:
                 proc.kill()
                 log.warning("Killed ghost process %s", name)
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
+        except (OSError, psutil.NoSuchProcess, psutil.AccessDenied):
             pass
 
 
@@ -359,7 +359,7 @@ def run():
 
     except OSError as e:
         # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
-        if not sys.platform.startswith("win") and not e.winerror == 0:
+        if not sys.platform.startswith("win") or not e.winerror == 0:
             raise
     except Exception as e:
         log.critical("Critical error while running the server: {}".format(e), exc_info=1)

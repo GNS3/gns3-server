@@ -251,7 +251,7 @@ class VPCSVM(BaseNode):
                 log.error("Could not start VPCS {}: {}\n{}".format(self._vpcs_path(), e, vpcs_stdout))
                 raise VPCSError("Could not start VPCS {}: {}\n{}".format(self._vpcs_path(), e, vpcs_stdout))
 
-    def _termination_callback(self, returncode):
+    async def _termination_callback(self, returncode):
         """
         Called when the process has stopped.
 
@@ -263,6 +263,8 @@ class VPCSVM(BaseNode):
             self._started = False
             self.status = "stopped"
             self._process = None
+            await self._stop_ubridge()
+            await super().stop()
             if returncode != 0:
                 self.project.emit("log.error", {"message": "VPCS process has stopped, return code: {}\n{}".format(returncode, self.read_vpcs_stdout())})
 
