@@ -1814,7 +1814,7 @@ class QemuVM(BaseNode):
                 os.remove(zip_file)
         shutil.rmtree(config_dir, ignore_errors=True)
 
-    def _disk_interface_options(self, disk, disk_index, interface, format=None):
+    async def _disk_interface_options(self, disk, disk_index, interface, format=None):
         options = []
         extra_drive_options = ""
         if format:
