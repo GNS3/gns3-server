@@ -1,0 +1,49 @@
+{
+    "name": "HuaWei USG6000v",
+    "category": "firewall",
+    "description": "Huawei USG6000V is a virtual service gateway based on Network Functions Virtualization (NFV). It features high virtual resource usage and provides virtualized gateway services, such as vFW, vIPsec, vLB, vIPS, vAV, and vURL Remote Query.\nHuawei USG6000V is compatible with most mainstream virtual platforms. It provides standard APIs, together with the OpenStack cloud platform, SDN Controller, and MANO to achieve intelligent solutions for cloud security. This gateway meets flexible service customization requirements for frequent security service changes, elastic and on-demand resource allocation, visualized network management, and rapid rollout.",
+    "vendor_name": "HuaWei",
+    "vendor_url": "https://www.huawei.com",
+    "product_name": "HuaWei USG6000v",
+    "product_url": "https://e.huawei.com/en/products/enterprise-networking/security/firewall-gateway/usg6000v",
+    "registry_version": 5,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "none",
+    "maintainer_email": "none",
+    "usage": "Default password is admin. Default username and password for web is admin/Admin@123.",
+    "first_port_name": "GigabitEthernet0/0/0",
+    "port_name_format": "GigabitEthernet1/0/{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 6,
+        "ram": 4096,
+        "cpus": 2,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "hdd_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "dc",
+        "kvm": "require",
+        "options": "-machine type=pc,accel=kvm -vga std -usbdevice tablet"
+    },
+    "images": [
+        {
+            "filename": "usg6kv-v2-V500R001C10.qcow2",
+            "version": "V500R001C10",
+            "md5sum": "07f87aaa4f4d8b9a713d90eb32f89111",
+            "filesize": 737476608,
+            "download_url": "https://support.huawei.com/enterprise/en/security/usg6000v-pid-21431620/software"
+        }
+    ],
+    "versions": [
+        {
+            "name": "V500R001C10",
+            "images": {
+                "hda_disk_image": "usg6kv-v2-V500R001C10.qcow2"
+            }
+        }
+    ]
+}

@@ -1,0 +1,81 @@
+{
+    "name": "Puppy Linux",
+    "category": "guest",
+    "description": "Puppy Linux is a unique family of Linux distributions meant for the home-user computers. It was originally created by Barry Kauler in 2003.",
+    "vendor_name": "Puppy Linux",
+    "vendor_url": "http://puppylinux.com/",
+    "documentation_url": "http://wikka.puppylinux.com/HomePage",
+    "product_name": "Puppy Linux",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Savio D'souza",
+    "maintainer_email": "savio2002@yahoo.in",
+    "usage": "No Password by default\nRun installer & install to local disk\nEject the ISO and reboot.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 256,
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "cd",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "fossapup64-9.5.iso",
+            "version": "9.5",
+            "md5sum": "6a45e7a305b7d3172ebd9eab5ca460e4",
+            "filesize":  428867584,
+            "download_url": "http://puppylinux.com/index.html",
+            "direct_download_url": "http://distro.ibiblio.org/puppylinux/puppy-fossa/fossapup64-9.5.iso"
+        },
+        {
+            "filename": "bionicpup64-8.0-uefi.iso",
+            "version": "8.0",
+            "md5sum": "e31ddba0e6006021c157cb5a5b65ad5f",
+            "filesize": 371195904,
+            "download_url": "http://puppylinux.com/index.html",
+            "direct_download_url": "http://distro.ibiblio.org/puppylinux/puppy-bionic/bionicpup64/bionicpup64-8.0-uefi.iso"
+        },
+        {
+            "filename": "xenialpup64-7.5-uefi.iso",
+            "version": "7.5",
+            "md5sum": "4502bb9693bd72fb5dcfb86a2ce8255d",
+            "filesize": 346030080,
+            "download_url": "http://puppylinux.com/index.html",
+            "direct_download_url": "http://distro.ibiblio.org/puppylinux/puppy-xenial/64/xenialpup64-7.5-uefi.iso"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.5",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "fossapup64-9.5.iso"
+            }
+        },
+        {
+            "name": "8.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "bionicpup64-8.0-uefi.iso"
+            }
+        },
+        {
+            "name": "7.5",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "xenialpup64-7.5-uefi.iso"
+            }
+        }
+    ]
+}

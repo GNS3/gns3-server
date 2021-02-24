@@ -1,0 +1,59 @@
+{
+    "name": "Aruba VGW",
+    "category": "firewall",
+    "description": "Aruba Virtual Gateways allow customers to bring their public cloud infrastructure to the SD-WAN fabric and facilitate connectivity between branches and the public cloud.",
+    "vendor_name": "HPE Aruba",
+    "vendor_url": "arubanetworks.com",
+    "documentation_url": "https://asp.arubanetworks.com/downloads;products=Aruba%20SD-WAN",
+    "product_url": "https://www.arubanetworks.com/products/networking/gateways-and-controllers/",
+    "product_name": "Aruba SD-WAN Virtual Gateway",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "service-contract",
+    "maintainer": "Aruba",
+    "maintainer_email": "mitchell.pompe@hpe.com",
+    "usage": "The device must receive an user-data.iso image, which can be mounted to the CD/DVD-ROM and retrieved from Aruba Central. https://help.central.arubanetworks.com/latest/documentation/online_help/content/gateways/vgw/vgw_man-esxi-gen-ud.htm . By default the VGW can be used with VNC, but once provisioned the command '#serial console redirect enable' will enable telnet usage for GNS3.",
+    "symbol": ":/symbols/classic/gateway.svg",
+    "first_port_name": "mgmt",
+    "port_name_format": "GE0/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 4096,
+        "cpus": 3,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kernel_command_line": "",
+        "kvm": "require",
+        "options": "-smp cores=3,threads=1,sockets=1 -cpu host",
+        "process_priority": "normal"
+    },
+    "images": [
+        {
+            "filename": "ArubaOS_VGW_8.6.0.4-2.2.0.0_76905-disk1.vmdk",
+            "version": "8.6.0.4-2.2.0.0",
+            "md5sum": "24d3fdcbec01c1faa2d4e68659024b40",
+            "filesize": 226974208,
+            "download_url": "https://asp.arubanetworks.com/downloads"
+        },
+        {
+            "filename": "ArubaOS_VGW_8.6.0.4-2.2.0.0_76905-disk2.vmdk",
+            "version": "8.6.0.4-2.2.0.0",
+            "md5sum": "354edd27dc320c739919f55766737d06",
+            "filesize": 4203008,
+            "download_url": "https://asp.arubanetworks.com/downloads"
+        }
+    ],
+    "versions": [
+        {
+            "name": "8.6.0.4-2.2.0.0",
+            "images": {
+                "hda_disk_image": "ArubaOS_VGW_8.6.0.4-2.2.0.0_76905-disk1.vmdk",
+                "hdb_disk_image": "ArubaOS_VGW_8.6.0.4-2.2.0.0_76905-disk2.vmdk"
+            }
+        }
+    ]
+}

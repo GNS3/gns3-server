@@ -1,76 +1,52 @@
 {
     "name": "VyOS",
     "category": "router",
-    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is in the rolling release track.",
+    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is the monthly snapshot of the rolling release track.",
     "vendor_name": "Linux",
-    "vendor_url": "http://vyos.net/",
-    "documentation_url": "http://vyos.net/wiki/User_Guide",
+    "vendor_url": "https://vyos.net/",
+    "documentation_url": "https://docs.vyos.io/",
     "product_name": "VyOS",
-    "product_url": "http://vyos.net/",
+    "product_url": "https://vyos.net/",
     "registry_version": 3,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password is vyos/vyos. At first boot the router will start from the cdrom, login and then type install system and follow the instructions.",
-    "symbol": "vyos.png",
+    "usage": "Default username/password is vyos/vyos.\n\nAt first boot of versions 1.1.x/1.2.x the router will start from the cdrom. Login and then type \"install image\" and follow the instructions.",
+    "symbol": "vyos.svg",
     "port_name_format": "eth{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 3,
         "ram": 512,
-        "hda_disk_interface": "ide",
+        "hda_disk_interface": "scsi",
         "arch": "x86_64",
         "console_type": "telnet",
-        "boot_priority": "dc",
+        "boot_priority": "cd",
         "kvm": "allow"
     },
     "images": [
         {
-            "filename": "vyos-1.2.6-amd64.iso",
-            "version": "1.2.6",
-            "md5sum": "dbf5335c16967cd5f768d1ca927666db",
-            "filesize": 428867584,
-            "download_url": "https://downloads.vyos.io/?dir=release/current/1.2.6"
+            "filename": "vyos-1.3-rolling-202101-qemu.qcow2",
+            "version": "1.3-snapshot-202101",
+            "md5sum": "b05a1f8a879c42342ea90f65ebe62f05",
+            "filesize": 315359232,
+            "download_url": "https://vyos.net/get/snapshots/",
+            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/snapshot/vyos-1.3-rolling-202101/qemu/vyos-1.3-rolling-202101-qemu.qcow2"
         },
         {
-            "filename": "vyos-1.3-rolling-202005040117-amd64.iso",
-            "version": "1.3-rolling-202005040117",
-            "md5sum": "0500d5138cd05239b50f93fb24ac8b55",
-            "filesize": 438304768,
-            "download_url": "https://downloads.vyos.io/?dir=rolling/current/amd64",
-            "direct_download_url": "https://downloads.vyos.io/rolling/current/amd64/vyos-1.3-rolling-202005040117-amd64.iso"
+            "filename": "vyos-1.2.6-S1-amd64.iso",
+            "version": "1.2.6-S1",
+            "md5sum": "449873ae455d5f3f509db7a614e86984",
+            "filesize": 428867584,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-6-s1-generic-iso-image"
         },
         {
             "filename": "vyos-1.1.8-amd64.iso",
             "version": "1.1.8",
             "md5sum": "95a141d4b592b81c803cdf7e9b11d8ea",
             "filesize": 241172480,
-            "download_url": "https://downloads.vyos.io/?dir=release/legacy/1.1.8",
-            "direct_download_url": "https://downloads.vyos.io/release/legacy/1.1.8/vyos-1.1.8-amd64.iso"
-        },
-        {
-            "filename": "vyos-1.1.7-amd64.iso",
-            "version": "1.1.7",
-            "md5sum": "9a7f745a0b0db0d4f1d9eee2a437fb54",
-            "filesize": 245366784,
-            "download_url": "https://downloads.vyos.io/?dir=release/legacy/1.1.7/",
-            "direct_download_url": "https://downloads.vyos.io/release/legacy/1.1.7/vyos-1.1.7-amd64.iso"
-        },
-        {
-            "filename": "vyos-1.1.6-amd64.iso",
-            "version": "1.1.6",
-            "md5sum": "3128954d026e567402a924c2424ce2bf",
-            "filesize": 245366784,
-            "download_url": "hhttps://downloads.vyos.io/?dir=release/legacy/1.1.6/",
-            "direct_download_url": "https://downloads.vyos.io/release/legacy/1.1.6/vyos-1.1.6-amd64.iso"
-        },
-        {
-            "filename": "vyos-1.1.5-amd64.iso",
-            "version": "1.1.5",
-            "md5sum": "193179532011ceaa87ee725bd8f22022",
-            "filesize": 247463936,
-            "download_url": "https://downloads.vyos.io/?dir=release/legacy/1.1.5/",
-            "direct_download_url": "https://downloads.vyos.io/release/legacy/1.1.5/vyos-1.1.5-amd64.iso"
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-1-8-iso",
+            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/vyos-1.1.8-amd64.iso"
         },
         {
             "filename": "empty8G.qcow2",
@@ -83,17 +59,16 @@
     ],
     "versions": [
         {
-            "name": "1.2.6",
+            "name": "1.3-snapshot-202101",
             "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.6-amd64.iso"
+                "hda_disk_image": "vyos-1.3-rolling-202101-qemu.qcow2"
             }
         },
         {
-            "name": "1.3-rolling-202005040117",
+            "name": "1.2.6-S1",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3-rolling-202005040117-amd64.iso"
+                "cdrom_image": "vyos-1.2.6-S1-amd64.iso"
             }
         },
         {
@@ -101,27 +76,6 @@
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
                 "cdrom_image": "vyos-1.1.8-amd64.iso"
-            }
-        },
-        {
-            "name": "1.1.7",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.1.7-amd64.iso"
-            }
-        },
-        {
-            "name": "1.1.6",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.1.6-amd64.iso"
-            }
-        },
-        {
-            "name": "1.1.5",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.1.5-amd64.iso"
             }
         }
     ]

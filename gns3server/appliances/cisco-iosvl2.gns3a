@@ -20,8 +20,7 @@
         "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
-        "kvm": "require",
-        "options": "-machine pc-q35-4.2"
+        "kvm": "require"
     },
     "images": [
         {

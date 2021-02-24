@@ -1,0 +1,51 @@
+{
+    "name": "Windows",
+    "category": "guest",
+    "description": "Microsoft Windows XP is a graphical operating system developed, marketed, and sold by Microsoft.\n\nMicrosoft has released time limited VMs for testing Internet Explorer.",
+    "vendor_name": "Microsoft",
+    "vendor_url": "http://www.microsoft.com",
+    "product_name": "Windows XP",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "qemu": {
+        "adapter_type": "pcnet",
+        "adapters": 2,
+        "ram": 512,
+        "arch": "i386",
+        "console_type": "vnc",
+        "kvm": "require",
+        "options": "-vga std -soundhw es1370 -usbdevice tablet"
+    },
+    "images": [
+        {
+            "filename": "IE8 - WinXP-disk1.vmdk",
+            "version": "XP+IE8",
+            "md5sum": "9cf6a0d5af11bdad26a59731f6494666",
+            "filesize": 1241311744,
+            "download_url": "https://ia802808.us.archive.org/22/items/ie8.winxp.vmware/IE8-WinXP-VMWare.zip"
+        },
+        {
+            "filename": "IE6 - WinXP-disk1.vmdk",
+            "version": "XP+IE6",
+            "md5sum": "f7fc1948749f0a62c3cccf0775d74f05",
+            "filesize": 1063498240,
+            "download_url": "https://ia802903.us.archive.org/25/items/ie6.winxp.vmware/IE6%20-%20WinXP-VMWare.zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "XP+IE8",
+            "images": {
+                "hda_disk_image": "IE8 - WinXP-disk1.vmdk"
+            }
+        },
+        {
+            "name": "XP+IE6",
+            "images": {
+                "hda_disk_image": "IE6 - WinXP-disk1.vmdk"
+            }
+        }
+    ]
+}

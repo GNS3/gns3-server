@@ -32,6 +32,13 @@
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/IOSv_startup_config.img/download"
         },
         {
+            "filename": "vios-adventerprisek9-m.spa.158-3.m2.qcow2",
+            "version": "15.8(3)M2",
+            "md5sum": "40e3d25b5b0cb13d639fcd2cf18e9965",
+            "filesize": 57129984,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        },
+        {
             "filename": "vios-adventerprisek9-m.vmdk.SPA.157-3.M3",
             "version": "15.7(3)M3",
             "md5sum": "37c148ffa14a82f418a6e9c2b049fafe",
@@ -61,6 +68,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.8(3)M2",
+            "images": {
+                "hda_disk_image": "vios-adventerprisek9-m.spa.158-3.m2.qcow2",
+                "hdb_disk_image": "IOSv_startup_config.img"
+            }
+        },
         {
             "name": "15.7(3)M3",
             "images": {
