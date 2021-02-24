@@ -34,7 +34,7 @@
         },
         {
             "filename": "junos-vsrx3-x86-64-20.4R1.12.qcow2",
-            "version": "20.4R1",
+            "version": "20.4R1 3.0",
             "md5sum": "0e7a44a56c0326908fcbdc70451e08f5",
             "filesize": 942211072,
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
@@ -48,7 +48,7 @@
         },
         {
             "filename": "junos-vsrx3-x86-64-19.3R1.8.qcow2",
-            "version": "19.3R1",
+            "version": "19.3R1 3.0",
             "md5sum": "b94d6e5b38737af09c5c9f49c623b69b",
             "filesize": 834928640,
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
@@ -62,7 +62,7 @@
         },
         {
             "filename": "junos-vsrx3-x86-64-18.4R3.3.qcow2",
-            "version": "18.4R3",
+            "version": "18.4R3 3.0",
             "md5sum": "bb1dec15bb047446f80d85a129cb57c6",
             "filesize": 764805120,
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
