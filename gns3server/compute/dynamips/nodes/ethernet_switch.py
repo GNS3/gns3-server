@@ -79,7 +79,7 @@ class EthernetSwitch(Device):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="none", ports=None, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type=None, ports=None, hypervisor=None):
 
         super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
@@ -89,6 +89,9 @@ class EthernetSwitch(Device):
         #self._telnet_server = None
         self._console = console
         self._console_type = console_type
+
+        if self._console_type is None:
+            self._console_type = "none"
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
@@ -115,6 +118,7 @@ class EthernetSwitch(Device):
                                 "project_id": self.project.id,
                                 "ports_mapping": self._ports,
                                 "status": "started"}
+
         return ethernet_switch_info
 
     @property
