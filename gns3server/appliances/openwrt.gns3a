@@ -22,6 +22,15 @@
         "kvm": "allow"
     },
     "images": [
+            {
+            "filename": "openwrt-19.07.7-x86-64-combined-ext4.img",
+            "version": "19.07.7",
+            "md5sum": "0cfa752fab87014419ab00b18a6cc5a6",
+            "filesize": 285736960,
+            "download_url": "https://downloads.openwrt.org/releases/19.07.7/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/19.07.7/targets/x86/64/openwrt-19.07.7-x86-64-combined-ext4.img.gz",
+            "compression": "gzip"
+        },
         {
             "filename": "openwrt-19.07.6-x86-64-combined-ext4.img",
             "version": "19.07.6",
@@ -159,6 +168,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "19.07.7",
+            "images": {
+                "hda_disk_image": "openwrt-19.07.7-x86-64-combined-ext4.img"
+            }
+        },
         {
             "name": "19.07.6",
             "images": {
