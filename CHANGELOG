@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.19 05/03/2021
+
+* Launch projects marked for auto open after SIGHUP is received
+* Release Web UI 2.2.19
+* Fix console type error when creating Ethernet switch node. Fixes #1873
+* Upgrade Jinja to version 2.11.3. Fixes #1865
+
 ## 2.2.18 16/02/2021
 
 * SIGHUP: remove projects with an empty project directory.
