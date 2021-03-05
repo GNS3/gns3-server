@@ -154,6 +154,7 @@ class Controller:
                 self.remove_project(project)
 
         await self.load_projects()
+        await self._project_auto_open()
 
     def check_can_write_config(self):
         """
