@@ -62,7 +62,8 @@ class DockerHandler:
                                                           console_http_path=request.json.get("console_http_path", "/"),
                                                           aux=request.json.get("aux"),
                                                           extra_hosts=request.json.get("extra_hosts"),
-                                                          extra_volumes=request.json.get("extra_volumes"))
+                                                          extra_volumes=request.json.get("extra_volumes"),
+                                                          extra_parameters=request.json.get("extra_parameters"))
         for name, value in request.json.items():
             if name != "node_id":
                 if hasattr(container, name) and getattr(container, name) != value:
@@ -317,7 +318,7 @@ class DockerHandler:
         props = [
             "name", "console", "aux", "console_type", "console_resolution",
             "console_http_port", "console_http_path", "start_command",
-            "environment", "adapters", "extra_hosts", "extra_volumes"
+            "environment", "adapters", "extra_hosts", "extra_volumes", "extra_parameters"
         ]
 
         changed = False

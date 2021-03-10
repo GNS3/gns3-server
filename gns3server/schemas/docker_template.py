@@ -87,6 +87,11 @@ DOCKER_TEMPLATE_PROPERTIES = {
         "type": "array",
         "default": []
     },
+    "extra_parameters": {
+        "description": "Docker extra create parameters (used in docker create)",
+        "type": "string",
+        "default": ""
+    },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
