@@ -130,6 +130,10 @@ def _is_exportable(path, include_snapshots=False):
     :returns: True if file should not be included in the final archive
     """
 
+    # do not export file that does not exist anymore
+    if not os.path.exists(path):
+        return False
+
     # do not export snapshots by default
     if include_snapshots is False and path.endswith("snapshots"):
         return False
