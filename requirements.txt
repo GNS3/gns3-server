@@ -10,7 +10,7 @@ psutil==5.7.3
 async-timeout==3.0.1
 distro==1.5.0
 py-cpuinfo==7.0.0
-sqlalchemy==1.4.0b1  # beta version with asyncio support
+sqlalchemy==1.4.2
 passlib[bcrypt]==1.7.2
 python-jose==3.2.0
 email-validator==1.1.2
