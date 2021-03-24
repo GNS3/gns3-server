@@ -61,9 +61,11 @@ async def write_file(path, z):
             f.write(chunk)
 
 
-def test_exportable_files():
+def test_exportable_files(tmpdir):
 
-    assert _is_exportable("hello/world")
+    with open(str(tmpdir / "test.file"), "w+") as f:
+        f.write("AAA")
+    assert _is_exportable(str(tmpdir / "test.file"))
     assert not _is_exportable("project-files/tmp")
     assert not _is_exportable("project-files/test_log.txt")
     assert not _is_exportable("project-files/test.log")
