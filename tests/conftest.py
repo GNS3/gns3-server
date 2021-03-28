@@ -64,7 +64,7 @@ async def app() -> FastAPI:
 @pytest.fixture(scope="class")
 def db_engine():
 
-    db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
+    db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     yield engine
     engine.sync_engine.dispose()

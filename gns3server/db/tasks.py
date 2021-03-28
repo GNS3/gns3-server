@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 async def connect_to_db(app: FastAPI) -> None:
 
     db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
-    db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+pysqlite:///{db_path}")
+    db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     try:
         async with engine.begin() as conn:

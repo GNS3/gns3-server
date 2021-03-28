@@ -37,7 +37,7 @@ class Template(BaseTable):
 
     __mapper_args__ = {
         "polymorphic_identity": "templates",
-        "polymorphic_on": template_type
+        "polymorphic_on": template_type,
     }
 
 
@@ -53,7 +53,8 @@ class CloudTemplate(Template):
     remote_console_http_path = Column(String)
 
     __mapper_args__ = {
-         "polymorphic_identity": "cloud"
+         "polymorphic_identity": "cloud",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -79,7 +80,8 @@ class DockerTemplate(Template):
     custom_adapters = Column(PickleType)
 
     __mapper_args__ = {
-         "polymorphic_identity": "docker"
+         "polymorphic_identity": "docker",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -124,7 +126,8 @@ class DynamipsTemplate(Template):
     wic2 = Column(String)
 
     __mapper_args__ = {
-         "polymorphic_identity": "dynamips"
+         "polymorphic_identity": "dynamips",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -136,7 +139,8 @@ class EthernetHubTemplate(Template):
     ports_mapping = Column(PickleType)
 
     __mapper_args__ = {
-         "polymorphic_identity": "ethernet_hub"
+         "polymorphic_identity": "ethernet_hub",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -149,7 +153,8 @@ class EthernetSwitchTemplate(Template):
     console_type = Column(String)
 
     __mapper_args__ = {
-         "polymorphic_identity": "ethernet_switch"
+         "polymorphic_identity": "ethernet_switch",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -171,7 +176,8 @@ class IOUTemplate(Template):
     console_auto_start = Column(Boolean)
 
     __mapper_args__ = {
-         "polymorphic_identity": "iou"
+         "polymorphic_identity": "iou",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -219,7 +225,8 @@ class QemuTemplate(Template):
     custom_adapters = Column(PickleType)
 
     __mapper_args__ = {
-         "polymorphic_identity": "qemu"
+         "polymorphic_identity": "qemu",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -244,7 +251,8 @@ class VirtualBoxTemplate(Template):
     custom_adapters = Column(PickleType)
 
     __mapper_args__ = {
-         "polymorphic_identity": "virtualbox"
+         "polymorphic_identity": "virtualbox",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -268,7 +276,8 @@ class VMwareTemplate(Template):
     custom_adapters = Column(PickleType)
 
     __mapper_args__ = {
-         "polymorphic_identity": "vmware"
+         "polymorphic_identity": "vmware",
+         "polymorphic_load": "selectin"
     }
 
 
@@ -282,5 +291,6 @@ class VPCSTemplate(Template):
     console_auto_start = Column(Boolean, default=False)
 
     __mapper_args__ = {
-         "polymorphic_identity": "vpcs"
+         "polymorphic_identity": "vpcs",
+         "polymorphic_load": "selectin"
     }

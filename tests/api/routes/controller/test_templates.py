@@ -23,7 +23,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from gns3server.controller import Controller
-from gns3server.db.repositories.templates import BUILTIN_TEMPLATES
+from gns3server.services.templates import BUILTIN_TEMPLATES
 
 pytestmark = pytest.mark.asyncio
 

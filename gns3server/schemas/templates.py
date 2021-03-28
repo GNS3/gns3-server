@@ -52,7 +52,6 @@ class TemplateBase(BaseModel):
 
     class Config:
         extra = "allow"
-        orm_mode = True
 
 
 class TemplateCreate(TemplateBase):
@@ -79,6 +78,9 @@ class Template(DateTimeModelMixin, TemplateBase):
     builtin: bool
     template_type: NodeType
     compute_id: Union[str, None]
+
+    class Config:
+        orm_mode = True
 
 
 class TemplateUsage(BaseModel):

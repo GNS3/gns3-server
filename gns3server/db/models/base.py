@@ -27,14 +27,14 @@ from sqlalchemy.ext.declarative import as_declarative
 @as_declarative()
 class Base:
 
-    def _asdict(self):
+    def asdict(self):
 
         return {c.key: getattr(self, c.key)
                 for c in inspect(self).mapper.column_attrs}
 
-    def _asjson(self):
+    def asjson(self):
 
-        return jsonable_encoder(self._asdict())
+        return jsonable_encoder(self.asdict())
 
 
 class GUID(TypeDecorator):

@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from gns3server.controller import Controller
 
 
 class BaseRepository:
@@ -24,4 +23,3 @@ class BaseRepository:
     def __init__(self, db_session: AsyncSession) -> None:
 
         self._db_session = db_session
-        self._controller = Controller.instance()

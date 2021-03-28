@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 GNS3 Technologies Inc.
+# Copyright (C) 2021 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ API routes for templates.
 
 import hashlib
 import json
-import pydantic
 
 import logging
 log = logging.getLogger(__name__)
@@ -33,54 +32,44 @@ from uuid import UUID
 from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.controller.controller_error import (
-    ControllerBadRequestError,
-    ControllerNotFoundError,
-    ControllerForbiddenError
-)
+from gns3server.services.templates import TemplatesService
 
 from .dependencies.database import get_repository
-
-router = APIRouter()
 
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find template"}
 }
 
+router = APIRouter(responses=responses)
+
 
 @router.post("/templates", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def create_template(
-        new_template: schemas.TemplateCreate,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        template_data: schemas.TemplateCreate,
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Create a new template.
     """
 
-    try:
-        return await template_repo.create_template(new_template)
-    except pydantic.ValidationError as e:
-        raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
+    return await TemplatesService(templates_repo).create_template(template_data)
 
 
 @router.get("/templates/{template_id}",
             response_model=schemas.Template,
-            response_model_exclude_unset=True,
-            responses=responses)
+            response_model_exclude_unset=True)
 async def get_template(
         template_id: UUID,
         request: Request,
         response: Response,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Return a template.
     """
 
     request_etag = request.headers.get("If-None-Match", "")
-    template = await template_repo.get_template(template_id)
-    if not template:
-        raise ControllerNotFoundError(f"Template '{template_id}' not found")
+    template = await TemplatesService(templates_repo).get_template(template_id)
     data = json.dumps(template)
     template_etag = '"' + hashlib.md5(data.encode()).hexdigest() + '"'
     if template_etag == request_etag:
@@ -92,75 +81,57 @@ async def get_template(
 
 @router.put("/templates/{template_id}",
             response_model=schemas.Template,
-            response_model_exclude_unset=True,
-            responses=responses)
+            response_model_exclude_unset=True)
 async def update_template(
         template_id: UUID,
         template_data: schemas.TemplateUpdate,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Update a template.
     """
 
-    if template_repo.get_builtin_template(template_id):
-        raise ControllerForbiddenError(f"Template '{template_id}' cannot be updated because it is built-in")
-    template = await template_repo.update_template(template_id, template_data)
-    if not template:
-        raise ControllerNotFoundError(f"Template '{template_id}' not found")
-    return template
+    return await TemplatesService(templates_repo).update_template(template_id, template_data)
 
 
 @router.delete("/templates/{template_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT,)
 async def delete_template(
         template_id: UUID,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> None:
     """
     Delete a template.
     """
 
-    if template_repo.get_builtin_template(template_id):
-        raise ControllerForbiddenError(f"Template '{template_id}' cannot be deleted because it is built-in")
-    success = await template_repo.delete_template(template_id)
-    if not success:
-        raise ControllerNotFoundError(f"Template '{template_id}' not found")
+    await TemplatesService(templates_repo).delete_template(template_id)
 
 
 @router.get("/templates",
             response_model=List[schemas.Template],
             response_model_exclude_unset=True)
 async def get_templates(
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> List[dict]:
     """
     Return all templates.
     """
 
-    templates = await template_repo.get_templates()
-    return templates
+    return await TemplatesService(templates_repo).get_templates()
 
 
 @router.post("/templates/{template_id}/duplicate",
              response_model=schemas.Template,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_template(
         template_id: UUID,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Duplicate a template.
     """
 
-    if template_repo.get_builtin_template(template_id):
-        raise ControllerForbiddenError(f"Template '{template_id}' cannot be duplicated because it is built-in")
-    template = await template_repo.duplicate_template(template_id)
-    if not template:
-        raise ControllerNotFoundError(f"Template '{template_id}' not found")
-    return template
+    return await TemplatesService(templates_repo).duplicate_template(template_id)
 
 
 @router.post("/projects/{project_id}/templates/{template_id}",
@@ -171,15 +142,13 @@ async def create_node_from_template(
         project_id: UUID,
         template_id: UUID,
         template_usage: schemas.TemplateUsage,
-        template_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Node:
     """
     Create a new node from a template.
     """
 
-    template = await template_repo.get_template(template_id)
-    if not template:
-        raise ControllerNotFoundError(f"Template '{template_id}' not found")
+    template = TemplatesService(templates_repo).get_template(template_id)
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
     node = await project.add_node_from_template(template,

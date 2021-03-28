@@ -24,7 +24,7 @@ from gns3server.db.repositories.base import BaseRepository
 
 async def get_db_session(request: Request) -> AsyncSession:
 
-    session = AsyncSession(request.app.state._db_engine)
+    session = AsyncSession(request.app.state._db_engine, expire_on_commit=False)
     try:
         yield session
     finally:
