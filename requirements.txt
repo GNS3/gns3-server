@@ -17,4 +17,3 @@ python-jose==3.2.0
 email-validator==1.1.2
 async-exit-stack==1.0.1  ; python_version < "3.7"
 async-generator==1.10  ; python_version < "3.7"
-contextvars==2.4.0 ; python_version < "3.7"
