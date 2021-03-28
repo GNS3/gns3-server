@@ -17,21 +17,33 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, func
-from sqlalchemy.orm import relationship
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy import Column, DateTime, func, inspect
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import as_declarative
 
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+@as_declarative()
+class Base:
+
+    def _asdict(self):
+
+        return {c.key: getattr(self, c.key)
+                for c in inspect(self).mapper.column_attrs}
+
+    def _asjson(self):
+
+        return jsonable_encoder(self._asdict())
 
 
 class GUID(TypeDecorator):
-    """Platform-independent GUID type.
+    """
+    Platform-independent GUID type.
     Uses PostgreSQL's UUID type, otherwise uses
     CHAR(32), storing as stringified hex values.
     """
+
     impl = CHAR
 
     def load_dialect_impl(self, dialect):
@@ -73,30 +85,3 @@ class BaseTable(Base):
 
 def generate_uuid():
     return str(uuid.uuid4())
-
-
-class User(BaseTable):
-
-    __tablename__ = "users"
-
-    user_id = Column(GUID, primary_key=True, default=generate_uuid)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    full_name = Column(String)
-    hashed_password = Column(String)
-    is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
-
-
-#     items = relationship("Item", back_populates="owner")
-#
-#
-# class Item(Base):
-#     __tablename__ = "items"
-#
-#     id = Column(Integer, primary_key=True, index=True)
-#     title = Column(String, index=True)
-#     description = Column(String, index=True)
-#     owner_id = Column(Integer, ForeignKey("users.id"))
-#
-#     owner = relationship("User", back_populates="items")

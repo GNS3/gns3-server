@@ -445,33 +445,6 @@ def test_appliances(controller, tmpdir):
         elif j["name"] == "My Appliance":
             assert not j["builtin"]
 
-
-def test_load_templates(controller):
-
-    controller._settings = {}
-    controller.template_manager.load_templates()
-
-    assert "Cloud" in [template.name for template in controller.template_manager.templates.values()]
-    assert "VPCS" in [template.name for template in controller.template_manager.templates.values()]
-
-    for template in controller.template_manager.templates.values():
-        if template.name == "VPCS":
-            assert template._settings["properties"] == {"base_script_file": "vpcs_base_config.txt"}
-
-    # UUID should not change when you run again the function
-    for template in controller.template_manager.templates.values():
-        if template.name == "Test":
-            qemu_uuid = template.id
-        elif template.name == "Cloud":
-            cloud_uuid = template.id
-    controller.template_manager.load_templates()
-    for template in controller.template_manager.templates.values():
-        if template.name == "Test":
-            assert qemu_uuid == template.id
-        elif template.name == "Cloud":
-            assert cloud_uuid == template.id
-
-
 @pytest.mark.asyncio
 async def test_autoidlepc(controller):
 

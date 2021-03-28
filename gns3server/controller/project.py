@@ -500,16 +500,11 @@ class Project:
         return new_name
 
     @open_required
-    async def add_node_from_template(self, template_id, x=0, y=0, name=None, compute_id=None):
+    async def add_node_from_template(self, template, x=0, y=0, name=None, compute_id=None):
         """
         Create a node from a template.
         """
-        try:
-            template = copy.deepcopy(self.controller.template_manager.templates[template_id].settings)
-        except KeyError:
-            msg = "Template {} doesn't exist".format(template_id)
-            log.error(msg)
-            raise ControllerNotFoundError(msg)
+
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")

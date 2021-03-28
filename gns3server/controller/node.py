@@ -612,7 +612,6 @@ class Node:
         if the image exists
         """
 
-        print("UPLOAD MISSING IMAGE")
         for directory in images_directories(type):
             image = os.path.join(directory, img)
             if os.path.exists(image):

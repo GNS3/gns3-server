@@ -25,10 +25,8 @@ import asyncio
 
 from ..config import Config
 from .project import Project
-from .template import Template
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
-from .template_manager import TemplateManager
 from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
@@ -55,7 +53,6 @@ class Controller:
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
         self._appliance_manager = ApplianceManager()
-        self._template_manager = TemplateManager()
         self._iou_license_settings = {"iourc_content": "",
                                       "license_check": True}
         self._config_loaded = False
@@ -208,10 +205,6 @@ class Controller:
                                "appliances_etag": self._appliance_manager.appliances_etag,
                                "version": __version__}
 
-        for template in self._template_manager.templates.values():
-            if not template.builtin:
-                controller_settings["templates"].append(template.__json__())
-
         for compute in self._computes.values():
             if compute.id != "local" and compute.id != "vm":
                 controller_settings["computes"].append({"host": compute.host,
@@ -259,7 +252,6 @@ class Controller:
 
         self._appliance_manager.appliances_etag = controller_settings.get("appliances_etag")
         self._appliance_manager.load_appliances()
-        self._template_manager.load_templates(controller_settings.get("templates"))
         self._config_loaded = True
         return controller_settings.get("computes", [])
 
@@ -545,14 +537,6 @@ class Controller:
         """
 
         return self._appliance_manager
-
-    @property
-    def template_manager(self):
-        """
-        :returns: Template Manager instance
-        """
-
-        return self._template_manager
 
     @property
     def iou_license(self):

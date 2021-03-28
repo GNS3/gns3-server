@@ -36,22 +36,26 @@ class UsersRepository(BaseRepository):
 
     async def get_user(self, user_id: UUID) -> Optional[models.User]:
 
-        result = await self._db_session.execute(select(models.User).where(models.User.user_id == user_id))
+        query = select(models.User).where(models.User.user_id == user_id)
+        result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_user_by_username(self, username: str) -> Optional[models.User]:
 
-        result = await self._db_session.execute(select(models.User).where(models.User.username == username))
+        query = select(models.User).where(models.User.username == username)
+        result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_user_by_email(self, email: str) -> Optional[models.User]:
 
-        result = await self._db_session.execute(select(models.User).where(models.User.email == email))
+        query = select(models.User).where(models.User.email == email)
+        result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_users(self) -> List[models.User]:
 
-        result = await self._db_session.execute(select(models.User))
+        query = select(models.User)
+        result = await self._db_session.execute(query)
         return result.scalars().all()
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
