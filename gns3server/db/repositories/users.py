@@ -93,8 +93,6 @@ class UsersRepository(BaseRepository):
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
-            #except:
-            #    await session.rollback()
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
 

@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, func
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, String
 
 from .base import BaseTable, generate_uuid, GUID
 
@@ -32,17 +31,3 @@ class User(BaseTable):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
-
-
-#     items = relationship("Item", back_populates="owner")
-#
-#
-# class Item(Base):
-#     __tablename__ = "items"
-#
-#     id = Column(Integer, primary_key=True, index=True)
-#     title = Column(String, index=True)
-#     description = Column(String, index=True)
-#     owner_id = Column(Integer, ForeignKey("users.id"))
-#
-#     owner = relationship("User", back_populates="items")

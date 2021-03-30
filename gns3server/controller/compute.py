@@ -110,11 +110,6 @@ class Compute:
             self._http_session = aiohttp.ClientSession(connector=connector)
         return self._http_session
 
-    #def __del__(self):
-    #
-    #   if self._http_session:
-    #       self._http_session.close()
-
     def _set_auth(self, user, password):
         """
         Set authentication parameters

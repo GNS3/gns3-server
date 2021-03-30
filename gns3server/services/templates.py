@@ -154,22 +154,22 @@ class TemplatesService:
             templates.append(jsonable_encoder(builtin_template))
         return templates
 
-    async def create_template(self, template_data: schemas.TemplateCreate) -> dict:
+    async def create_template(self, template_create: schemas.TemplateCreate) -> dict:
 
         try:
             # get the default template settings
-            template_settings = jsonable_encoder(template_data, exclude_unset=True)
-            template_schema = TEMPLATE_TYPE_TO_SHEMA[template_data.template_type]
+            template_settings = jsonable_encoder(template_create, exclude_unset=True)
+            template_schema = TEMPLATE_TYPE_TO_SHEMA[template_create.template_type]
             template_settings_with_defaults = template_schema.parse_obj(template_settings)
             settings = template_settings_with_defaults.dict()
-            if template_data.template_type == "dynamips":
+            if template_create.template_type == "dynamips":
                 # special case for Dynamips to cover all platform types that contain specific settings
                 dynamips_template_schema = DYNAMIPS_PLATFORM_TO_SHEMA[settings["platform"]]
                 dynamips_template_settings_with_defaults = dynamips_template_schema.parse_obj(template_settings)
                 settings = dynamips_template_settings_with_defaults.dict()
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
-        db_template = await self._templates_repo.create_template(template_data.template_type, settings)
+        db_template = await self._templates_repo.create_template(template_create.template_type, settings)
         template = db_template.asjson()
         self._controller.notification.controller_emit("template.created", template)
         return template
@@ -185,14 +185,14 @@ class TemplatesService:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
         return template
 
-    async def update_template(self, template_id: UUID, template_data: schemas.TemplateUpdate) -> dict:
+    async def update_template(self, template_id: UUID, template_update: schemas.TemplateUpdate) -> dict:
 
         if self.get_builtin_template(template_id):
             raise ControllerForbiddenError(f"Template '{template_id}' cannot be updated because it is built-in")
-        template = await self._templates_repo.update_template(template_id, template_data)
-        if not template:
+        db_template = await self._templates_repo.update_template(template_id, template_update)
+        if not db_template:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
-        template = template.asjson()
+        template = db_template.asjson()
         self._controller.notification.controller_emit("template.updated", template)
         return template
 

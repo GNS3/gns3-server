@@ -33,7 +33,6 @@ from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
-
 from .dependencies.database import get_repository
 
 responses = {
@@ -45,14 +44,14 @@ router = APIRouter(responses=responses)
 
 @router.post("/templates", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def create_template(
-        template_data: schemas.TemplateCreate,
+        template_create: schemas.TemplateCreate,
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Create a new template.
     """
 
-    return await TemplatesService(templates_repo).create_template(template_data)
+    return await TemplatesService(templates_repo).create_template(template_create)
 
 
 @router.get("/templates/{template_id}",
@@ -84,14 +83,14 @@ async def get_template(
             response_model_exclude_unset=True)
 async def update_template(
         template_id: UUID,
-        template_data: schemas.TemplateUpdate,
+        template_update: schemas.TemplateUpdate,
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> dict:
     """
     Update a template.
     """
 
-    return await TemplatesService(templates_repo).update_template(template_id, template_data)
+    return await TemplatesService(templates_repo).update_template(template_id, template_update)
 
 
 @router.delete("/templates/{template_id}",
