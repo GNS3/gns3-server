@@ -17,3 +17,4 @@ python-jose==3.2.0
 email-validator==1.1.2
 async-exit-stack==1.0.1  ; python_version < "3.7"
 async-generator==1.10  ; python_version < "3.7"
+greenlet==0.4.7  ; python_version < "3.7"  # workaround for https://github.com/sqlalchemy/sqlalchemy/issues/6166
