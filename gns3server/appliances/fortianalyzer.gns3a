@@ -17,7 +17,7 @@
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 4,
-        "ram": 1024,
+        "ram": 4096,
         "hda_disk_interface": "virtio",
         "hdb_disk_interface": "virtio",
         "arch": "x86_64",
@@ -26,6 +26,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "FAZ_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
+            "version": "6.4.5",
+            "md5sum": "e220b48c6e86f8ddc660d578295051a9",
+            "filesize": 152698880,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
         {
             "filename": "FAZ_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
             "version": "6.2.2",
@@ -169,6 +176,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.4.5",
+            "images": {
+              "hda_disk_image": "FAZ_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
+              "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "6.2.2",
             "images": {

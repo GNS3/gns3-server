@@ -30,7 +30,7 @@
         {
             "filename": "BIGIP-16.0.0.1-0.0.3.qcow2",
             "version": "16.0.0.1",
-            "md5sum": "95ff618b7d0b53c4252299cd49b0e564",
+            "md5sum": "f153120d46e84c018c8ff78c6c7164bc",
             "filesize": 5393088512,
             "download_url": "https://downloads.f5.com/esd/serveDownload.jsp?path=/big-ip/big-ip_v16.x/16.0.0/english/16.0.0.1_virtual-edition/&sw=BIG-IP&pro=big-ip_v16.x&ver=16.0.0&container=16.0.0.1_Virtual-Edition&file=BIGIP-16.0.0.1-0.0.3.ALL.qcow2.zip"
         },

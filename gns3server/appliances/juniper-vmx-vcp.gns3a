@@ -47,24 +47,6 @@
             "filesize": 10485760
         },
         {
-            "filename": "junos-vmx-x86-64-19.3R1.8.qcow2",
-            "version": "19.3R1.8-KVM",
-            "md5sum": "cd14a6884edeb6b337d3c2be02241c63",
-            "filesize": 1435238400
-        },
-        {
-            "filename": "vmxhdd-19.3R1.8.img",
-            "version": "19.3R1.8-KVM",
-            "md5sum": "ae26e0f32605a53a5c85342bad677c9f",
-            "filesize": 197120
-        },
-        {
-            "filename": "metadata-usb-re-19.3R1.8.img",
-            "version": "19.3R1.8-KVM",
-            "md5sum": "3c66c4657773a0cd2b38ffd84115446a",
-            "filesize": 10485760
-        },
-        {
             "filename": "junos-vmx-x86-64-17.4R1.16.qcow2",
             "version": "17.4R1.16-KVM",
             "md5sum": "85239193e852d643dfd9d5c257240bdf",
@@ -363,14 +345,6 @@
                 "hda_disk_image": "junos-vmx-x86-64-20.2R1.10.qcow2",
                 "hdb_disk_image": "vmxhdd-20.2R1.10.img",
                 "hdc_disk_image": "metadata-usb-re-20.2R1.10.img"
-            }
-        },
-        {
-            "name": "19.3R1.8-KVM",
-            "images": {
-                "hda_disk_image": "junos-vmx-x86-64-19.3R1.8.qcow2",
-                "hdb_disk_image": "vmxhdd-19.3R1.8.img",
-                "hdc_disk_image": "metadata-usb-re-19.3R1.8.img"
             }
         },
         {

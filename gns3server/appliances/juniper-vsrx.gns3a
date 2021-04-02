@@ -26,6 +26,20 @@
     },
     "images": [
         {
+            "filename": "junos-media-vsrx-x86-64-vmdisk-20.4R1.12.qcow2",
+            "version": "20.4R1",
+            "md5sum": "a445304c6f710d6d5401b486ef68cd20",
+            "filesize": 6796738560,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx3-x86-64-20.4R1.12.qcow2",
+            "version": "20.4R1 3.0",
+            "md5sum": "0e7a44a56c0326908fcbdc70451e08f5",
+            "filesize": 942211072,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2",
             "version": "19.3R1",
             "md5sum": "4121122ccf9ec697fd26cdac91b81543",
@@ -33,10 +47,24 @@
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
         },
         {
+            "filename": "junos-vsrx3-x86-64-19.3R1.8.qcow2",
+            "version": "19.3R1 3.0",
+            "md5sum": "b94d6e5b38737af09c5c9f49c623b69b",
+            "filesize": 834928640,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2",
             "version": "18.1R1",
             "md5sum": "4e9393142afc675d5d3d03c5071e70ce",
             "filesize": 4418961408,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
+            "filename": "junos-vsrx3-x86-64-18.4R3.3.qcow2",
+            "version": "18.4R3 3.0",
+            "md5sum": "bb1dec15bb047446f80d85a129cb57c6",
+            "filesize": 764805120,
             "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
         },
         {
@@ -154,15 +182,39 @@
     ],
     "versions": [
         {
+            "name": "20.4R1",
+            "images": {
+                "hda_disk_image": "junos-media-vsrx-x86-64-vmdisk-20.4R1.12.qcow2"
+            }
+        },
+        {
+            "name": "20.4R1 3.0",
+            "images": {
+                "hda_disk_image": "junos-vsrx3-x86-64-20.4R1.12.qcow2"
+            }
+        },
+        {
             "name": "19.3R1",
             "images": {
                 "hda_disk_image": "junos-media-vsrx-x86-64-vmdisk-19.3R1.8.qcow2"
             }
         },
         {
+            "name": "19.3R1 3.0",
+            "images": {
+                "hda_disk_image": "junos-vsrx3-x86-64-19.3R1.8.qcow2"
+            }
+        },
+        {
             "name": "18.1R1",
             "images": {
                 "hda_disk_image": "junos-media-vsrx-vmdisk-18.1R1.9.qcow2"
+            }
+        },
+        {
+            "name": "18.4R3 3.0",
+            "images": {
+                "hda_disk_image": "junos-vsrx3-x86-64-18.4R3.3.qcow2"
             }
         },
         {

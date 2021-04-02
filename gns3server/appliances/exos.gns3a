@@ -26,6 +26,13 @@
         "options": "-cpu core2duo"
     },
     "images": [
+  		{
+            "filename": "EXOS-VM_v31.1.1.3.qcow2",
+            "version": "31.1.1.3",
+            "md5sum": "e4936ad94a5304bfeeca8dfc6f285cc0",
+            "filesize": 561512448,
+            "direct_download_url": "https://akamai-ep.extremenetworks.com/Extreme_P/github-en/Virtual_EXOS/EXOS-VM_v31.1.1.3.qcow2"
+        },
         {
             "filename": "EXOS-VM_v30.7.1.1.qcow2",
             "version": "30.7.1.1",
@@ -91,6 +98,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "31.1.1.3",
+            "images": {
+                "hda_disk_image": "EXOS-VM_v31.1.1.3.qcow2"
+            }
+        },
         {
             "name": "30.7.1.1",
             "images": {
