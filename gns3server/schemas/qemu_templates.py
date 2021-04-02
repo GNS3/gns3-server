@@ -73,4 +73,4 @@ class QemuTemplate(TemplateBase):
     cpu_throttling: Optional[int] = Field(0, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
     process_priority: Optional[QemuProcessPriority] = Field("normal", description="Process priority for QEMU")
     options: Optional[str] = Field("", description="Additional QEMU options")
-    custom_adapters: Optional[List[CustomAdapter]] = Field([], description="Custom adapters")
+    custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")

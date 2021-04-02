@@ -45,4 +45,4 @@ class VirtualBoxTemplate(TemplateBase):
     on_close: Optional[VirtualBoxOnCloseAction] = Field("power_off", description="Action to execute on the VM is closed")
     console_type: Optional[VirtualBoxConsoleType] = Field("none", description="Console type")
     console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
-    custom_adapters: Optional[List[CustomAdapter]] = Field([], description="Custom adapters")
+    custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")

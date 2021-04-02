@@ -43,4 +43,4 @@ class DockerTemplate(TemplateBase):
     extra_volumes: Optional[List] = Field([], description="Additional directories to make persistent")
     memory: Optional[int] = Field(0, description="Maximum amount of memory the container can use in MB")
     cpus: Optional[int] = Field(0, description="Maximum amount of CPU resources the container can use")
-    custom_adapters: Optional[List[CustomAdapter]] = Field([], description="Custom adapters")
+    custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
