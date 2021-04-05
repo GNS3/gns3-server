@@ -34,7 +34,6 @@ def test_save(controller, controller_config_path):
     assert os.path.exists(controller_config_path)
     with open(controller_config_path) as f:
         data = json.load(f)
-        assert data["computes"] == []
         assert data["version"] == __version__
         assert data["iou_license"] == controller.iou_license
         assert data["gns3vm"] == controller.gns3vm.__json__()
@@ -45,20 +44,10 @@ def test_load_controller_settings(controller, controller_config_path):
     controller.save()
     with open(controller_config_path) as f:
         data = json.load(f)
-    data["computes"] = [
-        {
-            "host": "localhost",
-            "port": 8000,
-            "protocol": "http",
-            "user": "admin",
-            "password": "root",
-            "compute_id": "test1"
-        }
-    ]
     data["gns3vm"] = {"vmname": "Test VM"}
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
-    assert len(controller._load_controller_settings()) == 1
+    controller._load_controller_settings()
     assert controller.gns3vm.settings["vmname"] == "Test VM"
 
 
@@ -67,7 +56,6 @@ def test_load_controller_settings_with_no_computes_section(controller, controlle
     controller.save()
     with open(controller_config_path) as f:
         data = json.load(f)
-    del data['computes']
     with open(controller_config_path, "w+") as f:
         json.dump(data, f)
     assert len(controller._load_controller_settings()) == 0
@@ -147,22 +135,6 @@ async def test_addDuplicateCompute(controller):
 
 
 @pytest.mark.asyncio
-async def test_deleteCompute(controller, controller_config_path):
-
-    c = await controller.add_compute(compute_id="test1", connect=False)
-    assert len(controller.computes) == 1
-    controller._notification = MagicMock()
-    c._connected = True
-    await controller.delete_compute("test1")
-    assert len(controller.computes) == 0
-    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
-    with open(controller_config_path) as f:
-        data = json.load(f)
-        assert len(data["computes"]) == 0
-    assert c.connected is False
-
-
-@pytest.mark.asyncio
 async def test_deleteComputeProjectOpened(controller, controller_config_path):
     """
     When you delete a compute the project using it are close
@@ -185,34 +157,11 @@ async def test_deleteComputeProjectOpened(controller, controller_config_path):
     await controller.delete_compute("test1")
     assert len(controller.computes) == 0
     controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
-    with open(controller_config_path) as f:
-        data = json.load(f)
-        assert len(data["computes"]) == 0
     assert c.connected is False
 
     # Project 1 use this compute it should be close before deleting the compute
     assert project1.status == "closed"
     assert project2.status == "opened"
-
-
-@pytest.mark.asyncio
-async def test_addComputeConfigFile(controller, controller_config_path):
-
-    await controller.add_compute(compute_id="test1", name="Test", connect=False)
-    assert len(controller.computes) == 1
-    with open(controller_config_path) as f:
-        data = json.load(f)
-        assert data["computes"] == [
-            {
-                'compute_id': 'test1',
-                'name': 'Test',
-                'host': 'localhost',
-                'port': 3080,
-                'protocol': 'http',
-                'user': None,
-                'password': None
-            }
-        ]
 
 
 @pytest.mark.asyncio

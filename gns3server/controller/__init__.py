@@ -61,7 +61,7 @@ class Controller:
         self._config_file = Config.instance().controller_config
         log.info("Load controller configuration file {}".format(self._config_file))
 
-    async def start(self, computes):
+    async def start(self, computes=None):
 
         log.info("Controller is starting")
         self.load_base_files()
@@ -108,11 +108,13 @@ class Controller:
         except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
-        for c in computes:
-            try:
-                await self.add_compute(**c, connect=False)
-            except (ControllerError, KeyError):
-                pass  # Skip not available servers at loading
+
+        if computes:
+            for c in computes:
+                try:
+                    await self.add_compute(**c, connect=False)
+                except (ControllerError, KeyError):
+                    pass  # Skip not available servers at loading
 
         try:
             await self.gns3vm.auto_start_vm()
