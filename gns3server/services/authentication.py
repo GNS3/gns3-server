@@ -77,7 +77,7 @@ class AuthService:
             secret_key = self._server_config.get("jwt_secret_key", None)
         if secret_key is None:
             secret_key = DEFAULT_JWT_SECRET_KEY
-            log.error("A JWT secret key must be configured to secure the server, using default key...")
+            log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
         algorithm = self._server_config.get("jwt_algorithm", "HS256")
         encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
         return encoded_jwt
@@ -94,7 +94,7 @@ class AuthService:
                 secret_key = self._server_config.get("jwt_secret_key", None)
             if secret_key is None:
                 secret_key = DEFAULT_JWT_SECRET_KEY
-                log.error("A JWT secret key must be configured to secure the server, using default key...")
+                log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
             algorithm = self._server_config.get("jwt_algorithm", "HS256")
             payload = jwt.decode(token, secret_key, algorithms=[algorithm])
             username: str = payload.get("sub")

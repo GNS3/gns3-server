@@ -127,19 +127,22 @@ class TestAuthTokens:
             self,
             app: FastAPI,
             client: AsyncClient,
-            test_user: User
+            test_user: User,
+            config: Config
     ) -> None:
 
+        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
         token = auth_service.create_access_token(test_user.username)
-        payload = jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
         username = payload.get("sub")
         assert username == test_user.username
 
     async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
 
+        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
         token = auth_service.create_access_token(None)
         with pytest.raises(jwt.JWTError):
-            jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
+            jwt.decode(token, jwt_secret, algorithms=["HS256"])
 
     async def test_can_retrieve_username_from_token(
             self,
@@ -172,7 +175,7 @@ class TestAuthTokens:
 
         token = auth_service.create_access_token(test_user.username)
         if wrong_secret == "use correct secret":
-            wrong_secret = auth_service._server_config.get("jwt_secret_key")
+            wrong_secret = auth_service._server_config.get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
         if wrong_token == "use correct token":
             wrong_token = token
         with pytest.raises(HTTPException):
@@ -186,8 +189,10 @@ class TestUserLogin:
             app: FastAPI,
             client: AsyncClient,
             test_user: User,
+            config: Config
     ) -> None:
 
+        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
         client.headers["content-type"] = "application/x-www-form-urlencoded"
         login_data = {
             "username": test_user.username,
@@ -198,7 +203,7 @@ class TestUserLogin:
 
         # check that token exists in response and has user encoded within it
         token = res.json().get("access_token")
-        payload = jwt.decode(token, DEFAULT_JWT_SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
         assert "sub" in payload
         username = payload.get("sub")
         assert username == test_user.username

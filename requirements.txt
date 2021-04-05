@@ -10,11 +10,10 @@ psutil==5.8.0
 async-timeout==3.0.1
 distro==1.5.0
 py-cpuinfo==7.0.0
-sqlalchemy==1.4.4
+sqlalchemy==1.4.5
 aiosqlite===0.17.0
 passlib[bcrypt]==1.7.4
 python-jose==3.2.0
 email-validator==1.1.2
 async-exit-stack==1.0.1  ; python_version < "3.7"
 async-generator==1.10  ; python_version < "3.7"
-greenlet==0.4.7  ; python_version < "3.7"  # workaround for https://github.com/sqlalchemy/sqlalchemy/issues/6166
