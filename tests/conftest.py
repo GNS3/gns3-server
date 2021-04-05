@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import sys
 import os
+import uuid
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -16,10 +17,12 @@ from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-from gns3server.db.models import Base, User
+from gns3server.db.models import Base, User, Compute
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.api.routes.controller.dependencies.database import get_db_session
-from gns3server.schemas.users import UserCreate
+from gns3server import schemas
+from gns3server.schemas.computes import Protocol
 from gns3server.services import auth_service
 
 sys._called_from_test = True
@@ -27,7 +30,7 @@ sys.original_platform = sys.platform
 
 
 if sys.platform.startswith("win") and sys.version_info < (3, 8):
-    @pytest.yield_fixture(scope="session")
+    @pytest.fixture(scope="session")
     def event_loop(request):
         """
         Overwrite pytest_asyncio event loop on Windows for Python < 3.8
@@ -43,7 +46,7 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
 # this event_loop is used by pytest-asyncio, and redefining it
 # is currently the only way of changing the scope of this fixture
-@pytest.yield_fixture(scope="class")
+@pytest.fixture(scope="class")
 def event_loop(request):
 
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -54,9 +57,6 @@ def event_loop(request):
 @pytest.fixture(scope="class")
 async def app() -> FastAPI:
 
-    # async with db_engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.drop_all)
-    #     await conn.run_sync(Base.metadata.create_all)
     from gns3server.api.server import app as gns3app
     yield gns3app
 
@@ -109,7 +109,7 @@ async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 @pytest.fixture
 async def test_user(db_session: AsyncSession) -> User:
 
-    new_user = UserCreate(
+    new_user = schemas.UserCreate(
         username="user1",
         email="user1@email.com",
         password="user1_password",
@@ -119,6 +119,25 @@ async def test_user(db_session: AsyncSession) -> User:
     if existing_user:
         return existing_user
     return await user_repo.create_user(new_user)
+
+
+@pytest.fixture
+async def test_compute(db_session: AsyncSession) -> Compute:
+
+    new_compute = schemas.ComputeCreate(
+        compute_id=uuid.uuid4(),
+        protocol=Protocol.http,
+        host="localhost",
+        port=4242,
+        user="julien",
+        password="secure"
+    )
+
+    compute_repo = ComputesRepository(db_session)
+    existing_compute = await compute_repo.get_compute(new_compute.compute_id)
+    if existing_compute:
+        return existing_compute
+    return await compute_repo.create_compute(new_compute)
 
 
 @pytest.fixture

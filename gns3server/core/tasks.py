@@ -25,8 +25,7 @@ from gns3server.controller import Controller
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db
-
+from gns3server.db.tasks import connect_to_db, get_computes
 
 import logging
 log = logging.getLogger(__name__)
@@ -57,11 +56,14 @@ def create_startup_handler(app: FastAPI) -> Callable:
         # connect to the database
         await connect_to_db(app)
 
-        await Controller.instance().start()
+        # retrieve the computes from the database
+        computes = await get_computes(app)
+
+        await Controller.instance().start(computes)
+
         # Because with a large image collection
         # without md5sum already computed we start the
         # computing with server start
-
         from gns3server.compute.qemu import Qemu
         asyncio.ensure_future(Qemu.instance().list_images())
 

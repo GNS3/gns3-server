@@ -18,8 +18,14 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from pydantic import ValidationError
+
+from typing import List
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from gns3server.db.repositories.computes import ComputesRepository
+from gns3server import schemas
 
 from .models import Base
 from gns3server.config import Config
@@ -40,3 +46,21 @@ async def connect_to_db(app: FastAPI) -> None:
         app.state._db_engine = engine
     except SQLAlchemyError as e:
         log.error(f"Error while connecting to database '{db_url}: {e}")
+
+
+async def get_computes(app: FastAPI) -> List[dict]:
+
+    computes = []
+    async with AsyncSession(app.state._db_engine) as db_session:
+        db_computes = await ComputesRepository(db_session).get_computes()
+        for db_compute in db_computes:
+            try:
+                compute = jsonable_encoder(
+                    schemas.Compute.from_orm(db_compute),
+                    exclude_unset=True,
+                    exclude={"created_at", "updated_at"})
+            except ValidationError as e:
+                log.error(f"Could not load compute '{db_compute.compute_id}' from database: {e}")
+                continue
+            computes.append(compute)
+    return computes

@@ -19,19 +19,22 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, status
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Depends, status
 from typing import List, Union
 from uuid import UUID
 
 from gns3server.controller import Controller
+from gns3server.db.repositories.computes import ComputesRepository
+from gns3server.services.computes import ComputesService
 from gns3server import schemas
 
-router = APIRouter()
+from .dependencies.database import get_repository
 
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Compute not found"}
 }
+
+router = APIRouter(responses=responses)
 
 
 @router.post("",
@@ -40,69 +43,73 @@ responses = {
              responses={404: {"model": schemas.ErrorMessage, "description": "Could not connect to compute"},
                         409: {"model": schemas.ErrorMessage, "description": "Could not create compute"},
                         401: {"model": schemas.ErrorMessage, "description": "Invalid authentication for compute"}})
-async def create_compute(compute_data: schemas.ComputeCreate):
+async def create_compute(
+        compute_create: schemas.ComputeCreate,
+        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+) -> schemas.Compute:
     """
     Create a new compute on the controller.
     """
 
-    compute = await Controller.instance().add_compute(**jsonable_encoder(compute_data, exclude_unset=True),
-                                                      connect=False)
-    return compute.__json__()
+    return await ComputesService(computes_repo).create_compute(compute_create)
 
 
 @router.get("/{compute_id}",
             response_model=schemas.Compute,
-            response_model_exclude_unset=True,
-            responses=responses)
-def get_compute(compute_id: Union[str, UUID]):
+            response_model_exclude_unset=True)
+async def get_compute(
+        compute_id: Union[str, UUID],
+        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+) -> schemas.Compute:
     """
     Return a compute from the controller.
     """
 
-    compute = Controller.instance().get_compute(str(compute_id))
-    return compute.__json__()
+    return await ComputesService(computes_repo).get_compute(compute_id)
 
 
 @router.get("",
             response_model=List[schemas.Compute],
             response_model_exclude_unset=True)
-async def get_computes():
+async def get_computes(
+        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+) -> List[schemas.Compute]:
     """
     Return all computes known by the controller.
     """
 
-    controller = Controller.instance()
-    return [c.__json__() for c in controller.computes.values()]
+    return await ComputesService(computes_repo).get_computes()
 
 
 @router.put("/{compute_id}",
             response_model=schemas.Compute,
-            response_model_exclude_unset=True,
-            responses=responses)
-async def update_compute(compute_id: Union[str, UUID], compute_data: schemas.ComputeUpdate):
+            response_model_exclude_unset=True)
+async def update_compute(
+        compute_id: Union[str, UUID],
+        compute_update: schemas.ComputeUpdate,
+        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+) -> schemas.Compute:
     """
     Update a compute on the controller.
     """
 
-    compute = Controller.instance().get_compute(str(compute_id))
-    # exclude compute_id because we only use it when creating a new compute
-    await compute.update(**jsonable_encoder(compute_data, exclude_unset=True, exclude={"compute_id"}))
-    return compute.__json__()
+    return await ComputesService(computes_repo).update_compute(compute_id, compute_update)
 
 
 @router.delete("/{compute_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
-async def delete_compute(compute_id: Union[str, UUID]):
+               status_code=status.HTTP_204_NO_CONTENT)
+async def delete_compute(
+        compute_id: Union[str, UUID],
+        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+):
     """
     Delete a compute from the controller.
     """
 
-    await Controller.instance().delete_compute(str(compute_id))
+    await ComputesService(computes_repo).delete_compute(compute_id)
 
 
-@router.get("/{compute_id}/{emulator}/images",
-            responses=responses)
+@router.get("/{compute_id}/{emulator}/images")
 async def get_images(compute_id: Union[str, UUID], emulator: str):
     """
     Return the list of images available on a compute for a given emulator type.
@@ -113,8 +120,7 @@ async def get_images(compute_id: Union[str, UUID], emulator: str):
     return await compute.images(emulator)
 
 
-@router.get("/{compute_id}/{emulator}/{endpoint_path:path}",
-            responses=responses)
+@router.get("/{compute_id}/{emulator}/{endpoint_path:path}")
 async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str):
     """
     Forward a GET request to a compute.
@@ -126,8 +132,7 @@ async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path
     return result
 
 
-@router.post("/{compute_id}/{emulator}/{endpoint_path:path}",
-             responses=responses)
+@router.post("/{compute_id}/{emulator}/{endpoint_path:path}")
 async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
     """
     Forward a POST request to a compute.
@@ -138,8 +143,7 @@ async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_pat
     return await compute.forward("POST", emulator, endpoint_path, data=compute_data)
 
 
-@router.put("/{compute_id}/{emulator}/{endpoint_path:path}",
-            responses=responses)
+@router.put("/{compute_id}/{emulator}/{endpoint_path:path}")
 async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
     """
     Forward a PUT request to a compute.
@@ -150,8 +154,7 @@ async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path
     return await compute.forward("PUT", emulator, endpoint_path, data=compute_data)
 
 
-@router.post("/{compute_id}/auto_idlepc",
-             responses=responses)
+@router.post("/{compute_id}/auto_idlepc")
 async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC):
     """
     Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
@@ -162,14 +165,3 @@ async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdl
                                        auto_idle_pc.platform,
                                        auto_idle_pc.image,
                                        auto_idle_pc.ram)
-
-
-@router.get("/{compute_id}/ports",
-            deprecated=True,
-            responses=responses)
-async def ports(compute_id: Union[str, UUID]):
-    """
-    Return ports information for a given compute.
-    """
-
-    return await Controller.instance().compute_ports(str(compute_id))

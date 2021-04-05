@@ -37,6 +37,7 @@ from ..utils.get_resource import get_resource
 from .gns3vm.gns3_vm_error import GNS3VMError
 from .controller_error import ControllerError, ControllerNotFoundError
 
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class Controller:
     """
 
     def __init__(self):
+
         self._computes = {}
         self._projects = {}
         self._notification = Notification(self)
@@ -59,7 +61,7 @@ class Controller:
         self._config_file = Config.instance().controller_config
         log.info("Load controller configuration file {}".format(self._config_file))
 
-    async def start(self):
+    async def start(self, computes):
 
         log.info("Controller is starting")
         self.load_base_files()
@@ -78,7 +80,7 @@ class Controller:
         if name == "gns3vm":
             name = "Main server"
 
-        computes = self._load_controller_settings()
+        self._load_controller_settings()
 
         ssl_context = None
         if server_config.getboolean("ssl"):
@@ -198,22 +200,20 @@ class Controller:
         if self._config_loaded is False:
             return
 
-        controller_settings = {"computes": [],
-                               "templates": [],
-                               "gns3vm": self.gns3vm.__json__(),
+        controller_settings = {"gns3vm": self.gns3vm.__json__(),
                                "iou_license": self._iou_license_settings,
                                "appliances_etag": self._appliance_manager.appliances_etag,
                                "version": __version__}
 
-        for compute in self._computes.values():
-            if compute.id != "local" and compute.id != "vm":
-                controller_settings["computes"].append({"host": compute.host,
-                                                        "name": compute.name,
-                                                        "port": compute.port,
-                                                        "protocol": compute.protocol,
-                                                        "user": compute.user,
-                                                        "password": compute.password,
-                                                        "compute_id": compute.id})
+        # for compute in self._computes.values():
+        #     if compute.id != "local" and compute.id != "vm":
+        #         controller_settings["computes"].append({"host": compute.host,
+        #                                                 "name": compute.name,
+        #                                                 "port": compute.port,
+        #                                                 "protocol": compute.protocol,
+        #                                                 "user": compute.user,
+        #                                                 "password": compute.password,
+        #                                                 "compute_id": compute.id})
 
         try:
             os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
@@ -584,14 +584,3 @@ class Controller:
         await project.delete()
         self.remove_project(project)
         return res
-
-    async def compute_ports(self, compute_id):
-        """
-        Get the ports used by a compute.
-
-        :param compute_id: ID of the compute
-        """
-
-        compute = self.get_compute(compute_id)
-        response = await compute.get("/network/ports")
-        return response.json

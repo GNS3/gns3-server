@@ -15,19 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .base import Base
-from .users import User
-from .computes import Compute
-from .templates import (
-    Template,
-    CloudTemplate,
-    DockerTemplate,
-    DynamipsTemplate,
-    EthernetHubTemplate,
-    EthernetSwitchTemplate,
-    IOUTemplate,
-    QemuTemplate,
-    VirtualBoxTemplate,
-    VMwareTemplate,
-    VPCSTemplate
-)
+from sqlalchemy import Column, String
+
+from .base import BaseTable, GUID
+
+
+class Compute(BaseTable):
+
+    __tablename__ = "computes"
+
+    compute_id = Column(GUID, primary_key=True)
+    name = Column(String, index=True)
+    protocol = Column(String)
+    host = Column(String)
+    port = Column(String)
+    user = Column(String)
+    password = Column(String)

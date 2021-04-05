@@ -44,43 +44,42 @@ router = APIRouter()
 
 
 @router.get("", response_model=List[schemas.User])
-async def get_users(user_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
+async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
     """
     Get all users.
     """
 
-    users = await user_repo.get_users()
-    return users
+    return await users_repo.get_users()
 
 
 @router.post("", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create_user(
-        new_user: schemas.UserCreate,
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        user_create: schemas.UserCreate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Create a new user.
     """
 
-    if await user_repo.get_user_by_username(new_user.username):
-        raise ControllerBadRequestError(f"Username '{new_user.username}' is already registered")
+    if await users_repo.get_user_by_username(user_create.username):
+        raise ControllerBadRequestError(f"Username '{user_create.username}' is already registered")
 
-    if new_user.email and await user_repo.get_user_by_email(new_user.email):
-        raise ControllerBadRequestError(f"Email '{new_user.email}' is already registered")
+    if user_create.email and await users_repo.get_user_by_email(user_create.email):
+        raise ControllerBadRequestError(f"Email '{user_create.email}' is already registered")
 
-    return await user_repo.create_user(new_user)
+    return await users_repo.create_user(user_create)
 
 
 @router.get("/{user_id}", response_model=schemas.User)
 async def get_user(
         user_id: UUID,
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Get an user.
     """
 
-    user = await user_repo.get_user(user_id)
+    user = await users_repo.get_user(user_id)
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
     return user
@@ -89,14 +88,14 @@ async def get_user(
 @router.put("/{user_id}", response_model=schemas.User)
 async def update_user(
         user_id: UUID,
-        update_user: schemas.UserUpdate,
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        user_update: schemas.UserUpdate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Update an user.
     """
 
-    user = await user_repo.update_user(user_id, update_user)
+    user = await users_repo.update_user(user_id, user_update)
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
     return user
@@ -105,7 +104,7 @@ async def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
         user_id: UUID,
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
         current_user: schemas.User = Depends(get_current_active_user)
 ) -> None:
     """
@@ -115,21 +114,21 @@ async def delete_user(
     if current_user.is_superuser:
         raise ControllerUnauthorizedError("The super user cannot be deleted")
 
-    success = await user_repo.delete_user(user_id)
+    success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
 
 @router.post("/login", response_model=schemas.Token)
 async def login(
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
         form_data: OAuth2PasswordRequestForm = Depends()
 ) -> schemas.Token:
     """
     User login.
     """
 
-    user = await user_repo.authenticate_user(username=form_data.username, password=form_data.password)
+    user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Authentication was unsuccessful.",
