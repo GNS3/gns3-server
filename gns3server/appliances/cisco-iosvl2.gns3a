@@ -24,6 +24,13 @@
     },
     "images": [
         {
+            "filename": "vios_l2-adventerprisek9-m.ssa.high_iron_20190423.qcow2",
+            "version": "15.2(6.0.81)E",
+            "md5sum": "71cacb678f98a106f99e889b97b34686",
+            "filesize": 44950016,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        },
+        {
             "filename": "vios_l2-adventerprisek9-m.SSA.high_iron_20180619.qcow2",
             "version": "15.2.1",
             "md5sum": "14b981002e40b660f2d7400401e04c14",
@@ -46,6 +53,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.2(6.0.81)E",
+            "images": {
+                "hda_disk_image": "vios_l2-adventerprisek9-m.ssa.high_iron_20190423.qcow2"
+            }
+        },
         {
             "name": "15.2.1",
             "images": {
