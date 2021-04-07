@@ -215,6 +215,7 @@ class LinkHandler:
     async def pcap(request, response):
 
         project = await Controller.instance().get_loaded_project(request.match_info["project_id"])
+        ssl_context = Controller.instance().ssl_context()
         link = project.get_link(request.match_info["link_id"])
         if not link.capturing:
             raise aiohttp.web.HTTPConflict(text="This link has no active packet capture")
@@ -226,7 +227,7 @@ class LinkHandler:
         headers['Router-Host'] = request.host
         body = await request.read()
 
-        connector = aiohttp.TCPConnector(limit=None, force_close=True)
+        connector = aiohttp.TCPConnector(limit=None, force_close=True, ssl_context=ssl_context)
         async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
             async with session.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
                 proxied_response = aiohttp.web.Response(headers=response.headers, status=response.status)
