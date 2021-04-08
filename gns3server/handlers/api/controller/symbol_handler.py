@@ -19,11 +19,10 @@ import os
 import aiohttp
 import asyncio
 import urllib.parse
-import xml.etree.ElementTree as ET
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
-
+from gns3server.utils.picture import get_size
 
 import logging
 log = logging.getLogger(__name__)
@@ -56,25 +55,7 @@ class SymbolHandler:
         controller = Controller.instance()
         symbol_id = urllib.parse.unquote(request.match_info["symbol_id"])
         try:
-            file_content = open(controller.symbols.get_path(symbol_id), 'r').read()
-            svg_root = ET.fromstring(file_content)
-
-            svg_width = svg_root.get('width')
-            if svg_width is not None:
-                try:
-                    width = int(float(svg_width))
-                except:
-                    log.warning("Could not get width for symbol with id: {}".format(symbol_id))
-                    width = 0
-            
-            svg_height = svg_root.get('height')
-            if svg_height is not None:
-                try:
-                    height = int(float(svg_height))
-                except:
-                    log.warning("Could not get height for symbol with id: {}".format(symbol_id))
-                    height = 0
-            
+            width, height, _ = controller.symbols.get_size(symbol_id)
             symbol_dimensions = { 'width': width, 'height': height }
             response.json(symbol_dimensions)
         except (KeyError, OSError) as e:
