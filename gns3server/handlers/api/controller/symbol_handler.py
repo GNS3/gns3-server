@@ -19,6 +19,7 @@ import os
 import aiohttp
 import asyncio
 import urllib.parse
+import xml.etree.ElementTree as ET
 
 from gns3server.web.route import Route
 from gns3server.controller import Controller
@@ -43,6 +44,42 @@ class SymbolHandler:
 
         controller = Controller.instance()
         response.json(controller.symbols.list())
+
+    @Route.get(
+        r"/symbols/{symbol_id:.+}/dimensions",
+        description="Get the symbol dimensions",
+        status_codes={
+            200: "Symbol dimensions returned"
+        })
+    async def raw(request, response):
+
+        controller = Controller.instance()
+        symbol_id = urllib.parse.unquote(request.match_info["symbol_id"])
+        try:
+            file_content = open(controller.symbols.get_path(symbol_id), 'r').read()
+            svg_root = ET.fromstring(file_content)
+
+            svg_width = svg_root.get('width')
+            if svg_width is not None:
+                try:
+                    width = int(float(svg_width))
+                except:
+                    log.warning("Could not get width for symbol with id: {}".format(symbol_id))
+                    width = 0
+            
+            svg_height = svg_root.get('height')
+            if svg_height is not None:
+                try:
+                    height = int(float(svg_height))
+                except:
+                    log.warning("Could not get height for symbol with id: {}".format(symbol_id))
+                    height = 0
+            
+            symbol_dimensions = { 'width': width, 'height': height }
+            response.json(symbol_dimensions)
+        except (KeyError, OSError) as e:
+            log.warning("Could not get symbol file: {}".format(e))
+            response.set_status(404)
 
     @Route.get(
         r"/symbols/{symbol_id:.+}/raw",
