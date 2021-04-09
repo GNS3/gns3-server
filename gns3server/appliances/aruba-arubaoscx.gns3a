@@ -23,7 +23,7 @@
         "hdb_disk_interface": "ide",
         "hdc_disk_interface": "ide",
         "arch": "x86_64",
-        "console_type": "vnc",
+        "console_type": "telnet",
         "kvm": "require",
         "options": "-nographic",
         "process_priority": "normal"
