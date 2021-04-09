@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.20 09/04/2021
+
+* Release Web UI version 2.2.20
+* Fix packet capture with HTTPS remote server. Fixes #1882
+* Sync appliance files and remove old ones after sync with online repo. Fixes #1876
+* Upgrade dependencies
+* Fix export for missing files
+* Fix issue when trying to export temporary Dynamips files.
+
 ## 2.2.19 05/03/2021
 
 * Launch projects marked for auto open after SIGHUP is received
