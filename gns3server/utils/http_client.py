@@ -30,9 +30,10 @@ class HTTPClient:
     _aiohttp_client: aiohttp.ClientSession = None
 
     @classmethod
-    def get_client(cls) -> aiohttp.ClientSession:
+    def get_client(cls, ssl_context=None) -> aiohttp.ClientSession:
         if cls._aiohttp_client is None:
-            cls._aiohttp_client = aiohttp.ClientSession(connector=aiohttp.TCPConnector(family=socket.AF_INET))
+            connector = aiohttp.TCPConnector(family=socket.AF_INET, ssl_context=ssl_context)
+            cls._aiohttp_client = aiohttp.ClientSession(connector=connector)
         return cls._aiohttp_client
 
     @classmethod
@@ -42,9 +43,9 @@ class HTTPClient:
             cls._aiohttp_client = None
 
     @classmethod
-    def request(cls, method: str, url: str, user: str = None, password: str = None, **kwargs):
+    def request(cls, method: str, url: str, user: str = None, password: str = None, ssl_context=None, **kwargs):
 
-        client = cls.get_client()
+        client = cls.get_client(ssl_context=ssl_context)
         basic_auth = None
         if user:
             if not password:

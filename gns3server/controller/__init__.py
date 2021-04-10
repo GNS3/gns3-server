@@ -51,6 +51,7 @@ class Controller:
 
         self._computes = {}
         self._projects = {}
+        self._ssl_context = None
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
@@ -82,15 +83,14 @@ class Controller:
 
         self._load_controller_settings()
 
-        ssl_context = None
         if server_config.getboolean("ssl"):
             if sys.platform.startswith("win"):
                 log.critical("SSL mode is not supported on Windows")
                 raise SystemExit
-            ssl_context = self._create_ssl_context(server_config)
+            self._ssl_context = self._create_ssl_context(server_config)
 
         protocol = server_config.get("protocol", "http")
-        if ssl_context and protocol != "https":
+        if self._ssl_context and protocol != "https":
             log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
             protocol = "https"
         try:
@@ -104,7 +104,7 @@ class Controller:
                                                         password=server_config.get("password", ""),
                                                         force=True,
                                                         connect=True,
-                                                        ssl_context=ssl_context)
+                                                        ssl_context=self._ssl_context)
         except ControllerError:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
@@ -139,6 +139,13 @@ class Controller:
             log.critical("SSL error: {}".format(e))
             raise SystemExit
         return ssl_context
+
+    def ssl_context(self):
+        """
+        Returns the SSL context for the server.
+        """
+
+        return self._ssl_context
 
     def _update_config(self):
         """

@@ -57,6 +57,22 @@ async def get_symbol(symbol_id: str):
         return ControllerNotFoundError("Could not get symbol file: {}".format(e))
 
 
+@router.get("/{symbol_id:path}/dimensions",
+            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}})
+async def get_symbol_dimensions(symbol_id: str):
+    """
+    Get a symbol dimensions.
+    """
+
+    controller = Controller.instance()
+    try:
+        width, height, _ = controller.symbols.get_size(symbol_id)
+        symbol_dimensions = {'width': width, 'height': height}
+        return symbol_dimensions
+    except (KeyError, OSError, ValueError) as e:
+        return ControllerNotFoundError("Could not get symbol file: {}".format(e))
+
+
 @router.post("/{symbol_id:path}/raw",
              status_code=status.HTTP_204_NO_CONTENT)
 async def upload_symbol(symbol_id: str, request: Request):
