@@ -1,5 +1,21 @@
 # Change Log
 
+## 2.2.20 09/04/2021
+
+* Release Web UI version 2.2.20
+* Fix packet capture with HTTPS remote server. Fixes #1882
+* Sync appliance files and remove old ones after sync with online repo. Fixes #1876
+* Upgrade dependencies
+* Fix export for missing files
+* Fix issue when trying to export temporary Dynamips files.
+
+## 2.2.19 05/03/2021
+
+* Launch projects marked for auto open after SIGHUP is received
+* Release Web UI 2.2.19
+* Fix console type error when creating Ethernet switch node. Fixes #1873
+* Upgrade Jinja to version 2.11.3. Fixes #1865
+
 ## 2.2.18 16/02/2021
 
 * SIGHUP: remove projects with an empty project directory.

@@ -92,7 +92,7 @@ def get_size(data, default_width=0, default_height=0):
     # End of https://github.com/shibukawa/imagesize_py
 
     # handle SVG
-    elif size >= 10 and data.startswith(b'<?xml'):
+    elif size >= 10 and (data.startswith(b'<?xml') or data.startswith(b'<svg')):
         filetype = "svg"
         fhandle = io.BytesIO(data)
         tree = ElementTree()

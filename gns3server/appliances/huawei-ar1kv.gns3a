@@ -1,0 +1,44 @@
+{
+    "name": "HuaWei AR1000v",
+    "category": "router",
+    "description": "Huawei AR1000V Virtual Router (Virtual CPE, vCPE) is an NFV product based on the industry-leading Huawei VRP platform. The product has rich business capabilities, integrating routing, switching, security, VPN, QoS and other functions, with software and hardware decoupling, Features such as easy business deployment and intelligent operation and maintenance can be applied to scenarios such as enterprise interconnection (SD-WAN) corporate headquarters (Hub point), POP point access, and cloud access.",
+    "vendor_name": "HuaWei",
+    "vendor_url": "https://www.huawei.com",
+    "product_name": "HuaWei AR1000v",
+    "product_url": "https://support.huawei.com/enterprise/en/routers/ar1000v-pid-21768212",
+    "registry_version": 5,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "none",
+    "maintainer_email": "none",
+    "usage": "Default user is super, default password is super.",
+    "port_name_format": "GigabitEthernet0/0/{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 6,
+        "ram": 4096,
+        "cpus": 1,
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-machine type=pc,accel=kvm -vga std -usbdevice tablet -cpu host"
+    },
+    "images": [
+        {
+            "filename": "ar1k-V300R019C00SPC300.qcow2",
+            "version": "V300R019C00SPC300",
+            "md5sum": "5263e1d8964643a22c87f59ff14a5bdc",
+            "filesize": 534904832,
+            "download_url": "https://support.huawei.com/enterprise/en/routers/ar1000v-pid-21768212/software"
+        }
+    ],
+    "versions": [
+        {
+            "name": "V300R019C00SPC300",
+            "images": {
+                "hda_disk_image": "ar1k-V300R019C00SPC300.qcow2"
+            }
+        }
+    ]
+}

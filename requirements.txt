@@ -2,7 +2,7 @@ uvicorn==0.13.4
 fastapi==0.63.0
 websockets==8.1
 python-multipart==0.0.5
-aiohttp==3.7.4
+aiohttp==3.7.4.post0
 aiofiles==0.6.0
 Jinja2==2.11.3
 sentry-sdk==1.0.0

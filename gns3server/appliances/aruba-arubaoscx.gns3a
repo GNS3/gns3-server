@@ -23,12 +23,20 @@
         "hdb_disk_interface": "ide",
         "hdc_disk_interface": "ide",
         "arch": "x86_64",
-        "console_type": "vnc",
+        "console_type": "telnet",
         "kvm": "require",
         "options": "-nographic",
         "process_priority": "normal"
     },
     "images": [
+
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20201110192651.vmdk",
+            "version": "10.06.0001",
+            "md5sum": "f8b45bc52f6bad79b5ff563e0c1ea73b",
+            "filesize": 380304896,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
         {
             "filename": "arubaoscx-disk-image-genericx86-p4-20200311173823.vmdk",
             "version": "10.04.1000",
@@ -45,6 +53,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.06.0001",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20201110192651.vmdk"
+            }
+        },
         {
             "name": "10.04.1000",
             "images": {

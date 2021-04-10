@@ -6,7 +6,7 @@
     "vendor_url": "https://www.raspberrypi.org",
     "product_name": "Raspberry Pi Desktop",
     "product_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "availability": "free",
     "maintainer": "Brent Stewart",

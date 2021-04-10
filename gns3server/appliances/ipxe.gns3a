@@ -1,0 +1,46 @@
+{
+    "name": "ipxe",
+    "category": "guest",
+    "description": "boot guest from network via iPXE",
+    "vendor_name": "Linux",
+    "vendor_url": "http://gns3.com/",
+    "documentation_url": "http://ipxe.org",
+    "product_name": "iPXE netboot",
+    "product_url": "http://ipxe.org/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "x86_64 guest booted from network via iPXE. If you need latest ipxe version - download, attach and boot iso from http://boot.ipxe.org/ipxe.iso. Don't forget to adjust memory according guest requirements. If guest is linux, you can add serial console options to kernel arguments.",
+    "symbol": "linux_guest.svg",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "n",
+        "kvm": "allow",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1.0",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "1.0",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2"
+            }
+        }
+    ]
+}

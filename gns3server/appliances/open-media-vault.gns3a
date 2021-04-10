@@ -1,0 +1,55 @@
+{
+    "name": "OpenMediaVault",
+    "category": "guest",
+    "description": "openmediavault is the next generation network attached storage (NAS) solution based on Debian Linux. It contains services like SSH, (S)FTP, SMB/CIFS, DAAP media server, RSync, BitTorrent client and many more.",
+    "vendor_name": "Volker Theile",
+    "vendor_url": "https://www.openmediavault.org/",
+    "documentation_url": "hhttps://docs.openmediavault.org",
+    "product_name": "OpenMediaVault",
+    "product_url": "https://www.openmediavault.org/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Savio D'souza",
+    "maintainer_email": "savio2002@yahoo.in",
+    "usage": "Install OS to first Disk, poweroff, eject iso.\nAdd empty30G.qcow2 to Secondary master and slave this way you will get 3 hard disks for storage.\nDefault WUI credentials are admin:openmediavault.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 2048,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+		"arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "dc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "openmediavault_5.5.11-amd64.iso",
+            "version": "5.5.11",
+            "md5sum": "76baad8e13dd49bee9b4b4a6936b7296",
+            "filesize": 608174080,
+            "download_url": "https://www.openmediavault.org/download.html",
+            "direct_download_url": "https://sourceforge.net/projects/openmediavault/files/latest/download"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "5.5.11",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "openmediavault_5.5.11-amd64.iso"
+            }
+        }
+    ]
+}
