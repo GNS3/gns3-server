@@ -71,8 +71,8 @@ class ApplianceManager:
         Get the image storage directory
         """
 
-        server_config = Config.instance().get_section_config("Server")
-        appliances_path = os.path.expanduser(server_config.get("appliances_path", "~/GNS3/appliances"))
+        server_config = Config.instance().settings.Server
+        appliances_path = os.path.expanduser(server_config.appliances_path)
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 

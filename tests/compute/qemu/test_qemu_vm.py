@@ -77,7 +77,7 @@ async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
     vm._start_ubridge = AsyncioMagicMock()
     vm._ubridge_hypervisor = MagicMock()
     vm._ubridge_hypervisor.is_running.return_value = True
-    vm.manager.config.set("Qemu", "enable_hardware_acceleration", False)
+    vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
     return vm
 
 
@@ -894,14 +894,14 @@ def test_get_qemu_img(vm, tmpdir):
 @pytest.mark.asyncio
 async def test_run_with_hardware_acceleration_darwin(darwin_platform, vm):
 
-    vm.manager.config.set("Qemu", "enable_hardware_acceleration", False)
+    vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
     assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is False
 
 
 @pytest.mark.asyncio
 async def test_run_with_hardware_acceleration_windows(windows_platform, vm):
 
-    vm.manager.config.set("Qemu", "enable_hardware_acceleration", False)
+    vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
     assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is False
 
 
@@ -909,7 +909,7 @@ async def test_run_with_hardware_acceleration_windows(windows_platform, vm):
 async def test_run_with_kvm_linux(linux_platform, vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
-        vm.manager.config.set("Qemu", "enable_kvm", True)
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
         assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "") is True
         os_path.assert_called_with("/dev/kvm")
 
@@ -918,7 +918,7 @@ async def test_run_with_kvm_linux(linux_platform, vm):
 async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
-        vm.manager.config.set("Qemu", "enable_kvm", True)
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
         assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "-no-kvm") is False
 
 
@@ -926,7 +926,8 @@ async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
 async def test_run_with_kvm_not_x86(linux_platform, vm):
 
     with patch("os.path.exists", return_value=True):
-        vm.manager.config.set("Qemu", "enable_kvm", True)
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
+        vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):
             await vm._run_with_hardware_acceleration("qemu-system-arm", "")
 
@@ -935,6 +936,7 @@ async def test_run_with_kvm_not_x86(linux_platform, vm):
 async def test_run_with_kvm_linux_dev_kvm_missing(linux_platform, vm):
 
     with patch("os.path.exists", return_value=False):
-        vm.manager.config.set("Qemu", "enable_kvm", True)
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
+        vm.manager.config.settings.Qemu.require_hardware_acceleration = True
         with pytest.raises(QemuError):
             await vm._run_with_hardware_acceleration("qemu-system-x86_64", "")

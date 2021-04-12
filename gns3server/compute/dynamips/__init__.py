@@ -248,7 +248,7 @@ class Dynamips(BaseManager):
     def find_dynamips(self):
 
         # look for Dynamips
-        dynamips_path = self.config.get_section_config("Dynamips").get("dynamips_path", "dynamips")
+        dynamips_path = self.config.settings.Dynamips.dynamips_path
         if not os.path.isabs(dynamips_path):
             dynamips_path = shutil.which(dynamips_path)
 
@@ -279,8 +279,7 @@ class Dynamips(BaseManager):
 
         # FIXME: hypervisor should always listen to 127.0.0.1
         # See https://github.com/GNS3/dynamips/issues/62
-        server_config = self.config.get_section_config("Server")
-        server_host = server_config.get("host")
+        server_host = self.config.settings.Server.host
 
         try:
             info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
@@ -310,7 +309,7 @@ class Dynamips(BaseManager):
 
     async def ghost_ios_support(self, vm):
 
-        ghost_ios_support = self.config.get_section_config("Dynamips").getboolean("ghost_ios_support", True)
+        ghost_ios_support = self.config.settings.Dynamips.ghost_ios_support
         if ghost_ios_support:
             async with Dynamips._ghost_ios_lock:
                 try:
@@ -483,11 +482,11 @@ class Dynamips(BaseManager):
                 except IndexError:
                     raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
 
-        mmap_support = self.config.get_section_config("Dynamips").getboolean("mmap_support", True)
+        mmap_support = self.config.settings.Dynamips.mmap_support
         if mmap_support is False:
             await vm.set_mmap(False)
 
-        sparse_memory_support = self.config.get_section_config("Dynamips").getboolean("sparse_memory_support", True)
+        sparse_memory_support = self.config.settings.Dynamips.sparse_memory_support
         if sparse_memory_support is False:
             await vm.set_sparsemem(False)
 

@@ -85,13 +85,9 @@ class Project:
             "variables": self._variables
         }
 
-    def _config(self):
-
-        return Config.instance().get_section_config("Server")
-
     def is_local(self):
 
-        return self._config().getboolean("local", False)
+        return Config.instance().settings.Server.local
 
     @property
     def id(self):

@@ -73,9 +73,9 @@ class QemuVM(BaseNode):
     def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", aux=None, aux_type="none", platform=None):
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, aux=aux, aux_type=aux_type, wrap_console=True, wrap_aux=True)
-        server_config = manager.config.get_section_config("Server")
-        self._host = server_config.get("host", "127.0.0.1")
-        self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
+
+        self._host = manager.config.settings.Server.host
+        self._monitor_host = manager.config.settings.Qemu.monitor_host
         self._process = None
         self._cpulimit_process = None
         self._monitor = None
@@ -1055,7 +1055,7 @@ class QemuVM(BaseNode):
                 await self.resume()
                 return
 
-            if self._manager.config.get_section_config("Qemu").getboolean("monitor", True):
+            if self._manager.config.settings.Qemu.enable_monitor:
                 try:
                     info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
                     if not info:
@@ -2112,17 +2112,8 @@ class QemuVM(BaseNode):
         :returns: Boolean True if we need to enable hardware acceleration
         """
 
-        enable_hardware_accel = self.manager.config.get_section_config("Qemu").getboolean("enable_hardware_acceleration", True)
-        require_hardware_accel = self.manager.config.get_section_config("Qemu").getboolean("require_hardware_acceleration", True)
-        if sys.platform.startswith("linux"):
-            # compatibility: these options were used before version 2.0 and have priority
-            enable_kvm = self.manager.config.get_section_config("Qemu").getboolean("enable_kvm")
-            if enable_kvm is not None:
-                enable_hardware_accel = enable_kvm
-            require_kvm = self.manager.config.get_section_config("Qemu").getboolean("require_kvm")
-            if require_kvm is not None:
-                require_hardware_accel = require_kvm
-
+        enable_hardware_accel = self.manager.config.settings.Qemu.enable_hardware_acceleration
+        require_hardware_accel = self.manager.config.settings.Qemu.require_hardware_acceleration
         if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
             if sys.platform.startswith("win"):
@@ -2137,7 +2128,7 @@ class QemuVM(BaseNode):
 
             if sys.platform.startswith("linux") and not os.path.exists("/dev/kvm"):
                 if require_hardware_accel:
-                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_kvm = false to the [Qemu] section.")
+                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_hardware_acceleration = false to the [Qemu] section.")
                 else:
                     return False
             elif sys.platform.startswith("win"):

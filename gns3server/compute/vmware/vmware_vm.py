@@ -336,7 +336,7 @@ class VMwareVM(BaseNode):
             # special case on OSX, we cannot bind VMnet interfaces using the libpcap
             await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
-            block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
+            block_host_traffic = self.manager.config.VMware.block_host_traffic
             await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
 
         if isinstance(nio, NIOUDP):

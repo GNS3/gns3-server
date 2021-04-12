@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 GNS3 Technologies Inc.
+# Copyright (C) 2021 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,14 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Reads the configuration file and store the settings for the controller & compute.
+Reads the configuration file and store the settings for the server.
 """
 
 import sys
 import os
 import shutil
+import secrets
 import configparser
 
+from pydantic import ValidationError
+from .schemas import ServerConfig
 from .version import __version_info__
 from .utils.file_watcher import FileWatcher
 
@@ -32,18 +35,19 @@ log = logging.getLogger(__name__)
 
 
 class Config:
-
     """
     Configuration file management using configparser.
 
     :param files: Array of configuration files (optional)
-    :param profile: Profile settings (default use standard settings file)
+    :param profile: Profile settings (default use standard config file)
     """
 
     def __init__(self, files=None, profile=None):
 
+        self._settings = None
         self._files = files
         self._profile = profile
+
         if files and len(files):
             directory_name = os.path.dirname(files[0])
             if not directory_name or directory_name == "":
@@ -79,15 +83,6 @@ class Config:
                 versioned_user_dir = os.path.join(appdata, appname, version)
 
             server_filename = "gns3_server.ini"
-            controller_filename = "gns3_controller.ini"
-
-            # move gns3_controller.conf to gns3_controller.ini (file was renamed in 2.2.0 on Windows)
-            old_controller_filename = os.path.join(legacy_user_dir, "gns3_controller.conf")
-            if os.path.exists(old_controller_filename):
-                try:
-                    shutil.copyfile(old_controller_filename, os.path.join(legacy_user_dir, controller_filename))
-                except OSError as e:
-                    log.error("Cannot move old controller configuration file: {}".format(e))
 
             if self._files is None and not hasattr(sys, "_called_from_test"):
                 self._files = [os.path.join(os.getcwd(), server_filename),
@@ -106,7 +101,6 @@ class Config:
 
             home = os.path.expanduser("~")
             server_filename = "gns3_server.conf"
-            controller_filename = "gns3_controller.conf"
 
             if self._profile:
                 legacy_user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
@@ -128,7 +122,7 @@ class Config:
 
         if self._main_config_file is None:
 
-            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 2.3) + support profiles
+            # TODO: migrate versioned config file from a previous version of GNS3 (for instance 2.2 -> 3.0) + support profiles
             # migrate post version 2.2.0 config files if they exist
             os.makedirs(versioned_user_dir, exist_ok=True)
             try:
@@ -137,12 +131,6 @@ class Config:
                 new_server_config = os.path.join(versioned_user_dir, server_filename)
                 if not os.path.exists(new_server_config) and os.path.exists(old_server_config):
                     shutil.copyfile(old_server_config, new_server_config)
-
-                # migrate the controller config file
-                old_controller_config = os.path.join(legacy_user_dir, controller_filename)
-                new_controller_config = os.path.join(versioned_user_dir, controller_filename)
-                if not os.path.exists(new_controller_config) and os.path.exists(old_controller_config):
-                    shutil.copyfile(old_controller_config, os.path.join(versioned_user_dir, new_controller_config))
             except OSError as e:
                 log.error("Cannot migrate old config files: {}".format(e))
 
@@ -154,6 +142,16 @@ class Config:
 
         self.clear()
         self._watch_config_file()
+
+    @property
+    def settings(self) -> ServerConfig:
+        """
+        Return the settings.
+        """
+
+        if self._settings is None:
+            return ServerConfig()
+        return self._settings
 
     def listen_for_config_changes(self, callback):
         """
@@ -170,20 +168,17 @@ class Config:
 
     @property
     def config_dir(self):
+        """
+        Return the directory where the configuration file is located.
+        """
 
         return os.path.dirname(self._main_config_file)
 
     @property
-    def controller_config(self):
-
-        if sys.platform.startswith("win"):
-            controller_config_filename = "gns3_controller.ini"
-        else:
-            controller_config_filename = "gns3_controller.conf"
-        return os.path.join(self.config_dir, controller_config_filename)
-
-    @property
     def server_config(self):
+        """
+        Return the server configuration file path.
+        """
 
         if sys.platform.startswith("win"):
             server_config_filename = "gns3_server.ini"
@@ -196,21 +191,24 @@ class Config:
         Restart with a clean config
         """
 
-        self._config = configparser.ConfigParser(interpolation=None)
-        # Override config from command line even if we modify the config file and live reload it.
-        self._override_config = {}
-
         self.read_config()
 
     def _watch_config_file(self):
+        """
+        Add config files to be monitored for changes.
+        """
+
         for file in self._files:
             if os.path.exists(file):
                 self._watched_files[file] = FileWatcher(file, self._config_file_change)
 
-    def _config_file_change(self, path):
+    def _config_file_change(self, file_path):
+        """
+        Callback when a config file has been updated.
+        """
+
+        log.info(f"'{file_path}' has been updated, reloading the config...")
         self.read_config()
-        for section in self._override_config:
-            self.set_section_config(section, self._override_config[section])
         for callback in self._watch_callback:
             callback()
 
@@ -220,93 +218,70 @@ class Config:
         """
 
         self.read_config()
-        for section in self._override_config:
-            self.set_section_config(section, self._override_config[section])
 
     def get_config_files(self):
+        """
+        Return the config files in use.
+        """
+
         return self._watched_files
+
+    def _load_jwt_secret_key(self):
+        """
+        Load the JWT secret key.
+        """
+
+        jwt_secret_key_path = os.path.join(self._settings.Server.secrets_dir, "gns3_jwt_secret_key")
+        if not os.path.exists(jwt_secret_key_path):
+            log.info(f"No JWT secret key configured, generating one in '{jwt_secret_key_path}'...")
+            try:
+                with open(jwt_secret_key_path, "w+", encoding="utf-8") as fd:
+                    fd.write(secrets.token_hex(32))
+            except OSError as e:
+                log.error(f"Could not create JWT secret key file '{jwt_secret_key_path}': {e}")
+        try:
+            with open(jwt_secret_key_path, encoding="utf-8") as fd:
+                jwt_secret_key_content = fd.read()
+                self._settings.Controller.jwt_secret_key = jwt_secret_key_content
+        except OSError as e:
+            log.error(f"Could not read JWT secret key file '{jwt_secret_key_path}': {e}")
+
+    def _load_secret_files(self):
+        """
+        Load the secret files.
+        """
+
+        if not self._settings.Server.secrets_dir:
+            self._settings.Server.secrets_dir = os.path.dirname(self.server_config)
+
+        self._load_jwt_secret_key()
 
     def read_config(self):
         """
-        Read the configuration files.
+        Read the configuration files and validate the settings.
         """
 
+        config = configparser.ConfigParser(interpolation=None)
         try:
-            parsed_files = self._config.read(self._files, encoding="utf-8")
+            parsed_files = config.read(self._files, encoding="utf-8")
         except configparser.Error as e:
             log.error("Can't parse configuration file: %s", str(e))
             return
         if not parsed_files:
             log.warning("No configuration file could be found or read")
-        else:
-            for file in parsed_files:
-                log.info("Load configuration file {}".format(file))
-                self._watched_files[file] = os.stat(file).st_mtime
+            return
 
-    def write_config(self):
-        """
-        Write the server configuration file.
-        """
+        for file in parsed_files:
+            log.info(f"Load configuration file '{file}'")
+            self._watched_files[file] = os.stat(file).st_mtime
 
         try:
-            os.makedirs(os.path.dirname(self.server_config), exist_ok=True)
-            with open(self.server_config, 'w+') as fd:
-                self._config.write(fd)
-        except OSError as e:
-            log.error("Cannot write server configuration file '{}': {}".format(self.server_config, e))
+            self._settings = ServerConfig(**config._sections)
+        except ValidationError as e:
+            log.error(f"Could not validate config: {e}")
+            return
 
-    def get_default_section(self):
-        """
-        Get the default configuration section.
-
-        :returns: configparser section
-        """
-
-        return self._config["DEFAULT"]
-
-    def get_section_config(self, section):
-        """
-        Get a specific configuration section.
-        Returns the default section if none can be found.
-
-        :returns: configparser section
-        """
-
-        if section not in self._config:
-            return self._config["DEFAULT"]
-        return self._config[section]
-
-    def set_section_config(self, section, content):
-        """
-        Set a specific configuration section. It's not
-        dumped on the disk.
-
-        :param section: Section name
-        :param content: A dictionary with section content
-        """
-
-        if not self._config.has_section(section):
-            self._config.add_section(section)
-        for key in content:
-            if isinstance(content[key], bool):
-                content[key] = str(content[key]).lower()
-            self._config.set(section, key, content[key])
-        self._override_config[section] = content
-
-    def set(self, section, key, value):
-        """
-        Set a config value.
-        It's not dumped on the disk.
-
-        If the section doesn't exists the section is created
-        """
-
-        conf = self.get_section_config(section)
-        if isinstance(value, bool):
-            conf[key] = str(value)
-        else:
-            conf[key] = value
-        self.set_section_config(section, conf)
+        self._load_secret_files()
 
     @staticmethod
     def instance(*args, **kwargs):

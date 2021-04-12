@@ -37,19 +37,20 @@ async def manager(port_manager):
     return m
 
 
-def test_vm_invalid_dynamips_path(manager):
+def test_vm_invalid_dynamips_path(manager, config):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": "/bin/test_fake"}):
-        with pytest.raises(DynamipsError):
-            manager.find_dynamips()
+    config.settings.Dynamips.dynamips_path = "/bin/test_fake"
+    with pytest.raises(DynamipsError):
+        manager.find_dynamips()
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported by Windows")
-def test_vm_non_executable_dynamips_path(manager):
+def test_vm_non_executable_dynamips_path(manager, config):
+
     tmpfile = tempfile.NamedTemporaryFile()
-    with patch("gns3server.config.Config.get_section_config", return_value={"dynamips_path": tmpfile.name}):
-        with pytest.raises(DynamipsError):
-            manager.find_dynamips()
+    config.settings.Dynamips.dynamips_path = tmpfile.name
+    with pytest.raises(DynamipsError):
+        manager.find_dynamips()
 
 
 def test_get_dynamips_id(manager):

@@ -183,9 +183,8 @@ async def load_project(path: str = Body(..., embed=True)):
     """
 
     controller = Controller.instance()
-    config = Config.instance()
     dot_gns3_file = path
-    if config.get_section_config("Server").getboolean("local", False) is False:
+    if Config.instance().settings.Server.local is False:
         log.error("Cannot load '{}' because the server has not been started with the '--local' parameter".format(dot_gns3_file))
         raise ControllerForbiddenError("Cannot load project when server is not local")
     project = await controller.load_project(dot_gns3_file,)
@@ -313,8 +312,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
     """
 
     controller = Controller.instance()
-    config = Config.instance()
-    if not config.get_section_config("Server").getboolean("local", False):
+    if Config.instance().settings.Server.local is False:
         raise ControllerForbiddenError("The server is not local")
 
     # We write the content to a temporary location and after we extract it all.
@@ -353,8 +351,7 @@ async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Pro
     """
 
     if project_data.path:
-        config = Config.instance()
-        if config.get_section_config("Server").getboolean("local", False) is False:
+        if Config.instance().settings.Server.local is False:
             raise ControllerForbiddenError("The server is not a local server")
         location = project_data.path
     else:

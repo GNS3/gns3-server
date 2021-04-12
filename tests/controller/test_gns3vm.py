@@ -21,6 +21,7 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.gns3vm import GNS3VM
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
+from pydantic import SecretStr
 
 
 @pytest.fixture
@@ -32,7 +33,7 @@ def dummy_engine():
     engine.protocol = "https"
     engine.port = 8442
     engine.user = "hello"
-    engine.password = "world"
+    engine.password = SecretStr("world")
     return engine
 
 
@@ -102,7 +103,7 @@ async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     assert controller.computes["vm"].port == 80
     assert controller.computes["vm"].protocol == "https"
     assert controller.computes["vm"].user == "hello"
-    assert controller.computes["vm"].password == "world"
+    assert controller.computes["vm"].password.get_secret_value() == "world"
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")

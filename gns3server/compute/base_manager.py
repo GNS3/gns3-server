@@ -418,7 +418,6 @@ class BaseManager:
             return ""
         orig_path = path
 
-        server_config = self.config.get_section_config("Server")
         img_directory = self.get_images_directory()
         valid_directory_prefices = images_directories(self._NODE_TYPE)
         if extra_dir:
@@ -445,7 +444,7 @@ class BaseManager:
             raise ImageMissingError(orig_path)
 
         # For local server we allow using absolute path outside image directory
-        if server_config.getboolean("local", False) is True:
+        if Config.instance().settings.Server.local is True:
             log.debug("Searching for '{}'".format(orig_path))
             path = force_unix_path(path)
             if os.path.exists(path):

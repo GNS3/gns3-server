@@ -83,8 +83,7 @@ def compute_version() -> dict:
     Retrieve the server version number.
     """
 
-    config = Config.instance()
-    local_server = config.get_section_config("Server").getboolean("local", False)
+    local_server = Config.instance().settings.Server.local
     return {"version": __version__, "local": local_server}
 
 
@@ -153,8 +152,7 @@ async def create_qemu_image(image_data: schemas.QemuImageCreate):
     """
 
     if os.path.isabs(image_data.path):
-        config = Config.instance()
-        if config.get_section_config("Server").getboolean("local", False) is False:
+        if Config.instance().settings.Server.local is False:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     await Qemu.instance().create_disk(image_data.qemu_img, image_data.path, jsonable_encoder(image_data, exclude_unset=True))
@@ -169,8 +167,7 @@ async def update_qemu_image(image_data: schemas.QemuImageUpdate):
     """
 
     if os.path.isabs(image_data.path):
-        config = Config.instance()
-        if config.get_section_config("Server").getboolean("local", False) is False:
+        if Config.instance().settings.Server.local is False:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     if image_data.extend:

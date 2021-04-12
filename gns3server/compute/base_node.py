@@ -373,9 +373,8 @@ class BaseNode:
         Returns the VNC console port range.
         """
 
-        server_config = self._manager.config.get_section_config("Server")
-        vnc_console_start_port_range = server_config.getint("vnc_console_start_port_range", 5900)
-        vnc_console_end_port_range = server_config.getint("vnc_console_end_port_range", 10000)
+        vnc_console_start_port_range = self._manager.config.settings.Server.vnc_console_start_port_range
+        vnc_console_end_port_range = self._manager.config.settings.Server.vnc_console_end_port_range
 
         if not 5900 <= vnc_console_start_port_range <= 65535:
             raise NodeError("The VNC console start port range must be between 5900 and 65535")
@@ -685,8 +684,7 @@ class BaseNode:
         :returns: path to uBridge
         """
 
-        path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
-        path = shutil.which(path)
+        path = shutil.which(self._manager.config.settings.Server.ubridge_path)
         return path
 
     async def _ubridge_send(self, command):
@@ -721,8 +719,7 @@ class BaseNode:
         if require_privileged_access and not self._manager.has_privileged_access(self.ubridge_path):
             raise NodeError("uBridge requires root access or the capability to interact with network adapters")
 
-        server_config = self._manager.config.get_section_config("Server")
-        server_host = server_config.get("host")
+        server_host = self._manager.config.settings.Server.host
         if not self.ubridge:
             self._ubridge_hypervisor = Hypervisor(self._project, self.ubridge_path, self.working_dir, server_host)
         log.info("Starting new uBridge hypervisor {}:{}".format(self._ubridge_hypervisor.host, self._ubridge_hypervisor.port))

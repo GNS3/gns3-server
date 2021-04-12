@@ -91,7 +91,7 @@ class VMware(BaseManager):
         """
 
         # look for vmrun
-        vmrun_path = self.config.get_section_config("VMware").get("vmrun_path")
+        vmrun_path = self.config.settings.VMware.vmrun_path
         if not vmrun_path:
             if sys.platform.startswith("win"):
                 vmrun_path = shutil.which("vmrun")
@@ -309,8 +309,8 @@ class VMware(BaseManager):
 
     def is_managed_vmnet(self, vmnet):
 
-        self._vmnet_start_range = self.config.get_section_config("VMware").getint("vmnet_start_range", self._vmnet_start_range)
-        self._vmnet_end_range = self.config.get_section_config("VMware").getint("vmnet_end_range", self._vmnet_end_range)
+        self._vmnet_start_range = self.config.settings.VMware.vmnet_start_range
+        self._vmnet_end_range = self.config.settings.VMware.vmnet_end_range
         match = re.search(r"vmnet([0-9]+)$", vmnet, re.IGNORECASE)
         if match:
             vmnet_number = match.group(1)

@@ -25,12 +25,12 @@ from gns3server.utils.path import check_path_allowed, get_default_project_direct
 
 def test_check_path_allowed(config, tmpdir):
 
-    config.set("Server", "local", False)
-    config.set("Server", "projects_path", str(tmpdir))
+    config.settings.Server.local = False
+    config.settings.Server.projects_path = str(tmpdir)
     with pytest.raises(HTTPException):
         check_path_allowed("/private")
 
-    config.set("Server", "local", True)
+    config.settings.Server.local = True
     check_path_allowed(str(tmpdir / "hello" / "world"))
     check_path_allowed("/private")
 

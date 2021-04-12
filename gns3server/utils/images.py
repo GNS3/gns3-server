@@ -35,8 +35,8 @@ def list_images(type):
     files = set()
     images = []
 
-    server_config = Config.instance().get_section_config("Server")
-    general_images_directory = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    server_config = Config.instance().settings.Server
+    general_images_directory = os.path.expanduser(server_config.images_path)
 
     # Subfolder of the general_images_directory specific to this VM type
     default_directory = default_images_directory(type)
@@ -106,8 +106,8 @@ def default_images_directory(type):
     """
     :returns: Return the default directory for a node type
     """
-    server_config = Config.instance().get_section_config("Server")
-    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    server_config = Config.instance().settings.Server
+    img_dir = os.path.expanduser(server_config.images_path)
     if type == "qemu":
         return os.path.join(img_dir, "QEMU")
     elif type == "iou":
@@ -125,17 +125,17 @@ def images_directories(type):
 
     :param type: Type of emulator
     """
-    server_config = Config.instance().get_section_config("Server")
 
+    server_config = Config.instance().settings.Server
     paths = []
-    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    img_dir = os.path.expanduser(server_config.images_path)
     type_img_directory = default_images_directory(type)
     try:
         os.makedirs(type_img_directory, exist_ok=True)
         paths.append(type_img_directory)
     except (OSError, PermissionError):
         pass
-    for directory in server_config.get("additional_images_path", "").split(";"):
+    for directory in server_config.additional_images_paths:
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
     paths.append(img_dir)

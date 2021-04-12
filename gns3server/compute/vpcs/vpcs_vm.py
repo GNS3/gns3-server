@@ -138,7 +138,7 @@ class VPCSVM(BaseNode):
         :returns: path to VPCS
         """
 
-        vpcs_path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
+        vpcs_path = self._manager.config.settings.VPCS.vpcs_path
         if not os.path.isabs(vpcs_path):
             vpcs_path = shutil.which(vpcs_path)
         return vpcs_path

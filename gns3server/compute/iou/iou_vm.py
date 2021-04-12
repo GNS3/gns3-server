@@ -95,9 +95,6 @@ class IOUVM(BaseNode):
         self._application_id = application_id
         self._l1_keepalives = False  # used to overcome the always-up Ethernet interfaces (not supported by all IOSes).
 
-    def _config(self):
-        return self._manager.config.get_section_config("IOU")
-
     def _nvram_changed(self, path):
         """
         Called when the NVRAM file has changed
@@ -248,7 +245,7 @@ class IOUVM(BaseNode):
         :returns: path to IOURC
         """
 
-        iourc_path = self._config().get("iourc_path")
+        iourc_path = self._manager.config.settings.IOU.iourc_path
         if not iourc_path:
             # look for the iourc file in the temporary  dir.
             path = os.path.join(self.temporary_directory, "iourc")
@@ -401,7 +398,7 @@ class IOUVM(BaseNode):
 
         try:
             # we allow license check to be disabled server wide
-            server_wide_license_check = self._config().getboolean("license_check", True)
+            server_wide_license_check = self._manager.config.settings.IOU.license_check
         except ValueError:
             raise IOUError("Invalid licence check setting")
 

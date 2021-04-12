@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+from .config import ServerConfig
 from .iou_license import IOULicense
 from .links import Link
 from .common import ErrorMessage

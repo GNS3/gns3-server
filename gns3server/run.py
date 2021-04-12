@@ -100,12 +100,10 @@ def parse_arguments(argv):
     parser.add_argument("--config", help="Configuration file")
     parser.add_argument("--certfile", help="SSL cert file")
     parser.add_argument("--certkey", help="SSL key file")
-    parser.add_argument("--record", help="save curl requests into a file (for developers)")
     parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
     parser.add_argument("-A", "--allow", action="store_true", help="allow remote connections to local console ports")
     parser.add_argument("-q", "--quiet", action="store_true", help="do not show logs on stdout")
     parser.add_argument("-d", "--debug", action="store_true", help="show debug logs")
-    parser.add_argument("--shell", action="store_true", help="start a shell inside the server (debugging purpose only you need to install ptpython before)")
     parser.add_argument("--log", help="send output to logfile instead of console")
     parser.add_argument("--logmaxsize", help="maximum logfile size in bytes (default is 10MB)")
     parser.add_argument("--logbackupcount", help="number of historical log files to keep (default is 10)")
@@ -120,50 +118,37 @@ def parse_arguments(argv):
     else:
         Config.instance(profile=args.profile)
 
-    config = Config.instance().get_section_config("Server")
+    config = Config.instance().settings
     defaults = {
-        "host": config.get("host", "0.0.0.0"),
-        "port": config.getint("port", 3080),
-        "ssl": config.getboolean("ssl", False),
-        "certfile": config.get("certfile", ""),
-        "certkey": config.get("certkey", ""),
-        "record": config.get("record", ""),
-        "local": config.getboolean("local", False),
-        "allow": config.getboolean("allow_remote_console", False),
-        "quiet": config.getboolean("quiet", False),
-        "debug": config.getboolean("debug", False),
-        "logfile": config.getboolean("logfile", ""),
-        "logmaxsize": config.getint("logmaxsize", 10000000),  # default is 10MB
-        "logbackupcount": config.getint("logbackupcount", 10),
-        "logcompression": config.getboolean("logcompression", False)
+        "host": config.Server.host,
+        "port": config.Server.port,
+        "ssl": config.Server.ssl,
+        "certfile": config.Server.certfile,
+        "certkey": config.Server.certkey,
+        "local": config.Server.local,
+        "allow":  config.Server.allow_remote_console,
+        "quiet": config.Server.quiet,
+        "debug": config.Server.debug,
+        "logfile": config.Server.logfile,
+        "logmaxsize": config.Server.logmaxsize,
+        "logbackupcount": config.Server.logbackupcount,
+        "logcompression": config.Server.logcompression
     }
-
     parser.set_defaults(**defaults)
     return parser.parse_args(argv)
 
 
 def set_config(args):
 
-    config = Config.instance()
-    server_config = config.get_section_config("Server")
-    jwt_secret_key = server_config.get("jwt_secret_key", None)
-    if not jwt_secret_key:
-        log.info("No JWT secret key configured, generating one...")
-        if not config._config.has_section("Server"):
-            config._config.add_section("Server")
-        config._config.set("Server", "jwt_secret_key", secrets.token_hex(32))
-        config.write_config()
-    server_config["local"] = str(args.local)
-    server_config["allow_remote_console"] = str(args.allow)
-    server_config["host"] = args.host
-    server_config["port"] = str(args.port)
-    server_config["ssl"] = str(args.ssl)
-    server_config["certfile"] = args.certfile
-    server_config["certkey"] = args.certkey
-    server_config["record"] = args.record
-    server_config["debug"] = str(args.debug)
-    server_config["shell"] = str(args.shell)
-    config.set_section_config("Server", server_config)
+    config = Config.instance().settings
+    config.Server.local = args.local
+    config.Server.allow_remote_console = args.allow
+    config.Server.host = args.host
+    config.Server.port = args.port
+    config.Server.ssl = args.ssl
+    config.Server.certfile = args.certfile
+    config.Server.certkey = args.certkey
+    config.Server.debug = args.debug
 
 
 def pid_lock(path):
@@ -280,17 +265,13 @@ def run():
         log.info("Config file {} loaded".format(config_file))
 
     set_config(args)
-    server_config = Config.instance().get_section_config("Server")
+    config = Config.instance().settings
 
-    if server_config.getboolean("local"):
+    if config.Server.local:
         log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
-    if server_config.getboolean("auth"):
-        user = server_config.get("user", "").strip()
-        if not user:
-            log.critical("HTTP authentication is enabled but no username is configured")
-            return
-        log.info("HTTP authentication is enabled with username '{}'".format(user))
+    if config.Server.auth:
+        log.info("HTTP authentication is enabled with username '{}'".format(config.Server.user))
 
     # we only support Python 3 version >= 3.6
     if sys.version_info < (3, 6, 0):
@@ -311,8 +292,8 @@ def run():
         return
 
     CrashReport.instance()
-    host = server_config["host"]
-    port = int(server_config["port"])
+    host = config.Server.host
+    port = config.Server.port
 
     PortManager.instance().console_host = host
     signal_handling()
@@ -325,22 +306,19 @@ def run():
         if log.getEffectiveLevel() == logging.DEBUG:
             access_log = True
 
-        certfile = None
-        certkey = None
-        if server_config.getboolean("ssl"):
+        if config.Server.ssl:
             if sys.platform.startswith("win"):
                 log.critical("SSL mode is not supported on Windows")
                 raise SystemExit
-            certfile = server_config["certfile"]
-            certkey = server_config["certkey"]
             log.info("SSL is enabled")
 
         config = uvicorn.Config(app,
                                 host=host,
                                 port=port,
                                 access_log=access_log,
-                                ssl_certfile=certfile,
-                                ssl_keyfile=certkey)
+                                ssl_certfile=config.Server.certfile,
+                                ssl_keyfile=config.Server.certkey,
+                                lifespan="on")
 
         # overwrite uvicorn loggers with our own logger
         for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):

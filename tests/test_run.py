@@ -35,12 +35,9 @@ def test_locale_check():
     assert locale.getlocale() == ('fr_FR', 'UTF-8')
 
 
-def test_parse_arguments(capsys, tmpdir):
+def test_parse_arguments(capsys, config, tmpdir):
 
-    Config.reset()
-    config = Config.instance([str(tmpdir / "test.cfg")])
-    server_config = config.get_section_config("Server")
-
+    server_config = config.settings.Server
     with pytest.raises(SystemExit):
         run.parse_arguments(["--fail"])
     out, err = capsys.readouterr()
@@ -70,37 +67,38 @@ def test_parse_arguments(capsys, tmpdir):
     # assert "optional arguments" in out
 
     assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
-    assert run.parse_arguments([]).host == "0.0.0.0"
-    server_config["host"] = "192.168.1.2"
+    assert run.parse_arguments([]).host == "localhost"
+    server_config.host = "192.168.1.2"
     assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
     assert run.parse_arguments([]).host == "192.168.1.2"
 
     assert run.parse_arguments(["--port", "8002"]).port == 8002
     assert run.parse_arguments([]).port == 3080
-    server_config["port"] = "8003"
+    server_config.port = 8003
     assert run.parse_arguments([]).port == 8003
 
     assert run.parse_arguments(["--ssl"]).ssl
     assert run.parse_arguments([]).ssl is False
-    server_config["ssl"] = "True"
+    server_config.ssl = True
     assert run.parse_arguments([]).ssl
 
     assert run.parse_arguments(["--certfile", "bla"]).certfile == "bla"
-    assert run.parse_arguments([]).certfile == ""
+    assert run.parse_arguments([]).certfile is None
 
     assert run.parse_arguments(["--certkey", "blu"]).certkey == "blu"
-    assert run.parse_arguments([]).certkey == ""
+    assert run.parse_arguments([]).certkey is None
 
     assert run.parse_arguments(["-L"]).local
     assert run.parse_arguments(["--local"]).local
+    server_config.local = False
     assert run.parse_arguments([]).local is False
-    server_config["local"] = "True"
+    server_config.local = True
     assert run.parse_arguments([]).local
 
     assert run.parse_arguments(["-A"]).allow
     assert run.parse_arguments(["--allow"]).allow
     assert run.parse_arguments([]).allow is False
-    server_config["allow_remote_console"] = "True"
+    server_config.allow_remote_console = True
     assert run.parse_arguments([]).allow
 
     assert run.parse_arguments(["-q"]).quiet
@@ -109,7 +107,7 @@ def test_parse_arguments(capsys, tmpdir):
 
     assert run.parse_arguments(["-d"]).debug
     assert run.parse_arguments([]).debug is False
-    server_config["debug"] = "True"
+    server_config.debug = True
     assert run.parse_arguments([]).debug
 
 
@@ -129,13 +127,13 @@ def test_set_config_with_args():
                                 "blu",
                                 "--debug"])
     run.set_config(args)
-    server_config = config.get_section_config("Server")
+    server_config = config.settings.Server
 
-    assert server_config.getboolean("local")
-    assert server_config.getboolean("allow_remote_console")
-    assert server_config["host"] == "192.168.1.1"
-    assert server_config["port"] == "8001"
-    assert server_config.getboolean("ssl")
-    assert server_config["certfile"] == "bla"
-    assert server_config["certkey"] == "blu"
-    assert server_config.getboolean("debug")
+    assert server_config.local
+    assert server_config.allow_remote_console
+    assert server_config.host
+    assert server_config.port
+    assert server_config.ssl
+    assert server_config.certfile
+    assert server_config.certkey
+    assert server_config.debug

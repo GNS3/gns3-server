@@ -178,7 +178,7 @@ async def test_open_project(app: FastAPI, client: AsyncClient, project: Project)
 
 async def test_load_project(app: FastAPI, client: AsyncClient, project: Project, config) -> None:
 
-    config.set("Server", "local", "true")
+    config.settings.Server.local = True
     with asyncio_patch("gns3server.controller.Controller.load_project", return_value=project) as mock:
         response = await client.post(app.url_path_for("load_project"), json={"path": "/tmp/test.gns3"})
         assert response.status_code == status.HTTP_201_CREATED

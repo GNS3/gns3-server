@@ -22,6 +22,7 @@ from unittest.mock import patch, MagicMock
 from gns3server.controller.project import Project
 from gns3server.controller.compute import Compute, ComputeConflict
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from pydantic import SecretStr
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
@@ -98,7 +99,7 @@ async def test_compute_httpQueryAuth(compute):
         response.status = 200
 
         compute.user = "root"
-        compute.password = "toor"
+        compute.password = SecretStr("toor")
         await compute.post("/projects", {"a": "b"})
         await compute.close()
         mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=b'{"a": "b"}', headers={'content-type': 'application/json'}, auth=compute._auth, chunked=None, timeout=20)

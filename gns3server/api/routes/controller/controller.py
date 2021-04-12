@@ -43,8 +43,7 @@ async def shutdown():
     Shutdown the local server
     """
 
-    config = Config.instance()
-    if config.get_section_config("Server").getboolean("local", False) is False:
+    if Config.instance().settings.Server.local is False:
         raise ControllerForbiddenError("You can only stop a local server")
 
     log.info("Start shutting down the server")
@@ -76,8 +75,7 @@ def get_version():
     Return the server version number.
     """
 
-    config = Config.instance()
-    local_server = config.get_section_config("Server").getboolean("local", False)
+    local_server = Config.instance().settings.Server.local
     return {"version": __version__, "local": local_server}
 
 

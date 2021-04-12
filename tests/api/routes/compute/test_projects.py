@@ -158,10 +158,10 @@ async def test_close_project_invalid_uuid(app: FastAPI, client: AsyncClient) -> 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_get_file(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+async def test_get_file(app: FastAPI, client: AsyncClient, config, tmpdir) -> None:
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
-        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+    config.settings.Server.projects_path = str(tmpdir)
+    project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     with open(os.path.join(project.path, "hello"), "w+") as f:
         f.write("world")
@@ -179,10 +179,10 @@ async def test_get_file(app: FastAPI, client: AsyncClient, tmpdir) -> None:
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_write_file(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+async def test_write_file(app: FastAPI, client: AsyncClient, config, tmpdir) -> None:
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
-        project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+    config.settings.Server.projects_path = str(tmpdir)
+    project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     response = await client.post(app.url_path_for("write_compute_project_file",
                                                   project_id=project.id,

@@ -43,15 +43,13 @@ class PortManager:
         self._used_tcp_ports = set()
         self._used_udp_ports = set()
 
-        server_config = Config.instance().get_section_config("Server")
-
-        console_start_port_range = server_config.getint("console_start_port_range", 5000)
-        console_end_port_range = server_config.getint("console_end_port_range", 10000)
+        console_start_port_range = Config.instance().settings.Server.console_start_port_range
+        console_end_port_range = Config.instance().settings.Server.console_end_port_range
         self._console_port_range = (console_start_port_range, console_end_port_range)
         log.debug(f"Console port range is {console_start_port_range}-{console_end_port_range}")
 
-        udp_start_port_range = server_config.getint("udp_start_port_range", 20000)
-        udp_end_port_range = server_config.getint("udp_end_port_range", 30000)
+        udp_start_port_range = Config.instance().settings.Server.udp_start_port_range
+        udp_end_port_range = Config.instance().settings.Server.udp_end_port_range
         self._udp_port_range = (udp_start_port_range, udp_end_port_range)
         log.debug(f"UDP port range is {udp_start_port_range}-{udp_end_port_range}")
 
@@ -86,8 +84,7 @@ class PortManager:
         Bind console host to 0.0.0.0 if remote connections are allowed.
         """
 
-        server_config = Config.instance().get_section_config("Server")
-        remote_console_connections = server_config.getboolean("allow_remote_console")
+        remote_console_connections = Config.instance().settings.Server.allow_remote_console
         if remote_console_connections:
             log.warning("Remote console connections are allowed")
             self._console_host = "0.0.0.0"

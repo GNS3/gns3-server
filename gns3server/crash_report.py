@@ -142,8 +142,7 @@ class CrashReport:
             log.warning(".git directory detected, crash reporting is turned off for developers.")
             return
 
-        server_config = Config.instance().get_section_config("Server")
-        if server_config.getboolean("report_errors"):
+        if Config.instance().settings.Server.report_errors:
 
             if not SENTRY_SDK_AVAILABLE:
                 log.warning("Cannot capture exception: Sentry SDK is not available")

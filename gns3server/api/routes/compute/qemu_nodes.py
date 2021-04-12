@@ -148,12 +148,7 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)):
     """
 
     qemu_manager = Qemu.instance()
-    hardware_accel = qemu_manager.config.get_section_config("Qemu").getboolean("enable_hardware_acceleration", True)
-    if sys.platform.startswith("linux"):
-        # the enable_kvm option was used before version 2.0 and has priority
-        enable_kvm = qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm")
-        if enable_kvm is not None:
-            hardware_accel = enable_kvm
+    hardware_accel = qemu_manager.config.settings.Qemu.enable_hardware_acceleration
     if hardware_accel and "-no-kvm" not in node.options and "-no-hax" not in node.options:
         pm = ProjectManager.instance()
         if pm.check_hardware_virtualization(node) is False:

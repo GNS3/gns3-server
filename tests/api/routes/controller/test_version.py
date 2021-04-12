@@ -25,9 +25,8 @@ from gns3server.version import __version__
 pytestmark = pytest.mark.asyncio
 
 
-async def test_version_output(app: FastAPI, client: AsyncClient, config) -> None:
+async def test_version_output(app: FastAPI, client: AsyncClient) -> None:
 
-    config.set("Server", "local", "true")
     response = await client.get(app.url_path_for("get_version"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {'local': True, 'version': __version__}

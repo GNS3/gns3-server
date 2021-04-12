@@ -425,9 +425,9 @@ async def test_create_img_relative(app: FastAPI, client: AsyncClient):
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-async def test_create_img_absolute_non_local(app: FastAPI, client: AsyncClient, config: dict) -> None:
+async def test_create_img_absolute_non_local(app: FastAPI, client: AsyncClient, config) -> None:
 
-    config.set("Server", "local", "false")
+    config.settings.Server.local = False
     params = {
         "qemu_img": "/tmp/qemu-img",
         "path": "/tmp/hda.qcow2",
@@ -443,9 +443,9 @@ async def test_create_img_absolute_non_local(app: FastAPI, client: AsyncClient, 
     assert response.status_code == 403
 
 
-async def test_create_img_absolute_local(app: FastAPI, client: AsyncClient, config: dict) -> None:
+async def test_create_img_absolute_local(app: FastAPI, client: AsyncClient, config) -> None:
 
-    config.set("Server", "local", "true")
+    config.settings.Server.local = True
     params = {
         "qemu_img": "/tmp/qemu-img",
         "path": "/tmp/hda.qcow2",

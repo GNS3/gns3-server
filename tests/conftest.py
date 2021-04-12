@@ -205,7 +205,7 @@ def images_dir(config):
     Get the location of images
     """
 
-    path = config.get_section_config("Server").get("images_path")
+    path = config.settings.Server.images_path
     os.makedirs(path, exist_ok=True)
     os.makedirs(os.path.join(path, "QEMU"), exist_ok=True)
     os.makedirs(os.path.join(path, "IOU"), exist_ok=True)
@@ -218,7 +218,7 @@ def symbols_dir(config):
     Get the location of symbols
     """
 
-    path = config.get_section_config("Server").get("symbols_path")
+    path = config.settings.Server.symbols_path
     os.makedirs(path, exist_ok=True)
     print(path)
     return path
@@ -230,7 +230,7 @@ def projects_dir(config):
     Get the location of images
     """
 
-    path = config.get_section_config("Server").get("projects_path")
+    path = config.settings.Server.projects_path
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -320,7 +320,7 @@ def ubridge_path(config):
     Get the location of a fake ubridge
     """
 
-    path = config.get_section_config("Server").get("ubridge_path")
+    path = config.settings.Server.ubridge_path
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, 'w+').close()
     return path
@@ -338,22 +338,23 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
         module._instance = None
 
     os.makedirs(os.path.join(tmppath, 'projects'))
-    config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
-    config.set("Server", "symbols_path", os.path.join(tmppath, 'symbols'))
-    config.set("Server", "images_path", os.path.join(tmppath, 'images'))
-    config.set("Server", "appliances_path", os.path.join(tmppath, 'appliances'))
-    config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
-    config.set("Server", "auth", False)
-    config.set("Server", "local", True)
+    config.settings.Server.projects_path = os.path.join(tmppath, 'projects')
+    config.settings.Server.symbols_path = os.path.join(tmppath, 'symbols')
+    config.settings.Server.images_path = os.path.join(tmppath, 'images')
+    config.settings.Server.appliances_path = os.path.join(tmppath, 'appliances')
+    config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
+    config.settings.Server.local = True
+    config.settings.Server.auth = False
 
     # Prevent executions of the VM if we forgot to mock something
-    config.set("VirtualBox", "vboxmanage_path", tmppath)
-    config.set("VPCS", "vpcs_path", tmppath)
-    config.set("VMware", "vmrun_path", tmppath)
-    config.set("Dynamips", "dynamips_path", tmppath)
+    config.settings.VirtualBox.vboxmanage_path = tmppath
+    config.settings.VPCS.vpcs_path = tmppath
+    config.settings.VMware.vmrun_path = tmppath
+    config.settings.Dynamips.dynamips_path = tmppath
+
 
     # Force turn off KVM because it's not available on CI
-    config.set("Qemu", "enable_kvm", False)
+    config.settings.Qemu.enable_hardware_acceleration = False
 
     monkeypatch.setattr("gns3server.utils.path.get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 

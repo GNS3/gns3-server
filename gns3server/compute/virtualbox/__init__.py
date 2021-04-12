@@ -57,7 +57,7 @@ class VirtualBox(BaseManager):
     def find_vboxmanage(self):
 
         # look for VBoxManage
-        vboxmanage_path = self.config.get_section_config("VirtualBox").get("vboxmanage_path")
+        vboxmanage_path = self.config.settings.VirtualBox.vboxmanage_path
         if vboxmanage_path:
             if not os.path.isabs(vboxmanage_path):
                 vboxmanage_path = shutil.which(vboxmanage_path)

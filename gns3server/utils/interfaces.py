@@ -184,9 +184,7 @@ def interfaces():
 
     results = []
     if not sys.platform.startswith("win"):
-        allowed_interfaces = Config.instance().get_section_config("Server").get("allowed_interfaces", None)
-        if allowed_interfaces:
-            allowed_interfaces = allowed_interfaces.split(',')
+        allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
         net_if_addrs = psutil.net_if_addrs()
         for interface in sorted(net_if_addrs.keys()):
             if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):

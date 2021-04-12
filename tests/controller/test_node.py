@@ -234,7 +234,7 @@ async def test_create_image_missing(node, compute):
 @pytest.mark.asyncio
 async def test_create_base_script(node, config, compute, tmpdir):
 
-    config.set_section_config("Server", {"configs_path": str(tmpdir)})
+    config.settings.Server.configs_path = str(tmpdir)
     with open(str(tmpdir / 'test.txt'), 'w+') as f:
         f.write('hostname test')
 

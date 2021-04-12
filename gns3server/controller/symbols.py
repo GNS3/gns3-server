@@ -112,7 +112,9 @@ class Symbols:
         return symbols
 
     def symbols_path(self):
-        directory = os.path.expanduser(Config.instance().get_section_config("Server").get("symbols_path", "~/GNS3/symbols"))
+
+        server_config = Config.instance().settings.Server
+        directory = os.path.expanduser(server_config.symbols_path)
         if directory:
             try:
                 os.makedirs(directory, exist_ok=True)

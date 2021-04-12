@@ -131,7 +131,7 @@ class TestAuthTokens:
             config: Config
     ) -> None:
 
-        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
+        jwt_secret = config.settings.Controller.jwt_secret_key
         token = auth_service.create_access_token(test_user.username)
         payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
         username = payload.get("sub")
@@ -139,7 +139,7 @@ class TestAuthTokens:
 
     async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient, config: Config) -> None:
 
-        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
+        jwt_secret = config.settings.Controller.jwt_secret_key
         token = auth_service.create_access_token(None)
         with pytest.raises(jwt.JWTError):
             jwt.decode(token, jwt_secret, algorithms=["HS256"])
@@ -171,11 +171,12 @@ class TestAuthTokens:
             test_user: User,
             wrong_secret: str,
             wrong_token: Optional[str],
+            config,
     ) -> None:
 
         token = auth_service.create_access_token(test_user.username)
         if wrong_secret == "use correct secret":
-            wrong_secret = auth_service._server_config.get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
+            wrong_secret = config.settings.Controller.jwt_secret_key
         if wrong_token == "use correct token":
             wrong_token = token
         with pytest.raises(HTTPException):
@@ -192,7 +193,7 @@ class TestUserLogin:
             config: Config
     ) -> None:
 
-        jwt_secret = config.get_section_config("Server").get("jwt_secret_key", DEFAULT_JWT_SECRET_KEY)
+        jwt_secret = config.settings.Controller.jwt_secret_key
         client.headers["content-type"] = "application/x-www-form-urlencoded"
         login_data = {
             "username": test_user.username,

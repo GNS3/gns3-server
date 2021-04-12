@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, SecretStr, validator
 from typing import List, Optional, Union
 from uuid import UUID, uuid4
 from enum import Enum
@@ -51,7 +51,7 @@ class ComputeCreate(ComputeBase):
     """
 
     compute_id: Union[str, UUID] = Field(default_factory=uuid4)
-    password: Optional[str] = None
+    password: Optional[SecretStr] = None
 
     class Config:
         schema_extra = {
@@ -91,7 +91,7 @@ class ComputeUpdate(ComputeBase):
     protocol: Optional[Protocol] = None
     host: Optional[str] = None
     port: Optional[int] = Field(None, gt=0, le=65535)
-    password: Optional[str] = None
+    password: Optional[SecretStr] = None
 
     class Config:
         schema_extra = {

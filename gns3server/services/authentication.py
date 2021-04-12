@@ -38,7 +38,7 @@ class AuthService:
 
     def __init__(self):
 
-        self._server_config = Config.instance().get_section_config("Server")
+        self._controller_config = Config.instance().settings.Controller
 
     def hash_password(self, password: str) -> str:
 
@@ -48,20 +48,6 @@ class AuthService:
 
         return pwd_context.verify(password, hashed_password)
 
-    def get_secret_key(self):
-        """
-        Should only be used by tests.
-        """
-
-        return self._server_config.get("jwt_secret_key", None)
-
-    def get_algorithm(self):
-        """
-        Should only be used by tests.
-        """
-
-        return self._server_config.get("jwt_algorithm", None)
-
     def create_access_token(
             self,
             username,
@@ -70,15 +56,15 @@ class AuthService:
     ) -> str:
 
         if not expires_in:
-            expires_in = self._server_config.getint("jwt_access_token_expire_minutes", 1440)
+            expires_in = self._controller_config.jwt_access_token_expire_minutes
         expire = datetime.utcnow() + timedelta(minutes=expires_in)
         to_encode = {"sub": username, "exp": expire}
         if secret_key is None:
-            secret_key = self._server_config.get("jwt_secret_key", None)
+            secret_key = self._controller_config.jwt_secret_key
         if secret_key is None:
             secret_key = DEFAULT_JWT_SECRET_KEY
             log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
-        algorithm = self._server_config.get("jwt_algorithm", "HS256")
+        algorithm = self._controller_config.jwt_algorithm
         encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
         return encoded_jwt
 
@@ -91,11 +77,11 @@ class AuthService:
         )
         try:
             if secret_key is None:
-                secret_key = self._server_config.get("jwt_secret_key", None)
+                secret_key = self._controller_config.jwt_secret_key
             if secret_key is None:
                 secret_key = DEFAULT_JWT_SECRET_KEY
                 log.error("A JWT secret key must be configured to secure the server, using an unsecured default key!")
-            algorithm = self._server_config.get("jwt_algorithm", "HS256")
+            algorithm = self._controller_config.jwt_algorithm
             payload = jwt.decode(token, secret_key, algorithms=[algorithm])
             username: str = payload.get("sub")
             if username is None:

@@ -121,9 +121,9 @@ class Compute:
         else:
             self._user = user.strip()
             if password:
-                self._password = password.strip()
+                self._password = password
                 try:
-                    self._auth = aiohttp.BasicAuth(self._user, self._password, "utf-8")
+                    self._auth = aiohttp.BasicAuth(self._user, self._password.get_secret_value(), "utf-8")
                 except ValueError as e:
                     log.error(str(e))
             else:
