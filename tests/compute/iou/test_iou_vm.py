@@ -222,7 +222,6 @@ async def test_close(vm, port_manager):
 
 def test_path(vm, fake_iou_bin, config):
 
-    config.settings.Server.local = True
     vm.path = fake_iou_bin
     assert vm.path == fake_iou_bin
 
@@ -235,7 +234,6 @@ def test_path_relative(vm, fake_iou_bin):
 
 def test_path_invalid_bin(vm, tmpdir, config):
 
-    config.settings.Server.local = True
     path = str(tmpdir / "test.bin")
 
     with open(path, "w+") as f:

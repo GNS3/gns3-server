@@ -30,7 +30,6 @@ pytestmark = pytest.mark.asyncio
 async def test_shutdown_local(app: FastAPI, client: AsyncClient, config: Config) -> None:
 
     os.kill = MagicMock()
-    config.settings.Server.local = True
     response = await client.post(app.url_path_for("shutdown"))
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert os.kill.called

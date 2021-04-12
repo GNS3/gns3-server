@@ -67,7 +67,7 @@ def test_parse_arguments(capsys, config, tmpdir):
     # assert "optional arguments" in out
 
     assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
-    assert run.parse_arguments([]).host == "localhost"
+    assert run.parse_arguments([]).host == "0.0.0.0"
     server_config.host = "192.168.1.2"
     assert run.parse_arguments(["--host", "192.168.1.1"]).host == "192.168.1.1"
     assert run.parse_arguments([]).host == "192.168.1.2"

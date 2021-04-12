@@ -5,6 +5,7 @@ import shutil
 import sys
 import os
 import uuid
+import configparser
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -24,6 +25,7 @@ from gns3server.api.routes.controller.dependencies.database import get_db_sessio
 from gns3server import schemas
 from gns3server.schemas.computes import Protocol
 from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
@@ -192,9 +194,14 @@ def compute_project(tmpdir):
 
 
 @pytest.fixture
-def config():
+def config(tmpdir):
 
-    config = Config.instance()
+    path = str(tmpdir / "server.conf")
+    config = configparser.ConfigParser()
+    with open(path, "w+") as f:
+        config.write(f)
+    Config.reset()
+    config = Config.instance(files=[path])
     config.clear()
     return config
 
@@ -220,7 +227,6 @@ def symbols_dir(config):
 
     path = config.settings.Server.symbols_path
     os.makedirs(path, exist_ok=True)
-    print(path)
     return path
 
 
@@ -337,6 +343,9 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
     for module in MODULES:
         module._instance = None
 
+    config.settings.Controller.jwt_secret_key = DEFAULT_JWT_SECRET_KEY
+    config.settings.Server.secrets_dir = os.path.join(tmppath, 'secrets')
+
     os.makedirs(os.path.join(tmppath, 'projects'))
     config.settings.Server.projects_path = os.path.join(tmppath, 'projects')
     config.settings.Server.symbols_path = os.path.join(tmppath, 'symbols')
@@ -368,4 +377,3 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
         shutil.rmtree(tmppath)
     except BaseException:
         pass
-

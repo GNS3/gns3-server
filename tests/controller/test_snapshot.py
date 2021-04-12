@@ -95,7 +95,6 @@ async def test_restore(project, controller, config):
     assert len(project.nodes) == 2
 
     controller._notification = MagicMock()
-    config.settings.Server.local = True
     await snapshot.restore()
 
     assert "snapshot.restored" in [c[0][0] for c in controller.notification.project_emit.call_args_list]

@@ -445,7 +445,6 @@ async def test_create_img_absolute_non_local(app: FastAPI, client: AsyncClient, 
 
 async def test_create_img_absolute_local(app: FastAPI, client: AsyncClient, config) -> None:
 
-    config.settings.Server.local = True
     params = {
         "qemu_img": "/tmp/qemu-img",
         "path": "/tmp/hda.qcow2",

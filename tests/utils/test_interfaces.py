@@ -41,7 +41,6 @@ def test_interfaces():
 
 def test_has_netmask(config):
 
-    config.settings.Server.allowed_interfaces = "lo0,lo"
     if sys.platform.startswith("win"):
         # No loopback
         pass
