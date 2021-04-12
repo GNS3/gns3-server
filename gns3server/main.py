@@ -80,8 +80,8 @@ def main():
     if not sys.platform.startswith("win"):
         if "--daemon" in sys.argv:
             daemonize()
-    from gns3server.run import run
-    run()
+    from gns3server.server import Server
+    Server().run()
 
 
 if __name__ == '__main__':

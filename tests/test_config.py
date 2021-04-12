@@ -121,9 +121,13 @@ def test_server_password_hidden():
             ({"vnc_console_end_port_range": 6000}, False),
             ({"vnc_console_end_port_range": 1000}, True),
             ({"vnc_console_start_port_range": 7000, "vnc_console_end_port_range": 6000}, True),
-            ({"auth": True, "user": "user1"}, False),
-            ({"auth": True, "user": ""}, True),
-            ({"auth": True}, True),
+            ({"enable_ssl": True, "certfile": "/path/to/certfile", "certkey": "/path/to/certkey"}, True),
+            ({"enable_ssl": True}, True),
+            ({"enable_ssl": True, "certfile": "/path/to/certfile"}, True),
+            ({"enable_ssl": True, "certkey": "/path/to/certkey"}, True),
+            ({"enable_http_auth": True, "user": "user1"}, False),
+            ({"enable_http_auth": True, "user": ""}, True),
+            ({"enable_http_auth": True}, True),
     )
 )
 def test_server_settings(settings: dict, exception_expected: bool):

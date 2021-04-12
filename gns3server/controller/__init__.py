@@ -81,7 +81,7 @@ class Controller:
 
         self._load_controller_settings()
 
-        if server_config.ssl:
+        if server_config.enable_ssl:
             if sys.platform.startswith("win"):
                 log.critical("SSL mode is not supported on Windows")
                 raise SystemExit
@@ -242,11 +242,11 @@ class Controller:
         iou_config = Config.instance().settings.IOU
         server_config = Config.instance().settings.Server
 
-        #controller_config.getboolean("iou_license_check", True)
-
         if iou_config.iourc_path:
             iourc_path = iou_config.iourc_path
         else:
+            if not server_config.secrets_dir:
+                server_config.secrets_dir = os.path.dirname(Config.instance().server_config)
             iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
 
         if os.path.exists(iourc_path):

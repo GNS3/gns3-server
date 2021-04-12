@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from pydantic import BaseModel, Field, SecretStr, validator
+from pydantic import BaseModel, Field, SecretStr, FilePath, validator
 from typing import List
 
 
@@ -110,13 +110,14 @@ class ServerProtocol(str, Enum):
 
 class ServerSettings(BaseModel):
 
+    local: bool = False
     protocol: ServerProtocol = ServerProtocol.http
     host: str = "0.0.0.0"
     port: int = Field(3080, gt=0, le=65535)
     secrets_dir: str = None
-    ssl: bool = False
-    certfile: str = None
-    certkey: str = None
+    certfile: FilePath = None
+    certkey: FilePath = None
+    enable_ssl: bool = False
     images_path: str = "~/GNS3/images"
     projects_path: str = "~/GNS3/projects"
     appliances_path: str = "~/GNS3/appliances"
@@ -133,18 +134,10 @@ class ServerSettings(BaseModel):
     ubridge_path: str = "ubridge"
     user: str = None
     password: SecretStr = None
-    auth: bool = False
+    enable_http_auth: bool = False
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
-    logfile: str = None
-    logmaxsize: int = 10000000  # default is 10MB
-    logbackupcount: int = 10
-    logcompression: bool = False
-
-    local: bool = False
     allow_remote_console: bool = False
-    quiet: bool = False
-    debug: bool = False
 
     @validator("additional_images_paths", pre=True)
     def split_additional_images_paths(cls, v):
@@ -170,12 +163,22 @@ class ServerSettings(BaseModel):
             raise ValueError("vnc_console_end_port_range must be > vnc_console_start_port_range")
         return v
 
-    @validator("auth")
+    @validator("enable_http_auth")
     def validate_enable_auth(cls, v, values):
 
         if v is True:
             if "user" not in values or not values["user"]:
                 raise ValueError("HTTP authentication is enabled but no username is configured")
+        return v
+
+    @validator("enable_ssl")
+    def validate_enable_ssl(cls, v, values):
+
+        if v is True:
+            if "certfile" not in values or not values["certfile"]:
+                raise ValueError("SSL is enabled but certfile is not configured")
+            if "certkey" not in values or not values["certkey"]:
+                raise ValueError("SSL is enabled but certkey is not configured")
         return v
 
     class Config:

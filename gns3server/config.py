@@ -272,14 +272,14 @@ class Config:
             return
 
         for file in parsed_files:
-            log.info(f"Load configuration file '{file}'")
+            log.info(f"Configuration file '{file}' loaded")
             self._watched_files[file] = os.stat(file).st_mtime
 
         try:
             self._settings = ServerConfig(**config._sections)
         except ValidationError as e:
-            log.error(f"Could not validate config: {e}")
-            return
+            log.critical(f"Could not validate configuration file settings: {e}")
+            raise
 
         self._load_secret_files()
 
