@@ -320,8 +320,7 @@ class Server:
                                     port=port,
                                     access_log=access_log,
                                     ssl_certfile=config.Server.certfile,
-                                    ssl_keyfile=config.Server.certkey,
-                                    lifespan="on")
+                                    ssl_keyfile=config.Server.certkey)
 
             # overwrite uvicorn loggers with our own logger
             for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):

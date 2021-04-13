@@ -473,7 +473,8 @@ class Compute:
             log.info("Connection closed to compute '{}' WebSocket '{}'".format(self._id, ws_url))
 
         # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
-        if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+        if self.id != "local" and not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+            log.info("Reconnecting to to compute '{}' WebSocket '{}'".format(self._id, ws_url))
             asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
 
         self._cpu_usage_percent = None

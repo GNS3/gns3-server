@@ -348,7 +348,7 @@ class Controller:
             self._computes[compute.id] = compute
             #self.save()
             if connect:
-                asyncio.ensure_future(compute.connect())
+                asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
             self.notification.controller_emit("compute.created", compute.__json__())
             return compute
         else:
