@@ -27,6 +27,7 @@ from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -57,12 +58,14 @@ class ATMSwitch(Device):
         for source, destination in self._mappings.items():
             mappings[source] = destination
 
-        return {"name": self.name,
-                "usage": self.usage,
-                "node_id": self.id,
-                "project_id": self.project.id,
-                "mappings": mappings,
-                "status": "started"}
+        return {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "project_id": self.project.id,
+            "mappings": mappings,
+            "status": "started",
+        }
 
     async def create(self):
 
@@ -82,9 +85,11 @@ class ATMSwitch(Device):
         """
 
         await self._hypervisor.send(f'atmsw rename "{self._name}" "{new_name}"')
-        log.info('ATM switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
-                                                                              id=self._id,
-                                                                              new_name=new_name))
+        log.info(
+            'ATM switch "{name}" [{id}]: renamed to "{new_name}"'.format(
+                name=self._name, id=self._id, new_name=new_name
+            )
+        )
         self._name = new_name
 
     @property
@@ -163,10 +168,11 @@ class ATMSwitch(Device):
         if port_number in self._nios:
             raise DynamipsError(f"Port {port_number} isn't free")
 
-        log.info('ATM switch "{name}" [id={id}]: NIO {nio} bound to port {port}'.format(name=self._name,
-                                                                                        id=self._id,
-                                                                                        nio=nio,
-                                                                                        port=port_number))
+        log.info(
+            'ATM switch "{name}" [id={id}]: NIO {nio} bound to port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         self._nios[port_number] = nio
         await self.set_mappings(self._mappings)
@@ -189,37 +195,50 @@ class ATMSwitch(Device):
                 source_port, source_vpi, source_vci = source
                 destination_port, destination_vpi, destination_vci = destination
                 if port_number == source_port:
-                    log.info('ATM switch "{name}" [{id}]: unmapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(name=self._name,
-                                                                                                                                                                                                                     id=self._id,
-                                                                                                                                                                                                                     source_port=source_port,
-                                                                                                                                                                                                                     source_vpi=source_vpi,
-                                                                                                                                                                                                                     source_vci=source_vci,
-                                                                                                                                                                                                                     destination_port=destination_port,
-                                                                                                                                                                                                                     destination_vpi=destination_vpi,
-                                                                                                                                                                                                                     destination_vci=destination_vci))
-                    await self.unmap_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
-                    await self.unmap_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
+                    log.info(
+                        'ATM switch "{name}" [{id}]: unmapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(
+                            name=self._name,
+                            id=self._id,
+                            source_port=source_port,
+                            source_vpi=source_vpi,
+                            source_vci=source_vci,
+                            destination_port=destination_port,
+                            destination_vpi=destination_vpi,
+                            destination_vci=destination_vci,
+                        )
+                    )
+                    await self.unmap_pvc(
+                        source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci
+                    )
+                    await self.unmap_pvc(
+                        destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci
+                    )
             else:
                 # remove the virtual paths mapped with this port/nio
                 source_port, source_vpi = source
                 destination_port, destination_vpi = destination
                 if port_number == source_port:
-                    log.info('ATM switch "{name}" [{id}]: unmapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(name=self._name,
-                                                                                                                                                                              id=self._id,
-                                                                                                                                                                              source_port=source_port,
-                                                                                                                                                                              source_vpi=source_vpi,
-                                                                                                                                                                              destination_port=destination_port,
-                                                                                                                                                                              destination_vpi=destination_vpi))
+                    log.info(
+                        'ATM switch "{name}" [{id}]: unmapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(
+                            name=self._name,
+                            id=self._id,
+                            source_port=source_port,
+                            source_vpi=source_vpi,
+                            destination_port=destination_port,
+                            destination_vpi=destination_vpi,
+                        )
+                    )
                     await self.unmap_vp(source_port, source_vpi, destination_port, destination_vpi)
                     await self.unmap_vp(destination_port, destination_vpi, source_port, source_vpi)
 
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
-        log.info('ATM switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
-                                                                                         id=self._id,
-                                                                                         nio=nio,
-                                                                                         port=port_number))
+        log.info(
+            'ATM switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         del self._nios[port_number]
         return nio
@@ -261,30 +280,48 @@ class ATMSwitch(Device):
                 source_port, source_vpi, source_vci = map(int, match_source_pvc.group(1, 2, 3))
                 destination_port, destination_vpi, destination_vci = map(int, match_destination_pvc.group(1, 2, 3))
                 if self.has_port(destination_port):
-                    if (source_port, source_vpi, source_vci) not in self._active_mappings and \
-                       (destination_port, destination_vpi, destination_vci) not in self._active_mappings:
-                        log.info('ATM switch "{name}" [{id}]: mapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(name=self._name,
-                                                                                                                                                                                                                       id=self._id,
-                                                                                                                                                                                                                       source_port=source_port,
-                                                                                                                                                                                                                       source_vpi=source_vpi,
-                                                                                                                                                                                                                       source_vci=source_vci,
-                                                                                                                                                                                                                       destination_port=destination_port,
-                                                                                                                                                                                                                       destination_vpi=destination_vpi,
-                                                                                                                                                                                                                       destination_vci=destination_vci))
-                        await self.map_pvc(source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci)
-                        await self.map_pvc(destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci)
+                    if (source_port, source_vpi, source_vci) not in self._active_mappings and (
+                        destination_port,
+                        destination_vpi,
+                        destination_vci,
+                    ) not in self._active_mappings:
+                        log.info(
+                            'ATM switch "{name}" [{id}]: mapping VCC between port {source_port} VPI {source_vpi} VCI {source_vci} and port {destination_port} VPI {destination_vpi} VCI {destination_vci}'.format(
+                                name=self._name,
+                                id=self._id,
+                                source_port=source_port,
+                                source_vpi=source_vpi,
+                                source_vci=source_vci,
+                                destination_port=destination_port,
+                                destination_vpi=destination_vpi,
+                                destination_vci=destination_vci,
+                            )
+                        )
+                        await self.map_pvc(
+                            source_port, source_vpi, source_vci, destination_port, destination_vpi, destination_vci
+                        )
+                        await self.map_pvc(
+                            destination_port, destination_vpi, destination_vci, source_port, source_vpi, source_vci
+                        )
             else:
                 # add the virtual paths
-                source_port, source_vpi = map(int, source.split(':'))
-                destination_port, destination_vpi = map(int, destination.split(':'))
+                source_port, source_vpi = map(int, source.split(":"))
+                destination_port, destination_vpi = map(int, destination.split(":"))
                 if self.has_port(destination_port):
-                    if (source_port, source_vpi) not in self._active_mappings and (destination_port, destination_vpi) not in self._active_mappings:
-                        log.info('ATM switch "{name}" [{id}]: mapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(name=self._name,
-                                                                                                                                                                                id=self._id,
-                                                                                                                                                                                source_port=source_port,
-                                                                                                                                                                                source_vpi=source_vpi,
-                                                                                                                                                                                destination_port=destination_port,
-                                                                                                                                                                                destination_vpi=destination_vpi))
+                    if (source_port, source_vpi) not in self._active_mappings and (
+                        destination_port,
+                        destination_vpi,
+                    ) not in self._active_mappings:
+                        log.info(
+                            'ATM switch "{name}" [{id}]: mapping VPC between port {source_port} VPI {source_vpi} and port {destination_port} VPI {destination_vpi}'.format(
+                                name=self._name,
+                                id=self._id,
+                                source_port=source_port,
+                                source_vpi=source_vpi,
+                                destination_port=destination_port,
+                                destination_vpi=destination_vpi,
+                            )
+                        )
                         await self.map_vp(source_port, source_vpi, destination_port, destination_vpi)
                         await self.map_vp(destination_port, destination_vpi, source_port, source_vpi)
 
@@ -307,18 +344,17 @@ class ATMSwitch(Device):
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('atmsw create_vpc "{name}" {input_nio} {input_vpi} {output_nio} {output_vpi}'.format(name=self._name,
-                                                                                                                              input_nio=nio1,
-                                                                                                                              input_vpi=vpi1,
-                                                                                                                              output_nio=nio2,
-                                                                                                                              output_vpi=vpi2))
+        await self._hypervisor.send(
+            'atmsw create_vpc "{name}" {input_nio} {input_vpi} {output_nio} {output_vpi}'.format(
+                name=self._name, input_nio=nio1, input_vpi=vpi1, output_nio=nio2, output_vpi=vpi2
+            )
+        )
 
-        log.info('ATM switch "{name}" [{id}]: VPC from port {port1} VPI {vpi1} to port {port2} VPI {vpi2} created'.format(name=self._name,
-                                                                                                                          id=self._id,
-                                                                                                                          port1=port1,
-                                                                                                                          vpi1=vpi1,
-                                                                                                                          port2=port2,
-                                                                                                                          vpi2=vpi2))
+        log.info(
+            'ATM switch "{name}" [{id}]: VPC from port {port1} VPI {vpi1} to port {port2} VPI {vpi2} created'.format(
+                name=self._name, id=self._id, port1=port1, vpi1=vpi1, port2=port2, vpi2=vpi2
+            )
+        )
 
         self._active_mappings[(port1, vpi1)] = (port2, vpi2)
 
@@ -341,18 +377,17 @@ class ATMSwitch(Device):
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('atmsw delete_vpc "{name}" {input_nio} {input_vpi} {output_nio} {output_vpi}'.format(name=self._name,
-                                                                                                                              input_nio=nio1,
-                                                                                                                              input_vpi=vpi1,
-                                                                                                                              output_nio=nio2,
-                                                                                                                              output_vpi=vpi2))
+        await self._hypervisor.send(
+            'atmsw delete_vpc "{name}" {input_nio} {input_vpi} {output_nio} {output_vpi}'.format(
+                name=self._name, input_nio=nio1, input_vpi=vpi1, output_nio=nio2, output_vpi=vpi2
+            )
+        )
 
-        log.info('ATM switch "{name}" [{id}]: VPC from port {port1} VPI {vpi1} to port {port2} VPI {vpi2} deleted'.format(name=self._name,
-                                                                                                                          id=self._id,
-                                                                                                                          port1=port1,
-                                                                                                                          vpi1=vpi1,
-                                                                                                                          port2=port2,
-                                                                                                                          vpi2=vpi2))
+        log.info(
+            'ATM switch "{name}" [{id}]: VPC from port {port1} VPI {vpi1} to port {port2} VPI {vpi2} deleted'.format(
+                name=self._name, id=self._id, port1=port1, vpi1=vpi1, port2=port2, vpi2=vpi2
+            )
+        )
 
         del self._active_mappings[(port1, vpi1)]
 
@@ -377,22 +412,23 @@ class ATMSwitch(Device):
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('atmsw create_vcc "{name}" {input_nio} {input_vpi} {input_vci} {output_nio} {output_vpi} {output_vci}'.format(name=self._name,
-                                                                                                                                                       input_nio=nio1,
-                                                                                                                                                       input_vpi=vpi1,
-                                                                                                                                                       input_vci=vci1,
-                                                                                                                                                       output_nio=nio2,
-                                                                                                                                                       output_vpi=vpi2,
-                                                                                                                                                       output_vci=vci2))
+        await self._hypervisor.send(
+            'atmsw create_vcc "{name}" {input_nio} {input_vpi} {input_vci} {output_nio} {output_vpi} {output_vci}'.format(
+                name=self._name,
+                input_nio=nio1,
+                input_vpi=vpi1,
+                input_vci=vci1,
+                output_nio=nio2,
+                output_vpi=vpi2,
+                output_vci=vci2,
+            )
+        )
 
-        log.info('ATM switch "{name}" [{id}]: VCC from port {port1} VPI {vpi1} VCI {vci1} to port {port2} VPI {vpi2} VCI {vci2} created'.format(name=self._name,
-                                                                                                                                                id=self._id,
-                                                                                                                                                port1=port1,
-                                                                                                                                                vpi1=vpi1,
-                                                                                                                                                vci1=vci1,
-                                                                                                                                                port2=port2,
-                                                                                                                                                vpi2=vpi2,
-                                                                                                                                                vci2=vci2))
+        log.info(
+            'ATM switch "{name}" [{id}]: VCC from port {port1} VPI {vpi1} VCI {vci1} to port {port2} VPI {vpi2} VCI {vci2} created'.format(
+                name=self._name, id=self._id, port1=port1, vpi1=vpi1, vci1=vci1, port2=port2, vpi2=vpi2, vci2=vci2
+            )
+        )
 
         self._active_mappings[(port1, vpi1, vci1)] = (port2, vpi2, vci2)
 
@@ -417,22 +453,23 @@ class ATMSwitch(Device):
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('atmsw delete_vcc "{name}" {input_nio} {input_vpi} {input_vci} {output_nio} {output_vpi} {output_vci}'.format(name=self._name,
-                                                                                                                                                       input_nio=nio1,
-                                                                                                                                                       input_vpi=vpi1,
-                                                                                                                                                       input_vci=vci1,
-                                                                                                                                                       output_nio=nio2,
-                                                                                                                                                       output_vpi=vpi2,
-                                                                                                                                                       output_vci=vci2))
+        await self._hypervisor.send(
+            'atmsw delete_vcc "{name}" {input_nio} {input_vpi} {input_vci} {output_nio} {output_vpi} {output_vci}'.format(
+                name=self._name,
+                input_nio=nio1,
+                input_vpi=vpi1,
+                input_vci=vci1,
+                output_nio=nio2,
+                output_vpi=vpi2,
+                output_vci=vci2,
+            )
+        )
 
-        log.info('ATM switch "{name}" [{id}]: VCC from port {port1} VPI {vpi1} VCI {vci1} to port {port2} VPI {vpi2} VCI {vci2} deleted'.format(name=self._name,
-                                                                                                                                                id=self._id,
-                                                                                                                                                port1=port1,
-                                                                                                                                                vpi1=vpi1,
-                                                                                                                                                vci1=vci1,
-                                                                                                                                                port2=port2,
-                                                                                                                                                vpi2=vpi2,
-                                                                                                                                                vci2=vci2))
+        log.info(
+            'ATM switch "{name}" [{id}]: VCC from port {port1} VPI {vpi1} VCI {vci1} to port {port2} VPI {vpi2} VCI {vci2} deleted'.format(
+                name=self._name, id=self._id, port1=port1, vpi1=vpi1, vci1=vci1, port2=port2, vpi2=vpi2, vci2=vci2
+            )
+        )
         del self._active_mappings[(port1, vpi1, vci1)]
 
     async def start_capture(self, port_number, output_file, data_link_type="DLT_ATM_RFC1483"):
@@ -453,9 +490,11 @@ class ATMSwitch(Device):
             raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info('ATM switch "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             port=port_number))
+        log.info(
+            'ATM switch "{name}" [{id}]: starting packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -468,6 +507,8 @@ class ATMSwitch(Device):
         if not nio.capturing:
             return
         await nio.stop_packet_capture()
-        log.info('ATM switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             port=port_number))
+        log.info(
+            'ATM switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )

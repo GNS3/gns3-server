@@ -78,7 +78,9 @@ class DynamipsHypervisor:
         while time.time() - begin < timeout:
             await asyncio.sleep(0.01)
             try:
-                self._reader, self._writer = await asyncio.wait_for(asyncio.open_connection(host, self._port), timeout=1)
+                self._reader, self._writer = await asyncio.wait_for(
+                    asyncio.open_connection(host, self._port), timeout=1
+                )
             except (asyncio.TimeoutError, OSError) as e:
                 last_exception = e
                 continue
@@ -242,17 +244,20 @@ class DynamipsHypervisor:
                 raise DynamipsError("Not connected")
 
             try:
-                command = command.strip() + '\n'
+                command = command.strip() + "\n"
                 log.debug(f"sending {command}")
                 self._writer.write(command.encode())
                 await self._writer.drain()
             except OSError as e:
-                raise DynamipsError("Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}"
-                                    .format(command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()))
+                raise DynamipsError(
+                    "Could not send Dynamips command '{command}' to {host}:{port}: {error}, process running: {run}".format(
+                        command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
+                    )
+                )
 
             # Now retrieve the result
             data = []
-            buf = ''
+            buf = ""
             retries = 0
             max_retries = 10
             while True:
@@ -272,8 +277,11 @@ class DynamipsHypervisor:
                         continue
                     if not chunk:
                         if retries > max_retries:
-                            raise DynamipsError("No data returned from {host}:{port}, Dynamips process running: {run}"
-                                                .format(host=self._host, port=self._port, run=self.is_running()))
+                            raise DynamipsError(
+                                "No data returned from {host}:{port}, Dynamips process running: {run}".format(
+                                    host=self._host, port=self._port, run=self.is_running()
+                                )
+                            )
                         else:
                             retries += 1
                             await asyncio.sleep(0.1)
@@ -281,30 +289,36 @@ class DynamipsHypervisor:
                     retries = 0
                     buf += chunk.decode("utf-8", errors="ignore")
                 except OSError as e:
-                    raise DynamipsError("Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}"
-                                        .format(command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()))
+                    raise DynamipsError(
+                        "Could not read response for '{command}' from {host}:{port}: {error}, process running: {run}".format(
+                            command=command.strip(), host=self._host, port=self._port, error=e, run=self.is_running()
+                        )
+                    )
 
                 # If the buffer doesn't end in '\n' then we can't be done
                 try:
-                    if buf[-1] != '\n':
+                    if buf[-1] != "\n":
                         continue
                 except IndexError:
-                    raise DynamipsError("Could not communicate with {host}:{port}, Dynamips process running: {run}"
-                                        .format(host=self._host, port=self._port, run=self.is_running()))
+                    raise DynamipsError(
+                        "Could not communicate with {host}:{port}, Dynamips process running: {run}".format(
+                            host=self._host, port=self._port, run=self.is_running()
+                        )
+                    )
 
-                data += buf.split('\r\n')
-                if data[-1] == '':
+                data += buf.split("\r\n")
+                if data[-1] == "":
                     data.pop()
-                buf = ''
+                buf = ""
 
                 # Does it contain an error code?
                 if self.error_re.search(data[-1]):
                     raise DynamipsError(f"Dynamips error when running command '{command}': {data[-1][4:]}")
 
                 # Or does the last line begin with '100-'? Then we are done!
-                if data[-1][:4] == '100-':
+                if data[-1][:4] == "100-":
                     data[-1] = data[-1][4:]
-                    if data[-1] == 'OK':
+                    if data[-1] == "OK":
                         data.pop()
                     break
 

@@ -45,7 +45,7 @@ class QemuPlatform(str, Enum):
     s390x = "s390x"
     sh4 = "sh4"
     sh4eb = "sh4eb"
-    sparc =  "sparc"
+    sparc = "sparc"
     sparc64 = "sparc64"
     tricore = "tricore"
     unicore32 = "unicore32"
@@ -192,10 +192,16 @@ class QemuBase(BaseModel):
     maxcpus: Optional[int] = Field(None, ge=1, le=255, description="Maximum number of hotpluggable vCPUs")
     adapters: Optional[int] = Field(None, ge=0, le=275, description="Number of adapters")
     adapter_type: Optional[QemuAdapterType] = Field(None, description="QEMU adapter type")
-    mac_address: Optional[str] = Field(None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+    mac_address: Optional[str] = Field(
+        None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+    )
     legacy_networking: Optional[bool] = Field(None, description="Use QEMU legagy networking commands (-net syntax)")
-    replicate_network_connection_state: Optional[bool] = Field(None, description="Replicate the network connection state for links in Qemu")
-    create_config_disk: Optional[bool] = Field(None, description="Automatically create a config disk on HDD disk interface (secondary slave)")
+    replicate_network_connection_state: Optional[bool] = Field(
+        None, description="Replicate the network connection state for links in Qemu"
+    )
+    create_config_disk: Optional[bool] = Field(
+        None, description="Automatically create a config disk on HDD disk interface (secondary slave)"
+    )
     on_close: Optional[QemuOnCloseAction] = Field(None, description="Action to execute on the VM is closed")
     cpu_throttling: Optional[int] = Field(None, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
     process_priority: Optional[QemuProcessPriority] = Field(None, description="Process priority for QEMU")

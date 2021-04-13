@@ -19,14 +19,77 @@ from fastapi import HTTPException, status
 from gns3server.config import Config
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 # These ports are disallowed by Chrome and Firefox to avoid issues, we skip them as well
-BANNED_PORTS = {1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 77, 79, 87, 95, 101, 102, 103,
-                    104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 139, 143, 179, 389, 465, 512, 513, 514, 515, 526,
-                    530, 531, 532, 540, 556, 563, 587, 601, 636, 993, 995, 2049, 3659, 4045, 6000, 6665, 6666, 6667,
-                    6668, 6669}
+BANNED_PORTS = {
+    1,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19,
+    20,
+    21,
+    22,
+    23,
+    25,
+    37,
+    42,
+    43,
+    53,
+    77,
+    79,
+    87,
+    95,
+    101,
+    102,
+    103,
+    104,
+    109,
+    110,
+    111,
+    113,
+    115,
+    117,
+    119,
+    123,
+    135,
+    139,
+    143,
+    179,
+    389,
+    465,
+    512,
+    513,
+    514,
+    515,
+    526,
+    530,
+    531,
+    532,
+    540,
+    556,
+    563,
+    587,
+    601,
+    636,
+    993,
+    995,
+    2049,
+    3659,
+    4045,
+    6000,
+    6665,
+    6666,
+    6667,
+    6668,
+    6669,
+}
 
 
 class PortManager:
@@ -66,10 +129,12 @@ class PortManager:
 
     def __json__(self):
 
-        return {"console_port_range": self._console_port_range,
-                "console_ports": list(self._used_tcp_ports),
-                "udp_port_range": self._udp_port_range,
-                "udp_ports": list(self._used_udp_ports)}
+        return {
+            "console_port_range": self._console_port_range,
+            "console_ports": list(self._used_tcp_ports),
+            "udp_port_range": self._udp_port_range,
+            "udp_ports": list(self._used_udp_ports),
+        }
 
     @property
     def console_host(self):
@@ -145,8 +210,9 @@ class PortManager:
         """
 
         if end_port < start_port:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                detail=f"Invalid port range {start_port}-{end_port}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=f"Invalid port range {start_port}-{end_port}"
+            )
 
         last_exception = None
         for port in range(start_port, end_port + 1):
@@ -165,9 +231,11 @@ class PortManager:
                 else:
                     continue
 
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail=f"Could not find a free port between {start_port} and {end_port} on host {host},"
-                                   f" last exception: {last_exception}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Could not find a free port between {start_port} and {end_port} on host {host},"
+            f" last exception: {last_exception}",
+        )
 
     @staticmethod
     def _check_port(host, port, socket_type):
@@ -200,11 +268,13 @@ class PortManager:
             port_range_start = self._console_port_range[0]
             port_range_end = self._console_port_range[1]
 
-        port = self.find_unused_port(port_range_start,
-                                     port_range_end,
-                                     host=self._console_host,
-                                     socket_type="TCP",
-                                     ignore_ports=self._used_tcp_ports)
+        port = self.find_unused_port(
+            port_range_start,
+            port_range_end,
+            host=self._console_host,
+            socket_type="TCP",
+            ignore_ports=self._used_tcp_ports,
+        )
 
         self._used_tcp_ports.add(port)
         project.record_tcp_port(port)
@@ -237,8 +307,10 @@ class PortManager:
         if port < port_range_start or port > port_range_end:
             old_port = port
             port = self.get_free_tcp_port(project, port_range_start=port_range_start, port_range_end=port_range_end)
-            msg = f"TCP port {old_port} is outside the range {port_range_start}-{port_range_end} on host " \
-                  f"{self._console_host}. Port has been replaced by {port}"
+            msg = (
+                f"TCP port {old_port} is outside the range {port_range_start}-{port_range_end} on host "
+                f"{self._console_host}. Port has been replaced by {port}"
+            )
             log.debug(msg)
             return port
         try:
@@ -274,11 +346,13 @@ class PortManager:
 
         :param project: Project instance
         """
-        port = self.find_unused_port(self._udp_port_range[0],
-                                     self._udp_port_range[1],
-                                     host=self._udp_host,
-                                     socket_type="UDP",
-                                     ignore_ports=self._used_udp_ports)
+        port = self.find_unused_port(
+            self._udp_port_range[0],
+            self._udp_port_range[1],
+            host=self._udp_host,
+            socket_type="UDP",
+            ignore_ports=self._used_udp_ports,
+        )
 
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
@@ -294,12 +368,15 @@ class PortManager:
         """
 
         if port in self._used_udp_ports:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                detail=f"UDP port {port} already in use on host {self._console_host}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"UDP port {port} already in use on host {self._console_host}",
+            )
         if port < self._udp_port_range[0] or port > self._udp_port_range[1]:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                detail=f"UDP port {port} is outside the range "
-                                       f"{self._udp_port_range[0]}-{self._udp_port_range[1]}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"UDP port {port} is outside the range " f"{self._udp_port_range[0]}-{self._udp_port_range[1]}",
+            )
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
         log.debug(f"UDP port {port} has been reserved")

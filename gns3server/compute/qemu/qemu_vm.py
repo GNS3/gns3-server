@@ -50,11 +50,12 @@ from ...utils import macaddress_to_int, int_to_macaddress
 from gns3server.schemas.qemu_nodes import Qemu, QemuPlatform
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class QemuVM(BaseNode):
-    module_name = 'qemu'
+    module_name = "qemu"
 
     """
     QEMU VM implementation.
@@ -69,9 +70,34 @@ class QemuVM(BaseNode):
     :param platform: Platform to emulate
     """
 
-    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", aux=None, aux_type="none", platform=None):
+    def __init__(
+        self,
+        name,
+        node_id,
+        project,
+        manager,
+        linked_clone=True,
+        qemu_path=None,
+        console=None,
+        console_type="telnet",
+        aux=None,
+        aux_type="none",
+        platform=None,
+    ):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, aux=aux, aux_type=aux_type, wrap_console=True, wrap_aux=True)
+        super().__init__(
+            name,
+            node_id,
+            project,
+            manager,
+            console=console,
+            console_type=console_type,
+            linked_clone=linked_clone,
+            aux=aux,
+            aux_type=aux_type,
+            wrap_console=True,
+            wrap_aux=True,
+        )
 
         self._host = manager.config.settings.Server.host
         self._monitor_host = manager.config.settings.Qemu.monitor_host
@@ -209,20 +235,22 @@ class QemuVM(BaseNode):
             self._platform = "x86_64"
         else:
             qemu_bin = os.path.basename(qemu_path)
-            qemu_bin = re.sub(r'(w)?\.(exe|EXE)$', '', qemu_bin)
+            qemu_bin = re.sub(r"(w)?\.(exe|EXE)$", "", qemu_bin)
             # Old version of GNS3 provide a binary named qemu.exe
             if qemu_bin == "qemu":
                 self._platform = "i386"
             else:
-                self._platform = re.sub(r'^qemu-system-(.*)$', r'\1', qemu_bin, re.IGNORECASE)
+                self._platform = re.sub(r"^qemu-system-(.*)$", r"\1", qemu_bin, re.IGNORECASE)
 
         try:
             QemuPlatform(self._platform.split(".")[0])
         except ValueError:
             raise QemuError(f"Platform {self._platform} is unknown")
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       qemu_path=qemu_path))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(
+                name=self._name, id=self._id, qemu_path=qemu_path
+            )
+        )
 
     def _check_qemu_path(self, qemu_path):
 
@@ -261,12 +289,15 @@ class QemuVM(BaseNode):
         if not self.linked_clone:
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
-                    raise QemuError(f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name}")
+                    raise QemuError(
+                        f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name}"
+                    )
         setattr(self, "_" + variable, value)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU {variable} path to {disk_image}'.format(name=self._name,
-                                                                                                   variable=variable,
-                                                                                                   id=self._id,
-                                                                                                   disk_image=value))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU {variable} path to {disk_image}'.format(
+                name=self._name, variable=variable, id=self._id, disk_image=value
+            )
+        )
 
     @property
     def hda_disk_image(self):
@@ -367,9 +398,11 @@ class QemuVM(BaseNode):
         """
 
         self._hda_disk_interface = hda_disk_interface
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hda disk interface to {interface}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     interface=self._hda_disk_interface))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU hda disk interface to {interface}'.format(
+                name=self._name, id=self._id, interface=self._hda_disk_interface
+            )
+        )
 
     @property
     def hdb_disk_interface(self):
@@ -390,9 +423,11 @@ class QemuVM(BaseNode):
         """
 
         self._hdb_disk_interface = hdb_disk_interface
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdb disk interface to {interface}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     interface=self._hdb_disk_interface))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU hdb disk interface to {interface}'.format(
+                name=self._name, id=self._id, interface=self._hdb_disk_interface
+            )
+        )
 
     @property
     def hdc_disk_interface(self):
@@ -413,9 +448,11 @@ class QemuVM(BaseNode):
         """
 
         self._hdc_disk_interface = hdc_disk_interface
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdc disk interface to {interface}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     interface=self._hdc_disk_interface))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU hdc disk interface to {interface}'.format(
+                name=self._name, id=self._id, interface=self._hdc_disk_interface
+            )
+        )
 
     @property
     def hdd_disk_interface(self):
@@ -436,9 +473,11 @@ class QemuVM(BaseNode):
         """
 
         self._hdd_disk_interface = hdd_disk_interface
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU hdd disk interface to {interface}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     interface=self._hdd_disk_interface))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU hdd disk interface to {interface}'.format(
+                name=self._name, id=self._id, interface=self._hdd_disk_interface
+            )
+        )
 
     @property
     def cdrom_image(self):
@@ -461,9 +500,11 @@ class QemuVM(BaseNode):
         if cdrom_image:
             self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
 
-            log.info('QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(name=self._name,
-                                                                                                         id=self._id,
-                                                                                                         cdrom_image=self._cdrom_image))
+            log.info(
+                'QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(
+                    name=self._name, id=self._id, cdrom_image=self._cdrom_image
+                )
+            )
         else:
             self._cdrom_image = ""
 
@@ -488,9 +529,11 @@ class QemuVM(BaseNode):
                 self._cdrom_option()  # this will check the cdrom image is accessible
                 await self._control_vm("eject -f ide1-cd0")
                 await self._control_vm(f"change ide1-cd0 {self._cdrom_image}")
-                log.info('QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(name=self._name,
-                                                                                                            id=self._id,
-                                                                                                            cdrom_image=self._cdrom_image))
+                log.info(
+                    'QEMU VM "{name}" [{id}] has changed the cdrom image path to {cdrom_image}'.format(
+                        name=self._name, id=self._id, cdrom_image=self._cdrom_image
+                    )
+                )
             else:
                 await self._control_vm("eject -f ide1-cd0")
                 log.info(f'QEMU VM "{self._name}" [{self._id}] has ejected the cdrom image')
@@ -514,9 +557,11 @@ class QemuVM(BaseNode):
         """
 
         self._bios_image = self.manager.get_abs_image_path(bios_image, self.project.path)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(name=self._name,
-                                                                                                   id=self._id,
-                                                                                                   bios_image=self._bios_image))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(
+                name=self._name, id=self._id, bios_image=self._bios_image
+            )
+        )
 
     @property
     def boot_priority(self):
@@ -537,9 +582,11 @@ class QemuVM(BaseNode):
         """
 
         self._boot_priority = boot_priority
-        log.info('QEMU VM "{name}" [{id}] has set the boot priority to {boot_priority}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               boot_priority=self._boot_priority))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the boot priority to {boot_priority}'.format(
+                name=self._name, id=self._id, boot_priority=self._boot_priority
+            )
+        )
 
     @property
     def ethernet_adapters(self):
@@ -570,9 +617,11 @@ class QemuVM(BaseNode):
         for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info('QEMU VM "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     adapters=adapters))
+        log.info(
+            'QEMU VM "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(
+                name=self._name, id=self._id, adapters=adapters
+            )
+        )
 
     @property
     def adapter_type(self):
@@ -594,9 +643,11 @@ class QemuVM(BaseNode):
 
         self._adapter_type = adapter_type
 
-        log.info('QEMU VM "{name}" [{id}]: adapter type changed to {adapter_type}'.format(name=self._name,
-                                                                                          id=self._id,
-                                                                                          adapter_type=adapter_type))
+        log.info(
+            'QEMU VM "{name}" [{id}]: adapter type changed to {adapter_type}'.format(
+                name=self._name, id=self._id, adapter_type=adapter_type
+            )
+        )
 
     @property
     def mac_address(self):
@@ -622,9 +673,11 @@ class QemuVM(BaseNode):
         else:
             self._mac_address = mac_address
 
-        log.info('QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(name=self._name,
-                                                                                     id=self._id,
-                                                                                     mac_addr=self._mac_address))
+        log.info(
+            'QEMU VM "{name}" [{id}]: MAC address changed to {mac_addr}'.format(
+                name=self._name, id=self._id, mac_addr=self._mac_address
+            )
+        )
 
     @property
     def legacy_networking(self):
@@ -737,9 +790,11 @@ class QemuVM(BaseNode):
         :param cpu_throttling: integer
         """
 
-        log.info('QEMU VM "{name}" [{id}] has set the percentage of CPU allowed to {cpu}'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 cpu=cpu_throttling))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the percentage of CPU allowed to {cpu}'.format(
+                name=self._name, id=self._id, cpu=cpu_throttling
+            )
+        )
         self._cpu_throttling = cpu_throttling
         self._stop_cpulimit()
         if cpu_throttling:
@@ -763,9 +818,11 @@ class QemuVM(BaseNode):
         :param process_priority: string
         """
 
-        log.info('QEMU VM "{name}" [{id}] has set the process priority to {priority}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             priority=process_priority))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the process priority to {priority}'.format(
+                name=self._name, id=self._id, priority=process_priority
+            )
+        )
         self._process_priority = process_priority
 
     @property
@@ -849,9 +906,11 @@ class QemuVM(BaseNode):
         :param options: QEMU options
         """
 
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU options to {options}'.format(name=self._name,
-                                                                                        id=self._id,
-                                                                                        options=options))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU options to {options}'.format(
+                name=self._name, id=self._id, options=options
+            )
+        )
 
         if not sys.platform.startswith("linux"):
             if "-no-kvm" in options:
@@ -889,11 +948,18 @@ class QemuVM(BaseNode):
 
         initrd = self.manager.get_abs_image_path(initrd, self.project.path)
 
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           initrd=initrd))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(
+                name=self._name, id=self._id, initrd=initrd
+            )
+        )
         if "asa" in initrd and self._initrd != initrd:
-            self.project.emit("log.warning", {"message": "Warning ASA 8 is not supported by GNS3 and Cisco, please use ASAv instead. Depending of your hardware and OS this could not work or you could be limited to one instance. If ASA 8 is not booting their is no GNS3 solution, you must to upgrade to ASAv."})
+            self.project.emit(
+                "log.warning",
+                {
+                    "message": "Warning ASA 8 is not supported by GNS3 and Cisco, please use ASAv instead. Depending of your hardware and OS this could not work or you could be limited to one instance. If ASA 8 is not booting their is no GNS3 solution, you must to upgrade to ASAv."
+                },
+            )
         self._initrd = initrd
 
     @property
@@ -915,9 +981,11 @@ class QemuVM(BaseNode):
         """
 
         kernel_image = self.manager.get_abs_image_path(kernel_image, self.project.path)
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       kernel_image=kernel_image))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(
+                name=self._name, id=self._id, kernel_image=kernel_image
+            )
+        )
         self._kernel_image = kernel_image
 
     @property
@@ -938,9 +1006,11 @@ class QemuVM(BaseNode):
         :param kernel_command_line: QEMU kernel command line
         """
 
-        log.info('QEMU VM "{name}" [{id}] has set the QEMU kernel command line to {kernel_command_line}'.format(name=self._name,
-                                                                                                                id=self._id,
-                                                                                                                kernel_command_line=kernel_command_line))
+        log.info(
+            'QEMU VM "{name}" [{id}] has set the QEMU kernel command line to {kernel_command_line}'.format(
+                name=self._name, id=self._id, kernel_command_line=kernel_command_line
+            )
+        )
         self._kernel_command_line = kernel_command_line
 
     async def _set_process_priority(self):
@@ -991,7 +1061,9 @@ class QemuVM(BaseNode):
             else:
                 priority = 0
             try:
-                process = await asyncio.create_subprocess_exec('renice', '-n', str(priority), '-p', str(self._process.pid))
+                process = await asyncio.create_subprocess_exec(
+                    "renice", "-n", str(priority), "-p", str(self._process.pid)
+                )
                 await process.wait()
             except (OSError, subprocess.SubprocessError) as e:
                 log.error(f'Could not change process priority for QEMU VM "{self._name}": {e}')
@@ -1018,10 +1090,15 @@ class QemuVM(BaseNode):
 
         try:
             if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                cpulimit_exec = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe")
+                cpulimit_exec = os.path.join(
+                    os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe"
+                )
             else:
                 cpulimit_exec = "cpulimit"
-            subprocess.Popen([cpulimit_exec, "--lazy", f"--pid={self._process.pid}", f"--limit={self._cpu_throttling}"], cwd=self.working_dir)
+            subprocess.Popen(
+                [cpulimit_exec, "--lazy", f"--pid={self._process.pid}", f"--limit={self._cpu_throttling}"],
+                cwd=self.working_dir,
+            )
             log.info(f"CPU throttled to {self._cpu_throttling}%")
         except FileNotFoundError:
             raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
@@ -1056,7 +1133,9 @@ class QemuVM(BaseNode):
 
             if self._manager.config.settings.Qemu.enable_monitor:
                 try:
-                    info = socket.getaddrinfo(self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+                    info = socket.getaddrinfo(
+                        self._monitor_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE
+                    )
                     if not info:
                         raise QemuError(f"getaddrinfo returns an empty list on {self._monitor_host}")
                     for res in info:
@@ -1080,11 +1159,10 @@ class QemuVM(BaseNode):
                 log.info(f"logging to {self._stdout_file}")
                 with open(self._stdout_file, "w", encoding="utf-8") as fd:
                     fd.write(f"Start QEMU with {command_string}\n\nExecution log:\n")
-                    self.command_line = ' '.join(command)
-                    self._process = await asyncio.create_subprocess_exec(*command,
-                                                                              stdout=fd,
-                                                                              stderr=subprocess.STDOUT,
-                                                                              cwd=self.working_dir)
+                    self.command_line = " ".join(command)
+                    self._process = await asyncio.create_subprocess_exec(
+                        *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
+                    )
                 log.info(f'QEMU VM "{self._name}" started PID={self._process.pid}')
                 self._command_line_changed = False
                 self.status = "started"
@@ -1106,9 +1184,9 @@ class QemuVM(BaseNode):
             for adapter_number, adapter in enumerate(self._ethernet_adapters):
                 nio = adapter.get_nio(0)
                 if nio:
-                    await self.add_ubridge_udp_connection(f"QEMU-{self._id}-{adapter_number}",
-                                                               self._local_udp_tunnels[adapter_number][1],
-                                                               nio)
+                    await self.add_ubridge_udp_connection(
+                        f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
+                    )
                     if nio.suspend and self._replicate_network_connection_state:
                         set_link_commands.append(f"set_link gns3-{adapter_number} off")
                 elif self._replicate_network_connection_state:
@@ -1136,7 +1214,10 @@ class QemuVM(BaseNode):
             await self.stop()
             # A return code of 1 seem fine on Windows
             if returncode != 0 and (not sys.platform.startswith("win") or returncode != 1):
-                self.project.emit("log.error", {"message": f"QEMU process has stopped, return code: {returncode}\n{self.read_stdout()}"})
+                self.project.emit(
+                    "log.error",
+                    {"message": f"QEMU process has stopped, return code: {returncode}\n{self.read_stdout()}"},
+                )
 
     async def stop(self):
         """
@@ -1209,10 +1290,15 @@ class QemuVM(BaseNode):
             break
 
         if not connection_success:
-            log.warning("Could not connect to QEMU monitor on {}:{}: {}".format(self._monitor_host, self._monitor,
-                                                                                last_exception))
+            log.warning(
+                "Could not connect to QEMU monitor on {}:{}: {}".format(
+                    self._monitor_host, self._monitor, last_exception
+                )
+            )
         else:
-            log.info(f"Connected to QEMU monitor on {self._monitor_host}:{self._monitor} after {time.time() - begin:.4f} seconds")
+            log.info(
+                f"Connected to QEMU monitor on {self._monitor_host}:{self._monitor} after {time.time() - begin:.4f} seconds"
+            )
         return reader, writer
 
     async def _control_vm(self, command, expected=None):
@@ -1233,7 +1319,7 @@ class QemuVM(BaseNode):
                 return result
 
             try:
-                cmd_byte = command.encode('ascii')
+                cmd_byte = command.encode("ascii")
                 writer.write(cmd_byte + b"\n")
                 if not expected:
                     while True:
@@ -1279,7 +1365,7 @@ class QemuVM(BaseNode):
             for command in commands:
                 log.info(f"Execute QEMU monitor command: {command}")
                 try:
-                    cmd_byte = command.encode('ascii')
+                    cmd_byte = command.encode("ascii")
                     writer.write(cmd_byte + b"\n")
                     while True:
                         line = await asyncio.wait_for(reader.readline(), timeout=3)  # echo of the command
@@ -1299,7 +1385,7 @@ class QemuVM(BaseNode):
         if not (await super().close()):
             return False
 
-        #FIXME: Don't wait for ACPI shutdown when closing the project, should we?
+        # FIXME: Don't wait for ACPI shutdown when closing the project, should we?
         if self.on_close == "shutdown_signal":
             self.on_close = "power_off"
         await self.stop()
@@ -1325,15 +1411,29 @@ class QemuVM(BaseNode):
         :returns: status (string)
         """
 
-        result = await self._control_vm("info status", [
-            b"debug", b"inmigrate", b"internal-error", b"io-error",
-            b"paused", b"postmigrate", b"prelaunch", b"finish-migrate",
-            b"restore-vm", b"running", b"save-vm", b"shutdown", b"suspended",
-            b"watchdog", b"guest-panicked"
-        ])
+        result = await self._control_vm(
+            "info status",
+            [
+                b"debug",
+                b"inmigrate",
+                b"internal-error",
+                b"io-error",
+                b"paused",
+                b"postmigrate",
+                b"prelaunch",
+                b"finish-migrate",
+                b"restore-vm",
+                b"running",
+                b"save-vm",
+                b"shutdown",
+                b"suspended",
+                b"watchdog",
+                b"guest-panicked",
+            ],
+        )
         if result is None:
             return result
-        status = result.rsplit(' ', 1)[1]
+        status = result.rsplit(" ", 1)[1]
         if status == "running" or status == "prelaunch":
             self.status = "started"
         elif status == "suspended":
@@ -1396,25 +1496,32 @@ class QemuVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                 adapter_number=adapter_number))
+            raise QemuError(
+                'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         if self.is_running():
             try:
-                await self.add_ubridge_udp_connection(f"QEMU-{self._id}-{adapter_number}",
-                                                           self._local_udp_tunnels[adapter_number][1],
-                                                           nio)
+                await self.add_ubridge_udp_connection(
+                    f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
+                )
                 if self._replicate_network_connection_state:
                     await self._control_vm(f"set_link gns3-{adapter_number} on")
             except (IndexError, KeyError):
-                raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                     adapter_number=adapter_number))
+                raise QemuError(
+                    'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
+                        name=self._name, adapter_number=adapter_number
+                    )
+                )
 
         adapter.add_nio(0, nio)
-        log.info('QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           nio=nio,
-                                                                                           adapter_number=adapter_number))
+        log.info(
+            'QEMU VM "{name}" [{id}]: {nio} added to adapter {adapter_number}'.format(
+                name=self._name, id=self._id, nio=nio, adapter_number=adapter_number
+            )
+        )
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
@@ -1426,17 +1533,20 @@ class QemuVM(BaseNode):
 
         if self.is_running():
             try:
-                await self.update_ubridge_udp_connection(f"QEMU-{self._id}-{adapter_number}",
-                                                              self._local_udp_tunnels[adapter_number][1],
-                                                              nio)
+                await self.update_ubridge_udp_connection(
+                    f"QEMU-{self._id}-{adapter_number}", self._local_udp_tunnels[adapter_number][1], nio
+                )
                 if self._replicate_network_connection_state:
                     if nio.suspend:
                         await self._control_vm(f"set_link gns3-{adapter_number} off")
                     else:
                         await self._control_vm(f"set_link gns3-{adapter_number} on")
             except IndexError:
-                raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                     adapter_number=adapter_number))
+                raise QemuError(
+                    'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
+                        name=self._name, adapter_number=adapter_number
+                    )
+                )
 
     async def adapter_remove_nio_binding(self, adapter_number):
         """
@@ -1450,8 +1560,11 @@ class QemuVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                 adapter_number=adapter_number))
+            raise QemuError(
+                'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         await self.stop_capture(adapter_number)
         if self.is_running():
@@ -1464,10 +1577,11 @@ class QemuVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(0)
 
-        log.info('QEMU VM "{name}" [{id}]: {nio} removed from adapter {adapter_number}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               nio=nio,
-                                                                                               adapter_number=adapter_number))
+        log.info(
+            'QEMU VM "{name}" [{id}]: {nio} removed from adapter {adapter_number}'.format(
+                name=self._name, id=self._id, nio=nio, adapter_number=adapter_number
+            )
+        )
         return nio
 
     def get_nio(self, adapter_number):
@@ -1482,8 +1596,11 @@ class QemuVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise QemuError('Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(name=self._name,
-                                                                                                 adapter_number=adapter_number))
+            raise QemuError(
+                'Adapter {adapter_number} does not exist on QEMU VM "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         nio = adapter.get_nio(0)
 
@@ -1506,12 +1623,17 @@ class QemuVM(BaseNode):
 
         nio.start_packet_capture(output_file)
         if self.ubridge:
-            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=f"QEMU-{self._id}-{adapter_number}",
-                                                                                               output_file=output_file))
+            await self._ubridge_send(
+                'bridge start_capture {name} "{output_file}"'.format(
+                    name=f"QEMU-{self._id}-{adapter_number}", output_file=output_file
+                )
+            )
 
-        log.info("QEMU VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
-                                                                                                       id=self.id,
-                                                                                                       adapter_number=adapter_number))
+        log.info(
+            "QEMU VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(
+                name=self.name, id=self.id, adapter_number=adapter_number
+            )
+        )
 
     async def stop_capture(self, adapter_number):
         """
@@ -1526,11 +1648,13 @@ class QemuVM(BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            await self._ubridge_send('bridge stop_capture {name}'.format(name=f"QEMU-{self._id}-{adapter_number}"))
+            await self._ubridge_send("bridge stop_capture {name}".format(name=f"QEMU-{self._id}-{adapter_number}"))
 
-        log.info("QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
-                                                                                                       id=self.id,
-                                                                                                       adapter_number=adapter_number))
+        log.info(
+            "QEMU VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(
+                name=self.name, id=self.id, adapter_number=adapter_number
+            )
+        )
 
     @property
     def started(self):
@@ -1634,9 +1758,7 @@ class QemuVM(BaseNode):
                     console_host = "::"
                 else:
                     raise QemuError("IPv6 must be enabled in order to use the SPICE console")
-            return ["-spice",
-                    f"addr={console_host},port={port},disable-ticketing",
-                    "-vga", "qxl"]
+            return ["-spice", f"addr={console_host},port={port},disable-ticketing", "-vga", "qxl"]
         else:
             return []
 
@@ -1645,13 +1767,22 @@ class QemuVM(BaseNode):
         spice_options = self._spice_options(port)
         if spice_options:
             # agent options (mouse/screen)
-            agent_options = ["-device", "virtio-serial",
-                             "-chardev", "spicevmc,id=vdagent,debug=0,name=vdagent",
-                             "-device", "virtserialport,chardev=vdagent,name=com.redhat.spice.0"]
+            agent_options = [
+                "-device",
+                "virtio-serial",
+                "-chardev",
+                "spicevmc,id=vdagent,debug=0,name=vdagent",
+                "-device",
+                "virtserialport,chardev=vdagent,name=com.redhat.spice.0",
+            ]
             spice_options.extend(agent_options)
             # folder sharing options
-            folder_sharing_options = ["-chardev", "spiceport,name=org.spice-space.webdav.0,id=charchannel0",
-                                      "-device", "virtserialport,chardev=charchannel0,id=channel0,name=org.spice-space.webdav.0"]
+            folder_sharing_options = [
+                "-chardev",
+                "spiceport,name=org.spice-space.webdav.0,id=charchannel0",
+                "-device",
+                "virtserialport,chardev=charchannel0,id=channel0,name=org.spice-space.webdav.0",
+            ]
             spice_options.extend(folder_sharing_options)
         return spice_options
 
@@ -1720,7 +1851,9 @@ class QemuVM(BaseNode):
         command_string = " ".join(shlex_quote(s) for s in command)
         log.info(f"Executing qemu-img with: {command_string}")
         with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
-            process = await asyncio.create_subprocess_exec(*command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir)
+            process = await asyncio.create_subprocess_exec(
+                *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
+            )
         retcode = await process.wait()
         log.info(f"{self._get_qemu_img()} returned with {retcode}")
         return retcode
@@ -1732,9 +1865,9 @@ class QemuVM(BaseNode):
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
-                raise QemuError("Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name,
-                                                                                                         retcode,
-                                                                                                         stdout))
+                raise QemuError(
+                    "Could not create '{}' disk image: qemu-img returned with {}\n{}".format(disk_name, retcode, stdout)
+                )
         except (OSError, subprocess.SubprocessError) as e:
             stdout = self.read_qemu_img_stdout()
             raise QemuError(f"Could not create '{disk_name}' disk image: {e}\n{stdout}")
@@ -1748,15 +1881,19 @@ class QemuVM(BaseNode):
             if signature != 0xAA55:
                 raise OSError(f"mcopy failure: {image}: invalid MBR")
             if part_type not in (1, 4, 6, 11, 12, 14):
-                raise OSError("mcopy failure: {}: invalid partition type {:02X}"
-                              .format(image, part_type))
+                raise OSError("mcopy failure: {}: invalid partition type {:02X}".format(image, part_type))
             part_image = image + f"@@{offset}S"
 
             process = await asyncio.create_subprocess_exec(
-                "mcopy", "-i", part_image, *args,
+                "mcopy",
+                "-i",
+                part_image,
+                *args,
                 stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                cwd=self.working_dir)
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=self.working_dir,
+            )
             (stdout, _) = await process.communicate()
             retcode = process.returncode
         except (OSError, subprocess.SubprocessError) as e:
@@ -1800,8 +1937,7 @@ class QemuVM(BaseNode):
             os.mkdir(config_dir)
             shutil.copyfile(getattr(self, "config_disk_image"), disk_tmp)
             unpack_zip(zip_file, config_dir)
-            config_files = [os.path.join(config_dir, fname)
-                            for fname in os.listdir(config_dir)]
+            config_files = [os.path.join(config_dir, fname) for fname in os.listdir(config_dir)]
             if config_files:
                 await self._mcopy(disk_tmp, "-s", "-m", "-o", "--", *config_files, "::/")
             os.replace(disk_tmp, disk)
@@ -1825,27 +1961,51 @@ class QemuVM(BaseNode):
 
         if interface == "sata":
             # special case, sata controller doesn't exist in Qemu
-            options.extend(["-device", f'ahci,id=ahci{disk_index}'])
-            options.extend(["-drive", f'file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}'])
+            options.extend(["-device", f"ahci,id=ahci{disk_index}"])
+            options.extend(
+                [
+                    "-drive",
+                    f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
+                ]
+            )
             qemu_version = await self.manager.get_qemu_version(self.qemu_path)
             if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
                 # The ‘ide-drive’ device is deprecated since version 4.2.0
                 # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
-                options.extend(["-device", f'ide-hd,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}'])
+                options.extend(
+                    ["-device", f"ide-hd,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}"]
+                )
             else:
-                options.extend(["-device", f'ide-drive,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}'])
+                options.extend(
+                    ["-device", f"ide-drive,drive=drive{disk_index},bus=ahci{disk_index}.0,id=drive{disk_index}"]
+                )
         elif interface == "nvme":
-            options.extend(["-drive", f'file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}'])
-            options.extend(["-device", f'nvme,drive=drive{disk_index},serial={disk_index}'])
+            options.extend(
+                [
+                    "-drive",
+                    f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
+                ]
+            )
+            options.extend(["-device", f"nvme,drive=drive{disk_index},serial={disk_index}"])
         elif interface == "scsi":
-            options.extend(["-device", f'virtio-scsi-pci,id=scsi{disk_index}'])
-            options.extend(["-drive", f'file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}'])
-            options.extend(["-device", f'scsi-hd,drive=drive{disk_index}'])
-        #elif interface == "sd":
+            options.extend(["-device", f"virtio-scsi-pci,id=scsi{disk_index}"])
+            options.extend(
+                [
+                    "-drive",
+                    f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
+                ]
+            )
+            options.extend(["-device", f"scsi-hd,drive=drive{disk_index}"])
+        # elif interface == "sd":
         #    options.extend(["-drive", 'file={},id=drive{},index={}{}'.format(disk, disk_index, disk_index, extra_drive_options)])
         #    options.extend(["-device", 'sd-card,drive=drive{},id=drive{}'.format(disk_index, disk_index, disk_index)])
         else:
-            options.extend(["-drive", f'file={disk},if={interface},index={disk_index},media=disk,id=drive{disk_index}{extra_drive_options}'])
+            options.extend(
+                [
+                    "-drive",
+                    f"file={disk},if={interface},index={disk_index},media=disk,id=drive{disk_index}{extra_drive_options}",
+                ]
+            )
         return options
 
     async def _disk_options(self):
@@ -1856,7 +2016,7 @@ class QemuVM(BaseNode):
 
         for disk_index, drive in enumerate(drives):
             # prioritize config disk over harddisk d
-            if drive == 'd' and self._create_config_disk:
+            if drive == "d" and self._create_config_disk:
                 continue
 
             disk_image = getattr(self, f"_hd{drive}_disk_image")
@@ -1872,7 +2032,9 @@ class QemuVM(BaseNode):
             disk_name = "hd" + drive
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
                 if os.path.islink(disk_image):
-                    raise QemuError(f"{disk_name} disk image '{disk_image}' linked to '{os.path.realpath(disk_image)}' is not accessible")
+                    raise QemuError(
+                        f"{disk_name} disk image '{disk_image}' linked to '{os.path.realpath(disk_image)}' is not accessible"
+                    )
                 else:
                     raise QemuError(f"{disk_name} disk image '{disk_image}' is not accessible")
             else:
@@ -1883,12 +2045,18 @@ class QemuVM(BaseNode):
                         # image has leaked clusters, but is not corrupted, let's try to fix it
                         log.warning(f"Qemu image {disk_image} has leaked clusters")
                         if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", f"{disk_image}"])) == 3:
-                            self.project.emit("log.warning", {"message": f"Qemu image '{disk_image}' has leaked clusters and could not be fixed"})
+                            self.project.emit(
+                                "log.warning",
+                                {"message": f"Qemu image '{disk_image}' has leaked clusters and could not be fixed"},
+                            )
                     elif retcode == 2:
                         # image is corrupted, let's try to fix it
                         log.warning(f"Qemu image {disk_image} is corrupted")
                         if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", f"{disk_image}"])) == 2:
-                            self.project.emit("log.warning", {"message": f"Qemu image '{disk_image}' is corrupted and could not be fixed"})
+                            self.project.emit(
+                                "log.warning",
+                                {"message": f"Qemu image '{disk_image}' is corrupted and could not be fixed"},
+                            )
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError(f"Could not check '{disk_name}' disk image: {e}\n{stdout}")
@@ -1956,7 +2124,9 @@ class QemuVM(BaseNode):
         if self._cdrom_image:
             if not os.path.isfile(self._cdrom_image) or not os.path.exists(self._cdrom_image):
                 if os.path.islink(self._cdrom_image):
-                    raise QemuError(f"cdrom image '{self._cdrom_image}' linked to '{os.path.realpath(self._cdrom_image)}' is not accessible")
+                    raise QemuError(
+                        f"cdrom image '{self._cdrom_image}' linked to '{os.path.realpath(self._cdrom_image)}' is not accessible"
+                    )
                 else:
                     raise QemuError(f"cdrom image '{self._cdrom_image}' is not accessible")
             if self._hdc_disk_image:
@@ -1970,7 +2140,9 @@ class QemuVM(BaseNode):
         if self._bios_image:
             if not os.path.isfile(self._bios_image) or not os.path.exists(self._bios_image):
                 if os.path.islink(self._bios_image):
-                    raise QemuError(f"bios image '{self._bios_image}' linked to '{os.path.realpath(self._bios_image)}' is not accessible")
+                    raise QemuError(
+                        f"bios image '{self._bios_image}' linked to '{os.path.realpath(self._bios_image)}' is not accessible"
+                    )
                 else:
                     raise QemuError(f"bios image '{self._bios_image}' is not accessible")
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
@@ -1982,14 +2154,18 @@ class QemuVM(BaseNode):
         if self._initrd:
             if not os.path.isfile(self._initrd) or not os.path.exists(self._initrd):
                 if os.path.islink(self._initrd):
-                    raise QemuError(f"initrd file '{self._initrd}' linked to '{os.path.realpath(self._initrd)}' is not accessible")
+                    raise QemuError(
+                        f"initrd file '{self._initrd}' linked to '{os.path.realpath(self._initrd)}' is not accessible"
+                    )
                 else:
                     raise QemuError(f"initrd file '{self._initrd}' is not accessible")
             options.extend(["-initrd", self._initrd.replace(",", ",,")])
         if self._kernel_image:
             if not os.path.isfile(self._kernel_image) or not os.path.exists(self._kernel_image):
                 if os.path.islink(self._kernel_image):
-                    raise QemuError(f"kernel image '{self._kernel_image}' linked to '{os.path.realpath(self._kernel_image)}' is not accessible")
+                    raise QemuError(
+                        f"kernel image '{self._kernel_image}' linked to '{os.path.realpath(self._kernel_image)}' is not accessible"
+                    )
                 else:
                     raise QemuError(f"kernel image '{self._kernel_image}' is not accessible")
             options.extend(["-kernel", self._kernel_image.replace(",", ",,")])
@@ -2001,7 +2177,9 @@ class QemuVM(BaseNode):
     async def _network_options(self):
 
         network_options = []
-        network_options.extend(["-net", "none"])  # we do not want any user networking back-end if no adapter is connected.
+        network_options.extend(
+            ["-net", "none"]
+        )  # we do not want any user networking back-end if no adapter is connected.
 
         patched_qemu = False
         if self._legacy_networking:
@@ -2020,7 +2198,9 @@ class QemuVM(BaseNode):
         if pci_bridges >= 1:
             qemu_version = await self.manager.get_qemu_version(self.qemu_path)
             if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
-                raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
+                raise QemuError(
+                    "Qemu version 2.4 or later is required to run this VM with a large number of network adapters"
+                )
 
         pci_device_id = 4 + pci_bridges  # Bridge consume PCI ports
         for adapter_number, adapter in enumerate(self._ethernet_adapters):
@@ -2044,19 +2224,24 @@ class QemuVM(BaseNode):
                     if isinstance(nio, NIOUDP):
                         if patched_qemu:
                             # use patched Qemu syntax
-                            network_options.extend(["-net", "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(adapter_number,
-                                                                                                                         adapter_number,
-                                                                                                                         nio.lport,
-                                                                                                                         nio.rport,
-                                                                                                                         nio.rhost)])
+                            network_options.extend(
+                                [
+                                    "-net",
+                                    "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(
+                                        adapter_number, adapter_number, nio.lport, nio.rport, nio.rhost
+                                    ),
+                                ]
+                            )
                         else:
                             # use UDP tunnel support added in Qemu 1.1.0
-                            network_options.extend(["-net", "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
-                                                                                                                           adapter_number,
-                                                                                                                           nio.rhost,
-                                                                                                                           nio.rport,
-                                                                                                                           "127.0.0.1",
-                                                                                                                           nio.lport)])
+                            network_options.extend(
+                                [
+                                    "-net",
+                                    "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(
+                                        adapter_number, adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
+                                    ),
+                                ]
+                            )
                     elif isinstance(nio, NIOTAP):
                         network_options.extend(["-net", f"tap,name=gns3-{adapter_number},ifname={nio.tap_device}"])
                 else:
@@ -2069,7 +2254,14 @@ class QemuVM(BaseNode):
                 if bridge_id > 0:
                     if pci_bridges_created < bridge_id:
                         network_options.extend(["-device", f"i82801b11-bridge,id=dmi_pci_bridge{bridge_id}"])
-                        network_options.extend(["-device", "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(bridge_id=bridge_id)])
+                        network_options.extend(
+                            [
+                                "-device",
+                                "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(
+                                    bridge_id=bridge_id
+                                ),
+                            ]
+                        )
                         pci_bridges_created += 1
                     addr = pci_device_id % 32
                     device_string = f"{device_string},bus=pci-bridge{bridge_id},addr=0x{addr:02x}"
@@ -2077,13 +2269,18 @@ class QemuVM(BaseNode):
                 if nio:
                     network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
                     if isinstance(nio, NIOUDP):
-                        network_options.extend(["-netdev", "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(adapter_number,
-                                                                                                                nio.rhost,
-                                                                                                                nio.rport,
-                                                                                                                "127.0.0.1",
-                                                                                                                nio.lport)])
+                        network_options.extend(
+                            [
+                                "-netdev",
+                                "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(
+                                    adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
+                                ),
+                            ]
+                        )
                     elif isinstance(nio, NIOTAP):
-                        network_options.extend(["-netdev", f"tap,id=gns3-{adapter_number},ifname={nio.tap_device},script=no,downscript=no"])
+                        network_options.extend(
+                            ["-netdev", f"tap,id=gns3-{adapter_number},ifname={nio.tap_device},script=no,downscript=no"]
+                        )
                 else:
                     network_options.extend(["-device", device_string])
 
@@ -2116,18 +2313,29 @@ class QemuVM(BaseNode):
         if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
             if sys.platform.startswith("win"):
-                supported_binaries = ["qemu-system-x86_64.exe", "qemu-system-x86_64w.exe", "qemu-system-i386.exe", "qemu-system-i386w.exe"]
+                supported_binaries = [
+                    "qemu-system-x86_64.exe",
+                    "qemu-system-x86_64w.exe",
+                    "qemu-system-i386.exe",
+                    "qemu-system-i386w.exe",
+                ]
             else:
                 supported_binaries = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
             if os.path.basename(qemu_path) not in supported_binaries:
                 if require_hardware_accel:
-                    raise QemuError("Hardware acceleration can only be used with the following Qemu executables: {}".format(", ".join(supported_binaries)))
+                    raise QemuError(
+                        "Hardware acceleration can only be used with the following Qemu executables: {}".format(
+                            ", ".join(supported_binaries)
+                        )
+                    )
                 else:
                     return False
 
             if sys.platform.startswith("linux") and not os.path.exists("/dev/kvm"):
                 if require_hardware_accel:
-                    raise QemuError("KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_hardware_acceleration = false to the [Qemu] section.")
+                    raise QemuError(
+                        "KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_hardware_acceleration = false to the [Qemu] section."
+                    )
                 else:
                     return False
             elif sys.platform.startswith("win"):
@@ -2135,7 +2343,9 @@ class QemuVM(BaseNode):
                     # HAXM is only available starting with Qemu version 2.9.0
                     version = await self.manager.get_qemu_version(self.qemu_path)
                     if version and parse_version(version) < parse_version("2.9.0"):
-                        raise QemuError(f"HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {version})")
+                        raise QemuError(
+                            f"HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {version})"
+                        )
 
                     # check if HAXM is installed
                     version = self.manager.get_haxm_windows_version()
@@ -2145,6 +2355,7 @@ class QemuVM(BaseNode):
 
                     # check if the HAXM service is running
                     from gns3server.utils.windows_service import check_windows_service_is_running
+
                     if not check_windows_service_is_running("intelhaxm"):
                         raise QemuError("Intel HAXM service is not running on this host")
 
@@ -2155,7 +2366,9 @@ class QemuVM(BaseNode):
                 await process.wait()
                 if process.returncode != 0:
                     if require_hardware_accel:
-                        raise QemuError("HAXM acceleration support is not installed on this host (com.intel.kext.intelhaxm extension not loaded)")
+                        raise QemuError(
+                            "HAXM acceleration support is not installed on this host (com.intel.kext.intelhaxm extension not loaded)"
+                        )
                     else:
                         return False
             return True
@@ -2181,7 +2394,9 @@ class QemuVM(BaseNode):
                     try:
                         json_data = json.loads(output)
                     except ValueError as e:
-                        raise QemuError(f"Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {e}")
+                        raise QemuError(
+                            f"Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {e}"
+                        )
                     if "snapshots" in json_data:
                         for snapshot in json_data["snapshots"]:
                             if snapshot["name"] == snapshot_name:
@@ -2216,13 +2431,17 @@ class QemuVM(BaseNode):
                     try:
                         json_data = json.loads(output)
                     except ValueError as e:
-                        raise QemuError(f"Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {e}")
+                        raise QemuError(
+                            f"Invalid JSON data returned by qemu-img while looking for the Qemu VM saved state snapshot: {e}"
+                        )
                     if "snapshots" in json_data:
                         for snapshot in json_data["snapshots"]:
                             if snapshot["name"] == snapshot_name:
-                                log.info('QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(name=self._name,
-                                                                                                                              id=self.id,
-                                                                                                                              snapshot=snapshot_name))
+                                log.info(
+                                    'QEMU VM "{name}" [{id}] VM saved state detected (snapshot name: {snapshot})'.format(
+                                        name=self._name, id=self.id, snapshot=snapshot_name
+                                    )
+                                )
                                 return ["-loadvm", snapshot_name.replace(",", ",,")]
 
             except subprocess.SubprocessError as e:
@@ -2253,7 +2472,7 @@ class QemuVM(BaseNode):
         if self._cpus > maxcpus:
             maxcpus = self._cpus
         command.extend(["-smp", f"cpus={self._cpus},maxcpus={maxcpus},sockets=1"])
-        if (await self._run_with_hardware_acceleration(self.qemu_path, self._options)):
+        if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
                 version = await self.manager.get_qemu_version(self.qemu_path)
@@ -2288,11 +2507,7 @@ class QemuVM(BaseNode):
         return command
 
     def __json__(self):
-        answer = {
-            "project_id": self.project.id,
-            "node_id": self.id,
-            "node_directory": self.working_path
-        }
+        answer = {"project_id": self.project.id, "node_id": self.id, "node_directory": self.working_path}
         # Qemu has a long list of options. The JSON schema is the single source of information
         for field in Qemu.schema()["properties"]:
             if field not in answer:

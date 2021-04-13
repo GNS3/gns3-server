@@ -20,12 +20,14 @@ import time
 import shutil
 import zipfile
 
+
 def pack_zip(filename, root_dir=None, base_dir=None):
     """Create a zip archive"""
 
     if filename[-4:].lower() == ".zip":
         filename = filename[:-4]
-    shutil.make_archive(filename, 'zip', root_dir, base_dir)
+    shutil.make_archive(filename, "zip", root_dir, base_dir)
+
 
 def unpack_zip(filename, extract_dir=None):
     """Unpack a zip archive"""
@@ -35,7 +37,7 @@ def unpack_zip(filename, extract_dir=None):
         extract_dir = os.getcwd()
 
     try:
-        with zipfile.ZipFile(filename, 'r') as zfile:
+        with zipfile.ZipFile(filename, "r") as zfile:
             for zinfo in zfile.infolist():
                 fname = os.path.join(extract_dir, zinfo.filename)
                 date_time = time.mktime(zinfo.date_time + (0, 0, -1))

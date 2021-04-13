@@ -29,6 +29,7 @@ from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -78,11 +79,7 @@ class Project:
 
     def __json__(self):
 
-        return {
-            "name": self._name,
-            "project_id": self._id,
-            "variables": self._variables
-        }
+        return {"name": self._name, "project_id": self._id, "variables": self._variables}
 
     def is_local(self):
 
@@ -225,7 +222,6 @@ class Project:
         """
         return os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
 
-
     def tmp_working_directory(self):
         """
         A temporary directory. Will be clean at project open and close
@@ -296,7 +292,7 @@ class Project:
         # we need to update docker nodes when variables changes
         if original_variables != variables:
             for node in self.nodes:
-                if hasattr(node, 'update'):
+                if hasattr(node, "update"):
                     await node.update()
 
     async def close(self):
@@ -385,6 +381,7 @@ class Project:
 
         # We import it at the last time to avoid circular dependencies
         from ..compute import MODULES
+
         return MODULES
 
     def emit(self, action, event):
@@ -411,7 +408,9 @@ class Project:
                     file_info = {"path": path}
 
                     try:
-                        file_info["md5sum"] = await wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
+                        file_info["md5sum"] = await wait_run_in_executor(
+                            self._hash_file, os.path.join(dirpath, filename)
+                        )
                     except OSError:
                         continue
                     files.append(file_info)

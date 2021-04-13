@@ -31,9 +31,7 @@ from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}}
 
 router = APIRouter(responses=responses)
 
@@ -48,10 +46,12 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("",
-             response_model=schemas.Qemu,
-             status_code=status.HTTP_201_CREATED,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Qemu node"}})
+@router.post(
+    "",
+    response_model=schemas.Qemu,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Qemu node"}},
+)
 async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate):
     """
     Create a new Qemu node.
@@ -59,16 +59,18 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate):
 
     qemu = Qemu.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    vm = await qemu.create_node(node_data.pop("name"),
-                                str(project_id),
-                                node_data.pop("node_id", None),
-                                linked_clone=node_data.get("linked_clone", True),
-                                qemu_path=node_data.pop("qemu_path", None),
-                                console=node_data.pop("console", None),
-                                console_type=node_data.pop("console_type", "telnet"),
-                                aux=node_data.get("aux"),
-                                aux_type=node_data.pop("aux_type", "none"),
-                                platform=node_data.pop("platform", None))
+    vm = await qemu.create_node(
+        node_data.pop("name"),
+        str(project_id),
+        node_data.pop("node_id", None),
+        linked_clone=node_data.get("linked_clone", True),
+        qemu_path=node_data.pop("qemu_path", None),
+        console=node_data.pop("console", None),
+        console_type=node_data.pop("console_type", "telnet"),
+        aux=node_data.get("aux"),
+        aux_type=node_data.pop("aux_type", "none"),
+        platform=node_data.pop("platform", None),
+    )
 
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
@@ -77,8 +79,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate):
     return vm.__json__()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.Qemu)
+@router.get("/{node_id}", response_model=schemas.Qemu)
 def get_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Return a Qemu node.
@@ -87,8 +88,7 @@ def get_qemu_node(node: QemuVM = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.Qemu)
+@router.put("/{node_id}", response_model=schemas.Qemu)
 async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends(dep_node)):
     """
     Update a Qemu node.
@@ -104,8 +104,7 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Delete a Qemu node.
@@ -114,9 +113,7 @@ async def delete_qemu_node(node: QemuVM = Depends(dep_node)):
     await Qemu.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/duplicate",
-             response_model=schemas.Qemu,
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/duplicate", response_model=schemas.Qemu, status_code=status.HTTP_201_CREATED)
 async def duplicate_qemu_node(destination_node_id: UUID = Body(..., embed=True), node: QemuVM = Depends(dep_node)):
     """
     Duplicate a Qemu node.
@@ -126,15 +123,13 @@ async def duplicate_qemu_node(destination_node_id: UUID = Body(..., embed=True),
     return new_node.__json__()
 
 
-@router.post("/{node_id}/resize_disk",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
 async def resize_qemu_node_disk(node_data: schemas.QemuDiskResize, node: QemuVM = Depends(dep_node)):
 
     await node.resize_disk(node_data.drive_name, node_data.extend)
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Start a Qemu node.
@@ -145,13 +140,12 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)):
     if hardware_accel and "-no-kvm" not in node.options and "-no-hax" not in node.options:
         pm = ProjectManager.instance()
         if pm.check_hardware_virtualization(node) is False:
-            pass  #FIXME: check this
-            #raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
+            pass  # FIXME: check this
+            # raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
     await node.start()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Stop a Qemu node.
@@ -160,8 +154,7 @@ async def stop_qemu_node(node: QemuVM = Depends(dep_node)):
     await node.stop()
 
 
-@router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
 async def reload_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Reload a Qemu node.
@@ -170,8 +163,7 @@ async def reload_qemu_node(node: QemuVM = Depends(dep_node)):
     await node.reload()
 
 
-@router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Suspend a Qemu node.
@@ -180,8 +172,7 @@ async def suspend_qemu_node(node: QemuVM = Depends(dep_node)):
     await node.suspend()
 
 
-@router.post("/{node_id}/resume",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
 async def resume_qemu_node(node: QemuVM = Depends(dep_node)):
     """
     Resume a Qemu node.
@@ -190,13 +181,14 @@ async def resume_qemu_node(node: QemuVM = Depends(dep_node)):
     await node.resume()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO)
-async def create_qemu_node_nio(adapter_number: int,
-                               port_number: int,
-                               nio_data: schemas.UDPNIO,
-                               node: QemuVM = Depends(dep_node)):
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UDPNIO,
+)
+async def create_qemu_node_nio(
+    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: QemuVM = Depends(dep_node)
+):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the Qemu node is always 0.
@@ -207,13 +199,14 @@ async def create_qemu_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-            status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO)
-async def update_qemu_node_nio(adapter_number: int,
-                               port_number: int,
-                               nio_data: schemas.UDPNIO,
-                               node: QemuVM = Depends(dep_node)):
+@router.put(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UDPNIO,
+)
+async def update_qemu_node_nio(
+    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: QemuVM = Depends(dep_node)
+):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the Qemu node is always 0.
@@ -228,11 +221,8 @@ async def update_qemu_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT)
-async def delete_qemu_node_nio(adapter_number: int,
-                               port_number: int,
-                               node: QemuVM = Depends(dep_node)):
+@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_qemu_node_nio(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the Qemu node is always 0.
@@ -242,10 +232,9 @@ async def delete_qemu_node_nio(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_qemu_node_capture(adapter_number: int,
-                                  port_number: int,
-                                  node_capture_data: schemas.NodeCapture,
-                                  node: QemuVM = Depends(dep_node)):
+async def start_qemu_node_capture(
+    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: QemuVM = Depends(dep_node)
+):
     """
     Start a packet capture on the node.
     The port number on the Qemu node is always 0.
@@ -256,8 +245,9 @@ async def start_qemu_node_capture(adapter_number: int,
     return {"pcap_file_path": str(pcap_file_path)}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+)
 async def stop_qemu_node_capture(adapter_number: int, port_number: int, node: QemuVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -288,8 +278,7 @@ async def console_ws(websocket: WebSocket, node: QemuVM = Depends(dep_node)):
     await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: QemuVM = Depends(dep_node)):
 
     await node.reset_console()

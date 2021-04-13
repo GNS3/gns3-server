@@ -39,6 +39,7 @@ from .controller_error import ControllerError, ControllerNotFoundError
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -56,8 +57,7 @@ class Controller:
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
         self._appliance_manager = ApplianceManager()
-        self._iou_license_settings = {"iourc_content": "",
-                                      "license_check": True}
+        self._iou_license_settings = {"iourc_content": "", "license_check": True}
         self._config_loaded = False
 
     async def start(self, computes=None):
@@ -92,19 +92,23 @@ class Controller:
             log.warning(f"Protocol changed to 'https' for local compute because SSL is enabled")
             protocol = "https"
         try:
-            self._local_server = await self.add_compute(compute_id="local",
-                                                        name=name,
-                                                        protocol=protocol,
-                                                        host=host,
-                                                        console_host=console_host,
-                                                        port=port,
-                                                        user=server_config.user,
-                                                        password=server_config.password,
-                                                        force=True,
-                                                        connect=True,
-                                                        ssl_context=self._ssl_context)
+            self._local_server = await self.add_compute(
+                compute_id="local",
+                name=name,
+                protocol=protocol,
+                host=host,
+                console_host=console_host,
+                port=port,
+                user=server_config.user,
+                password=server_config.password,
+                force=True,
+                connect=True,
+                ssl_context=self._ssl_context,
+            )
         except ControllerError:
-            log.fatal(f"Cannot access to the local server, make sure something else is not running on the TCP port {port}")
+            log.fatal(
+                f"Cannot access to the local server, make sure something else is not running on the TCP port {port}"
+            )
             sys.exit(1)
 
         if computes:
@@ -125,6 +129,7 @@ class Controller:
     def _create_ssl_context(self, server_config):
 
         import ssl
+
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         certfile = server_config.certfile
         certkey = server_config.certkey
@@ -204,7 +209,7 @@ class Controller:
                 iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
 
             try:
-                with open(iourc_path, 'w+') as f:
+                with open(iourc_path, "w+") as f:
                     f.write(self._iou_license_settings["iourc_content"])
                 log.info(f"iourc file '{iourc_path}' saved")
             except OSError as e:
@@ -258,8 +263,8 @@ class Controller:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
 
         self._iou_license_settings["license_check"] = iou_config.license_check
-        #self._appliance_manager.appliances_etag = controller_config.get("appliances_etag", None)
-        #self._appliance_manager.load_appliances()
+        # self._appliance_manager.appliances_etag = controller_config.get("appliances_etag", None)
+        # self._appliance_manager.load_appliances()
         self._config_loaded = True
 
     async def load_projects(self):
@@ -290,7 +295,7 @@ class Controller:
         """
 
         dst_path = self.configs_path()
-        src_path = get_resource('configs')
+        src_path = get_resource("configs")
         try:
             for file in os.listdir(src_path):
                 if not os.path.exists(os.path.join(dst_path, file)):
@@ -332,12 +337,12 @@ class Controller:
         if compute_id not in self._computes:
 
             # We disallow to create from the outside the local and VM server
-            if (compute_id == 'local' or compute_id == 'vm') and not force:
+            if (compute_id == "local" or compute_id == "vm") and not force:
                 return None
 
             # It seem we have error with a gns3vm imported as a remote server and conflict
             # with GNS3 VM settings. That's why we ignore server name gns3vm
-            if name == 'gns3vm':
+            if name == "gns3vm":
                 return None
 
             for compute in self._computes.values():
@@ -346,7 +351,7 @@ class Controller:
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
-            #self.save()
+            # self.save()
             if connect:
                 asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
             self.notification.controller_emit("compute.created", compute.__json__())
@@ -392,7 +397,7 @@ class Controller:
         await self.close_compute_projects(compute)
         await compute.close()
         del self._computes[compute_id]
-        #self.save()
+        # self.save()
         self.notification.controller_emit("compute.deleted", compute.__json__())
 
     @property
@@ -494,7 +499,9 @@ class Controller:
         if topo_data["project_id"] in self._projects:
             project = self._projects[topo_data["project_id"]]
         else:
-            project = await self.add_project(path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data)
+            project = await self.add_project(
+                path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data
+            )
         if load or project.auto_open:
             await project.open()
         return project
@@ -566,7 +573,7 @@ class Controller:
         :returns: instance of Controller
         """
 
-        if not hasattr(Controller, '_instance') or Controller._instance is None:
+        if not hasattr(Controller, "_instance") or Controller._instance is None:
             Controller._instance = Controller()
         return Controller._instance
 
@@ -586,7 +593,9 @@ class Controller:
                 await project.delete()
                 self.remove_project(project)
         project = await self.add_project(name="AUTOIDLEPC")
-        node = await project.add_node(compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=ram)
+        node = await project.add_node(
+            compute, "AUTOIDLEPC", str(uuid.uuid4()), node_type="dynamips", platform=platform, image=image, ram=ram
+        )
         res = await node.dynamips_auto_idlepc()
         await project.delete()
         self.remove_project(project)

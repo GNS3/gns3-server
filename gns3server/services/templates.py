@@ -27,7 +27,7 @@ from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
-    ControllerForbiddenError
+    ControllerForbiddenError,
 )
 
 TEMPLATE_TYPE_TO_SHEMA = {
@@ -40,7 +40,7 @@ TEMPLATE_TYPE_TO_SHEMA = {
     "virtualbox": schemas.VirtualBoxTemplate,
     "vmware": schemas.VMwareTemplate,
     "iou": schemas.IOUTemplate,
-    "qemu": schemas.QemuTemplate
+    "qemu": schemas.QemuTemplate,
 }
 
 DYNAMIPS_PLATFORM_TO_SHEMA = {
@@ -50,7 +50,7 @@ DYNAMIPS_PLATFORM_TO_SHEMA = {
     "c3600": schemas.C3600DynamipsTemplate,
     "c2691": schemas.C2691DynamipsTemplate,
     "c2600": schemas.C2600DynamipsTemplate,
-    "c1700": schemas.C1700DynamipsTemplate
+    "c1700": schemas.C1700DynamipsTemplate,
 }
 
 # built-in templates have their compute_id set to None to tell clients to select a compute
@@ -63,7 +63,7 @@ BUILTIN_TEMPLATES = [
         "category": "guest",
         "symbol": ":/symbols/cloud.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "nat"),
@@ -73,7 +73,7 @@ BUILTIN_TEMPLATES = [
         "category": "guest",
         "symbol": ":/symbols/cloud.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"),
@@ -84,7 +84,7 @@ BUILTIN_TEMPLATES = [
         "symbol": ":/symbols/vpcs_guest.svg",
         "base_script_file": "vpcs_base_config.txt",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"),
@@ -95,7 +95,7 @@ BUILTIN_TEMPLATES = [
         "category": "switch",
         "symbol": ":/symbols/ethernet_switch.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"),
@@ -105,7 +105,7 @@ BUILTIN_TEMPLATES = [
         "category": "switch",
         "symbol": ":/symbols/hub.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"),
@@ -115,7 +115,7 @@ BUILTIN_TEMPLATES = [
         "category": "switch",
         "symbol": ":/symbols/frame_relay_switch.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
     {
         "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"),
@@ -125,13 +125,12 @@ BUILTIN_TEMPLATES = [
         "category": "switch",
         "symbol": ":/symbols/atm_switch.svg",
         "compute_id": None,
-        "builtin": True
+        "builtin": True,
     },
 ]
 
 
 class TemplatesService:
-
     def __init__(self, templates_repo: TemplatesRepository):
 
         self._templates_repo = templates_repo

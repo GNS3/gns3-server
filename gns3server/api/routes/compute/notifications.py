@@ -24,6 +24,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 from gns3server.compute.notification_manager import NotificationManager
 
 import logging
+
 log = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -50,7 +51,7 @@ async def notification_ws(websocket: WebSocket):
         await websocket.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import uvicorn
     from fastapi import FastAPI

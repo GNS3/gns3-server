@@ -199,17 +199,20 @@ class UBridgeHypervisor:
             raise UbridgeError("Not connected")
 
         try:
-            command = command.strip() + '\n'
+            command = command.strip() + "\n"
             log.debug(f"sending {command}")
             self._writer.write(command.encode())
             await self._writer.drain()
         except OSError as e:
-            raise UbridgeError("Lost communication with {host}:{port} when sending command '{command}': {error}, uBridge process running: {run}"
-                               .format(host=self._host, port=self._port, command=command, error=e, run=self.is_running()))
+            raise UbridgeError(
+                "Lost communication with {host}:{port} when sending command '{command}': {error}, uBridge process running: {run}".format(
+                    host=self._host, port=self._port, command=command, error=e, run=self.is_running()
+                )
+            )
 
         # Now retrieve the result
         data = []
-        buf = ''
+        buf = ""
         retries = 0
         max_retries = 10
         while True:
@@ -228,8 +231,11 @@ class UBridgeHypervisor:
                     continue
                 if not chunk:
                     if retries > max_retries:
-                        raise UbridgeError("No data returned from {host}:{port} after sending command '{command}', uBridge process running: {run}"
-                                            .format(host=self._host, port=self._port, command=command, run=self.is_running()))
+                        raise UbridgeError(
+                            "No data returned from {host}:{port} after sending command '{command}', uBridge process running: {run}".format(
+                                host=self._host, port=self._port, command=command, run=self.is_running()
+                            )
+                        )
                     else:
                         retries += 1
                         await asyncio.sleep(0.5)
@@ -237,30 +243,36 @@ class UBridgeHypervisor:
                 retries = 0
                 buf += chunk.decode("utf-8")
             except OSError as e:
-                raise UbridgeError("Lost communication with {host}:{port} after sending command '{command}': {error}, uBridge process running: {run}"
-                                   .format(host=self._host, port=self._port, command=command, error=e, run=self.is_running()))
+                raise UbridgeError(
+                    "Lost communication with {host}:{port} after sending command '{command}': {error}, uBridge process running: {run}".format(
+                        host=self._host, port=self._port, command=command, error=e, run=self.is_running()
+                    )
+                )
 
             # If the buffer doesn't end in '\n' then we can't be done
             try:
-                if buf[-1] != '\n':
+                if buf[-1] != "\n":
                     continue
             except IndexError:
-                raise UbridgeError("Could not communicate with {host}:{port} after sending command '{command}', uBridge process running: {run}"
-                                   .format(host=self._host, port=self._port, command=command, run=self.is_running()))
+                raise UbridgeError(
+                    "Could not communicate with {host}:{port} after sending command '{command}', uBridge process running: {run}".format(
+                        host=self._host, port=self._port, command=command, run=self.is_running()
+                    )
+                )
 
-            data += buf.split('\r\n')
-            if data[-1] == '':
+            data += buf.split("\r\n")
+            if data[-1] == "":
                 data.pop()
-            buf = ''
+            buf = ""
 
             # Does it contain an error code?
             if self.error_re.search(data[-1]):
                 raise UbridgeError(data[-1][4:])
 
             # Or does the last line begin with '100-'? Then we are done!
-            if data[-1][:4] == '100-':
+            if data[-1][:4] == "100-":
                 data[-1] = data[-1][4:]
-                if data[-1] == 'OK':
+                if data[-1] == "OK":
                     data.pop()
                 break
 

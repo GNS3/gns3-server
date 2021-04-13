@@ -68,6 +68,6 @@ class NotificationManager:
         :returns: instance of NotificationManager
         """
 
-        if not hasattr(NotificationManager, '_instance') or NotificationManager._instance is None:
+        if not hasattr(NotificationManager, "_instance") or NotificationManager._instance is None:
             NotificationManager._instance = NotificationManager()
         return NotificationManager._instance

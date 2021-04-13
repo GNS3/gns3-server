@@ -42,6 +42,7 @@ from gns3server.api.server import app
 from pydantic import ValidationError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -104,16 +105,19 @@ class Server:
         parser.add_argument("--certfile", help="SSL cert file")
         parser.add_argument("--certkey", help="SSL key file")
         parser.add_argument("-L", "--local", action="store_true", help="local mode (allows some insecure operations)")
-        parser.add_argument("-A", "--allow", action="store_true",
-                            help="allow remote connections to local console ports")
+        parser.add_argument(
+            "-A", "--allow", action="store_true", help="allow remote connections to local console ports"
+        )
         parser.add_argument("-q", "--quiet", default=False, action="store_true", help="do not show logs on stdout")
         parser.add_argument("-d", "--debug", default=False, action="store_true", help="show debug logs")
         parser.add_argument("--logfile", help="send output to logfile instead of console")
         parser.add_argument("--logmaxsize", default=10000000, help="maximum logfile size in bytes (default is 10MB)")
-        parser.add_argument("--logbackupcount", default=10,
-                            help="number of historical log files to keep (default is 10)")
-        parser.add_argument("--logcompression", default=False, action="store_true",
-                            help="compress inactive (historical) logs")
+        parser.add_argument(
+            "--logbackupcount", default=10, help="number of historical log files to keep (default is 10)"
+        )
+        parser.add_argument(
+            "--logcompression", default=False, action="store_true", help="compress inactive (historical) logs"
+        )
         parser.add_argument("--daemon", action="store_true", help="start as a daemon")
         parser.add_argument("--pid", help="store process pid")
         parser.add_argument("--profile", help="Settings profile (blank will use default settings files)")
@@ -123,12 +127,14 @@ class Server:
         if args.debug:
             level = logging.DEBUG
 
-        self._stream_handler = init_logger(level,
-                                           logfile=args.logfile,
-                                           max_bytes=int(args.logmaxsize),
-                                           backup_count=int(args.logbackupcount),
-                                           compression=args.logcompression,
-                                           quiet=args.quiet)
+        self._stream_handler = init_logger(
+            level,
+            logfile=args.logfile,
+            max_bytes=int(args.logmaxsize),
+            backup_count=int(args.logbackupcount),
+            compression=args.logcompression,
+            quiet=args.quiet,
+        )
 
         try:
             if args.config:
@@ -146,7 +152,7 @@ class Server:
             "certfile": config.Server.certfile,
             "certkey": config.Server.certkey,
             "local": config.Server.local,
-            "allow": config.Server.allow_remote_console
+            "allow": config.Server.allow_remote_console,
         }
 
         parser.set_defaults(**defaults)
@@ -172,7 +178,6 @@ class Server:
         await Controller.instance().reload()
 
     def _signal_handling(self):
-
         def signal_handler(signame, *args):
 
             try:
@@ -240,7 +245,7 @@ class Server:
                 sys.exit(1)
 
         try:
-            with open(path, 'w+') as f:
+            with open(path, "w+") as f:
                 f.write(str(os.getpid()))
         except OSError as e:
             log.critical("Can't write pid file %s: %s", path, str(e))
@@ -278,10 +283,11 @@ class Server:
         if sys.version_info < (3, 6, 0):
             raise SystemExit("Python 3.6 or higher is required")
 
-        log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0],
-                                                                                        minor=sys.version_info[1],
-                                                                                        micro=sys.version_info[2],
-                                                                                        pid=os.getpid()))
+        log.info(
+            "Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
+                major=sys.version_info[0], minor=sys.version_info[1], micro=sys.version_info[2], pid=os.getpid()
+            )
+        )
 
         # check for the correct locale (UNIX/Linux only)
         self._locale_check()
@@ -313,12 +319,14 @@ class Server:
                     raise SystemExit
                 log.info("SSL is enabled")
 
-            config = uvicorn.Config(app,
-                                    host=host,
-                                    port=port,
-                                    access_log=access_log,
-                                    ssl_certfile=config.Server.certfile,
-                                    ssl_keyfile=config.Server.certkey)
+            config = uvicorn.Config(
+                app,
+                host=host,
+                port=port,
+                access_log=access_log,
+                ssl_certfile=config.Server.certfile,
+                ssl_keyfile=config.Server.certkey,
+            )
 
             # overwrite uvicorn loggers with our own logger
             for uvicorn_logger_name in ("uvicorn", "uvicorn.error"):

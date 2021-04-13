@@ -72,7 +72,7 @@ class BaseManager:
         """
 
         # By default we transform DockerVM => docker but you can override this (see builtins)
-        return [cls._NODE_CLASS.__name__.rstrip('VM').lower()]
+        return [cls._NODE_CLASS.__name__.rstrip("VM").lower()]
 
     @property
     def nodes(self):
@@ -313,7 +313,9 @@ class BaseManager:
             # we are root, so we should have privileged access.
             return True
 
-        if os.stat(executable).st_uid == 0 and (os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID):
+        if os.stat(executable).st_uid == 0 and (
+            os.stat(executable).st_mode & stat.S_ISUID or os.stat(executable).st_mode & stat.S_ISGID
+        ):
             # the executable has set UID bit.
             return True
 
@@ -425,7 +427,9 @@ class BaseManager:
         # Windows path should not be send to a unix server
         if not sys.platform.startswith("win"):
             if re.match(r"^[A-Z]:", path) is not None:
-                raise NodeError(f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'")
+                raise NodeError(
+                    f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'"
+                )
 
         if not os.path.isabs(path):
             for directory in valid_directory_prefices:
@@ -471,7 +475,7 @@ class BaseManager:
         for root, dirs, files in os.walk(directory):
             for file in files:
                 # If filename is the same
-                if s[1] == file and (s[0] == '' or s[0] == os.path.basename(root)):
+                if s[1] == file and (s[0] == "" or s[0] == os.path.basename(root)):
                     path = os.path.normpath(os.path.join(root, s[1]))
                     if os.path.exists(path):
                         return path
@@ -540,7 +544,7 @@ class BaseManager:
             # We store the file under his final name only when the upload is finished
             tmp_path = path + ".tmp"
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            async with aiofiles.open(tmp_path, 'wb') as f:
+            async with aiofiles.open(tmp_path, "wb") as f:
                 async for chunk in stream:
                     await f.write(chunk)
             os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)

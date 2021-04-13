@@ -43,11 +43,11 @@ class VirtualBoxOnCloseAction(str, Enum):
 
 class VirtualBoxAdapterType(str, Enum):
 
-    pcnet_pci_ii = "PCnet-PCI II (Am79C970A)",
-    pcnet_fast_iii = "PCNet-FAST III (Am79C973)",
-    intel_pro_1000_mt_desktop = "Intel PRO/1000 MT Desktop (82540EM)",
-    intel_pro_1000_t_server = "Intel PRO/1000 T Server (82543GC)",
-    intel_pro_1000_mt_server = "Intel PRO/1000 MT Server (82545EM)",
+    pcnet_pci_ii = ("PCnet-PCI II (Am79C970A)",)
+    pcnet_fast_iii = ("PCNet-FAST III (Am79C973)",)
+    intel_pro_1000_mt_desktop = ("Intel PRO/1000 MT Desktop (82540EM)",)
+    intel_pro_1000_t_server = ("Intel PRO/1000 T Server (82543GC)",)
+    intel_pro_1000_mt_server = ("Intel PRO/1000 MT Server (82545EM)",)
     paravirtualized_network = "Paravirtualized Network (virtio-net)"
 
 

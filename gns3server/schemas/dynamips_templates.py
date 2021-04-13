@@ -21,7 +21,7 @@ from .dynamips_nodes import (
     DynamipsAdapters,
     DynamipsWics,
     DynamipsNPE,
-    DynamipsMidplane
+    DynamipsMidplane,
 )
 
 from pydantic import Field
@@ -38,7 +38,9 @@ class DynamipsTemplate(TemplateBase):
     image: str = Field(..., description="Path to the IOS image")
     exec_area: Optional[int] = Field(64, description="Exec area value")
     mmap: Optional[bool] = Field(True, description="MMAP feature")
-    mac_addr: Optional[str] = Field("", description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$")
+    mac_addr: Optional[str] = Field(
+        "", description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$"
+    )
     system_id: Optional[str] = Field("FTX0945W0MY", description="System ID")
     startup_config: Optional[str] = Field("ios_base_startup-config.txt", description="IOS startup configuration file")
     private_config: Optional[str] = Field("", description="IOS private configuration file")
@@ -49,7 +51,9 @@ class DynamipsTemplate(TemplateBase):
     disk1: Optional[int] = Field(0, description="Disk1 size in MB")
     auto_delete_disks: Optional[bool] = Field(False, description="Automatically delete nvram and disk files")
     console_type: Optional[DynamipsConsoleType] = Field("telnet", description="Console type")
-    console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
+    console_auto_start: Optional[bool] = Field(
+        False, description="Automatically start the console when the node has started"
+    )
     aux_type: Optional[DynamipsConsoleType] = Field("none", description="Auxiliary console type")
     slot0: Optional[DynamipsAdapters] = Field(None, description="Network module slot 0")
     slot1: Optional[DynamipsAdapters] = Field(None, description="Network module slot 1")

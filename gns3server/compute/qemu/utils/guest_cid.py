@@ -17,6 +17,7 @@
 from ..qemu_error import QemuError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 

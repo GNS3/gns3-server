@@ -17,7 +17,6 @@
 
 
 class GNS3VMError(Exception):
-
     def __init__(self, message):
         super().__init__(message)
         self._message = message

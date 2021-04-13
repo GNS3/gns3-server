@@ -20,18 +20,15 @@ import logging
 import asyncio
 import psutil
 
-from gns3server.compute.vmware import (
-    VMware,
-    VMwareError
-)
+from gns3server.compute.vmware import VMware, VMwareError
 
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
+
 log = logging.getLogger(__name__)
 
 
 class VMwareGNS3VM(BaseGNS3VM):
-
     def __init__(self, controller):
 
         self._engine = "vmware"
@@ -47,7 +44,7 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         try:
             result = await self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
-            return (''.join(result))
+            return "".join(result)
         except VMwareError as e:
             raise GNS3VMError(f"Error while executing VMware command: {e}")
 
@@ -73,7 +70,9 @@ class VMwareGNS3VM(BaseGNS3VM):
         if not float(vcpus).is_integer():
             raise GNS3VMError(f"The allocated vCPUs value is not an integer: {vcpus}")
         if vcpus > available_vcpus:
-            raise GNS3VMError(f"You have allocated too many vCPUs for the GNS3 VM! (max available is {available_vcpus} vCPUs)")
+            raise GNS3VMError(
+                f"You have allocated too many vCPUs for the GNS3 VM! (max available is {available_vcpus} vCPUs)"
+            )
 
         try:
             pairs = VMware.parse_vmware_file(self._vmx_path)
@@ -94,9 +93,7 @@ class VMwareGNS3VM(BaseGNS3VM):
             Due to bug/change in VMWare 14 we're not able to pass Hardware Virtualization in GNS3VM.
             We only enable this when it's not present in current configuration and user hasn't deactivated that.
             """
-            extra_config = (
-                ("vhv.enable", "TRUE"),
-            )
+            extra_config = (("vhv.enable", "TRUE"),)
             pairs = VMware.parse_vmware_file(self._vmx_path)
             updated = False
             for key, value in extra_config:
@@ -117,7 +114,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         """
 
         try:
-            return (await self._vmware_manager.list_vms())
+            return await self._vmware_manager.list_vms()
         except VMwareError as e:
             raise GNS3VMError(f"Could not list VMware VMs: {str(e)}")
 
@@ -169,7 +166,9 @@ class VMwareGNS3VM(BaseGNS3VM):
         log.info("Waiting for GNS3 VM IP")
         while True:
             try:
-                guest_ip_address = await self._execute("readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG)
+                guest_ip_address = await self._execute(
+                    "readVariable", [self._vmx_path, "guestVar", "gns3.eth0"], timeout=120, log_level=logging.DEBUG
+                )
                 guest_ip_address = guest_ip_address.strip()
                 if len(guest_ip_address) != 0:
                     break

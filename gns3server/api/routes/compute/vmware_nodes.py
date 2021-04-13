@@ -30,9 +30,7 @@ from gns3server.compute.vmware import VMware
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}}
 
 router = APIRouter(responses=responses)
 
@@ -47,10 +45,12 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("",
-             response_model=schemas.VMware,
-             status_code=status.HTTP_201_CREATED,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VMware node"}})
+@router.post(
+    "",
+    response_model=schemas.VMware,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VMware node"}},
+)
 async def create_vmware_node(project_id: UUID, node_data: schemas.VMwareCreate):
     """
     Create a new VMware node.
@@ -58,13 +58,15 @@ async def create_vmware_node(project_id: UUID, node_data: schemas.VMwareCreate):
 
     vmware_manager = VMware.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    vm = await vmware_manager.create_node(node_data.pop("name"),
-                                          str(project_id),
-                                          node_data.get("node_id"),
-                                          node_data.pop("vmx_path"),
-                                          linked_clone=node_data.pop("linked_clone"),
-                                          console=node_data.get("console", None),
-                                          console_type=node_data.get("console_type", "telnet"))
+    vm = await vmware_manager.create_node(
+        node_data.pop("name"),
+        str(project_id),
+        node_data.get("node_id"),
+        node_data.pop("vmx_path"),
+        linked_clone=node_data.pop("linked_clone"),
+        console=node_data.get("console", None),
+        console_type=node_data.get("console_type", "telnet"),
+    )
 
     for name, value in node_data.items():
         if name != "node_id":
@@ -74,8 +76,7 @@ async def create_vmware_node(project_id: UUID, node_data: schemas.VMwareCreate):
     return vm.__json__()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.VMware)
+@router.get("/{node_id}", response_model=schemas.VMware)
 def get_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Return a VMware node.
@@ -84,8 +85,7 @@ def get_vmware_node(node: VMwareVM = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.VMware)
+@router.put("/{node_id}", response_model=schemas.VMware)
 def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = Depends(dep_node)):
     """
     Update a VMware node.
@@ -102,8 +102,7 @@ def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = Depends
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Delete a VMware node.
@@ -112,8 +111,7 @@ async def delete_vmware_node(node: VMwareVM = Depends(dep_node)):
     await VMware.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Start a VMware node.
@@ -122,13 +120,12 @@ async def start_vmware_node(node: VMwareVM = Depends(dep_node)):
     if node.check_hw_virtualization():
         pm = ProjectManager.instance()
         if pm.check_hardware_virtualization(node) is False:
-            pass # FIXME: check this
-            #raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
+            pass  # FIXME: check this
+            # raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
     await node.start()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Stop a VMware node.
@@ -137,8 +134,7 @@ async def stop_vmware_node(node: VMwareVM = Depends(dep_node)):
     await node.stop()
 
 
-@router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Suspend a VMware node.
@@ -147,8 +143,7 @@ async def suspend_vmware_node(node: VMwareVM = Depends(dep_node)):
     await node.suspend()
 
 
-@router.post("/{node_id}/resume",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
 async def resume_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Resume a VMware node.
@@ -157,8 +152,7 @@ async def resume_vmware_node(node: VMwareVM = Depends(dep_node)):
     await node.resume()
 
 
-@router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
 async def reload_vmware_node(node: VMwareVM = Depends(dep_node)):
     """
     Reload a VMware node.
@@ -167,13 +161,14 @@ async def reload_vmware_node(node: VMwareVM = Depends(dep_node)):
     await node.reload()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO)
-async def create_vmware_node_nio(adapter_number: int,
-                                 port_number: int,
-                                 nio_data: schemas.UDPNIO,
-                                 node: VMwareVM = Depends(dep_node)):
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UDPNIO,
+)
+async def create_vmware_node_nio(
+    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VMwareVM = Depends(dep_node)
+):
     """
     Add a NIO (Network Input/Output) to the node.
     The port number on the VMware node is always 0.
@@ -184,12 +179,14 @@ async def create_vmware_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-            status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO)
-async def update_vmware_node_nio(adapter_number: int,
-                                 port_number: int,
-                                 nio_data: schemas.UDPNIO, node: VMwareVM = Depends(dep_node)):
+@router.put(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UDPNIO,
+)
+async def update_vmware_node_nio(
+    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VMwareVM = Depends(dep_node)
+):
     """
     Update a NIO (Network Input/Output) on the node.
     The port number on the VMware node is always 0.
@@ -202,8 +199,7 @@ async def update_vmware_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vmware_node_nio(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -214,10 +210,9 @@ async def delete_vmware_node_nio(adapter_number: int, port_number: int, node: VM
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_vmware_node_capture(adapter_number: int,
-                                    port_number: int,
-                                    node_capture_data: schemas.NodeCapture,
-                                    node: VMwareVM = Depends(dep_node)):
+async def start_vmware_node_capture(
+    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: VMwareVM = Depends(dep_node)
+):
     """
     Start a packet capture on the node.
     The port number on the VMware node is always 0.
@@ -228,8 +223,9 @@ async def start_vmware_node_capture(adapter_number: int,
     return {"pcap_file_path": pcap_file_path}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+)
 async def stop_vmware_node_capture(adapter_number: int, port_number: int, node: VMwareVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -251,8 +247,7 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: VMwareVM
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-@router.post("/{node_id}/interfaces/vmnet",
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/interfaces/vmnet", status_code=status.HTTP_201_CREATED)
 def allocate_vmnet(node: VMwareVM = Depends(dep_node)) -> dict:
     """
     Allocate a VMware VMnet interface on the server.
@@ -274,8 +269,7 @@ async def console_ws(websocket: WebSocket, node: VMwareVM = Depends(dep_node)):
     await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: VMwareVM = Depends(dep_node)):
 
     await node.reset_console()

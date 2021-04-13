@@ -35,6 +35,7 @@ from gns3server.schemas.topology import Topology
 from gns3server.schemas.dynamips_nodes import DynamipsCreate
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -81,15 +82,10 @@ def project_to_topology(project):
         "show_interface_labels": project.show_interface_labels,
         "variables": project.variables,
         "supplier": project.supplier,
-        "topology": {
-            "nodes": [],
-            "links": [],
-            "computes": [],
-            "drawings": []
-        },
+        "topology": {"nodes": [], "links": [], "computes": [], "drawings": []},
         "type": "topology",
         "revision": GNS3_FILE_FORMAT_REVISION,
-        "version": __version__
+        "version": __version__,
     }
 
     for node in project.nodes.values():
@@ -110,7 +106,10 @@ def project_to_topology(project):
     for compute in project.computes:
         if hasattr(compute, "__json__"):
             compute = compute.__json__(topology_dump=True)
-            if compute["compute_id"] not in ("vm", "local", ):
+            if compute["compute_id"] not in (
+                "vm",
+                "local",
+            ):
                 data["topology"]["computes"].append(compute)
         elif isinstance(compute, dict):
             data["topology"]["computes"].append(compute)
@@ -130,7 +129,11 @@ def load_topology(path):
         raise ControllerError(f"Could not load topology {path}: {str(e)}")
 
     if topo.get("revision", 0) > GNS3_FILE_FORMAT_REVISION:
-        raise ControllerError("This project was created with more recent version of GNS3 (file revision: {}). Please upgrade GNS3 to version {} or later".format(topo["revision"], topo["version"]))
+        raise ControllerError(
+            "This project was created with more recent version of GNS3 (file revision: {}). Please upgrade GNS3 to version {} or later".format(
+                topo["revision"], topo["version"]
+            )
+        )
 
     changed = False
     if "revision" not in topo or topo["revision"] < GNS3_FILE_FORMAT_REVISION:
@@ -317,12 +320,7 @@ def _convert_1_3_later(topo, topo_path):
         "auto_start": topo.get("auto_start", False),
         "name": topo["name"],
         "project_id": topo.get("project_id"),
-        "topology": {
-            "links": [],
-            "drawings": [],
-            "computes": [],
-            "nodes": []
-        }
+        "topology": {"links": [], "drawings": [], "computes": [], "nodes": []},
     }
     if new_topo["project_id"] is None:
         new_topo["project_id"] = str(uuid.uuid4())  # Could arrive for topologues with drawing only
@@ -336,7 +334,7 @@ def _convert_1_3_later(topo, topo_path):
         compute = {
             "host": server.get("host", "localhost"),
             "port": server.get("port", 3080),
-            "protocol": server.get("protocol", "http")
+            "protocol": server.get("protocol", "http"),
         }
         if server["local"]:
             compute["compute_id"] = "local"
@@ -407,27 +405,40 @@ def _convert_1_3_later(topo, topo_path):
             node["symbol"] = ":/symbols/hub.svg"
             node["properties"]["ports_mapping"] = []
             for port in old_node.get("ports", []):
-                node["properties"]["ports_mapping"].append({
-                    "name": "Ethernet{}".format(port["port_number"] - 1),
-                    "port_number": port["port_number"] - 1
-                })
+                node["properties"]["ports_mapping"].append(
+                    {"name": "Ethernet{}".format(port["port_number"] - 1), "port_number": port["port_number"] - 1}
+                )
         elif old_node["type"] == "EthernetSwitch":
             node["node_type"] = "ethernet_switch"
             node["symbol"] = ":/symbols/ethernet_switch.svg"
             node["console_type"] = None
             node["properties"]["ports_mapping"] = []
             for port in old_node.get("ports", []):
-                node["properties"]["ports_mapping"].append({
-                    "name": "Ethernet{}".format(port["port_number"] - 1),
-                    "port_number": port["port_number"] - 1,
-                    "type": port["type"],
-                    "vlan": port["vlan"]
-                })
+                node["properties"]["ports_mapping"].append(
+                    {
+                        "name": "Ethernet{}".format(port["port_number"] - 1),
+                        "port_number": port["port_number"] - 1,
+                        "type": port["type"],
+                        "vlan": port["vlan"],
+                    }
+                )
         elif old_node["type"] == "FrameRelaySwitch":
             node["node_type"] = "frame_relay_switch"
             node["symbol"] = ":/symbols/frame_relay_switch.svg"
             node["console_type"] = None
-        elif old_node["type"].upper() in ["C1700", "C2600", "C2691", "C3600", "C3620", "C3640", "C3660", "C3725", "C3745", "C7200", "EtherSwitchRouter"]:
+        elif old_node["type"].upper() in [
+            "C1700",
+            "C2600",
+            "C2691",
+            "C3600",
+            "C3620",
+            "C3640",
+            "C3660",
+            "C3725",
+            "C3745",
+            "C7200",
+            "EtherSwitchRouter",
+        ]:
             if node["symbol"] is None:
                 node["symbol"] = ":/symbols/router.svg"
             node["node_type"] = "dynamips"
@@ -485,23 +496,20 @@ def _convert_1_3_later(topo, topo_path):
             source_node = {
                 "adapter_number": ports[old_link["source_port_id"]].get("adapter_number", 0),
                 "port_number": ports[old_link["source_port_id"]].get("port_number", 0),
-                "node_id": node_id_to_node_uuid[old_link["source_node_id"]]
+                "node_id": node_id_to_node_uuid[old_link["source_node_id"]],
             }
             nodes.append(source_node)
 
             destination_node = {
                 "adapter_number": ports[old_link["destination_port_id"]].get("adapter_number", 0),
                 "port_number": ports[old_link["destination_port_id"]].get("port_number", 0),
-                "node_id": node_id_to_node_uuid[old_link["destination_node_id"]]
+                "node_id": node_id_to_node_uuid[old_link["destination_node_id"]],
             }
             nodes.append(destination_node)
         except KeyError:
             continue
 
-        link = {
-            "link_id": str(uuid.uuid4()),
-            "nodes": nodes
-        }
+        link = {"link_id": str(uuid.uuid4()), "nodes": nodes}
         new_topo["topology"]["links"].append(link)
 
     # Ellipse
@@ -514,7 +522,7 @@ def _convert_1_3_later(topo, topo_path):
             rx=int(ellipse["width"] / 2),
             ry=int(ellipse["height"] / 2),
             fill=ellipse.get("color", "#ffffff"),
-            border_style=_convert_border_style(ellipse)
+            border_style=_convert_border_style(ellipse),
         )
         new_ellipse = {
             "drawing_id": str(uuid.uuid4()),
@@ -522,7 +530,7 @@ def _convert_1_3_later(topo, topo_path):
             "y": int(ellipse["y"]),
             "z": int(ellipse.get("z", 0)),
             "rotation": int(ellipse.get("rotation", 0)),
-            "svg": svg
+            "svg": svg,
         }
         new_topo["topology"]["drawings"].append(new_ellipse)
 
@@ -543,12 +551,14 @@ def _convert_1_3_later(topo, topo_path):
             height=int(font_info[1]) * 2,
             width=int(font_info[1]) * len(note["text"]),
             fill="#" + note.get("color", "#00000000")[-6:],
-            opacity=round(1.0 / 255 * int(note.get("color", "#ffffffff")[:3][-2:], base=16), 2),  # Extract the alpha channel from the hexa version
+            opacity=round(
+                1.0 / 255 * int(note.get("color", "#ffffffff")[:3][-2:], base=16), 2
+            ),  # Extract the alpha channel from the hexa version
             family=font_info[0],
             size=int(font_info[1]),
             weight=weight,
             style=style,
-            text=html.escape(note["text"])
+            text=html.escape(note["text"]),
         )
         new_note = {
             "drawing_id": str(uuid.uuid4()),
@@ -556,7 +566,7 @@ def _convert_1_3_later(topo, topo_path):
             "y": int(note["y"]),
             "z": int(note.get("z", 0)),
             "rotation": int(note.get("rotation", 0)),
-            "svg": svg
+            "svg": svg,
         }
         new_topo["topology"]["drawings"].append(new_note)
 
@@ -576,7 +586,7 @@ def _convert_1_3_later(topo, topo_path):
             "y": int(image["y"]),
             "z": int(image.get("z", 0)),
             "rotation": int(image.get("rotation", 0)),
-            "svg": os.path.basename(img_path)
+            "svg": os.path.basename(img_path),
         }
         new_topo["topology"]["drawings"].append(new_image)
 
@@ -586,7 +596,7 @@ def _convert_1_3_later(topo, topo_path):
             height=int(rectangle["height"]),
             width=int(rectangle["width"]),
             fill=rectangle.get("color", "#ffffff"),
-            border_style=_convert_border_style(rectangle)
+            border_style=_convert_border_style(rectangle),
         )
         new_rectangle = {
             "drawing_id": str(uuid.uuid4()),
@@ -594,7 +604,7 @@ def _convert_1_3_later(topo, topo_path):
             "y": int(rectangle["y"]),
             "z": int(rectangle.get("z", 0)),
             "rotation": int(rectangle.get("rotation", 0)),
-            "svg": svg
+            "svg": svg,
         }
         new_topo["topology"]["drawings"].append(new_rectangle)
 
@@ -608,12 +618,7 @@ def _convert_1_3_later(topo, topo_path):
 
 
 def _convert_border_style(element):
-    QT_DASH_TO_SVG = {
-        2: "25, 25",
-        3: "5, 25",
-        4: "5, 25, 25",
-        5: "25, 25, 5, 25, 5"
-    }
+    QT_DASH_TO_SVG = {2: "25, 25", 3: "5, 25", 4: "5, 25, 25", 5: "25, 25, 5, 25, 5"}
     border_style = int(element.get("border_style", 0))
     style = ""
     if border_style == 1:  # No border
@@ -623,8 +628,7 @@ def _convert_border_style(element):
     else:
         style += f'stroke-dasharray="{QT_DASH_TO_SVG[border_style]}" '
     style += 'stroke="{stroke}" stroke-width="{stroke_width}"'.format(
-        stroke=element.get("border_color", "#000000"),
-        stroke_width=element.get("border_width", 2)
+        stroke=element.get("border_color", "#000000"), stroke_width=element.get("border_width", 2)
     )
     return style
 
@@ -639,7 +643,7 @@ def _convert_label(label):
         "rotation": 0,
         "style": style,
         "x": int(label["x"]),
-        "y": int(label["y"])
+        "y": int(label["y"]),
     }
 
 
@@ -677,14 +681,14 @@ def _create_cloud(node, old_node, icon):
                 "type": port_type,
                 "lport": int(lport),
                 "rhost": rhost,
-                "rport": int(rport)
+                "rport": int(rport),
             }
         else:
             port = {
                 "interface": old_port["name"].split(":")[1],
                 "name": old_port["name"].split(":")[1],
                 "port_number": len(ports) + 1,
-                "type": port_type
+                "type": port_type,
             }
         keep_ports.append(old_port)
         ports.append(port)
@@ -716,10 +720,14 @@ def _convert_snapshots(topo_dir):
 
                 if is_gns3_topo:
                     snapshot_arc = os.path.join(new_snapshots_dir, snapshot + ".gns3project")
-                    with zipfile.ZipFile(snapshot_arc, 'w', allowZip64=True) as myzip:
+                    with zipfile.ZipFile(snapshot_arc, "w", allowZip64=True) as myzip:
                         for root, dirs, files in os.walk(snapshot_dir):
                             for file in files:
-                                myzip.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), snapshot_dir), compress_type=zipfile.ZIP_DEFLATED)
+                                myzip.write(
+                                    os.path.join(root, file),
+                                    os.path.relpath(os.path.join(root, file), snapshot_dir),
+                                    compress_type=zipfile.ZIP_DEFLATED,
+                                )
 
         shutil.rmtree(old_snapshots_dir)
 
@@ -735,16 +743,7 @@ def _convert_qemu_node(node, old_node):
         node["console_type"] = None
         node["node_type"] = "nat"
         del old_node["properties"]
-        node["properties"] = {
-            "ports": [
-                {
-                    "interface": "eth1",
-                    "name": "nat0",
-                    "port_number": 0,
-                    "type": "ethernet"
-                }
-            ]
-        }
+        node["properties"] = {"ports": [{"interface": "eth1", "name": "nat0", "port_number": 0, "type": "ethernet"}]}
         if node["symbol"] is None:
             node["symbol"] = ":/symbols/cloud.svg"
         return node

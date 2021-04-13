@@ -54,13 +54,7 @@ class ComputeCreate(ComputeBase):
 
     class Config:
         schema_extra = {
-            "example": {
-                "name": "My compute",
-                "host": "127.0.0.1",
-                "port": 3080,
-                "user": "user",
-                "password": "password"
-            }
+            "example": {"name": "My compute", "host": "127.0.0.1", "port": 3080, "user": "user", "password": "password"}
         }
 
     @validator("name", always=True)
@@ -142,10 +136,4 @@ class AutoIdlePC(BaseModel):
     ram: int = Field(..., description="Amount of RAM in MB")
 
     class Config:
-        schema_extra = {
-            "example": {
-                "platform": "c7200",
-                "image": "/path/to/c7200_image.bin",
-                "ram": 256
-            }
-        }
+        schema_extra = {"example": {"platform": "c7200", "image": "/path/to/c7200_image.bin", "ram": 256}}

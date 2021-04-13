@@ -18,7 +18,7 @@
 import asyncio
 
 
-class Pool():
+class Pool:
     """
     Limit concurrency for running parallel tasks
     """
@@ -60,5 +60,5 @@ def main():
     loop.run_until_complete(pool.join())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

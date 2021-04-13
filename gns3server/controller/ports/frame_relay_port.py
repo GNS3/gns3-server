@@ -22,7 +22,6 @@ from .serial_port import SerialPort
 
 
 class FrameRelayPort(SerialPort):
-
     @staticmethod
     def long_name_type():
         """

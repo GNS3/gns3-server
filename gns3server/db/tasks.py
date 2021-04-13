@@ -31,6 +31,7 @@ from .models import Base
 from gns3server.config import Config
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -56,9 +57,8 @@ async def get_computes(app: FastAPI) -> List[dict]:
         for db_compute in db_computes:
             try:
                 compute = jsonable_encoder(
-                    schemas.Compute.from_orm(db_compute),
-                    exclude_unset=True,
-                    exclude={"created_at", "updated_at"})
+                    schemas.Compute.from_orm(db_compute), exclude_unset=True, exclude={"created_at", "updated_at"}
+                )
             except ValidationError as e:
                 log.error(f"Could not load compute '{db_compute.compute_id}' from database: {e}")
                 continue

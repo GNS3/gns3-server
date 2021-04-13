@@ -22,12 +22,10 @@ from .nodes.ethernet_hub import EthernetHub
 from .nodes.ethernet_switch import EthernetSwitch
 
 import logging
+
 log = logging.getLogger(__name__)
 
-BUILTIN_NODES = {'cloud': Cloud,
-                 'nat': Nat,
-                 'ethernet_hub': EthernetHub,
-                 'ethernet_switch': EthernetSwitch}
+BUILTIN_NODES = {"cloud": Cloud, "nat": Nat, "ethernet_hub": EthernetHub, "ethernet_switch": EthernetSwitch}
 
 
 class BuiltinNodeFactory:

@@ -50,7 +50,7 @@ async def cancellable_wait_run_in_executor(func, *args, **kwargs):
     :returns: Return the result of the function
     """
     stopped_event = threading.Event()
-    kwargs['stopped_event'] = stopped_event
+    kwargs["stopped_event"] = stopped_event
     try:
         await wait_run_in_executor(func, *args, **kwargs)
     except asyncio.CancelledError:
@@ -80,6 +80,7 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
     # it should happens only when user try to use another binary
     # and the code of VPCS, dynamips... Will detect it's not the correct binary
     return output.decode("utf-8", errors="ignore")
+
 
 async def wait_for_process_termination(process, timeout=10):
     """
@@ -152,7 +153,6 @@ async def wait_for_named_pipe_creation(pipe_path, timeout=60):
 
 
 def locking(f):
-
     @functools.wraps(f)
     async def wrapper(oself, *args, **kwargs):
         lock_name = "__" + f.__name__ + "_lock"
@@ -160,4 +160,5 @@ def locking(f):
             setattr(oself, lock_name, asyncio.Lock())
         async with getattr(oself, lock_name):
             return await f(oself, *args, **kwargs)
+
     return wrapper

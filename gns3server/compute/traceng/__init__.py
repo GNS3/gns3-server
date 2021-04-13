@@ -40,4 +40,4 @@ class TraceNG(BaseManager):
         :returns: TraceNGVM instance
         """
 
-        return (await super().create_node(*args, **kwargs))
+        return await super().create_node(*args, **kwargs)

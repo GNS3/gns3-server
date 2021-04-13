@@ -28,11 +28,11 @@ from gns3server.utils.http_client import HTTPClient
 from gns3server.db.tasks import connect_to_db, get_computes
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 def create_startup_handler(app: FastAPI) -> Callable:
-
     async def start_app() -> None:
         loop = asyncio.get_event_loop()
         logger = logging.getLogger("asyncio")
@@ -65,6 +65,7 @@ def create_startup_handler(app: FastAPI) -> Callable:
         # without md5sum already computed we start the
         # computing with server start
         from gns3server.compute.qemu import Qemu
+
         asyncio.ensure_future(Qemu.instance().list_images())
 
         for module in MODULES:
@@ -76,7 +77,6 @@ def create_startup_handler(app: FastAPI) -> Callable:
 
 
 def create_shutdown_handler(app: FastAPI) -> Callable:
-
     async def shutdown_handler() -> None:
         await HTTPClient.close_session()
         await Controller.instance().stop()

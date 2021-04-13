@@ -29,6 +29,7 @@ from gns3server import schemas
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -42,8 +43,9 @@ def get_symbols():
     return controller.symbols.list()
 
 
-@router.get("/{symbol_id:path}/raw",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}})
+@router.get(
+    "/{symbol_id:path}/raw", responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}}
+)
 async def get_symbol(symbol_id: str):
     """
     Download a symbol file.
@@ -57,8 +59,10 @@ async def get_symbol(symbol_id: str):
         return ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
-@router.get("/{symbol_id:path}/dimensions",
-            responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}})
+@router.get(
+    "/{symbol_id:path}/dimensions",
+    responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
+)
 async def get_symbol_dimensions(symbol_id: str):
     """
     Get a symbol dimensions.
@@ -67,14 +71,13 @@ async def get_symbol_dimensions(symbol_id: str):
     controller = Controller.instance()
     try:
         width, height, _ = controller.symbols.get_size(symbol_id)
-        symbol_dimensions = {'width': width, 'height': height}
+        symbol_dimensions = {"width": width, "height": height}
         return symbol_dimensions
     except (KeyError, OSError, ValueError) as e:
         return ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
-@router.post("/{symbol_id:path}/raw",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{symbol_id:path}/raw", status_code=status.HTTP_204_NO_CONTENT)
 async def upload_symbol(symbol_id: str, request: Request):
     """
     Upload a symbol file.

@@ -22,7 +22,6 @@ from .serial_port import SerialPort
 
 
 class ATMPort(SerialPort):
-
     @staticmethod
     def long_name_type():
         """

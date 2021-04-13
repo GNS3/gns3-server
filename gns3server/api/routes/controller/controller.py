@@ -29,14 +29,17 @@ from gns3server import schemas
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.post("/shutdown",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}})
+@router.post(
+    "/shutdown",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
+)
 async def shutdown():
     """
     Shutdown the local server
@@ -67,8 +70,7 @@ async def shutdown():
     os.kill(os.getpid(), signal.SIGTERM)
 
 
-@router.get("/version",
-            response_model=schemas.Version)
+@router.get("/version", response_model=schemas.Version)
 def get_version():
     """
     Return the server version number.
@@ -78,10 +80,12 @@ def get_version():
     return {"version": __version__, "local": local_server}
 
 
-@router.post("/version",
-             response_model=schemas.Version,
-             response_model_exclude_defaults=True,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}})
+@router.post(
+    "/version",
+    response_model=schemas.Version,
+    response_model_exclude_defaults=True,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}},
+)
 def check_version(version: schemas.Version):
     """
     Check if version is the same as the server.
@@ -97,8 +101,7 @@ def check_version(version: schemas.Version):
     return {"version": __version__}
 
 
-@router.get("/iou_license",
-            response_model=schemas.IOULicense)
+@router.get("/iou_license", response_model=schemas.IOULicense)
 def get_iou_license():
     """
     Return the IOU license settings
@@ -107,9 +110,7 @@ def get_iou_license():
     return Controller.instance().iou_license
 
 
-@router.put("/iou_license",
-            status_code=status.HTTP_201_CREATED,
-            response_model=schemas.IOULicense)
+@router.put("/iou_license", status_code=status.HTTP_201_CREATED, response_model=schemas.IOULicense)
 async def update_iou_license(iou_license: schemas.IOULicense):
     """
     Update the IOU license settings.
@@ -136,6 +137,7 @@ async def statistics():
         except ControllerError as e:
             log.error(f"Could not retrieve statistics on compute {compute.name}: {e}")
     return compute_statistics
+
 
 # @Route.post(
 #     r"/debug",

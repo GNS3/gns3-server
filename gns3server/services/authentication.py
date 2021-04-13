@@ -26,6 +26,7 @@ from gns3server.config import Config
 from pydantic import ValidationError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -34,7 +35,6 @@ DEFAULT_JWT_SECRET_KEY = "efd08eccec3bd0a1be2e086670e5efa90969c68d07e072d7354a76
 
 
 class AuthService:
-
     def hash_password(self, password: str) -> str:
 
         return pwd_context.hash(password)
@@ -43,12 +43,7 @@ class AuthService:
 
         return pwd_context.verify(password, hashed_password)
 
-    def create_access_token(
-            self,
-            username,
-            secret_key: str = None,
-            expires_in: int = 0
-    ) -> str:
+    def create_access_token(self, username, secret_key: str = None, expires_in: int = 0) -> str:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_access_token_expire_minutes

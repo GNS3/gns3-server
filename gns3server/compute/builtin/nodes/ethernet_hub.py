@@ -19,6 +19,7 @@ import asyncio
 from ...base_node import BaseNode
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -39,10 +40,7 @@ class EthernetHub(BaseNode):
 
     def __json__(self):
 
-        return {"name": self.name,
-                "usage": self.usage,
-                "node_id": self.id,
-                "project_id": self.project.id}
+        return {"name": self.name, "usage": self.usage, "node_id": self.id, "project_id": self.project.id}
 
     async def create(self):
         """

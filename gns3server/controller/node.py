@@ -29,14 +29,29 @@ from ..utils.qt import qt_font_to_style
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class Node:
     # This properties are used only on controller and are not forwarded to the compute
-    CONTROLLER_ONLY_PROPERTIES = ["x", "y", "z", "locked", "width", "height", "symbol", "label", "console_host",
-                                  "port_name_format", "first_port_name", "port_segment_size", "ports",
-                                  "category", "console_auto_start"]
+    CONTROLLER_ONLY_PROPERTIES = [
+        "x",
+        "y",
+        "z",
+        "locked",
+        "width",
+        "height",
+        "symbol",
+        "label",
+        "console_host",
+        "port_name_format",
+        "first_port_name",
+        "port_segment_size",
+        "ports",
+        "category",
+        "console_auto_start",
+    ]
 
     def __init__(self, project, compute, name, node_id=None, node_type=None, template_id=None, **kwargs):
         """
@@ -93,7 +108,7 @@ class Node:
 
         # This properties will be recompute
         ignore_properties = ("width", "height", "hover_symbol")
-        self.properties = kwargs.pop('properties', {})
+        self.properties = kwargs.pop("properties", {})
 
         # Update node properties with additional elements
         for prop in kwargs:
@@ -124,10 +139,7 @@ class Node:
         :returns: Boolean True if the node is always running
         like ethernet switch
         """
-        return self.node_type not in (
-            "qemu", "docker", "dynamips",
-            "vpcs", "vmware", "virtualbox",
-            "iou", "traceng")
+        return self.node_type not in ("qemu", "docker", "dynamips", "vpcs", "vmware", "virtualbox", "iou", "traceng")
 
     @property
     def id(self):
@@ -299,7 +311,7 @@ class Node:
             # Apply to label user style or default
             try:
                 style = None  # FIXME: allow configuration of default label font & color on controller
-                #style = qt_font_to_style(self._project.controller.settings["GraphicsView"]["default_label_font"],
+                # style = qt_font_to_style(self._project.controller.settings["GraphicsView"]["default_label_font"],
                 #                         self._project.controller.settings["GraphicsView"]["default_label_color"])
             except KeyError:
                 style = "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
@@ -309,7 +321,7 @@ class Node:
                 "text": html.escape(self._name),
                 "style": style,  # None: means the client will apply its default style
                 "x": None,  # None: means the client should center it
-                "rotation": 0
+                "rotation": 0,
             }
 
     @property
@@ -384,7 +396,9 @@ class Node:
         trial = 0
         while trial != 6:
             try:
-                response = await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes", data=data, timeout=timeout)
+                response = await self._compute.post(
+                    f"/projects/{self._project.id}/{self._node_type}/nodes", data=data, timeout=timeout
+                )
             except ComputeConflict as e:
                 if e.response.get("exception") == "ImageMissingError":
                     res = await self._upload_missing_image(self._node_type, e.response["image"])
@@ -419,7 +433,12 @@ class Node:
                 if prop == "properties":
                     compute_properties = kwargs[prop]
                 else:
-                    if prop == "name" and self.status == "started" and self._node_type not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch"):
+                    if (
+                        prop == "name"
+                        and self.status == "started"
+                        and self._node_type
+                        not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch")
+                    ):
                         raise ControllerError("Sorry, it is not possible to rename a node that is already powered on")
                     setattr(self, prop, kwargs[prop])
 
@@ -458,10 +477,14 @@ class Node:
                 self._aux_type = value
             elif key == "name":
                 self.name = value
-            elif key in ["node_id", "project_id", "console_host",
-                         "startup_config_content",
-                         "private_config_content",
-                         "startup_script"]:
+            elif key in [
+                "node_id",
+                "project_id",
+                "console_host",
+                "startup_config_content",
+                "private_config_content",
+                "startup_script",
+            ]:
                 if key in self._properties:
                     del self._properties[key]
             else:
@@ -495,13 +518,26 @@ class Node:
         if self._console:
             # console is optional for builtin nodes
             data["console"] = self._console
-        if self._console_type and self._node_type not in ("cloud", "nat", "ethernet_hub", "frame_relay_switch", "atm_switch"):
+        if self._console_type and self._node_type not in (
+            "cloud",
+            "nat",
+            "ethernet_hub",
+            "frame_relay_switch",
+            "atm_switch",
+        ):
             # console_type is not supported by all builtin nodes excepting Ethernet switch
             data["console_type"] = self._console_type
         if self._aux:
             # aux is optional for builtin nodes
             data["aux"] = self._aux
-        if self._aux_type and self._node_type not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch"):
+        if self._aux_type and self._node_type not in (
+            "cloud",
+            "nat",
+            "ethernet_switch",
+            "ethernet_hub",
+            "frame_relay_switch",
+            "atm_switch",
+        ):
             # aux_type is not supported by all builtin nodes
             data["aux_type"] = self._aux_type
         if self.custom_adapters:
@@ -526,9 +562,11 @@ class Node:
             if self.node_type == "iou":
                 license_check = self._project.controller.iou_license.get("license_check", True)
                 iourc_content = self._project.controller.iou_license.get("iourc_content", None)
-                #if license_check and not iourc_content:
+                # if license_check and not iourc_content:
                 #    raise aiohttp.web.HTTPConflict(text="IOU licence is not configured")
-                await self.post("/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content})
+                await self.post(
+                    "/start", timeout=240, data={"license_check": license_check, "iourc_content": iourc_content}
+                )
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
@@ -580,9 +618,13 @@ class Node:
         HTTP post on the node
         """
         if data:
-            return (await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", data=data, **kwargs))
+            return await self._compute.post(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", data=data, **kwargs
+            )
         else:
-            return (await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs))
+            return await self._compute.post(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
+            )
 
     async def put(self, path, data=None, **kwargs):
         """
@@ -593,18 +635,22 @@ class Node:
         else:
             path = f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}"
         if data:
-            return (await self._compute.put(path, data=data, **kwargs))
+            return await self._compute.put(path, data=data, **kwargs)
         else:
-            return (await self._compute.put(path, **kwargs))
+            return await self._compute.put(path, **kwargs)
 
     async def delete(self, path=None, **kwargs):
         """
         HTTP post on the node
         """
         if path is None:
-            return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs)
+            return await self._compute.delete(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs
+            )
         else:
-            return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs)
+            return await self._compute.delete(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs
+            )
 
     async def _upload_missing_image(self, type, img):
         """
@@ -617,8 +663,10 @@ class Node:
             if os.path.exists(image):
                 self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
                 try:
-                    with open(image, 'rb') as f:
-                        await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
+                    with open(image, "rb") as f:
+                        await self._compute.post(
+                            f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None
+                        )
                 except OSError as e:
                     raise ControllerError(f"Can't upload {image}: {str(e)}")
                 self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
@@ -629,13 +677,21 @@ class Node:
         """
         Compute the idle PC for a dynamips node
         """
-        return (await self._compute.get(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/auto_idlepc", timeout=240)).json
+        return (
+            await self._compute.get(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/auto_idlepc", timeout=240
+            )
+        ).json
 
     async def dynamips_idlepc_proposals(self):
         """
         Compute a list of potential idle PC
         """
-        return (await self._compute.get(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/idlepc_proposals", timeout=240)).json
+        return (
+            await self._compute.get(
+                f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/idlepc_proposals", timeout=240
+            )
+        ).json
 
     def get_port(self, adapter_number, port_number):
         """
@@ -693,7 +749,9 @@ class Node:
             # Basic node we don't want to have adapter number
             port_number = 0
             for port in self._properties.get("ports_mapping", []):
-                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=f"e{port_number}"))
+                self._ports.append(
+                    PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=f"e{port_number}")
+                )
                 port_number += 1
         elif self._node_type in ("vpcs", "traceng"):
             self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
@@ -703,7 +761,14 @@ class Node:
                 self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=port["name"]))
                 port_number += 1
         else:
-            self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size, self._custom_adapters)
+            self._ports = StandardPortFactory(
+                self._properties,
+                self._port_by_adapter,
+                self._first_port_name,
+                self._port_name_format,
+                self._port_segment_size,
+                self._custom_adapters,
+            )
 
     def __repr__(self):
         return f"<gns3server.controller.Node {self._node_type} {self._name}>"
@@ -742,7 +807,7 @@ class Node:
                 "port_name_format": self._port_name_format,
                 "port_segment_size": self._port_segment_size,
                 "first_port_name": self._first_port_name,
-                "custom_adapters": self._custom_adapters
+                "custom_adapters": self._custom_adapters,
             }
         return {
             "compute_id": str(self._compute.id),
@@ -773,5 +838,5 @@ class Node:
             "port_segment_size": self._port_segment_size,
             "first_port_name": self._first_port_name,
             "custom_adapters": self._custom_adapters,
-            "ports": [port.__json__() for port in self.ports]
+            "ports": [port.__json__() for port in self.ports],
         }

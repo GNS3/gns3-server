@@ -24,6 +24,7 @@ import gns3server.utils.interfaces
 from gns3server.config import Config
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -46,22 +47,21 @@ class Nat(Cloud):
             nat_interface = Config.instance().settings.Server.default_nat_interface
             if not nat_interface:
                 nat_interface = "vmnet8"
-            interfaces = list(filter(lambda x: nat_interface in x.lower(),
-                           [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]))
+            interfaces = list(
+                filter(
+                    lambda x: nat_interface in x.lower(),
+                    [interface["name"] for interface in gns3server.utils.interfaces.interfaces()],
+                )
+            )
             if not len(interfaces):
-                raise NodeError(f"NAT interface {nat_interface} is missing. "
-                                f"You need to install VMware or use the NAT node on GNS3 VM")
+                raise NodeError(
+                    f"NAT interface {nat_interface} is missing. "
+                    f"You need to install VMware or use the NAT node on GNS3 VM"
+                )
             interface = interfaces[0]  # take the first available interface containing the vmnet8 name
 
         log.info(f"NAT node '{name}' configured to use NAT interface '{interface}'")
-        ports = [
-            {
-                "name": "nat0",
-                "type": "ethernet",
-                "interface": interface,
-                "port_number": 0
-            }
-        ]
+        ports = [{"name": "nat0", "type": "ethernet", "interface": interface, "port_number": 0}]
         super().__init__(name, node_id, project, manager, ports=ports)
 
     @property
@@ -84,5 +84,5 @@ class Nat(Cloud):
             "node_id": self.id,
             "project_id": self.project.id,
             "status": "started",
-            "ports_mapping": self.ports_mapping
+            "ports_mapping": self.ports_mapping,
         }

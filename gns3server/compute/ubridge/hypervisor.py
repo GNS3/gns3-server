@@ -33,6 +33,7 @@ from .ubridge_hypervisor import UBridgeHypervisor
 from .ubridge_error import UbridgeError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -141,7 +142,7 @@ class Hypervisor(UBridgeHypervisor):
                 if sys.platform.startswith("win") or sys.platform.startswith("darwin"):
                     minimum_required_version = "0.9.12"
                 else:
-                    # uBridge version 0.9.14 is required for packet filters 
+                    # uBridge version 0.9.14 is required for packet filters
                     # to work for IOU nodes.
                     minimum_required_version = "0.9.14"
                 if parse_version(self._version) < parse_version(minimum_required_version):
@@ -161,7 +162,7 @@ class Hypervisor(UBridgeHypervisor):
             # add the Npcap directory to $PATH to force uBridge to use npcap DLL instead of Winpcap (if installed)
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
-                env["PATH"] = system_root + ';' + env["PATH"]
+                env["PATH"] = system_root + ";" + env["PATH"]
         await self._check_ubridge_version(env)
         try:
             command = self._build_command()
@@ -169,16 +170,14 @@ class Hypervisor(UBridgeHypervisor):
             self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
             log.info(f"logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                self._process = await asyncio.create_subprocess_exec(*command,
-                                                                          stdout=fd,
-                                                                          stderr=subprocess.STDOUT,
-                                                                          cwd=self._working_dir,
-                                                                          env=env)
+                self._process = await asyncio.create_subprocess_exec(
+                    *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self._working_dir, env=env
+                )
 
             log.info(f"ubridge started PID={self._process.pid}")
             # recv: Bad address is received by uBridge when a docker image stops by itself
             # see https://github.com/GNS3/gns3-gui/issues/2957
-            #monitor_process(self._process, self._termination_callback)
+            # monitor_process(self._process, self._termination_callback)
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
             log.error(f"Could not start ubridge: {e}\n{ubridge_stdout}")

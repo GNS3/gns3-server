@@ -39,7 +39,7 @@ import struct
 
 # calculate padding
 def padding(length, start_address):
-    pad = -length % 4                   # padding to alignment of 4
+    pad = -length % 4  # padding to alignment of 4
     # extra padding if pad != 0 and big start_address
     if pad != 0 and (start_address & 0x80000000) != 0:
         pad += 4
@@ -50,66 +50,64 @@ def padding(length, start_address):
 def checksum(data, start, end):
     chk = 0
     # calculate checksum of first two words
-    for word in struct.unpack_from('>2H', data, start):
+    for word in struct.unpack_from(">2H", data, start):
         chk += word
 
     # add remaining words, ignoring old checksum at offset 4
-    struct_format = f'>{(end - start - 6) // 2:d}H'
-    for word in struct.unpack_from(struct_format, data, start+6):
+    struct_format = f">{(end - start - 6) // 2:d}H"
+    for word in struct.unpack_from(struct_format, data, start + 6):
         chk += word
 
     # handle 16 bit overflow
     while chk >> 16:
-        chk = (chk & 0xffff) + (chk >> 16)
-    chk = chk ^ 0xffff
+        chk = (chk & 0xFFFF) + (chk >> 16)
+    chk = chk ^ 0xFFFF
 
     # save checksum
-    struct.pack_into('>H', data, start+4, chk)
+    struct.pack_into(">H", data, start + 4, chk)
 
 
 # import IOU NVRAM
 # NVRAM format: https://github.com/ehlers/IOUtools/blob/master/NVRAM.md
 def nvram_import(nvram, startup, private, size):
-    DEFAULT_IOS  = 0x0F04               # IOS 15.4
+    DEFAULT_IOS = 0x0F04  # IOS 15.4
     base_address = 0x10000000
 
     # check size parameter
     if size is not None and (size < 8 or size > 1024):
-        raise ValueError('invalid size')
+        raise ValueError("invalid size")
 
     # create new nvram if nvram is empty or has wrong size
-    if nvram is None or (size is not None and len(nvram) != size*1024):
-        nvram = bytearray([0] * (size*1024))
+    if nvram is None or (size is not None and len(nvram) != size * 1024):
+        nvram = bytearray([0] * (size * 1024))
     else:
         nvram = bytearray(nvram)
 
     # check nvram size
     nvram_len = len(nvram)
-    if nvram_len < 8*1024 or nvram_len > 1024*1024 or nvram_len % 1024 != 0:
-        raise ValueError('invalid NVRAM length')
+    if nvram_len < 8 * 1024 or nvram_len > 1024 * 1024 or nvram_len % 1024 != 0:
+        raise ValueError("invalid NVRAM length")
     nvram_len = nvram_len // 2
 
     # get size of current config
     config_len = 0
     try:
-        (magic, _, _, ios, start_addr, _, length, _, _, _, _, _) = \
-            struct.unpack_from('>HHHHIIIIIHHI', nvram, offset=0)
+        (magic, _, _, ios, start_addr, _, length, _, _, _, _, _) = struct.unpack_from(">HHHHIIIIIHHI", nvram, offset=0)
         if magic == 0xABCD:
             base_address = start_addr - 36
             config_len = 36 + length + padding(length, base_address)
-            (magic, _, _, _, length) = \
-                struct.unpack_from('>HHIII', nvram, offset=config_len)
+            (magic, _, _, _, length) = struct.unpack_from(">HHIII", nvram, offset=config_len)
             if magic == 0xFEDC:
                 config_len += 16 + length
         else:
             ios = None
     except struct.error:
-        raise ValueError('unknown nvram format')
+        raise ValueError("unknown nvram format")
     if config_len > nvram_len:
-        raise ValueError('unknown nvram format')
+        raise ValueError("unknown nvram format")
 
     # calculate max. config size
-    max_config = nvram_len - 2*1024             # reserve 2k for files
+    max_config = nvram_len - 2 * 1024  # reserve 2k for files
     idx = max_config
     empty_sector = bytearray([0] * 1024)
     while True:
@@ -117,11 +115,10 @@ def nvram_import(nvram, startup, private, size):
         if idx < config_len:
             break
         # if valid file header:
-        (magic, _, flags, length, _) = \
-            struct.unpack_from('>HHHH24s', nvram, offset=idx)
+        (magic, _, flags, length, _) = struct.unpack_from(">HHHH24s", nvram, offset=idx)
         if magic == 0xDCBA and flags < 8 and length <= 992:
             max_config = idx
-        elif nvram[idx:idx+1024] != empty_sector:
+        elif nvram[idx : idx + 1024] != empty_sector:
             break
 
     # import startup config
@@ -131,34 +128,46 @@ def nvram_import(nvram, startup, private, size):
         # the padding of a different version, the startup config is padded
         # with '\n' to the alignment of 4.
         ios = DEFAULT_IOS
-        startup += b'\n' * (-len(startup) % 4)
-    new_nvram.extend(struct.pack('>HHHHIIIIIHHI',
-        0xABCD,                             # magic
-        1,                                  # raw data
-        0,                                  # checksum, not yet calculated
-        ios,                                # IOS version
-        base_address + 36,                  # start address
-        base_address + 36 + len(startup),   # end address
-        len(startup),                       # length
-        0, 0, 0, 0, 0))
+        startup += b"\n" * (-len(startup) % 4)
+    new_nvram.extend(
+        struct.pack(
+            ">HHHHIIIIIHHI",
+            0xABCD,  # magic
+            1,  # raw data
+            0,  # checksum, not yet calculated
+            ios,  # IOS version
+            base_address + 36,  # start address
+            base_address + 36 + len(startup),  # end address
+            len(startup),  # length
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+    )
     new_nvram.extend(startup)
     new_nvram.extend([0] * padding(len(new_nvram), base_address))
 
     # import private config
     if private is None:
-        private = b''
+        private = b""
     offset = len(new_nvram)
-    new_nvram.extend(struct.pack('>HHIII',
-        0xFEDC,                             # magic
-        1,                                  # raw data
-        base_address + offset + 16,         # start address
-        base_address + offset + 16 + len(private),  # end address
-        len(private) ))                     # length
+    new_nvram.extend(
+        struct.pack(
+            ">HHIII",
+            0xFEDC,  # magic
+            1,  # raw data
+            base_address + offset + 16,  # start address
+            base_address + offset + 16 + len(private),  # end address
+            len(private),
+        )
+    )  # length
     new_nvram.extend(private)
 
     # add rest
     if len(new_nvram) > max_config:
-        raise ValueError('NVRAM size too small')
+        raise ValueError("NVRAM size too small")
     new_nvram.extend([0] * (max_config - len(new_nvram)))
     new_nvram.extend(nvram[max_config:])
 
@@ -167,7 +176,7 @@ def nvram_import(nvram, startup, private, size):
     return new_nvram
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Main program
     import argparse
     import sys
@@ -176,36 +185,32 @@ if __name__ == '__main__':
         try:
             value = int(string)
         except ValueError:
-            raise argparse.ArgumentTypeError('invalid int value: ' + string)
+            raise argparse.ArgumentTypeError("invalid int value: " + string)
         if value < 8 or value > 1024:
-            raise argparse.ArgumentTypeError('size must be 8..1024')
+            raise argparse.ArgumentTypeError("size must be 8..1024")
         return value
 
-    parser = argparse.ArgumentParser(description='%(prog)s imports startup/private configuration into IOU NVRAM file.')
-    parser.add_argument('-c', '--create', metavar='size', type=check_size,
-                        help='create NVRAM file, size in kByte')
-    parser.add_argument('nvram', metavar='NVRAM',
-                        help='NVRAM file')
-    parser.add_argument('startup', metavar='startup-config',
-                        help='startup configuration')
-    parser.add_argument('private', metavar='private-config', nargs='?',
-                        help='private configuration')
+    parser = argparse.ArgumentParser(description="%(prog)s imports startup/private configuration into IOU NVRAM file.")
+    parser.add_argument("-c", "--create", metavar="size", type=check_size, help="create NVRAM file, size in kByte")
+    parser.add_argument("nvram", metavar="NVRAM", help="NVRAM file")
+    parser.add_argument("startup", metavar="startup-config", help="startup configuration")
+    parser.add_argument("private", metavar="private-config", nargs="?", help="private configuration")
     args = parser.parse_args()
 
     try:
         if args.create is None:
-            fd = open(args.nvram, 'rb')
+            fd = open(args.nvram, "rb")
             nvram = fd.read()
             fd.close()
         else:
             nvram = None
-        fd = open(args.startup, 'rb')
+        fd = open(args.startup, "rb")
         startup = fd.read()
         fd.close()
         if args.private is None:
             private = None
         else:
-            fd = open(args.private, 'rb')
+            fd = open(args.private, "rb")
             private = fd.read()
             fd.close()
     except OSError as err:
@@ -219,7 +224,7 @@ if __name__ == '__main__':
         sys.exit(3)
 
     try:
-        fd = open(args.nvram, 'wb')
+        fd = open(args.nvram, "wb")
         fd.write(nvram)
         fd.close()
     except OSError as err:

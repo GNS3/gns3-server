@@ -28,8 +28,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")  # FIXME: URL p
 
 
 async def get_user_from_token(
-        token: str = Depends(oauth2_scheme),
-        user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    token: str = Depends(oauth2_scheme), user_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
 
     username = auth_service.get_username_from_token(token)
@@ -38,7 +37,7 @@ async def get_user_from_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return user
 
@@ -49,6 +48,6 @@ async def get_current_active_user(current_user: schemas.User = Depends(get_user_
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not an active user",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return current_user

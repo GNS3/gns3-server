@@ -53,7 +53,13 @@ class Link(BaseModel):
     suspend: Optional[bool] = None
     filters: Optional[dict] = None
     capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
-    capture_file_name: Optional[str] = Field(None, description="Read only property. The name of the capture file if a capture is running")
-    capture_file_path: Optional[str] = Field(None, description="Read only property. The full path of the capture file if a capture is running")
-    capture_compute_id: Optional[str] = Field(None, description="Read only property. The compute identifier where a capture is running")
+    capture_file_name: Optional[str] = Field(
+        None, description="Read only property. The name of the capture file if a capture is running"
+    )
+    capture_file_path: Optional[str] = Field(
+        None, description="Read only property. The full path of the capture file if a capture is running"
+    )
+    capture_compute_id: Optional[str] = Field(
+        None, description="Read only property. The compute identifier where a capture is running"
+    )
     link_type: Optional[LinkType] = None

@@ -23,6 +23,7 @@ from uuid import UUID
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -91,9 +92,7 @@ class ProjectManager:
         # send a warning if used disk space is >= 90%
         if used_disk_space >= 90:
             message = 'Only {:.2f}% or less of free disk space detected in "{}" on "{}"'.format(
-                100 - used_disk_space,
-                project.path,
-                platform.node()
+                100 - used_disk_space, project.path, platform.node()
             )
             log.warning(message)
             project.emit("log.warning", {"message": message})
@@ -106,8 +105,7 @@ class ProjectManager:
         """
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
-        project = Project(name=name, project_id=project_id,
-                          path=path, variables=variables)
+        project = Project(name=name, project_id=project_id, path=path, variables=variables)
         self._check_available_disk_space(project)
         self._projects[project.id] = project
         return project

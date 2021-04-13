@@ -31,7 +31,6 @@ if sys.platform.startswith("win"):
 
 
 class SerialReaderWriterProtocol(asyncio.Protocol):
-
     def __init__(self):
         self._output = asyncio.StreamReader()
         self._closed = False
@@ -135,6 +134,6 @@ async def asyncio_open_serial(path):
     """
 
     if sys.platform.startswith("win"):
-        return (await _asyncio_open_serial_windows(path))
+        return await _asyncio_open_serial_windows(path)
     else:
-        return (await _asyncio_open_serial_unix(path))
+        return await _asyncio_open_serial_unix(path)

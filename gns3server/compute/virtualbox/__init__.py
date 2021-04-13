@@ -110,7 +110,9 @@ class VirtualBox(BaseManager):
             command_string = " ".join(command)
             log.info(f"Executing VBoxManage with command: {command_string}")
             try:
-                process = await asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                process = await asyncio.create_subprocess_exec(
+                    *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                )
             except (OSError, subprocess.SubprocessError) as e:
                 raise VirtualBoxError(f"Could not execute VBoxManage: {e}")
 
@@ -140,7 +142,7 @@ class VirtualBox(BaseManager):
         flag_inaccessible = False
         for prop in properties:
             try:
-                name, value = prop.split(':', 1)
+                name, value = prop.split(":", 1)
             except ValueError:
                 continue
             if name.strip() == "State" and value.strip() == "inaccessible":
@@ -191,7 +193,7 @@ class VirtualBox(BaseManager):
                 ram = 0
                 for info in info_results:
                     try:
-                        name, value = info.split('=', 1)
+                        name, value = info.split("=", 1)
                         if name.strip() == "memory":
                             ram = int(value.strip())
                             break

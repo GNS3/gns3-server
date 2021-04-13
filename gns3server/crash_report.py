@@ -17,6 +17,7 @@
 try:
     import sentry_sdk
     from sentry_sdk.integrations.logging import LoggingIntegration
+
     SENTRY_SDK_AVAILABLE = True
 except ImportError:
     # Sentry SDK is not installed with deb package in order to simplify packaging
@@ -34,6 +35,7 @@ from .config import Config
 from .utils.get_resource import get_resource
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -63,10 +65,10 @@ class CrashReport:
     def __init__(self):
 
         # We don't want sentry making noise if an error is caught when you don't have internet
-        sentry_errors = logging.getLogger('sentry.errors')
+        sentry_errors = logging.getLogger("sentry.errors")
         sentry_errors.disabled = True
 
-        sentry_uncaught = logging.getLogger('sentry.errors.uncaught')
+        sentry_uncaught = logging.getLogger("sentry.errors.uncaught")
         sentry_uncaught.disabled = True
 
         if SENTRY_SDK_AVAILABLE:
@@ -81,11 +83,13 @@ class CrashReport:
             # Don't send log records as events.
             sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
 
-            sentry_sdk.init(dsn=CrashReport.DSN,
-                            release=__version__,
-                            ca_certs=cacert,
-                            default_integrations=False,
-                            integrations=[sentry_logging])
+            sentry_sdk.init(
+                dsn=CrashReport.DSN,
+                release=__version__,
+                ca_certs=cacert,
+                default_integrations=False,
+                integrations=[sentry_logging],
+            )
 
             tags = {
                 "os:name": platform.system(),
@@ -93,7 +97,6 @@ class CrashReport:
                 "os:win_32": " ".join(platform.win32_ver()),
                 "os:mac": f"{platform.mac_ver()[0]} {platform.mac_ver()[2]}",
                 "os:linux": " ".join(distro.linux_distribution()),
-
             }
 
             with sentry_sdk.configure_scope() as scope:
@@ -101,12 +104,10 @@ class CrashReport:
                     scope.set_tag(key, value)
 
             extra_context = {
-                "python:version": "{}.{}.{}".format(sys.version_info[0],
-                                                    sys.version_info[1],
-                                                    sys.version_info[2]),
+                "python:version": "{}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]),
                 "python:bit": struct.calcsize("P") * 8,
                 "python:encoding": sys.getdefaultencoding(),
-                "python:frozen": "{}".format(hasattr(sys, "frozen"))
+                "python:frozen": "{}".format(hasattr(sys, "frozen")),
             }
 
             if sys.platform.startswith("linux") and not hasattr(sys, "frozen"):
@@ -137,7 +138,9 @@ class CrashReport:
         if not SENTRY_SDK_AVAILABLE:
             return
 
-        if not hasattr(sys, "frozen") and os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
+        if not hasattr(sys, "frozen") and os.path.exists(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")
+        ):
             log.warning(".git directory detected, crash reporting is turned off for developers.")
             return
 

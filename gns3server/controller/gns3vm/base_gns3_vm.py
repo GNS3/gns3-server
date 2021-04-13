@@ -18,11 +18,11 @@
 import psutil
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class BaseGNS3VM:
-
     def __init__(self, controller):
 
         self._controller = controller
@@ -42,9 +42,9 @@ class BaseGNS3VM:
         # because this is likely to degrade performances.
         self._vcpus = psutil.cpu_count(logical=False)
         # we want to allocate half of the available physical memory
-        #ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
+        # ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
         # value must be a multiple of 4 (VMware requirement)
-        #ram -= ram % 4
+        # ram -= ram % 4
 
         ram = 2048
 

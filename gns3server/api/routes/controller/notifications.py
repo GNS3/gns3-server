@@ -25,6 +25,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 from gns3server.controller import Controller
 
 import logging
+
 log = logging.getLogger(__name__)
 
 router = APIRouter()

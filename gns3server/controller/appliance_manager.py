@@ -29,6 +29,7 @@ from ..utils.http_client import HTTPClient
 from .controller_error import ControllerError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -82,18 +83,29 @@ class ApplianceManager:
         """
 
         self._appliances = {}
-        for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
+        for directory, builtin in (
+            (
+                get_resource("appliances"),
+                True,
+            ),
+            (
+                self.appliances_path(),
+                False,
+            ),
+        ):
             if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
-                    if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
+                    if not file.endswith(".gns3a") and not file.endswith(".gns3appliance"):
                         continue
                     path = os.path.join(directory, file)
-                    appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate UUID from path to avoid change between reboots
+                    appliance_id = uuid.uuid3(
+                        uuid.NAMESPACE_URL, path
+                    )  # Generate UUID from path to avoid change between reboots
                     try:
-                        with open(path, encoding='utf-8') as f:
+                        with open(path, encoding="utf-8") as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
                             json_data = appliance.__json__()  # Check if loaded without error
-                            if appliance.status != 'broken':
+                            if appliance.status != "broken":
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
@@ -110,6 +122,7 @@ class ApplianceManager:
         """
 
         from . import Controller
+
         controller = Controller.instance()
         category = appliance["category"]
         if category == "guest":
@@ -125,6 +138,7 @@ class ApplianceManager:
         """
 
         from . import Controller
+
         symbol_dir = Controller.instance().symbols.symbols_path()
         self.load_appliances()
         for appliance in self._appliances.values():
@@ -145,12 +159,14 @@ class ApplianceManager:
         symbol_url = f"https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{symbol}"
         async with HTTPClient.get(symbol_url) as response:
             if response.status != 200:
-                log.warning(f"Could not retrieve appliance symbol {symbol} from GitHub due to HTTP error code {response.status}")
+                log.warning(
+                    f"Could not retrieve appliance symbol {symbol} from GitHub due to HTTP error code {response.status}"
+                )
             else:
                 try:
                     symbol_data = await response.read()
                     log.info(f"Saving {symbol} symbol to {destination_path}")
-                    with open(destination_path, 'wb') as f:
+                    with open(destination_path, "wb") as f:
                         f.write(symbol_data)
                 except asyncio.TimeoutError:
                     log.warning(f"Timeout while downloading '{symbol_url}'")
@@ -169,19 +185,24 @@ class ApplianceManager:
                 log.info(f"Checking if appliances are up-to-date (ETag {self._appliances_etag})")
                 headers["If-None-Match"] = self._appliances_etag
 
-            async with HTTPClient.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
+            async with HTTPClient.get(
+                "https://api.github.com/repos/GNS3/gns3-registry/contents/appliances", headers=headers
+            ) as response:
                 if response.status == 304:
                     log.info(f"Appliances are already up-to-date (ETag {self._appliances_etag})")
                     return
                 elif response.status != 200:
-                    raise ControllerError(f"Could not retrieve appliances from GitHub due to HTTP error code {response.status}")
+                    raise ControllerError(
+                        f"Could not retrieve appliances from GitHub due to HTTP error code {response.status}"
+                    )
                 etag = response.headers.get("ETag")
                 if etag:
                     self._appliances_etag = etag
                     from . import Controller
+
                     Controller.instance().save()
                 json_data = await response.json()
-            appliances_dir = get_resource('appliances')
+            appliances_dir = get_resource("appliances")
             downloaded_appliance_files = []
             for appliance in json_data:
                 if appliance["type"] == "file":
@@ -189,7 +210,11 @@ class ApplianceManager:
                     log.info("Download appliance file from '{}'".format(appliance["download_url"]))
                     async with HTTPClient.get(appliance["download_url"]) as response:
                         if response.status != 200:
-                            log.warning("Could not download '{}' due to HTTP error code {}".format(appliance["download_url"], response.status))
+                            log.warning(
+                                "Could not download '{}' due to HTTP error code {}".format(
+                                    appliance["download_url"], response.status
+                                )
+                            )
                             continue
                         try:
                             appliance_data = await response.read()
@@ -199,7 +224,7 @@ class ApplianceManager:
                         path = os.path.join(appliances_dir, appliance_name)
                         try:
                             log.info(f"Saving {appliance_name} file to {path}")
-                            with open(path, 'wb') as f:
+                            with open(path, "wb") as f:
                                 f.write(appliance_data)
                         except OSError as e:
                             raise ControllerError(f"Could not write appliance file '{path}': {e}")

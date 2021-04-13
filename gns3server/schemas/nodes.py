@@ -153,13 +153,20 @@ class Node(BaseModel):
     node_type: NodeType
     project_id: Optional[UUID] = None
     node_id: Optional[UUID] = None
-    template_id: Optional[UUID] = Field(None, description="Template UUID from which the node has been created. Read only")
+    template_id: Optional[UUID] = Field(
+        None, description="Template UUID from which the node has been created. Read only"
+    )
     node_directory: Optional[str] = Field(None, description="Working directory of the node. Read only")
     command_line: Optional[str] = Field(None, description="Command line use to start the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
-    console_host: Optional[str] = Field(None, description="Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller")
+    console_host: Optional[str] = Field(
+        None,
+        description="Console host. Warning if the host is 0.0.0.0 or :: (listen on all interfaces) you need to use the same address you use to connect to the controller",
+    )
     console_type: Optional[ConsoleType] = None
-    console_auto_start: Optional[bool] = Field(None, description="Automatically start the console when the node has started")
+    console_auto_start: Optional[bool] = Field(
+        None, description="Automatically start the console when the node has started"
+    )
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[ConsoleType]
     properties: Optional[dict] = Field(None, description="Properties specific to an emulator")
@@ -172,7 +179,9 @@ class Node(BaseModel):
     y: Optional[int] = None
     z: Optional[int] = None
     locked: Optional[bool] = Field(None, description="Whether the element locked or not")
-    port_name_format: Optional[str] = Field(None, description="Formatting for port name {0} will be replace by port number")
+    port_name_format: Optional[str] = Field(
+        None, description="Formatting for port name {0} will be replace by port number"
+    )
     port_segment_size: Optional[int] = Field(None, description="Size of the port segment")
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None

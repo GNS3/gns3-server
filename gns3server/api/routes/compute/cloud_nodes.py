@@ -30,9 +30,7 @@ from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.cloud import Cloud
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or cloud node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or cloud node"}}
 
 router = APIRouter(responses=responses)
 
@@ -47,10 +45,12 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("",
-             response_model=schemas.Cloud,
-             status_code=status.HTTP_201_CREATED,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create cloud node"}})
+@router.post(
+    "",
+    response_model=schemas.Cloud,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create cloud node"}},
+)
 async def create_cloud(project_id: UUID, node_data: schemas.CloudCreate):
     """
     Create a new cloud node.
@@ -58,11 +58,13 @@ async def create_cloud(project_id: UUID, node_data: schemas.CloudCreate):
 
     builtin_manager = Builtin.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    node = await builtin_manager.create_node(node_data.pop("name"),
-                                             str(project_id),
-                                             node_data.get("node_id"),
-                                             node_type="cloud",
-                                             ports=node_data.get("ports_mapping"))
+    node = await builtin_manager.create_node(
+        node_data.pop("name"),
+        str(project_id),
+        node_data.get("node_id"),
+        node_type="cloud",
+        ports=node_data.get("ports_mapping"),
+    )
 
     # add the remote console settings
     node.remote_console_host = node_data.get("remote_console_host", node.remote_console_host)
@@ -73,8 +75,7 @@ async def create_cloud(project_id: UUID, node_data: schemas.CloudCreate):
     return node.__json__()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.Cloud)
+@router.get("/{node_id}", response_model=schemas.Cloud)
 def get_cloud(node: Cloud = Depends(dep_node)):
     """
     Return a cloud node.
@@ -83,8 +84,7 @@ def get_cloud(node: Cloud = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.Cloud)
+@router.put("/{node_id}", response_model=schemas.Cloud)
 def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)):
     """
     Update a cloud node.
@@ -98,8 +98,7 @@ def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_cloud(node: Cloud = Depends(dep_node)):
     """
     Delete a cloud node.
@@ -108,8 +107,7 @@ async def delete_cloud(node: Cloud = Depends(dep_node)):
     await Builtin.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_cloud(node: Cloud = Depends(dep_node)):
     """
     Start a cloud node.
@@ -118,8 +116,7 @@ async def start_cloud(node: Cloud = Depends(dep_node)):
     await node.start()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_cloud(node: Cloud = Depends(dep_node)):
     """
     Stop a cloud node.
@@ -129,8 +126,7 @@ async def stop_cloud(node: Cloud = Depends(dep_node)):
     pass
 
 
-@router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_cloud(node: Cloud = Depends(dep_node)):
     """
     Suspend a cloud node.
@@ -140,13 +136,17 @@ async def suspend_cloud(node: Cloud = Depends(dep_node)):
     pass
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-             status_code=status.HTTP_201_CREATED,
-             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def create_cloud_nio(adapter_number: int,
-                           port_number: int,
-                           nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                           node: Cloud = Depends(dep_node)):
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def create_cloud_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Cloud = Depends(dep_node),
+):
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -157,13 +157,17 @@ async def create_cloud_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-            status_code=status.HTTP_201_CREATED,
-            response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def update_cloud_nio(adapter_number: int,
-                           port_number: int,
-                           nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                           node: Cloud = Depends(dep_node)):
+@router.put(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def update_cloud_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Cloud = Depends(dep_node),
+):
     """
     Update a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -176,8 +180,7 @@ async def update_cloud_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_cloud_nio(adapter_number: int, port_number: int, node: Cloud = Depends(dep_node)):
     """
     Remove a NIO (Network Input/Output) from the node.
@@ -188,10 +191,9 @@ async def delete_cloud_nio(adapter_number: int, port_number: int, node: Cloud = 
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_cloud_capture(adapter_number: int,
-                              port_number: int,
-                              node_capture_data: schemas.NodeCapture,
-                              node: Cloud = Depends(dep_node)):
+async def start_cloud_capture(
+    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: Cloud = Depends(dep_node)
+):
     """
     Start a packet capture on the node.
     The adapter number on the cloud is always 0.
@@ -202,8 +204,9 @@ async def start_cloud_capture(adapter_number: int,
     return {"pcap_file_path": pcap_file_path}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+)
 async def stop_cloud_capture(adapter_number: int, port_number: int, node: Cloud = Depends(dep_node)):
     """
     Stop a packet capture on the node.

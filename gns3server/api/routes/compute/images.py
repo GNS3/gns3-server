@@ -53,8 +53,7 @@ async def get_dynamips_images() -> List[str]:
     return await dynamips_manager.list_images()
 
 
-@router.post("/dynamips/images/{filename:path}",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/dynamips/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def upload_dynamips_image(filename: str, request: Request):
     """
     Upload a Dynamips IOS image.
@@ -93,8 +92,7 @@ async def get_iou_images() -> List[str]:
     return await iou_manager.list_images()
 
 
-@router.post("/iou/images/{filename:path}",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/iou/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def upload_iou_image(filename: str, request: Request):
     """
     Upload an IOU image.
@@ -130,8 +128,7 @@ async def get_qemu_images() -> List[str]:
     return await qemu_manager.list_images()
 
 
-@router.post("/qemu/images/{filename:path}",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/qemu/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def upload_qemu_image(filename: str, request: Request):
 
     qemu_manager = Qemu.instance()

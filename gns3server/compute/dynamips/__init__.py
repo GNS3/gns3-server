@@ -74,36 +74,38 @@ from .adapters.wic_1t import WIC_1T
 from .adapters.wic_2t import WIC_2T
 
 
-ADAPTER_MATRIX = {"C7200-IO-2FE": C7200_IO_2FE,
-                  "C7200-IO-FE": C7200_IO_FE,
-                  "C7200-IO-GE-E": C7200_IO_GE_E,
-                  "NM-16ESW": NM_16ESW,
-                  "NM-1E": NM_1E,
-                  "NM-1FE-TX": NM_1FE_TX,
-                  "NM-4E": NM_4E,
-                  "NM-4T": NM_4T,
-                  "PA-2FE-TX": PA_2FE_TX,
-                  "PA-4E": PA_4E,
-                  "PA-4T+": PA_4T,
-                  "PA-8E": PA_8E,
-                  "PA-8T": PA_8T,
-                  "PA-A1": PA_A1,
-                  "PA-FE-TX": PA_FE_TX,
-                  "PA-GE": PA_GE,
-                  "PA-POS-OC3": PA_POS_OC3}
+ADAPTER_MATRIX = {
+    "C7200-IO-2FE": C7200_IO_2FE,
+    "C7200-IO-FE": C7200_IO_FE,
+    "C7200-IO-GE-E": C7200_IO_GE_E,
+    "NM-16ESW": NM_16ESW,
+    "NM-1E": NM_1E,
+    "NM-1FE-TX": NM_1FE_TX,
+    "NM-4E": NM_4E,
+    "NM-4T": NM_4T,
+    "PA-2FE-TX": PA_2FE_TX,
+    "PA-4E": PA_4E,
+    "PA-4T+": PA_4T,
+    "PA-8E": PA_8E,
+    "PA-8T": PA_8T,
+    "PA-A1": PA_A1,
+    "PA-FE-TX": PA_FE_TX,
+    "PA-GE": PA_GE,
+    "PA-POS-OC3": PA_POS_OC3,
+}
 
-WIC_MATRIX = {"WIC-1ENET": WIC_1ENET,
-              "WIC-1T": WIC_1T,
-              "WIC-2T": WIC_2T}
+WIC_MATRIX = {"WIC-1ENET": WIC_1ENET, "WIC-1T": WIC_1T, "WIC-2T": WIC_2T}
 
 
-PLATFORMS_DEFAULT_RAM = {"c1700": 160,
-                         "c2600": 160,
-                         "c2691": 192,
-                         "c3600": 192,
-                         "c3725": 128,
-                         "c3745": 256,
-                         "c7200": 512}
+PLATFORMS_DEFAULT_RAM = {
+    "c1700": 160,
+    "c2600": 160,
+    "c2691": 192,
+    "c3600": 192,
+    "c3725": 128,
+    "c3745": 256,
+    "c7200": 512,
+}
 
 
 class Dynamips(BaseManager):
@@ -126,7 +128,7 @@ class Dynamips(BaseManager):
         """
         :returns: List of node type supported by this class and computer
         """
-        return ['dynamips', 'frame_relay_switch', 'atm_switch']
+        return ["dynamips", "frame_relay_switch", "atm_switch"]
 
     def get_dynamips_id(self, project_id):
         """
@@ -301,7 +303,7 @@ class Dynamips(BaseManager):
         await hypervisor.start()
         log.info(f"Hypervisor {hypervisor.host}:{hypervisor.port} has successfully started")
         await hypervisor.connect()
-        if parse_version(hypervisor.version) < parse_version('0.2.11'):
+        if parse_version(hypervisor.version) < parse_version("0.2.11"):
             raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {hypervisor.version}")
 
         return hypervisor
@@ -408,7 +410,15 @@ class Dynamips(BaseManager):
         if ghost_file_path not in self._ghost_files:
             # create a new ghost IOS instance
             ghost_id = str(uuid4())
-            ghost = Router("ghost-" + ghost_file, ghost_id, vm.project, vm.manager, platform=vm.platform, hypervisor=vm.hypervisor, ghost_flag=True)
+            ghost = Router(
+                "ghost-" + ghost_file,
+                ghost_id,
+                vm.project,
+                vm.manager,
+                platform=vm.platform,
+                hypervisor=vm.hypervisor,
+                ghost_flag=True,
+            )
             try:
                 await ghost.create()
                 await ghost.set_image(vm.image)
@@ -538,7 +548,7 @@ class Dynamips(BaseManager):
             with open(path, "wb") as f:
                 if content:
                     content = "!\n" + content.replace("\r", "")
-                    content = content.replace('%h', vm.name)
+                    content = content.replace("%h", vm.name)
                     f.write(content.encode("utf-8"))
         except OSError as e:
             raise DynamipsError(f"Could not create config file '{path}': {e}")
@@ -571,7 +581,7 @@ class Dynamips(BaseManager):
             for idlepc in idlepcs:
                 match = re.search(r"^0x[0-9a-f]{8}$", idlepc.split()[0])
                 if not match:
-                   continue
+                    continue
                 await vm.set_idlepc(idlepc.split()[0])
                 log.debug(f"Auto Idle-PC: trying idle-PC value {vm.idlepc}")
                 start_time = time.time()
@@ -615,7 +625,7 @@ class Dynamips(BaseManager):
 
         # Not a Dynamips router
         if not hasattr(source_node, "startup_config_path"):
-            return (await super().duplicate_node(source_node_id, destination_node_id))
+            return await super().duplicate_node(source_node_id, destination_node_id)
 
         try:
             with open(source_node.startup_config_path) as f:
@@ -627,10 +637,9 @@ class Dynamips(BaseManager):
                 private_config = f.read()
         except OSError:
             private_config = None
-        await self.set_vm_configs(destination_node, {
-            "startup_config_content": startup_config,
-            "private_config_content": private_config
-        })
+        await self.set_vm_configs(
+            destination_node, {"startup_config_content": startup_config, "private_config_content": private_config}
+        )
 
         # Force refresh of the name in configuration files
         new_name = destination_node.name

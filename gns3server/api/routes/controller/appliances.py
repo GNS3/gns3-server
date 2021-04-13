@@ -25,12 +25,13 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_appliances(update: Optional[bool] = None, symbol_theme:  Optional[str] = "Classic"):
+async def get_appliances(update: Optional[bool] = None, symbol_theme: Optional[str] = "Classic"):
     """
     Return all appliances known by the controller.
     """
 
     from gns3server.controller import Controller
+
     controller = Controller.instance()
     if update:
         await controller.appliance_manager.download_appliances()

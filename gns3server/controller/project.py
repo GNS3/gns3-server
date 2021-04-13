@@ -46,6 +46,7 @@ from .import_project import import_project
 from .controller_error import ControllerError, ControllerForbiddenError, ControllerNotFoundError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -58,6 +59,7 @@ def open_required(func):
         if self._status == "closed":
             raise ControllerForbiddenError("The project is not opened")
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -70,10 +72,29 @@ class Project:
     :param status: Status of the project (opened / closed)
     """
 
-    def __init__(self, name=None, project_id=None, path=None, controller=None, status="opened",
-                 filename=None, auto_start=False, auto_open=False, auto_close=True,
-                 scene_height=1000, scene_width=2000, zoom=100, show_layers=False, snap_to_grid=False, show_grid=False,
-                 grid_size=75, drawing_grid_size=25, show_interface_labels=False, variables=None, supplier=None):
+    def __init__(
+        self,
+        name=None,
+        project_id=None,
+        path=None,
+        controller=None,
+        status="opened",
+        filename=None,
+        auto_start=False,
+        auto_open=False,
+        auto_close=True,
+        scene_height=1000,
+        scene_width=2000,
+        zoom=100,
+        show_layers=False,
+        snap_to_grid=False,
+        show_grid=False,
+        grid_size=75,
+        drawing_grid_size=25,
+        show_interface_labels=False,
+        variables=None,
+        supplier=None,
+    ):
 
         self._controller = controller
         assert name is not None
@@ -160,11 +181,7 @@ class Project:
 
             # update on computes
             for compute in list(self._project_created_on_compute):
-                await compute.put(
-                    f"/projects/{self._id}", {
-                        "variables": self.variables
-                    }
-                )
+                await compute.put(f"/projects/{self._id}", {"variables": self.variables})
 
     def reset(self):
         """
@@ -409,7 +426,9 @@ class Project:
             raise ControllerError(f"Could not create project directory: {e}")
 
         if '"' in path:
-            raise ControllerForbiddenError("You are not allowed to use \" in the project directory path. Not supported by Dynamips.")
+            raise ControllerForbiddenError(
+                'You are not allowed to use " in the project directory path. Not supported by Dynamips.'
+            )
 
         self._path = path
 
@@ -465,7 +484,7 @@ class Project:
         if base_name in self._allocated_node_names:
             base_name = re.sub(r"[0-9]+$", "{0}", base_name)
 
-        if '{0}' in base_name or '{id}' in base_name:
+        if "{0}" in base_name or "{id}" in base_name:
             # base name is a template, replace {0} or {id} by an unique identifier
             for number in range(1, 1000000):
                 try:
@@ -524,16 +543,9 @@ class Project:
         if compute not in self._project_created_on_compute:
             # For a local server we send the project path
             if compute.id == "local":
-                data = {
-                    "name": self._name,
-                    "project_id": self._id,
-                    "path": self._path
-                }
+                data = {"name": self._name, "project_id": self._id, "path": self._path}
             else:
-                data = {
-                    "name": self._name,
-                    "project_id": self._id
-                }
+                data = {"name": self._name, "project_id": self._id}
 
             if self._variables:
                 data["variables"] = self._variables
@@ -568,7 +580,9 @@ class Project:
                 # to generate MAC addresses) when creating multiple IOU node at the same time
                 if "properties" in kwargs.keys():
                     # allocate a new application id for nodes loaded from the project
-                    kwargs.get("properties")["application_id"] = get_next_application_id(self._controller.projects, self._computes)
+                    kwargs.get("properties")["application_id"] = get_next_application_id(
+                        self._controller.projects, self._computes
+                    )
                 elif "application_id" not in kwargs.keys() and not kwargs.get("properties"):
                     # allocate a new application id for nodes added to the project
                     kwargs["application_id"] = get_next_application_id(self._controller.projects, self._computes)
@@ -821,7 +835,7 @@ class Project:
             # don't remove supplier's logo
             if self.supplier:
                 try:
-                    logo = self.supplier['logo']
+                    logo = self.supplier["logo"]
                     pictures.remove(logo)
                 except KeyError:
                     pass
@@ -846,7 +860,9 @@ class Project:
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:
-                raise ControllerError(f"Project '{self._name}' cannot be deleted because it is not in the default project directory: '{project_directory}'")
+                raise ControllerError(
+                    f"Project '{self._name}' cannot be deleted because it is not in the default project directory: '{project_directory}'"
+                )
             shutil.rmtree(self.path)
         except OSError as e:
             raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
@@ -906,7 +922,7 @@ class Project:
         try:
             project_data = load_topology(path)
 
-            #load meta of project
+            # load meta of project
             keys_to_load = [
                 "auto_start",
                 "auto_close",
@@ -919,7 +935,7 @@ class Project:
                 "show_grid",
                 "grid_size",
                 "drawing_grid_size",
-                "show_interface_labels"
+                "show_interface_labels",
             ]
 
             for key in keys_to_load:
@@ -944,7 +960,7 @@ class Project:
                 node_id = node.pop("node_id", str(uuid.uuid4()))
                 await self.add_node(compute, name, node_id, dump=False, **node)
             for link_data in topology.get("links", []):
-                if 'link_id' not in link_data.keys():
+                if "link_id" not in link_data.keys():
                     # skip the link
                     continue
                 link = await self.add_link(link_id=link_data["link_id"])
@@ -954,12 +970,26 @@ class Project:
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
                     if port is None:
-                        log.warning("Port {}/{} for {} not found".format(node_link["adapter_number"], node_link["port_number"], node.name))
+                        log.warning(
+                            "Port {}/{} for {} not found".format(
+                                node_link["adapter_number"], node_link["port_number"], node.name
+                            )
+                        )
                         continue
                     if port.link is not None:
-                        log.warning("Port {}/{} is already connected to link ID {}".format(node_link["adapter_number"], node_link["port_number"], port.link.id))
+                        log.warning(
+                            "Port {}/{} is already connected to link ID {}".format(
+                                node_link["adapter_number"], node_link["port_number"], port.link.id
+                            )
+                        )
                         continue
-                    await link.add_node(node, node_link["adapter_number"], node_link["port_number"], label=node_link.get("label"), dump=False)
+                    await link.add_node(
+                        node,
+                        node_link["adapter_number"],
+                        node_link["port_number"],
+                        label=node_link.get("label"),
+                        dump=False,
+                    )
                 if len(link.nodes) != 2:
                     # a link should have 2 attached nodes, this can happen with corrupted projects
                     await self.delete_link(link.id, force_delete=True)
@@ -1039,18 +1069,27 @@ class Project:
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 # Do not compress the exported project when duplicating
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
-                    await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=reset_mac_addresses)
+                    await export_project(
+                        zstream,
+                        self,
+                        tmpdir,
+                        keep_compute_id=True,
+                        allow_all_nodes=True,
+                        reset_mac_addresses=reset_mac_addresses,
+                    )
 
                     # export the project to a temporary location
                     project_path = os.path.join(tmpdir, "project.gns3p")
                     log.info(f"Exporting project to '{project_path}'")
-                    async with aiofiles.open(project_path, 'wb') as f:
+                    async with aiofiles.open(project_path, "wb") as f:
                         async for chunk in zstream:
                             await f.write(chunk)
 
                     # import the temporary project
                     with open(project_path, "rb") as f:
-                        project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+                        project = await import_project(
+                            self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True
+                        )
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, UnicodeEncodeError) as e:
@@ -1143,31 +1182,26 @@ class Project:
         data = copy.deepcopy(node.__json__(topology_dump=True))
         # Some properties like internal ID should not be duplicated
         for unique_property in (
-                'node_id',
-                'name',
-                'mac_addr',
-                'mac_address',
-                'compute_id',
-                'application_id',
-                'dynamips_id'):
+            "node_id",
+            "name",
+            "mac_addr",
+            "mac_address",
+            "compute_id",
+            "application_id",
+            "dynamips_id",
+        ):
             data.pop(unique_property, None)
-            if 'properties' in data:
-                data['properties'].pop(unique_property, None)
-        node_type = data.pop('node_type')
-        data['x'] = x
-        data['y'] = y
-        data['z'] = z
-        data['locked'] = False  # duplicated node must not be locked
+            if "properties" in data:
+                data["properties"].pop(unique_property, None)
+        node_type = data.pop("node_type")
+        data["x"] = x
+        data["y"] = y
+        data["z"] = z
+        data["locked"] = False  # duplicated node must not be locked
         new_node_uuid = str(uuid.uuid4())
-        new_node = await self.add_node(node.compute,
-                                       node.name,
-                                       new_node_uuid,
-                                       node_type=node_type,
-                                       **data)
+        new_node = await self.add_node(node.compute, node.name, new_node_uuid, node_type=node_type, **data)
         try:
-            await node.post("/duplicate", timeout=None, data={
-                "destination_node_id": new_node_uuid
-            })
+            await node.post("/duplicate", timeout=None, data={"destination_node_id": new_node_uuid})
         except ControllerNotFoundError:
             await self.delete_node(new_node_uuid)
             raise ControllerError("This node type cannot be duplicated")
@@ -1182,7 +1216,7 @@ class Project:
             "nodes": len(self._nodes),
             "links": len(self._links),
             "drawings": len(self._drawings),
-            "snapshots": len(self._snapshots)
+            "snapshots": len(self._snapshots),
         }
 
     def __json__(self):
@@ -1205,7 +1239,7 @@ class Project:
             "drawing_grid_size": self._drawing_grid_size,
             "show_interface_labels": self._show_interface_labels,
             "supplier": self._supplier,
-            "variables": self._variables
+            "variables": self._variables,
         }
 
     def __repr__(self):

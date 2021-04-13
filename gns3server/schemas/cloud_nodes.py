@@ -107,7 +107,9 @@ class CloudBase(BaseModel):
     remote_console_port: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     remote_console_type: Optional[CloudConsoleType] = Field(None, description="Console type")
     remote_console_http_path: Optional[str] = Field(None, description="Path of the remote web interface")
-    ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(None, description="List of port mappings")
+    ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(
+        None, description="List of port mappings"
+    )
     interfaces: Optional[List[HostInterface]] = Field(None, description="List of interfaces")
 
 

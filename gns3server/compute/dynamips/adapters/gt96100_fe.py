@@ -18,7 +18,6 @@ from .adapter import Adapter
 
 
 class GT96100_FE(Adapter):
-
     def __init__(self):
 
         super().__init__(interfaces=2, wics=3)

@@ -37,5 +37,6 @@ class IOUTemplate(TemplateBase):
     private_config: Optional[str] = Field("", description="Private-config of IOU")
     l1_keepalives: Optional[bool] = Field(False, description="Always keep up Ethernet interface (does not always work)")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
-    console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
-
+    console_auto_start: Optional[bool] = Field(
+        False, description="Automatically start the console when the node has started"
+    )

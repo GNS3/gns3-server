@@ -29,5 +29,5 @@ from .templates import (
     QemuTemplate,
     VirtualBoxTemplate,
     VMwareTemplate,
-    VPCSTemplate
+    VPCSTemplate,
 )

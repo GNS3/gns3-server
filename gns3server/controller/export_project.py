@@ -28,12 +28,22 @@ from .controller_error import ControllerError, ControllerNotFoundError, Controll
 from datetime import datetime
 
 import logging
+
 log = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1024 * 8  # 8KB
 
 
-async def export_project(zstream, project, temporary_dir, include_images=False, include_snapshots=False, keep_compute_id=False, allow_all_nodes=False, reset_mac_addresses=False):
+async def export_project(
+    zstream,
+    project,
+    temporary_dir,
+    include_images=False,
+    include_snapshots=False,
+    keep_compute_id=False,
+    allow_all_nodes=False,
+    reset_mac_addresses=False,
+):
     """
     Export a project to a zip file.
 
@@ -63,7 +73,16 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
         if file.endswith(".gns3"):
-            await _patch_project_file(project, os.path.join(project._path, file), zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses)
+            await _patch_project_file(
+                project,
+                os.path.join(project._path, file),
+                zstream,
+                include_images,
+                keep_compute_id,
+                allow_all_nodes,
+                temporary_dir,
+                reset_mac_addresses,
+            )
 
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
@@ -97,15 +116,21 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                     log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
                     if response.status != 200:
-                        log.warning(f"Cannot export file from compute '{compute.id}'. Compute returned status code {response.status}.")
+                        log.warning(
+                            f"Cannot export file from compute '{compute.id}'. Compute returned status code {response.status}."
+                        )
                         continue
                     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
-                    async with aiofiles.open(fd, 'wb') as f:
+                    async with aiofiles.open(fd, "wb") as f:
                         while True:
                             try:
                                 data = await response.content.read(CHUNK_SIZE)
                             except asyncio.TimeoutError:
-                                raise ControllerTimeoutError("Timeout when downloading file '{}' from remote compute {}:{}".format(compute_file["path"], compute.host, compute.port))
+                                raise ControllerTimeoutError(
+                                    "Timeout when downloading file '{}' from remote compute {}:{}".format(
+                                        compute_file["path"], compute.host, compute.port
+                                    )
+                                )
                             if not data:
                                 break
                             await f.write(data)
@@ -161,12 +186,14 @@ def _is_exportable(path, include_snapshots=False):
 
     # do not export log files and OS noise
     filename = os.path.basename(path)
-    if filename.endswith('_log.txt') or filename.endswith('.log') or filename == '.DS_Store':
+    if filename.endswith("_log.txt") or filename.endswith(".log") or filename == ".DS_Store":
         return False
     return True
 
 
-async def _patch_project_file(project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses):
+async def _patch_project_file(
+    project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses
+):
     """
     Patch a project file (.gns3) to export a project.
     The .gns3 file is renamed to project.gns3
@@ -186,10 +213,14 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
     if "topology" in topology:
         if "nodes" in topology["topology"]:
             for node in topology["topology"]["nodes"]:
-                compute_id = node.get('compute_id', 'local')
+                compute_id = node.get("compute_id", "local")
 
                 if node["node_type"] == "virtualbox" and node.get("properties", {}).get("linked_clone"):
-                    raise ControllerError("Projects with a linked {} clone node cannot not be exported. Please use Qemu instead.".format(node["node_type"]))
+                    raise ControllerError(
+                        "Projects with a linked {} clone node cannot not be exported. Please use Qemu instead.".format(
+                            node["node_type"]
+                        )
+                    )
                 if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware"]:
                     raise ControllerError("Projects with a {} node cannot be exported".format(node["node_type"]))
 
@@ -208,30 +239,26 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
                                 continue
                         elif not prop.endswith("image"):
                             continue
-                        if value is None or value.strip() == '':
+                        if value is None or value.strip() == "":
                             continue
 
                         if not keep_compute_id:  # If we keep the original compute we can keep the image path
                             node["properties"][prop] = os.path.basename(value)
 
                         if include_images is True:
-                            images.append({
-                                'compute_id': compute_id,
-                                'image': value,
-                                'image_type': node['node_type']
-                            })
+                            images.append({"compute_id": compute_id, "image": value, "image_type": node["node_type"]})
 
         if not keep_compute_id:
-            topology["topology"]["computes"] = []  # Strip compute information because could contain secret info like password
+            topology["topology"][
+                "computes"
+            ] = []  # Strip compute information because could contain secret info like password
 
-    local_images = {i['image'] for i in images if i['compute_id'] == 'local'}
+    local_images = {i["image"] for i in images if i["compute_id"] == "local"}
 
     for image in local_images:
         _export_local_image(image, zstream)
 
-    remote_images = {
-        (i['compute_id'], i['image_type'], i['image'])
-        for i in images if i['compute_id'] != 'local'}
+    remote_images = {(i["compute_id"], i["image_type"], i["image"]) for i in images if i["compute_id"] != "local"}
 
     for compute_id, image_type, image in remote_images:
         await _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
@@ -249,6 +276,7 @@ def _export_local_image(image, zstream):
     """
 
     from ..compute import MODULES
+
     for module in MODULES:
         try:
             images_directory = module.instance().get_images_directory()
@@ -282,15 +310,19 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
 
     response = await compute.download_image(image_type, image)
     if response.status != 200:
-        raise ControllerError(f"Cannot export image from compute '{compute_id}'. Compute returned status code {response.status}.")
+        raise ControllerError(
+            f"Cannot export image from compute '{compute_id}'. Compute returned status code {response.status}."
+        )
 
     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
-    async with aiofiles.open(fd, 'wb') as f:
+    async with aiofiles.open(fd, "wb") as f:
         while True:
             try:
                 data = await response.content.read(CHUNK_SIZE)
             except asyncio.TimeoutError:
-                raise ControllerTimeoutError(f"Timeout when downloading image '{image}' from remote compute {compute.host}:{compute.port}")
+                raise ControllerTimeoutError(
+                    f"Timeout when downloading image '{image}' from remote compute {compute.host}:{compute.port}"
+                )
             if not data:
                 break
             await f.write(data)

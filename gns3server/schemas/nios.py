@@ -65,4 +65,3 @@ class TAPNIO(BaseModel):
 
     type: TAPNIOType
     tap_device: str = Field(..., description="TAP device name e.g. tap0")
-

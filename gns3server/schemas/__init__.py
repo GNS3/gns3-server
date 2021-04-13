@@ -61,5 +61,5 @@ from .dynamips_templates import (
     C3600DynamipsTemplate,
     C3725DynamipsTemplate,
     C3745DynamipsTemplate,
-    C7200DynamipsTemplate
+    C7200DynamipsTemplate,
 )

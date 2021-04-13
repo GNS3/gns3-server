@@ -36,12 +36,11 @@ TEMPLATE_TYPE_TO_MODEL = {
     "qemu": models.QemuTemplate,
     "virtualbox": models.VirtualBoxTemplate,
     "vmware": models.VMwareTemplate,
-    "vpcs": models.VPCSTemplate
+    "vpcs": models.VPCSTemplate,
 }
 
 
 class TemplatesRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -67,16 +66,11 @@ class TemplatesRepository(BaseRepository):
         await self._db_session.refresh(db_template)
         return db_template
 
-    async def update_template(
-            self,
-            template_id: UUID,
-            template_update: schemas.TemplateUpdate) -> schemas.Template:
+    async def update_template(self, template_id: UUID, template_update: schemas.TemplateUpdate) -> schemas.Template:
 
         update_values = template_update.dict(exclude_unset=True)
 
-        query = update(models.Template) \
-            .where(models.Template.template_id == template_id) \
-            .values(update_values)
+        query = update(models.Template).where(models.Template.template_id == template_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()

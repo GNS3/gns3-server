@@ -40,11 +40,12 @@ from ..base_node import BaseNode
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class VPCSVM(BaseNode):
-    module_name = 'vpcs'
+    module_name = "vpcs"
 
     """
     VPCS VM implementation.
@@ -121,14 +122,16 @@ class VPCSVM(BaseNode):
 
     def __json__(self):
 
-        return {"name": self.name,
-                "node_id": self.id,
-                "node_directory": self.working_path,
-                "status": self.status,
-                "console": self._console,
-                "console_type": self._console_type,
-                "project_id": self.project.id,
-                "command_line": self.command_line}
+        return {
+            "name": self.name,
+            "node_id": self.id,
+            "node_directory": self.working_path,
+            "status": self.status,
+            "console": self._console,
+            "console_type": self._console_type,
+            "project_id": self.project.id,
+            "command_line": self.command_line,
+        }
 
     def _vpcs_path(self):
         """
@@ -153,7 +156,7 @@ class VPCSVM(BaseNode):
         if self.script_file:
             content = self.startup_script
             content = content.replace(self._name, new_name)
-            escaped_name = new_name.replace('\\', '')
+            escaped_name = new_name.replace("\\", "")
             content = re.sub(r"^set pcname .+$", "set pcname " + escaped_name, content, flags=re.MULTILINE)
             self.startup_script = content
 
@@ -184,10 +187,10 @@ class VPCSVM(BaseNode):
         """
 
         try:
-            startup_script_path = os.path.join(self.working_dir, 'startup.vpc')
-            with open(startup_script_path, "w+", encoding='utf-8') as f:
+            startup_script_path = os.path.join(self.working_dir, "startup.vpc")
+            with open(startup_script_path, "w+", encoding="utf-8") as f:
                 if startup_script is None:
-                    f.write('')
+                    f.write("")
                 else:
                     startup_script = startup_script.replace("%h", self._name)
                     f.write(startup_script)
@@ -228,12 +231,10 @@ class VPCSVM(BaseNode):
                 if sys.platform.startswith("win32"):
                     flags = subprocess.CREATE_NEW_PROCESS_GROUP
                 with open(self._vpcs_stdout_file, "w", encoding="utf-8") as fd:
-                    self.command_line = ' '.join(command)
-                    self._process = await asyncio.create_subprocess_exec(*command,
-                                                                              stdout=fd,
-                                                                              stderr=subprocess.STDOUT,
-                                                                              cwd=self.working_dir,
-                                                                              creationflags=flags)
+                    self.command_line = " ".join(command)
+                    self._process = await asyncio.create_subprocess_exec(
+                        *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir, creationflags=flags
+                    )
                     monitor_process(self._process, self._termination_callback)
 
                 await self._start_ubridge()
@@ -265,7 +266,10 @@ class VPCSVM(BaseNode):
             await self._stop_ubridge()
             await super().stop()
             if returncode != 0:
-                self.project.emit("log.error", {"message": f"VPCS process has stopped, return code: {returncode}\n{self.read_vpcs_stdout()}"})
+                self.project.emit(
+                    "log.error",
+                    {"message": f"VPCS process has stopped, return code: {returncode}\n{self.read_vpcs_stdout()}"},
+                )
 
     async def stop(self):
         """
@@ -365,17 +369,21 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
+            raise VPCSError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
 
         if self.is_running():
             await self.add_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info('VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
-                                                                                  id=self.id,
-                                                                                  nio=nio,
-                                                                                  port_number=port_number))
+        log.info(
+            'VPCS "{name}" [{id}]: {nio} added to port {port_number}'.format(
+                name=self._name, id=self.id, nio=nio, port_number=port_number
+            )
+        )
 
         return nio
 
@@ -388,8 +396,11 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
+            raise VPCSError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
         if self.is_running():
             await self.update_ubridge_udp_connection(f"VPCS-{self._id}", self._local_udp_tunnel[1], nio)
 
@@ -403,8 +414,11 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
+            raise VPCSError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
 
         await self.stop_capture(port_number)
         if self.is_running():
@@ -415,10 +429,11 @@ class VPCSVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
 
-        log.info('VPCS "{name}" [{id}]: {nio} removed from port {port_number}'.format(name=self._name,
-                                                                                      id=self.id,
-                                                                                      nio=nio,
-                                                                                      port_number=port_number))
+        log.info(
+            'VPCS "{name}" [{id}]: {nio} removed from port {port_number}'.format(
+                name=self._name, id=self.id, nio=nio, port_number=port_number
+            )
+        )
         return nio
 
     def get_nio(self, port_number):
@@ -431,8 +446,11 @@ class VPCSVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise VPCSError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
+            raise VPCSError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
         nio = self._ethernet_adapter.get_nio(port_number)
         if not nio:
             raise VPCSError(f"Port {port_number} is not connected")
@@ -452,12 +470,15 @@ class VPCSVM(BaseNode):
 
         nio.start_packet_capture(output_file)
         if self.ubridge:
-            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=f"VPCS-{self._id}",
-                                                                                               output_file=output_file))
+            await self._ubridge_send(
+                'bridge start_capture {name} "{output_file}"'.format(name=f"VPCS-{self._id}", output_file=output_file)
+            )
 
-        log.info("VPCS '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
-                                                                                              id=self.id,
-                                                                                              port_number=port_number))
+        log.info(
+            "VPCS '{name}' [{id}]: starting packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -472,11 +493,13 @@ class VPCSVM(BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            await self._ubridge_send('bridge stop_capture {name}'.format(name=f"VPCS-{self._id}"))
+            await self._ubridge_send("bridge stop_capture {name}".format(name=f"VPCS-{self._id}"))
 
-        log.info("VPCS '{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
-                                                                                              id=self.id,
-                                                                                              port_number=port_number))
+        log.info(
+            "VPCS '{name}' [{id}]: stopping packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )
 
     def _build_command(self):
         """
@@ -516,7 +539,9 @@ class VPCSVM(BaseNode):
 
         command = [self._vpcs_path()]
         command.extend(["-p", str(self._internal_console_port)])  # listen to console port
-        command.extend(["-m", str(self._manager.get_mac_id(self.id))])   # the unique ID is used to set the MAC address offset
+        command.extend(
+            ["-m", str(self._manager.get_mac_id(self.id))]
+        )  # the unique ID is used to set the MAC address offset
         command.extend(["-i", "1"])  # option to start only one VPC instance
         command.extend(["-F"])  # option to avoid the daemonization of VPCS
         if self._vpcs_version >= parse_version("0.8b"):
@@ -533,7 +558,9 @@ class VPCSVM(BaseNode):
             command.extend(["-s", str(nio.lport)])  # source UDP port
             command.extend(["-c", str(nio.rport)])  # destination UDP port
             try:
-                command.extend(["-t", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because VPCS doesn't support it
+                command.extend(
+                    ["-t", socket.gethostbyname(nio.rhost)]
+                )  # destination host, we need to resolve the hostname because VPCS doesn't support it
             except socket.gaierror as e:
                 raise VPCSError(f"Can't resolve hostname {nio.rhost}")
 
@@ -550,7 +577,7 @@ class VPCSVM(BaseNode):
         """
 
         # use the default VPCS file if it exists
-        path = os.path.join(self.working_dir, 'startup.vpc')
+        path = os.path.join(self.working_dir, "startup.vpc")
         if os.path.exists(path):
             return path
         else:

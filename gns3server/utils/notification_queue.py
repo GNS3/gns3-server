@@ -23,6 +23,7 @@ from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.utils.path import get_default_project_directory
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -55,9 +56,7 @@ class NotificationQueue(asyncio.Queue):
         """
         Return the content of the ping notification
         """
-        msg = {"cpu_usage_percent": 0,
-               "memory_usage_percent": 0,
-               "disk_usage_percent": 0}
+        msg = {"cpu_usage_percent": 0, "memory_usage_percent": 0, "disk_usage_percent": 0}
         # Non blocking call in order to get cpu usage. First call will return 0
         try:
             msg["cpu_usage_percent"] = CpuPercent.get(interval=None)

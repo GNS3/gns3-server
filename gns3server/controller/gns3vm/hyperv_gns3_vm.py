@@ -23,6 +23,7 @@ import ipaddress
 
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
+
 log = logging.getLogger(__name__)
 
 
@@ -55,17 +56,25 @@ class HyperVGNS3VM(BaseGNS3VM):
             raise GNS3VMError("Hyper-V is only supported on Windows")
 
         if sys.getwindowsversion().platform_version[0] < 10:
-            raise GNS3VMError(f"Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {sys.getwindowsversion().platform_version[0]} detected)")
+            raise GNS3VMError(
+                f"Windows 10/Windows Server 2016 or a later version is required to run Hyper-V with nested virtualization enabled (version {sys.getwindowsversion().platform_version[0]} detected)"
+            )
 
-        is_windows_10 = sys.getwindowsversion().platform_version[0] == 10 and sys.getwindowsversion().platform_version[1] == 0
+        is_windows_10 = (
+            sys.getwindowsversion().platform_version[0] == 10 and sys.getwindowsversion().platform_version[1] == 0
+        )
 
         if is_windows_10 and sys.getwindowsversion().platform_version[2] < 14393:
-            raise GNS3VMError("Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later")
+            raise GNS3VMError(
+                "Hyper-V with nested virtualization is only supported on Windows 10 Anniversary Update (build 10.0.14393) or later"
+            )
 
         try:
             import pythoncom
+
             pythoncom.CoInitialize()
             import wmi
+
             self._wmi = wmi
             conn = self._wmi.WMI()
         except self._wmi.x_wmi as e:
@@ -77,12 +86,16 @@ class HyperVGNS3VM(BaseGNS3VM):
         if conn.Win32_Processor()[0].Manufacturer != "GenuineIntel":
             if is_windows_10 and conn.Win32_Processor()[0].Manufacturer == "AuthenticAMD":
                 if sys.getwindowsversion().platform_version[2] < 19640:
-                    raise GNS3VMError("Windows 10 (build 10.0.19640) or later is required by Hyper-V to support nested virtualization with AMD processors")
+                    raise GNS3VMError(
+                        "Windows 10 (build 10.0.19640) or later is required by Hyper-V to support nested virtualization with AMD processors"
+                    )
             else:
-                raise GNS3VMError("An Intel processor is required by Hyper-V to support nested virtualization on this version of Windows")
+                raise GNS3VMError(
+                    "An Intel processor is required by Hyper-V to support nested virtualization on this version of Windows"
+                )
 
         # This is not reliable
-        #if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
+        # if not conn.Win32_Processor()[0].VirtualizationFirmwareEnabled:
         #    raise GNS3VMError("Nested Virtualization (VT-x) is not enabled on this system")
 
     def _connect(self):
@@ -134,8 +147,8 @@ class HyperVGNS3VM(BaseGNS3VM):
         :param vm: VM instance
         """
 
-        vm_settings = vm.associators(wmi_result_class='Msvm_VirtualSystemSettingData')
-        return [s for s in vm_settings if s.VirtualSystemType == 'Microsoft:Hyper-V:System:Realized'][0]
+        vm_settings = vm.associators(wmi_result_class="Msvm_VirtualSystemSettingData")
+        return [s for s in vm_settings if s.VirtualSystemType == "Microsoft:Hyper-V:System:Realized"][0]
 
     def _get_vm_resources(self, vm, resource_class):
         """
@@ -158,11 +171,13 @@ class HyperVGNS3VM(BaseGNS3VM):
 
         available_vcpus = psutil.cpu_count(logical=False)
         if vcpus > available_vcpus:
-            raise GNS3VMError(f"You have allocated too many vCPUs for the GNS3 VM! (max available is {available_vcpus} vCPUs)")
+            raise GNS3VMError(
+                f"You have allocated too many vCPUs for the GNS3 VM! (max available is {available_vcpus} vCPUs)"
+            )
 
         try:
-            mem_settings = self._get_vm_resources(self._vm, 'Msvm_MemorySettingData')[0]
-            cpu_settings = self._get_vm_resources(self._vm, 'Msvm_ProcessorSettingData')[0]
+            mem_settings = self._get_vm_resources(self._vm, "Msvm_MemorySettingData")[0]
+            cpu_settings = self._get_vm_resources(self._vm, "Msvm_ProcessorSettingData")[0]
 
             mem_settings.VirtualQuantity = ram
             mem_settings.Reservation = ram
@@ -201,7 +216,7 @@ class HyperVGNS3VM(BaseGNS3VM):
         Gets the WMI object.
         """
 
-        return self._wmi.WMI(moniker=path.replace('\\', '/'))
+        return self._wmi.WMI(moniker=path.replace("\\", "/"))
 
     async def _set_state(self, state):
         """
@@ -234,8 +249,12 @@ class HyperVGNS3VM(BaseGNS3VM):
                         IPv4/v6 (4098)
         """
 
-        wql = "SELECT * FROM Msvm_GuestNetworkAdapterConfiguration WHERE InstanceID like \
-               'Microsoft:GuestNetwork\\" + self._vm.Name + "%' and ProtocolIFType > 0 "
+        wql = (
+            "SELECT * FROM Msvm_GuestNetworkAdapterConfiguration WHERE InstanceID like \
+               'Microsoft:GuestNetwork\\"
+            + self._vm.Name
+            + "%' and ProtocolIFType > 0 "
+        )
         nic_count = len(self._conn.query(wql))
         while nic_count == 0:
             await asyncio.sleep(0.1)  # 100ms
@@ -272,15 +291,15 @@ class HyperVGNS3VM(BaseGNS3VM):
         trial = 120
         guest_ip_address = ""
         log.info("Waiting for GNS3 VM IP")
-        ports = self._get_vm_resources(self._vm, 'Msvm_EthernetPortAllocationSettingData')
-        vnics = self._get_vm_resources(self._vm, 'Msvm_SyntheticEthernetPortSettingData')
+        ports = self._get_vm_resources(self._vm, "Msvm_EthernetPortAllocationSettingData")
+        vnics = self._get_vm_resources(self._vm, "Msvm_SyntheticEthernetPortSettingData")
         while True:
             for port in ports:
                 try:
                     vnic = [v for v in vnics if port.Parent == v.path_()][0]
                 except IndexError:
                     continue
-                config = vnic.associators(wmi_result_class='Msvm_GuestNetworkAdapterConfiguration')
+                config = vnic.associators(wmi_result_class="Msvm_GuestNetworkAdapterConfiguration")
                 ip_addresses = config[0].IPAddresses
                 for ip_address in ip_addresses:
                     # take the first valid IPv4 address

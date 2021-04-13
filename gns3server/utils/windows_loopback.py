@@ -33,7 +33,6 @@ def parse_add_loopback():
     """
 
     class Add(argparse.Action):
-
         def __call__(self, parser, args, values, option_string=None):
             try:
                 ipaddress.IPv4Interface(f"{values[1]}/{values[2]}")
@@ -42,6 +41,7 @@ def parse_add_loopback():
             except ipaddress.NetmaskValueError as e:
                 raise argparse.ArgumentTypeError(f"Invalid subnet mask: {e}")
             setattr(args, self.dest, values)
+
     return Add
 
 
@@ -70,8 +70,8 @@ def add_loopback(devcon_path, name, ip_address, netmask):
                     elif retcode != 0:
                         print('Error while configuring IP/Subnet mask on "{}"')
 
-                    #FIXME: support gateway?
-                    #network_config.SetGateways(DefaultIPGateway=[""])
+                    # FIXME: support gateway?
+                    # network_config.SetGateways(DefaultIPGateway=[""])
             break
 
     # restart winpcap/npcap services to take the new adapter into account
@@ -106,8 +106,8 @@ def main():
     Entry point for the Windows loopback tool.
     """
 
-    parser = argparse.ArgumentParser(description='%(prog)s add/remove Windows loopback adapters')
-    parser.add_argument('-a', "--add", nargs=3, action=parse_add_loopback(), help="add a Windows loopback adapter")
+    parser = argparse.ArgumentParser(description="%(prog)s add/remove Windows loopback adapters")
+    parser.add_argument("-a", "--add", nargs=3, action=parse_add_loopback(), help="add a Windows loopback adapter")
     parser.add_argument("-r", "--remove", action="store", help="remove a Windows loopback adapter")
     try:
         args = parser.parse_args()
@@ -120,6 +120,7 @@ def main():
         raise SystemExit("Could not find devcon.exe")
 
     from win32com.shell import shell
+
     if not shell.IsUserAnAdmin():
         raise SystemExit("You must run this script as an administrator")
 
@@ -132,5 +133,6 @@ def main():
         print(e)
         os.system("pause")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

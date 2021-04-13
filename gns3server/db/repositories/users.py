@@ -28,7 +28,6 @@ from gns3server.services import auth_service
 
 
 class UsersRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -62,10 +61,7 @@ class UsersRepository(BaseRepository):
 
         hashed_password = self._auth_service.hash_password(user.password)
         db_user = models.User(
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            hashed_password=hashed_password
+            username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
         )
         self._db_session.add(db_user)
         await self._db_session.commit()
@@ -79,9 +75,7 @@ class UsersRepository(BaseRepository):
         if password:
             update_values["hashed_password"] = self._auth_service.hash_password(password=password)
 
-        query = update(models.User) \
-            .where(models.User.user_id == user_id) \
-            .values(update_values)
+        query = update(models.User).where(models.User.user_id == user_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()

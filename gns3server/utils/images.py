@@ -22,6 +22,7 @@ from . import force_unix_path
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -56,9 +57,11 @@ def list_images(type):
                 if filename not in files:
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
-                    elif ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips") \
-                            or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou") \
-                            or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu"):
+                    elif (
+                        ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips")
+                        or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou")
+                        or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu")
+                    ):
                         files.add(filename)
 
                         # It the image is located in the standard directory the path is relative
@@ -73,14 +76,20 @@ def list_images(type):
                                     # read the first 7 bytes of the file.
                                     elf_header_start = f.read(7)
                                 # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
-                                if not elf_header_start == b'\x7fELF\x01\x02\x01' and not elf_header_start == b'\x7fELF\x01\x01\x01':
+                                if (
+                                    not elf_header_start == b"\x7fELF\x01\x02\x01"
+                                    and not elf_header_start == b"\x7fELF\x01\x01\x01"
+                                ):
                                     continue
 
-                            images.append({
-                                "filename": filename,
-                                "path": force_unix_path(path),
-                                "md5sum": md5sum(os.path.join(root, filename)),
-                                "filesize": os.stat(os.path.join(root, filename)).st_size})
+                            images.append(
+                                {
+                                    "filename": filename,
+                                    "path": force_unix_path(path),
+                                    "md5sum": md5sum(os.path.join(root, filename)),
+                                    "filesize": os.stat(os.path.join(root, filename)).st_size,
+                                }
+                            )
                         except OSError as e:
                             log.warning(f"Can't add image {path}: {str(e)}")
     return images
@@ -156,7 +165,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open(path + '.md5sum') as f:
+        with open(path + ".md5sum") as f:
             md5 = f.read().strip()
             if len(md5) == 32:
                 return md5
@@ -166,7 +175,7 @@ def md5sum(path, stopped_event=None):
 
     try:
         m = hashlib.md5()
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             while True:
                 if stopped_event is not None and stopped_event.is_set():
                     log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
@@ -181,7 +190,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open(f'{path}.md5sum', 'w+') as f:
+        with open(f"{path}.md5sum", "w+") as f:
             f.write(digest)
     except OSError as e:
         log.error("Can't write digest of %s: %s", path, str(e))
@@ -194,6 +203,6 @@ def remove_checksum(path):
     Remove the checksum of an image from cache if exists
     """
 
-    path = f'{path}.md5sum'
+    path = f"{path}.md5sum"
     if os.path.exists(path):
         os.remove(path)

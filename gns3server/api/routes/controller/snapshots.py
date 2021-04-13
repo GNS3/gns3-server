@@ -20,6 +20,7 @@ API routes for snapshots.
 """
 
 import logging
+
 log = logging.getLogger()
 
 from fastapi import APIRouter, Depends, status
@@ -30,9 +31,7 @@ from gns3server.controller.project import Project
 from gns3server import schemas
 from gns3server.controller import Controller
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or snapshot"}}
 
 router = APIRouter(responses=responses)
 
@@ -46,9 +45,7 @@ def dep_project(project_id: UUID):
     return project
 
 
-@router.post("",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Snapshot)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.Snapshot)
 async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Project = Depends(dep_project)):
     """
     Create a new snapshot of a project.
@@ -58,9 +55,7 @@ async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Projec
     return snapshot.__json__()
 
 
-@router.get("",
-            response_model=List[schemas.Snapshot],
-            response_model_exclude_unset=True)
+@router.get("", response_model=List[schemas.Snapshot], response_model_exclude_unset=True)
 def get_snapshots(project: Project = Depends(dep_project)):
     """
     Return all snapshots belonging to a given project.
@@ -70,8 +65,7 @@ def get_snapshots(project: Project = Depends(dep_project)):
     return [s.__json__() for s in sorted(snapshots, key=lambda s: (s.created_at, s.name))]
 
 
-@router.delete("/{snapshot_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{snapshot_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
     """
     Delete a snapshot.
@@ -80,9 +74,7 @@ async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_proj
     await project.delete_snapshot(str(snapshot_id))
 
 
-@router.post("/{snapshot_id}/restore",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project)
+@router.post("/{snapshot_id}/restore", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
 async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
     """
     Restore a snapshot.

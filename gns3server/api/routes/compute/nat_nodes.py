@@ -30,9 +30,7 @@ from gns3server import schemas
 from gns3server.compute.builtin import Builtin
 from gns3server.compute.builtin.nodes.nat import Nat
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or NAT node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or NAT node"}}
 
 router = APIRouter(responses=responses)
 
@@ -47,10 +45,12 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("",
-             response_model=schemas.NAT,
-             status_code=status.HTTP_201_CREATED,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create NAT node"}})
+@router.post(
+    "",
+    response_model=schemas.NAT,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create NAT node"}},
+)
 async def create_nat_node(project_id: UUID, node_data: schemas.NATCreate):
     """
     Create a new NAT node.
@@ -58,18 +58,19 @@ async def create_nat_node(project_id: UUID, node_data: schemas.NATCreate):
 
     builtin_manager = Builtin.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    node = await builtin_manager.create_node(node_data.pop("name"),
-                                             str(project_id),
-                                             node_data.get("node_id"),
-                                             node_type="nat",
-                                             ports=node_data.get("ports_mapping"))
+    node = await builtin_manager.create_node(
+        node_data.pop("name"),
+        str(project_id),
+        node_data.get("node_id"),
+        node_type="nat",
+        ports=node_data.get("ports_mapping"),
+    )
 
     node.usage = node_data.get("usage", "")
     return node.__json__()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.NAT)
+@router.get("/{node_id}", response_model=schemas.NAT)
 def get_nat_node(node: Nat = Depends(dep_node)):
     """
     Return a NAT node.
@@ -78,8 +79,7 @@ def get_nat_node(node: Nat = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.NAT)
+@router.put("/{node_id}", response_model=schemas.NAT)
 def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node)):
     """
     Update a NAT node.
@@ -93,8 +93,7 @@ def update_nat_node(node_data: schemas.NATUpdate, node: Nat = Depends(dep_node))
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nat_node(node: Nat = Depends(dep_node)):
     """
     Delete a cloud node.
@@ -103,8 +102,7 @@ async def delete_nat_node(node: Nat = Depends(dep_node)):
     await Builtin.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_nat_node(node: Nat = Depends(dep_node)):
     """
     Start a NAT node.
@@ -113,8 +111,7 @@ async def start_nat_node(node: Nat = Depends(dep_node)):
     await node.start()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_nat_node(node: Nat = Depends(dep_node)):
     """
     Stop a NAT node.
@@ -124,8 +121,7 @@ async def stop_nat_node(node: Nat = Depends(dep_node)):
     pass
 
 
-@router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_nat_node(node: Nat = Depends(dep_node)):
     """
     Suspend a NAT node.
@@ -135,13 +131,17 @@ async def suspend_nat_node(node: Nat = Depends(dep_node)):
     pass
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-             status_code=status.HTTP_201_CREATED,
-             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def create_nat_node_nio(adapter_number: int,
-                              port_number: int,
-                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                              node: Nat = Depends(dep_node)):
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def create_nat_node_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Nat = Depends(dep_node),
+):
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -152,13 +152,17 @@ async def create_nat_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-            status_code=status.HTTP_201_CREATED,
-            response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def update_nat_node_nio(adapter_number: int,
-                              port_number: int,
-                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                              node: Nat = Depends(dep_node)):
+@router.put(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def update_nat_node_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: Nat = Depends(dep_node),
+):
     """
     Update a NIO (Network Input/Output) to the node.
     The adapter number on the cloud is always 0.
@@ -171,8 +175,7 @@ async def update_nat_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nat_node_nio(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
     """
     Remove a NIO (Network Input/Output) from the node.
@@ -183,10 +186,9 @@ async def delete_nat_node_nio(adapter_number: int, port_number: int, node: Nat =
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_nat_node_capture(adapter_number: int,
-                                 port_number: int,
-                                 node_capture_data: schemas.NodeCapture,
-                                 node: Nat = Depends(dep_node)):
+async def start_nat_node_capture(
+    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: Nat = Depends(dep_node)
+):
     """
     Start a packet capture on the node.
     The adapter number on the cloud is always 0.
@@ -197,8 +199,9 @@ async def start_nat_node_capture(adapter_number: int,
     return {"pcap_file_path": pcap_file_path}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+)
 async def stop_nat_node_capture(adapter_number: int, port_number: int, node: Nat = Depends(dep_node)):
     """
     Stop a packet capture on the node.

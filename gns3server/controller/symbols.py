@@ -25,6 +25,7 @@ from ..utils.picture import get_size
 from ..config import Config
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -79,33 +80,31 @@ class Symbols:
         if get_resource("symbols"):
             for root, _, files in os.walk(get_resource("symbols")):
                 for filename in files:
-                    if filename.startswith('.'):
+                    if filename.startswith("."):
                         continue
-                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), get_resource("symbols"))).replace('\\', '/')
-                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    symbol_file = posixpath.normpath(
+                        os.path.relpath(os.path.join(root, filename), get_resource("symbols"))
+                    ).replace("\\", "/")
+                    theme = posixpath.dirname(symbol_file).replace("/", "-").capitalize()
                     if not theme:
                         continue
-                    symbol_id = ':/symbols/' + symbol_file
-                    symbols.append({'symbol_id': symbol_id,
-                                    'filename': filename,
-                                    'theme': theme,
-                                    'builtin': True})
+                    symbol_id = ":/symbols/" + symbol_file
+                    symbols.append({"symbol_id": symbol_id, "filename": filename, "theme": theme, "builtin": True})
                     self._symbols_path[symbol_id] = os.path.join(root, filename)
 
         directory = self.symbols_path()
         if directory:
             for root, _, files in os.walk(directory):
                 for filename in files:
-                    if filename.startswith('.'):
+                    if filename.startswith("."):
                         continue
-                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace('\\', '/')
-                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace(
+                        "\\", "/"
+                    )
+                    theme = posixpath.dirname(symbol_file).replace("/", "-").capitalize()
                     if not theme:
                         theme = "Custom symbols"
-                    symbols.append({'symbol_id': symbol_file,
-                                    'filename': filename,
-                                    'builtin': False,
-                                    'theme': theme})
+                    symbols.append({"symbol_id": symbol_file, "filename": filename, "builtin": False, "theme": theme})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])

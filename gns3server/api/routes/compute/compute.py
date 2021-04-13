@@ -42,8 +42,7 @@ from typing import Optional, List
 router = APIRouter()
 
 
-@router.post("/projects/{project_id}/ports/udp",
-             status_code=status.HTTP_201_CREATED)
+@router.post("/projects/{project_id}/ports/udp", status_code=status.HTTP_201_CREATED)
 def allocate_udp_port(project_id: UUID) -> dict:
     """
     Allocate an UDP port on the compute.
@@ -106,19 +105,21 @@ def compute_statistics() -> dict:
         disk_usage_percent = int(psutil.disk_usage(get_default_project_directory()).percent)
     except psutil.Error as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        #raise HTTPConflict(text="Psutil error detected: {}".format(e))
+        # raise HTTPConflict(text="Psutil error detected: {}".format(e))
 
-    return {"memory_total": memory_total,
-            "memory_free": memory_free,
-            "memory_used": memory_used,
-            "swap_total": swap_total,
-            "swap_free": swap_free,
-            "swap_used": swap_used,
-            "cpu_usage_percent": cpu_percent,
-            "memory_usage_percent": memory_percent,
-            "swap_usage_percent": swap_percent,
-            "disk_usage_percent": disk_usage_percent,
-            "load_average_percent": load_average_percent}
+    return {
+        "memory_total": memory_total,
+        "memory_free": memory_free,
+        "memory_used": memory_used,
+        "swap_total": swap_total,
+        "swap_free": swap_free,
+        "swap_used": swap_used,
+        "cpu_usage_percent": cpu_percent,
+        "memory_usage_percent": memory_percent,
+        "swap_usage_percent": swap_percent,
+        "disk_usage_percent": disk_usage_percent,
+        "load_average_percent": load_average_percent,
+    }
 
 
 @router.get("/qemu/binaries")
@@ -142,9 +143,11 @@ async def get_qemu_capabilities() -> dict:
     return capabilities
 
 
-@router.post("/qemu/img",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}})
+@router.post(
+    "/qemu/img",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}},
+)
 async def create_qemu_image(image_data: schemas.QemuImageCreate):
     """
     Create a Qemu image.
@@ -154,12 +157,16 @@ async def create_qemu_image(image_data: schemas.QemuImageCreate):
         if Config.instance().settings.Server.local is False:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    await Qemu.instance().create_disk(image_data.qemu_img, image_data.path, jsonable_encoder(image_data, exclude_unset=True))
+    await Qemu.instance().create_disk(
+        image_data.qemu_img, image_data.path, jsonable_encoder(image_data, exclude_unset=True)
+    )
 
 
-@router.put("/qemu/img",
-            status_code=status.HTTP_204_NO_CONTENT,
-            responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}})
+@router.put(
+    "/qemu/img",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}},
+)
 async def update_qemu_image(image_data: schemas.QemuImageUpdate):
     """
     Update a Qemu image.
@@ -173,17 +180,14 @@ async def update_qemu_image(image_data: schemas.QemuImageUpdate):
         await Qemu.instance().resize_disk(image_data.qemu_img, image_data.path, image_data.extend)
 
 
-@router.get("/virtualbox/vms",
-            response_model=List[dict])
+@router.get("/virtualbox/vms", response_model=List[dict])
 async def get_virtualbox_vms():
 
     vbox_manager = VirtualBox.instance()
     return await vbox_manager.list_vms()
 
 
-@router.get("/vmware/vms",
-            response_model=List[dict])
+@router.get("/vmware/vms", response_model=List[dict])
 async def get_vms():
     vmware_manager = VMware.instance()
     return await vmware_manager.list_vms()
-

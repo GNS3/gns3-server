@@ -34,11 +34,10 @@ from gns3server.utils.http_client import HTTPClient
 from gns3server import schemas
 
 import logging
+
 log = logging.getLogger(__name__)
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}}
 
 router = APIRouter(responses=responses)
 
@@ -53,9 +52,7 @@ async def dep_link(project_id: UUID, link_id: UUID):
     return link
 
 
-@router.get("",
-            response_model=List[schemas.Link],
-            response_model_exclude_unset=True)
+@router.get("", response_model=List[schemas.Link], response_model_exclude_unset=True)
 async def get_links(project_id: UUID):
     """
     Return all links for a given project.
@@ -65,11 +62,15 @@ async def get_links(project_id: UUID):
     return [v.__json__() for v in project.links.values()]
 
 
-@router.post("",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Link,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
-                        409: {"model": schemas.ErrorMessage, "description": "Could not create link"}})
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Link,
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+        409: {"model": schemas.ErrorMessage, "description": "Could not create link"},
+    },
+)
 async def create_link(project_id: UUID, link_data: schemas.Link):
     """
     Create a new link.
@@ -84,10 +85,12 @@ async def create_link(project_id: UUID, link_data: schemas.Link):
         await link.update_suspend(link_data["suspend"])
     try:
         for node in link_data["nodes"]:
-            await link.add_node(project.get_node(node["node_id"]),
-                                node.get("adapter_number", 0),
-                                node.get("port_number", 0),
-                                label=node.get("label"))
+            await link.add_node(
+                project.get_node(node["node_id"]),
+                node.get("adapter_number", 0),
+                node.get("port_number", 0),
+                label=node.get("label"),
+            )
     except ControllerError as e:
         await project.delete_link(link.id)
         raise e
@@ -103,9 +106,7 @@ async def get_filters(link: Link = Depends(dep_link)):
     return link.available_filters()
 
 
-@router.get("/{link_id}",
-            response_model=schemas.Link,
-            response_model_exclude_unset=True)
+@router.get("/{link_id}", response_model=schemas.Link, response_model_exclude_unset=True)
 async def get_link(link: Link = Depends(dep_link)):
     """
     Return a link.
@@ -114,9 +115,7 @@ async def get_link(link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.put("/{link_id}",
-            response_model=schemas.Link,
-            response_model_exclude_unset=True)
+@router.put("/{link_id}", response_model=schemas.Link, response_model_exclude_unset=True)
 async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
     """
     Update a link.
@@ -132,8 +131,7 @@ async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.delete("/{link_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_link(project_id: UUID, link: Link = Depends(dep_link)):
     """
     Delete a link.
@@ -143,8 +141,7 @@ async def delete_link(project_id: UUID, link: Link = Depends(dep_link)):
     await project.delete_link(link.id)
 
 
-@router.post("/{link_id}/reset",
-             response_model=schemas.Link)
+@router.post("/{link_id}/reset", response_model=schemas.Link)
 async def reset_link(link: Link = Depends(dep_link)):
     """
     Reset a link.
@@ -154,21 +151,20 @@ async def reset_link(link: Link = Depends(dep_link)):
     return link.__json__()
 
 
-@router.post("/{link_id}/capture/start",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Link)
+@router.post("/{link_id}/capture/start", status_code=status.HTTP_201_CREATED, response_model=schemas.Link)
 async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
     """
     Start packet capture on the link.
     """
 
-    await link.start_capture(data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
-                             capture_file_name=capture_data.get("capture_file_name"))
+    await link.start_capture(
+        data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
+        capture_file_name=capture_data.get("capture_file_name"),
+    )
     return link.__json__()
 
 
-@router.post("/{link_id}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{link_id}/capture/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(link: Link = Depends(dep_link)):
     """
     Stop packet capture on the link.
@@ -189,8 +185,8 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)):
     compute = link.compute
     pcap_streaming_url = link.pcap_streaming_url()
     headers = multidict.MultiDict(request.headers)
-    headers['Host'] = compute.host
-    headers['Router-Host'] = request.client.host
+    headers["Host"] = compute.host
+    headers["Router-Host"] = request.client.host
     body = await request.body()
 
     async def compute_pcap_stream():

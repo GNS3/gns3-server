@@ -31,18 +31,18 @@ from gns3server import schemas
 router = APIRouter()
 
 
-@router.get("/capabilities",
-            response_model=schemas.Capabilities
-)
+@router.get("/capabilities", response_model=schemas.Capabilities)
 def get_capabilities():
 
     node_types = []
     for module in MODULES:
         node_types.extend(module.node_types())
 
-    return {"version": __version__,
-            "platform": sys.platform,
-            "cpus": psutil.cpu_count(logical=True),
-            "memory": psutil.virtual_memory().total,
-            "disk_size": psutil.disk_usage(get_default_project_directory()).total,
-            "node_types": node_types}
+    return {
+        "version": __version__,
+        "platform": sys.platform,
+        "cpus": psutil.cpu_count(logical=True),
+        "memory": psutil.virtual_memory().total,
+        "disk_size": psutil.disk_usage(get_default_project_directory()).total,
+        "node_types": node_types,
+    }

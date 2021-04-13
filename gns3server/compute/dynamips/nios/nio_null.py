@@ -23,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -37,7 +38,7 @@ class NIONull(NIO):
     def __init__(self, hypervisor):
 
         # create an unique name
-        name = f'null-{uuid.uuid4()}'
+        name = f"null-{uuid.uuid4()}"
         super().__init__(name, hypervisor)
 
     async def create(self):

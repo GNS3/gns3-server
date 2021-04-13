@@ -36,6 +36,7 @@ from gns3server.controller.controller_error import ControllerForbiddenError
 from gns3server import schemas
 
 import logging
+
 log = logging.getLogger(__name__)
 
 node_locks = {}
@@ -75,9 +76,7 @@ class NodeConcurrency(APIRoute):
         return custom_route_handler
 
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or node"}}
 
 router = APIRouter(route_class=NodeConcurrency, responses=responses)
 
@@ -100,11 +99,15 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
     return node
 
 
-@router.post("",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Node,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
-                        409: {"model": schemas.ErrorMessage, "description": "Could not create node"}})
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Node,
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
+        409: {"model": schemas.ErrorMessage, "description": "Could not create node"},
+    },
+)
 async def create_node(node_data: schemas.Node, project: Project = Depends(dep_project)):
     """
     Create a new node.
@@ -113,16 +116,11 @@ async def create_node(node_data: schemas.Node, project: Project = Depends(dep_pr
     controller = Controller.instance()
     compute = controller.get_compute(str(node_data.compute_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    node = await project.add_node(compute,
-                                  node_data.pop("name"),
-                                  node_data.pop("node_id", None),
-                                  **node_data)
+    node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
     return node.__json__()
 
 
-@router.get("",
-            response_model=List[schemas.Node],
-            response_model_exclude_unset=True)
+@router.get("", response_model=List[schemas.Node], response_model_exclude_unset=True)
 async def get_nodes(project: Project = Depends(dep_project)):
     """
     Return all nodes belonging to a given project.
@@ -131,8 +129,7 @@ async def get_nodes(project: Project = Depends(dep_project)):
     return [v.__json__() for v in project.nodes.values()]
 
 
-@router.post("/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_all_nodes(project: Project = Depends(dep_project)):
     """
     Start all nodes belonging to a given project.
@@ -141,8 +138,7 @@ async def start_all_nodes(project: Project = Depends(dep_project)):
     await project.start_all()
 
 
-@router.post("/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_all_nodes(project: Project = Depends(dep_project)):
     """
     Stop all nodes belonging to a given project.
@@ -151,8 +147,7 @@ async def stop_all_nodes(project: Project = Depends(dep_project)):
     await project.stop_all()
 
 
-@router.post("/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_all_nodes(project: Project = Depends(dep_project)):
     """
     Suspend all nodes belonging to a given project.
@@ -161,8 +156,7 @@ async def suspend_all_nodes(project: Project = Depends(dep_project)):
     await project.suspend_all()
 
 
-@router.post("/reload",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/reload", status_code=status.HTTP_204_NO_CONTENT)
 async def reload_all_nodes(project: Project = Depends(dep_project)):
     """
     Reload all nodes belonging to a given project.
@@ -172,8 +166,7 @@ async def reload_all_nodes(project: Project = Depends(dep_project)):
     await project.start_all()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.Node)
+@router.get("/{node_id}", response_model=schemas.Node)
 def get_node(node: Node = Depends(dep_node)):
     """
     Return a node from a given project.
@@ -182,9 +175,7 @@ def get_node(node: Node = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.Node,
-            response_model_exclude_unset=True)
+@router.put("/{node_id}", response_model=schemas.Node, response_model_exclude_unset=True)
 async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)):
     """
     Update a node.
@@ -201,10 +192,11 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses={**responses,
-                          409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}})
+@router.delete(
+    "/{node_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}},
+)
 async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
     """
     Delete a node from a project.
@@ -213,23 +205,17 @@ async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
     await project.delete_node(str(node_id))
 
 
-@router.post("/{node_id}/duplicate",
-             response_model=schemas.Node,
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/duplicate", response_model=schemas.Node, status_code=status.HTTP_201_CREATED)
 async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)):
     """
     Duplicate a node.
     """
 
-    new_node = await node.project.duplicate_node(node,
-                                                 duplicate_data.x,
-                                                 duplicate_data.y,
-                                                 duplicate_data.z)
+    new_node = await node.project.duplicate_node(node, duplicate_data.x, duplicate_data.y, duplicate_data.z)
     return new_node.__json__()
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_node(start_data: dict, node: Node = Depends(dep_node)):
     """
     Start a node.
@@ -238,8 +224,7 @@ async def start_node(start_data: dict, node: Node = Depends(dep_node)):
     await node.start(data=start_data)
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_node(node: Node = Depends(dep_node)):
     """
     Stop a node.
@@ -248,8 +233,7 @@ async def stop_node(node: Node = Depends(dep_node)):
     await node.stop()
 
 
-@router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_node(node: Node = Depends(dep_node)):
     """
     Suspend a node.
@@ -258,8 +242,7 @@ async def suspend_node(node: Node = Depends(dep_node)):
     await node.suspend()
 
 
-@router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
 async def reload_node(node: Node = Depends(dep_node)):
     """
     Reload a node.
@@ -268,9 +251,7 @@ async def reload_node(node: Node = Depends(dep_node)):
     await node.reload()
 
 
-@router.get("/{node_id}/links",
-            response_model=List[schemas.Link],
-            response_model_exclude_unset=True)
+@router.get("/{node_id}/links", response_model=List[schemas.Link], response_model_exclude_unset=True)
 async def get_node_links(node: Node = Depends(dep_node)):
     """
     Return all the links connected to a node.
@@ -300,8 +281,7 @@ async def idlepc_proposals(node: Node = Depends(dep_node)):
     return await node.dynamips_idlepc_proposals()
 
 
-@router.post("/{node_id}/resize_disk",
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/resize_disk", status_code=status.HTTP_201_CREATED)
 async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)):
     """
     Resize a disk image.
@@ -328,8 +308,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)):
     return Response(res.body, media_type="application/octet-stream")
 
 
-@router.post("/{node_id}/files/{file_path:path}",
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/files/{file_path:path}", status_code=status.HTTP_201_CREATED)
 async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
     """
     Write a file in the node directory.
@@ -344,7 +323,7 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
     node_type = node.node_type
     path = f"/project-files/{node_type}/{node.id}/{path}"
 
-    data = await request.body()  #FIXME: are we handling timeout or large files correctly?
+    data = await request.body()  # FIXME: are we handling timeout or large files correctly?
 
     await node.compute.http_query("POST", f"/projects/{node.project.id}/files{path}", data=data, timeout=None, raw=True)
 
@@ -357,9 +336,13 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
 
     compute = node.compute
     await websocket.accept()
-    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket")
-    ws_console_compute_url = f"ws://{compute.host}:{compute.port}/v3/compute/projects/" \
-                             f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
+    log.info(
+        f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket"
+    )
+    ws_console_compute_url = (
+        f"ws://{compute.host}:{compute.port}/v3/compute/projects/"
+        f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
+    )
 
     async def ws_receive(ws_console_compute):
         """
@@ -373,8 +356,10 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
                     await ws_console_compute.send_str(data)
         except WebSocketDisconnect:
             await ws_console_compute.close()
-            log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
-                     f" console WebSocket")
+            log.info(
+                f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller"
+                f" console WebSocket"
+            )
 
     try:
         # receive WebSocket data from compute console WebSocket and forward to client.
@@ -391,8 +376,7 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
 
-@router.post("/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/console/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console_all_nodes(project: Project = Depends(dep_project)):
     """
     Reset console for all nodes belonging to the project.
@@ -401,8 +385,7 @@ async def reset_console_all_nodes(project: Project = Depends(dep_project)):
     await project.reset_console_all()
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def console_reset(node: Node = Depends(dep_node)):
 
-    await node.post("/console/reset")#, request.json)
+    await node.post("/console/reset")  # , request.json)

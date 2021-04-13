@@ -26,6 +26,7 @@ from .nio import NIO
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -43,7 +44,7 @@ class NIOUDP(NIO):
     def __init__(self, node, lport, rhost, rport):
 
         # create an unique name
-        name = f'udp-{uuid.uuid4()}'
+        name = f"udp-{uuid.uuid4()}"
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
@@ -57,48 +58,40 @@ class NIOUDP(NIO):
             return
         # Ubridge is not supported
         if not hasattr(self._node, "add_ubridge_udp_connection"):
-            await self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
-                                                                                                    lport=self._lport,
-                                                                                                    rhost=self._rhost,
-                                                                                                    rport=self._rport))
+            await self._hypervisor.send(
+                "nio create_udp {name} {lport} {rhost} {rport}".format(
+                    name=self._name, lport=self._lport, rhost=self._rhost, rport=self._rport
+                )
+            )
             return
         self._local_tunnel_lport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
         self._local_tunnel_rport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
-        self._bridge_name = f'DYNAMIPS-{self._local_tunnel_lport}-{self._local_tunnel_rport}'
-        await self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
-                                                                                                lport=self._local_tunnel_lport,
-                                                                                                rhost='127.0.0.1',
-                                                                                                rport=self._local_tunnel_rport))
-
-        log.info("NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(name=self._name,
-                                                                                                  lport=self._lport,
-                                                                                                  rhost=self._rhost,
-                                                                                                  rport=self._rport))
-
-        self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport,
-                                          '127.0.0.1',
-                                          self._local_tunnel_lport)
-        self._destination_nio = nio_udp.NIOUDP(self._lport,
-                                               self._rhost,
-                                               self._rport)
-        self._destination_nio.filters = self._filters
-        await self._node.add_ubridge_udp_connection(
-            self._bridge_name,
-            self._source_nio,
-            self._destination_nio
+        self._bridge_name = f"DYNAMIPS-{self._local_tunnel_lport}-{self._local_tunnel_rport}"
+        await self._hypervisor.send(
+            "nio create_udp {name} {lport} {rhost} {rport}".format(
+                name=self._name, lport=self._local_tunnel_lport, rhost="127.0.0.1", rport=self._local_tunnel_rport
+            )
         )
+
+        log.info(
+            "NIO UDP {name} created with lport={lport}, rhost={rhost}, rport={rport}".format(
+                name=self._name, lport=self._lport, rhost=self._rhost, rport=self._rport
+            )
+        )
+
+        self._source_nio = nio_udp.NIOUDP(self._local_tunnel_rport, "127.0.0.1", self._local_tunnel_lport)
+        self._destination_nio = nio_udp.NIOUDP(self._lport, self._rhost, self._rport)
+        self._destination_nio.filters = self._filters
+        await self._node.add_ubridge_udp_connection(self._bridge_name, self._source_nio, self._destination_nio)
 
     async def update(self):
         self._destination_nio.filters = self._filters
-        await self._node.update_ubridge_udp_connection(
-            self._bridge_name,
-            self._source_nio,
-            self._destination_nio)
+        await self._node.update_ubridge_udp_connection(self._bridge_name, self._source_nio, self._destination_nio)
 
     async def close(self):
         if self._local_tunnel_lport:
             await self._node.ubridge_delete_bridge(self._bridge_name)
-            self._node.manager.port_manager.release_udp_port(self._local_tunnel_lport, self ._node.project)
+            self._node.manager.port_manager.release_udp_port(self._local_tunnel_lport, self._node.project)
         if self._local_tunnel_rport:
             self._node.manager.port_manager.release_udp_port(self._local_tunnel_rport, self._node.project)
         self._node.manager.port_manager.release_udp_port(self._lport, self._node.project)
@@ -135,7 +128,4 @@ class NIOUDP(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_udp",
-                "lport": self._lport,
-                "rport": self._rport,
-                "rhost": self._rhost}
+        return {"type": "nio_udp", "lport": self._lport, "rport": self._rport, "rhost": self._rhost}

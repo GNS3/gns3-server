@@ -22,7 +22,6 @@ from .port import Port
 
 
 class FastEthernetPort(Port):
-
     @staticmethod
     def long_name_type():
         """

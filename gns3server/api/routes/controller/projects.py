@@ -26,6 +26,7 @@ import aiofiles
 import time
 
 import logging
+
 log = logging.getLogger()
 
 from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
@@ -45,9 +46,7 @@ from gns3server.controller.export_project import export_project as export_contro
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.config import Config
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
 
 router = APIRouter(responses=responses)
 
@@ -64,9 +63,7 @@ def dep_project(project_id: UUID):
 CHUNK_SIZE = 1024 * 8  # 8KB
 
 
-@router.get("",
-            response_model=List[schemas.Project],
-            response_model_exclude_unset=True)
+@router.get("", response_model=List[schemas.Project], response_model_exclude_unset=True)
 def get_projects():
     """
     Return all projects.
@@ -76,11 +73,13 @@ def get_projects():
     return [p.__json__() for p in controller.projects.values()]
 
 
-@router.post("",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project,
-             response_model_exclude_unset=True,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}})
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Project,
+    response_model_exclude_unset=True,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}},
+)
 async def create_project(project_data: schemas.ProjectCreate):
     """
     Create a new project.
@@ -91,8 +90,7 @@ async def create_project(project_data: schemas.ProjectCreate):
     return project.__json__()
 
 
-@router.get("/{project_id}",
-            response_model=schemas.Project)
+@router.get("/{project_id}", response_model=schemas.Project)
 def get_project(project: Project = Depends(dep_project)):
     """
     Return a project.
@@ -101,9 +99,7 @@ def get_project(project: Project = Depends(dep_project)):
     return project.__json__()
 
 
-@router.put("/{project_id}",
-            response_model=schemas.Project,
-            response_model_exclude_unset=True)
+@router.put("/{project_id}", response_model=schemas.Project, response_model_exclude_unset=True)
 async def update_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
     """
     Update a project.
@@ -113,8 +109,7 @@ async def update_project(project_data: schemas.ProjectUpdate, project: Project =
     return project.__json__()
 
 
-@router.delete("/{project_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(project: Project = Depends(dep_project)):
     """
     Delete a project.
@@ -134,12 +129,11 @@ def get_project_stats(project: Project = Depends(dep_project)):
     return project.stats()
 
 
-@router.post("/{project_id}/close",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses={
-                 **responses,
-                 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}
-             })
+@router.post(
+    "/{project_id}/close",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}},
+)
 async def close_project(project: Project = Depends(dep_project)):
     """
     Close a project.
@@ -148,13 +142,12 @@ async def close_project(project: Project = Depends(dep_project)):
     await project.close()
 
 
-@router.post("/{project_id}/open",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project,
-             responses={
-                 **responses,
-                 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}
-             })
+@router.post(
+    "/{project_id}/open",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Project,
+    responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
+)
 async def open_project(project: Project = Depends(dep_project)):
     """
     Open a project.
@@ -164,13 +157,12 @@ async def open_project(project: Project = Depends(dep_project)):
     return project.__json__()
 
 
-@router.post("/load",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project,
-             responses={
-                 **responses,
-                 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}
-             })
+@router.post(
+    "/load",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Project,
+    responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}},
+)
 async def load_project(path: str = Body(..., embed=True)):
     """
     Load a project (local server only).
@@ -181,7 +173,9 @@ async def load_project(path: str = Body(..., embed=True)):
     if Config.instance().settings.Server.local is False:
         log.error(f"Cannot load '{dot_gns3_file}' because the server has not been started with the '--local' parameter")
         raise ControllerForbiddenError("Cannot load project when server is not local")
-    project = await controller.load_project(dot_gns3_file,)
+    project = await controller.load_project(
+        dot_gns3_file,
+    )
     return project.__json__()
 
 
@@ -248,11 +242,13 @@ async def notification_ws(project_id: UUID, websocket: WebSocket):
 
 
 @router.get("/{project_id}/export")
-async def export_project(project: Project = Depends(dep_project),
-                         include_snapshots: bool = False,
-                         include_images: bool = False,
-                         reset_mac_addresses: bool = False,
-                         compression: str = "zip"):
+async def export_project(
+    project: Project = Depends(dep_project),
+    include_snapshots: bool = False,
+    include_images: bool = False,
+    reset_mac_addresses: bool = False,
+    compression: str = "zip",
+):
     """
     Export a project as a portable archive.
     """
@@ -275,12 +271,14 @@ async def export_project(project: Project = Depends(dep_project),
         async def streamer():
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 with aiozipstream.ZipFile(compression=compression) as zstream:
-                    await export_controller_project(zstream,
-                                                    project,
-                                                    tmpdir,
-                                                    include_snapshots=include_snapshots,
-                                                    include_images=include_images,
-                                                    reset_mac_addresses=reset_mac_addresses)
+                    await export_controller_project(
+                        zstream,
+                        project,
+                        tmpdir,
+                        include_snapshots=include_snapshots,
+                        include_images=include_images,
+                        reset_mac_addresses=reset_mac_addresses,
+                    )
                     async for chunk in zstream:
                         yield chunk
 
@@ -295,9 +293,7 @@ async def export_project(project: Project = Depends(dep_project),
     return StreamingResponse(streamer(), media_type="application/gns3project", headers=headers)
 
 
-@router.post("/{project_id}/import",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project)
+@router.post("/{project_id}/import", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
 async def import_project(project_id: UUID, request: Request, path: Optional[Path] = None, name: Optional[str] = None):
     """
     Import a project from a portable archive.
@@ -318,7 +314,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
             working_dir = controller.projects_directory()
         with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
             temp_project_path = os.path.join(tmpdir, "project.zip")
-            async with aiofiles.open(temp_project_path, 'wb') as f:
+            async with aiofiles.open(temp_project_path, "wb") as f:
                 async for chunk in request.stream():
                     await f.write(chunk)
             with open(temp_project_path, "rb") as f:
@@ -330,13 +326,12 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
     return project.__json__()
 
 
-@router.post("/{project_id}/duplicate",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project,
-             responses={
-                 **responses,
-                 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}
-             })
+@router.post(
+    "/{project_id}/duplicate",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Project,
+    responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}},
+)
 async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Project = Depends(dep_project)):
     """
     Duplicate a project.
@@ -350,7 +345,9 @@ async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Pro
         location = None
 
     reset_mac_addresses = project_data.reset_mac_addresses
-    new_project = await project.duplicate(name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses)
+    new_project = await project.duplicate(
+        name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
+    )
     return new_project.__json__()
 
 
@@ -360,7 +357,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)):
     Return a file from a project.
     """
 
-    path = os.path.normpath(file_path).strip('/')
+    path = os.path.normpath(file_path).strip("/")
 
     # Raise error if user try to escape
     if path[0] == ".":
@@ -373,8 +370,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)):
     return FileResponse(path, media_type="application/octet-stream")
 
 
-@router.post("/{project_id}/files/{file_path:path}",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)):
     """
     Write a file from a project.
@@ -389,7 +385,7 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
     path = os.path.join(project.path, path)
 
     try:
-        async with aiofiles.open(path, 'wb+') as f:
+        async with aiofiles.open(path, "wb+") as f:
             async for chunk in request.stream():
                 await f.write(chunk)
     except FileNotFoundError:

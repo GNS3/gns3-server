@@ -34,10 +34,19 @@ class DockerTemplate(TemplateBase):
     environment: Optional[str] = Field("", description="Docker environment variables")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
     aux_type: Optional[AuxType] = Field("none", description="Auxiliary console type")
-    console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
-    console_http_port: Optional[int] = Field(80, gt=0, le=65535, description="Internal port in the container for the HTTP server")
-    console_http_path: Optional[str] = Field("/", description="Path of the web interface",)
-    console_resolution: Optional[str] = Field("1024x768", regex="^[0-9]+x[0-9]+$", description="Console resolution for VNC")
+    console_auto_start: Optional[bool] = Field(
+        False, description="Automatically start the console when the node has started"
+    )
+    console_http_port: Optional[int] = Field(
+        80, gt=0, le=65535, description="Internal port in the container for the HTTP server"
+    )
+    console_http_path: Optional[str] = Field(
+        "/",
+        description="Path of the web interface",
+    )
+    console_resolution: Optional[str] = Field(
+        "1024x768", regex="^[0-9]+x[0-9]+$", description="Console resolution for VNC"
+    )
     extra_hosts: Optional[str] = Field("", description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List] = Field([], description="Additional directories to make persistent")
     memory: Optional[int] = Field(0, description="Maximum amount of memory the container can use in MB")

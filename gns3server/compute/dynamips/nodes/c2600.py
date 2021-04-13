@@ -27,6 +27,7 @@ from ..adapters.c2600_mb_1fe import C2600_MB_1FE
 from ..adapters.c2600_mb_2fe import C2600_MB_2FE
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -51,20 +52,36 @@ class C2600(Router):
 
     # adapters to insert by default corresponding the
     # chosen chassis.
-    integrated_adapters = {"2610": C2600_MB_1E,
-                           "2611": C2600_MB_2E,
-                           "2620": C2600_MB_1FE,
-                           "2621": C2600_MB_2FE,
-                           "2610XM": C2600_MB_1FE,
-                           "2611XM": C2600_MB_2FE,
-                           "2620XM": C2600_MB_1FE,
-                           "2621XM": C2600_MB_2FE,
-                           "2650XM": C2600_MB_1FE,
-                           "2651XM": C2600_MB_2FE}
+    integrated_adapters = {
+        "2610": C2600_MB_1E,
+        "2611": C2600_MB_2E,
+        "2620": C2600_MB_1FE,
+        "2621": C2600_MB_2FE,
+        "2610XM": C2600_MB_1FE,
+        "2611XM": C2600_MB_2FE,
+        "2620XM": C2600_MB_1FE,
+        "2621XM": C2600_MB_2FE,
+        "2650XM": C2600_MB_1FE,
+        "2651XM": C2600_MB_2FE,
+    }
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, aux_type="none", chassis="2610"):
+    def __init__(
+        self,
+        name,
+        node_id,
+        project,
+        manager,
+        dynamips_id,
+        console=None,
+        console_type="telnet",
+        aux=None,
+        aux_type="none",
+        chassis="2610",
+    ):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, aux_type, platform="c2600")
+        super().__init__(
+            name, node_id, project, manager, dynamips_id, console, console_type, aux, aux_type, platform="c2600"
+        )
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 64
@@ -78,9 +95,7 @@ class C2600(Router):
 
     def __json__(self):
 
-        c2600_router_info = {"iomem": self._iomem,
-                             "chassis": self._chassis,
-                             "sparsemem": self._sparsemem}
+        c2600_router_info = {"iomem": self._iomem, "chassis": self._chassis, "sparsemem": self._sparsemem}
 
         router_info = Router.__json__(self)
         router_info.update(c2600_router_info)
@@ -123,9 +138,9 @@ class C2600(Router):
 
         await self._hypervisor.send(f'c2600 set_chassis "{self._name}" {chassis}')
 
-        log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
-                                                                           id=self._id,
-                                                                           chassis=chassis))
+        log.info(
+            'Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name, id=self._id, chassis=chassis)
+        )
         self._chassis = chassis
         self._setup_chassis()
 
@@ -148,8 +163,9 @@ class C2600(Router):
 
         await self._hypervisor.send(f'c2600 set_iomem "{self._name}" {iomem}')
 
-        log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       old_iomem=self._iomem,
-                                                                                                       new_iomem=iomem))
+        log.info(
+            'Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(
+                name=self._name, id=self._id, old_iomem=self._iomem, new_iomem=iomem
+            )
+        )
         self._iomem = iomem

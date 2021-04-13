@@ -31,7 +31,7 @@ async def get_db_session(request: Request) -> AsyncSession:
 
 
 def get_repository(repo: Type[BaseRepository]) -> Callable:
-
     def get_repo(db_session: AsyncSession = Depends(get_db_session)) -> Type[BaseRepository]:
         return repo(db_session)
+
     return get_repo

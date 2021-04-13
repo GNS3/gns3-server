@@ -20,7 +20,6 @@ Custom exceptions for the ubridge.
 
 
 class UbridgeError(Exception):
-
     def __init__(self, message):
         Exception.__init__(self, message)
 
@@ -29,4 +28,5 @@ class UbridgeNamespaceError(Exception):
     """
     Raised if ubridge can not move a container to a namespace
     """
+
     pass

@@ -30,7 +30,7 @@ DEFAULT_PORTS = [
     dict(port_number=4, name="Ethernet4"),
     dict(port_number=5, name="Ethernet5"),
     dict(port_number=6, name="Ethernet6"),
-    dict(port_number=7, name="Ethernet7")
+    dict(port_number=7, name="Ethernet7"),
 ]
 
 

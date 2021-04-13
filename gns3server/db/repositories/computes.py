@@ -28,7 +28,6 @@ from gns3server import schemas
 
 
 class ComputesRepository(BaseRepository):
-
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
@@ -65,7 +64,7 @@ class ComputesRepository(BaseRepository):
             host=compute_create.host,
             port=compute_create.port,
             user=compute_create.user,
-            password=password
+            password=password,
         )
         self._db_session.add(db_compute)
         await self._db_session.commit()
@@ -80,9 +79,7 @@ class ComputesRepository(BaseRepository):
         if password:
             update_values["password"] = password.get_secret_value()
 
-        query = update(models.Compute) \
-            .where(models.Compute.compute_id == compute_id) \
-            .values(update_values)
+        query = update(models.Compute).where(models.Compute.compute_id == compute_id).values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()

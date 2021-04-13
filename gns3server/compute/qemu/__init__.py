@@ -35,6 +35,7 @@ from .utils.guest_cid import get_next_guest_cid
 from .utils.ziputils import unpack_zip
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -153,9 +154,11 @@ class Qemu(BaseManager):
                 for f in os.listdir(path):
                     if f.endswith("-spice"):
                         continue
-                    if (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe") and \
-                            os.access(os.path.join(path, f), os.X_OK) and \
-                            os.path.isfile(os.path.join(path, f)):
+                    if (
+                        (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe")
+                        and os.access(os.path.join(path, f), os.X_OK)
+                        and os.path.isfile(os.path.join(path, f))
+                    ):
                         if archs is not None:
                             for arch in archs:
                                 if f.endswith(arch) or f.endswith(f"{arch}.exe") or f.endswith(f"{arch}w.exe"):
@@ -183,9 +186,11 @@ class Qemu(BaseManager):
         for path in Qemu.paths_list():
             try:
                 for f in os.listdir(path):
-                    if (f == "qemu-img" or f == "qemu-img.exe") and \
-                            os.access(os.path.join(path, f), os.X_OK) and \
-                            os.path.isfile(os.path.join(path, f)):
+                    if (
+                        (f == "qemu-img" or f == "qemu-img.exe")
+                        and os.access(os.path.join(path, f), os.X_OK)
+                        and os.path.isfile(os.path.join(path, f))
+                    ):
                         qemu_path = os.path.join(path, f)
                         version = await Qemu._get_qemu_img_version(qemu_path)
                         qemu_imgs.append({"path": qemu_path, "version": version})
@@ -255,17 +260,21 @@ class Qemu(BaseManager):
         :returns: HAXM version number. Returns None if HAXM is not installed.
         """
 
-        assert(sys.platform.startswith("win"))
+        assert sys.platform.startswith("win")
         import winreg
 
-        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products")
+        hkey = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
+        )
         version = None
         for index in range(winreg.QueryInfoKey(hkey)[0]):
             product_id = winreg.EnumKey(hkey, index)
             try:
                 product_key = winreg.OpenKey(hkey, fr"{product_id}\InstallProperties")
                 try:
-                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith("Hardware Accelerated Execution Manager"):
+                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith(
+                        "Hardware Accelerated Execution Manager"
+                    ):
                         version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
                         break
                 finally:
@@ -310,8 +319,10 @@ class Qemu(BaseManager):
                 if os.path.exists(path):
                     raise QemuError(f"Could not create disk image '{path}', file already exists")
             except UnicodeEncodeError:
-                raise QemuError("Could not create disk image '{}', "
-                                "path contains characters not supported by filesystem".format(path))
+                raise QemuError(
+                    "Could not create disk image '{}', "
+                    "path contains characters not supported by filesystem".format(path)
+                )
 
             command = [qemu_img, "create", "-f", img_format]
             for option in sorted(options.keys()):

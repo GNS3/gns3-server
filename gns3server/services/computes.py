@@ -26,12 +26,11 @@ from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
-    ControllerForbiddenError
+    ControllerForbiddenError,
 )
 
 
 class ComputesService:
-
     def __init__(self, computes_repo: ComputesRepository):
 
         self._computes_repo = computes_repo
@@ -47,9 +46,11 @@ class ComputesService:
         if await self._computes_repo.get_compute(compute_create.compute_id):
             raise ControllerBadRequestError(f"Compute '{compute_create.compute_id}' is already registered")
         db_compute = await self._computes_repo.create_compute(compute_create)
-        await self._controller.add_compute(compute_id=str(db_compute.compute_id),
-                                           connect=False,
-                                           **compute_create.dict(exclude_unset=True, exclude={"compute_id"}))
+        await self._controller.add_compute(
+            compute_id=str(db_compute.compute_id),
+            connect=False,
+            **compute_create.dict(exclude_unset=True, exclude={"compute_id"}),
+        )
         self._controller.notification.controller_emit("compute.created", db_compute.asjson())
         return db_compute
 
@@ -61,9 +62,7 @@ class ComputesService:
         return db_compute
 
     async def update_compute(
-            self,
-            compute_id: Union[str, UUID],
-            compute_update: schemas.ComputeUpdate
+        self, compute_id: Union[str, UUID], compute_update: schemas.ComputeUpdate
     ) -> models.Compute:
 
         compute = self._controller.get_compute(str(compute_id))

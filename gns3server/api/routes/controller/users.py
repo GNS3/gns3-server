@@ -28,7 +28,7 @@ from gns3server import schemas
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
-    ControllerUnauthorizedError
+    ControllerUnauthorizedError,
 )
 
 from gns3server.db.repositories.users import UsersRepository
@@ -38,6 +38,7 @@ from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 
 import logging
+
 log = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -54,8 +55,7 @@ async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRe
 
 @router.post("", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create_user(
-        user_create: schemas.UserCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_create: schemas.UserCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Create a new user.
@@ -72,8 +72,7 @@ async def create_user(
 
 @router.get("/{user_id}", response_model=schemas.User)
 async def get_user(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Get an user.
@@ -87,9 +86,9 @@ async def get_user(
 
 @router.put("/{user_id}", response_model=schemas.User)
 async def update_user(
-        user_id: UUID,
-        user_update: schemas.UserUpdate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    user_id: UUID,
+    user_update: schemas.UserUpdate,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.User:
     """
     Update an user.
@@ -103,9 +102,9 @@ async def update_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-        user_id: UUID,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        current_user: schemas.User = Depends(get_current_active_user)
+    user_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
 ) -> None:
     """
     Delete an user.
@@ -121,8 +120,8 @@ async def delete_user(
 
 @router.post("/login", response_model=schemas.Token)
 async def login(
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        form_data: OAuth2PasswordRequestForm = Depends()
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> schemas.Token:
     """
     User login.
@@ -130,9 +129,11 @@ async def login(
 
     user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Authentication was unsuccessful.",
-                            headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication was unsuccessful.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
     return token

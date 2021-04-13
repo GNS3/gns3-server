@@ -47,7 +47,7 @@ def parse_networking_file():
             version = f.readline()
             for line in f.read().splitlines():
                 try:
-                    _, key, value = line.split(' ', 3)
+                    _, key, value = line.split(" ", 3)
                     key = key.strip()
                     value = value.strip()
                     pairs[key] = value
@@ -92,19 +92,20 @@ def parse_vmnet_range(start, end):
     """
 
     class Range(argparse.Action):
-
         def __call__(self, parser, args, values, option_string=None):
             if len(values) != 2:
                 raise argparse.ArgumentTypeError("vmnet range must consist of 2 numbers")
             if not start <= values[0] or not values[1] <= end:
                 raise argparse.ArgumentTypeError(f"vmnet range must be between {start} and {end}")
             setattr(args, self.dest, values)
+
     return Range
 
 
 def find_vnetlib_registry(regkey):
 
     import winreg
+
     try:
         # default path not used, let's look in the registry
         hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
@@ -162,6 +163,7 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
     if not vnetlib_path:
         raise SystemExit("VMware is not installed, could not find vnetlib.exe")
     from win32com.shell import shell
+
     if not shell.IsUserAnAdmin():
         raise SystemExit("You must run this script as an administrator")
 
@@ -243,9 +245,15 @@ def main():
     Entry point for the VMNET tool.
     """
 
-    parser = argparse.ArgumentParser(description='%(prog)s add/remove vmnet interfaces')
-    parser.add_argument('-r', "--range", nargs='+', action=parse_vmnet_range(1, 255),
-                        type=int, help=f"vmnet range to add (default is {DEFAULT_RANGE[0]} {DEFAULT_RANGE[1]})")
+    parser = argparse.ArgumentParser(description="%(prog)s add/remove vmnet interfaces")
+    parser.add_argument(
+        "-r",
+        "--range",
+        nargs="+",
+        action=parse_vmnet_range(1, 255),
+        type=int,
+        help=f"vmnet range to add (default is {DEFAULT_RANGE[0]} {DEFAULT_RANGE[1]})",
+    )
     parser.add_argument("-C", "--clean", action="store_true", help="remove all vmnets excepting vmnet1 and vmnet8")
     parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets (UNIX only)")
 
@@ -264,5 +272,6 @@ def main():
     else:
         vmnet_unix(args, vmnet_range[0], vmnet_range[1])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

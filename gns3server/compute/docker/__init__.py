@@ -46,7 +46,7 @@ class Docker(BaseManager):
     def __init__(self):
 
         super().__init__()
-        self._server_url = '/var/run/docker.sock'
+        self._server_url = "/var/run/docker.sock"
         self._connected = False
         # Allow locking during ubridge operations
         self.ubridge_lock = asyncio.Lock()
@@ -64,11 +64,13 @@ class Docker(BaseManager):
                 self._connected = False
                 raise DockerError("Can't connect to docker daemon")
 
-            docker_version = parse_version(version['ApiVersion'])
+            docker_version = parse_version(version["ApiVersion"])
 
             if docker_version < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError(f"Docker version is {version['Version']}. "
-                                  f"GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}")
+                raise DockerError(
+                    f"Docker version is {version['Version']}. "
+                    f"GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}"
+                )
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
             if docker_version >= preferred_api_version:
@@ -108,7 +110,7 @@ class Docker(BaseManager):
         body = await response.read()
         response.close()
         if body and len(body):
-            if response.headers['CONTENT-TYPE'] == 'application/json':
+            if response.headers["CONTENT-TYPE"] == "application/json":
                 body = json.loads(body.decode("utf-8"))
             else:
                 body = body.decode("utf-8")
@@ -131,8 +133,8 @@ class Docker(BaseManager):
         if timeout is None:
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
-        if path == 'version':
-            url = "http://docker/v1.12/" + path         # API of docker v1.0
+        if path == "version":
+            url = "http://docker/v1.12/" + path  # API of docker v1.0
         else:
             url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         try:
@@ -141,12 +143,16 @@ class Docker(BaseManager):
             if self._session is None or self._session.closed:
                 connector = self.connector()
                 self._session = aiohttp.ClientSession(connector=connector)
-            response = await self._session.request(method,
-                                                   url,
-                                                   params=params,
-                                                   data=data,
-                                                   headers={"content-type": "application/json", },
-                                                   timeout=timeout)
+            response = await self._session.request(
+                method,
+                url,
+                params=params,
+                data=data,
+                headers={
+                    "content-type": "application/json",
+                },
+                timeout=timeout,
+            )
         except aiohttp.ClientError as e:
             raise DockerError(f"Docker has returned an error: {e}")
         except (asyncio.TimeoutError):
@@ -199,8 +205,10 @@ class Docker(BaseManager):
         try:
             response = await self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
         except DockerError as e:
-            raise DockerError(f"Could not pull the '{image}' image from Docker Hub, "
-                              f"please check your Internet connection (original error: {e})")
+            raise DockerError(
+                f"Could not pull the '{image}' image from Docker Hub, "
+                f"please check your Internet connection (original error: {e})"
+            )
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
@@ -238,9 +246,9 @@ class Docker(BaseManager):
         """
 
         images = []
-        for image in (await self.query("GET", "images/json", params={"all": 0})):
-            if image['RepoTags']:
-                for tag in image['RepoTags']:
+        for image in await self.query("GET", "images/json", params={"all": 0}):
+            if image["RepoTags"]:
+                for tag in image["RepoTags"]:
                     if tag != "<none>:<none>":
-                        images.append({'image': tag})
-        return sorted(images, key=lambda i: i['image'])
+                        images.append({"image": tag})
+        return sorted(images, key=lambda i: i["image"])

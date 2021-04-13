@@ -24,6 +24,7 @@ from .router import Router
 from ..adapters.leopard_2fe import Leopard_2FE
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -45,9 +46,23 @@ class C3600(Router):
     3620, 3640 or 3660 (default = 3640).
     """
 
-    def __init__(self, name, node_id, project, manager, dynamips_id, console=None, console_type="telnet", aux=None, aux_type="none", chassis="3640"):
+    def __init__(
+        self,
+        name,
+        node_id,
+        project,
+        manager,
+        dynamips_id,
+        console=None,
+        console_type="telnet",
+        aux=None,
+        aux_type="none",
+        chassis="3640",
+    ):
 
-        super().__init__(name, node_id, project, manager, dynamips_id, console, console_type, aux, aux_type, platform="c3600")
+        super().__init__(
+            name, node_id, project, manager, dynamips_id, console, console_type, aux, aux_type, platform="c3600"
+        )
 
         # Set default values for this platform (must be the same as Dynamips)
         self._ram = 128
@@ -60,8 +75,7 @@ class C3600(Router):
 
     def __json__(self):
 
-        c3600_router_info = {"iomem": self._iomem,
-                             "chassis": self._chassis}
+        c3600_router_info = {"iomem": self._iomem, "chassis": self._chassis}
 
         router_info = Router.__json__(self)
         router_info.update(c3600_router_info)
@@ -107,9 +121,9 @@ class C3600(Router):
 
         await self._hypervisor.send(f'c3600 set_chassis "{self._name}" {chassis}')
 
-        log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
-                                                                           id=self._id,
-                                                                           chassis=chassis))
+        log.info(
+            'Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name, id=self._id, chassis=chassis)
+        )
 
         self._chassis = chassis
         self._setup_chassis()
@@ -133,8 +147,9 @@ class C3600(Router):
 
         await self._hypervisor.send(f'c3600 set_iomem "{self._name}" {iomem}')
 
-        log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
-                                                                                                       id=self._id,
-                                                                                                       old_iomem=self._iomem,
-                                                                                                       new_iomem=iomem))
+        log.info(
+            'Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(
+                name=self._name, id=self._id, old_iomem=self._iomem, new_iomem=iomem
+            )
+        )
         self._iomem = iomem

@@ -39,13 +39,10 @@ from ..base_node import BaseNode
 
 from ..adapters.ethernet_adapter import EthernetAdapter
 from ..nios.nio_udp import NIOUDP
-from .docker_error import (
-    DockerError,
-    DockerHttp304Error,
-    DockerHttp404Error
-)
+from .docker_error import DockerError, DockerHttp304Error, DockerHttp404Error
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -69,11 +66,32 @@ class DockerVM(BaseNode):
     :param extra_volumes: Additional directories to make persistent
     """
 
-    def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
-                 adapters=None, environment=None, console_type="telnet", aux_type="none", console_resolution="1024x768",
-                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[], memory=0, cpus=0):
+    def __init__(
+        self,
+        name,
+        node_id,
+        project,
+        manager,
+        image,
+        console=None,
+        aux=None,
+        start_command=None,
+        adapters=None,
+        environment=None,
+        console_type="telnet",
+        aux_type="none",
+        console_resolution="1024x768",
+        console_http_port=80,
+        console_http_path="/",
+        extra_hosts=None,
+        extra_volumes=[],
+        memory=0,
+        cpus=0,
+    ):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type)
+        super().__init__(
+            name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type
+        )
 
         # force the latest image if no version is specified
         if ":" not in image:
@@ -109,10 +127,10 @@ class DockerVM(BaseNode):
         else:
             self.adapters = adapters
 
-        log.debug("{module}: {name} [{image}] initialized.".format(
-            module=self.manager.module_name,
-            name=self.name,
-            image=self._image)
+        log.debug(
+            "{module}: {name} [{image}] initialized.".format(
+                module=self.manager.module_name, name=self.name, image=self._image
+            )
         )
 
     def __json__(self):
@@ -138,7 +156,7 @@ class DockerVM(BaseNode):
             "extra_hosts": self.extra_hosts,
             "extra_volumes": self.extra_volumes,
             "memory": self.memory,
-            "cpus": self.cpus
+            "cpus": self.cpus,
         }
 
     def _get_free_display_port(self):
@@ -281,7 +299,9 @@ class DockerVM(BaseNode):
         volumes.extend((image_info.get("Config", {}).get("Volumes") or {}).keys())
         for volume in self._extra_volumes:
             if not volume.strip() or volume[0] != "/" or volume.find("..") >= 0:
-                raise DockerError(f"Persistent volume '{volume}' has invalid format. It must start with a '/' and not contain '..'.")
+                raise DockerError(
+                    f"Persistent volume '{volume}' has invalid format. It must start with a '/' and not contain '..'."
+                )
         volumes.extend(self._extra_volumes)
 
         self._volumes = []
@@ -292,7 +312,7 @@ class DockerVM(BaseNode):
             # remove any mount that is equal or more specific, then append this one
             self._volumes = list(filter(lambda v: not generalises(volume, v), self._volumes))
             # if there is nothing more general, append this mount
-            if not [ v for v in self._volumes if generalises(v, volume) ] :
+            if not [v for v in self._volumes if generalises(v, volume)]:
                 self._volumes.append(volume)
 
         for volume in self._volumes:
@@ -308,7 +328,7 @@ class DockerVM(BaseNode):
         """
         path = os.path.join(self.working_dir, "etc", "network")
         os.makedirs(path, exist_ok=True)
-        open(os.path.join(path, ".gns3_perms"), 'a').close()
+        open(os.path.join(path, ".gns3_perms"), "a").close()
         os.makedirs(os.path.join(path, "if-up.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
@@ -316,13 +336,16 @@ class DockerVM(BaseNode):
 
         if not os.path.exists(os.path.join(path, "interfaces")):
             with open(os.path.join(path, "interfaces"), "w+") as f:
-                f.write("""#
+                f.write(
+                    """#
 # This is a sample network config uncomment lines to configure the network
 #
 
-""")
+"""
+                )
                 for adapter in range(0, self.adapters):
-                    f.write("""
+                    f.write(
+                        """
 # Static config for eth{adapter}
 #auto eth{adapter}
 #iface eth{adapter} inet static
@@ -333,7 +356,10 @@ class DockerVM(BaseNode):
 
 # DHCP config for eth{adapter}
 # auto eth{adapter}
-# iface eth{adapter} inet dhcp""".format(adapter=adapter))
+# iface eth{adapter} inet dhcp""".format(
+                            adapter=adapter
+                        )
+                    )
         return path
 
     async def create(self):
@@ -353,8 +379,10 @@ class DockerVM(BaseNode):
 
         available_cpus = psutil.cpu_count(logical=True)
         if self._cpus > available_cpus:
-            raise DockerError(f"You have allocated too many CPUs for the Docker container "
-                              f"(max available is {available_cpus} CPUs)")
+            raise DockerError(
+                f"You have allocated too many CPUs for the Docker container "
+                f"(max available is {available_cpus} CPUs)"
+            )
 
         params = {
             "Hostname": self._name,
@@ -369,12 +397,12 @@ class DockerVM(BaseNode):
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
                 "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
-                "NanoCpus": int(self._cpus * 1e9)  # convert cpus to nano cpus
+                "NanoCpus": int(self._cpus * 1e9),  # convert cpus to nano cpus
             },
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
-            "Entrypoint": image_infos.get("Config", {"Entrypoint": []}).get("Entrypoint")
+            "Entrypoint": image_infos.get("Config", {"Entrypoint": []}).get("Entrypoint"),
         }
 
         if params["Entrypoint"] is None:
@@ -407,7 +435,7 @@ class DockerVM(BaseNode):
             variables = []
 
         for var in variables:
-            formatted = self._format_env(variables, var.get('value', ''))
+            formatted = self._format_env(variables, var.get("value", ""))
             params["Env"].append("{}={}".format(var["name"], formatted))
 
         if self._environment:
@@ -422,7 +450,9 @@ class DockerVM(BaseNode):
 
         if self._console_type == "vnc":
             await self._start_vnc()
-            params["Env"].append("QT_GRAPHICSSYSTEM=native")  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
+            params["Env"].append(
+                "QT_GRAPHICSSYSTEM=native"
+            )  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append(f"DISPLAY=:{self._display}")
             params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
 
@@ -432,13 +462,13 @@ class DockerVM(BaseNode):
                 params["Env"].append(f"GNS3_EXTRA_HOSTS={extra_hosts}")
 
         result = await self.manager.query("POST", "containers/create", data=params)
-        self._cid = result['Id']
+        self._cid = result["Id"]
         log.info(f"Docker container '{self._name}' [{self._id}] created")
         return True
 
     def _format_env(self, variables, env):
         for variable in variables:
-            env = env.replace('${' + variable["name"] + '}', variable.get("value", ""))
+            env = env.replace("${" + variable["name"] + "}", variable.get("value", ""))
         return env
 
     def _format_extra_hosts(self, extra_hosts):
@@ -481,9 +511,10 @@ class DockerVM(BaseNode):
         try:
             state = await self._get_container_state()
         except DockerHttp404Error:
-            raise DockerError("Docker container '{name}' with ID {cid} does not exist or is not ready yet. Please try again in a few seconds.".format(
-                name=self.name,
-                cid=self._cid)
+            raise DockerError(
+                "Docker container '{name}' with ID {cid} does not exist or is not ready yet. Please try again in a few seconds.".format(
+                    name=self.name, cid=self._cid
+                )
             )
         if state == "paused":
             await self.unpause()
@@ -514,7 +545,7 @@ class DockerVM(BaseNode):
 
                         # The container can crash soon after the start, this means we can not move the interface to the container namespace
                         logdata = await self._get_log()
-                        for line in logdata.split('\n'):
+                        for line in logdata.split("\n"):
                             log.error(line)
                         raise DockerError(logdata)
 
@@ -528,11 +559,10 @@ class DockerVM(BaseNode):
 
         self._permissions_fixed = False
         self.status = "started"
-        log.info("Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(
-            name=self._name,
-            image=self._image,
-            console=self.console,
-            console_type=self.console_type)
+        log.info(
+            "Docker container '{name}' [{image}] started listen for {console_type} on {console}".format(
+                name=self._name, image=self._image, console=self.console, console_type=self.console_type
+            )
         )
 
     async def _start_aux(self):
@@ -544,17 +574,30 @@ class DockerVM(BaseNode):
         # https://github.com/GNS3/gns3-gui/issues/1039
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "script", "-qfc", "while true; do TERM=vt100 /gns3/bin/busybox sh; done", "/dev/null",
+                "docker",
+                "exec",
+                "-i",
+                self._cid,
+                "/gns3/bin/busybox",
+                "script",
+                "-qfc",
+                "while true; do TERM=vt100 /gns3/bin/busybox sh; done",
+                "/dev/null",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                stdin=asyncio.subprocess.PIPE)
+                stdin=asyncio.subprocess.PIPE,
+            )
         except OSError as e:
             raise DockerError(f"Could not start auxiliary console process: {e}")
         server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=True, echo=True)
         try:
-            self._telnet_servers.append(await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux))
+            self._telnet_servers.append(
+                await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.aux)
+            )
         except OSError as e:
-            raise DockerError(f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.aux}: {e}")
+            raise DockerError(
+                f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.aux}: {e}"
+            )
         log.debug(f"Docker container '{self.name}' started listen for auxiliary telnet on {self.aux}")
 
     async def _fix_permissions(self):
@@ -570,8 +613,11 @@ class DockerVM(BaseNode):
             await self.manager.query("POST", f"containers/{self._cid}/start")
 
         for volume in self._volumes:
-            log.debug("Docker container '{name}' [{image}] fix ownership on {path}".format(
-                name=self._name, image=self._image, path=volume))
+            log.debug(
+                "Docker container '{name}' [{image}] fix ownership on {path}".format(
+                    name=self._name, image=self._image, path=volume
+                )
+            )
 
             try:
                 process = await asyncio.subprocess.create_subprocess_exec(
@@ -582,12 +628,13 @@ class DockerVM(BaseNode):
                     "sh",
                     "-c",
                     "("
-                    "/gns3/bin/busybox find \"{path}\" -depth -print0"
+                    '/gns3/bin/busybox find "{path}" -depth -print0'
                     " | /gns3/bin/busybox xargs -0 /gns3/bin/busybox stat -c '%a:%u:%g:%n' > \"{path}/.gns3_perms\""
                     ")"
-                    " && /gns3/bin/busybox chmod -R u+rX \"{path}\""
-                    " && /gns3/bin/busybox chown {uid}:{gid} -R \"{path}\""
-                    .format(uid=os.getuid(), gid=os.getgid(), path=volume),
+                    ' && /gns3/bin/busybox chmod -R u+rX "{path}"'
+                    ' && /gns3/bin/busybox chown {uid}:{gid} -R "{path}"'.format(
+                        uid=os.getuid(), gid=os.getgid(), path=volume
+                    ),
                 )
             except OSError as e:
                 raise DockerError(f"Could not fix permissions for {volume}: {e}")
@@ -607,36 +654,50 @@ class DockerVM(BaseNode):
 
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec(tigervnc_path,
-                                                                         "-geometry", self._console_resolution,
-                                                                         "-depth", "16",
-                                                                         "-interface", self._manager.port_manager.console_host,
-                                                                         "-rfbport", str(self.console),
-                                                                         "-AlwaysShared",
-                                                                         "-SecurityTypes", "None",
-                                                                         f":{self._display}",
-                                                                         stdout=fd, stderr=subprocess.STDOUT)
+                self._vnc_process = await asyncio.create_subprocess_exec(
+                    tigervnc_path,
+                    "-geometry",
+                    self._console_resolution,
+                    "-depth",
+                    "16",
+                    "-interface",
+                    self._manager.port_manager.console_host,
+                    "-rfbport",
+                    str(self.console),
+                    "-AlwaysShared",
+                    "-SecurityTypes",
+                    "None",
+                    f":{self._display}",
+                    stdout=fd,
+                    stderr=subprocess.STDOUT,
+                )
         else:
             if restart is False:
-                self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
-                                                                          "-nolisten",
-                                                                          "tcp", f":{self._display}",
-                                                                          "-screen", "0",
-                                                                          self._console_resolution + "x16")
+                self._xvfb_process = await asyncio.create_subprocess_exec(
+                    "Xvfb", "-nolisten", "tcp", f":{self._display}", "-screen", "0", self._console_resolution + "x16"
+                )
 
             # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
-                                                                         "-forever",
-                                                                         "-nopw",
-                                                                         "-shared",
-                                                                         "-geometry", self._console_resolution,
-                                                                         "-display", f"WAIT:{self._display}",
-                                                                         "-rfbport", str(self.console),
-                                                                         "-rfbportv6", str(self.console),
-                                                                         "-noncache",
-                                                                         "-listen", self._manager.port_manager.console_host,
-                                                                         stdout=fd, stderr=subprocess.STDOUT)
+                self._vnc_process = await asyncio.create_subprocess_exec(
+                    "x11vnc",
+                    "-forever",
+                    "-nopw",
+                    "-shared",
+                    "-geometry",
+                    self._console_resolution,
+                    "-display",
+                    f"WAIT:{self._display}",
+                    "-rfbport",
+                    str(self.console),
+                    "-rfbportv6",
+                    str(self.console),
+                    "-noncache",
+                    "-listen",
+                    self._manager.port_manager.console_host,
+                    stdout=fd,
+                    stderr=subprocess.STDOUT,
+                )
 
     async def _start_vnc(self):
         """
@@ -658,7 +719,9 @@ class DockerVM(BaseNode):
             # Start vncconfig for tigervnc clipboard support, connection available only after socket creation.
             tigervncconfig_path = shutil.which("vncconfig")
             if tigervnc_path and tigervncconfig_path:
-                self._vncconfig_process = await asyncio.create_subprocess_exec(tigervncconfig_path, "-display", f":{self._display}", "-nowin")
+                self._vncconfig_process = await asyncio.create_subprocess_exec(
+                    tigervncconfig_path, "-display", f":{self._display}", "-nowin"
+                )
 
         # sometimes the VNC process can crash
         monitor_process(self._vnc_process, self._vnc_callback)
@@ -671,7 +734,12 @@ class DockerVM(BaseNode):
         """
 
         if returncode != 0 and self._closing is False:
-            self.project.emit("log.error", {"message": f"The vnc process has stopped with return code {returncode} for node '{self.name}'. Please restart this node."})
+            self.project.emit(
+                "log.error",
+                {
+                    "message": f"The vnc process has stopped with return code {returncode} for node '{self.name}'. Please restart this node."
+                },
+            )
             self._vnc_process = None
 
     async def _start_http(self):
@@ -681,19 +749,33 @@ class DockerVM(BaseNode):
         """
 
         log.debug("Forward HTTP for %s to %d", self.name, self._console_http_port)
-        command = ["docker", "exec", "-i", self._cid, "/gns3/bin/busybox", "nc", "127.0.0.1", str(self._console_http_port)]
+        command = [
+            "docker",
+            "exec",
+            "-i",
+            self._cid,
+            "/gns3/bin/busybox",
+            "nc",
+            "127.0.0.1",
+            str(self._console_http_port),
+        ]
         # We replace host and port in the server answer otherwise some link could be broken
-        server = AsyncioRawCommandServer(command, replaces=[
-            (
-                b'://127.0.0.1',  # {{HOST}} mean client host
-                b'://{{HOST}}',
-            ),
-            (
-                f':{self._console_http_port}'.encode(),
-                f':{self.console}'.encode(),
-            )
-        ])
-        self._telnet_servers.append(await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console))
+        server = AsyncioRawCommandServer(
+            command,
+            replaces=[
+                (
+                    b"://127.0.0.1",  # {{HOST}} mean client host
+                    b"://{{HOST}}",
+                ),
+                (
+                    f":{self._console_http_port}".encode(),
+                    f":{self.console}".encode(),
+                ),
+            ],
+        )
+        self._telnet_servers.append(
+            await asyncio.start_server(server.run, self._manager.port_manager.console_host, self.console)
+        )
 
     async def _window_size_changed_callback(self, columns, rows):
         """
@@ -707,14 +789,12 @@ class DockerVM(BaseNode):
         # resize the container TTY.
         await self._manager.query("POST", f"containers/{self._cid}/resize?h={rows}&w={columns}")
 
-
     async def _start_console(self):
         """
         Starts streaming the console via telnet
         """
 
         class InputStream:
-
             def __init__(self):
                 self._data = b""
 
@@ -728,13 +808,25 @@ class DockerVM(BaseNode):
 
         output_stream = asyncio.StreamReader()
         input_stream = InputStream()
-        telnet = AsyncioTelnetServer(reader=output_stream, writer=input_stream, echo=True, naws=True, window_size_changed_callback=self._window_size_changed_callback)
+        telnet = AsyncioTelnetServer(
+            reader=output_stream,
+            writer=input_stream,
+            echo=True,
+            naws=True,
+            window_size_changed_callback=self._window_size_changed_callback,
+        )
         try:
-            self._telnet_servers.append(await asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console))
+            self._telnet_servers.append(
+                await asyncio.start_server(telnet.run, self._manager.port_manager.console_host, self.console)
+            )
         except OSError as e:
-            raise DockerError(f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.console}: {e}")
+            raise DockerError(
+                f"Could not start Telnet server on socket {self._manager.port_manager.console_host}:{self.console}: {e}"
+            )
 
-        self._console_websocket = await self.manager.websocket_query(f"containers/{self._cid}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1")
+        self._console_websocket = await self.manager.websocket_query(
+            f"containers/{self._cid}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1"
+        )
         input_stream.ws = self._console_websocket
 
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
@@ -792,8 +884,7 @@ class DockerVM(BaseNode):
         """
 
         await self.manager.query("POST", f"containers/{self._cid}/restart")
-        log.info("Docker container '{name}' [{image}] restarted".format(
-            name=self._name, image=self._image))
+        log.info("Docker container '{name}' [{image}] restarted".format(name=self._name, image=self._image))
 
     async def _clean_servers(self):
         """
@@ -911,8 +1002,7 @@ class DockerVM(BaseNode):
                 await self.manager.query("DELETE", f"containers/{self._cid}", params={"force": 1, "v": 1})
             except DockerError:
                 pass
-            log.info("Docker container '{name}' [{image}] removed".format(
-                name=self._name, image=self._image))
+            log.info("Docker container '{name}' [{image}] removed".format(name=self._name, image=self._image))
 
             if release_nio_udp_ports:
                 for adapter in self._ethernet_adapters:
@@ -936,26 +1026,37 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name,
-                                                                                                           adapter_number=adapter_number))
+            raise DockerError(
+                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
 
         for index in range(4096):
             if f"tap-gns3-e{index}" not in psutil.net_if_addrs():
                 adapter.host_ifc = f"tap-gns3-e{str(index)}"
                 break
         if adapter.host_ifc is None:
-            raise DockerError("Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(name=self.name,
-                                                                                                                                                                    adapter_number=adapter_number))
-        bridge_name = f'bridge{adapter_number}'
-        await self._ubridge_send(f'bridge create {bridge_name}')
+            raise DockerError(
+                "Adapter {adapter_number} couldn't allocate interface on Docker container '{name}'. Too many Docker interfaces already exists".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
+        bridge_name = f"bridge{adapter_number}"
+        await self._ubridge_send(f"bridge create {bridge_name}")
         self._bridges.add(bridge_name)
-        await self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(adapter_number=adapter_number,
-                                                                                                  hostif=adapter.host_ifc))
+        await self._ubridge_send(
+            "bridge add_nio_tap bridge{adapter_number} {hostif}".format(
+                adapter_number=adapter_number, hostif=adapter.host_ifc
+            )
+        )
         log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, self._namespace)
         try:
-            await self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.host_ifc,
-                                                                                             ns=self._namespace,
-                                                                                             adapter=adapter_number))
+            await self._ubridge_send(
+                "docker move_to_ns {ifc} {ns} eth{adapter}".format(
+                    ifc=adapter.host_ifc, ns=self._namespace, adapter=adapter_number
+                )
+            )
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
 
@@ -965,20 +1066,24 @@ class DockerVM(BaseNode):
     async def _get_namespace(self):
 
         result = await self.manager.query("GET", f"containers/{self._cid}/json")
-        return int(result['State']['Pid'])
+        return int(result["State"]["Pid"])
 
     async def _connect_nio(self, adapter_number, nio):
 
-        bridge_name = f'bridge{adapter_number}'
-        await self._ubridge_send('bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}'.format(bridge_name=bridge_name,
-                                                                                                        lport=nio.lport,
-                                                                                                        rhost=nio.rhost,
-                                                                                                        rport=nio.rport))
+        bridge_name = f"bridge{adapter_number}"
+        await self._ubridge_send(
+            "bridge add_nio_udp {bridge_name} {lport} {rhost} {rport}".format(
+                bridge_name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+            )
+        )
 
         if nio.capturing:
-            await self._ubridge_send('bridge start_capture {bridge_name} "{pcap_file}"'.format(bridge_name=bridge_name,
-                                                                                                    pcap_file=nio.pcap_output_file))
-        await self._ubridge_send(f'bridge start {bridge_name}')
+            await self._ubridge_send(
+                'bridge start_capture {bridge_name} "{pcap_file}"'.format(
+                    bridge_name=bridge_name, pcap_file=nio.pcap_output_file
+                )
+            )
+        await self._ubridge_send(f"bridge start {bridge_name}")
         await self._ubridge_apply_filters(bridge_name, nio.filters)
 
     async def adapter_add_nio_binding(self, adapter_number, nio):
@@ -992,17 +1097,21 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(name=self.name,
-                                                                                                           adapter_number=adapter_number))
+            raise DockerError(
+                "Adapter {adapter_number} doesn't exist on Docker container '{name}'".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
 
         if self.status == "started" and self.ubridge:
             await self._connect_nio(adapter_number, nio)
 
         adapter.add_nio(0, nio)
-        log.info("Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(name=self.name,
-                                                                                                    id=self._id,
-                                                                                                    nio=nio,
-                                                                                                    adapter_number=adapter_number))
+        log.info(
+            "Docker container '{name}' [{id}]: {nio} added to adapter {adapter_number}".format(
+                name=self.name, id=self._id, nio=nio, adapter_number=adapter_number
+            )
+        )
 
     async def adapter_update_nio_binding(self, adapter_number, nio):
         """
@@ -1013,7 +1122,7 @@ class DockerVM(BaseNode):
         """
 
         if self.ubridge:
-            bridge_name = f'bridge{adapter_number}'
+            bridge_name = f"bridge{adapter_number}"
             if bridge_name in self._bridges:
                 await self._ubridge_apply_filters(bridge_name, nio.filters)
 
@@ -1029,25 +1138,30 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except IndexError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
+            raise DockerError(
+                "Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
 
         await self.stop_capture(adapter_number)
         if self.ubridge:
             nio = adapter.get_nio(0)
-            bridge_name = f'bridge{adapter_number}'
+            bridge_name = f"bridge{adapter_number}"
             await self._ubridge_send(f"bridge stop {bridge_name}")
-            await self._ubridge_send('bridge remove_nio_udp bridge{adapter} {lport} {rhost} {rport}'.format(adapter=adapter_number,
-                                                                                                                 lport=nio.lport,
-                                                                                                                 rhost=nio.rhost,
-                                                                                                                 rport=nio.rport))
+            await self._ubridge_send(
+                "bridge remove_nio_udp bridge{adapter} {lport} {rhost} {rport}".format(
+                    adapter=adapter_number, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+                )
+            )
 
         adapter.remove_nio(0)
 
-        log.info("Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(name=self.name,
-                                                                                                 id=self.id,
-                                                                                                 nio=adapter.host_ifc,
-                                                                                                 adapter_number=adapter_number))
+        log.info(
+            "Docker VM '{name}' [{id}]: {nio} removed from adapter {adapter_number}".format(
+                name=self.name, id=self.id, nio=adapter.host_ifc, adapter_number=adapter_number
+            )
+        )
 
     def get_nio(self, adapter_number):
         """
@@ -1061,8 +1175,11 @@ class DockerVM(BaseNode):
         try:
             adapter = self._ethernet_adapters[adapter_number]
         except KeyError:
-            raise DockerError("Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(name=self.name,
-                                                                                                    adapter_number=adapter_number))
+            raise DockerError(
+                "Adapter {adapter_number} doesn't exist on Docker VM '{name}'".format(
+                    name=self.name, adapter_number=adapter_number
+                )
+            )
 
         nio = adapter.get_nio(0)
 
@@ -1097,9 +1214,11 @@ class DockerVM(BaseNode):
         for adapter_number in range(0, adapters):
             self._ethernet_adapters.append(EthernetAdapter())
 
-        log.info('Docker container "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
-                                                                                                              id=self._id,
-                                                                                                              adapters=adapters))
+        log.info(
+            'Docker container "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(
+                name=self._name, id=self._id, adapters=adapters
+            )
+        )
 
     async def pull_image(self, image):
         """
@@ -1108,6 +1227,7 @@ class DockerVM(BaseNode):
 
         def callback(msg):
             self.project.emit("log.info", {"message": msg})
+
         await self.manager.pull_image(image, progress_callback=callback)
 
     async def _start_ubridge_capture(self, adapter_number, output_file):
@@ -1151,9 +1271,11 @@ class DockerVM(BaseNode):
         if self.status == "started" and self.ubridge:
             await self._start_ubridge_capture(adapter_number, output_file)
 
-        log.info("Docker VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(name=self.name,
-                                                                                                         id=self.id,
-                                                                                                         adapter_number=adapter_number))
+        log.info(
+            "Docker VM '{name}' [{id}]: starting packet capture on adapter {adapter_number}".format(
+                name=self.name, id=self.id, adapter_number=adapter_number
+            )
+        )
 
     async def stop_capture(self, adapter_number):
         """
@@ -1169,9 +1291,11 @@ class DockerVM(BaseNode):
         if self.status == "started" and self.ubridge:
             await self._stop_ubridge_capture(adapter_number)
 
-        log.info("Docker VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(name=self.name,
-                                                                                                         id=self.id,
-                                                                                                         adapter_number=adapter_number))
+        log.info(
+            "Docker VM '{name}' [{id}]: stopping packet capture on adapter {adapter_number}".format(
+                name=self.name, id=self.id, adapter_number=adapter_number
+            )
+        )
 
     async def _get_log(self):
         """

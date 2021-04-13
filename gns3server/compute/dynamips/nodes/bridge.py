@@ -56,8 +56,9 @@ class Bridge(Device):
         :param new_name: New name for this bridge
         """
 
-        await self._hypervisor.send('nio_bridge rename "{name}" "{new_name}"'.format(name=self._name,
-                                                                                          new_name=new_name))
+        await self._hypervisor.send(
+            'nio_bridge rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name)
+        )
 
         self._name = new_name
 

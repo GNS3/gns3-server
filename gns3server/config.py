@@ -30,6 +30,7 @@ from .version import __version_info__
 from .utils.file_watcher import FileWatcher
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -84,11 +85,13 @@ class Config:
             server_filename = "gns3_server.ini"
 
             if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [os.path.join(os.getcwd(), server_filename),
-                               os.path.join(versioned_user_dir, server_filename),
-                               os.path.join(appdata, appname + ".ini"),
-                               os.path.join(common_appdata, appname, server_filename),
-                               os.path.join(common_appdata, appname + ".ini")]
+                self._files = [
+                    os.path.join(os.getcwd(), server_filename),
+                    os.path.join(versioned_user_dir, server_filename),
+                    os.path.join(appdata, appname + ".ini"),
+                    os.path.join(common_appdata, appname, server_filename),
+                    os.path.join(common_appdata, appname + ".ini"),
+                ]
         else:
 
             # On UNIX-like platforms, the configuration file location can be one of the following:
@@ -109,12 +112,14 @@ class Config:
                 versioned_user_dir = os.path.join(home, ".config", appname, version)
 
             if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [os.path.join(os.getcwd(), server_filename),
-                               os.path.join(versioned_user_dir, server_filename),
-                               os.path.join(home, ".config", appname + ".conf"),
-                               os.path.join("/etc/gns3", server_filename),
-                               os.path.join("/etc/xdg", appname, server_filename),
-                               os.path.join("/etc/xdg", appname + ".conf")]
+                self._files = [
+                    os.path.join(os.getcwd(), server_filename),
+                    os.path.join(versioned_user_dir, server_filename),
+                    os.path.join(home, ".config", appname + ".conf"),
+                    os.path.join("/etc/gns3", server_filename),
+                    os.path.join("/etc/xdg", appname, server_filename),
+                    os.path.join("/etc/xdg", appname + ".conf"),
+                ]
 
         if self._files is None:
             self._files = []

@@ -48,11 +48,12 @@ import gns3server.utils.images
 
 import logging
 import sys
+
 log = logging.getLogger(__name__)
 
 
 class IOUVM(BaseNode):
-    module_name = 'iou'
+    module_name = "iou"
 
     """
     IOU VM implementation.
@@ -65,13 +66,17 @@ class IOUVM(BaseNode):
     :param console_type: console type
     """
 
-    def __init__(self, name, node_id, project, manager, application_id=None, path=None, console=None, console_type="telnet"):
+    def __init__(
+        self, name, node_id, project, manager, application_id=None, path=None, console=None, console_type="telnet"
+    ):
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
 
-        log.info('IOU "{name}" [{id}]: assigned with application ID {application_id}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             application_id=application_id))
+        log.info(
+            'IOU "{name}" [{id}]: assigned with application ID {application_id}'.format(
+                name=self._name, id=self._id, application_id=application_id
+            )
+        )
 
         self._iou_process = None
         self._telnet_server = None
@@ -170,7 +175,9 @@ class IOUVM(BaseNode):
         """
 
         try:
-            output = await gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, stderr=True)
+            output = await gns3server.utils.asyncio.subprocess_check_output(
+                self._path, "-h", cwd=self.working_dir, stderr=True
+            )
             match = re.search(r"-n <n>\s+Size of nvram in Kb \(default ([0-9]+)KB\)", output)
             if match:
                 self.nvram = int(match.group(1))
@@ -206,7 +213,7 @@ class IOUVM(BaseNode):
 
         # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian
         # and have an ELF version of 1 normal IOS image are big endian!
-        if elf_header_start != b'\x7fELF\x01\x01\x01' and elf_header_start != b'\x7fELF\x02\x01\x01':
+        if elf_header_start != b"\x7fELF\x01\x01\x01" and elf_header_start != b"\x7fELF\x02\x01\x01":
             raise IOUError(f"'{self._path}' is not a valid IOU image")
 
         if not os.access(self._path, os.X_OK):
@@ -214,24 +221,26 @@ class IOUVM(BaseNode):
 
     def __json__(self):
 
-        iou_vm_info = {"name": self.name,
-                       "usage": self.usage,
-                       "node_id": self.id,
-                       "node_directory": self.working_path,
-                       "console": self._console,
-                       "console_type": self._console_type,
-                       "status": self.status,
-                       "project_id": self.project.id,
-                       "path": self.path,
-                       "md5sum": gns3server.utils.images.md5sum(self.path),
-                       "ethernet_adapters": len(self._ethernet_adapters),
-                       "serial_adapters": len(self._serial_adapters),
-                       "ram": self._ram,
-                       "nvram": self._nvram,
-                       "l1_keepalives": self._l1_keepalives,
-                       "use_default_iou_values": self._use_default_iou_values,
-                       "command_line": self.command_line,
-                       "application_id": self.application_id}
+        iou_vm_info = {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "node_directory": self.working_path,
+            "console": self._console,
+            "console_type": self._console_type,
+            "status": self.status,
+            "project_id": self.project.id,
+            "path": self.path,
+            "md5sum": gns3server.utils.images.md5sum(self.path),
+            "ethernet_adapters": len(self._ethernet_adapters),
+            "serial_adapters": len(self._serial_adapters),
+            "ram": self._ram,
+            "nvram": self._nvram,
+            "l1_keepalives": self._l1_keepalives,
+            "use_default_iou_values": self._use_default_iou_values,
+            "command_line": self.command_line,
+            "application_id": self.application_id,
+        }
 
         iou_vm_info["path"] = self.manager.get_relative_image_path(self.path, self.project.path)
         return iou_vm_info
@@ -281,10 +290,11 @@ class IOUVM(BaseNode):
         if self._ram == ram:
             return
 
-        log.info('IOU "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           old_ram=self._ram,
-                                                                                           new_ram=ram))
+        log.info(
+            'IOU "{name}" [{id}]: RAM updated from {old_ram}MB to {new_ram}MB'.format(
+                name=self._name, id=self._id, old_ram=self._ram, new_ram=ram
+            )
+        )
 
         self._ram = ram
 
@@ -309,10 +319,11 @@ class IOUVM(BaseNode):
         if self._nvram == nvram:
             return
 
-        log.info('IOU "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 old_nvram=self._nvram,
-                                                                                                 new_nvram=nvram))
+        log.info(
+            'IOU "{name}" [{id}]: NVRAM updated from {old_nvram}KB to {new_nvram}KB'.format(
+                name=self._name, id=self._id, old_nvram=self._nvram, new_nvram=nvram
+            )
+        )
         self._nvram = nvram
 
     @BaseNode.name.setter
@@ -383,8 +394,11 @@ class IOUVM(BaseNode):
         p = re.compile(r"([\.\w]+)\s=>\s+not found")
         missing_libs = p.findall(output)
         if missing_libs:
-            raise IOUError("The following shared library dependencies cannot be found for IOU image {}: {}".format(self._path,
-                                                                                                                   ", ".join(missing_libs)))
+            raise IOUError(
+                "The following shared library dependencies cannot be found for IOU image {}: {}".format(
+                    self._path, ", ".join(missing_libs)
+                )
+            )
 
     async def _check_iou_licence(self):
         """
@@ -422,9 +436,9 @@ class IOUVM(BaseNode):
         if len(hostname) > 15:
             log.warning(f"Older IOU images may not boot because hostname '{hostname}' length is above 15 characters")
         if hostname not in config["license"]:
-            raise IOUError(f"Hostname \"{hostname}\" not found in iourc file {self.iourc_path}")
+            raise IOUError(f'Hostname "{hostname}" not found in iourc file {self.iourc_path}')
         user_ioukey = config["license"][hostname]
-        if user_ioukey[-1:] != ';':
+        if user_ioukey[-1:] != ";":
             raise IOUError(f"IOU key not ending with ; in iourc file {self.iourc_path}")
         if len(user_ioukey) != 17:
             raise IOUError(f"IOU key length is not 16 characters in iourc file {self.iourc_path}")
@@ -446,13 +460,15 @@ class IOUVM(BaseNode):
                 raise IOUError(f"Invalid hostid detected: {hostid}")
             for x in hostname:
                 ioukey += ord(x)
-            pad1 = b'\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A'
-            pad2 = b'\x80' + 39 * b'\0'
-            ioukey = hashlib.md5(pad1 + pad2 + struct.pack('!I', ioukey) + pad1).hexdigest()[:16]
+            pad1 = b"\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A"
+            pad2 = b"\x80" + 39 * b"\0"
+            ioukey = hashlib.md5(pad1 + pad2 + struct.pack("!I", ioukey) + pad1).hexdigest()[:16]
             if ioukey != user_ioukey:
-                raise IOUError("Invalid IOU license key {} detected in iourc file {} for host {}".format(user_ioukey,
-                                                                                                         self.iourc_path,
-                                                                                                         hostname))
+                raise IOUError(
+                    "Invalid IOU license key {} detected in iourc file {} for host {}".format(
+                        user_ioukey, self.iourc_path, hostname
+                    )
+                )
 
     def _nvram_file(self):
         """
@@ -545,14 +561,15 @@ class IOUVM(BaseNode):
             command = await self._build_command()
             try:
                 log.info(f"Starting IOU: {command}")
-                self.command_line = ' '.join(command)
+                self.command_line = " ".join(command)
                 self._iou_process = await asyncio.create_subprocess_exec(
                     *command,
                     stdout=asyncio.subprocess.PIPE,
                     stdin=asyncio.subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     cwd=self.working_dir,
-                    env=env)
+                    env=env,
+                )
                 log.info(f"IOU instance {self._id} started PID={self._iou_process.pid}")
                 self._started = True
                 self.status = "started"
@@ -576,16 +593,20 @@ class IOUVM(BaseNode):
         """
 
         if self.console and self.console_type == "telnet":
-            server = AsyncioTelnetServer(reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True,
-                                         echo=True)
+            server = AsyncioTelnetServer(
+                reader=self._iou_process.stdout, writer=self._iou_process.stdin, binary=True, echo=True
+            )
             try:
-                self._telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host,
-                                                                 self.console)
+                self._telnet_server = await asyncio.start_server(
+                    server.run, self._manager.port_manager.console_host, self.console
+                )
             except OSError as e:
                 await self.stop()
                 raise IOUError(
-                    "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host,
-                                                                               self.console, e))
+                    "Could not start Telnet server on socket {}:{}: {}".format(
+                        self._manager.port_manager.console_host, self.console, e
+                    )
+                )
 
     async def reset_console(self):
         """
@@ -618,17 +639,25 @@ class IOUVM(BaseNode):
             for unit in adapter.ports.keys():
                 nio = adapter.get_nio(unit)
                 if nio and isinstance(nio, NIOUDP):
-                    await self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
-                                                                                                                                       iol_id=self.application_id,
-                                                                                                                                       bay=bay_id,
-                                                                                                                                       unit=unit_id,
-                                                                                                                                       lport=nio.lport,
-                                                                                                                                       rhost=nio.rhost,
-                                                                                                                                       rport=nio.rport))
+                    await self._ubridge_send(
+                        "iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(
+                            name=bridge_name,
+                            iol_id=self.application_id,
+                            bay=bay_id,
+                            unit=unit_id,
+                            lport=nio.lport,
+                            rhost=nio.rhost,
+                            rport=nio.rport,
+                        )
+                    )
                     if nio.capturing:
-                        await self._ubridge_send('iol_bridge start_capture {name} "{output_file}" {data_link_type}'.format(name=bridge_name,
-                                                                                                                                output_file=nio.pcap_output_file,
-                                                                                                                                data_link_type=re.sub(r"^DLT_", "", nio.pcap_data_link_type)))
+                        await self._ubridge_send(
+                            'iol_bridge start_capture {name} "{output_file}" {data_link_type}'.format(
+                                name=bridge_name,
+                                output_file=nio.pcap_output_file,
+                                data_link_type=re.sub(r"^DLT_", "", nio.pcap_data_link_type),
+                            )
+                        )
 
                     await self._ubridge_apply_filters(bay_id, unit_id, nio.filters)
                 unit_id += 1
@@ -646,11 +675,13 @@ class IOUVM(BaseNode):
         self._terminate_process_iou()
         if returncode != 0:
             if returncode == -11:
-                message = 'IOU VM "{}" process has stopped with return code: {} (segfault). This could be an issue with the IOU image, using a different image may fix this.\n{}'.format(self.name,
-                                                                                                                                                                                         returncode,
-                                                                                                                                                                                         self.read_iou_stdout())
+                message = 'IOU VM "{}" process has stopped with return code: {} (segfault). This could be an issue with the IOU image, using a different image may fix this.\n{}'.format(
+                    self.name, returncode, self.read_iou_stdout()
+                )
             else:
-                message = f'IOU VM "{self.name}" process has stopped with return code: {returncode}\n{self.read_iou_stdout()}'
+                message = (
+                    f'IOU VM "{self.name}" process has stopped with return code: {returncode}\n{self.read_iou_stdout()}'
+                )
             log.warning(message)
             self.project.emit("log.error", {"message": message})
         if self._telnet_server:
@@ -764,12 +795,15 @@ class IOUVM(BaseNode):
             with open(netmap_path, "w", encoding="utf-8") as f:
                 for bay in range(0, 16):
                     for unit in range(0, 4):
-                        f.write("{ubridge_id}:{bay}/{unit}{iou_id:>5d}:{bay}/{unit}\n".format(ubridge_id=str(self.application_id + 512),
-                                                                                              bay=bay,
-                                                                                              unit=unit,
-                                                                                              iou_id=self.application_id))
-            log.info("IOU {name} [id={id}]: NETMAP file created".format(name=self._name,
-                                                                        id=self._id))
+                        f.write(
+                            "{ubridge_id}:{bay}/{unit}{iou_id:>5d}:{bay}/{unit}\n".format(
+                                ubridge_id=str(self.application_id + 512),
+                                bay=bay,
+                                unit=unit,
+                                iou_id=self.application_id,
+                            )
+                        )
+            log.info("IOU {name} [id={id}]: NETMAP file created".format(name=self._name, id=self._id))
         except OSError as e:
             raise IOUError(f"Could not create {netmap_path}: {e}")
 
@@ -813,7 +847,7 @@ class IOUVM(BaseNode):
             command.extend(["-m", str(self._ram)])
 
         # do not let IOU create the NVRAM anymore
-        #startup_config_file = self.startup_config_file
+        # startup_config_file = self.startup_config_file
         # if startup_config_file:
         #    command.extend(["-c", os.path.basename(startup_config_file)])
 
@@ -863,9 +897,11 @@ class IOUVM(BaseNode):
         for _ in range(0, ethernet_adapters):
             self._ethernet_adapters.append(EthernetAdapter(interfaces=4))
 
-        log.info('IOU "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 adapters=len(self._ethernet_adapters)))
+        log.info(
+            'IOU "{name}" [{id}]: number of Ethernet adapters changed to {adapters}'.format(
+                name=self._name, id=self._id, adapters=len(self._ethernet_adapters)
+            )
+        )
 
         self._adapters = self._ethernet_adapters + self._serial_adapters
 
@@ -891,9 +927,11 @@ class IOUVM(BaseNode):
         for _ in range(0, serial_adapters):
             self._serial_adapters.append(SerialAdapter(interfaces=4))
 
-        log.info('IOU "{name}" [{id}]: number of Serial adapters changed to {adapters}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               adapters=len(self._serial_adapters)))
+        log.info(
+            'IOU "{name}" [{id}]: number of Serial adapters changed to {adapters}'.format(
+                name=self._name, id=self._id, adapters=len(self._serial_adapters)
+            )
+        )
 
         self._adapters = self._ethernet_adapters + self._serial_adapters
 
@@ -909,29 +947,39 @@ class IOUVM(BaseNode):
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError('Adapter {adapter_number} does not exist for IOU "{name}"'.format(name=self._name,
-                                                                                             adapter_number=adapter_number))
+            raise IOUError(
+                'Adapter {adapter_number} does not exist for IOU "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
-                                                                                           port_number=port_number))
+            raise IOUError(
+                "Port {port_number} does not exist on adapter {adapter}".format(
+                    adapter=adapter, port_number=port_number
+                )
+            )
 
         adapter.add_nio(port_number, nio)
-        log.info('IOU "{name}" [{id}]: {nio} added to {adapter_number}/{port_number}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             nio=nio,
-                                                                                             adapter_number=adapter_number,
-                                                                                             port_number=port_number))
+        log.info(
+            'IOU "{name}" [{id}]: {nio} added to {adapter_number}/{port_number}'.format(
+                name=self._name, id=self._id, nio=nio, adapter_number=adapter_number, port_number=port_number
+            )
+        )
 
         if self.ubridge:
             bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-            await self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
-                                                                                                                               iol_id=self.application_id,
-                                                                                                                               bay=adapter_number,
-                                                                                                                               unit=port_number,
-                                                                                                                               lport=nio.lport,
-                                                                                                                               rhost=nio.rhost,
-                                                                                                                               rport=nio.rport))
+            await self._ubridge_send(
+                "iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(
+                    name=bridge_name,
+                    iol_id=self.application_id,
+                    bay=adapter_number,
+                    unit=port_number,
+                    lport=nio.lport,
+                    rhost=nio.rhost,
+                    rport=nio.rport,
+                )
+            )
             await self._ubridge_apply_filters(adapter_number, port_number, nio.filters)
 
     async def adapter_update_nio_binding(self, adapter_number, port_number, nio):
@@ -955,15 +1003,10 @@ class IOUVM(BaseNode):
         :param filters: Array of filter dictionnary
         """
         bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-        location = '{bridge_name} {bay} {unit}'.format(
-            bridge_name=bridge_name,
-            bay=adapter_number,
-            unit=port_number)
-        await self._ubridge_send('iol_bridge reset_packet_filters ' + location)
+        location = "{bridge_name} {bay} {unit}".format(bridge_name=bridge_name, bay=adapter_number, unit=port_number)
+        await self._ubridge_send("iol_bridge reset_packet_filters " + location)
         for filter in self._build_filter_list(filters):
-            cmd = 'iol_bridge add_packet_filter {} {}'.format(
-                location,
-                filter)
+            cmd = "iol_bridge add_packet_filter {} {}".format(location, filter)
             await self._ubridge_send(cmd)
 
     async def adapter_remove_nio_binding(self, adapter_number, port_number):
@@ -979,28 +1022,36 @@ class IOUVM(BaseNode):
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
-                                                                                            adapter_number=adapter_number))
+            raise IOUError(
+                'Adapter {adapter_number} does not exist on IOU "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
-                                                                                           port_number=port_number))
+            raise IOUError(
+                "Port {port_number} does not exist on adapter {adapter}".format(
+                    adapter=adapter, port_number=port_number
+                )
+            )
 
         nio = adapter.get_nio(port_number)
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         adapter.remove_nio(port_number)
-        log.info('IOU "{name}" [{id}]: {nio} removed from {adapter_number}/{port_number}'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 nio=nio,
-                                                                                                 adapter_number=adapter_number,
-                                                                                                 port_number=port_number))
+        log.info(
+            'IOU "{name}" [{id}]: {nio} removed from {adapter_number}/{port_number}'.format(
+                name=self._name, id=self._id, nio=nio, adapter_number=adapter_number, port_number=port_number
+            )
+        )
 
         if self.ubridge:
             bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-            await self._ubridge_send("iol_bridge delete_nio_udp {name} {bay} {unit}".format(name=bridge_name,
-                                                                                                 bay=adapter_number,
-                                                                                                 unit=port_number))
+            await self._ubridge_send(
+                "iol_bridge delete_nio_udp {name} {bay} {unit}".format(
+                    name=bridge_name, bay=adapter_number, unit=port_number
+                )
+            )
 
         return nio
 
@@ -1017,18 +1068,25 @@ class IOUVM(BaseNode):
         try:
             adapter = self._adapters[adapter_number]
         except IndexError:
-            raise IOUError('Adapter {adapter_number} does not exist on IOU "{name}"'.format(name=self._name,
-                                                                                            adapter_number=adapter_number))
+            raise IOUError(
+                'Adapter {adapter_number} does not exist on IOU "{name}"'.format(
+                    name=self._name, adapter_number=adapter_number
+                )
+            )
 
         if not adapter.port_exists(port_number):
-            raise IOUError("Port {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
-                                                                                           port_number=port_number))
+            raise IOUError(
+                "Port {port_number} does not exist on adapter {adapter}".format(
+                    adapter=adapter, port_number=port_number
+                )
+            )
 
         nio = adapter.get_nio(port_number)
 
         if not nio:
-            raise IOUError("NIO {port_number} does not exist on adapter {adapter}".format(adapter=adapter,
-                                                                                          port_number=port_number))
+            raise IOUError(
+                "NIO {port_number} does not exist on adapter {adapter}".format(adapter=adapter, port_number=port_number)
+            )
         return nio
 
     @property
@@ -1066,13 +1124,17 @@ class IOUVM(BaseNode):
         if "IOURC" not in os.environ:
             env["IOURC"] = self.iourc_path
         try:
-            output = await gns3server.utils.asyncio.subprocess_check_output(self._path, "-h", cwd=self.working_dir, env=env, stderr=True)
+            output = await gns3server.utils.asyncio.subprocess_check_output(
+                self._path, "-h", cwd=self.working_dir, env=env, stderr=True
+            )
             if re.search(r"-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])
             else:
                 raise IOUError(f"layer 1 keepalive messages are not supported by {os.path.basename(self._path)}")
         except (OSError, subprocess.SubprocessError) as e:
-            log.warning(f"could not determine if layer 1 keepalive messages are supported by {os.path.basename(self._path)}: {e}")
+            log.warning(
+                f"could not determine if layer 1 keepalive messages are supported by {os.path.basename(self._path)}: {e}"
+            )
 
     @property
     def startup_config_content(self):
@@ -1102,15 +1164,15 @@ class IOUVM(BaseNode):
             startup_config_path = os.path.join(self.working_dir, "startup-config.cfg")
 
             if startup_config is None:
-                startup_config = ''
+                startup_config = ""
 
             # We disallow erasing the startup config file
             if len(startup_config) == 0 and os.path.exists(startup_config_path):
                 return
 
-            with open(startup_config_path, 'w+', encoding='utf-8') as f:
+            with open(startup_config_path, "w+", encoding="utf-8") as f:
                 if len(startup_config) == 0:
-                    f.write('')
+                    f.write("")
                 else:
                     startup_config = startup_config.replace("%h", self._name)
                     f.write(startup_config)
@@ -1153,15 +1215,15 @@ class IOUVM(BaseNode):
             private_config_path = os.path.join(self.working_dir, "private-config.cfg")
 
             if private_config is None:
-                private_config = ''
+                private_config = ""
 
             # We disallow erasing the private config file
             if len(private_config) == 0 and os.path.exists(private_config_path):
                 return
 
-            with open(private_config_path, 'w+', encoding='utf-8') as f:
+            with open(private_config_path, "w+", encoding="utf-8") as f:
                 if len(private_config) == 0:
-                    f.write('')
+                    f.write("")
                 else:
                     private_config = private_config.replace("%h", self._name)
                     f.write(private_config)
@@ -1176,7 +1238,7 @@ class IOUVM(BaseNode):
         :returns: path to config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'startup-config.cfg')
+        path = os.path.join(self.working_dir, "startup-config.cfg")
         if os.path.exists(path):
             return path
         else:
@@ -1190,7 +1252,7 @@ class IOUVM(BaseNode):
         :returns: path to config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'private-config.cfg')
+        path = os.path.join(self.working_dir, "private-config.cfg")
         if os.path.exists(path):
             return path
         else:
@@ -1205,9 +1267,9 @@ class IOUVM(BaseNode):
         :returns: path to startup-config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'startup-config.cfg')
+        path = os.path.join(self.working_dir, "startup-config.cfg")
         if os.path.exists(path):
-            return 'startup-config.cfg'
+            return "startup-config.cfg"
         else:
             return None
 
@@ -1219,9 +1281,9 @@ class IOUVM(BaseNode):
         :returns: path to private-config file. None if the file doesn't exist
         """
 
-        path = os.path.join(self.working_dir, 'private-config.cfg')
+        path = os.path.join(self.working_dir, "private-config.cfg")
         if os.path.exists(path):
-            return 'private-config.cfg'
+            return "private-config.cfg"
         else:
             return None
 
@@ -1288,7 +1350,7 @@ class IOUVM(BaseNode):
                 except (binascii.Error, OSError) as e:
                     raise IOUError(f"Could not save the startup configuration {config_path}: {e}")
 
-            if private_config_content and private_config_content != b'\nend\n':
+            if private_config_content and private_config_content != b"\nend\n":
                 config_path = os.path.join(self.working_dir, "private-config.cfg")
                 try:
                     config = private_config_content.decode("utf-8", errors="replace")
@@ -1310,23 +1372,34 @@ class IOUVM(BaseNode):
 
         nio = self.get_nio(adapter_number, port_number)
         if nio.capturing:
-            raise IOUError("Packet capture is already activated on {adapter_number}/{port_number}".format(adapter_number=adapter_number,
-                                                                                                          port_number=port_number))
+            raise IOUError(
+                "Packet capture is already activated on {adapter_number}/{port_number}".format(
+                    adapter_number=adapter_number, port_number=port_number
+                )
+            )
 
         nio.start_packet_capture(output_file, data_link_type)
-        log.info('IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number} to {output_file}'.format(name=self._name,
-                                                                                                                          id=self._id,
-                                                                                                                          adapter_number=adapter_number,
-                                                                                                                          port_number=port_number,
-                                                                                                                          output_file=output_file))
+        log.info(
+            'IOU "{name}" [{id}]: starting packet capture on {adapter_number}/{port_number} to {output_file}'.format(
+                name=self._name,
+                id=self._id,
+                adapter_number=adapter_number,
+                port_number=port_number,
+                output_file=output_file,
+            )
+        )
 
         if self.ubridge:
             bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-            await self._ubridge_send('iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(name=bridge_name,
-                                                                                                                                 bay=adapter_number,
-                                                                                                                                 unit=port_number,
-                                                                                                                                 output_file=output_file,
-                                                                                                                                 data_link_type=re.sub(r"^DLT_", "", data_link_type)))
+            await self._ubridge_send(
+                'iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(
+                    name=bridge_name,
+                    bay=adapter_number,
+                    unit=port_number,
+                    output_file=output_file,
+                    data_link_type=re.sub(r"^DLT_", "", data_link_type),
+                )
+            )
 
     async def stop_capture(self, adapter_number, port_number):
         """
@@ -1340,12 +1413,15 @@ class IOUVM(BaseNode):
         if not nio.capturing:
             return
         nio.stop_packet_capture()
-        log.info('IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(name=self._name,
-                                                                                                         id=self._id,
-                                                                                                         adapter_number=adapter_number,
-                                                                                                         port_number=port_number))
+        log.info(
+            'IOU "{name}" [{id}]: stopping packet capture on {adapter_number}/{port_number}'.format(
+                name=self._name, id=self._id, adapter_number=adapter_number, port_number=port_number
+            )
+        )
         if self.ubridge:
             bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
-            await self._ubridge_send('iol_bridge stop_capture {name} {bay} {unit}'.format(name=bridge_name,
-                                                                                               bay=adapter_number,
-                                                                                               unit=port_number))
+            await self._ubridge_send(
+                "iol_bridge stop_capture {name} {bay} {unit}".format(
+                    name=bridge_name, bay=adapter_number, unit=port_number
+                )
+            )

@@ -17,6 +17,7 @@
 from gns3server.controller.controller_error import ControllerError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -43,4 +44,6 @@ def get_next_application_id(projects, computes):
         application_id = (pool - used).pop()
         return application_id
     except KeyError:
-        raise ControllerError("Cannot create a new IOU node (limit of 512 nodes across all opened projects using the same computes)")
+        raise ControllerError(
+            "Cannot create a new IOU node (limit of 512 nodes across all opened projects using the same computes)"
+        )

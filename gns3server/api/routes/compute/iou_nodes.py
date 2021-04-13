@@ -30,9 +30,7 @@ from gns3server import schemas
 from gns3server.compute.iou import IOU
 from gns3server.compute.iou.iou_vm import IOUVM
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}}
 
 router = APIRouter(responses=responses)
 
@@ -47,10 +45,12 @@ def dep_node(project_id: UUID, node_id: UUID):
     return node
 
 
-@router.post("",
-             response_model=schemas.IOU,
-             status_code=status.HTTP_201_CREATED,
-             responses={409: {"model": schemas.ErrorMessage, "description": "Could not create IOU node"}})
+@router.post(
+    "",
+    response_model=schemas.IOU,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Could not create IOU node"}},
+)
 async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
     """
     Create a new IOU node.
@@ -58,13 +58,15 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
 
     iou = IOU.instance()
     node_data = jsonable_encoder(node_data, exclude_unset=True)
-    vm = await iou.create_node(node_data.pop("name"),
-                               str(project_id),
-                               node_data.get("node_id"),
-                               application_id=node_data.get("application_id"),
-                               path=node_data.get("path"),
-                               console=node_data.get("console"),
-                               console_type=node_data.get("console_type", "telnet"))
+    vm = await iou.create_node(
+        node_data.pop("name"),
+        str(project_id),
+        node_data.get("node_id"),
+        application_id=node_data.get("application_id"),
+        path=node_data.get("path"),
+        console=node_data.get("console"),
+        console_type=node_data.get("console_type", "telnet"),
+    )
 
     for name, value in node_data.items():
         if hasattr(vm, name) and getattr(vm, name) != value:
@@ -80,8 +82,7 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
     return vm.__json__()
 
 
-@router.get("/{node_id}",
-            response_model=schemas.IOU)
+@router.get("/{node_id}", response_model=schemas.IOU)
 def get_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Return an IOU node.
@@ -90,8 +91,7 @@ def get_iou_node(node: IOUVM = Depends(dep_node)):
     return node.__json__()
 
 
-@router.put("/{node_id}",
-            response_model=schemas.IOU)
+@router.put("/{node_id}", response_model=schemas.IOU)
 async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(dep_node)):
     """
     Update an IOU node.
@@ -112,8 +112,7 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
     return node.__json__()
 
 
-@router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Delete an IOU node.
@@ -122,9 +121,7 @@ async def delete_iou_node(node: IOUVM = Depends(dep_node)):
     await IOU.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/duplicate",
-             response_model=schemas.IOU,
-             status_code=status.HTTP_201_CREATED)
+@router.post("/{node_id}/duplicate", response_model=schemas.IOU, status_code=status.HTTP_201_CREATED)
 async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), node: IOUVM = Depends(dep_node)):
     """
     Duplicate an IOU node.
@@ -134,8 +131,7 @@ async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), 
     return new_node.__json__()
 
 
-@router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep_node)):
     """
     Start an IOU node.
@@ -150,8 +146,7 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
     return node.__json__()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 async def stop_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Stop an IOU node.
@@ -160,8 +155,7 @@ async def stop_iou_node(node: IOUVM = Depends(dep_node)):
     await node.stop()
 
 
-@router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
 def suspend_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Suspend an IOU node.
@@ -171,8 +165,7 @@ def suspend_iou_node(node: IOUVM = Depends(dep_node)):
     pass
 
 
-@router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
 async def reload_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Reload an IOU node.
@@ -181,13 +174,17 @@ async def reload_iou_node(node: IOUVM = Depends(dep_node)):
     await node.reload()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-             status_code=status.HTTP_201_CREATED,
-             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def create_iou_node_nio(adapter_number: int,
-                              port_number: int,
-                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                              node: IOUVM = Depends(dep_node)):
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def create_iou_node_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: IOUVM = Depends(dep_node),
+):
     """
     Add a NIO (Network Input/Output) to the node.
     """
@@ -197,13 +194,17 @@ async def create_iou_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-            status_code=status.HTTP_201_CREATED,
-            response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
-async def update_iou_node_nio(adapter_number: int,
-                              port_number: int,
-                              nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-                              node: IOUVM = Depends(dep_node)):
+@router.put(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+)
+async def update_iou_node_nio(
+    adapter_number: int,
+    port_number: int,
+    nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
+    node: IOUVM = Depends(dep_node),
+):
     """
     Update a NIO (Network Input/Output) on the node.
     """
@@ -215,8 +216,7 @@ async def update_iou_node_nio(adapter_number: int,
     return nio.__json__()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -226,10 +226,9 @@ async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_iou_node_capture(adapter_number: int,
-                                 port_number: int,
-                                 node_capture_data: schemas.NodeCapture,
-                                 node: IOUVM = Depends(dep_node)):
+async def start_iou_node_capture(
+    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: IOUVM = Depends(dep_node)
+):
     """
     Start a packet capture on the node.
     """
@@ -239,8 +238,9 @@ async def start_iou_node_capture(adapter_number: int,
     return {"pcap_file_path": str(pcap_file_path)}
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+)
 async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -269,8 +269,7 @@ async def console_ws(websocket: WebSocket, node: IOUVM = Depends(dep_node)):
     await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: IOUVM = Depends(dep_node)):
 
     await node.reset_console()

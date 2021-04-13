@@ -33,7 +33,7 @@ from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerTimeoutError,
     ControllerForbiddenError,
-    ControllerUnauthorizedError
+    ControllerUnauthorizedError,
 )
 
 from gns3server.api.routes import controller, index
@@ -42,15 +42,14 @@ from gns3server.core import tasks
 from gns3server.version import __version__
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 def get_application() -> FastAPI:
 
     application = FastAPI(
-        title="GNS3 controller API",
-        description="This page describes the public controller API for GNS3",
-        version="v3"
+        title="GNS3 controller API", description="This page describes the public controller API for GNS3", version="v3"
     )
 
     origins = [
@@ -61,16 +60,16 @@ def get_application() -> FastAPI:
         "http://127.0.0.1:3080",
         "http://localhost:3080",
         "http://gns3.github.io",
-        "https://gns3.github.io"
+        "https://gns3.github.io",
     ]
 
     application.add_middleware(
-            CORSMiddleware,
-            allow_origins=origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     application.add_event_handler("startup", tasks.create_startup_handler(application))
     application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))

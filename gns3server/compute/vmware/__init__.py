@@ -70,6 +70,7 @@ class VMware(BaseManager):
     def _find_vmrun_registry(regkey):
 
         import winreg
+
         try:
             # default path not used, let's look in the registry
             hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
@@ -124,6 +125,7 @@ class VMware(BaseManager):
     def _find_vmware_version_registry(regkey):
 
         import winreg
+
         version = None
         try:
             # default path not used, let's look in the registry
@@ -210,7 +212,9 @@ class VMware(BaseManager):
         else:
             if sys.platform.startswith("darwin"):
                 if not os.path.isdir("/Applications/VMware Fusion.app"):
-                    raise VMwareError("VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app")
+                    raise VMwareError(
+                        "VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app"
+                    )
                 self._host_type = "fusion"
                 return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
 
@@ -244,6 +248,7 @@ class VMware(BaseManager):
     def _get_vmnet_interfaces_registry():
 
         import winreg
+
         vmnet_interfaces = []
         regkey = r"SOFTWARE\Wow6432Node\VMware, Inc.\VMnetLib\VMnetConfig"
         try:
@@ -320,7 +325,9 @@ class VMware(BaseManager):
     def allocate_vmnet(self):
 
         if not self._vmnets:
-            raise VMwareError(f"No VMnet interface available between vmnet{self._vmnet_start_range} and vmnet{self._vmnet_end_range}. Go to preferences VMware / Network / Configure to add more interfaces.")
+            raise VMwareError(
+                f"No VMnet interface available between vmnet{self._vmnet_start_range} and vmnet{self._vmnet_end_range}. Go to preferences VMware / Network / Configure to add more interfaces."
+            )
         return self._vmnets.pop(0)
 
     def refresh_vmnet_list(self, ubridge=True):
@@ -363,12 +370,12 @@ class VMware(BaseManager):
 
         while True:
             try:
-                return (await self._execute(subcommand, args, timeout=timeout, log_level=log_level))
+                return await self._execute(subcommand, args, timeout=timeout, log_level=log_level)
             except VMwareError as e:
                 # We can fail to detect that it's VMware player instead of Workstation (due to marketing change Player is now Player Workstation)
                 if self.host_type == "ws" and "VIX_SERVICEPROVIDER_VMWARE_WORKSTATION" in str(e):
                     self._host_type = "player"
-                    return (await self._execute(subcommand, args, timeout=timeout, log_level=log_level))
+                    return await self._execute(subcommand, args, timeout=timeout, log_level=log_level)
                 else:
                     if trial <= 0:
                         raise e
@@ -388,19 +395,25 @@ class VMware(BaseManager):
         command_string = " ".join([shlex_quote(c) for c in command])
         log.log(log_level, f"Executing vmrun with command: {command_string}")
         try:
-            process = await asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            process = await asyncio.create_subprocess_exec(
+                *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
         except (OSError, subprocess.SubprocessError) as e:
             raise VMwareError(f"Could not execute vmrun: {e}")
 
         try:
             stdout_data, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
-            raise VMwareError(f"vmrun has timed out after {timeout} seconds!\nTry to run {command_string} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus.")
+            raise VMwareError(
+                f"vmrun has timed out after {timeout} seconds!\nTry to run {command_string} in a terminal to see more details.\n\nMake sure GNS3 and VMware run under the same user and whitelist vmrun.exe in your antivirus."
+            )
 
         if process.returncode:
             # vmrun print errors on stdout
             vmrun_error = stdout_data.decode("utf-8", errors="ignore")
-            raise VMwareError(f"vmrun has returned an error: {vmrun_error}\nTry to run {command_string} in a terminal to see more details.\nAnd make sure GNS3 and VMware run under the same user.")
+            raise VMwareError(
+                f"vmrun has returned an error: {vmrun_error}\nTry to run {command_string} in a terminal to see more details.\nAnd make sure GNS3 and VMware run under the same user."
+            )
 
         return stdout_data.decode("utf-8", errors="ignore").splitlines()
 
@@ -487,7 +500,7 @@ class VMware(BaseManager):
                 # skip the shebang
                 line = f.readline().decode(encoding, errors="ignore")
             try:
-                key, value = line.split('=', 1)
+                key, value = line.split("=", 1)
                 if key.strip().lower() == ".encoding":
                     file_encoding = value.strip('" ')
                     try:
@@ -502,7 +515,7 @@ class VMware(BaseManager):
         with open(path, encoding=encoding, errors="ignore") as f:
             for line in f.read().splitlines():
                 try:
-                    key, value = line.split('=', 1)
+                    key, value = line.split("=", 1)
                     pairs[key.strip().lower()] = value.strip('" ')
                 except ValueError:
                     continue
@@ -574,7 +587,7 @@ class VMware(BaseManager):
             for key, value in pairs.items():
                 if key.startswith("vmlist"):
                     try:
-                        vm_entry, variable_name = key.split('.', 1)
+                        vm_entry, variable_name = key.split(".", 1)
                     except ValueError:
                         continue
                     if vm_entry not in vm_entries:
@@ -586,7 +599,11 @@ class VMware(BaseManager):
         for vm_settings in vm_entries.values():
             if "displayname" in vm_settings and "config" in vm_settings:
                 if os.path.exists(vm_settings["config"]):
-                    log.debug('Found VM named "{}" with VMX file "{}"'.format(vm_settings["displayname"], vm_settings["config"]))
+                    log.debug(
+                        'Found VM named "{}" with VMX file "{}"'.format(
+                            vm_settings["displayname"], vm_settings["config"]
+                        )
+                    )
                     vmware_vms.append({"vmname": vm_settings["displayname"], "vmx_path": vm_settings["config"]})
         return vmware_vms
 
@@ -657,10 +674,11 @@ class VMware(BaseManager):
         if sys.platform.startswith("win"):
             import ctypes
             import ctypes.wintypes
+
             path = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
             ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, path)
             documents_folder = path.value
-            return [fr'{documents_folder}\My Virtual Machines', fr'{documents_folder}\Virtual Machines']
+            return [fr"{documents_folder}\My Virtual Machines", fr"{documents_folder}\Virtual Machines"]
         elif sys.platform.startswith("darwin"):
             return [os.path.expanduser("~/Documents/Virtual Machines.localized")]
         else:
@@ -691,8 +709,11 @@ class VMware(BaseManager):
                 if "prefvmx.defaultvmpath" in pairs:
                     default_vm_path = pairs["prefvmx.defaultvmpath"]
                     if not os.path.isdir(default_vm_path):
-                        raise VMwareError('Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'.format(default_vm_path=default_vm_path,
-                                                                                                                                                                                                                  vmware_preferences_path=vmware_preferences_path))
+                        raise VMwareError(
+                            'Could not find or access the default VM directory: "{default_vm_path}". Please change "prefvmx.defaultvmpath={default_vm_path}" in "{vmware_preferences_path}"'.format(
+                                default_vm_path=default_vm_path, vmware_preferences_path=vmware_preferences_path
+                            )
+                        )
                     vmware_vms = self._get_vms_from_directory(default_vm_path)
 
             if not vmware_vms:
@@ -707,7 +728,7 @@ class VMware(BaseManager):
 
             # look for VMX paths in the preferences file in case not all VMs are in a default directory
             for key, value in pairs.items():
-                m = re.match(r'pref.mruVM(\d+)\.filename', key)
+                m = re.match(r"pref.mruVM(\d+)\.filename", key)
                 if m:
                     display_name = f"pref.mruVM{m.group(1)}.displayName"
                     if display_name in pairs:
@@ -730,7 +751,7 @@ class VMware(BaseManager):
         return path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     vmware = VMware.instance()
     print("=> Check version")

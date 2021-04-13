@@ -35,12 +35,13 @@ import types
 # To avoid strange bug later we switch the event loop before any other operation
 if sys.platform.startswith("win"):
     import asyncio
+
     # use the Proactor event loop on Windows
     loop = asyncio.ProactorEventLoop()
     asyncio.set_event_loop(loop)
 
 if sys.platform.startswith("win"):
-    sys.modules['termios'] = types.ModuleType('termios')
+    sys.modules["termios"] = types.ModuleType("termios")
 
 
 def daemonize():
@@ -80,8 +81,9 @@ def main():
         if "--daemon" in sys.argv:
             daemonize()
     from gns3server.server import Server
+
     Server().run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

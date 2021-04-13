@@ -24,10 +24,7 @@ from .drawings import Drawing
 from .links import Link
 from .nodes import Node
 
-from .projects import (
-    Supplier,
-    Variable
-)
+from .projects import Supplier, Variable
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -81,5 +78,5 @@ def main():
         Topology.parse_obj(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -23,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -38,7 +39,7 @@ class NIOTAP(NIO):
     def __init__(self, hypervisor, tap_device):
 
         # create an unique name
-        name = f'tap-{uuid.uuid4()}'
+        name = f"tap-{uuid.uuid4()}"
         self._tap_device = tap_device
         super().__init__(name, hypervisor)
 
@@ -59,5 +60,4 @@ class NIOTAP(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_tap",
-                "tap_device": self._tap_device}
+        return {"type": "nio_tap", "tap_device": self._tap_device}

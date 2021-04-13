@@ -22,7 +22,6 @@ from .serial_port import SerialPort
 
 
 class POSPort(SerialPort):
-
     @staticmethod
     def long_name_type():
         """

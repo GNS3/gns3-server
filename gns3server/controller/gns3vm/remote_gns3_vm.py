@@ -20,11 +20,11 @@ from .gns3_vm_error import GNS3VMError
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class RemoteGNS3VM(BaseGNS3VM):
-
     def __init__(self, controller):
 
         self._engine = "remote"

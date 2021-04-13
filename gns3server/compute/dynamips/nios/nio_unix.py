@@ -23,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -39,20 +40,24 @@ class NIOUNIX(NIO):
     def __init__(self, hypervisor, local_file, remote_file):
 
         # create an unique name
-        name = f'unix-{uuid.uuid4()}'
+        name = f"unix-{uuid.uuid4()}"
         self._local_file = local_file
         self._remote_file = remote_file
         super().__init__(name, hypervisor)
 
     async def create(self):
 
-        await self._hypervisor.send("nio create_unix {name} {local} {remote}".format(name=self._name,
-                                                                                          local=self._local_file,
-                                                                                          remote=self._remote_file))
+        await self._hypervisor.send(
+            "nio create_unix {name} {local} {remote}".format(
+                name=self._name, local=self._local_file, remote=self._remote_file
+            )
+        )
 
-        log.info("NIO UNIX {name} created with local file {local} and remote file {remote}".format(name=self._name,
-                                                                                                   local=self._local_file,
-                                                                                                   remote=self._remote_file))
+        log.info(
+            "NIO UNIX {name} created with local file {local} and remote file {remote}".format(
+                name=self._name, local=self._local_file, remote=self._remote_file
+            )
+        )
 
     @property
     def local_file(self):
@@ -76,6 +81,4 @@ class NIOUNIX(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_unix",
-                "local_file": self._local_file,
-                "remote_file": self._remote_file}
+        return {"type": "nio_unix", "local_file": self._local_file, "remote_file": self._remote_file}

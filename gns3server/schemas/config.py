@@ -141,13 +141,13 @@ class ServerSettings(BaseModel):
     @validator("additional_images_paths", pre=True)
     def split_additional_images_paths(cls, v):
         if v:
-            return v.split(';')
+            return v.split(";")
         return list()
 
     @validator("allowed_interfaces", pre=True)
     def split_allowed_interfaces(cls, v):
         if v:
-            return v.split(',')
+            return v.split(",")
         return list()
 
     @validator("console_end_port_range")
@@ -188,7 +188,7 @@ class ServerSettings(BaseModel):
 
 class ServerConfig(BaseModel):
 
-    Server: ServerSettings= ServerSettings()
+    Server: ServerSettings = ServerSettings()
     Controller: ControllerSettings = ControllerSettings()
     VPCS: VPCSSettings = VPCSSettings()
     Dynamips: DynamipsSettings = DynamipsSettings()

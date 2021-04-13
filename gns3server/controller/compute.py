@@ -34,11 +34,13 @@ from ..controller.controller_error import (
     ControllerNotFoundError,
     ControllerForbiddenError,
     ControllerTimeoutError,
-    ControllerUnauthorizedError)
+    ControllerUnauthorizedError,
+)
 from ..version import __version__, __version_info__
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -64,8 +66,19 @@ class Compute:
     A GNS3 compute.
     """
 
-    def __init__(self, compute_id, controller=None, protocol="http", host="localhost",
-                 port=3080, user=None, password=None, name=None, console_host=None, ssl_context=None):
+    def __init__(
+        self,
+        compute_id,
+        controller=None,
+        protocol="http",
+        host="localhost",
+        port=3080,
+        user=None,
+        password=None,
+        name=None,
+        console_host=None,
+        ssl_context=None,
+    ):
         self._http_session = None
         assert controller is not None
         log.info("Create compute %s", compute_id)
@@ -91,14 +104,7 @@ class Compute:
         self._disk_usage_percent = 0
         self._last_error = None
         self._ssl_context = ssl_context
-        self._capabilities = {
-            "version": "",
-            "platform": "",
-            "cpus": 0,
-            "memory": 0,
-            "disk_size": 0,
-            "node_types": []
-        }
+        self._capabilities = {"version": "", "platform": "", "cpus": 0, "memory": 0, "disk_size": 0, "node_types": []}
         self.name = name
         # Cache of interfaces on remote host
         self._interfaces_cache = None
@@ -223,7 +229,7 @@ class Compute:
         try:
             return socket.gethostbyname(self._host)
         except socket.gaierror:
-            return '0.0.0.0'
+            return "0.0.0.0"
 
     @host.setter
     def host(self, host):
@@ -295,7 +301,7 @@ class Compute:
                 "name": self._name,
                 "protocol": self._protocol,
                 "host": self._host,
-                "port": self._port
+                "port": self._port,
             }
         return {
             "compute_id": self._id,
@@ -309,7 +315,7 @@ class Compute:
             "memory_usage_percent": self._memory_usage_percent,
             "disk_usage_percent": self._disk_usage_percent,
             "capabilities": self._capabilities,
-            "last_error": self._last_error
+            "last_error": self._last_error,
         }
 
     async def download_file(self, project, path):
@@ -380,7 +386,9 @@ class Compute:
                 # Try to reconnect after 5 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
                     if self.id != "local" and self.id != "vm" and not self._controller.compute_has_open_project(self):
-                        log.warning(f"Not reconnecting to compute '{self._id}' because there is no project opened on it")
+                        log.warning(
+                            f"Not reconnecting to compute '{self._id}' because there is no project opened on it"
+                        )
                         return
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
@@ -407,12 +415,15 @@ class Compute:
 
             if response.json["version"].split("-")[0] != __version__.split("-")[0]:
                 if self._name.startswith("GNS3 VM"):
-                    msg = "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(__version__,
-                                                                                                                          response.json["version"])
+                    msg = (
+                        "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(
+                            __version__, response.json["version"]
+                        )
+                    )
                 else:
-                    msg = "GNS3 controller version {} is not the same as compute {} version {}".format(__version__,
-                                                                                                       self._name,
-                                                                                                       response.json["version"])
+                    msg = "GNS3 controller version {} is not the same as compute {} version {}".format(
+                        __version__, self._name, response.json["version"]
+                    )
                 if __version_info__[3] == 0:
                     # Stable release
                     log.error(msg)
@@ -454,10 +465,12 @@ class Compute:
                             self._cpu_usage_percent = event["cpu_usage_percent"]
                             self._memory_usage_percent = event["memory_usage_percent"]
                             self._disk_usage_percent = event["disk_usage_percent"]
-                            #FIXME: slow down number of compute events
+                            # FIXME: slow down number of compute events
                             self._controller.notification.controller_emit("compute.updated", self.__json__())
                         else:
-                            await self._controller.notification.dispatch(action, event, project_id=project_id, compute_id=self.id)
+                            await self._controller.notification.dispatch(
+                                action, event, project_id=project_id, compute_id=self.id
+                            )
                     else:
                         if response.type == aiohttp.WSMsgType.CLOSE:
                             await ws.close()
@@ -504,31 +517,40 @@ class Compute:
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
         with async_timeout.timeout(timeout):
             url = self._getUrl(path)
-            headers = {'content-type': 'application/json'}
+            headers = {"content-type": "application/json"}
             chunked = None
             if data == {}:
                 data = None
             elif data is not None:
-                if hasattr(data, '__json__'):
+                if hasattr(data, "__json__"):
                     data = json.dumps(data.__json__())
                 elif isinstance(data, aiohttp.streams.EmptyStreamReader):
                     data = None
                 # Stream the request
                 elif isinstance(data, aiohttp.streams.StreamReader) or isinstance(data, bytes):
                     chunked = True
-                    headers['content-type'] = 'application/octet-stream'
+                    headers["content-type"] = "application/octet-stream"
                 # If the data is an open file we will iterate on it
                 elif isinstance(data, io.BufferedIOBase):
                     chunked = True
-                    headers['content-type'] = 'application/octet-stream'
+                    headers["content-type"] = "application/octet-stream"
                 else:
                     data = json.dumps(data).encode("utf-8")
         try:
             log.debug(f"Attempting request to compute: {method} {url} {headers}")
-            response = await self._session().request(method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout)
+            response = await self._session().request(
+                method, url, headers=headers, data=data, auth=self._auth, chunked=chunked, timeout=timeout
+            )
         except asyncio.TimeoutError:
             raise ComputeError(f"Timeout error for {method} call to {url} after {timeout}s")
-        except (aiohttp.ClientError, aiohttp.ServerDisconnectedError, aiohttp.ClientResponseError, ValueError, KeyError, socket.gaierror) as e:
+        except (
+            aiohttp.ClientError,
+            aiohttp.ServerDisconnectedError,
+            aiohttp.ClientResponseError,
+            ValueError,
+            KeyError,
+            socket.gaierror,
+        ) as e:
             #  aiohttp 2.3.1 raises socket.gaierror when cannot find host
             raise ComputeError(str(e))
         body = await response.read()
@@ -614,12 +636,12 @@ class Compute:
 
         try:
             if type in ["qemu", "dynamips", "iou"]:
-                #for local_image in list_images(type):
+                # for local_image in list_images(type):
                 #    if local_image['filename'] not in [i['filename'] for i in images]:
                 #        images.append(local_image)
-                images = sorted(images, key=itemgetter('filename'))
+                images = sorted(images, key=itemgetter("filename"))
             else:
-                images = sorted(images, key=itemgetter('image'))
+                images = sorted(images, key=itemgetter("image"))
         except OSError as e:
             raise ComputeError(f"Cannot list images: {str(e)}")
         return images
@@ -643,7 +665,7 @@ class Compute:
             return self.host_ip, self.host_ip
 
         # Perhaps the user has correct network gateway, we trust him
-        if self.host_ip not in ('0.0.0.0', '127.0.0.1') and other_compute.host_ip not in ('0.0.0.0', '127.0.0.1'):
+        if self.host_ip not in ("0.0.0.0", "127.0.0.1") and other_compute.host_ip not in ("0.0.0.0", "127.0.0.1"):
             return self.host_ip, other_compute.host_ip
 
         this_compute_interfaces = await self.interfaces()
@@ -652,7 +674,9 @@ class Compute:
         # Sort interface to put the compute host in first position
         # we guess that if user specified this host it could have a reason (VMware Nat / Host only interface)
         this_compute_interfaces = sorted(this_compute_interfaces, key=lambda i: i["ip_address"] != self.host_ip)
-        other_compute_interfaces = sorted(other_compute_interfaces, key=lambda i: i["ip_address"] != other_compute.host_ip)
+        other_compute_interfaces = sorted(
+            other_compute_interfaces, key=lambda i: i["ip_address"] != other_compute.host_ip
+        )
 
         for this_interface in this_compute_interfaces:
             # Skip if no ip or no netmask (vbox when stopped set a null netmask)
@@ -662,7 +686,9 @@ class Compute:
             if this_interface["ip_address"].startswith("169.254."):
                 continue
 
-            this_network = ipaddress.ip_network("{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False)
+            this_network = ipaddress.ip_network(
+                "{}/{}".format(this_interface["ip_address"], this_interface["netmask"]), strict=False
+            )
 
             for other_interface in other_compute_interfaces:
                 if len(other_interface["ip_address"]) == 0 or other_interface["netmask"] is None:
@@ -672,7 +698,9 @@ class Compute:
                 if other_interface["ip_address"] == this_interface["ip_address"]:
                     continue
 
-                other_network = ipaddress.ip_network("{}/{}".format(other_interface["ip_address"], other_interface["netmask"]), strict=False)
+                other_network = ipaddress.ip_network(
+                    "{}/{}".format(other_interface["ip_address"], other_interface["netmask"]), strict=False
+                )
                 if this_network.overlaps(other_network):
                     return this_interface["ip_address"], other_interface["ip_address"]
 

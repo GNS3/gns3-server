@@ -36,11 +36,12 @@ from ..base_node import BaseNode
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class TraceNGVM(BaseNode):
-    module_name = 'traceng'
+    module_name = "traceng"
 
     """
     TraceNG VM implementation.
@@ -111,16 +112,18 @@ class TraceNGVM(BaseNode):
 
     def __json__(self):
 
-        return {"name": self.name,
-                "ip_address": self.ip_address,
-                "default_destination": self._default_destination,
-                "node_id": self.id,
-                "node_directory": self.working_path,
-                "status": self.status,
-                "console": self._console,
-                "console_type": "none",
-                "project_id": self.project.id,
-                "command_line": self.command_line}
+        return {
+            "name": self.name,
+            "ip_address": self.ip_address,
+            "default_destination": self._default_destination,
+            "node_id": self.id,
+            "node_directory": self.working_path,
+            "status": self.status,
+            "console": self._console,
+            "console_type": "none",
+            "project_id": self.project.id,
+            "command_line": self.command_line,
+        }
 
     def _traceng_path(self):
         """
@@ -161,10 +164,11 @@ class TraceNGVM(BaseNode):
             raise TraceNGError(f"Invalid IP address: {ip_address}\n")
 
         self._ip_address = ip_address
-        log.info("{module}: {name} [{id}] set IP address to {ip_address}".format(module=self.manager.module_name,
-                                                                                name=self.name,
-                                                                                id=self.id,
-                                                                                ip_address=ip_address))
+        log.info(
+            "{module}: {name} [{id}] set IP address to {ip_address}".format(
+                module=self.manager.module_name, name=self.name, id=self.id, ip_address=ip_address
+            )
+        )
 
     @property
     def default_destination(self):
@@ -185,10 +189,11 @@ class TraceNGVM(BaseNode):
         """
 
         self._default_destination = destination
-        log.info("{module}: {name} [{id}] set default destination to {destination}".format(module=self.manager.module_name,
-                                                                                           name=self.name,
-                                                                                           id=self.id,
-                                                                                           destination=destination))
+        log.info(
+            "{module}: {name} [{id}] set default destination to {destination}".format(
+                module=self.manager.module_name, name=self.name, id=self.id, destination=destination
+            )
+        )
 
     async def start(self, destination=None):
         """
@@ -207,10 +212,10 @@ class TraceNGVM(BaseNode):
                 flags = 0
                 if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
                     flags = subprocess.CREATE_NEW_CONSOLE
-                self.command_line = ' '.join(command)
-                self._process = await asyncio.create_subprocess_exec(*command,
-                                                                          cwd=self.working_dir,
-                                                                          creationflags=flags)
+                self.command_line = " ".join(command)
+                self._process = await asyncio.create_subprocess_exec(
+                    *command, cwd=self.working_dir, creationflags=flags
+                )
                 monitor_process(self._process, self._termination_callback)
 
                 await self._start_ubridge()
@@ -277,9 +282,9 @@ class TraceNGVM(BaseNode):
         """
 
         log.info(f"Stopping TraceNG instance {self.name} PID={self._process.pid}")
-        #if sys.platform.startswith("win32"):
+        # if sys.platform.startswith("win32"):
         #    self._process.send_signal(signal.CTRL_BREAK_EVENT)
-        #else:
+        # else:
         try:
             self._process.terminate()
         # Sometime the process may already be dead when we garbage collect
@@ -306,17 +311,21 @@ class TraceNGVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise TraceNGError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                           port_number=port_number))
+            raise TraceNGError(
+                "Port {port_number} doesn't exist in adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
 
         if self.is_running():
             await self.add_ubridge_udp_connection(f"TraceNG-{self._id}", self._local_udp_tunnel[1], nio)
 
         self._ethernet_adapter.add_nio(port_number, nio)
-        log.info('TraceNG "{name}" [{id}]: {nio} added to port {port_number}'.format(name=self._name,
-                                                                                     id=self.id,
-                                                                                     nio=nio,
-                                                                                     port_number=port_number))
+        log.info(
+            'TraceNG "{name}" [{id}]: {nio} added to port {port_number}'.format(
+                name=self._name, id=self.id, nio=nio, port_number=port_number
+            )
+        )
 
         return nio
 
@@ -329,8 +338,11 @@ class TraceNGVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise TraceNGError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                              port_number=port_number))
+            raise TraceNGError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
         if self.is_running():
             await self.update_ubridge_udp_connection(f"TraceNG-{self._id}", self._local_udp_tunnel[1], nio)
 
@@ -344,8 +356,11 @@ class TraceNGVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise TraceNGError("Port {port_number} doesn't exist in adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                              port_number=port_number))
+            raise TraceNGError(
+                "Port {port_number} doesn't exist in adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
 
         await self.stop_capture(port_number)
         if self.is_running():
@@ -356,10 +371,11 @@ class TraceNGVM(BaseNode):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         self._ethernet_adapter.remove_nio(port_number)
 
-        log.info('TraceNG "{name}" [{id}]: {nio} removed from port {port_number}'.format(name=self._name,
-                                                                                         id=self.id,
-                                                                                         nio=nio,
-                                                                                         port_number=port_number))
+        log.info(
+            'TraceNG "{name}" [{id}]: {nio} removed from port {port_number}'.format(
+                name=self._name, id=self.id, nio=nio, port_number=port_number
+            )
+        )
         return nio
 
     def get_nio(self, port_number):
@@ -372,8 +388,11 @@ class TraceNGVM(BaseNode):
         """
 
         if not self._ethernet_adapter.port_exists(port_number):
-            raise TraceNGError("Port {port_number} doesn't exist on adapter {adapter}".format(adapter=self._ethernet_adapter,
-                                                                                              port_number=port_number))
+            raise TraceNGError(
+                "Port {port_number} doesn't exist on adapter {adapter}".format(
+                    adapter=self._ethernet_adapter, port_number=port_number
+                )
+            )
         nio = self._ethernet_adapter.get_nio(port_number)
         if not nio:
             raise TraceNGError(f"Port {port_number} is not connected")
@@ -393,12 +412,17 @@ class TraceNGVM(BaseNode):
 
         nio.start_packet_capture(output_file)
         if self.ubridge:
-            await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=f"TraceNG-{self._id}",
-                                                                                               output_file=output_file))
+            await self._ubridge_send(
+                'bridge start_capture {name} "{output_file}"'.format(
+                    name=f"TraceNG-{self._id}", output_file=output_file
+                )
+            )
 
-        log.info("TraceNG '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
-                                                                                                 id=self.id,
-                                                                                                 port_number=port_number))
+        log.info(
+            "TraceNG '{name}' [{id}]: starting packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -413,11 +437,13 @@ class TraceNGVM(BaseNode):
 
         nio.stop_packet_capture()
         if self.ubridge:
-            await self._ubridge_send('bridge stop_capture {name}'.format(name=f"TraceNG-{self._id}"))
+            await self._ubridge_send("bridge stop_capture {name}".format(name=f"TraceNG-{self._id}"))
 
-        log.info("TraceNG '{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
-                                                                                                 id=self.id,
-                                                                                                 port_number=port_number))
+        log.info(
+            "TraceNG '{name}' [{id}]: stopping packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )
 
     def _build_command(self, destination):
         """
@@ -447,7 +473,9 @@ class TraceNGVM(BaseNode):
             command.extend(["-c", str(nio.lport)])  # source UDP port
             command.extend(["-v", str(nio.rport)])  # destination UDP port
             try:
-                command.extend(["-b", socket.gethostbyname(nio.rhost)])  # destination host, we need to resolve the hostname because TraceNG doesn't support it
+                command.extend(
+                    ["-b", socket.gethostbyname(nio.rhost)]
+                )  # destination host, we need to resolve the hostname because TraceNG doesn't support it
             except socket.gaierror as e:
                 raise TraceNGError(f"Can't resolve hostname {nio.rhost}: {e}")
 

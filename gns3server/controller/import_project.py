@@ -31,6 +31,7 @@ from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio import aiozipstream
 
 import logging
+
 log = logging.getLogger(__name__)
 
 """
@@ -150,9 +151,17 @@ async def import_project(controller, project_id, stream, location=None, name=Non
             # Project created on the remote GNS3 VM?
             if node["compute_id"] not in compute_created:
                 compute = controller.get_compute(node["compute_id"])
-                await compute.post("/projects", data={"name": project_name, "project_id": project_id,})
+                await compute.post(
+                    "/projects",
+                    data={
+                        "name": project_name,
+                        "project_id": project_id,
+                    },
+                )
                 compute_created.add(node["compute_id"])
-            await _move_files_to_compute(compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"]))
+            await _move_files_to_compute(
+                compute, project_id, path, os.path.join("project-files", node["node_type"], node["node_id"])
+            )
 
     # And we dump the updated.gns3
     dot_gns3_path = os.path.join(path, project_name + ".gns3")
@@ -259,7 +268,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
             except OSError as e:
                 raise ControllerError(f"Cannot open snapshot '{os.path.basename(snapshot)}': {e}")
             except zipfile.BadZipFile:
-                raise ControllerError(f"Cannot extract files from snapshot '{os.path.basename(snapshot)}': not a GNS3 project (invalid zip)")
+                raise ControllerError(
+                    f"Cannot extract files from snapshot '{os.path.basename(snapshot)}': not a GNS3 project (invalid zip)"
+                )
 
             # patch the topology with the correct project name and ID
             try:
@@ -272,9 +283,13 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:
-                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file cannot be modified: {e}")
+                raise ControllerError(
+                    f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file cannot be modified: {e}"
+                )
             except (ValueError, KeyError):
-                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file is corrupted")
+                raise ControllerError(
+                    f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file is corrupted"
+                )
 
             # write everything back to the original snapshot file
             try:
@@ -283,8 +298,10 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                         for file in files:
                             path = os.path.join(root, file)
                             zstream.write(path, os.path.relpath(path, tmpdir))
-                    async with aiofiles.open(snapshot_path, 'wb+') as f:
+                    async with aiofiles.open(snapshot_path, "wb+") as f:
                         async for chunk in zstream:
                             await f.write(chunk)
             except OSError as e:
-                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}")
+                raise ControllerError(
+                    f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}"
+                )

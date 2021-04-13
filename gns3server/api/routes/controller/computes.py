@@ -29,22 +29,24 @@ from gns3server import schemas
 
 from .dependencies.database import get_repository
 
-responses = {
-    404: {"model": schemas.ErrorMessage, "description": "Compute not found"}
-}
+responses = {404: {"model": schemas.ErrorMessage, "description": "Compute not found"}}
 
 router = APIRouter(responses=responses)
 
 
-@router.post("",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Compute,
-             responses={404: {"model": schemas.ErrorMessage, "description": "Could not connect to compute"},
-                        409: {"model": schemas.ErrorMessage, "description": "Could not create compute"},
-                        401: {"model": schemas.ErrorMessage, "description": "Invalid authentication for compute"}})
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Compute,
+    responses={
+        404: {"model": schemas.ErrorMessage, "description": "Could not connect to compute"},
+        409: {"model": schemas.ErrorMessage, "description": "Could not create compute"},
+        401: {"model": schemas.ErrorMessage, "description": "Invalid authentication for compute"},
+    },
+)
 async def create_compute(
-        compute_create: schemas.ComputeCreate,
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+    compute_create: schemas.ComputeCreate,
+    computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
 ) -> schemas.Compute:
     """
     Create a new compute on the controller.
@@ -53,12 +55,9 @@ async def create_compute(
     return await ComputesService(computes_repo).create_compute(compute_create)
 
 
-@router.get("/{compute_id}",
-            response_model=schemas.Compute,
-            response_model_exclude_unset=True)
+@router.get("/{compute_id}", response_model=schemas.Compute, response_model_exclude_unset=True)
 async def get_compute(
-        compute_id: Union[str, UUID],
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+    compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
 ) -> schemas.Compute:
     """
     Return a compute from the controller.
@@ -67,11 +66,9 @@ async def get_compute(
     return await ComputesService(computes_repo).get_compute(compute_id)
 
 
-@router.get("",
-            response_model=List[schemas.Compute],
-            response_model_exclude_unset=True)
+@router.get("", response_model=List[schemas.Compute], response_model_exclude_unset=True)
 async def get_computes(
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+    computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
 ) -> List[schemas.Compute]:
     """
     Return all computes known by the controller.
@@ -80,13 +77,11 @@ async def get_computes(
     return await ComputesService(computes_repo).get_computes()
 
 
-@router.put("/{compute_id}",
-            response_model=schemas.Compute,
-            response_model_exclude_unset=True)
+@router.put("/{compute_id}", response_model=schemas.Compute, response_model_exclude_unset=True)
 async def update_compute(
-        compute_id: Union[str, UUID],
-        compute_update: schemas.ComputeUpdate,
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+    compute_id: Union[str, UUID],
+    compute_update: schemas.ComputeUpdate,
+    computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
 ) -> schemas.Compute:
     """
     Update a compute on the controller.
@@ -95,11 +90,9 @@ async def update_compute(
     return await ComputesService(computes_repo).update_compute(compute_id, compute_update)
 
 
-@router.delete("/{compute_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{compute_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_compute(
-        compute_id: Union[str, UUID],
-        computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
+    compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
 ):
     """
     Delete a compute from the controller.
@@ -160,7 +153,4 @@ async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdl
     """
 
     controller = Controller.instance()
-    return await controller.autoidlepc(str(compute_id),
-                                       auto_idle_pc.platform,
-                                       auto_idle_pc.image,
-                                       auto_idle_pc.ram)
+    return await controller.autoidlepc(str(compute_id), auto_idle_pc.platform, auto_idle_pc.image, auto_idle_pc.ram)

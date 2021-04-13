@@ -28,6 +28,7 @@ from .dynamips_hypervisor import DynamipsHypervisor
 from .dynamips_error import DynamipsError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -121,17 +122,15 @@ class Hypervisor(DynamipsHypervisor):
             # add the Npcap directory to $PATH to force Dynamips to use npcap DLL instead of Winpcap (if installed)
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
-                env["PATH"] = system_root + ';' + env["PATH"]
+                env["PATH"] = system_root + ";" + env["PATH"]
         try:
             log.info(f"Starting Dynamips: {self._command}")
             self._stdout_file = os.path.join(self.working_dir, f"dynamips_i{self._id}_stdout.txt")
             log.info(f"Dynamips process logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                self._process = await asyncio.create_subprocess_exec(*self._command,
-                                                                          stdout=fd,
-                                                                          stderr=subprocess.STDOUT,
-                                                                          cwd=self._working_dir,
-                                                                          env=env)
+                self._process = await asyncio.create_subprocess_exec(
+                    *self._command, stdout=fd, stderr=subprocess.STDOUT, cwd=self._working_dir, env=env
+                )
             log.info(f"Dynamips process started PID={self._process.pid}")
             self._started = True
         except (OSError, subprocess.SubprocessError) as e:
@@ -159,7 +158,7 @@ class Hypervisor(DynamipsHypervisor):
                     except OSError as e:
                         log.error(f"Cannot stop the Dynamips process: {e}")
                     if self._process.returncode is None:
-                        log.warning(f'Dynamips hypervisor with PID={self._process.pid} is still running')
+                        log.warning(f"Dynamips hypervisor with PID={self._process.pid} is still running")
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:

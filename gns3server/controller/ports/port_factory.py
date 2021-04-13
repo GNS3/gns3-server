@@ -27,15 +27,16 @@ from .pos_port import POSPort
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 PORTS = {
-    'atm': ATMPort,
-    'frame_relay': FrameRelayPort,
-    'fastethernet': FastEthernetPort,
-    'gigabitethernet': GigabitEthernetPort,
-    'ethernet': EthernetPort,
-    'serial': SerialPort
+    "atm": ATMPort,
+    "frame_relay": FrameRelayPort,
+    "fastethernet": FastEthernetPort,
+    "gigabitethernet": GigabitEthernetPort,
+    "ethernet": EthernetPort,
+    "serial": SerialPort,
 }
 
 
@@ -52,7 +53,10 @@ class StandardPortFactory:
     """
     Create ports for standard device
     """
-    def __new__(cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size, custom_adapters):
+
+    def __new__(
+        cls, properties, port_by_adapter, first_port_name, port_name_format, port_segment_size, custom_adapters
+    ):
         ports = []
         adapter_number = interface_number = segment_number = 0
 
@@ -72,14 +76,17 @@ class StandardPortFactory:
             for port_number in range(0, port_by_adapter):
                 if first_port_name and adapter_number == 0:
                     port_name = custom_adapter_settings.get("port_name", first_port_name)
-                    port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet", short_name=port_name)
+                    port = PortFactory(
+                        port_name, segment_number, adapter_number, port_number, "ethernet", short_name=port_name
+                    )
                 else:
                     try:
                         port_name = port_name_format.format(
                             interface_number,
                             segment_number,
                             adapter=adapter_number,
-                            **cls._generate_replacement(interface_number, segment_number))
+                            **cls._generate_replacement(interface_number, segment_number),
+                        )
                     except (IndexError, ValueError, KeyError) as e:
                         raise ControllerError(f"Invalid port name format {port_name_format}: {str(e)}")
 
@@ -106,7 +113,15 @@ class StandardPortFactory:
         if "serial_adapters" in properties:
             for adapter_number in range(adapter_number, properties["serial_adapters"] + adapter_number):
                 for port_number in range(0, port_by_adapter):
-                    ports.append(PortFactory(f"Serial{segment_number}/{port_number}", segment_number, adapter_number, port_number, "serial"))
+                    ports.append(
+                        PortFactory(
+                            f"Serial{segment_number}/{port_number}",
+                            segment_number,
+                            adapter_number,
+                            port_number,
+                            "serial",
+                        )
+                    )
                 segment_number += 1
 
         return ports
@@ -132,67 +147,38 @@ class DynamipsPortFactory:
     """
 
     ADAPTER_MATRIX = {
-        "C1700-MB-1FE": {"nb_ports": 1,
-                         "port": FastEthernetPort},
-        "C1700-MB-WIC1": {"nb_ports": 0,
-                          "port": None},
-        "C2600-MB-1E": {"nb_ports": 1,
-                        "port": EthernetPort},
-        "C2600-MB-1FE": {"nb_ports": 1,
-                         "port": FastEthernetPort},
-        "C2600-MB-2E": {"nb_ports": 2,
-                        "port": EthernetPort},
-        "C2600-MB-2FE": {"nb_ports": 2,
-                         "port": FastEthernetPort},
-        "C7200-IO-2FE": {"nb_ports": 2,
-                         "port": FastEthernetPort},
-        "C7200-IO-FE": {"nb_ports": 1,
-                        "port": FastEthernetPort},
-        "C7200-IO-GE-E": {"nb_ports": 1,
-                          "port": GigabitEthernetPort},
-        "GT96100-FE": {"nb_ports": 2,
-                       "port": FastEthernetPort},
-        "Leopard-2FE": {"nb_ports": 2,
-                        "port": FastEthernetPort},
-        "NM-16ESW": {"nb_ports": 16,
-                     "port": FastEthernetPort},
-        "NM-1E": {"nb_ports": 1,
-                  "port": EthernetPort},
-        "NM-1FE-TX": {"nb_ports": 1,
-                      "port": FastEthernetPort},
-        "NM-4E": {"nb_ports": 4,
-                  "port": EthernetPort},
-        "NM-4T": {"nb_ports": 4,
-                  "port": SerialPort},
-        "PA-2FE-TX": {"nb_ports": 2,
-                      "port": FastEthernetPort},
-        "PA-4E": {"nb_ports": 4,
-                  "port": EthernetPort},
-        "PA-4T+": {"nb_ports": 4,
-                   "port": SerialPort},
-        "PA-8E": {"nb_ports": 8,
-                  "port": EthernetPort},
-        "PA-8T": {"nb_ports": 8,
-                  "port": SerialPort},
-        "PA-A1": {"nb_ports": 1,
-                  "port": ATMPort},
-        "PA-FE-TX": {"nb_ports": 1,
-                     "port": FastEthernetPort},
-        "PA-GE": {"nb_ports": 1,
-                  "port": GigabitEthernetPort},
-        "PA-POS-OC3": {"nb_ports": 1,
-                       "port": POSPort},
+        "C1700-MB-1FE": {"nb_ports": 1, "port": FastEthernetPort},
+        "C1700-MB-WIC1": {"nb_ports": 0, "port": None},
+        "C2600-MB-1E": {"nb_ports": 1, "port": EthernetPort},
+        "C2600-MB-1FE": {"nb_ports": 1, "port": FastEthernetPort},
+        "C2600-MB-2E": {"nb_ports": 2, "port": EthernetPort},
+        "C2600-MB-2FE": {"nb_ports": 2, "port": FastEthernetPort},
+        "C7200-IO-2FE": {"nb_ports": 2, "port": FastEthernetPort},
+        "C7200-IO-FE": {"nb_ports": 1, "port": FastEthernetPort},
+        "C7200-IO-GE-E": {"nb_ports": 1, "port": GigabitEthernetPort},
+        "GT96100-FE": {"nb_ports": 2, "port": FastEthernetPort},
+        "Leopard-2FE": {"nb_ports": 2, "port": FastEthernetPort},
+        "NM-16ESW": {"nb_ports": 16, "port": FastEthernetPort},
+        "NM-1E": {"nb_ports": 1, "port": EthernetPort},
+        "NM-1FE-TX": {"nb_ports": 1, "port": FastEthernetPort},
+        "NM-4E": {"nb_ports": 4, "port": EthernetPort},
+        "NM-4T": {"nb_ports": 4, "port": SerialPort},
+        "PA-2FE-TX": {"nb_ports": 2, "port": FastEthernetPort},
+        "PA-4E": {"nb_ports": 4, "port": EthernetPort},
+        "PA-4T+": {"nb_ports": 4, "port": SerialPort},
+        "PA-8E": {"nb_ports": 8, "port": EthernetPort},
+        "PA-8T": {"nb_ports": 8, "port": SerialPort},
+        "PA-A1": {"nb_ports": 1, "port": ATMPort},
+        "PA-FE-TX": {"nb_ports": 1, "port": FastEthernetPort},
+        "PA-GE": {"nb_ports": 1, "port": GigabitEthernetPort},
+        "PA-POS-OC3": {"nb_ports": 1, "port": POSPort},
     }
 
-    WIC_MATRIX = {"WIC-1ENET": {"nb_ports": 1,
-                                "port": EthernetPort},
-
-                  "WIC-1T": {"nb_ports": 1,
-                             "port": SerialPort},
-
-                  "WIC-2T": {"nb_ports": 2,
-                             "port": SerialPort}
-                  }
+    WIC_MATRIX = {
+        "WIC-1ENET": {"nb_ports": 1, "port": EthernetPort},
+        "WIC-1T": {"nb_ports": 1, "port": SerialPort},
+        "WIC-2T": {"nb_ports": 2, "port": SerialPort},
+    }
 
     def __new__(cls, properties):
 

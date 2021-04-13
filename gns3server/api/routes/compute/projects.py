@@ -21,6 +21,7 @@ API routes for projects.
 import os
 
 import logging
+
 log = logging.getLogger()
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -60,9 +61,7 @@ def get_compute_projects():
     return [p.__json__() for p in pm.projects]
 
 
-@router.post("/projects",
-             status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project)
+@router.post("/projects", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
 def create_compute_project(project_data: schemas.ProjectCreate):
     """
     Create a new project on the compute.
@@ -70,15 +69,16 @@ def create_compute_project(project_data: schemas.ProjectCreate):
 
     pm = ProjectManager.instance()
     project_data = jsonable_encoder(project_data, exclude_unset=True)
-    project = pm.create_project(name=project_data.get("name"),
-                                path=project_data.get("path"),
-                                project_id=project_data.get("project_id"),
-                                variables=project_data.get("variables", None))
+    project = pm.create_project(
+        name=project_data.get("name"),
+        path=project_data.get("path"),
+        project_id=project_data.get("project_id"),
+        variables=project_data.get("variables", None),
+    )
     return project.__json__()
 
 
-@router.put("/projects/{project_id}",
-             response_model=schemas.Project)
+@router.put("/projects/{project_id}", response_model=schemas.Project)
 async def update_compute_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
     """
     Update project on the compute.
@@ -88,8 +88,7 @@ async def update_compute_project(project_data: schemas.ProjectUpdate, project: P
     return project.__json__()
 
 
-@router.get("/projects/{project_id}",
-            response_model=schemas.Project)
+@router.get("/projects/{project_id}", response_model=schemas.Project)
 def get_compute_project(project: Project = Depends(dep_project)):
     """
     Return a project from the compute.
@@ -98,8 +97,7 @@ def get_compute_project(project: Project = Depends(dep_project)):
     return project.__json__()
 
 
-@router.post("/projects/{project_id}/close",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/projects/{project_id}/close", status_code=status.HTTP_204_NO_CONTENT)
 async def close_compute_project(project: Project = Depends(dep_project)):
     """
     Close a project on the compute.
@@ -117,8 +115,7 @@ async def close_compute_project(project: Project = Depends(dep_project)):
         log.warning("Skip project closing, another client is listening for project notifications")
 
 
-@router.delete("/projects/{project_id}",
-               status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_compute_project(project: Project = Depends(dep_project)):
     """
     Delete project from the compute.
@@ -126,6 +123,7 @@ async def delete_compute_project(project: Project = Depends(dep_project)):
 
     await project.delete()
     ProjectManager.instance().remove_project(project.id)
+
 
 # @Route.get(
 #     r"/projects/{project_id}/notifications",
@@ -181,8 +179,7 @@ async def delete_compute_project(project: Project = Depends(dep_project)):
 #     return {"action": "ping", "event": stats}
 
 
-@router.get("/projects/{project_id}/files",
-            response_model=List[schemas.ProjectFile])
+@router.get("/projects/{project_id}/files", response_model=List[schemas.ProjectFile])
 async def get_compute_project_files(project: Project = Depends(dep_project)):
     """
     Return files belonging to a project.
@@ -210,8 +207,7 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
     return FileResponse(path, media_type="application/octet-stream")
 
 
-@router.post("/projects/{project_id}/files/{file_path:path}",
-             status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)):
 
     path = os.path.normpath(file_path)
