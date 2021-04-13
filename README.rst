@@ -4,8 +4,8 @@ GNS3-server
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-.. image:: https://github.com/GNS3/gns3-server/workflows/testing/badge.svg
-    :target: https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting
+.. image:: https://github.com/GNS3/gns3-server/workflows/testing/badge.svg?branch=3.0
+    :target: https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting+branch%3A3.0
 
 .. image:: https://img.shields.io/pypi/v/gns3-server.svg
     :target: https://pypi.python.org/pypi/gns3-server
