@@ -1,0 +1,80 @@
+{
+    "name": "RHEL",
+    "category": "guest",
+    "description": "Red Hat Enterprise Linux Server provides core operating system functions and capabilities for application infrastructure.",
+    "vendor_name": "Red Hat",
+    "vendor_url": "https://redhat.com",
+    "documentation_url": "https://access.redhat.com/solutions/641193",
+    "product_name": "Red Hat Enterprise Linux KVM Guest Image",
+    "product_url": "https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux",
+    "registry_version": 5,
+    "status": "stable",
+    "availability": "service-contract",
+    "maintainer": "Neyder Achahuanco",
+    "maintainer_email": "neyder@neyder.net",
+    "usage": "You should download Red Hat Enterprise Linux KVM Guest Image from https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.3/x86_64/product-software attach/customize cloud-init.iso and start.\nusername: cloud-user\npassword: redhat",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "rhel-8.3-x86_64-kvm.qcow2",
+            "version": "8.3",
+            "md5sum": "dd554c059e0910379fff88f677f4a4b3",
+            "filesize": 1316683776,
+            "download_url": "https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.3/x86_64/product-software"
+        },
+        {
+            "filename": "rhel-server-7.9-x86_64-kvm.qcow2",
+            "version": "7.9",
+            "md5sum": "8d6669b3e2bb8df15b9b4280936cf950",
+            "filesize": 827777024,
+            "download_url": "https://access.redhat.com/downloads/content/69/ver=/rhel---7/7.9/x86_64/product-software"
+        },
+        {
+            "filename": "rhel-server-6.10-update-11-x86_64-kvm.qcow2",
+            "version": "6.10",
+            "md5sum": "6d672026d3a0eae794a677a18287f9c0",
+            "filesize": 341442560,
+            "download_url": "https://access.redhat.com/downloads/content/69/ver=/rhel---6/6.10/x86_64/product-software"
+        },
+        {
+            "filename": "rhel-cloud-init.iso",
+            "version": "1.0",
+            "md5sum": "421745b0d13615ecd48696f98d8b6352",
+            "filesize": 374784,
+            "download_url": "https://gitlab.com/neyder/rhel-cloud-init/raw/master/rhel-cloud-init.iso"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "rhel-8.3-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            },
+            "name": "8.3"
+        },
+        {
+            "images": {
+                "hda_disk_image": "rhel-server-7.9-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            },
+            "name": "7.9"
+        },
+        {
+            "images": {
+                "hda_disk_image": "rhel-server-6.10-update-11-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            },
+            "name": "6.10"
+        }
+    ]
+}

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -27,6 +26,7 @@ from .iou_error import IOUError
 from .iou_vm import IOUVM
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -61,4 +61,4 @@ class IOU(BaseManager):
         :returns: working directory name
         """
 
-        return os.path.join("iou", "device-{}".format(legacy_vm_id))
+        return os.path.join("iou", f"device-{legacy_vm_id}")

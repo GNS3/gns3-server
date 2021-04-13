@@ -27,7 +27,7 @@ def qt_font_to_style(font, color):
     if font is None:
         font = "TypeWriter,10,-1,5,75,0,0,0,0,0"
     font_info = font.split(",")
-    style = "font-family: {};font-size: {};".format(font_info[0], font_info[1])
+    style = f"font-family: {font_info[0]};font-size: {font_info[1]};"
     if font_info[4] == "75":
         style += "font-weight: bold;"
     if font_info[5] == "1":
@@ -37,8 +37,8 @@ def qt_font_to_style(font, color):
         color = "000000"
     if len(color) == 9:
         style += "fill: #" + color[-6:] + ";"
-        style += "fill-opacity: {};".format(round(1.0 / 255 * int(color[:3][-2:], base=16), 2))
+        style += f"fill-opacity: {round(1.0 / 255 * int(color[:3][-2:], base=16), 2)};"
     else:
         style += "fill: #" + color[-6:] + ";"
-        style += "fill-opacity: {};".format(1.0)
+        style += f"fill-opacity: {1.0};"
     return style

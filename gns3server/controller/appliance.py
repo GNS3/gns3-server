@@ -19,11 +19,11 @@ import copy
 import uuid
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class Appliance:
-
     def __init__(self, appliance_id, data, builtin=True):
         if appliance_id is None:
             self._id = str(uuid.uuid4())
@@ -36,8 +36,8 @@ class Appliance:
         if "appliance_id" in self._data:
             del self._data["appliance_id"]
 
-        if self.status != 'broken':
-            log.debug('Appliance "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+        if self.status != "broken":
+            log.debug(f'Appliance "{self.name}" [{self._id}] loaded')
 
     @property
     def id(self):

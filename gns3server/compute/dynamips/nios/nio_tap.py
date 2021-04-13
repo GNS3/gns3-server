@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -39,14 +39,14 @@ class NIOTAP(NIO):
     def __init__(self, hypervisor, tap_device):
 
         # create an unique name
-        name = 'tap-{}'.format(uuid.uuid4())
+        name = f"tap-{uuid.uuid4()}"
         self._tap_device = tap_device
         super().__init__(name, hypervisor)
 
     async def create(self):
 
-        await self._hypervisor.send("nio create_tap {name} {tap}".format(name=self._name, tap=self._tap_device))
-        log.info("NIO TAP {name} created with device {device}".format(name=self._name, device=self._tap_device))
+        await self._hypervisor.send(f"nio create_tap {self._name} {self._tap_device}")
+        log.info(f"NIO TAP {self._name} created with device {self._tap_device}")
 
     @property
     def tap_device(self):
@@ -60,5 +60,4 @@ class NIOTAP(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_tap",
-                "tap_device": self._tap_device}
+        return {"type": "nio_tap", "tap_device": self._tap_device}

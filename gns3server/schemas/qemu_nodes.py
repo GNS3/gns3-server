@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pydantic import BaseModel, Field
-from pathlib import Path
 from typing import Optional, List
 from enum import Enum
 from uuid import UUID
@@ -47,7 +45,7 @@ class QemuPlatform(str, Enum):
     s390x = "s390x"
     sh4 = "sh4"
     sh4eb = "sh4eb"
-    sparc =  "sparc"
+    sparc = "sparc"
     sparc64 = "sparc64"
     tricore = "tricore"
     unicore32 = "unicore32"
@@ -161,31 +159,31 @@ class QemuBase(BaseModel):
     node_id: Optional[UUID]
     usage: Optional[str] = Field(None, description="How to use the node")
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
-    qemu_path: Optional[Path] = Field(None, description="Qemu executable path")
+    qemu_path: Optional[str] = Field(None, description="Qemu executable path")
     platform: Optional[QemuPlatform] = Field(None, description="Platform to emulate")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[QemuConsoleType] = Field(None, description="Console type")
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[QemuConsoleType] = Field(None, description="Auxiliary console type")
-    hda_disk_image: Optional[Path] = Field(None, description="QEMU hda disk image path")
+    hda_disk_image: Optional[str] = Field(None, description="QEMU hda disk image path")
     hda_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hda disk image checksum")
     hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hda interface")
-    hdb_disk_image: Optional[Path] = Field(None, description="QEMU hdb disk image path")
+    hdb_disk_image: Optional[str] = Field(None, description="QEMU hdb disk image path")
     hdb_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdb disk image checksum")
     hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdb interface")
-    hdc_disk_image: Optional[Path] = Field(None, description="QEMU hdc disk image path")
+    hdc_disk_image: Optional[str] = Field(None, description="QEMU hdc disk image path")
     hdc_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdc disk image checksum")
     hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdc interface")
-    hdd_disk_image: Optional[Path] = Field(None, description="QEMU hdd disk image path")
+    hdd_disk_image: Optional[str] = Field(None, description="QEMU hdd disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
-    cdrom_image: Optional[Path] = Field(None, description="QEMU cdrom image path")
+    cdrom_image: Optional[str] = Field(None, description="QEMU cdrom image path")
     cdrom_image_md5sum: Optional[str] = Field(None, description="QEMU cdrom image checksum")
-    bios_image: Optional[Path] = Field(None, description="QEMU bios image path")
+    bios_image: Optional[str] = Field(None, description="QEMU bios image path")
     bios_image_md5sum: Optional[str] = Field(None, description="QEMU bios image checksum")
-    initrd: Optional[Path] = Field(None, description="QEMU initrd path")
+    initrd: Optional[str] = Field(None, description="QEMU initrd path")
     initrd_md5sum: Optional[str] = Field(None, description="QEMU initrd checksum")
-    kernel_image: Optional[Path] = Field(None, description="QEMU kernel image path")
+    kernel_image: Optional[str] = Field(None, description="QEMU kernel image path")
     kernel_image_md5sum: Optional[str] = Field(None, description="QEMU kernel image checksum")
     kernel_command_line: Optional[str] = Field(None, description="QEMU kernel command line")
     boot_priority: Optional[QemuBootPriority] = Field(None, description="QEMU boot priority")
@@ -194,10 +192,16 @@ class QemuBase(BaseModel):
     maxcpus: Optional[int] = Field(None, ge=1, le=255, description="Maximum number of hotpluggable vCPUs")
     adapters: Optional[int] = Field(None, ge=0, le=275, description="Number of adapters")
     adapter_type: Optional[QemuAdapterType] = Field(None, description="QEMU adapter type")
-    mac_address: Optional[str] = Field(None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+    mac_address: Optional[str] = Field(
+        None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+    )
     legacy_networking: Optional[bool] = Field(None, description="Use QEMU legagy networking commands (-net syntax)")
-    replicate_network_connection_state: Optional[bool] = Field(None, description="Replicate the network connection state for links in Qemu")
-    create_config_disk: Optional[bool] = Field(None, description="Automatically create a config disk on HDD disk interface (secondary slave)")
+    replicate_network_connection_state: Optional[bool] = Field(
+        None, description="Replicate the network connection state for links in Qemu"
+    )
+    create_config_disk: Optional[bool] = Field(
+        None, description="Automatically create a config disk on HDD disk interface (secondary slave)"
+    )
     on_close: Optional[QemuOnCloseAction] = Field(None, description="Action to execute on the VM is closed")
     cpu_throttling: Optional[int] = Field(None, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
     process_priority: Optional[QemuProcessPriority] = Field(None, description="Process priority for QEMU")
@@ -251,7 +255,7 @@ class QemuDiskResize(BaseModel):
 
 class QemuBinaryPath(BaseModel):
 
-    path: Path
+    path: str
     version: str
 
 
@@ -315,8 +319,8 @@ class QemuImageAdapterType(str, Enum):
 
 class QemuImageBase(BaseModel):
 
-    qemu_img: Path = Field(..., description="Path to the qemu-img binary")
-    path: Path = Field(..., description="Absolute or relative path of the image")
+    qemu_img: str = Field(..., description="Path to the qemu-img binary")
+    path: str = Field(..., description="Absolute or relative path of the image")
     format: QemuImageFormat = Field(..., description="Image format type")
     size: int = Field(..., description="Image size in Megabytes")
     preallocation: Optional[QemuImagePreallocation]

@@ -71,7 +71,7 @@ def test_json(project):
 
 
 @pytest.mark.asyncio
-async def test_restore(project, controller):
+async def test_restore(project, controller, config):
 
     compute = AsyncioMagicMock()
     compute.id = "local"
@@ -95,8 +95,7 @@ async def test_restore(project, controller):
     assert len(project.nodes) == 2
 
     controller._notification = MagicMock()
-    with patch("gns3server.config.Config.get_section_config", return_value={"local": True}):
-        await snapshot.restore()
+    await snapshot.restore()
 
     assert "snapshot.restored" in [c[0][0] for c in controller.notification.project_emit.call_args_list]
     # project.closed notification should not be send when restoring snapshots

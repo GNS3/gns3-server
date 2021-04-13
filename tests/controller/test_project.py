@@ -26,7 +26,6 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from gns3server.controller.project import Project
-from gns3server.controller.template import Template
 from gns3server.controller.node import Node
 from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ControllerForbiddenError
@@ -147,8 +146,8 @@ async def test_changing_path_with_quote_not_allowed(tmpdir):
 @pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
-    p = Project(path=str(tmpdir / "capturestest"), name="Test")
-    assert p.captures_directory == str(tmpdir / "capturestest" / "project-files" / "captures")
+    p = Project(name="Test")
+    assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
     assert os.path.exists(p.captures_directory)
 
 
@@ -343,72 +342,72 @@ async def test_add_node_iou_no_id_available(controller):
         await project.add_node(compute, "test1", None, node_type="iou")
 
 
-@pytest.mark.asyncio
-async def test_add_node_from_template(controller):
-    """
-    For a local server we send the project path
-    """
-
-    compute = MagicMock()
-    compute.id = "local"
-    project = Project(controller=controller, name="Test")
-    project.emit_notification = MagicMock()
-    template = Template(str(uuid.uuid4()), {
-        "compute_id": "local",
-        "name": "Test",
-        "template_type": "vpcs",
-        "builtin": False,
-    })
-    controller.template_manager.templates[template.id] = template
-    controller._computes["local"] = compute
-
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    node = await project.add_node_from_template(template.id, x=23, y=12)
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id,
-        "path": project._path
-    })
-
-    assert compute in project._project_created_on_compute
-    project.emit_notification.assert_any_call("node.created", node.__json__())
-
-
-@pytest.mark.asyncio
-async def test_add_builtin_node_from_template(controller):
-    """
-    For a local server we send the project path
-    """
-
-    compute = MagicMock()
-    compute.id = "local"
-    project = Project(controller=controller, name="Test")
-    project.emit_notification = MagicMock()
-    template = Template(str(uuid.uuid4()), {
-        "name": "Builtin-switch",
-        "template_type": "ethernet_switch",
-    }, builtin=True)
-
-    controller.template_manager.templates[template.id] = template
-    template.__json__()
-    controller._computes["local"] = compute
-
-    response = MagicMock()
-    response.json = {"console": 2048}
-    compute.post = AsyncioMagicMock(return_value=response)
-
-    node = await project.add_node_from_template(template.id, x=23, y=12, compute_id="local")
-    compute.post.assert_any_call('/projects', data={
-        "name": project._name,
-        "project_id": project._id,
-        "path": project._path
-    })
-
-    assert compute in project._project_created_on_compute
-    project.emit_notification.assert_any_call("node.created", node.__json__())
+# @pytest.mark.asyncio
+# async def test_add_node_from_template(controller):
+#     """
+#     For a local server we send the project path
+#     """
+#
+#     compute = MagicMock()
+#     compute.id = "local"
+#     project = Project(controller=controller, name="Test")
+#     project.emit_notification = MagicMock()
+#     template = Template(str(uuid.uuid4()), {
+#         "compute_id": "local",
+#         "name": "Test",
+#         "template_type": "vpcs",
+#         "builtin": False,
+#     })
+#     controller.template_manager.templates[template.id] = template
+#     controller._computes["local"] = compute
+#
+#     response = MagicMock()
+#     response.json = {"console": 2048}
+#     compute.post = AsyncioMagicMock(return_value=response)
+#
+#     node = await project.add_node_from_template(template.id, x=23, y=12)
+#     compute.post.assert_any_call('/projects', data={
+#         "name": project._name,
+#         "project_id": project._id,
+#         "path": project._path
+#     })
+#
+#     assert compute in project._project_created_on_compute
+#     project.emit_notification.assert_any_call("node.created", node.__json__())
+#
+#
+# @pytest.mark.asyncio
+# async def test_add_builtin_node_from_template(controller):
+#     """
+#     For a local server we send the project path
+#     """
+#
+#     compute = MagicMock()
+#     compute.id = "local"
+#     project = Project(controller=controller, name="Test")
+#     project.emit_notification = MagicMock()
+#     template = Template(str(uuid.uuid4()), {
+#         "name": "Builtin-switch",
+#         "template_type": "ethernet_switch",
+#     }, builtin=True)
+#
+#     controller.template_manager.templates[template.id] = template
+#     template.__json__()
+#     controller._computes["local"] = compute
+#
+#     response = MagicMock()
+#     response.json = {"console": 2048}
+#     compute.post = AsyncioMagicMock(return_value=response)
+#
+#     node = await project.add_node_from_template(template.id, x=23, y=12, compute_id="local")
+#     compute.post.assert_any_call('/projects', data={
+#         "name": project._name,
+#         "project_id": project._id,
+#         "path": project._path
+#     })
+#
+#     assert compute in project._project_created_on_compute
+#     project.emit_notification.assert_any_call("node.created", node.__json__())
 
 
 @pytest.mark.asyncio

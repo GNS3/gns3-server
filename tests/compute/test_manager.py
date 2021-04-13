@@ -77,30 +77,6 @@ async def test_create_node_new_topology_without_uuid(compute_project, vpcs):
     assert len(node.id) == 36
 
 
-@pytest.mark.asyncio
-async def test_create_node_old_topology(compute_project, tmpdir, vpcs):
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        # Create an old topology directory
-        project_dir = str(tmpdir / "testold")
-        node_dir = os.path.join(project_dir, "testold-files", "vpcs", "pc-1")
-        compute_project.path = project_dir
-        compute_project.name = "testold"
-        os.makedirs(node_dir, exist_ok=True)
-        with open(os.path.join(node_dir, "startup.vpc"), "w+") as f:
-            f.write("1")
-
-        node_id = 1
-        node = await vpcs.create_node("PC 1", compute_project.id, node_id)
-        assert len(node.id) == 36
-
-        assert os.path.exists(os.path.join(project_dir, "testold-files")) is False
-
-        node_dir = os.path.join(project_dir, "project-files", "vpcs", node.id)
-        with open(os.path.join(node_dir, "startup.vpc")) as f:
-            assert f.read() == "1"
-
-
 def test_get_abs_image_path(qemu, tmpdir, config):
 
     os.makedirs(str(tmpdir / "QEMU"))
@@ -110,7 +86,7 @@ def test_get_abs_image_path(qemu, tmpdir, config):
     path2 = force_unix_path(str(tmpdir / "QEMU" / "test2.bin"))
     open(path2, 'w+').close()
 
-    config.set_section_config("Server", {"images_path": str(tmpdir)})
+    config.settings.Server.images_path = str(tmpdir)
     assert qemu.get_abs_image_path(path1) == path1
     assert qemu.get_abs_image_path("test1.bin") == path1
     assert qemu.get_abs_image_path(path2) == path2
@@ -129,14 +105,16 @@ def test_get_abs_image_path_non_local(qemu, tmpdir, config):
     path2 = force_unix_path(str(path2))
 
     # If non local we can't use path outside images directory
-    config.set_section_config("Server", {"images_path": str(tmpdir / "images"), "local": False})
+    config.settings.Server.images_path = str(tmpdir / "images")
+    config.settings.Server.local = False
     assert qemu.get_abs_image_path(path1) == path1
     with pytest.raises(NodeError):
         qemu.get_abs_image_path(path2)
     with pytest.raises(NodeError):
         qemu.get_abs_image_path("C:\\test2.bin")
 
-    config.set_section_config("Server", {"images_path": str(tmpdir / "images"), "local": True})
+    config.settings.Server.images_path = str(tmpdir / "images")
+    config.settings.Server.local = True
     assert qemu.get_abs_image_path(path2) == path2
 
 
@@ -150,10 +128,9 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    config.set_section_config("Server", {
-        "images_path": str(tmpdir / "images1"),
-        "additional_images_path": "/tmp/null24564;{}".format(str(tmpdir / "images2")),
-        "local": False})
+    config.settings.Server.images_path = str(tmpdir / "images1")
+    config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
+    config.settings.Server.local = False
 
     assert qemu.get_abs_image_path("test1.bin") == path1
     assert qemu.get_abs_image_path("test2.bin") == path2
@@ -174,9 +151,9 @@ def test_get_abs_image_recursive(qemu, tmpdir, config):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    config.set_section_config("Server", {
-        "images_path": str(tmpdir / "images1"),
-        "local": False})
+    config.settings.Server.images_path = str(tmpdir / "images1")
+    config.settings.Server.local = False
+
     assert qemu.get_abs_image_path("test1.bin") == path1
     assert qemu.get_abs_image_path("test2.bin") == path2
     # Absolute path
@@ -193,9 +170,9 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
     path2.write("1", ensure=True)
     path2 = force_unix_path(str(path2))
 
-    config.set_section_config("Server", {
-        "images_path": str(tmpdir / "images1"),
-        "local": False})
+    config.settings.Server.images_path = str(tmpdir / "images1")
+    config.settings.Server.local = False
+
     assert qemu.get_abs_image_path("test.ova/test1.bin") == path1
     assert qemu.get_abs_image_path("test.ova/test2.bin") == path2
     # Absolute path
@@ -223,11 +200,10 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     path5 = force_unix_path(str(tmpdir / "images1" / "VBOX" / "test5.bin"))
     open(path5, 'w+').close()
 
-    config.set_section_config("Server", {
-        "images_path": str(tmpdir / "images1"),
-        "additional_images_path": str(tmpdir / "images2"),
-        "local": True
-    })
+    config.settings.Server.images_path = str(tmpdir / "images1")
+    config.settings.Server.additional_images_paths = str(tmpdir / "images2")
+    config.settings.Server.local = True
+
     assert qemu.get_relative_image_path(path1) == "test1.bin"
     assert qemu.get_relative_image_path("test1.bin") == "test1.bin"
     assert qemu.get_relative_image_path(path2) == "test2.bin"

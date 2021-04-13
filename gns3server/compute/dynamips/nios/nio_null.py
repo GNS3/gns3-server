@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -38,13 +38,13 @@ class NIONull(NIO):
     def __init__(self, hypervisor):
 
         # create an unique name
-        name = 'null-{}'.format(uuid.uuid4())
+        name = f"null-{uuid.uuid4()}"
         super().__init__(name, hypervisor)
 
     async def create(self):
 
-        await self._hypervisor.send("nio create_null {}".format(self._name))
-        log.info("NIO NULL {name} created.".format(name=self._name))
+        await self._hypervisor.send(f"nio create_null {self._name}")
+        log.info(f"NIO NULL {self._name} created.")
 
     def __json__(self):
 

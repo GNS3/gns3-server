@@ -25,6 +25,7 @@ from ..utils.picture import get_size
 from ..config import Config
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -54,7 +55,7 @@ class Symbols:
     def theme(self, theme):
 
         if not self._themes.get(theme):
-            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(theme))
+            raise ControllerNotFoundError(f"Could not find symbol theme '{theme}'")
         self._current_theme = theme
 
     def default_symbols(self):
@@ -65,10 +66,10 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(symbol_theme))
+            raise ControllerNotFoundError(f"Could not find symbol theme '{symbol_theme}'")
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
-            log.warning("Default symbol {} was not found".format(symbol_path))
+            log.warning(f"Default symbol {symbol_path} was not found")
             return None
         return symbol_path
 
@@ -79,45 +80,45 @@ class Symbols:
         if get_resource("symbols"):
             for root, _, files in os.walk(get_resource("symbols")):
                 for filename in files:
-                    if filename.startswith('.'):
+                    if filename.startswith("."):
                         continue
-                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), get_resource("symbols"))).replace('\\', '/')
-                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    symbol_file = posixpath.normpath(
+                        os.path.relpath(os.path.join(root, filename), get_resource("symbols"))
+                    ).replace("\\", "/")
+                    theme = posixpath.dirname(symbol_file).replace("/", "-").capitalize()
                     if not theme:
                         continue
-                    symbol_id = ':/symbols/' + symbol_file
-                    symbols.append({'symbol_id': symbol_id,
-                                    'filename': filename,
-                                    'theme': theme,
-                                    'builtin': True})
+                    symbol_id = ":/symbols/" + symbol_file
+                    symbols.append({"symbol_id": symbol_id, "filename": filename, "theme": theme, "builtin": True})
                     self._symbols_path[symbol_id] = os.path.join(root, filename)
 
         directory = self.symbols_path()
         if directory:
             for root, _, files in os.walk(directory):
                 for filename in files:
-                    if filename.startswith('.'):
+                    if filename.startswith("."):
                         continue
-                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace('\\', '/')
-                    theme = posixpath.dirname(symbol_file).replace('/', '-').capitalize()
+                    symbol_file = posixpath.normpath(os.path.relpath(os.path.join(root, filename), directory)).replace(
+                        "\\", "/"
+                    )
+                    theme = posixpath.dirname(symbol_file).replace("/", "-").capitalize()
                     if not theme:
                         theme = "Custom symbols"
-                    symbols.append({'symbol_id': symbol_file,
-                                    'filename': filename,
-                                    'builtin': False,
-                                    'theme': theme})
+                    symbols.append({"symbol_id": symbol_file, "filename": filename, "builtin": False, "theme": theme})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
 
         symbols.sort(key=lambda x: x["filename"])
         return symbols
 
     def symbols_path(self):
-        directory = os.path.expanduser(Config.instance().get_section_config("Server").get("symbols_path", "~/GNS3/symbols"))
+
+        server_config = Config.instance().settings.Server
+        directory = os.path.expanduser(server_config.symbols_path)
         if directory:
             try:
                 os.makedirs(directory, exist_ok=True)
             except OSError as e:
-                log.error("Could not create symbol directory '{}': {}".format(directory, e))
+                log.error(f"Could not create symbol directory '{directory}': {e}")
                 return None
         return directory
 
@@ -130,12 +131,12 @@ class Symbols:
                 return self._symbols_path[symbol_id]
             except (OSError, KeyError):
                 # try to return a symbol with the same name from the classic theme
-                symbol = self._symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)))
+                symbol = self._symbols_path.get(f":/symbols/classic/{os.path.basename(symbol_id)}")
                 if symbol:
                     return symbol
                 else:
                     # return the default computer symbol
-                    log.warning("Could not retrieve symbol '{}', returning default symbol...".format(symbol_id))
+                    log.warning(f"Could not retrieve symbol '{symbol_id}', returning default symbol...")
                     return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):

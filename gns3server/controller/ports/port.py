@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -84,10 +83,10 @@ class Port:
         # If port name format has changed we use the port name as the short name (1.X behavior)
         if self._short_name:
             return self._short_name
-        elif '/' in self._name:
+        elif "/" in self._name:
             return self._name.replace(self.long_name_type(), self.short_name_type())
-        elif self._name.startswith("{}{}".format(self.long_name_type(), self._interface_number)):
-            return self.short_name_type() + "{}".format(self._interface_number)
+        elif self._name.startswith(f"{self.long_name_type()}{self._interface_number}"):
+            return self.short_name_type() + f"{self._interface_number}"
         return self._name
 
     @short_name.setter
@@ -101,7 +100,7 @@ class Port:
             "data_link_types": self.data_link_types,
             "port_number": self._port_number,
             "adapter_number": self._adapter_number,
-            "link_type": self.link_type
+            "link_type": self.link_type,
         }
         if self._adapter_type:
             info["adapter_type"] = self._adapter_type

@@ -17,7 +17,7 @@
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
-        "ram": 1024,
+        "ram": 2048,
         "hda_disk_interface": "virtio",
         "hdb_disk_interface": "virtio",
         "arch": "x86_64",
@@ -26,6 +26,20 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "FMG_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
+            "version": "6.4.5",
+            "md5sum": "bd2791984b03f55a6825297e83c6576a",
+            "filesize": 117014528,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FMG_VM64_KVM-v6-build2253-FORTINET.out.kvm.qcow2",
+            "version": "6.4.4",
+            "md5sum": "3554a47fde2dc91d17eec16fd0dc10a3",
+            "filesize": 116621312,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
         {
             "filename": "FMG_VM64_KVM-v6-build1183-FORTINET.out.kvm.qcow2",
             "version": "6.2.2",
@@ -162,6 +176,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.4.5",
+            "images": {
+              "hda_disk_image": "FMG_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
+              "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.4.4",
+            "images": {
+              "hda_disk_image": "FMG_VM64_KVM-v6-build2253-FORTINET.out.kvm.qcow2",
+              "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "6.2.2",
             "images": {

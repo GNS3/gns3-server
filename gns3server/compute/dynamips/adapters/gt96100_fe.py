@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -19,7 +18,6 @@ from .adapter import Adapter
 
 
 class GT96100_FE(Adapter):
-
     def __init__(self):
 
         super().__init__(interfaces=2, wics=3)

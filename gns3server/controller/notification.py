@@ -18,7 +18,7 @@
 import os
 from contextlib import contextmanager
 
-from ..notification_queue import NotificationQueue
+from gns3server.utils.notification_queue import NotificationQueue
 from .controller_error import ControllerError
 
 
@@ -30,7 +30,7 @@ class Notification:
     def __init__(self, controller):
         self._controller = controller
         self._project_listeners = {}
-        self._controller_listeners = []
+        self._controller_listeners = set()
 
     @contextmanager
     def project_queue(self, project_id):
@@ -39,6 +39,7 @@ class Notification:
 
         Use it with Python with
         """
+
         queue = NotificationQueue()
         self._project_listeners.setdefault(project_id, set())
         self._project_listeners[project_id].add(queue)
@@ -54,8 +55,9 @@ class Notification:
 
         Use it with Python with
         """
+
         queue = NotificationQueue()
-        self._controller_listeners.append(queue)
+        self._controller_listeners.add(queue)
         try:
             yield queue
         finally:
@@ -74,9 +76,10 @@ class Notification:
             os.makedirs("docs/api/notifications", exist_ok=True)
             try:
                 import json
+
                 data = json.dumps(event, indent=4, sort_keys=True)
                 if "MagicMock" not in data:
-                    with open(os.path.join("docs/api/notifications", action + ".json"), 'w+') as f:
+                    with open(os.path.join("docs/api/notifications", action + ".json"), "w+") as f:
                         f.write(data)
             except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
                 pass
@@ -100,6 +103,7 @@ class Notification:
         :param event: Event to send
         :param compute_id: Compute id of the sender
         """
+
         if action == "node.updated":
             try:
                 # Update controller node data and send the event node.updated
@@ -110,8 +114,8 @@ class Notification:
             except ControllerError:  # Project closing
                 return
         elif action == "ping":
-             event["compute_id"] = compute_id
-             self.project_emit(action, event)
+            event["compute_id"] = compute_id
+            self.project_emit(action, event)
         else:
             self.project_emit(action, event, project_id)
 
@@ -128,9 +132,10 @@ class Notification:
             os.makedirs("docs/api/notifications", exist_ok=True)
             try:
                 import json
+
                 data = json.dumps(event, indent=4, sort_keys=True)
                 if "MagicMock" not in data:
-                    with open(os.path.join("docs/api/notifications", action + ".json"), 'w+') as f:
+                    with open(os.path.join("docs/api/notifications", action + ".json"), "w+") as f:
                         f.write(data)
             except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
                 pass

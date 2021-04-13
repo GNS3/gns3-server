@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -17,7 +16,6 @@
 
 
 class NodeError(Exception):
-
     def __init__(self, message, original_exception=None):
         super().__init__(message)
         if isinstance(message, Exception):
@@ -38,5 +36,5 @@ class ImageMissingError(Exception):
     """
 
     def __init__(self, image):
-        super().__init__("The image {} is missing".format(image))
+        super().__init__(f"The image '{image}' is missing")
         self.image = image

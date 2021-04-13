@@ -1,0 +1,42 @@
+{
+    "name": "HuaWei CE12800",
+    "category": "multilayer_switch",
+    "description": "CE12800 series switches are high-performance core switches designed for data center networks and high-end campus networks. The switches provide stable, reliable, secure, and high-performance Layer 2/Layer 3 switching services, to help build an elastic, virtualized, agile, and high-quality network.",
+    "vendor_name": "HuaWei",
+    "vendor_url": "https://www.huawei.com",
+    "product_name": "HuaWei CE12800",
+    "registry_version": 5,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "none",
+    "maintainer_email": "none",
+    "port_name_format": "GE1/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 12,
+        "ram": 2048,
+        "cpus": 2,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-machine type=pc-1.0,accel=kvm -serial mon:stdio -nographic -nodefaults -rtc base=utc -cpu host"
+    },
+    "images": [
+        {
+            "filename": "ce12800-V200R005C10SPC607B607.qcow2",
+            "version": "V200R005C10SPC607B607",
+            "md5sum": "a6f2b358b299e2b5f0da2820ef315368",
+            "filesize": 707002368,
+            "download_url": "https://support.huawei.com/enterprise/en/switches/cloudengine-12800-pid-7542409/software"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "ce12800-V200R005C10SPC607B607.qcow2"
+            },
+            "name": "V200R005C10SPC607B607"
+        }
+    ]
+}

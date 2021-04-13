@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -29,11 +28,11 @@ from logging.handlers import RotatingFileHandler
 
 
 class ColouredFormatter(logging.Formatter):
-    RESET = '\x1B[0m'
-    RED = '\x1B[31m'
-    YELLOW = '\x1B[33m'
-    GREEN = '\x1B[32m'
-    PINK = '\x1b[35m'
+    RESET = "\x1B[0m"
+    RED = "\x1B[31m"
+    YELLOW = "\x1B[33m"
+    GREEN = "\x1B[32m"
+    PINK = "\x1b[35m"
 
     def format(self, record, colour=False):
 
@@ -62,13 +61,12 @@ class ColouredFormatter(logging.Formatter):
         if record.name.startswith("uvicorn"):
             message = message.replace(f"{record.name}:{record.lineno}", "uvicorn")
 
-        message = '{colour}{message}{reset}'.format(colour=colour, message=message, reset=self.RESET)
+        message = f"{colour}{message}{self.RESET}"
 
         return message
 
 
 class ColouredStreamHandler(logging.StreamHandler):
-
     def format(self, record, colour=False):
 
         if not isinstance(self.formatter, ColouredFormatter):
@@ -92,7 +90,6 @@ class ColouredStreamHandler(logging.StreamHandler):
 
 
 class WinStreamHandler(logging.StreamHandler):
-
     def emit(self, record):
 
         if sys.stdin.encoding != "utf-8":
@@ -112,6 +109,7 @@ class LogFilter:
     """
     This filter some noise from the logs
     """
+
     def filter(record):
         if "/settings" in record.msg and "200" in record.msg:
             return 0
@@ -137,9 +135,9 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
             dfn = self.baseFilename + ".1.gz"
             if os.path.exists(dfn):
                 os.remove(dfn)
-            with open(self.baseFilename, 'rb') as f_in, gzip.open(dfn, 'wb') as f_out:
+            with open(self.baseFilename, "rb") as f_in, gzip.open(dfn, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-        self.mode = 'w'
+        self.mode = "w"
         self.stream = self._open()
 
 
@@ -149,13 +147,19 @@ def init_logger(level, logfile=None, max_bytes=10000000, backup_count=10, compre
             stream_handler = CompressedRotatingFileHandler(logfile, maxBytes=max_bytes, backupCount=backup_count)
         else:
             stream_handler = RotatingFileHandler(logfile, maxBytes=max_bytes, backupCount=backup_count)
-        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
+        stream_handler.formatter = ColouredFormatter(
+            "{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{"
+        )
     elif sys.platform.startswith("win"):
         stream_handler = WinStreamHandler(sys.stdout)
-        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{")
+        stream_handler.formatter = ColouredFormatter(
+            "{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{"
+        )
     else:
         stream_handler = ColouredStreamHandler(sys.stdout)
-        stream_handler.formatter = ColouredFormatter("{asctime} {levelname} {name}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{")
+        stream_handler.formatter = ColouredFormatter(
+            "{asctime} {levelname} {name}:{lineno}#RESET# {message}", "%Y-%m-%d %H:%M:%S", "{"
+        )
     if quiet:
         stream_handler.addFilter(logging.Filter(name="user_facing"))
         logging.getLogger("user_facing").propagate = False

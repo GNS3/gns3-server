@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -75,7 +74,4 @@ class NIOUDP(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_udp",
-                "lport": self._lport,
-                "rport": self._rport,
-                "rhost": self._rhost}
+        return {"type": "nio_udp", "lport": self._lport, "rport": self._rport, "rhost": self._rhost}

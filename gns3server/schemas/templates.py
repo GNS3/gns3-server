@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -18,8 +17,10 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Union
 from enum import Enum
+from uuid import UUID
 
 from .nodes import NodeType
+from .base import DateTimeModelMixin
 
 
 class Category(str, Enum):
@@ -38,7 +39,7 @@ class TemplateBase(BaseModel):
     Common template properties.
     """
 
-    template_id: Optional[str] = None
+    template_id: Optional[UUID] = None
     name: Optional[str] = None
     category: Optional[Category] = None
     default_name_format: Optional[str] = None
@@ -67,15 +68,18 @@ class TemplateUpdate(TemplateBase):
     pass
 
 
-class Template(TemplateBase):
+class Template(DateTimeModelMixin, TemplateBase):
 
-    template_id: str
+    template_id: UUID
     name: str
     category: Category
     symbol: str
     builtin: bool
     template_type: NodeType
     compute_id: Union[str, None]
+
+    class Config:
+        orm_mode = True
 
 
 class TemplateUsage(BaseModel):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -23,12 +22,10 @@ from .nodes.ethernet_hub import EthernetHub
 from .nodes.ethernet_switch import EthernetSwitch
 
 import logging
+
 log = logging.getLogger(__name__)
 
-BUILTIN_NODES = {'cloud': Cloud,
-                 'nat': Nat,
-                 'ethernet_hub': EthernetHub,
-                 'ethernet_switch': EthernetSwitch}
+BUILTIN_NODES = {"cloud": Cloud, "nat": Nat, "ethernet_hub": EthernetHub, "ethernet_switch": EthernetSwitch}
 
 
 class BuiltinNodeFactory:
@@ -40,6 +37,6 @@ class BuiltinNodeFactory:
     def __new__(cls, name, node_id, project, manager, node_type, **kwargs):
 
         if node_type not in BUILTIN_NODES:
-            raise NodeError("Unknown node type: {}".format(node_type))
+            raise NodeError(f"Unknown node type: {node_type}")
 
         return BUILTIN_NODES[node_type](name, node_id, project, manager, **kwargs)

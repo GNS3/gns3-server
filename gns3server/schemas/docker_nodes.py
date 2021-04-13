@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -67,7 +66,9 @@ class DockerUpdate(DockerBase):
 
 class Docker(DockerBase):
 
-    container_id: str = Field(..., min_length=12, max_length=64, regex="^[a-f0-9]+$", description="Docker container ID (read only)")
+    container_id: str = Field(
+        ..., min_length=12, max_length=64, regex="^[a-f0-9]+$", description="Docker container ID (read only)"
+    )
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")
     status: NodeStatus = Field(..., description="Container status (read only)")

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -24,8 +23,8 @@ class CpuPercent:
     Ensures a minumum interval between two cpu_percent() calls
     """
 
-    _last_measurement = None		# time of last measurement
-    _last_cpu_percent = 0.0		# last cpu_percent
+    _last_measurement = None  # time of last measurement
+    _last_cpu_percent = 0.0  # last cpu_percent
 
     @classmethod
     def get(cls, interval=None):
@@ -40,8 +39,7 @@ class CpuPercent:
             cls._last_measurement = time.monotonic()
         else:
             cur_time = time.monotonic()
-            if cls._last_measurement is None or \
-               (cur_time - cls._last_measurement) >= 1.9:
+            if cls._last_measurement is None or (cur_time - cls._last_measurement) >= 1.9:
                 cls._last_cpu_percent = psutil.cpu_percent(interval=None)
                 cls._last_measurement = cur_time
 

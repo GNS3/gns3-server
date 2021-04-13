@@ -140,7 +140,7 @@ async def test_import_upgrade(tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_with_images(tmpdir, controller):
+async def test_import_with_images(config, tmpdir, controller):
 
     project_id = str(uuid.uuid4())
     topology = {
@@ -167,7 +167,7 @@ async def test_import_with_images(tmpdir, controller):
 
     assert not os.path.exists(os.path.join(project.path, "images/IOS/test.image"))
 
-    path = os.path.join(project._config().get("images_path"), "IOS", "test.image")
+    path = os.path.join(config.settings.Server.images_path, "IOS", "test.image")
     assert os.path.exists(path), path
 
 

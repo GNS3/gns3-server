@@ -18,11 +18,11 @@
 import psutil
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class BaseGNS3VM:
-
     def __init__(self, controller):
 
         self._controller = controller
@@ -30,6 +30,7 @@ class BaseGNS3VM:
         self._ip_address = None
         self._port = 80  # value not used, will be overwritten
         self._headless = False
+        self._allocate_vcpus_ram = True
         self._vcpus = 1
         self._ram = 1024
         self._user = ""
@@ -41,9 +42,9 @@ class BaseGNS3VM:
         # because this is likely to degrade performances.
         self._vcpus = psutil.cpu_count(logical=False)
         # we want to allocate half of the available physical memory
-        #ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
+        # ram = int(psutil.virtual_memory().total / (1024 * 1024) / 2)
         # value must be a multiple of 4 (VMware requirement)
-        #ram -= ram % 4
+        # ram -= ram % 4
 
         ram = 2048
 
@@ -202,6 +203,26 @@ class BaseGNS3VM:
         """
 
         self._headless = value
+
+    @property
+    def allocate_vcpus_ram(self):
+        """
+        Returns whether VCPUs and RAM settings should be configured for the GNS3 VM.
+
+        :returns: boolean
+        """
+
+        return self._allocate_vcpus_ram
+
+    @allocate_vcpus_ram.setter
+    def allocate_vcpus_ram(self, value):
+        """
+        Sets whether VCPUs and RAM settings should be configured for the GNS3 VM.
+
+        :param value: boolean
+        """
+
+        self._allocate_vcpus_ram = value
 
     @property
     def vcpus(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -21,12 +20,13 @@ import subprocess
 from ...error import NodeError
 from ...base_node import BaseNode
 from ...nios.nio_udp import NIOUDP
-from ....ubridge.ubridge_error import UbridgeError
+from gns3server.compute.ubridge.ubridge_error import UbridgeError
 
 import gns3server.utils.interfaces
 import gns3server.utils.asyncio
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -55,12 +55,14 @@ class Cloud(BaseNode):
             self._ports_mapping = []
             for interface in self._interfaces():
                 if not interface["special"]:
-                    self._ports_mapping.append({
-                        "interface": interface["name"],
-                        "type": interface["type"],
-                        "port_number": len(self._ports_mapping),
-                        "name": interface["name"]
-                    })
+                    self._ports_mapping.append(
+                        {
+                            "interface": interface["name"],
+                            "type": interface["type"],
+                            "port_number": len(self._ports_mapping),
+                            "name": interface["name"],
+                        }
+                    )
         else:
             port_number = 0
             for port in ports:
@@ -80,23 +82,24 @@ class Cloud(BaseNode):
         host_interfaces = []
         network_interfaces = gns3server.utils.interfaces.interfaces()
         for interface in network_interfaces:
-            host_interfaces.append({"name": interface["name"],
-                                    "type": interface["type"],
-                                    "special": interface["special"]})
+            host_interfaces.append(
+                {"name": interface["name"], "type": interface["type"], "special": interface["special"]}
+            )
 
-        return {"name": self.name,
-                "usage": self.usage,
-                "node_id": self.id,
-                "project_id": self.project.id,
-                "remote_console_host": self.remote_console_host,
-                "remote_console_port": self.remote_console_port,
-                "remote_console_type": self.remote_console_type,
-                "remote_console_http_path": self.remote_console_http_path,
-                "ports_mapping": self._ports_mapping,
-                "interfaces": host_interfaces,
-                "status": self.status,
-                "node_directory": self.working_path
-                }
+        return {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "project_id": self.project.id,
+            "remote_console_host": self.remote_console_host,
+            "remote_console_port": self.remote_console_port,
+            "remote_console_type": self.remote_console_type,
+            "remote_console_http_path": self.remote_console_http_path,
+            "ports_mapping": self._ports_mapping,
+            "interfaces": host_interfaces,
+            "status": self.status,
+            "node_directory": self.working_path,
+        }
 
     @property
     def remote_console_host(self):
@@ -213,7 +216,7 @@ class Cloud(BaseNode):
         """
 
         await self.start()
-        log.info('Cloud "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        log.info(f'Cloud "{self._name}" [{self._id}] has been created')
 
     async def start(self):
         """
@@ -246,7 +249,7 @@ class Cloud(BaseNode):
                 self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
         await self._stop_ubridge()
-        log.info('Cloud "{name}" [{id}] has been closed'.format(name=self._name, id=self._id))
+        log.info(f'Cloud "{self._name}" [{self._id}] has been closed')
 
     async def _is_wifi_adapter_osx(self, adapter_name):
         """
@@ -256,7 +259,7 @@ class Cloud(BaseNode):
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output("networksetup", "-listallhardwareports")
         except (OSError, subprocess.SubprocessError) as e:
-            log.warning("Could not execute networksetup: {}".format(e))
+            log.warning(f"Could not execute networksetup: {e}")
             return False
 
         is_wifi = False
@@ -266,7 +269,7 @@ class Cloud(BaseNode):
                     return True
                 is_wifi = False
             else:
-                if 'Wi-Fi' in line:
+                if "Wi-Fi" in line:
                     is_wifi = True
         return False
 
@@ -285,23 +288,27 @@ class Cloud(BaseNode):
                 break
 
         if not port_info:
-            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
-                                                                                        port_number=port_number))
+            raise NodeError(
+                "Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name, port_number=port_number)
+            )
 
-        bridge_name = "{}-{}".format(self._id, port_number)
-        await self._ubridge_send("bridge create {name}".format(name=bridge_name))
+        bridge_name = f"{self._id}-{port_number}"
+        await self._ubridge_send(f"bridge create {bridge_name}")
         if not isinstance(nio, NIOUDP):
             raise NodeError("Source NIO is not UDP")
-        await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                            lport=nio.lport,
-                                                                                            rhost=nio.rhost,
-                                                                                            rport=nio.rport))
+        await self._ubridge_send(
+            "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
+                name=bridge_name, lport=nio.lport, rhost=nio.rhost, rport=nio.rport
+            )
+        )
 
         await self._ubridge_apply_filters(bridge_name, nio.filters)
         if port_info["type"] in ("ethernet", "tap"):
 
             if not self.manager.has_privileged_access(self.ubridge_path):
-                raise NodeError("uBridge requires root access or the capability to interact with Ethernet and TAP adapters")
+                raise NodeError(
+                    "uBridge requires root access or the capability to interact with Ethernet and TAP adapters"
+                )
 
             if sys.platform.startswith("win"):
                 await self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"])
@@ -310,7 +317,9 @@ class Cloud(BaseNode):
                 if port_info["type"] == "ethernet":
                     network_interfaces = [interface["name"] for interface in self._interfaces()]
                     if not port_info["interface"] in network_interfaces:
-                        raise NodeError("Interface '{}' could not be found on this system, please update '{}'".format(port_info["interface"], self.name))
+                        raise NodeError(
+                            f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
+                        )
 
                     if sys.platform.startswith("linux"):
                         await self._add_linux_ethernet(port_info, bridge_name)
@@ -320,19 +329,25 @@ class Cloud(BaseNode):
                         await self._add_windows_ethernet(port_info, bridge_name)
 
                 elif port_info["type"] == "tap":
-                    await self._ubridge_send('bridge add_nio_tap {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
+                    await self._ubridge_send(
+                        'bridge add_nio_tap {name} "{interface}"'.format(
+                            name=bridge_name, interface=port_info["interface"]
+                        )
+                    )
 
         elif port_info["type"] == "udp":
-            await self._ubridge_send('bridge add_nio_udp {name} {lport} {rhost} {rport}'.format(name=bridge_name,
-                                                                                                     lport=port_info["lport"],
-                                                                                                     rhost=port_info["rhost"],
-                                                                                                     rport=port_info["rport"]))
+            await self._ubridge_send(
+                "bridge add_nio_udp {name} {lport} {rhost} {rport}".format(
+                    name=bridge_name, lport=port_info["lport"], rhost=port_info["rhost"], rport=port_info["rport"]
+                )
+            )
 
         if nio.capturing:
-            await self._ubridge_send('bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name,
-                                                                                             pcap_file=nio.pcap_output_file))
+            await self._ubridge_send(
+                'bridge start_capture {name} "{pcap_file}"'.format(name=bridge_name, pcap_file=nio.pcap_output_file)
+            )
 
-        await self._ubridge_send('bridge start {name}'.format(name=bridge_name))
+        await self._ubridge_send(f"bridge start {bridge_name}")
 
     async def _add_linux_ethernet(self, port_info, bridge_name):
         """
@@ -352,10 +367,14 @@ class Cloud(BaseNode):
                     break
                 i += 1
 
-            await self._ubridge_send('bridge add_nio_tap "{name}" "{interface}"'.format(name=bridge_name, interface=tap))
+            await self._ubridge_send(
+                'bridge add_nio_tap "{name}" "{interface}"'.format(name=bridge_name, interface=tap)
+            )
             await self._ubridge_send('brctl addif "{interface}" "{tap}"'.format(tap=tap, interface=interface))
         else:
-            await self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=interface))
+            await self._ubridge_send(
+                'bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=interface)
+            )
 
     async def _add_osx_ethernet(self, port_info, bridge_name):
         """
@@ -363,16 +382,21 @@ class Cloud(BaseNode):
         """
 
         # Wireless adapters are not well supported by the libpcap on OSX
-        if (await self._is_wifi_adapter_osx(port_info["interface"])):
+        if await self._is_wifi_adapter_osx(port_info["interface"]):
             raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
         if port_info["interface"].startswith("vmnet"):
             # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
-            await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                    interface=port_info["interface"]))
+            await self._ubridge_send(
+                'bridge add_nio_fusion_vmnet {name} "{interface}"'.format(
+                    name=bridge_name, interface=port_info["interface"]
+                )
+            )
             return
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
-        await self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
+            raise NodeError(f"Interface {port_info['interface']} has no netmask, interface down?")
+        await self._ubridge_send(
+            'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
+        )
 
     async def _add_windows_ethernet(self, port_info, bridge_name):
         """
@@ -380,8 +404,10 @@ class Cloud(BaseNode):
         """
 
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
-            raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
-        await self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"]))
+            raise NodeError(f"Interface {port_info['interface']} has no netmask, interface down?")
+        await self._ubridge_send(
+            'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=port_info["interface"])
+        )
 
     async def add_nio(self, nio, port_number):
         """
@@ -392,12 +418,13 @@ class Cloud(BaseNode):
         """
 
         if port_number in self._nios:
-            raise NodeError("Port {} isn't free".format(port_number))
+            raise NodeError(f"Port {port_number} isn't free")
 
-        log.info('Cloud "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
-                                                                                id=self._id,
-                                                                                nio=nio,
-                                                                                port=port_number))
+        log.info(
+            'Cloud "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
         try:
             await self.start()
             await self._add_ubridge_connection(nio, port_number)
@@ -416,7 +443,7 @@ class Cloud(BaseNode):
         :param port_number: port to allocate for the NIO
         """
 
-        bridge_name = "{}-{}".format(self._id, port_number)
+        bridge_name = f"{self._id}-{port_number}"
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
             await self._ubridge_apply_filters(bridge_name, nio.filters)
 
@@ -427,8 +454,8 @@ class Cloud(BaseNode):
         :param port_number: adapter number
         """
 
-        bridge_name = "{}-{}".format(self._id, port_number)
-        await self._ubridge_send("bridge delete {name}".format(name=bridge_name))
+        bridge_name = f"{self._id}-{port_number}"
+        await self._ubridge_send(f"bridge delete {bridge_name}")
 
     async def remove_nio(self, port_number):
         """
@@ -440,17 +467,18 @@ class Cloud(BaseNode):
         """
 
         if port_number not in self._nios:
-            raise NodeError("Port {} is not allocated".format(port_number))
+            raise NodeError(f"Port {port_number} is not allocated")
 
         await self.stop_capture(port_number)
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        log.info('Cloud "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
-                                                                                    id=self._id,
-                                                                                    nio=nio,
-                                                                                    port=port_number))
+        log.info(
+            'Cloud "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         del self._nios[port_number]
         if self._ubridge_hypervisor and self._ubridge_hypervisor.is_running():
@@ -468,11 +496,12 @@ class Cloud(BaseNode):
         """
 
         if not [port["port_number"] for port in self._ports_mapping if port_number == port["port_number"]]:
-            raise NodeError("Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name,
-                                                                                        port_number=port_number))
+            raise NodeError(
+                "Port {port_number} doesn't exist on cloud '{name}'".format(name=self.name, port_number=port_number)
+            )
 
         if port_number not in self._nios:
-            raise NodeError("Port {} is not connected".format(port_number))
+            raise NodeError(f"Port {port_number} is not connected")
 
         nio = self._nios[port_number]
 
@@ -489,14 +518,17 @@ class Cloud(BaseNode):
 
         nio = self.get_nio(port_number)
         if nio.capturing:
-            raise NodeError("Packet capture is already activated on port {port_number}".format(port_number=port_number))
+            raise NodeError(f"Packet capture is already activated on port {port_number}")
         nio.start_packet_capture(output_file)
-        bridge_name = "{}-{}".format(self._id, port_number)
-        await self._ubridge_send('bridge start_capture {name} "{output_file}"'.format(name=bridge_name,
-                                                                                           output_file=output_file))
-        log.info("Cloud '{name}' [{id}]: starting packet capture on port {port_number}".format(name=self.name,
-                                                                                               id=self.id,
-                                                                                               port_number=port_number))
+        bridge_name = f"{self._id}-{port_number}"
+        await self._ubridge_send(
+            'bridge start_capture {name} "{output_file}"'.format(name=bridge_name, output_file=output_file)
+        )
+        log.info(
+            "Cloud '{name}' [{id}]: starting packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -509,9 +541,11 @@ class Cloud(BaseNode):
         if not nio.capturing:
             return
         nio.stop_packet_capture()
-        bridge_name = "{}-{}".format(self._id, port_number)
-        await self._ubridge_send("bridge stop_capture {name}".format(name=bridge_name))
+        bridge_name = f"{self._id}-{port_number}"
+        await self._ubridge_send(f"bridge stop_capture {bridge_name}")
 
-        log.info("Cloud'{name}' [{id}]: stopping packet capture on port {port_number}".format(name=self.name,
-                                                                                              id=self.id,
-                                                                                              port_number=port_number))
+        log.info(
+            "Cloud'{name}' [{id}]: stopping packet capture on port {port_number}".format(
+                name=self.name, id=self.id, port_number=port_number
+            )
+        )

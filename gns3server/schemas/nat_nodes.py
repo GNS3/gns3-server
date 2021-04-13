@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -94,7 +93,9 @@ class NATBase(BaseModel):
     name: str
     node_id: Optional[UUID] = None
     usage: Optional[str] = None
-    ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(None, description="List of port mappings")
+    ports_mapping: Optional[List[Union[EthernetPort, TAPPort, UDPPort]]] = Field(
+        None, description="List of port mappings"
+    )
 
 
 class NATCreate(NATBase):

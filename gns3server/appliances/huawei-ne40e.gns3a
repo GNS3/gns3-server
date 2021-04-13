@@ -1,0 +1,44 @@
+{
+    "name": "HuaWei NE40E",
+    "category": "router",
+    "description": "Based on a 2T platform, the NetEngine 40E-X series provides the industry\u2019s highest capacity 2T routing line cards. Combining performance with low power consumption, innovative Internet Protocol (IP) hard pipe technology, and quick evolution capabilities, NetEngine 40E-X routers meet the low latency and high reliability requirements of business-critical services as well as mature Wide Area Network (WAN) Software-Defined Networking (SDN) solutions. They can serve as core nodes on enterprise WANs, access nodes on large-scale enterprise networks, interconnection and aggregation nodes on campus networks, and edge nodes on large-scale Internet Data Center (IDC) networks.",
+    "vendor_name": "HuaWei",
+    "vendor_url": "https://www.huawei.com",
+    "product_name": "HuaWei NE40E",
+    "product_url": "https://e.huawei.com/en/products/enterprise-networking/routers/ne/ne40e",
+    "registry_version": 5,
+    "status": "experimental",
+    "availability": "service-contract",
+    "maintainer": "none",
+    "maintainer_email": "none",
+    "first_port_name": "eth0",
+    "port_name_format": "Ethernet1/0/{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 12,
+        "ram": 2048,
+        "cpus": 2,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-machine type=pc-1.0,accel=kvm -serial mon:stdio -nographic -nodefaults -rtc base=utc -cpu host"
+    },
+    "images": [
+        {
+            "filename": "ne40e-V800R011C00SPC607B607.qcow2",
+            "version": "V800R011C00SPC607B607",
+            "md5sum": "2ac9c477e22a17860b76b3dc1d5aa119",
+            "filesize": 496959488,
+            "download_url": "https://support.huawei.com/enterprise/en/routers/ne40e-pid-15837/software"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "ne40e-V800R011C00SPC607B607.qcow2"
+            },
+            "name": "V800R011C00SPC607B607"
+        }
+    ]
+}

@@ -23,9 +23,9 @@ import sys
 import os
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
+from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp304Error
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker import Docker
 from gns3server.utils.get_resource import get_resource
 
@@ -1449,7 +1449,7 @@ async def test_start_aux(vm):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         await vm._start_aux()
-    mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do TERM=vt100 /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+        mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do TERM=vt100 /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
 
 
 @pytest.mark.asyncio

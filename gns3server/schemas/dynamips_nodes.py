@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -18,7 +17,6 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from pathlib import Path
 from enum import Enum
 from uuid import UUID
 
@@ -114,7 +112,7 @@ class DynamipsMidplane(str, Enum):
     vxr = "vxr"
 
 
-#TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowd only for c7200)
+# TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowd only for c7200)
 class DynamipsBase(BaseModel):
     """
     Common Dynamips node properties.
@@ -126,7 +124,7 @@ class DynamipsBase(BaseModel):
     platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
     ram: Optional[int] = Field(None, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(None, description="Amount of NVRAM in KB")
-    image: Optional[Path] = Field(None, description="Path to the IOS image")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
     image_md5sum: Optional[str] = Field(None, description="Checksum of the IOS image")
     usage: Optional[str] = Field(None, description="How to use the Dynamips VM")
     chassis: Optional[str] = Field(None, description="Cisco router chassis model", regex="^[0-9]{4}(XM)?$")
@@ -146,7 +144,9 @@ class DynamipsBase(BaseModel):
     console_type: Optional[DynamipsConsoleType] = Field(None, description="Console type")
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[DynamipsConsoleType] = Field(None, description="Auxiliary console type")
-    mac_addr: Optional[str] = Field(None, description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$")
+    mac_addr: Optional[str] = Field(
+        None, description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
+    )
     system_id: Optional[str] = Field(None, description="System ID")
     slot0: Optional[DynamipsAdapters] = Field(None, description="Network module slot 0")
     slot1: Optional[DynamipsAdapters] = Field(None, description="Network module slot 1")
@@ -173,7 +173,7 @@ class DynamipsCreate(DynamipsBase):
 
     name: str
     platform: str = Field(..., description="Cisco router platform", regex="^c[0-9]{4}$")
-    image: Path = Field(..., description="Path to the IOS image")
+    image: str = Field(..., description="Path to the IOS image")
     ram: int = Field(..., description="Amount of RAM in MB")
 
 
@@ -192,4 +192,4 @@ class Dynamips(DynamipsBase):
     project_id: UUID
     dynamips_id: int
     status: NodeStatus
-    node_directory: Optional[Path] = Field(None, description="Path to the vm working directory")
+    node_directory: Optional[str] = Field(None, description="Path to the vm working directory")

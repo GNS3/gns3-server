@@ -5,6 +5,12 @@ __pycache__
 #py.test
 .cache
 
+# environment file
+.env
+
+# hypothesis files
+.hypothesis
+
 # C extensions
 *.so
 
@@ -59,4 +65,5 @@ startup.vpcs
 # Virtualenv
 env
 venv
+*venv
 .ropeproject

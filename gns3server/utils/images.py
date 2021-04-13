@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -23,6 +22,7 @@ from . import force_unix_path
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -35,8 +35,8 @@ def list_images(type):
     files = set()
     images = []
 
-    server_config = Config.instance().get_section_config("Server")
-    general_images_directory = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    server_config = Config.instance().settings.Server
+    general_images_directory = os.path.expanduser(server_config.images_path)
 
     # Subfolder of the general_images_directory specific to this VM type
     default_directory = default_images_directory(type)
@@ -57,9 +57,11 @@ def list_images(type):
                 if filename not in files:
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
-                    elif ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips") \
-                            or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou") \
-                            or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu"):
+                    elif (
+                        ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips")
+                        or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou")
+                        or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu")
+                    ):
                         files.add(filename)
 
                         # It the image is located in the standard directory the path is relative
@@ -74,16 +76,22 @@ def list_images(type):
                                     # read the first 7 bytes of the file.
                                     elf_header_start = f.read(7)
                                 # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
-                                if not elf_header_start == b'\x7fELF\x01\x02\x01' and not elf_header_start == b'\x7fELF\x01\x01\x01':
+                                if (
+                                    not elf_header_start == b"\x7fELF\x01\x02\x01"
+                                    and not elf_header_start == b"\x7fELF\x01\x01\x01"
+                                ):
                                     continue
 
-                            images.append({
-                                "filename": filename,
-                                "path": force_unix_path(path),
-                                "md5sum": md5sum(os.path.join(root, filename)),
-                                "filesize": os.stat(os.path.join(root, filename)).st_size})
+                            images.append(
+                                {
+                                    "filename": filename,
+                                    "path": force_unix_path(path),
+                                    "md5sum": md5sum(os.path.join(root, filename)),
+                                    "filesize": os.stat(os.path.join(root, filename)).st_size,
+                                }
+                            )
                         except OSError as e:
-                            log.warning("Can't add image {}: {}".format(path, str(e)))
+                            log.warning(f"Can't add image {path}: {str(e)}")
     return images
 
 
@@ -106,8 +114,8 @@ def default_images_directory(type):
     """
     :returns: Return the default directory for a node type
     """
-    server_config = Config.instance().get_section_config("Server")
-    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    server_config = Config.instance().settings.Server
+    img_dir = os.path.expanduser(server_config.images_path)
     if type == "qemu":
         return os.path.join(img_dir, "QEMU")
     elif type == "iou":
@@ -125,17 +133,17 @@ def images_directories(type):
 
     :param type: Type of emulator
     """
-    server_config = Config.instance().get_section_config("Server")
 
+    server_config = Config.instance().settings.Server
     paths = []
-    img_dir = os.path.expanduser(server_config.get("images_path", "~/GNS3/images"))
+    img_dir = os.path.expanduser(server_config.images_path)
     type_img_directory = default_images_directory(type)
     try:
         os.makedirs(type_img_directory, exist_ok=True)
         paths.append(type_img_directory)
     except (OSError, PermissionError):
         pass
-    for directory in server_config.get("additional_images_path", "").split(";"):
+    for directory in server_config.additional_images_paths:
         paths.append(directory)
     # Compatibility with old topologies we look in parent directory
     paths.append(img_dir)
@@ -157,7 +165,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open(path + '.md5sum') as f:
+        with open(path + ".md5sum") as f:
             md5 = f.read().strip()
             if len(md5) == 32:
                 return md5
@@ -167,10 +175,10 @@ def md5sum(path, stopped_event=None):
 
     try:
         m = hashlib.md5()
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             while True:
                 if stopped_event is not None and stopped_event.is_set():
-                    log.error("MD5 sum calculation of `{}` has stopped due to cancellation".format(path))
+                    log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
                     return
                 buf = f.read(128)
                 if not buf:
@@ -182,7 +190,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open('{}.md5sum'.format(path), 'w+') as f:
+        with open(f"{path}.md5sum", "w+") as f:
             f.write(digest)
     except OSError as e:
         log.error("Can't write digest of %s: %s", path, str(e))
@@ -195,6 +203,6 @@ def remove_checksum(path):
     Remove the checksum of an image from cache if exists
     """
 
-    path = '{}.md5sum'.format(path)
+    path = f"{path}.md5sum"
     if os.path.exists(path):
         os.remove(path)

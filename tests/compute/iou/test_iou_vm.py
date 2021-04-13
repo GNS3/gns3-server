@@ -47,12 +47,10 @@ async def manager(port_manager):
 
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
-async def vm(compute_project, manager, tmpdir, fake_iou_bin, iourc_file):
+async def vm(compute_project, manager, config, tmpdir, fake_iou_bin, iourc_file):
 
     vm = IOUVM("test", str(uuid.uuid4()), compute_project, manager, application_id=1)
-    config = manager.config.get_section_config("IOU")
-    config["iourc_path"] = iourc_file
-    manager.config.set_section_config("IOU", config)
+    config.settings.IOU.iourc_path = iourc_file
     vm.path = "iou.bin"
     return vm
 
@@ -118,7 +116,7 @@ async def test_start(vm):
 
 
 @pytest.mark.asyncio
-async def test_start_with_iourc(vm, tmpdir):
+async def test_start_with_iourc(vm, tmpdir, config):
 
     fake_file = str(tmpdir / "iourc")
     with open(fake_file, "w+") as f:
@@ -131,13 +129,13 @@ async def test_start_with_iourc(vm, tmpdir):
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file}):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
-            mock_process.returncode = None
-            await vm.start()
-            assert vm.is_running()
-            arsgs, kwargs = exec_mock.call_args
-            assert kwargs["env"]["IOURC"] == fake_file
+    config.settings.IOU.iourc_path = fake_file
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
+        mock_process.returncode = None
+        await vm.start()
+        assert vm.is_running()
+        arsgs, kwargs = exec_mock.call_args
+        assert kwargs["env"]["IOURC"] == fake_file
 
 
 @pytest.mark.asyncio
@@ -224,7 +222,6 @@ async def test_close(vm, port_manager):
 
 def test_path(vm, fake_iou_bin, config):
 
-    config.set_section_config("Server", {"local": True})
     vm.path = fake_iou_bin
     assert vm.path == fake_iou_bin
 
@@ -237,7 +234,6 @@ def test_path_relative(vm, fake_iou_bin):
 
 def test_path_invalid_bin(vm, tmpdir, config):
 
-    config.set_section_config("Server", {"local": True})
     path = str(tmpdir / "test.bin")
 
     with open(path, "w+") as f:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -29,6 +28,7 @@ from .dynamips_hypervisor import DynamipsHypervisor
 from .dynamips_error import DynamipsError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -122,22 +122,20 @@ class Hypervisor(DynamipsHypervisor):
             # add the Npcap directory to $PATH to force Dynamips to use npcap DLL instead of Winpcap (if installed)
             system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
             if os.path.isdir(system_root):
-                env["PATH"] = system_root + ';' + env["PATH"]
+                env["PATH"] = system_root + ";" + env["PATH"]
         try:
-            log.info("Starting Dynamips: {}".format(self._command))
-            self._stdout_file = os.path.join(self.working_dir, "dynamips_i{}_stdout.txt".format(self._id))
-            log.info("Dynamips process logging to {}".format(self._stdout_file))
+            log.info(f"Starting Dynamips: {self._command}")
+            self._stdout_file = os.path.join(self.working_dir, f"dynamips_i{self._id}_stdout.txt")
+            log.info(f"Dynamips process logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
-                self._process = await asyncio.create_subprocess_exec(*self._command,
-                                                                          stdout=fd,
-                                                                          stderr=subprocess.STDOUT,
-                                                                          cwd=self._working_dir,
-                                                                          env=env)
-            log.info("Dynamips process started PID={}".format(self._process.pid))
+                self._process = await asyncio.create_subprocess_exec(
+                    *self._command, stdout=fd, stderr=subprocess.STDOUT, cwd=self._working_dir, env=env
+                )
+            log.info(f"Dynamips process started PID={self._process.pid}")
             self._started = True
         except (OSError, subprocess.SubprocessError) as e:
-            log.error("Could not start Dynamips: {}".format(e))
-            raise DynamipsError("Could not start Dynamips: {}".format(e))
+            log.error(f"Could not start Dynamips: {e}")
+            raise DynamipsError(f"Could not start Dynamips: {e}")
 
     async def stop(self):
         """
@@ -145,7 +143,7 @@ class Hypervisor(DynamipsHypervisor):
         """
 
         if self.is_running():
-            log.info("Stopping Dynamips process PID={}".format(self._process.pid))
+            log.info(f"Stopping Dynamips process PID={self._process.pid}")
             await DynamipsHypervisor.stop(self)
             # give some time for the hypervisor to properly stop.
             # time to delete UNIX NIOs for instance.
@@ -154,19 +152,19 @@ class Hypervisor(DynamipsHypervisor):
                 await wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process.returncode is None:
-                    log.warning("Dynamips process {} is still running... killing it".format(self._process.pid))
+                    log.warning(f"Dynamips process {self._process.pid} is still running... killing it")
                     try:
                         self._process.kill()
                     except OSError as e:
-                        log.error("Cannot stop the Dynamips process: {}".format(e))
+                        log.error(f"Cannot stop the Dynamips process: {e}")
                     if self._process.returncode is None:
-                        log.warning('Dynamips hypervisor with PID={} is still running'.format(self._process.pid))
+                        log.warning(f"Dynamips hypervisor with PID={self._process.pid} is still running")
 
         if self._stdout_file and os.access(self._stdout_file, os.W_OK):
             try:
                 os.remove(self._stdout_file)
             except OSError as e:
-                log.warning("could not delete temporary Dynamips log file: {}".format(e))
+                log.warning(f"could not delete temporary Dynamips log file: {e}")
         self._started = False
 
     def read_stdout(self):
@@ -181,7 +179,7 @@ class Hypervisor(DynamipsHypervisor):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warning("could not read {}: {}".format(self._stdout_file, e))
+                log.warning(f"could not read {self._stdout_file}: {e}")
         return output
 
     def is_running(self):
@@ -203,12 +201,12 @@ class Hypervisor(DynamipsHypervisor):
 
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
-        command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
+        command.extend(["-l", f"dynamips_i{self._id}_log.txt"])  # log file
         # Dynamips cannot listen for hypervisor commands and for console connections on
         # 2 different IP addresses.
         # See https://github.com/GNS3/dynamips/issues/62
         if self._console_host != "0.0.0.0" and self._console_host != "::":
-            command.extend(["-H", "{}:{}".format(self._host, self._port)])
+            command.extend(["-H", f"{self._host}:{self._port}"])
         else:
             command.extend(["-H", str(self._port)])
         return command

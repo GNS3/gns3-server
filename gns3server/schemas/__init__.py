@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -15,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+from .config import ServerConfig
 from .iou_license import IOULicense
 from .links import Link
 from .common import ErrorMessage
@@ -26,6 +25,8 @@ from .drawings import Drawing
 from .gns3vm import GNS3VM
 from .nodes import NodeUpdate, NodeDuplicate, NodeCapture, Node
 from .projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
+from .users import UserCreate, UserUpdate, User
+from .tokens import Token
 from .snapshots import SnapshotCreate, Snapshot
 from .capabilities import Capabilities
 from .nios import UDPNIO, TAPNIO, EthernetNIO
@@ -60,5 +61,5 @@ from .dynamips_templates import (
     C3600DynamipsTemplate,
     C3725DynamipsTemplate,
     C3745DynamipsTemplate,
-    C7200DynamipsTemplate
+    C7200DynamipsTemplate,
 )

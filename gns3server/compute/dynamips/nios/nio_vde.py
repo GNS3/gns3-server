@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -40,20 +40,24 @@ class NIOVDE(NIO):
     def __init__(self, hypervisor, control_file, local_file):
 
         # create an unique name
-        name = 'vde-{}'.format(uuid.uuid4())
+        name = f"vde-{uuid.uuid4()}"
         self._control_file = control_file
         self._local_file = local_file
         super().__init__(name, hypervisor)
 
     async def create(self):
 
-        await self._hypervisor.send("nio create_vde {name} {control} {local}".format(name=self._name,
-                                                                                          control=self._control_file,
-                                                                                          local=self._local_file))
+        await self._hypervisor.send(
+            "nio create_vde {name} {control} {local}".format(
+                name=self._name, control=self._control_file, local=self._local_file
+            )
+        )
 
-        log.info("NIO VDE {name} created with control={control}, local={local}".format(name=self._name,
-                                                                                       control=self._control_file,
-                                                                                       local=self._local_file))
+        log.info(
+            "NIO VDE {name} created with control={control}, local={local}".format(
+                name=self._name, control=self._control_file, local=self._local_file
+            )
+        )
 
     @property
     def control_file(self):
@@ -77,6 +81,4 @@ class NIOVDE(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_vde",
-                "local_file": self._local_file,
-                "control_file": self._control_file}
+        return {"type": "nio_vde", "local_file": self._local_file, "control_file": self._control_file}

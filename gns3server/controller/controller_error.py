@@ -17,9 +17,8 @@
 
 
 class ControllerError(Exception):
-
     def __init__(self, message: str):
-        super().__init__(message)
+        super().__init__()
         self._message = message
 
     def __repr__(self):
@@ -30,24 +29,25 @@ class ControllerError(Exception):
 
 
 class ControllerNotFoundError(ControllerError):
+    def __init__(self, message: str):
+        super().__init__(message)
 
+
+class ControllerBadRequestError(ControllerError):
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ControllerUnauthorizedError(ControllerError):
-
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ControllerForbiddenError(ControllerError):
-
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ControllerTimeoutError(ControllerError):
-
     def __init__(self, message: str):
         super().__init__(message)

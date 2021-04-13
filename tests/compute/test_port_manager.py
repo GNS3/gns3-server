@@ -135,10 +135,10 @@ def test_set_console_host(config):
     """
 
     p = PortManager()
-    config.set_section_config("Server", {"allow_remote_console": False})
+    config.settings.Server.allow_remote_console = False
     p.console_host = "10.42.1.42"
     assert p.console_host == "10.42.1.42"
     p = PortManager()
-    config.set_section_config("Server", {"allow_remote_console": True})
+    config.settings.Server.allow_remote_console = True
     p.console_host = "10.42.1.42"
     assert p.console_host == "0.0.0.0"

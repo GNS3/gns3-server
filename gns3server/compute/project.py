@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -30,6 +29,7 @@ from ..utils.asyncio import wait_run_in_executor
 from ..utils.path import check_path_allowed, get_default_project_directory
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -50,7 +50,7 @@ class Project:
             try:
                 UUID(project_id, version=4)
             except ValueError:
-                raise ComputeError("{} is not a valid UUID".format(project_id))
+                raise ComputeError(f"{project_id} is not a valid UUID")
         else:
             project_id = str(uuid4())
         self._id = project_id
@@ -66,32 +66,24 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise ComputeError("Could not create project directory: {}".format(e))
+            raise ComputeError(f"Could not create project directory: {e}")
         self.path = path
 
         try:
             if os.path.exists(self.tmp_working_directory()):
                 shutil.rmtree(self.tmp_working_directory())
         except OSError as e:
-            raise ComputeError("Could not clean project directory: {}".format(e))
+            raise ComputeError(f"Could not clean project directory: {e}")
 
-        log.info("Project {id} with path '{path}' created".format(path=self._path, id=self._id))
+        log.info(f"Project {self._id} with path '{self._path}' created")
 
     def __json__(self):
 
-        return {
-            "name": self._name,
-            "project_id": self._id,
-            "variables": self._variables
-        }
-
-    def _config(self):
-
-        return Config.instance().get_section_config("Server")
+        return {"name": self._name, "project_id": self._id, "variables": self._variables}
 
     def is_local(self):
 
-        return self._config().getboolean("local", False)
+        return Config.instance().settings.Server.local
 
     @property
     def id(self):
@@ -192,7 +184,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise ComputeError("Could not create module working directory: {}".format(e))
+                raise ComputeError(f"Could not create module working directory: {e}")
         return workdir
 
     def module_working_path(self, module_name):
@@ -219,7 +211,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise ComputeError("Could not create the node working directory: {}".format(e))
+                raise ComputeError(f"Could not create the node working directory: {e}")
         return workdir
 
     def node_working_path(self, node):
@@ -229,7 +221,6 @@ class Project:
         :return: Node working path
         """
         return os.path.join(self._path, "project-files", node.manager.module_name.lower(), node.id)
-
 
     def tmp_working_directory(self):
         """
@@ -249,7 +240,7 @@ class Project:
             try:
                 os.makedirs(workdir, exist_ok=True)
             except OSError as e:
-                raise ComputeError("Could not create the capture working directory: {}".format(e))
+                raise ComputeError(f"Could not create the capture working directory: {e}")
         return workdir
 
     def add_node(self, node):
@@ -274,13 +265,13 @@ class Project:
         try:
             UUID(node_id, version=4)
         except ValueError:
-            raise ComputeError("Node ID {} is not a valid UUID".format(node_id))
+            raise ComputeError(f"Node ID {node_id} is not a valid UUID")
 
         for node in self._nodes:
             if node.id == node_id:
                 return node
 
-        raise ComputeNotFoundError("Node ID {} doesn't exist".format(node_id))
+        raise ComputeNotFoundError(f"Node ID {node_id} doesn't exist")
 
     async def remove_node(self, node):
         """
@@ -301,7 +292,7 @@ class Project:
         # we need to update docker nodes when variables changes
         if original_variables != variables:
             for node in self.nodes:
-                if hasattr(node, 'update'):
+                if hasattr(node, "update"):
                     await node.update()
 
     async def close(self):
@@ -309,10 +300,10 @@ class Project:
         Closes the project, but keep project data on disk
         """
 
-        project_nodes_id = set([n.id for n in self.nodes])
+        project_nodes_id = {n.id for n in self.nodes}
 
         for module in self.compute():
-            module_nodes_id = set([n.id for n in module.instance().nodes])
+            module_nodes_id = {n.id for n in module.instance().nodes}
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
                 await module.instance().project_closing(self)
@@ -320,7 +311,7 @@ class Project:
         await self._close_and_clean(False)
 
         for module in self.compute():
-            module_nodes_id = set([n.id for n in module.instance().nodes])
+            module_nodes_id = {n.id for n in module.instance().nodes}
             # We close the project only for the modules using it
             if len(module_nodes_id & project_nodes_id):
                 await module.instance().project_closed(self)
@@ -348,22 +339,22 @@ class Project:
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not close node {}".format(e), exc_info=1)
+                    log.error(f"Could not close node: {e}", exc_info=1)
 
         if cleanup and os.path.exists(self.path):
             self._deleted = True
             try:
                 await wait_run_in_executor(shutil.rmtree, self.path)
-                log.info("Project {id} with path '{path}' deleted".format(path=self._path, id=self._id))
+                log.info(f"Project {self._id} with path '{self._path}' deleted")
             except OSError as e:
-                raise ComputeError("Could not delete the project directory: {}".format(e))
+                raise ComputeError(f"Could not delete the project directory: {e}")
         else:
-            log.info("Project {id} with path '{path}' closed".format(path=self._path, id=self._id))
+            log.info(f"Project {self._id} with path '{self._path}' closed")
 
         if self._used_tcp_ports:
-            log.warning("Project {} has TCP ports still in use: {}".format(self.id, self._used_tcp_ports))
+            log.warning(f"Project {self.id} has TCP ports still in use: {self._used_tcp_ports}")
         if self._used_udp_ports:
-            log.warning("Project {} has UDP ports still in use: {}".format(self.id, self._used_udp_ports))
+            log.warning(f"Project {self.id} has UDP ports still in use: {self._used_udp_ports}")
 
         # clean the remaining ports that have not been cleaned by their respective node.
         port_manager = PortManager.instance()
@@ -390,6 +381,7 @@ class Project:
 
         # We import it at the last time to avoid circular dependencies
         from ..compute import MODULES
+
         return MODULES
 
     def emit(self, action, event):
@@ -416,7 +408,9 @@ class Project:
                     file_info = {"path": path}
 
                     try:
-                        file_info["md5sum"] = await wait_run_in_executor(self._hash_file, os.path.join(dirpath, filename))
+                        file_info["md5sum"] = await wait_run_in_executor(
+                            self._hash_file, os.path.join(dirpath, filename)
+                        )
                     except OSError:
                         continue
                     files.append(file_info)

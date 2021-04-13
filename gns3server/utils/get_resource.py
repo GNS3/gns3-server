@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -36,6 +35,7 @@ except ValueError:
 def clean_egg_cache():
     try:
         import shutil
+
         log.debug("Clean egg cache %s", egg_cache_dir)
         shutil.rmtree(egg_cache_dir)
     except Exception:

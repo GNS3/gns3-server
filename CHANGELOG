@@ -1,5 +1,59 @@
 # Change Log
 
+## 2.2.20 09/04/2021
+
+* Release Web UI version 2.2.20
+* Fix packet capture with HTTPS remote server. Fixes #1882
+* Sync appliance files and remove old ones after sync with online repo. Fixes #1876
+* Upgrade dependencies
+* Fix export for missing files
+* Fix issue when trying to export temporary Dynamips files.
+
+## 2.2.19 05/03/2021
+
+* Launch projects marked for auto open after SIGHUP is received
+* Release Web UI 2.2.19
+* Fix console type error when creating Ethernet switch node. Fixes #1873
+* Upgrade Jinja to version 2.11.3. Fixes #1865
+
+## 2.2.18 16/02/2021
+
+* SIGHUP: remove projects with an empty project directory.
+* Release Web UI 2.2.18
+* Catch OSError exception in psutil. Fixes https://github.com/GNS3/gns3-gui/issues/3127
+* Expose 'auto_open' and 'auto_start' properties in API when creating project. Fixes https://github.com/GNS3/gns3-gui/issues/3119
+* Add mtools package information. Ref https://github.com/GNS3/gns3-gui/issues/3076
+* Fix warning: 'ide-drive' is deprecated when using recent version of Qemu. Fixes https://github.com/GNS3/gns3-gui/issues/3101
+* Fix bug when starting of vpcs stopped with "quit". Fixes https://github.com/GNS3/gns3-gui/issues/3110
+* Fix WinError 0 handling
+* Stop uBridge if VPCS node has been terminated. Ref https://github.com/GNS3/gns3-gui/issues/3110
+* Allow cloned QEMU disk images to be resized before the node starts, by cloning the disk image in response to a resize request instead of waiting until the node starts.
+* Fix(readme): update python version from 3.5.3 to 3.6
+* Use HDD disk image as startup QEMU config disk
+* Create config disk property false by default for Qemu templates
+* Set default disk interface type to "none".
+* Add explicit option to automatically create or not the config disk. Off by default.
+* QEMU config disk support
+
+
+## 2.2.17 04/12/2020
+
+* Close and remove projects deleted from disks after SIGHUP signal is received.
+* Release Web Ui 2.2.17
+* New config file options to configure the VNC console port range.
+* Use asyncio.all_tasks instead of deprecated method for Python 3.9 compatibility.
+
+## 2.2.16 05/11/2020
+
+* Option to allocate or not the vCPUs and RAM settings for the GNS3 VM. Fixes https://github.com/GNS3/gns3-gui/issues/3069
+* Release Web UI version 2.2.16
+* Fix wrong defaults for images_path, configs_path, appliances_path. Fixes #1829
+* Use EnvironmentFile for Systemd service. Ref https://github.com/GNS3/gns3-gui/issues/3048
+* Fix SSL support for controller and local compute. Fixes #1826
+* Prevent WIC to be added/removed while Dynamips router is running. Fixes https://github.com/GNS3/gns3-gui/issues/3082
+* Fix bug with application id allocation for IOU nodes. Fixes #3079
+* Allow commas in image paths and VM name for Qemu VMs. Fixes https://github.com/GNS3/gns3-gui/issues/3065
+
 ## 2.2.15 07/10/2020
 
 * Fix symbol retrieval issue. Ref #1824

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -44,20 +43,20 @@ def parse_networking_file():
     pairs = dict()
     allocated_subnets = []
     try:
-        with open(VMWARE_NETWORKING_FILE, "r", encoding="utf-8") as f:
+        with open(VMWARE_NETWORKING_FILE, encoding="utf-8") as f:
             version = f.readline()
             for line in f.read().splitlines():
                 try:
-                    _, key, value = line.split(' ', 3)
+                    _, key, value = line.split(" ", 3)
                     key = key.strip()
                     value = value.strip()
                     pairs[key] = value
                     if key.endswith("HOSTONLY_SUBNET"):
                         allocated_subnets.append(value)
                 except ValueError:
-                    raise SystemExit("Error while parsing {}".format(VMWARE_NETWORKING_FILE))
+                    raise SystemExit(f"Error while parsing {VMWARE_NETWORKING_FILE}")
     except OSError as e:
-        raise SystemExit("Cannot open {}: {}".format(VMWARE_NETWORKING_FILE, e))
+        raise SystemExit(f"Cannot open {VMWARE_NETWORKING_FILE}: {e}")
     return version, pairs, allocated_subnets
 
 
@@ -71,9 +70,9 @@ def write_networking_file(version, pairs):
         with open(VMWARE_NETWORKING_FILE, "w", encoding="utf-8") as f:
             f.write(version)
             for key, value in vmnets.items():
-                f.write("answer {} {}\n".format(key, value))
+                f.write(f"answer {key} {value}\n")
     except OSError as e:
-        raise SystemExit("Cannot open {}: {}".format(VMWARE_NETWORKING_FILE, e))
+        raise SystemExit(f"Cannot open {VMWARE_NETWORKING_FILE}: {e}")
 
     # restart VMware networking service
     if sys.platform.startswith("darwin"):
@@ -93,19 +92,20 @@ def parse_vmnet_range(start, end):
     """
 
     class Range(argparse.Action):
-
         def __call__(self, parser, args, values, option_string=None):
             if len(values) != 2:
                 raise argparse.ArgumentTypeError("vmnet range must consist of 2 numbers")
             if not start <= values[0] or not values[1] <= end:
-                raise argparse.ArgumentTypeError("vmnet range must be between {} and {}".format(start, end))
+                raise argparse.ArgumentTypeError(f"vmnet range must be between {start} and {end}")
             setattr(args, self.dest, values)
+
     return Range
 
 
 def find_vnetlib_registry(regkey):
 
     import winreg
+
     try:
         # default path not used, let's look in the registry
         hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
@@ -163,6 +163,7 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
     if not vnetlib_path:
         raise SystemExit("VMware is not installed, could not find vnetlib.exe")
     from win32com.shell import shell
+
     if not shell.IsUserAnAdmin():
         raise SystemExit("You must run this script as an administrator")
 
@@ -176,14 +177,14 @@ def vmnet_windows(args, vmnet_range_start, vmnet_range_end):
         for vmnet_number in range(1, 20):
             if vmnet_number in (1, 8):
                 continue
-            print("Removing vmnet{}...".format(vmnet_number))
-            os.system('"{}" -- remove adapter vmnet{}'.format(vnetlib_path, vmnet_number))
+            print(f"Removing vmnet{vmnet_number}...")
+            os.system(f'"{vnetlib_path}" -- remove adapter vmnet{vmnet_number}')
     else:
         for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
             if vmnet_number in (1, 8):
                 continue
-            print("Adding vmnet{}...".format(vmnet_number))
-            os.system('"{}" -- add adapter vmnet{}'.format(vnetlib_path, vmnet_number))
+            print(f"Adding vmnet{vmnet_number}...")
+            os.system(f'"{vnetlib_path}" -- add adapter vmnet{vmnet_number}')
     os.system("net stop npf")
     os.system("net start npf")
     os.system("net stop npcap")
@@ -203,9 +204,9 @@ def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
     version, pairs, allocated_subnets = parse_networking_file()
     if args.list and not sys.platform.startswith("win"):
         for vmnet_number in range(1, 256):
-            vmnet_name = "VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)
+            vmnet_name = f"VNET_{vmnet_number}_VIRTUAL_ADAPTER"
             if vmnet_name in pairs:
-                print("vmnet{}".format(vmnet_number))
+                print(f"vmnet{vmnet_number}")
         return
 
     if args.clean:
@@ -216,7 +217,7 @@ def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
             del pairs[key]
     else:
         for vmnet_number in range(vmnet_range_start, vmnet_range_end + 1):
-            vmnet_name = "VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)
+            vmnet_name = f"VNET_{vmnet_number}_VIRTUAL_ADAPTER"
             if vmnet_name in pairs:
                 continue
             allocated_subnet = None
@@ -228,13 +229,13 @@ def vmnet_unix(args, vmnet_range_start, vmnet_range_end):
                     break
 
             if allocated_subnet is None:
-                print("Couldn't allocate a subnet for vmnet{}".format(vmnet_number))
+                print(f"Couldn't allocate a subnet for vmnet{vmnet_number}")
                 continue
 
-            print("Adding vmnet{}...".format(vmnet_number))
-            pairs["VNET_{}_HOSTONLY_NETMASK".format(vmnet_number)] = "255.255.255.0"
-            pairs["VNET_{}_HOSTONLY_SUBNET".format(vmnet_number)] = allocated_subnet
-            pairs["VNET_{}_VIRTUAL_ADAPTER".format(vmnet_number)] = "yes"
+            print(f"Adding vmnet{vmnet_number}...")
+            pairs[f"VNET_{vmnet_number}_HOSTONLY_NETMASK"] = "255.255.255.0"
+            pairs[f"VNET_{vmnet_number}_HOSTONLY_SUBNET"] = allocated_subnet
+            pairs[f"VNET_{vmnet_number}_VIRTUAL_ADAPTER"] = "yes"
 
     write_networking_file(version, pairs)
 
@@ -244,9 +245,15 @@ def main():
     Entry point for the VMNET tool.
     """
 
-    parser = argparse.ArgumentParser(description='%(prog)s add/remove vmnet interfaces')
-    parser.add_argument('-r', "--range", nargs='+', action=parse_vmnet_range(1, 255),
-                        type=int, help="vmnet range to add (default is {} {})".format(DEFAULT_RANGE[0], DEFAULT_RANGE[1]))
+    parser = argparse.ArgumentParser(description="%(prog)s add/remove vmnet interfaces")
+    parser.add_argument(
+        "-r",
+        "--range",
+        nargs="+",
+        action=parse_vmnet_range(1, 255),
+        type=int,
+        help=f"vmnet range to add (default is {DEFAULT_RANGE[0]} {DEFAULT_RANGE[1]})",
+    )
     parser.add_argument("-C", "--clean", action="store_true", help="remove all vmnets excepting vmnet1 and vmnet8")
     parser.add_argument("-l", "--list", action="store_true", help="list all existing vmnets (UNIX only)")
 
@@ -265,5 +272,6 @@ def main():
     else:
         vmnet_unix(args, vmnet_range[0], vmnet_range[1])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

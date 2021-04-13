@@ -11,19 +11,27 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username is cumulus and password is CumulusLinux!",
+    "usage": "Default username is cumulus and password is CumulusLinux! in version 4.1 and earlier, and cumulus in version 4.2 and later.",
     "first_port_name": "eth0",
     "port_name_format": "swp{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
-        "ram": 512,
+        "ram": 768,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+          "filename": "cumulus-linux-4.3.0-vx-amd64-qemu.qcow2",
+          "version": "4.3.0",
+          "md5sum": "aba2f0bb462b26a208afb6202bc97d51",
+          "filesize": 2819325952,
+          "download_url": "https://cumulusnetworks.com/cumulus-vx/download/",
+          "direct_download_url": "https://d2cd9e7ca6hntp.cloudfront.net/public/CumulusLinux-4.3.0/cumulus-linux-4.3.0-vx-amd64-qemu.qcow2"
+        },
         {
             "filename": "cumulus-linux-4.2.0-vx-amd64-qemu.qcow2",
             "version": "4.2.0",
@@ -222,6 +230,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.3.0",
+            "images": {
+              "hda_disk_image": "cumulus-linux-4.3.0-vx-amd64-qemu.qcow2"
+            }
+        },
         {
             "name": "4.2.0",
             "images": {

@@ -29,7 +29,7 @@ class FileWatcher:
     :param strategy: File change strategy (mtime: modification time, hash: hash compute)
     """
 
-    def __init__(self, paths, callback, delay=1, strategy='mtime'):
+    def __init__(self, paths, callback, delay=1, strategy="mtime"):
         self._paths = []
         if not isinstance(paths, list):
             paths = [paths]
@@ -43,7 +43,7 @@ class FileWatcher:
         self._closed = False
         self._strategy = strategy
 
-        if self._strategy == 'mtime':
+        if self._strategy == "mtime":
             # Store modification time
             self._mtime = {}
             for path in self._paths:
@@ -57,7 +57,7 @@ class FileWatcher:
             for path in self._paths:
                 try:
                     # Alder32 is a fast but insecure hash algorithm
-                    self._hashed[path] = zlib.adler32(open(path, 'rb').read())
+                    self._hashed[path] = zlib.adler32(open(path, "rb").read())
                 except OSError:
                     self._hashed[path] = None
         asyncio.get_event_loop().call_later(self._delay, self._check_config_file_change)
@@ -74,7 +74,7 @@ class FileWatcher:
         changed = False
 
         for path in self._paths:
-            if self._strategy == 'mtime':
+            if self._strategy == "mtime":
                 try:
                     mtime = os.stat(path).st_mtime_ns
                     if mtime != self._mtime[path]:
@@ -84,7 +84,7 @@ class FileWatcher:
                     self._mtime[path] = None
             else:
                 try:
-                    hashc = zlib.adler32(open(path, 'rb').read())
+                    hashc = zlib.adler32(open(path, "rb").read())
                     if hashc != self._hashed[path]:
                         changed = True
                         self._hashed[path] = hashc

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -25,6 +24,7 @@ from ..dynamips_error import DynamipsError
 from ...error import NodeError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -49,19 +49,20 @@ class EthernetHub(Bridge):
             # create 8 ports by default
             self._ports = []
             for port_number in range(0, 8):
-                self._ports.append({"port_number": port_number,
-                                    "name": "Ethernet{}".format(port_number)})
+                self._ports.append({"port_number": port_number, "name": f"Ethernet{port_number}"})
         else:
             self._ports = ports
 
     def __json__(self):
 
-        return {"name": self.name,
-                "usage": self.usage,
-                "node_id": self.id,
-                "project_id": self.project.id,
-                "ports_mapping": self._ports,
-                "status": "started"}
+        return {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "project_id": self.project.id,
+            "ports_mapping": self._ports,
+            "status": "started",
+        }
 
     @property
     def ports_mapping(self):
@@ -86,7 +87,7 @@ class EthernetHub(Bridge):
 
             port_number = 0
             for port in ports:
-                port["name"] = "Ethernet{}".format(port_number)
+                port["name"] = f"Ethernet{port_number}"
                 port["port_number"] = port_number
                 port_number += 1
 
@@ -95,7 +96,7 @@ class EthernetHub(Bridge):
     async def create(self):
 
         await Bridge.create(self)
-        log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        log.info(f'Ethernet hub "{self._name}" [{self._id}] has been created')
 
     @property
     def mappings(self):
@@ -108,7 +109,7 @@ class EthernetHub(Bridge):
         return self._mappings
 
     async def delete(self):
-        return (await self.close())
+        return await self.close()
 
     async def close(self):
         """
@@ -121,9 +122,9 @@ class EthernetHub(Bridge):
 
         try:
             await Bridge.delete(self)
-            log.info('Ethernet hub "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+            log.info(f'Ethernet hub "{self._name}" [{self._id}] has been deleted')
         except DynamipsError:
-            log.debug("Could not properly delete Ethernet hub {}".format(self._name))
+            log.debug(f"Could not properly delete Ethernet hub {self._name}")
         if self._hypervisor and not self._hypervisor.devices:
             await self.hypervisor.stop()
             self._hypervisor = None
@@ -138,17 +139,18 @@ class EthernetHub(Bridge):
         """
 
         if port_number not in [port["port_number"] for port in self._ports]:
-            raise DynamipsError("Port {} doesn't exist".format(port_number))
+            raise DynamipsError(f"Port {port_number} doesn't exist")
 
         if port_number in self._mappings:
-            raise DynamipsError("Port {} isn't free".format(port_number))
+            raise DynamipsError(f"Port {port_number} isn't free")
 
         await Bridge.add_nio(self, nio)
 
-        log.info('Ethernet hub "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
-                                                                                       id=self._id,
-                                                                                       nio=nio,
-                                                                                       port=port_number))
+        log.info(
+            'Ethernet hub "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
         self._mappings[port_number] = nio
 
     async def remove_nio(self, port_number):
@@ -161,7 +163,7 @@ class EthernetHub(Bridge):
         """
 
         if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         await self.stop_capture(port_number)
         nio = self._mappings[port_number]
@@ -169,10 +171,11 @@ class EthernetHub(Bridge):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         await Bridge.remove_nio(self, nio)
 
-        log.info('Ethernet hub "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
-                                                                                           id=self._id,
-                                                                                           nio=nio,
-                                                                                           port=port_number))
+        log.info(
+            'Ethernet hub "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         del self._mappings[port_number]
         return nio
@@ -187,12 +190,12 @@ class EthernetHub(Bridge):
         """
 
         if port_number not in self._mappings:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._mappings[port_number]
 
         if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not connected")
 
         return nio
 
@@ -211,12 +214,14 @@ class EthernetHub(Bridge):
             data_link_type = data_link_type[4:]
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {} has already a filter applied".format(port_number))
+            raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info('Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               port=port_number))
+        log.info(
+            'Ethernet hub "{name}" [{id}]: starting packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -229,6 +234,8 @@ class EthernetHub(Bridge):
         if not nio.capturing:
             return
         await nio.stop_packet_capture()
-        log.info('Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
-                                                                                               id=self._id,
-                                                                                               port=port_number))
+        log.info(
+            'Ethernet hub "{name}" [{id}]: stopping packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )

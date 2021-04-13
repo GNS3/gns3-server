@@ -59,16 +59,18 @@ class Qcow2:
         # } QCowHeader;
 
         struct_format = ">IIQi"
-        with open(self._path, 'rb') as f:
+        with open(self._path, "rb") as f:
             content = f.read(struct.calcsize(struct_format))
             try:
-                self.magic, self.version, self.backing_file_offset, self.backing_file_size = struct.unpack_from(struct_format, content)
+                self.magic, self.version, self.backing_file_offset, self.backing_file_size = struct.unpack_from(
+                    struct_format, content
+                )
 
             except struct.error:
-                raise Qcow2Error("Invalid file header for {}".format(self._path))
+                raise Qcow2Error(f"Invalid file header for {self._path}")
 
         if self.magic != 1363560955:  # The first 4 bytes contain the characters 'Q', 'F', 'I' followed by 0xfb.
-            raise Qcow2Error("Invalid magic for {}".format(self._path))
+            raise Qcow2Error(f"Invalid magic for {self._path}")
 
     @property
     def backing_file(self):
@@ -78,7 +80,7 @@ class Qcow2:
         :returns: None if it's not a linked clone, the path otherwise
         """
 
-        with open(self._path, 'rb') as f:
+        with open(self._path, "rb") as f:
             f.seek(self.backing_file_offset)
             content = f.read(self.backing_file_size)
 

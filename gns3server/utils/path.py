@@ -27,8 +27,8 @@ def get_default_project_directory():
     depending of the operating system
     """
 
-    server_config = Config.instance().get_section_config("Server")
-    path = os.path.expanduser(server_config.get("projects_path", "~/GNS3/projects"))
+    server_config = Config.instance().settings.Server
+    path = os.path.expanduser(server_config.projects_path)
     path = os.path.normpath(path)
     try:
         os.makedirs(path, exist_ok=True)
@@ -45,11 +45,9 @@ def check_path_allowed(path):
     Raise a 403 in case of error
     """
 
-    config = Config.instance().get_section_config("Server")
-
     project_directory = get_default_project_directory()
     if len(os.path.commonprefix([project_directory, path])) == len(project_directory):
         return
 
-    if "local" in config and config.getboolean("local") is False:
+    if Config.instance().settings.Server.local is False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The path is not allowed")

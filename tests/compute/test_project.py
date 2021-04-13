@@ -194,30 +194,30 @@ async def test_project_close(node, compute_project):
 
 
 @pytest.mark.asyncio
-async def test_list_files(tmpdir):
+async def test_list_files(tmpdir, config):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"projects_path": str(tmpdir)}):
-        project = Project(project_id=str(uuid4()))
-        path = project.path
-        os.makedirs(os.path.join(path, "vm-1", "dynamips"))
-        with open(os.path.join(path, "vm-1", "dynamips", "test.bin"), "w+") as f:
-            f.write("test")
-        open(os.path.join(path, "vm-1", "dynamips", "test.ghost"), "w+").close()
-        with open(os.path.join(path, "test.txt"), "w+") as f:
-            f.write("test2")
+    config.settings.Server.projects_path = str(tmpdir)
+    project = Project(project_id=str(uuid4()))
+    path = project.path
+    os.makedirs(os.path.join(path, "vm-1", "dynamips"))
+    with open(os.path.join(path, "vm-1", "dynamips", "test.bin"), "w+") as f:
+        f.write("test")
+    open(os.path.join(path, "vm-1", "dynamips", "test.ghost"), "w+").close()
+    with open(os.path.join(path, "test.txt"), "w+") as f:
+        f.write("test2")
 
-        files = await project.list_files()
+    files = await project.list_files()
 
-        assert files == [
-            {
-                "path": "test.txt",
-                "md5sum": "ad0234829205b9033196ba818f7a872b"
-            },
-            {
-                "path": os.path.join("vm-1", "dynamips", "test.bin"),
-                "md5sum": "098f6bcd4621d373cade4e832627b4f6"
-            }
-        ]
+    assert files == [
+        {
+            "path": "test.txt",
+            "md5sum": "ad0234829205b9033196ba818f7a872b"
+        },
+        {
+            "path": os.path.join("vm-1", "dynamips", "test.bin"),
+            "md5sum": "098f6bcd4621d373cade4e832627b4f6"
+        }
+    ]
 
 
 @pytest.mark.asyncio

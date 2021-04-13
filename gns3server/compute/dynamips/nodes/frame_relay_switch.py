@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -27,6 +26,7 @@ from ..nios.nio_udp import NIOUDP
 from ..dynamips_error import DynamipsError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -57,12 +57,14 @@ class FrameRelaySwitch(Device):
         for source, destination in self._mappings.items():
             mappings[source] = destination
 
-        return {"name": self.name,
-                "usage": self.usage,
-                "node_id": self.id,
-                "project_id": self.project.id,
-                "mappings": mappings,
-                "status": "started"}
+        return {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "project_id": self.project.id,
+            "mappings": mappings,
+            "status": "started",
+        }
 
     async def create(self):
 
@@ -70,8 +72,8 @@ class FrameRelaySwitch(Device):
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             self._hypervisor = await self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        await self._hypervisor.send('frsw create "{}"'.format(self._name))
-        log.info('Frame Relay switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        await self._hypervisor.send(f'frsw create "{self._name}"')
+        log.info(f'Frame Relay switch "{self._name}" [{self._id}] has been created')
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
@@ -81,10 +83,12 @@ class FrameRelaySwitch(Device):
         :param new_name: New name for this switch
         """
 
-        await self._hypervisor.send('frsw rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
-        log.info('Frame Relay switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
-                                                                                      id=self._id,
-                                                                                      new_name=new_name))
+        await self._hypervisor.send(f'frsw rename "{self._name}" "{new_name}"')
+        log.info(
+            'Frame Relay switch "{name}" [{id}]: renamed to "{new_name}"'.format(
+                name=self._name, id=self._id, new_name=new_name
+            )
+        )
         self._name = new_name
 
     @property
@@ -124,10 +128,10 @@ class FrameRelaySwitch(Device):
 
         if self._hypervisor:
             try:
-                await self._hypervisor.send('frsw delete "{}"'.format(self._name))
-                log.info('Frame Relay switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+                await self._hypervisor.send(f'frsw delete "{self._name}"')
+                log.info(f'Frame Relay switch "{self._name}" [{self._id}] has been deleted')
             except DynamipsError:
-                log.debug("Could not properly delete Frame relay switch {}".format(self._name))
+                log.debug(f"Could not properly delete Frame relay switch {self._name}")
 
         if self._hypervisor and self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
@@ -162,12 +166,13 @@ class FrameRelaySwitch(Device):
         """
 
         if port_number in self._nios:
-            raise DynamipsError("Port {} isn't free".format(port_number))
+            raise DynamipsError(f"Port {port_number} isn't free")
 
-        log.info('Frame Relay switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
-                                                                                             id=self._id,
-                                                                                             nio=nio,
-                                                                                             port=port_number))
+        log.info(
+            'Frame Relay switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         self._nios[port_number] = nio
         await self.set_mappings(self._mappings)
@@ -182,7 +187,7 @@ class FrameRelaySwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         await self.stop_capture(port_number)
         # remove VCs mapped with the port
@@ -190,12 +195,16 @@ class FrameRelaySwitch(Device):
             source_port, source_dlci = source
             destination_port, destination_dlci = destination
             if port_number == source_port:
-                log.info('Frame Relay switch "{name}" [{id}]: unmapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(name=self._name,
-                                                                                                                                                                                     id=self._id,
-                                                                                                                                                                                     source_port=source_port,
-                                                                                                                                                                                     source_dlci=source_dlci,
-                                                                                                                                                                                     destination_port=destination_port,
-                                                                                                                                                                                     destination_dlci=destination_dlci))
+                log.info(
+                    'Frame Relay switch "{name}" [{id}]: unmapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(
+                        name=self._name,
+                        id=self._id,
+                        source_port=source_port,
+                        source_dlci=source_dlci,
+                        destination_port=destination_port,
+                        destination_dlci=destination_dlci,
+                    )
+                )
                 await self.unmap_vc(source_port, source_dlci, destination_port, destination_dlci)
                 await self.unmap_vc(destination_port, destination_dlci, source_port, source_dlci)
 
@@ -203,10 +212,11 @@ class FrameRelaySwitch(Device):
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
 
-        log.info('Frame Relay switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
-                                                                                                 id=self._id,
-                                                                                                 nio=nio,
-                                                                                                 port=port_number))
+        log.info(
+            'Frame Relay switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         del self._nios[port_number]
         return nio
@@ -221,12 +231,12 @@ class FrameRelaySwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
 
         if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not connected")
 
         return nio
 
@@ -240,16 +250,23 @@ class FrameRelaySwitch(Device):
         for source, destination in mappings.items():
             if not isinstance(source, str) or not isinstance(destination, str):
                 raise DynamipsError("Invalid Frame-Relay mappings")
-            source_port, source_dlci = map(int, source.split(':'))
-            destination_port, destination_dlci = map(int, destination.split(':'))
+            source_port, source_dlci = map(int, source.split(":"))
+            destination_port, destination_dlci = map(int, destination.split(":"))
             if self.has_port(destination_port):
-                if (source_port, source_dlci) not in self._active_mappings and (destination_port, destination_dlci) not in self._active_mappings:
-                    log.info('Frame Relay switch "{name}" [{id}]: mapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(name=self._name,
-                                                                                                                                                                                       id=self._id,
-                                                                                                                                                                                       source_port=source_port,
-                                                                                                                                                                                       source_dlci=source_dlci,
-                                                                                                                                                                                       destination_port=destination_port,
-                                                                                                                                                                                       destination_dlci=destination_dlci))
+                if (source_port, source_dlci) not in self._active_mappings and (
+                    destination_port,
+                    destination_dlci,
+                ) not in self._active_mappings:
+                    log.info(
+                        'Frame Relay switch "{name}" [{id}]: mapping VC between port {source_port} DLCI {source_dlci} and port {destination_port} DLCI {destination_dlci}'.format(
+                            name=self._name,
+                            id=self._id,
+                            source_port=source_port,
+                            source_dlci=source_dlci,
+                            destination_port=destination_port,
+                            destination_dlci=destination_dlci,
+                        )
+                    )
 
                     await self.map_vc(source_port, source_dlci, destination_port, destination_dlci)
                     await self.map_vc(destination_port, destination_dlci, source_port, source_dlci)
@@ -273,18 +290,17 @@ class FrameRelaySwitch(Device):
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('frsw create_vc "{name}" {input_nio} {input_dlci} {output_nio} {output_dlci}'.format(name=self._name,
-                                                                                                                              input_nio=nio1,
-                                                                                                                              input_dlci=dlci1,
-                                                                                                                              output_nio=nio2,
-                                                                                                                              output_dlci=dlci2))
+        await self._hypervisor.send(
+            'frsw create_vc "{name}" {input_nio} {input_dlci} {output_nio} {output_dlci}'.format(
+                name=self._name, input_nio=nio1, input_dlci=dlci1, output_nio=nio2, output_dlci=dlci2
+            )
+        )
 
-        log.info('Frame Relay switch "{name}" [{id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} created'.format(name=self._name,
-                                                                                                                                     id=self._id,
-                                                                                                                                     port1=port1,
-                                                                                                                                     dlci1=dlci1,
-                                                                                                                                     port2=port2,
-                                                                                                                                     dlci2=dlci2))
+        log.info(
+            'Frame Relay switch "{name}" [{id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} created'.format(
+                name=self._name, id=self._id, port1=port1, dlci1=dlci1, port2=port2, dlci2=dlci2
+            )
+        )
 
         self._active_mappings[(port1, dlci1)] = (port2, dlci2)
 
@@ -299,26 +315,25 @@ class FrameRelaySwitch(Device):
         """
 
         if port1 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port1))
+            raise DynamipsError(f"Port {port1} is not allocated")
 
         if port2 not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port2))
+            raise DynamipsError(f"Port {port2} is not allocated")
 
         nio1 = self._nios[port1]
         nio2 = self._nios[port2]
 
-        await self._hypervisor.send('frsw delete_vc "{name}" {input_nio} {input_dlci} {output_nio} {output_dlci}'.format(name=self._name,
-                                                                                                                              input_nio=nio1,
-                                                                                                                              input_dlci=dlci1,
-                                                                                                                              output_nio=nio2,
-                                                                                                                              output_dlci=dlci2))
+        await self._hypervisor.send(
+            'frsw delete_vc "{name}" {input_nio} {input_dlci} {output_nio} {output_dlci}'.format(
+                name=self._name, input_nio=nio1, input_dlci=dlci1, output_nio=nio2, output_dlci=dlci2
+            )
+        )
 
-        log.info('Frame Relay switch "{name}" [{id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} deleted'.format(name=self._name,
-                                                                                                                                     id=self._id,
-                                                                                                                                     port1=port1,
-                                                                                                                                     dlci1=dlci1,
-                                                                                                                                     port2=port2,
-                                                                                                                                     dlci2=dlci2))
+        log.info(
+            'Frame Relay switch "{name}" [{id}]: VC from port {port1} DLCI {dlci1} to port {port2} DLCI {dlci2} deleted'.format(
+                name=self._name, id=self._id, port1=port1, dlci1=dlci1, port2=port2, dlci2=dlci2
+            )
+        )
         del self._active_mappings[(port1, dlci1)]
 
     async def start_capture(self, port_number, output_file, data_link_type="DLT_FRELAY"):
@@ -337,12 +352,14 @@ class FrameRelaySwitch(Device):
             data_link_type = data_link_type[4:]
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {} has already a filter applied".format(port_number))
+            raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info('Frame relay switch "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     port=port_number))
+        log.info(
+            'Frame relay switch "{name}" [{id}]: starting packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -355,6 +372,8 @@ class FrameRelaySwitch(Device):
         if not nio.capturing:
             return
         await nio.stop_packet_capture()
-        log.info('Frame relay switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
-                                                                                                     id=self._id,
-                                                                                                     port=port_number))
+        log.info(
+            'Frame relay switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )

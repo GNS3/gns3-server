@@ -1,8 +1,11 @@
 GNS3-server
 ===========
 
-.. image:: https://github.com/GNS3/gns3-server/workflows/testing/badge.svg
-    :target: https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+
+.. image:: https://github.com/GNS3/gns3-server/workflows/testing/badge.svg?branch=3.0
+    :target: https://github.com/GNS3/gns3-server/actions?query=workflow%3Atesting+branch%3A3.0
 
 .. image:: https://img.shields.io/pypi/v/gns3-server.svg
     :target: https://pypi.python.org/pypi/gns3-server
@@ -24,8 +27,9 @@ In addition of Python dependencies listed in a section below, other software may
 * `Dynamips <https://github.com/GNS3/dynamips/>`_ is required for running IOS routers (using real IOS images) as well as the internal switches and hubs.
 * `VPCS <https://github.com/GNS3/vpcs/>`_ is recommended, it is a builtin node simulating a very simple computer to perform connectitivy tests using ping, traceroute etc.
 * Qemu is strongly recommended on Linux, as most node types are based on Qemu, for example Cisco IOSv and Arista vEOS.
-* libvirt is recommended (Linux only), as it's needed for the NAT cloud
+* libvirt is recommended (Linux only), as it's needed for the NAT cloud.
 * Docker is optional (Linux only), some nodes are based on Docker.
+* mtools is recommended to support data transfer to/from QEMU VMs using virtual disks.
 * i386-libraries of libc and libcrypto are optional (Linux only), they are only needed to run IOU based nodes.
 
 Branches
@@ -59,7 +63,7 @@ You must be connected to the Internet in order to install the dependencies.
 
 Dependencies:
 
-- Python 3.5.3, setuptools and the ones listed `here <https://github.com/GNS3/gns3-server/blob/master/requirements.txt>`_
+- Python 3.6, setuptools and the ones listed `here <https://github.com/GNS3/gns3-server/blob/master/requirements.txt>`_
 
 The following commands will install some of these dependencies:
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ import uuid
 from .nio import NIO
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -38,17 +38,21 @@ class NIOLinuxEthernet(NIO):
 
     def __init__(self, hypervisor, ethernet_device):
         # create an unique name
-        name = 'linux_ethernet-{}'.format(uuid.uuid4())
+        name = f"linux_ethernet-{uuid.uuid4()}"
         self._ethernet_device = ethernet_device
         super().__init__(name, hypervisor)
 
     async def create(self):
 
-        await self._hypervisor.send("nio create_linux_eth {name} {eth_device}".format(name=self._name,
-                                                                                           eth_device=self._ethernet_device))
+        await self._hypervisor.send(
+            "nio create_linux_eth {name} {eth_device}".format(name=self._name, eth_device=self._ethernet_device)
+        )
 
-        log.info("NIO Linux Ethernet {name} created with device {device}".format(name=self._name,
-                                                                                 device=self._ethernet_device))
+        log.info(
+            "NIO Linux Ethernet {name} created with device {device}".format(
+                name=self._name, device=self._ethernet_device
+            )
+        )
 
     @property
     def ethernet_device(self):
@@ -62,5 +66,4 @@ class NIOLinuxEthernet(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_linux_ethernet",
-                "ethernet_device": self._ethernet_device}
+        return {"type": "nio_linux_ethernet", "ethernet_device": self._ethernet_device}

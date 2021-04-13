@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # To use python v2.7 change the first line to:
 #!/usr/bin/env python
@@ -48,28 +47,28 @@ def uncompress_LZC(data):
     LZC_NUM_BITS_MIN = 9
     LZC_NUM_BITS_MAX = 16
 
-    in_data  = bytearray(data)
-    in_len   = len(in_data)
+    in_data = bytearray(data)
+    in_len = len(in_data)
     out_data = bytearray()
 
     if in_len == 0:
         return out_data
     if in_len < 3:
-        raise ValueError('invalid length')
+        raise ValueError("invalid length")
     if in_data[0] != 0x1F or in_data[1] != 0x9D:
-        raise ValueError('invalid header')
+        raise ValueError("invalid header")
 
     max_bits = in_data[2] & 0x1F
     if max_bits < LZC_NUM_BITS_MIN or max_bits > LZC_NUM_BITS_MAX:
-        raise ValueError('not supported')
+        raise ValueError("not supported")
     num_items = 1 << max_bits
     blockmode = (in_data[2] & 0x80) != 0
 
-    in_pos    = 3
+    in_pos = 3
     start_pos = in_pos
-    num_bits  = LZC_NUM_BITS_MIN
+    num_bits = LZC_NUM_BITS_MIN
     dict_size = 1 << num_bits
-    head      = 256
+    head = 256
     if blockmode:
         head += 1
     first_sym = True
@@ -90,7 +89,7 @@ def uncompress_LZC(data):
             buf, symbol = divmod(buf, dict_size)
             buf_bits -= num_bits
         except IndexError:
-            raise ValueError('invalid data')
+            raise ValueError("invalid data")
 
         # re-initialize dictionary
         if blockmode and symbol == 256:
@@ -109,7 +108,7 @@ def uncompress_LZC(data):
         if first_sym:
             first_sym = False
             if symbol >= 256:
-                raise ValueError('invalid data')
+                raise ValueError("invalid data")
             prev = symbol
             out_data.extend(comp_dict[symbol])
             continue
@@ -125,7 +124,7 @@ def uncompress_LZC(data):
         elif symbol == head:
             comp_dict[head] = comp_dict[prev] + comp_dict[prev][0:1]
         else:
-            raise ValueError('invalid data')
+            raise ValueError("invalid data")
         prev = symbol
 
         # output symbol
@@ -149,42 +148,42 @@ def nvram_export(nvram):
     offset = 0
     # extract startup config
     try:
-        (magic, data_format, _, _, _, _, length, _, _, _, _, _) = \
-            struct.unpack_from('>HHHHIIIIIHHI', nvram, offset=offset)
+        (magic, data_format, _, _, _, _, length, _, _, _, _, _) = struct.unpack_from(
+            ">HHHHIIIIIHHI", nvram, offset=offset
+        )
         offset += 36
         if magic != 0xABCD:
-            raise ValueError('no startup config')
-        if len(nvram) < offset+length:
-            raise ValueError('invalid length')
-        startup = nvram[offset:offset+length]
+            raise ValueError("no startup config")
+        if len(nvram) < offset + length:
+            raise ValueError("invalid length")
+        startup = nvram[offset : offset + length]
     except struct.error:
-        raise ValueError('invalid length')
+        raise ValueError("invalid length")
 
     # uncompress startup config
     if data_format == 2:
         try:
             startup = uncompress_LZC(startup)
         except ValueError as err:
-            raise ValueError('uncompress startup: ' + str(err))
+            raise ValueError("uncompress startup: " + str(err))
 
     private = None
     try:
         # calculate offset of private header
-        length += (4 - length % 4) % 4          # alignment to multiple of 4
+        length += (4 - length % 4) % 4  # alignment to multiple of 4
         offset += length
         # check for additonal offset of 4
-        (magic, data_format) = struct.unpack_from('>HH', nvram, offset=offset+4)
+        (magic, data_format) = struct.unpack_from(">HH", nvram, offset=offset + 4)
         if magic == 0xFEDC and data_format == 1:
             offset += 4
 
         # extract private config
-        (magic, data_format, _, _, length) = \
-            struct.unpack_from('>HHIII', nvram, offset=offset)
+        (magic, data_format, _, _, length) = struct.unpack_from(">HHIII", nvram, offset=offset)
         offset += 16
         if magic == 0xFEDC and data_format == 1:
-            if len(nvram) < offset+length:
-                raise ValueError('invalid length')
-            private = nvram[offset:offset+length]
+            if len(nvram) < offset + length:
+                raise ValueError("invalid length")
+            private = nvram[offset : offset + length]
 
     # missing private header is not an error
     except struct.error:
@@ -193,45 +192,42 @@ def nvram_export(nvram):
     return (startup, private)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Main program
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(description='%(prog)s exports startup/private configuration from IOU NVRAM file.')
-    parser.add_argument('nvram', metavar='NVRAM',
-                        help='NVRAM file')
-    parser.add_argument('startup', metavar='startup-config',
-                        help='startup configuration')
-    parser.add_argument('private', metavar='private-config', nargs='?',
-                        help='private configuration')
+    parser = argparse.ArgumentParser(description="%(prog)s exports startup/private configuration from IOU NVRAM file.")
+    parser.add_argument("nvram", metavar="NVRAM", help="NVRAM file")
+    parser.add_argument("startup", metavar="startup-config", help="startup configuration")
+    parser.add_argument("private", metavar="private-config", nargs="?", help="private configuration")
     args = parser.parse_args()
 
     try:
-        fd = open(args.nvram, 'rb')
+        fd = open(args.nvram, "rb")
         nvram = fd.read()
         fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error reading file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error reading file: {err}\n")
         sys.exit(1)
 
     try:
         startup, private = nvram_export(nvram)
     except ValueError as err:
-        sys.stderr.write("nvram_export: {}\n".format(err))
+        sys.stderr.write(f"nvram_export: {err}\n")
         sys.exit(3)
 
     try:
-        fd = open(args.startup, 'wb')
+        fd = open(args.startup, "wb")
         fd.write(startup)
         fd.close()
         if args.private is not None:
             if private is None:
                 sys.stderr.write("Warning: No private config\n")
             else:
-                fd = open(args.private, 'wb')
+                fd = open(args.private, "wb")
                 fd.write(private)
                 fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error writing file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error writing file: {err}\n")
         sys.exit(1)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -23,15 +22,16 @@
 # or negative for a release candidate or beta (after the base version
 # number has been incremented)
 
-__version__ = "3.0.0dev1"
+__version__ = "3.0.0dev2"
 __version_info__ = (3, 0, 0, 99)
 
 if "dev" in __version__:
     try:
         import os
         import subprocess
+
         if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
             r = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
-            __version__ = "{}-{}".format(__version__, r)
+            __version__ = f"{__version__}-{r}"
     except Exception as e:
         print(e)

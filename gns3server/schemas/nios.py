@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -66,4 +65,3 @@ class TAPNIO(BaseModel):
 
     type: TAPNIOType
     tap_device: str = Field(..., description="TAP device name e.g. tap0")
-

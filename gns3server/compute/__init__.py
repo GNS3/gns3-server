@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -24,14 +23,19 @@ from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .qemu import Qemu
 from .vmware import VMware
-from .traceng import TraceNG
 
-MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware, TraceNG]
+MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
 
-if sys.platform.startswith("linux") or hasattr(sys, "_called_from_test") or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
+if (
+    sys.platform.startswith("linux")
+    or hasattr(sys, "_called_from_test")
+    or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1"
+):
     # IOU & Docker only runs on Linux but test suite works on UNIX platform
     if not sys.platform.startswith("win"):
         from .docker import Docker
+
         MODULES.append(Docker)
         from .iou import IOU
+
         MODULES.append(IOU)

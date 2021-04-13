@@ -1,0 +1,50 @@
+{
+    "name": "Raspian",
+    "category": "guest",
+    "description": "Raspberry Pi Desktop comes pre-installed with plenty of software for education, programming and general use; including Python, Scratch, Sonic Pi, Java, and more.  Appliance created to demonstrate new_appliance.py - read more at https://nextpertise.net.",
+    "vendor_name": "Raspberry Pi Foundation",
+    "vendor_url": "https://www.raspberrypi.org",
+    "product_name": "Raspberry Pi Desktop",
+    "product_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Brent Stewart",
+    "maintainer_email": "brent@stewart.tc",
+    "usage": "Default password is raspberry",
+    "symbol": "rpi.png",
+    "qemu": {
+        "adapter_type": "virtio",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "disable"
+    },
+    "images": [
+        {
+            "filename": "2020-02-12-rpd-x86-buster.iso",
+            "version": "2020-02-12",
+            "md5sum": "98f34fb53086752b4c9c452094f30740",
+            "filesize": 3128147968,
+            "download_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/"
+        },
+        {
+            "filename": "empty8G.qcow2",
+            "version": "1",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2020-02-12",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "2020-02-12-rpd-x86-buster.iso"
+            }
+        }
+    ]
+}

@@ -39,7 +39,7 @@ def test_interfaces():
         assert "netmask" in interface
 
 
-def test_has_netmask():
+def test_has_netmask(config):
 
     if sys.platform.startswith("win"):
         # No loopback

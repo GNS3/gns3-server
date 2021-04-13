@@ -66,11 +66,11 @@ def test_convert_project_before_2_0_0_b3(compute_project, manager):
 
 
 @pytest.mark.asyncio
-async def test_router_invalid_dynamips_path(compute_project, manager):
+async def test_router_invalid_dynamips_path(compute_project, config, manager):
 
     config = Config.instance()
-    config.set("Dynamips", "dynamips_path", "/bin/test_fake")
-    config.set("Dynamips", "allocate_aux_console_ports", False)
+    config.settings.Dynamips.dynamips_path = "/bin/test_fake"
+    config.settings.Dynamips.allocate_aux_console_ports = False
 
     with pytest.raises(DynamipsError):
         router = Router("test", "00010203-0405-0607-0809-0a0b0c0d0e0e", compute_project, manager)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ from uuid import UUID
 from gns3server.compute.compute_error import ComputeError, ComputeNotFoundError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -71,10 +71,10 @@ class ProjectManager:
         try:
             UUID(project_id, version=4)
         except ValueError:
-            raise ComputeError("Project ID {} is not a valid UUID".format(project_id))
+            raise ComputeError(f"Project ID {project_id} is not a valid UUID")
 
         if project_id not in self._projects:
-            raise ComputeNotFoundError("Project ID {} doesn't exist".format(project_id))
+            raise ComputeNotFoundError(f"Project ID {project_id} doesn't exist")
         return self._projects[project_id]
 
     def _check_available_disk_space(self, project):
@@ -87,13 +87,13 @@ class ProjectManager:
         try:
             used_disk_space = psutil.disk_usage(project.path).percent
         except FileNotFoundError:
-            log.warning('Could not find "{}" when checking for used disk space'.format(project.path))
+            log.warning(f"Could not find '{project.path}' when checking for used disk space")
             return
         # send a warning if used disk space is >= 90%
         if used_disk_space >= 90:
-            message = 'Only {:.2f}% or less of free disk space detected in "{}" on "{}"'.format(100 - used_disk_space,
-                                                                                                project.path,
-                                                                                                platform.node())
+            message = 'Only {:.2f}% or less of free disk space detected in "{}" on "{}"'.format(
+                100 - used_disk_space, project.path, platform.node()
+            )
             log.warning(message)
             project.emit("log.warning", {"message": message})
 
@@ -105,8 +105,7 @@ class ProjectManager:
         """
         if project_id is not None and project_id in self._projects:
             return self._projects[project_id]
-        project = Project(name=name, project_id=project_id,
-                          path=path, variables=variables)
+        project = Project(name=name, project_id=project_id, path=path, variables=variables)
         self._check_available_disk_space(project)
         self._projects[project.id] = project
         return project
@@ -119,7 +118,7 @@ class ProjectManager:
         """
 
         if project_id not in self._projects:
-            raise ComputeNotFoundError("Project ID {} doesn't exist".format(project_id))
+            raise ComputeNotFoundError(f"Project ID {project_id} doesn't exist")
         del self._projects[project_id]
 
     def check_hardware_virtualization(self, source_node):

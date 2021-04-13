@@ -4,7 +4,12 @@ import tempfile
 import shutil
 import sys
 import os
+import uuid
+import configparser
 
+from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from httpx import AsyncClient
 from unittest.mock import MagicMock, patch
 from pathlib import Path
 
@@ -13,20 +18,21 @@ from gns3server.config import Config
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
-
-
-from .endpoints.base import Query
+from gns3server.db.models import Base, User, Compute
+from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.computes import ComputesRepository
+from gns3server.api.routes.controller.dependencies.database import get_db_session
+from gns3server import schemas
+from gns3server.schemas.computes import Protocol
+from gns3server.services import auth_service
+from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
 sys._called_from_test = True
 sys.original_platform = sys.platform
 
-from fastapi.testclient import TestClient
-from gns3server.app import app
-from httpx import AsyncClient
-
 
 if sys.platform.startswith("win") and sys.version_info < (3, 8):
-    @pytest.yield_fixture(scope="session")
+    @pytest.fixture(scope="session")
     def event_loop(request):
         """
         Overwrite pytest_asyncio event loop on Windows for Python < 3.8
@@ -39,16 +45,112 @@ if sys.platform.startswith("win") and sys.version_info < (3, 8):
         asyncio.set_event_loop(None)
 
 
-@pytest.fixture(scope='function')
-def http_client():
+# https://github.com/pytest-dev/pytest-asyncio/issues/68
+# this event_loop is used by pytest-asyncio, and redefining it
+# is currently the only way of changing the scope of this fixture
+@pytest.fixture(scope="class")
+def event_loop(request):
 
-    return AsyncClient(app=app, base_url="http://test-api")
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
-@pytest.fixture(scope='function')
-def ws_client():
+@pytest.fixture(scope="class")
+async def app() -> FastAPI:
 
-    return TestClient(app)
+    from gns3server.api.server import app as gns3app
+    yield gns3app
+
+
+@pytest.fixture(scope="class")
+async def db_engine():
+
+    db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
+    engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
+    yield engine
+    #await engine.sync_engine.dispose()
+
+
+@pytest.fixture(scope="class")
+async def db_session(db_engine):
+
+    # recreate database tables for each class
+    # preferred and faster way would be to rollback the session/transaction
+    # but it doesn't work for some reason
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    session = AsyncSession(db_engine)
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+@pytest.fixture
+async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
+
+    async def _get_test_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db_session] = _get_test_db
+
+    async with AsyncClient(
+            app=app,
+            base_url="http://test-api",
+            headers={"Content-Type": "application/json"}
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+async def test_user(db_session: AsyncSession) -> User:
+
+    new_user = schemas.UserCreate(
+        username="user1",
+        email="user1@email.com",
+        password="user1_password",
+    )
+    user_repo = UsersRepository(db_session)
+    existing_user = await user_repo.get_user_by_username(new_user.username)
+    if existing_user:
+        return existing_user
+    return await user_repo.create_user(new_user)
+
+
+@pytest.fixture
+async def test_compute(db_session: AsyncSession) -> Compute:
+
+    new_compute = schemas.ComputeCreate(
+        compute_id=uuid.uuid4(),
+        protocol=Protocol.http,
+        host="localhost",
+        port=4242,
+        user="julien",
+        password="secure"
+    )
+
+    compute_repo = ComputesRepository(db_session)
+    existing_compute = await compute_repo.get_compute(new_compute.compute_id)
+    if existing_compute:
+        return existing_compute
+    return await compute_repo.create_compute(new_compute)
+
+
+@pytest.fixture
+def authorized_client(client: AsyncClient, test_user: User) -> AsyncClient:
+
+    access_token = auth_service.create_access_token(test_user.username)
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {access_token}",
+    }
+    return client
 
 
 @pytest.fixture
@@ -92,27 +194,14 @@ def compute_project(tmpdir):
 
 
 @pytest.fixture
-def compute_api(http_client, ws_client):
-    """
-    Return an helper allowing you to call the hypervisor API via HTTP
-    """
+def config(tmpdir):
 
-    return Query(http_client, ws_client, prefix="/compute", api_version=3)
-
-
-@pytest.fixture
-def controller_api(http_client, ws_client, controller):
-    """
-    Return an helper allowing you to call the server API without any prefix
-    """
-
-    return Query(http_client, ws_client, api_version=3)
-
-
-@pytest.fixture
-def config():
-
-    config = Config.instance()
+    path = str(tmpdir / "server.conf")
+    config = configparser.ConfigParser()
+    with open(path, "w+") as f:
+        config.write(f)
+    Config.reset()
+    config = Config.instance(files=[path])
     config.clear()
     return config
 
@@ -123,7 +212,7 @@ def images_dir(config):
     Get the location of images
     """
 
-    path = config.get_section_config("Server").get("images_path")
+    path = config.settings.Server.images_path
     os.makedirs(path, exist_ok=True)
     os.makedirs(os.path.join(path, "QEMU"), exist_ok=True)
     os.makedirs(os.path.join(path, "IOU"), exist_ok=True)
@@ -136,9 +225,8 @@ def symbols_dir(config):
     Get the location of symbols
     """
 
-    path = config.get_section_config("Server").get("symbols_path")
+    path = config.settings.Server.symbols_path
     os.makedirs(path, exist_ok=True)
-    print(path)
     return path
 
 
@@ -148,7 +236,7 @@ def projects_dir(config):
     Get the location of images
     """
 
-    path = config.get_section_config("Server").get("projects_path")
+    path = config.settings.Server.projects_path
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -238,7 +326,7 @@ def ubridge_path(config):
     Get the location of a fake ubridge
     """
 
-    path = config.get_section_config("Server").get("ubridge_path")
+    path = config.settings.Server.ubridge_path
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, 'w+').close()
     return path
@@ -255,23 +343,27 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
     for module in MODULES:
         module._instance = None
 
+    config.settings.Controller.jwt_secret_key = DEFAULT_JWT_SECRET_KEY
+    config.settings.Server.secrets_dir = os.path.join(tmppath, 'secrets')
+
     os.makedirs(os.path.join(tmppath, 'projects'))
-    config.set("Server", "projects_path", os.path.join(tmppath, 'projects'))
-    config.set("Server", "symbols_path", os.path.join(tmppath, 'symbols'))
-    config.set("Server", "images_path", os.path.join(tmppath, 'images'))
-    config.set("Server", "appliances_path", os.path.join(tmppath, 'appliances'))
-    config.set("Server", "ubridge_path", os.path.join(tmppath, 'bin', 'ubridge'))
-    config.set("Server", "auth", False)
-    config.set("Server", "local", True)
+    config.settings.Server.projects_path = os.path.join(tmppath, 'projects')
+    config.settings.Server.symbols_path = os.path.join(tmppath, 'symbols')
+    config.settings.Server.images_path = os.path.join(tmppath, 'images')
+    config.settings.Server.appliances_path = os.path.join(tmppath, 'appliances')
+    config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
+    config.settings.Server.local = True
+    config.settings.Server.enable_http_auth = False
 
     # Prevent executions of the VM if we forgot to mock something
-    config.set("VirtualBox", "vboxmanage_path", tmppath)
-    config.set("VPCS", "vpcs_path", tmppath)
-    config.set("VMware", "vmrun_path", tmppath)
-    config.set("Dynamips", "dynamips_path", tmppath)
+    config.settings.VirtualBox.vboxmanage_path = tmppath
+    config.settings.VPCS.vpcs_path = tmppath
+    config.settings.VMware.vmrun_path = tmppath
+    config.settings.Dynamips.dynamips_path = tmppath
+
 
     # Force turn off KVM because it's not available on CI
-    config.set("Qemu", "enable_kvm", False)
+    config.settings.Qemu.enable_hardware_acceleration = False
 
     monkeypatch.setattr("gns3server.utils.path.get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 

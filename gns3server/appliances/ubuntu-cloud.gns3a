@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "ubuntu-20.04-server-cloudimg-amd64.img",
+            "version": "20.04 (LTS)",
+            "md5sum": "044bc979b2238192ee3edb44e2bb6405",
+            "filesize": 552337408,
+            "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/ubuntu-20.04-server-cloudimg-amd64.img"
+        },
+        {
             "filename": "ubuntu-18.04-server-cloudimg-amd64.img",
             "version": "18.04 (LTS)",
             "md5sum": "f4134e7fa16d7fa766c7467cbe25c949",
@@ -62,6 +69,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "20.04 (LTS)",
+            "images": {
+                "hda_disk_image": "ubuntu-20.04-server-cloudimg-amd64.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
         {
             "name": "18.04 (LTS)",
             "images": {

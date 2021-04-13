@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -22,7 +21,8 @@ http://github.com/GNS3/dynamips/blob/master/README.hypervisor#L558
 
 import asyncio
 from gns3server.utils import parse_version
-#from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
+
+# from gns3server.utils.asyncio.embed_shell import EmbedShell, create_telnet_shell
 
 
 from .device import Device
@@ -31,6 +31,7 @@ from ..dynamips_error import DynamipsError
 from ...error import NodeError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -79,16 +80,19 @@ class EthernetSwitch(Device):
     :param hypervisor: Dynamips hypervisor instance
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="none", ports=None, hypervisor=None):
+    def __init__(self, name, node_id, project, manager, console=None, console_type=None, ports=None, hypervisor=None):
 
         super().__init__(name, node_id, project, manager, hypervisor)
         self._nios = {}
         self._mappings = {}
         self._telnet_console = None
-        #self._telnet_shell = None
-        #self._telnet_server = None
+        # self._telnet_shell = None
+        # self._telnet_server = None
         self._console = console
         self._console_type = console_type
+
+        if self._console_type is None:
+            self._console_type = "none"
 
         if self._console is not None:
             self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
@@ -99,23 +103,25 @@ class EthernetSwitch(Device):
             # create 8 ports by default
             self._ports = []
             for port_number in range(0, 8):
-                self._ports.append({"port_number": port_number,
-                                    "name": "Ethernet{}".format(port_number),
-                                    "type": "access",
-                                    "vlan": 1})
+                self._ports.append(
+                    {"port_number": port_number, "name": f"Ethernet{port_number}", "type": "access", "vlan": 1}
+                )
         else:
             self._ports = ports
 
     def __json__(self):
 
-        ethernet_switch_info = {"name": self.name,
-                                "usage": self.usage,
-                                "console": self.console,
-                                "console_type": self.console_type,
-                                "node_id": self.id,
-                                "project_id": self.project.id,
-                                "ports_mapping": self._ports,
-                                "status": "started"}
+        ethernet_switch_info = {
+            "name": self.name,
+            "usage": self.usage,
+            "console": self.console,
+            "console_type": self.console_type,
+            "node_id": self.id,
+            "project_id": self.project.id,
+            "ports_mapping": self._ports,
+            "status": "started",
+        }
+
         return ethernet_switch_info
 
     @property
@@ -135,8 +141,10 @@ class EthernetSwitch(Device):
 
         if self._console_type != console_type:
             if console_type == "telnet":
-                self.project.emit("log.warning", {
-                    "message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
+                self.project.emit(
+                    "log.warning",
+                    {"message": f'"{self._name}": Telnet access for switches is not available in this version of GNS3'},
+                )
             self._console_type = console_type
 
     @property
@@ -162,7 +170,7 @@ class EthernetSwitch(Device):
 
             port_number = 0
             for port in ports:
-                port["name"] = "Ethernet{}".format(port_number)
+                port["name"] = f"Ethernet{port_number}"
                 port["port_number"] = port_number
                 port_number += 1
 
@@ -180,18 +188,21 @@ class EthernetSwitch(Device):
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             self._hypervisor = await self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        await self._hypervisor.send('ethsw create "{}"'.format(self._name))
-        log.info('Ethernet switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        await self._hypervisor.send(f'ethsw create "{self._name}"')
+        log.info(f'Ethernet switch "{self._name}" [{self._id}] has been created')
 
-        #self._telnet_shell = EthernetSwitchConsole(self)
-        #self._telnet_shell.prompt = self._name + '> '
-        #self._telnet = create_telnet_shell(self._telnet_shell)
-        #try:
+        # self._telnet_shell = EthernetSwitchConsole(self)
+        # self._telnet_shell.prompt = self._name + '> '
+        # self._telnet = create_telnet_shell(self._telnet_shell)
+        # try:
         #    self._telnet_server = (await asyncio.start_server(self._telnet.run, self._manager.port_manager.console_host, self.console))
-        #except OSError as e:
+        # except OSError as e:
         #    self.project.emit("log.warning", {"message": "Could not start Telnet server on socket {}:{}: {}".format(self._manager.port_manager.console_host, self.console, e)})
         if self._console_type == "telnet":
-            self.project.emit("log.warning", {"message": '"{name}": Telnet access for switches is not available in this version of GNS3'.format(name=self._name)})
+            self.project.emit(
+                "log.warning",
+                {"message": f'"{self._name}": Telnet access for switches is not available in this version of GNS3'},
+            )
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
@@ -201,10 +212,12 @@ class EthernetSwitch(Device):
         :param new_name: New name for this switch
         """
 
-        await self._hypervisor.send('ethsw rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
-        log.info('Ethernet switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
-                                                                                   id=self._id,
-                                                                                   new_name=new_name))
+        await self._hypervisor.send(f'ethsw rename "{self._name}" "{new_name}"')
+        log.info(
+            'Ethernet switch "{name}" [{id}]: renamed to "{new_name}"'.format(
+                name=self._name, id=self._id, new_name=new_name
+            )
+        )
         self._name = new_name
 
     @property
@@ -228,15 +241,15 @@ class EthernetSwitch(Device):
         return self._mappings
 
     async def delete(self):
-        return (await self.close())
+        return await self.close()
 
     async def close(self):
         """
         Deletes this Ethernet switch.
         """
 
-        #await self._telnet.close()
-        #if self._telnet_server:
+        # await self._telnet.close()
+        # if self._telnet_server:
         #    self._telnet_server.close()
 
         for nio in self._nios.values():
@@ -245,10 +258,10 @@ class EthernetSwitch(Device):
         self.manager.port_manager.release_tcp_port(self._console, self._project)
         if self._hypervisor:
             try:
-                await self._hypervisor.send('ethsw delete "{}"'.format(self._name))
-                log.info('Ethernet switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+                await self._hypervisor.send(f'ethsw delete "{self._name}"')
+                log.info(f'Ethernet switch "{self._name}" [{self._id}] has been deleted')
             except DynamipsError:
-                log.debug("Could not properly delete Ethernet switch {}".format(self._name))
+                log.debug(f"Could not properly delete Ethernet switch {self._name}")
         if self._hypervisor and self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
@@ -265,14 +278,15 @@ class EthernetSwitch(Device):
         """
 
         if port_number in self._nios:
-            raise DynamipsError("Port {} isn't free".format(port_number))
+            raise DynamipsError(f"Port {port_number} isn't free")
 
-        await self._hypervisor.send('ethsw add_nio "{name}" {nio}'.format(name=self._name, nio=nio))
+        await self._hypervisor.send(f'ethsw add_nio "{self._name}" {nio}')
 
-        log.info('Ethernet switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(name=self._name,
-                                                                                          id=self._id,
-                                                                                          nio=nio,
-                                                                                          port=port_number))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: NIO {nio} bound to port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
         self._nios[port_number] = nio
         for port_settings in self._ports:
             if port_settings["port_number"] == port_number:
@@ -289,19 +303,20 @@ class EthernetSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         await self.stop_capture(port_number)
         nio = self._nios[port_number]
         if isinstance(nio, NIOUDP):
             self.manager.port_manager.release_udp_port(nio.lport, self._project)
         if self._hypervisor:
-            await self._hypervisor.send('ethsw remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
+            await self._hypervisor.send(f'ethsw remove_nio "{self._name}" {nio}')
 
-        log.info('Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(name=self._name,
-                                                                                              id=self._id,
-                                                                                              nio=nio,
-                                                                                              port=port_number))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: NIO {nio} removed from port {port}'.format(
+                name=self._name, id=self._id, nio=nio, port=port_number
+            )
+        )
 
         del self._nios[port_number]
         if port_number in self._mappings:
@@ -319,12 +334,12 @@ class EthernetSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
 
         if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not connected")
 
         return nio
 
@@ -352,17 +367,18 @@ class EthernetSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
-        await self._hypervisor.send('ethsw set_access_port "{name}" {nio} {vlan_id}'.format(name=self._name,
-                                                                                                 nio=nio,
-                                                                                                 vlan_id=vlan_id))
+        await self._hypervisor.send(
+            'ethsw set_access_port "{name}" {nio} {vlan_id}'.format(name=self._name, nio=nio, vlan_id=vlan_id)
+        )
 
-        log.info('Ethernet switch "{name}" [{id}]: port {port} set as an access port in VLAN {vlan_id}'.format(name=self._name,
-                                                                                                               id=self._id,
-                                                                                                               port=port_number,
-                                                                                                               vlan_id=vlan_id))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: port {port} set as an access port in VLAN {vlan_id}'.format(
+                name=self._name, id=self._id, port=port_number, vlan_id=vlan_id
+            )
+        )
         self._mappings[port_number] = ("access", vlan_id)
 
     async def set_dot1q_port(self, port_number, native_vlan):
@@ -374,17 +390,20 @@ class EthernetSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
-        await self._hypervisor.send('ethsw set_dot1q_port "{name}" {nio} {native_vlan}'.format(name=self._name,
-                                                                                                    nio=nio,
-                                                                                                    native_vlan=native_vlan))
+        await self._hypervisor.send(
+            'ethsw set_dot1q_port "{name}" {nio} {native_vlan}'.format(
+                name=self._name, nio=nio, native_vlan=native_vlan
+            )
+        )
 
-        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a 802.1Q port with native VLAN {vlan_id}'.format(name=self._name,
-                                                                                                                       id=self._id,
-                                                                                                                       port=port_number,
-                                                                                                                       vlan_id=native_vlan))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: port {port} set as a 802.1Q port with native VLAN {vlan_id}'.format(
+                name=self._name, id=self._id, port=port_number, vlan_id=native_vlan
+            )
+        )
 
         self._mappings[port_number] = ("dot1q", native_vlan)
 
@@ -397,22 +416,25 @@ class EthernetSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
-        if ethertype != "0x8100" and parse_version(self.hypervisor.version) < parse_version('0.2.16'):
-            raise DynamipsError("Dynamips version required is >= 0.2.16 to change the default QinQ Ethernet type, detected version is {}".format(self.hypervisor.version))
+        if ethertype != "0x8100" and parse_version(self.hypervisor.version) < parse_version("0.2.16"):
+            raise DynamipsError(
+                f"Dynamips version required is >= 0.2.16 to change the default QinQ Ethernet type, detected version is {self.hypervisor.version}"
+            )
 
-        await self._hypervisor.send('ethsw set_qinq_port "{name}" {nio} {outer_vlan} {ethertype}'.format(name=self._name,
-                                                                                                              nio=nio,
-                                                                                                              outer_vlan=outer_vlan,
-                                                                                                              ethertype=ethertype if ethertype != "0x8100" else ""))
+        await self._hypervisor.send(
+            'ethsw set_qinq_port "{name}" {nio} {outer_vlan} {ethertype}'.format(
+                name=self._name, nio=nio, outer_vlan=outer_vlan, ethertype=ethertype if ethertype != "0x8100" else ""
+            )
+        )
 
-        log.info('Ethernet switch "{name}" [{id}]: port {port} set as a QinQ ({ethertype}) port with outer VLAN {vlan_id}'.format(name=self._name,
-                                                                                                                                  id=self._id,
-                                                                                                                                  port=port_number,
-                                                                                                                                  vlan_id=outer_vlan,
-                                                                                                                                  ethertype=ethertype))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: port {port} set as a QinQ ({ethertype}) port with outer VLAN {vlan_id}'.format(
+                name=self._name, id=self._id, port=port_number, vlan_id=outer_vlan, ethertype=ethertype
+            )
+        )
         self._mappings[port_number] = ("qinq", outer_vlan, ethertype)
 
     async def get_mac_addr_table(self):
@@ -422,7 +444,7 @@ class EthernetSwitch(Device):
         :returns: list of entries (Ethernet address, VLAN, NIO)
         """
 
-        mac_addr_table = await self._hypervisor.send('ethsw show_mac_addr_table "{}"'.format(self._name))
+        mac_addr_table = await self._hypervisor.send(f'ethsw show_mac_addr_table "{self._name}"')
         return mac_addr_table
 
     async def clear_mac_addr_table(self):
@@ -430,7 +452,7 @@ class EthernetSwitch(Device):
         Clears the MAC address table for this Ethernet switch.
         """
 
-        await self._hypervisor.send('ethsw clear_mac_addr_table "{}"'.format(self._name))
+        await self._hypervisor.send(f'ethsw clear_mac_addr_table "{self._name}"')
 
     async def start_capture(self, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
@@ -447,12 +469,14 @@ class EthernetSwitch(Device):
             data_link_type = data_link_type[4:]
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {} has already a filter applied".format(port_number))
+            raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
-        log.info('Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  port=port_number))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: starting packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )
 
     async def stop_capture(self, port_number):
         """
@@ -465,6 +489,8 @@ class EthernetSwitch(Device):
         if not nio.capturing:
             return
         await nio.stop_packet_capture()
-        log.info('Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(name=self._name,
-                                                                                                  id=self._id,
-                                                                                                  port=port_number))
+        log.info(
+            'Ethernet switch "{name}" [{id}]: stopping packet capture on port {port}'.format(
+                name=self._name, id=self._id, port=port_number
+            )
+        )

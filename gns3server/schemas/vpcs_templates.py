@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -30,4 +29,6 @@ class VPCSTemplate(TemplateBase):
     symbol: Optional[str] = ":/symbols/vpcs_guest.svg"
     base_script_file: Optional[str] = Field("vpcs_base_config.txt", description="Script file")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
-    console_auto_start: Optional[bool] = Field(False, description="Automatically start the console when the node has started")
+    console_auto_start: Optional[bool] = Field(
+        False, description="Automatically start the console when the node has started"
+    )

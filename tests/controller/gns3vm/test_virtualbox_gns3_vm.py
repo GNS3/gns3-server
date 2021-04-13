@@ -57,9 +57,8 @@ GuestMemoryBalloon=0
 
     with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute", return_value=showvminfo) as mock:
         res = await gns3vm._look_for_interface("nat")
-
-    mock.assert_called_with('showvminfo', ['GNS3 VM', '--machinereadable'])
-    assert res == 2
+        mock.assert_called_with('showvminfo', ['GNS3 VM', '--machinereadable'])
+        assert res == 2
 
     # with asyncio_patch("gns3server.controller.gns3vm.virtualbox_gns3_vm.VirtualBoxGNS3VM._execute") as mock:
     #     mock.side_effect = execute_mock

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -23,7 +22,6 @@ from .serial_port import SerialPort
 
 
 class ATMPort(SerialPort):
-
     @staticmethod
     def long_name_type():
         """

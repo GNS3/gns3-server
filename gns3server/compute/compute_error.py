@@ -17,9 +17,8 @@
 
 
 class ComputeError(Exception):
-
     def __init__(self, message: str):
-        super().__init__(message)
+        super().__init__()
         self._message = message
 
     def __repr__(self):
@@ -30,24 +29,20 @@ class ComputeError(Exception):
 
 
 class ComputeNotFoundError(ComputeError):
-
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ComputeUnauthorizedError(ComputeError):
-
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ComputeForbiddenError(ComputeError):
-
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ComputeTimeoutError(ComputeError):
-
     def __init__(self, message: str):
         super().__init__(message)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -16,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from pathlib import Path
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from uuid import UUID
@@ -51,7 +49,7 @@ class ProjectBase(BaseModel):
 
     name: str
     project_id: Optional[UUID] = None
-    path: Optional[Path] = Field(None, description="Project directory")
+    path: Optional[str] = Field(None, description="Project directory")
     auto_close: Optional[bool] = Field(None, description="Close project when last client leaves")
     auto_open: Optional[bool] = Field(None, description="Project opens when GNS3 starts")
     auto_start: Optional[bool] = Field(None, description="Project starts when opened")
@@ -102,5 +100,5 @@ class Project(ProjectBase):
 
 class ProjectFile(BaseModel):
 
-    path: Path = Field(..., description="File path")
+    path: str = Field(..., description="File path")
     md5sum: str = Field(..., description="File checksum")

@@ -36,40 +36,40 @@ async def manager(port_manager):
     return m
 
 
-def test_vm_invalid_vboxmanage_path(manager):
+def test_vm_invalid_vboxmanage_path(manager, config):
 
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": "/bin/test_fake"}):
-        with pytest.raises(VirtualBoxError):
-            manager.find_vboxmanage()
+    config.settings.VirtualBox.vboxmanage_path = "/bin/test_fake"
+    with pytest.raises(VirtualBoxError):
+        manager.find_vboxmanage()
 
 
-def test_vm_non_executable_vboxmanage_path(manager):
+def test_vm_non_executable_vboxmanage_path(manager, config):
 
     tmpfile = tempfile.NamedTemporaryFile()
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": tmpfile.name}):
-        with pytest.raises(VirtualBoxError):
-            manager.find_vboxmanage()
+    config.settings.VirtualBox.vboxmanage_path = tmpfile.name
+    with pytest.raises(VirtualBoxError):
+        manager.find_vboxmanage()
 
 
-def test_vm_invalid_executable_name_vboxmanage_path(manager, tmpdir):
+def test_vm_invalid_executable_name_vboxmanage_path(manager, config, tmpdir):
 
     path = str(tmpdir / "vpcs")
     with open(path, "w+") as f:
         f.write(path)
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": path}):
-        with pytest.raises(VirtualBoxError):
-            manager.find_vboxmanage()
+    config.settings.VirtualBox.vboxmanage_path = path
+    with pytest.raises(VirtualBoxError):
+        manager.find_vboxmanage()
 
 
-def test_vboxmanage_path(manager, tmpdir):
+def test_vboxmanage_path(manager, config, tmpdir):
 
     path = str(tmpdir / "VBoxManage")
     with open(path, "w+") as f:
         f.write(path)
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    with patch("gns3server.config.Config.get_section_config", return_value={"vboxmanage_path": path}):
-        assert manager.find_vboxmanage() == path
+    config.settings.VirtualBox.vboxmanage_path = path
+    assert manager.find_vboxmanage() == path
 
 
 @pytest.mark.asyncio

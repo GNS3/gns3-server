@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -47,7 +46,7 @@ class Bridge(Device):
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             self._hypervisor = await self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        await self._hypervisor.send('nio_bridge create "{}"'.format(self._name))
+        await self._hypervisor.send(f'nio_bridge create "{self._name}"')
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
@@ -57,8 +56,9 @@ class Bridge(Device):
         :param new_name: New name for this bridge
         """
 
-        await self._hypervisor.send('nio_bridge rename "{name}" "{new_name}"'.format(name=self._name,
-                                                                                          new_name=new_name))
+        await self._hypervisor.send(
+            'nio_bridge rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name)
+        )
 
         self._name = new_name
 
@@ -80,7 +80,7 @@ class Bridge(Device):
         if self._hypervisor and self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
-            await self._hypervisor.send('nio_bridge delete "{}"'.format(self._name))
+            await self._hypervisor.send(f'nio_bridge delete "{self._name}"')
 
     async def add_nio(self, nio):
         """
@@ -89,7 +89,7 @@ class Bridge(Device):
         :param nio: NIO instance to add
         """
 
-        await self._hypervisor.send('nio_bridge add_nio "{name}" {nio}'.format(name=self._name, nio=nio))
+        await self._hypervisor.send(f'nio_bridge add_nio "{self._name}" {nio}')
         self._nios.append(nio)
 
     async def remove_nio(self, nio):
@@ -99,7 +99,7 @@ class Bridge(Device):
         :param nio: NIO instance to remove
         """
         if self._hypervisor:
-            await self._hypervisor.send('nio_bridge remove_nio "{name}" {nio}'.format(name=self._name, nio=nio))
+            await self._hypervisor.send(f'nio_bridge remove_nio "{self._name}" {nio}')
         self._nios.remove(nio)
 
     @property

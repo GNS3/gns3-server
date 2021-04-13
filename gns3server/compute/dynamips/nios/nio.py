@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -24,6 +23,7 @@ import asyncio
 from ..dynamips_error import DynamipsError
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -69,8 +69,8 @@ class NIO:
         if self._input_filter or self._output_filter:
             await self.unbind_filter("both")
             self._capturing = False
-        await self._hypervisor.send("nio delete {}".format(self._name))
-        log.info("NIO {name} has been deleted".format(name=self._name))
+        await self._hypervisor.send(f"nio delete {self._name}")
+        log.info(f"NIO {self._name} has been deleted")
 
     async def rename(self, new_name):
         """
@@ -79,9 +79,9 @@ class NIO:
         :param new_name: new NIO name
         """
 
-        await self._hypervisor.send("nio rename {name} {new_name}".format(name=self._name, new_name=new_name))
+        await self._hypervisor.send(f"nio rename {self._name} {new_name}")
 
-        log.info("NIO {name} renamed to {new_name}".format(name=self._name, new_name=new_name))
+        log.info(f"NIO {self._name} renamed to {new_name}")
         self._name = new_name
 
     async def debug(self, debug):
@@ -91,7 +91,7 @@ class NIO:
         :param debug: debug value (0 = disable, enable = 1)
         """
 
-        await self._hypervisor.send("nio set_debug {name} {debug}".format(name=self._name, debug=debug))
+        await self._hypervisor.send(f"nio set_debug {self._name} {debug}")
 
     async def start_packet_capture(self, pcap_output_file, pcap_data_link_type="DLT_EN10MB"):
         """
@@ -102,7 +102,7 @@ class NIO:
         """
 
         await self.bind_filter("both", "capture")
-        await self.setup_filter("both", '{} "{}"'.format(pcap_data_link_type, pcap_output_file))
+        await self.setup_filter("both", f'{pcap_data_link_type} "{pcap_output_file}"')
         self._capturing = True
         self._pcap_output_file = pcap_output_file
         self._pcap_data_link_type = pcap_data_link_type
@@ -128,12 +128,14 @@ class NIO:
         """
 
         if direction not in self._dynamips_direction:
-            raise DynamipsError("Unknown direction {} to bind filter {}:".format(direction, filter_name))
+            raise DynamipsError(f"Unknown direction {direction} to bind filter {filter_name}:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send("nio bind_filter {name} {direction} {filter}".format(name=self._name,
-                                                                                              direction=dynamips_direction,
-                                                                                              filter=filter_name))
+        await self._hypervisor.send(
+            "nio bind_filter {name} {direction} {filter}".format(
+                name=self._name, direction=dynamips_direction, filter=filter_name
+            )
+        )
 
         if direction == "in":
             self._input_filter = filter_name
@@ -151,11 +153,12 @@ class NIO:
         """
 
         if direction not in self._dynamips_direction:
-            raise DynamipsError("Unknown direction {} to unbind filter:".format(direction))
+            raise DynamipsError(f"Unknown direction {direction} to unbind filter:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send("nio unbind_filter {name} {direction}".format(name=self._name,
-                                                                                       direction=dynamips_direction))
+        await self._hypervisor.send(
+            "nio unbind_filter {name} {direction}".format(name=self._name, direction=dynamips_direction)
+        )
 
         if direction == "in":
             self._input_filter = None
@@ -185,12 +188,14 @@ class NIO:
         """
 
         if direction not in self._dynamips_direction:
-            raise DynamipsError("Unknown direction {} to setup filter:".format(direction))
+            raise DynamipsError(f"Unknown direction {direction} to setup filter:")
         dynamips_direction = self._dynamips_direction[direction]
 
-        await self._hypervisor.send("nio setup_filter {name} {direction} {options}".format(name=self._name,
-                                                                                                direction=dynamips_direction,
-                                                                                                options=options))
+        await self._hypervisor.send(
+            "nio setup_filter {name} {direction} {options}".format(
+                name=self._name, direction=dynamips_direction, options=options
+            )
+        )
 
         if direction == "in":
             self._input_filter_options = options
@@ -227,7 +232,7 @@ class NIO:
         :returns: NIO statistics (string with packets in, packets out, bytes in, bytes out)
         """
 
-        stats = await self._hypervisor.send("nio get_stats {}".format(self._name))
+        stats = await self._hypervisor.send(f"nio get_stats {self._name}")
         return stats[0]
 
     async def reset_stats(self):
@@ -235,7 +240,7 @@ class NIO:
         Resets statistics for this NIO.
         """
 
-        await self._hypervisor.send("nio reset_stats {}".format(self._name))
+        await self._hypervisor.send(f"nio reset_stats {self._name}")
 
     @property
     def bandwidth(self):
@@ -254,7 +259,7 @@ class NIO:
         :param bandwidth: bandwidth integer value (in Kb/s)
         """
 
-        await self._hypervisor.send("nio set_bandwidth {name} {bandwidth}".format(name=self._name, bandwidth=bandwidth))
+        await self._hypervisor.send(f"nio set_bandwidth {self._name} {bandwidth}")
         self._bandwidth = bandwidth
 
     @property

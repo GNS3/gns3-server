@@ -15,18 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
-
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
 
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class RemoteGNS3VM(BaseGNS3VM):
-
     def __init__(self, controller):
 
         self._engine = "remote"
@@ -60,7 +58,7 @@ class RemoteGNS3VM(BaseGNS3VM):
                 self.user = compute.user
                 self.password = compute.password
                 return
-        raise GNS3VMError("Can't start the GNS3 VM remote VM {} not found".format(self.vmname))
+        raise GNS3VMError(f"Can't start the GNS3 VM remote VM {self.vmname} not found")
 
     async def suspend(self):
         """

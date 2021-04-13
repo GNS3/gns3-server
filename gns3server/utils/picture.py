@@ -47,7 +47,7 @@ def get_size(data, default_width=0, default_height=0):
 
     size = len(data)
     # handle GIFs
-    if size >= 10 and data[:6] in (b'GIF87a', b'GIF89a'):
+    if size >= 10 and data[:6] in (b"GIF87a", b"GIF89a"):
         # Check to see if content_type is correct
         try:
             width, height = struct.unpack("<hh", data[6:10])
@@ -55,14 +55,14 @@ def get_size(data, default_width=0, default_height=0):
         except struct.error:
             raise ValueError("Invalid GIF file")
     # see png edition spec bytes are below chunk length then and finally the
-    elif size >= 24 and data.startswith(b'\211PNG\r\n\032\n') and data[12:16] == b'IHDR':
+    elif size >= 24 and data.startswith(b"\211PNG\r\n\032\n") and data[12:16] == b"IHDR":
         try:
             width, height = struct.unpack(">LL", data[16:24])
             filetype = "png"
         except struct.error:
             raise ValueError("Invalid PNG file")
     # Maybe this is for an older PNG version.
-    elif size >= 16 and data.startswith(b'\211PNG\r\n\032\n'):
+    elif size >= 16 and data.startswith(b"\211PNG\r\n\032\n"):
         # Check to see if we have the right content type
         try:
             width, height = struct.unpack(">LL", data[8:16])
@@ -70,29 +70,29 @@ def get_size(data, default_width=0, default_height=0):
         except struct.error:
             raise ValueError("Invalid PNG file")
     # handle JPEGs
-    elif size >= 2 and data.startswith(b'\377\330'):
+    elif size >= 2 and data.startswith(b"\377\330"):
         try:
             # Not very efficient to copy data to a buffer
             fhandle = io.BytesIO(data)
             size = 2
             ftype = 0
-            while not 0xc0 <= ftype <= 0xcf:
+            while not 0xC0 <= ftype <= 0xCF:
                 fhandle.seek(size, 1)
                 byte = fhandle.read(1)
-                while ord(byte) == 0xff:
+                while ord(byte) == 0xFF:
                     byte = fhandle.read(1)
                 ftype = ord(byte)
-                size = struct.unpack('>H', fhandle.read(2))[0] - 2
+                size = struct.unpack(">H", fhandle.read(2))[0] - 2
             # We are at a SOFn block
             fhandle.seek(1, 1)  # Skip `precision' byte.
-            height, width = struct.unpack('>HH', fhandle.read(4))
+            height, width = struct.unpack(">HH", fhandle.read(4))
             filetype = "jpg"
         except struct.error:
             raise ValueError("Invalid JPEG file")
     # End of https://github.com/shibukawa/imagesize_py
 
     # handle SVG
-    elif size >= 10 and data.startswith(b'<?xml'):
+    elif size >= 10 and (data.startswith(b"<?xml") or data.startswith(b"<svg")):
         filetype = "svg"
         fhandle = io.BytesIO(data)
         tree = ElementTree()
@@ -111,7 +111,7 @@ def get_size(data, default_width=0, default_height=0):
                 viewbox = root.attrib.get("viewBox")
                 if not viewbox:
                     raise ValueError("Invalid SVG file: missing viewBox attribute")
-                _, _, viewbox_width, viewbox_height = re.split(r'[\s,]+', viewbox)
+                _, _, viewbox_width, viewbox_height = re.split(r"[\s,]+", viewbox)
             if width_attr.endswith("%"):
                 width = _svg_convert_size(viewbox_width, width_attr)
             else:
@@ -121,7 +121,7 @@ def get_size(data, default_width=0, default_height=0):
             else:
                 height = _svg_convert_size(height_attr)
         except (AttributeError, IndexError) as e:
-            raise ValueError("Invalid SVG file: {}".format(e))
+            raise ValueError(f"Invalid SVG file: {e}")
 
     return width, height, filetype
 
@@ -135,14 +135,7 @@ def _svg_convert_size(size, percent=None):
     """
 
     # https://www.w3.org/TR/SVG/coords.html#Units
-    conversion_table = {
-        "pt": 1.25,
-        "pc": 15,
-        "mm": 3.543307,
-        "cm": 35.43307,
-        "in": 90,
-        "px": 1
-    }
+    conversion_table = {"pt": 1.25, "pc": 15, "mm": 3.543307, "cm": 35.43307, "in": 90, "px": 1}
     factor = 1.0
     if len(size) >= 3:
         if size[-2:] in conversion_table:

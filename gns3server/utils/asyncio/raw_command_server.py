@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -21,6 +20,7 @@ import asyncio
 import asyncio.subprocess
 
 import logging
+
 log = logging.getLogger(__name__)
 
 READ_SIZE = 4096
@@ -44,10 +44,12 @@ class AsyncioRawCommandServer:
 
     async def run(self, network_reader, network_writer):
         await self._lock.acquire()
-        process = await asyncio.subprocess.create_subprocess_exec(*self._command,
-                                                                       stdout=asyncio.subprocess.PIPE,
-                                                                       stderr=asyncio.subprocess.STDOUT,
-                                                                       stdin=asyncio.subprocess.PIPE)
+        process = await asyncio.subprocess.create_subprocess_exec(
+            *self._command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            stdin=asyncio.subprocess.PIPE
+        )
         try:
             await self._process(network_reader, network_writer, process.stdout, process.stdin)
         except ConnectionResetError:
@@ -62,10 +64,20 @@ class AsyncioRawCommandServer:
         # Server host from the client point of view
         host = network_writer.transport.get_extra_info("sockname")[0]
         for replace in self._replaces:
-            if b'{{HOST}}' in replace[1]:
-                replaces.append((replace[0], replace[1].replace(b'{{HOST}}', host.encode()), ))
+            if b"{{HOST}}" in replace[1]:
+                replaces.append(
+                    (
+                        replace[0],
+                        replace[1].replace(b"{{HOST}}", host.encode()),
+                    )
+                )
             else:
-                replaces.append((replace[0], replace[1], ))
+                replaces.append(
+                    (
+                        replace[0],
+                        replace[1],
+                    )
+                )
 
         network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
         reader_read = asyncio.ensure_future(process_reader.read(READ_SIZE))
@@ -73,12 +85,8 @@ class AsyncioRawCommandServer:
 
         while True:
             done, pending = await asyncio.wait(
-                [
-                    network_read,
-                    reader_read
-                ],
-                timeout=timeout,
-                return_when=asyncio.FIRST_COMPLETED)
+                [network_read, reader_read], timeout=timeout, return_when=asyncio.FIRST_COMPLETED
+            )
             if len(done) == 0:
                 raise ConnectionResetError()
             for coro in done:
@@ -105,13 +113,21 @@ class AsyncioRawCommandServer:
                     await network_writer.drain()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
 
     command = ["nc", "localhost", "80"]
-    server = AsyncioRawCommandServer(command, replaces=[(b"work", b"{{HOST}}", )])
-    coro = asyncio.start_server(server.run, '0.0.0.0', 4444, loop=loop)
+    server = AsyncioRawCommandServer(
+        command,
+        replaces=[
+            (
+                b"work",
+                b"{{HOST}}",
+            )
+        ],
+    )
+    coro = asyncio.start_server(server.run, "0.0.0.0", 4444, loop=loop)
     s = loop.run_until_complete(coro)
 
     try:

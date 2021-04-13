@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -21,45 +20,47 @@ import asyncio.subprocess
 import struct
 
 import logging
+
 log = logging.getLogger(__name__)
 
 # Mostly from https://code.google.com/p/miniboa/source/browse/trunk/miniboa/telnet.py
 
 # Telnet Commands
-SE = 240    # End of sub-negotiation parameters
-NOP = 241    # No operation
-DATMK = 242    # Data stream portion of a sync.
-BREAK = 243    # NVT Character BRK
-IP = 244    # Interrupt Process
-AO = 245    # Abort Output
-AYT = 246    # Are you there
-EC = 247    # Erase Character
-EL = 248    # Erase Line
-GA = 249    # The Go Ahead Signal
-SB = 250    # Sub-option to follow
-WILL = 251    # Will; request or confirm option begin
-WONT = 252    # Wont; deny option request
-DO = 253    # Do = Request or confirm remote option
-DONT = 254    # Don't = Demand or confirm option halt
-IAC = 255    # Interpret as Command
-SEND = 1      # Sub-process negotiation SEND command
-IS = 0      # Sub-process negotiation IS command
+SE = 240  # End of sub-negotiation parameters
+NOP = 241  # No operation
+DATMK = 242  # Data stream portion of a sync.
+BREAK = 243  # NVT Character BRK
+IP = 244  # Interrupt Process
+AO = 245  # Abort Output
+AYT = 246  # Are you there
+EC = 247  # Erase Character
+EL = 248  # Erase Line
+GA = 249  # The Go Ahead Signal
+SB = 250  # Sub-option to follow
+WILL = 251  # Will; request or confirm option begin
+WONT = 252  # Wont; deny option request
+DO = 253  # Do = Request or confirm remote option
+DONT = 254  # Don't = Demand or confirm option halt
+IAC = 255  # Interpret as Command
+SEND = 1  # Sub-process negotiation SEND command
+IS = 0  # Sub-process negotiation IS command
 
 # Telnet Options
-BINARY = 0      # Transmit Binary
-ECHO = 1      # Echo characters back to sender
-RECON = 2      # Reconnection
-SGA = 3      # Suppress Go-Ahead
-TMARK = 6      # Timing Mark
-TTYPE = 24     # Terminal Type
-NAWS = 31     # Negotiate About Window Size
-LINEMO = 34     # Line Mode
+BINARY = 0  # Transmit Binary
+ECHO = 1  # Echo characters back to sender
+RECON = 2  # Reconnection
+SGA = 3  # Suppress Go-Ahead
+TMARK = 6  # Timing Mark
+TTYPE = 24  # Terminal Type
+NAWS = 31  # Negotiate About Window Size
+LINEMO = 34  # Line Mode
 
 READ_SIZE = 1024
 
 
-class TelnetConnection(object):
+class TelnetConnection:
     """Default implementation of telnet connection which may but may not be used."""
+
     def __init__(self, reader, writer, window_size_changed_callback=None):
         self.is_closing = False
         self._reader = reader
@@ -84,7 +85,7 @@ class TelnetConnection(object):
 
     async def window_size_changed(self, columns, rows):
         """Method called when window size changed, only can occur when
-         `naws` flag is enable in server configuration."""
+        `naws` flag is enable in server configuration."""
 
         if self._window_size_changed_callback:
             await self._window_size_changed_callback(columns, rows)
@@ -114,14 +115,24 @@ class TelnetConnection(object):
 class AsyncioTelnetServer:
     MAX_NEGOTIATION_READ = 10
 
-    def __init__(self, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None):
+    def __init__(
+        self,
+        reader=None,
+        writer=None,
+        binary=True,
+        echo=False,
+        naws=False,
+        window_size_changed_callback=None,
+        connection_factory=None,
+    ):
         """
         Initializes telnet server
         :param naws when True make a window size negotiation
         :param connection_factory: when set it's possible to inject own implementation of connection
         """
-        assert connection_factory is None or (connection_factory is not None and reader is None and writer is None), \
-            "Please use either reader and writer either connection_factory, otherwise duplicate data may be produced."
+        assert connection_factory is None or (
+            connection_factory is not None and reader is None and writer is None
+        ), "Please use either reader and writer either connection_factory, otherwise duplicate data may be produced."
 
         self._reader = reader
         self._writer = writer
@@ -152,9 +163,7 @@ class AsyncioTelnetServer:
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
         else:
-            writer.write(bytes([
-                IAC, WONT, ECHO,
-                IAC, DONT, ECHO]))
+            writer.write(bytes([IAC, WONT, ECHO, IAC, DONT, ECHO]))
         await writer.drain()
 
     async def _write_intro(self, writer, binary=False, echo=False, naws=False):
@@ -162,26 +171,15 @@ class AsyncioTelnetServer:
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
         else:
-            writer.write(bytes([
-                IAC, WONT, ECHO,
-                IAC, DONT, ECHO]))
+            writer.write(bytes([IAC, WONT, ECHO, IAC, DONT, ECHO]))
 
         if binary:
-            writer.write(bytes([
-                IAC, WILL, SGA,
-                IAC, WILL, BINARY,
-                IAC, DO, BINARY]))
+            writer.write(bytes([IAC, WILL, SGA, IAC, WILL, BINARY, IAC, DO, BINARY]))
         else:
-            writer.write(bytes([
-                IAC, WONT, SGA,
-                IAC, DONT, SGA,
-                IAC, WONT, BINARY,
-                IAC, DONT, BINARY]))
+            writer.write(bytes([IAC, WONT, SGA, IAC, DONT, SGA, IAC, WONT, BINARY, IAC, DONT, BINARY]))
 
         if naws:
-            writer.write(bytes([
-                IAC, DO, NAWS
-            ]))
+            writer.write(bytes([IAC, DO, NAWS]))
         await writer.drain()
 
     async def run(self, network_reader, network_writer):
@@ -189,7 +187,7 @@ class AsyncioTelnetServer:
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        #log.debug("New connection from {}".format(sock.getpeername()))
+        # log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients
         connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
@@ -248,14 +246,10 @@ class AsyncioTelnetServer:
                         network_read,
                     ],
                     timeout=1,
-                    return_when=asyncio.FIRST_COMPLETED)
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
             else:
-                done, pending = await asyncio.wait(
-                    [
-                        network_read,
-                        reader_read
-                    ],
-                    return_when=asyncio.FIRST_COMPLETED)
+                done, pending = await asyncio.wait([network_read, reader_read], return_when=asyncio.FIRST_COMPLETED)
             for coro in done:
                 data = coro.result()
                 if coro == network_read:
@@ -310,10 +304,10 @@ class AsyncioTelnetServer:
         command, payload = data[0], data[1:]
         if command == NAWS:
             if len(payload) == 4:
-                columns, rows = struct.unpack(str('!HH'), bytes(payload))
+                columns, rows = struct.unpack("!HH", bytes(payload))
                 await connection.window_size_changed(columns, rows)
             else:
-                log.warning('Wrong number of NAWS bytes')
+                log.warning("Wrong number of NAWS bytes")
         else:
             log.debug("Not supported negotiation sequence, received {} bytes", len(data))
 
@@ -324,7 +318,6 @@ class AsyncioTelnetServer:
         :param buf: buffer
         :returns: buffer minus Telnet commands
         """
-
 
         skip_to = 0
         while True:
@@ -346,7 +339,7 @@ class AsyncioTelnetServer:
             if iac_cmd[1] not in [WILL, WONT, DO, DONT, SB]:
                 if iac_cmd[1] == AYT:
                     log.debug("Telnet server received Are-You-There (AYT)")
-                    network_writer.write(b'\r\nYour Are-You-There received. I am here.\r\n')
+                    network_writer.write(b"\r\nYour Are-You-There received. I am here.\r\n")
                 elif iac_cmd[1] == IAC:
                     # It's data, not an IAC
                     iac_cmd.pop()
@@ -357,8 +350,7 @@ class AsyncioTelnetServer:
                 elif iac_cmd[1] == NOP:
                     pass
                 else:
-                    log.debug("Unhandled telnet command: "
-                              "{0:#x} {1:#x}".format(*iac_cmd))
+                    log.debug("Unhandled telnet command: " "{:#x} {:#x}".format(*iac_cmd))
             elif iac_cmd[1] == SB:  # starts negotiation commands
                 negotiation = []
                 for pos in range(2, self.MAX_NEGOTIATION_READ):
@@ -383,48 +375,52 @@ class AsyncioTelnetServer:
                 if iac_cmd[1] == DO:
                     if iac_cmd[2] not in [ECHO, SGA, BINARY]:
                         network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                        log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                        log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
                     else:
                         if iac_cmd[2] == SGA:
                             if self._binary:
                                 network_writer.write(bytes([IAC, WILL, iac_cmd[2]]))
                             else:
                                 network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                                log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                                log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
 
                 elif iac_cmd[1] == DONT:
-                    log.debug("Unhandled DONT telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                    log.debug("Unhandled DONT telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WILL:
                     if iac_cmd[2] not in [BINARY, NAWS]:
-                        log.debug("Unhandled WILL telnet command: "
-                                  "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                        log.debug("Unhandled WILL telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WONT:
-                    log.debug("Unhandled WONT telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                    log.debug("Unhandled WONT telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 else:
-                    log.debug("Unhandled telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                    log.debug("Unhandled telnet command: " "{:#x} {:#x} {:#x}".format(*iac_cmd))
 
             # Remove the entire TELNET command from the buffer
-            buf = buf.replace(iac_cmd, b'', 1)
+            buf = buf.replace(iac_cmd, b"", 1)
 
             await network_writer.drain()
 
         # Return the new copy of the buffer, minus telnet commands
         return buf
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     loop = asyncio.get_event_loop()
 
-    process = loop.run_until_complete(asyncio.ensure_future(asyncio.subprocess.create_subprocess_exec("/bin/sh", "-i",
-                                                                                                      stdout=asyncio.subprocess.PIPE,
-                                                                                                      stderr=asyncio.subprocess.STDOUT,
-                                                                                                      stdin=asyncio.subprocess.PIPE)))
+    process = loop.run_until_complete(
+        asyncio.ensure_future(
+            asyncio.subprocess.create_subprocess_exec(
+                "/bin/sh",
+                "-i",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                stdin=asyncio.subprocess.PIPE,
+            )
+        )
+    )
     server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
 
-    coro = asyncio.start_server(server.run, '127.0.0.1', 4444, loop=loop)
+    coro = asyncio.start_server(server.run, "127.0.0.1", 4444, loop=loop)
     s = loop.run_until_complete(coro)
 
     try:

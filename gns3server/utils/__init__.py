@@ -60,10 +60,10 @@ def parse_version(version):
     """
 
     release_type_found = False
-    version_infos = re.split('(\.|[a-z]+)', version)
+    version_infos = re.split(r"(\.|[a-z]+)", version)
     version = []
     for info in version_infos:
-        if info == '.' or len(info) == 0:
+        if info == "." or len(info) == 0:
             continue
         try:
             info = int(info)
@@ -77,8 +77,8 @@ def parse_version(version):
             if len(version) == 2:
                 version.append("000000")
             # We want rc to be at lower level than dev version
-            if info == 'rc':
-                info = 'c'
+            if info == "rc":
+                info = "c"
             version.append(info)
             release_type_found = True
     if release_type_found is False:
@@ -97,6 +97,6 @@ def shlex_quote(s):
     """
 
     if sys.platform.startswith("win"):
-        return s if re.match(r'^[-_\w./]+$', s) else '"%s"' % s.replace('"', '\\"')
+        return s if re.match(r"^[-_\w./]+$", s) else '"%s"' % s.replace('"', '\\"')
     else:
         return shlex.quote(s)
