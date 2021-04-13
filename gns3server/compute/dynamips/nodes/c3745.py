@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -88,7 +87,7 @@ class C3745(Router):
         :param iomem: I/O memory size
         """
 
-        await self._hypervisor.send('c3745 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send(f'c3745 set_iomem "{self._name}" {iomem}')
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

@@ -58,7 +58,7 @@ class RemoteGNS3VM(BaseGNS3VM):
                 self.user = compute.user
                 self.password = compute.password
                 return
-        raise GNS3VMError("Can't start the GNS3 VM remote VM {} not found".format(self.vmname))
+        raise GNS3VMError(f"Can't start the GNS3 VM remote VM {self.vmname} not found")
 
     async def suspend(self):
         """

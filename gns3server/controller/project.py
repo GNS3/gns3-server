@@ -100,7 +100,7 @@ class Project:
         # Disallow overwrite of existing project
         if project_id is None and path is not None:
             if os.path.exists(path):
-                raise ControllerForbiddenError("The path {} already exists".format(path))
+                raise ControllerForbiddenError(f"The path {path} already exists")
             else:
                 raise ControllerForbiddenError("Providing a path to create a new project is deprecated.")
 
@@ -110,7 +110,7 @@ class Project:
             try:
                 UUID(project_id, version=4)
             except ValueError:
-                raise ControllerError("{} is not a valid UUID".format(project_id))
+                raise ControllerError(f"{project_id} is not a valid UUID")
             self._id = project_id
 
         if path is None:
@@ -130,7 +130,7 @@ class Project:
             self.dump()
 
         self._iou_id_lock = asyncio.Lock()
-        log.debug('Project "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+        log.debug(f'Project "{self.name}" [{self._id}] loaded')
 
     def emit_notification(self, action, event):
         """
@@ -161,7 +161,7 @@ class Project:
             # update on computes
             for compute in list(self._project_created_on_compute):
                 await compute.put(
-                    "/projects/{}".format(self._id), {
+                    f"/projects/{self._id}", {
                         "variables": self.variables
                     }
                 )
@@ -406,7 +406,7 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise ControllerError("Could not create project directory: {}".format(e))
+            raise ControllerError(f"Could not create project directory: {e}")
 
         if '"' in path:
             raise ControllerForbiddenError("You are not allowed to use \" in the project directory path. Not supported by Dynamips.")
@@ -473,7 +473,7 @@ class Project:
                 except KeyError as e:
                     raise ControllerError("{" + e.args[0] + "} is not a valid replacement string in the node name")
                 except (ValueError, IndexError) as e:
-                    raise ControllerError("{} is not a valid replacement string in the node name".format(base_name))
+                    raise ControllerError(f"{base_name} is not a valid replacement string in the node name")
                 if name not in self._allocated_node_names:
                     self._allocated_node_names.add(name)
                     return name
@@ -596,7 +596,7 @@ class Project:
     async def delete_node(self, node_id):
         node = self.get_node(node_id)
         if node.locked:
-            raise ControllerError("Node {} cannot be deleted because it is locked".format(node.name))
+            raise ControllerError(f"Node {node.name} cannot be deleted because it is locked")
         await self.__delete_node_links(node)
         self.remove_allocated_node_name(node.name)
         del self._nodes[node.id]
@@ -614,7 +614,7 @@ class Project:
         try:
             return self._nodes[node_id]
         except KeyError:
-            raise ControllerNotFoundError("Node ID {} doesn't exist".format(node_id))
+            raise ControllerNotFoundError(f"Node ID {node_id} doesn't exist")
 
     def _get_closed_data(self, section, id_key):
         """
@@ -627,10 +627,10 @@ class Project:
 
         try:
             path = self._topology_file()
-            with open(path, "r") as f:
+            with open(path) as f:
                 topology = json.load(f)
         except OSError as e:
-            raise ControllerError("Could not load topology: {}".format(e))
+            raise ControllerError(f"Could not load topology: {e}")
 
         try:
             data = {}
@@ -638,7 +638,7 @@ class Project:
                 data[elem[id_key]] = elem
             return data
         except KeyError:
-            raise ControllerNotFoundError("Section {} not found in the topology".format(section))
+            raise ControllerNotFoundError(f"Section {section} not found in the topology")
 
     @property
     def nodes(self):
@@ -683,13 +683,13 @@ class Project:
         try:
             return self._drawings[drawing_id]
         except KeyError:
-            raise ControllerNotFoundError("Drawing ID {} doesn't exist".format(drawing_id))
+            raise ControllerNotFoundError(f"Drawing ID {drawing_id} doesn't exist")
 
     @open_required
     async def delete_drawing(self, drawing_id):
         drawing = self.get_drawing(drawing_id)
         if drawing.locked:
-            raise ControllerError("Drawing ID {} cannot be deleted because it is locked".format(drawing_id))
+            raise ControllerError(f"Drawing ID {drawing_id} cannot be deleted because it is locked")
         del self._drawings[drawing.id]
         self.dump()
         self.emit_notification("drawing.deleted", drawing.__json__())
@@ -729,7 +729,7 @@ class Project:
         try:
             return self._links[link_id]
         except KeyError:
-            raise ControllerNotFoundError("Link ID {} doesn't exist".format(link_id))
+            raise ControllerNotFoundError(f"Link ID {link_id} doesn't exist")
 
     @property
     def links(self):
@@ -755,7 +755,7 @@ class Project:
         try:
             return self._snapshots[snapshot_id]
         except KeyError:
-            raise ControllerNotFoundError("Snapshot ID {} doesn't exist".format(snapshot_id))
+            raise ControllerNotFoundError(f"Snapshot ID {snapshot_id} doesn't exist")
 
     @open_required
     async def snapshot(self, name):
@@ -766,7 +766,7 @@ class Project:
         """
 
         if name in [snap.name for snap in self._snapshots.values()]:
-            raise ControllerError("The snapshot name {} already exists".format(name))
+            raise ControllerError(f"The snapshot name {name} already exists")
         snapshot = Snapshot(self, name=name)
         await snapshot.create()
         self._snapshots[snapshot.id] = snapshot
@@ -783,13 +783,13 @@ class Project:
         if self._status == "closed" or self._closing:
             return
         if self._loading:
-            log.warning("Closing project '{}' ignored because it is being loaded".format(self.name))
+            log.warning(f"Closing project '{self.name}' ignored because it is being loaded")
             return
         self._closing = True
         await self.stop_all()
         for compute in list(self._project_created_on_compute):
             try:
-                await compute.post("/projects/{}/close".format(self._id), dont_connect=True)
+                await compute.post(f"/projects/{self._id}/close", dont_connect=True)
             # We don't care if a compute is down at this step
             except (ComputeError, ControllerError, TimeoutError):
                 pass
@@ -828,10 +828,10 @@ class Project:
 
             for pic_filename in pictures:
                 path = os.path.join(self.pictures_directory, pic_filename)
-                log.info("Deleting unused picture '{}'".format(path))
+                log.info(f"Deleting unused picture '{path}'")
                 os.remove(path)
         except OSError as e:
-            log.warning("Could not delete unused pictures: {}".format(e))
+            log.warning(f"Could not delete unused pictures: {e}")
 
     async def delete(self):
 
@@ -840,16 +840,16 @@ class Project:
                 await self.open()
             except ControllerError as e:
                 # ignore missing images or other conflicts when deleting a project
-                log.warning("Conflict while deleting project: {}".format(e))
+                log.warning(f"Conflict while deleting project: {e}")
         await self.delete_on_computes()
         await self.close()
         try:
             project_directory = get_default_project_directory()
             if not os.path.commonprefix([project_directory, self.path]) == project_directory:
-                raise ControllerError("Project '{}' cannot be deleted because it is not in the default project directory: '{}'".format(self._name, project_directory))
+                raise ControllerError(f"Project '{self._name}' cannot be deleted because it is not in the default project directory: '{project_directory}'")
             shutil.rmtree(self.path)
         except OSError as e:
-            raise ControllerError("Cannot delete project directory {}: {}".format(self.path, str(e)))
+            raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
 
     async def delete_on_computes(self):
         """
@@ -857,7 +857,7 @@ class Project:
         """
         for compute in list(self._project_created_on_compute):
             if compute.id != "local":
-                await compute.delete("/projects/{}".format(self._id))
+                await compute.delete(f"/projects/{self._id}")
                 self._project_created_on_compute.remove(compute)
 
     @classmethod
@@ -873,7 +873,7 @@ class Project:
         try:
             os.makedirs(path, exist_ok=True)
         except OSError as e:
-            raise ControllerError("Could not create project directory: {}".format(e))
+            raise ControllerError(f"Could not create project directory: {e}")
         return path
 
     def _topology_file(self):
@@ -971,7 +971,7 @@ class Project:
         except Exception as e:
             for compute in list(self._project_created_on_compute):
                 try:
-                    await compute.post("/projects/{}/close".format(self._id))
+                    await compute.post(f"/projects/{self._id}/close")
                 # We don't care if a compute is down at this step
                 except ComputeError:
                     pass
@@ -1043,7 +1043,7 @@ class Project:
 
                     # export the project to a temporary location
                     project_path = os.path.join(tmpdir, "project.gns3p")
-                    log.info("Exporting project to '{}'".format(project_path))
+                    log.info(f"Exporting project to '{project_path}'")
                     async with aiofiles.open(project_path, 'wb') as f:
                         async for chunk in zstream:
                             await f.write(chunk)
@@ -1052,9 +1052,9 @@ class Project:
                     with open(project_path, "rb") as f:
                         project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
 
-            log.info("Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - begin))
+            log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, UnicodeEncodeError) as e:
-            raise ControllerError("Cannot duplicate project: {}".format(str(e)))
+            raise ControllerError(f"Cannot duplicate project: {str(e)}")
 
         if previous_status == "closed":
             await self.close()
@@ -1083,7 +1083,7 @@ class Project:
                 json.dump(topo, f, indent=4, sort_keys=True)
             shutil.move(path + ".tmp", path)
         except OSError as e:
-            raise ControllerError("Could not write topology: {}".format(e))
+            raise ControllerError(f"Could not write topology: {e}")
 
     @open_required
     async def start_all(self):
@@ -1209,4 +1209,4 @@ class Project:
         }
 
     def __repr__(self):
-        return "<gns3server.controller.Project {} {}>".format(self._name, self._id)
+        return f"<gns3server.controller.Project {self._name} {self._id}>"

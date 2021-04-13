@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -40,6 +39,6 @@ class BuiltinNodeFactory:
     def __new__(cls, name, node_id, project, manager, node_type, **kwargs):
 
         if node_type not in BUILTIN_NODES:
-            raise NodeError("Unknown node type: {}".format(node_type))
+            raise NodeError(f"Unknown node type: {node_type}")
 
         return BUILTIN_NODES[node_type](name, node_id, project, manager, **kwargs)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -62,7 +61,7 @@ class ColouredFormatter(logging.Formatter):
         if record.name.startswith("uvicorn"):
             message = message.replace(f"{record.name}:{record.lineno}", "uvicorn")
 
-        message = '{colour}{message}{reset}'.format(colour=colour, message=message, reset=self.RESET)
+        message = f'{colour}{message}{self.RESET}'
 
         return message
 

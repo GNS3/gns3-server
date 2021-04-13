@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -71,8 +70,8 @@ class ATMSwitch(Device):
             module_workdir = self.project.module_working_directory(self.manager.module_name.lower())
             self._hypervisor = await self.manager.start_new_hypervisor(working_dir=module_workdir)
 
-        await self._hypervisor.send('atmsw create "{}"'.format(self._name))
-        log.info('ATM switch "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        await self._hypervisor.send(f'atmsw create "{self._name}"')
+        log.info(f'ATM switch "{self._name}" [{self._id}] has been created')
         self._hypervisor.devices.append(self)
 
     async def set_name(self, new_name):
@@ -82,7 +81,7 @@ class ATMSwitch(Device):
         :param new_name: New name for this switch
         """
 
-        await self._hypervisor.send('atmsw rename "{name}" "{new_name}"'.format(name=self._name, new_name=new_name))
+        await self._hypervisor.send(f'atmsw rename "{self._name}" "{new_name}"')
         log.info('ATM switch "{name}" [{id}]: renamed to "{new_name}"'.format(name=self._name,
                                                                               id=self._id,
                                                                               new_name=new_name))
@@ -125,10 +124,10 @@ class ATMSwitch(Device):
 
         if self._hypervisor:
             try:
-                await self._hypervisor.send('atmsw delete "{}"'.format(self._name))
-                log.info('ATM switch "{name}" [{id}] has been deleted'.format(name=self._name, id=self._id))
+                await self._hypervisor.send(f'atmsw delete "{self._name}"')
+                log.info(f'ATM switch "{self._name}" [{self._id}] has been deleted')
             except DynamipsError:
-                log.debug("Could not properly delete ATM switch {}".format(self._name))
+                log.debug(f"Could not properly delete ATM switch {self._name}")
         if self._hypervisor and self in self._hypervisor.devices:
             self._hypervisor.devices.remove(self)
         if self._hypervisor and not self._hypervisor.devices:
@@ -162,7 +161,7 @@ class ATMSwitch(Device):
         """
 
         if port_number in self._nios:
-            raise DynamipsError("Port {} isn't free".format(port_number))
+            raise DynamipsError(f"Port {port_number} isn't free")
 
         log.info('ATM switch "{name}" [id={id}]: NIO {nio} bound to port {port}'.format(name=self._name,
                                                                                         id=self._id,
@@ -180,7 +179,7 @@ class ATMSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         await self.stop_capture(port_number)
         # remove VCs mapped with the port
@@ -235,12 +234,12 @@ class ATMSwitch(Device):
         """
 
         if port_number not in self._nios:
-            raise DynamipsError("Port {} is not allocated".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not allocated")
 
         nio = self._nios[port_number]
 
         if not nio:
-            raise DynamipsError("Port {} is not connected".format(port_number))
+            raise DynamipsError(f"Port {port_number} is not connected")
 
         return nio
 
@@ -451,7 +450,7 @@ class ATMSwitch(Device):
             data_link_type = data_link_type[4:]
 
         if nio.input_filter[0] is not None and nio.output_filter[0] is not None:
-            raise DynamipsError("Port {} has already a filter applied".format(port_number))
+            raise DynamipsError(f"Port {port_number} has already a filter applied")
 
         await nio.start_packet_capture(output_file, data_link_type)
         log.info('ATM switch "{name}" [{id}]: starting packet capture on port {port}'.format(name=self._name,

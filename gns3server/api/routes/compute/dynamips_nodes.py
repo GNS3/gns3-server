@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -226,7 +225,7 @@ async def start_capture(adapter_number: int,
         try:
             pcap_file_path.encode('ascii')
         except UnicodeEncodeError:
-            raise DynamipsError('The capture file path "{}" must only contain ASCII (English) characters'.format(pcap_file_path))
+            raise DynamipsError(f"The capture file path '{pcap_file_path}' must only contain ASCII (English) characters")
 
     await node.start_capture(adapter_number, port_number, pcap_file_path, node_capture_data.data_link_type)
     return {"pcap_file_path": pcap_file_path}

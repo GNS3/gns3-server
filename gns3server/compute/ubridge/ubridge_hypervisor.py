@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -78,9 +77,9 @@ class UBridgeHypervisor:
             break
 
         if not connection_success:
-            raise UbridgeError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
+            raise UbridgeError(f"Couldn't connect to hypervisor on {host}:{self._port} :{last_exception}")
         else:
-            log.info("Connected to uBridge hypervisor on {}:{} after {:.4f} seconds".format(host, self._port, time.time() - begin))
+            log.info(f"Connected to uBridge hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
 
         try:
             await asyncio.sleep(0.1)
@@ -123,7 +122,7 @@ class UBridgeHypervisor:
                 await self._writer.drain()
                 self._writer.close()
         except OSError as e:
-            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
+            log.debug(f"Stopping hypervisor {self._host}:{self._port} {e}")
         self._reader = self._writer = None
 
     async def reset(self):
@@ -201,7 +200,7 @@ class UBridgeHypervisor:
 
         try:
             command = command.strip() + '\n'
-            log.debug("sending {}".format(command))
+            log.debug(f"sending {command}")
             self._writer.write(command.encode())
             await self._writer.drain()
         except OSError as e:
@@ -225,7 +224,7 @@ class UBridgeHypervisor:
                     # Sometimes WinError 64 (ERROR_NETNAME_DELETED) is returned here on Windows.
                     # These happen if connection reset is received before IOCP could complete
                     # a previous operation. Ignore and try again....
-                    log.warning("Connection reset received while reading uBridge response: {}".format(e))
+                    log.warning(f"Connection reset received while reading uBridge response: {e}")
                     continue
                 if not chunk:
                     if retries > max_retries:
@@ -270,5 +269,5 @@ class UBridgeHypervisor:
             if self.success_re.search(data[index]):
                 data[index] = data[index][4:]
 
-        log.debug("returned result {}".format(data))
+        log.debug(f"returned result {data}")
         return data

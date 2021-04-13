@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # To use python v2.7 change the first line to:
 #!/usr/bin/env python
@@ -211,14 +210,14 @@ if __name__ == '__main__':
         fd = open(args.nvram, 'rb')
         nvram = fd.read()
         fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error reading file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error reading file: {err}\n")
         sys.exit(1)
 
     try:
         startup, private = nvram_export(nvram)
     except ValueError as err:
-        sys.stderr.write("nvram_export: {}\n".format(err))
+        sys.stderr.write(f"nvram_export: {err}\n")
         sys.exit(3)
 
     try:
@@ -232,6 +231,6 @@ if __name__ == '__main__':
                 fd = open(args.private, 'wb')
                 fd.write(private)
                 fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error writing file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error writing file: {err}\n")
         sys.exit(1)

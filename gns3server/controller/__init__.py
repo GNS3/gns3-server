@@ -89,7 +89,7 @@ class Controller:
 
         protocol = server_config.protocol
         if self._ssl_context and protocol != "https":
-            log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
+            log.warning(f"Protocol changed to 'https' for local compute because SSL is enabled")
             protocol = "https"
         try:
             self._local_server = await self.add_compute(compute_id="local",
@@ -104,7 +104,7 @@ class Controller:
                                                         connect=True,
                                                         ssl_context=self._ssl_context)
         except ControllerError:
-            log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
+            log.fatal(f"Cannot access to the local server, make sure something else is not running on the TCP port {port}")
             sys.exit(1)
 
         if computes:
@@ -134,7 +134,7 @@ class Controller:
             log.critical("Could not find the SSL certfile or certkey")
             raise SystemExit
         except ssl.SSLError as e:
-            log.critical("SSL error: {}".format(e))
+            log.critical(f"SSL error: {e}")
             raise SystemExit
         return ssl_context
 
@@ -251,7 +251,7 @@ class Controller:
 
         if os.path.exists(iourc_path):
             try:
-                with open(iourc_path, 'r') as f:
+                with open(iourc_path) as f:
                     self._iou_license_settings["iourc_content"] = f.read()
                 log.info(f"iourc file '{iourc_path}' loaded")
             except OSError as e:
@@ -342,7 +342,7 @@ class Controller:
 
             for compute in self._computes.values():
                 if name and compute.name == name and not force:
-                    raise ControllerError('Compute name "{}" already exists'.format(name))
+                    raise ControllerError(f'Compute name "{name}" already exists')
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
@@ -421,7 +421,7 @@ class Controller:
         except KeyError:
             if compute_id == "vm":
                 raise ControllerNotFoundError("Cannot use a node on the GNS3 VM server with the GNS3 VM not configured")
-            raise ControllerNotFoundError("Compute ID {} doesn't exist".format(compute_id))
+            raise ControllerNotFoundError(f"Compute ID {compute_id} doesn't exist")
 
     def has_compute(self, compute_id):
         """
@@ -443,9 +443,9 @@ class Controller:
             for project in self._projects.values():
                 if name and project.name == name:
                     if path and path == project.path:
-                        raise ControllerError('Project "{}" already exists in location "{}"'.format(name, path))
+                        raise ControllerError(f'Project "{name}" already exists in location "{path}"')
                     else:
-                        raise ControllerError('Project "{}" already exists'.format(name))
+                        raise ControllerError(f'Project "{name}" already exists')
             project = Project(project_id=project_id, controller=self, name=name, path=path, **kwargs)
             self._projects[project.id] = project
             return self._projects[project.id]
@@ -459,7 +459,7 @@ class Controller:
         try:
             return self._projects[project_id]
         except KeyError:
-            raise ControllerNotFoundError("Project ID {} doesn't exist".format(project_id))
+            raise ControllerNotFoundError(f"Project ID {project_id} doesn't exist")
 
     async def get_loaded_project(self, project_id):
         """
@@ -521,7 +521,7 @@ class Controller:
         projects_path = self.projects_directory()
 
         while True:
-            new_name = "{}-{}".format(base_name, i)
+            new_name = f"{base_name}-{i}"
             if new_name not in names and not os.path.exists(os.path.join(projects_path, new_name)):
                 break
             i += 1

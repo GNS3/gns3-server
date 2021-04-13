@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -180,7 +179,7 @@ async def load_project(path: str = Body(..., embed=True)):
     controller = Controller.instance()
     dot_gns3_file = path
     if Config.instance().settings.Server.local is False:
-        log.error("Cannot load '{}' because the server has not been started with the '--local' parameter".format(dot_gns3_file))
+        log.error(f"Cannot load '{dot_gns3_file}' because the server has not been started with the '--local' parameter")
         raise ControllerForbiddenError("Cannot load project when server is not local")
     project = await controller.load_project(dot_gns3_file,)
     return project.__json__()
@@ -195,7 +194,7 @@ async def notification(project_id: UUID):
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
 
-    log.info("New client has connected to the notification stream for project ID '{}' (HTTP steam method)".format(project.id))
+    log.info(f"New client has connected to the notification stream for project ID '{project.id}' (HTTP steam method)")
 
     async def event_stream():
 
@@ -203,15 +202,15 @@ async def notification(project_id: UUID):
             with controller.notification.project_queue(project.id) as queue:
                 while True:
                     msg = await queue.get_json(5)
-                    yield ("{}\n".format(msg)).encode("utf-8")
+                    yield (f"{msg}\n").encode("utf-8")
         finally:
-            log.info("Client has disconnected from notification for project ID '{}' (HTTP stream method)".format(project.id))
+            log.info(f"Client has disconnected from notification for project ID '{project.id}' (HTTP stream method)")
             if project.auto_close:
                 # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
                 # if someone else is not connected
                 await asyncio.sleep(5)
                 if not controller.notification.project_has_listeners(project.id):
-                    log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                    log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                     await project.close()
 
     return StreamingResponse(event_stream(), media_type="application/json")
@@ -227,16 +226,16 @@ async def notification_ws(project_id: UUID, websocket: WebSocket):
     project = controller.get_project(str(project_id))
     await websocket.accept()
 
-    log.info("New client has connected to the notification stream for project ID '{}' (WebSocket method)".format(project.id))
+    log.info(f"New client has connected to the notification stream for project ID '{project.id}' (WebSocket method)")
     try:
         with controller.notification.project_queue(project.id) as queue:
             while True:
                 notification = await queue.get_json(5)
                 await websocket.send_text(notification)
     except (ConnectionClosed, WebSocketDisconnect):
-        log.info("Client has disconnected from notification stream for project ID '{}' (WebSocket method)".format(project.id))
+        log.info(f"Client has disconnected from notification stream for project ID '{project.id}' (WebSocket method)")
     except WebSocketException as e:
-        log.warning("Error while sending to project event to WebSocket client: '{}'".format(e))
+        log.warning(f"Error while sending to project event to WebSocket client: {e}")
     finally:
         await websocket.close()
         if project.auto_close:
@@ -244,7 +243,7 @@ async def notification_ws(project_id: UUID, websocket: WebSocket):
             # if someone else is not connected
             await asyncio.sleep(5)
             if not controller.notification.project_has_listeners(project.id):
-                log.info("Project '{}' is automatically closing due to no client listening".format(project.id))
+                log.info(f"Project '{project.id}' is automatically closing due to no client listening")
                 await project.close()
 
 
@@ -285,14 +284,14 @@ async def export_project(project: Project = Depends(dep_project),
                     async for chunk in zstream:
                         yield chunk
 
-            log.info("Project '{}' exported in {:.4f} seconds".format(project.name, time.time() - begin))
+            log.info(f"Project '{project.name}' exported in {time.time() - begin:.4f} seconds")
 
     # Will be raise if you have no space left or permission issue on your temporary directory
     # RuntimeError: something was wrong during the zip process
     except (ValueError, OSError, RuntimeError) as e:
-        raise ConnectionError("Cannot export project: {}".format(e))
+        raise ConnectionError(f"Cannot export project: {e}")
 
-    headers = {"CONTENT-DISPOSITION": 'attachment; filename="{}.gns3project"'.format(project.name)}
+    headers = {"CONTENT-DISPOSITION": f'attachment; filename="{project.name}.gns3project"'}
     return StreamingResponse(streamer(), media_type="application/gns3project", headers=headers)
 
 
@@ -325,9 +324,9 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
             with open(temp_project_path, "rb") as f:
                 project = await import_controller_project(controller, str(project_id), f, location=path, name=name)
 
-        log.info("Project '{}' imported in {:.4f} seconds".format(project.name, time.time() - begin))
+        log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
-        raise ControllerError("Could not import the project: {}".format(e))
+        raise ControllerError(f"Could not import the project: {e}")
     return project.__json__()
 
 

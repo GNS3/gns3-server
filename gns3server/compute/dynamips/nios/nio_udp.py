@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -44,7 +43,7 @@ class NIOUDP(NIO):
     def __init__(self, node, lport, rhost, rport):
 
         # create an unique name
-        name = 'udp-{}'.format(uuid.uuid4())
+        name = f'udp-{uuid.uuid4()}'
         self._lport = lport
         self._rhost = rhost
         self._rport = rport
@@ -65,7 +64,7 @@ class NIOUDP(NIO):
             return
         self._local_tunnel_lport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
         self._local_tunnel_rport = self._node.manager.port_manager.get_free_udp_port(self._node.project)
-        self._bridge_name = 'DYNAMIPS-{}-{}'.format(self._local_tunnel_lport, self._local_tunnel_rport)
+        self._bridge_name = f'DYNAMIPS-{self._local_tunnel_lport}-{self._local_tunnel_rport}'
         await self._hypervisor.send("nio create_udp {name} {lport} {rhost} {rport}".format(name=self._name,
                                                                                                 lport=self._local_tunnel_lport,
                                                                                                 rhost='127.0.0.1',

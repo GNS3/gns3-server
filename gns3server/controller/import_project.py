@@ -257,9 +257,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                     with zipfile.ZipFile(f) as zip_file:
                         await wait_run_in_executor(zip_file.extractall, tmpdir)
             except OSError as e:
-                raise ControllerError("Cannot open snapshot '{}': {}".format(os.path.basename(snapshot), e))
+                raise ControllerError(f"Cannot open snapshot '{os.path.basename(snapshot)}': {e}")
             except zipfile.BadZipFile:
-                raise ControllerError("Cannot extract files from snapshot '{}': not a GNS3 project (invalid zip)".format(os.path.basename(snapshot)))
+                raise ControllerError(f"Cannot extract files from snapshot '{os.path.basename(snapshot)}': not a GNS3 project (invalid zip)")
 
             # patch the topology with the correct project name and ID
             try:
@@ -272,9 +272,9 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                 with open(topology_file_path, "w+", encoding="utf-8") as f:
                     json.dump(topology, f, indent=4, sort_keys=True)
             except OSError as e:
-                raise ControllerError("Cannot update snapshot '{}': the project.gns3 file cannot be modified: {}".format(os.path.basename(snapshot), e))
+                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file cannot be modified: {e}")
             except (ValueError, KeyError):
-                raise ControllerError("Cannot update snapshot '{}': the project.gns3 file is corrupted".format(os.path.basename(snapshot)))
+                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the project.gns3 file is corrupted")
 
             # write everything back to the original snapshot file
             try:
@@ -287,4 +287,4 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
                         async for chunk in zstream:
                             await f.write(chunk)
             except OSError as e:
-                raise ControllerError("Cannot update snapshot '{}': the snapshot cannot be recreated: {}".format(os.path.basename(snapshot), e))
+                raise ControllerError(f"Cannot update snapshot '{os.path.basename(snapshot)}': the snapshot cannot be recreated: {e}")

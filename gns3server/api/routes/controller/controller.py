@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -61,7 +60,7 @@ async def shutdown():
             try:
                 future.result()
             except Exception as e:
-                log.error("Could not close project {}".format(e), exc_info=1)
+                log.error(f"Could not close project: {e}", exc_info=1)
                 continue
 
     # then shutdown the server itself
@@ -94,7 +93,7 @@ def check_version(version: schemas.Version):
 
     print(version.version)
     if version.version != __version__:
-        raise ControllerError("Client version {} is not the same as server version {}".format(version.version, __version__))
+        raise ControllerError(f"Client version {version.version} is not the same as server version {__version__}")
     return {"version": __version__}
 
 
@@ -135,7 +134,7 @@ async def statistics():
             r = await compute.get("/statistics")
             compute_statistics.append({"compute_id": compute.id, "compute_name": compute.name, "statistics": r.json})
         except ControllerError as e:
-            log.error("Could not retrieve statistics on compute {}: {}".format(compute.name, e))
+            log.error(f"Could not retrieve statistics on compute {compute.name}: {e}")
     return compute_statistics
 
 # @Route.post(

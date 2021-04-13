@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -24,10 +23,10 @@ log = logging.getLogger(__name__)
 
 
 # These ports are disallowed by Chrome and Firefox to avoid issues, we skip them as well
-BANNED_PORTS = set((1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 77, 79, 87, 95, 101, 102, 103,
+BANNED_PORTS = {1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 77, 79, 87, 95, 101, 102, 103,
                     104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 139, 143, 179, 389, 465, 512, 513, 514, 515, 526,
                     530, 531, 532, 540, 556, 563, 587, 601, 636, 993, 995, 2049, 3659, 4045, 6000, 6665, 6666, 6667,
-                    6668, 6669))
+                    6668, 6669}
 
 
 class PortManager:
@@ -303,7 +302,7 @@ class PortManager:
                                        f"{self._udp_port_range[0]}-{self._udp_port_range[1]}")
         self._used_udp_ports.add(port)
         project.record_udp_port(port)
-        log.debug("UDP port {} has been reserved".format(port))
+        log.debug(f"UDP port {port} has been reserved")
 
     def release_udp_port(self, port, project):
         """

@@ -58,7 +58,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
     project.dump()
 
     if not os.path.exists(project._path):
-        raise ControllerNotFoundError("Project could not be found at '{}'".format(project._path))
+        raise ControllerNotFoundError(f"Project could not be found at '{project._path}'")
 
     # First we process the .gns3 in order to be sure we don't have an error
     for file in os.listdir(project._path):
@@ -75,7 +75,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                 try:
                     open(path).close()
                 except OSError as e:
-                    msg = "Could not export file {}: {}".format(path, e)
+                    msg = f"Could not export file {path}: {e}"
                     log.warning(msg)
                     project.emit_notification("log.warning", {"message": msg})
                     continue
@@ -85,7 +85,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                 _patch_mtime(path)
                 zstream.write(path, os.path.relpath(path, project._path))
         except FileNotFoundError as e:
-            log.warning("Cannot export local file: {}".format(e))
+            log.warning(f"Cannot export local file: {e}")
             continue
 
     # Export files from remote computes
@@ -97,7 +97,7 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                     log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
                     if response.status != 200:
-                        log.warning("Cannot export file from compute '{}'. Compute returned status code {}.".format(compute.id, response.status))
+                        log.warning(f"Cannot export file from compute '{compute.id}'. Compute returned status code {response.status}.")
                         continue
                     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
                     async with aiofiles.open(fd, 'wb') as f:
@@ -181,7 +181,7 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
         with open(path) as f:
             topology = json.load(f)
     except (OSError, ValueError) as e:
-        raise ControllerError("Project file '{}' cannot be read: {}".format(path, e))
+        raise ControllerError(f"Project file '{path}' cannot be read: {e}")
 
     if "topology" in topology:
         if "nodes" in topology["topology"]:
@@ -224,14 +224,14 @@ async def _patch_project_file(project, path, zstream, include_images, keep_compu
         if not keep_compute_id:
             topology["topology"]["computes"] = []  # Strip compute information because could contain secret info like password
 
-    local_images = set([i['image'] for i in images if i['compute_id'] == 'local'])
+    local_images = {i['image'] for i in images if i['compute_id'] == 'local'}
 
     for image in local_images:
         _export_local_image(image, zstream)
 
-    remote_images = set([
+    remote_images = {
         (i['compute_id'], i['image_type'], i['image'])
-        for i in images if i['compute_id'] != 'local'])
+        for i in images if i['compute_id'] != 'local'}
 
     for compute_id, image_type, image in remote_images:
         await _export_remote_images(project, compute_id, image_type, image, zstream, temporary_dir)
@@ -274,15 +274,15 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
     Export specific image from remote compute.
     """
 
-    log.debug("Downloading image '{}' from compute '{}'".format(image, compute_id))
+    log.debug(f"Downloading image '{image}' from compute '{compute_id}'")
     try:
         compute = [compute for compute in project.computes if compute.id == compute_id][0]
     except IndexError:
-        raise ControllerNotFoundError("Cannot export image from '{}' compute. Compute doesn't exist.".format(compute_id))
+        raise ControllerNotFoundError(f"Cannot export image from '{compute_id}' compute. Compute doesn't exist.")
 
     response = await compute.download_image(image_type, image)
     if response.status != 200:
-        raise ControllerError("Cannot export image from compute '{}'. Compute returned status code {}.".format(compute_id, response.status))
+        raise ControllerError(f"Cannot export image from compute '{compute_id}'. Compute returned status code {response.status}.")
 
     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
     async with aiofiles.open(fd, 'wb') as f:
@@ -290,7 +290,7 @@ async def _export_remote_images(project, compute_id, image_type, image, project_
             try:
                 data = await response.content.read(CHUNK_SIZE)
             except asyncio.TimeoutError:
-                raise ControllerTimeoutError("Timeout when downloading image '{}' from remote compute {}:{}".format(image, compute.host, compute.port))
+                raise ControllerTimeoutError(f"Timeout when downloading image '{image}' from remote compute {compute.host}:{compute.port}")
             if not data:
                 break
             await f.write(data)

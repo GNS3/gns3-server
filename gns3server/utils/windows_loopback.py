@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -37,11 +36,11 @@ def parse_add_loopback():
 
         def __call__(self, parser, args, values, option_string=None):
             try:
-                ipaddress.IPv4Interface("{}/{}".format(values[1], values[2]))
+                ipaddress.IPv4Interface(f"{values[1]}/{values[2]}")
             except ipaddress.AddressValueError as e:
-                raise argparse.ArgumentTypeError("Invalid IP address: {}".format(e))
+                raise argparse.ArgumentTypeError(f"Invalid IP address: {e}")
             except ipaddress.NetmaskValueError as e:
-                raise argparse.ArgumentTypeError("Invalid subnet mask: {}".format(e))
+                raise argparse.ArgumentTypeError(f"Invalid subnet mask: {e}")
             setattr(args, self.dest, values)
     return Add
 
@@ -52,7 +51,7 @@ def add_loopback(devcon_path, name, ip_address, netmask):
     previous_adapters = wmi.WMI().Win32_NetworkAdapter()
     for adapter in previous_adapters:
         if "Loopback" in adapter.Description and adapter.NetConnectionID == name:
-            raise SystemExit('Windows loopback adapter named "{}" already exists'.format(name))
+            raise SystemExit(f'Windows loopback adapter named "{name}" already exists')
 
     # install a new Windows loopback adapter
     os.system('"{}" install {}\\inf\\netloop.inf *MSLOOP'.format(devcon_path, os.path.expandvars("%WINDIR%")))
@@ -60,11 +59,11 @@ def add_loopback(devcon_path, name, ip_address, netmask):
     # configure the new Windows loopback adapter
     for adapter in wmi.WMI().Win32_NetworkAdapter():
         if "Loopback" in adapter.Description and adapter not in previous_adapters:
-            print('Renaming loopback adapter "{}" to "{}"'.format(adapter.NetConnectionID, name))
+            print(f'Renaming loopback adapter "{adapter.NetConnectionID}" to "{name}"')
             adapter.NetConnectionID = name
             for network_config in wmi.WMI().Win32_NetworkAdapterConfiguration(IPEnabled=True):
                 if network_config.InterfaceIndex == adapter.InterfaceIndex:
-                    print('Configuring loopback adapter "{}" with {} {}'.format(name, ip_address, netmask))
+                    print(f'Configuring loopback adapter "{name}" with {ip_address} {netmask}')
                     retcode = network_config.EnableStatic(IPAddress=[ip_address], SubnetMask=[netmask])[0]
                     if retcode == 1:
                         print("A reboot is required")
@@ -88,12 +87,12 @@ def remove_loopback(devcon_path, name):
     for adapter in wmi.WMI().Win32_NetworkAdapter():
         if "Loopback" in adapter.Description and adapter.NetConnectionID == name:
             # remove a Windows loopback adapter
-            print('Removing loopback adapter "{}"'.format(name))
-            os.system('"{}" remove @{}'.format(devcon_path, adapter.PNPDeviceID))
+            print(f'Removing loopback adapter "{name}"')
+            os.system(f'"{devcon_path}" remove @{adapter.PNPDeviceID}')
             deleted = True
 
     if not deleted:
-        raise SystemExit('Could not find adapter "{}"'.format(name))
+        raise SystemExit(f'Could not find adapter "{name}"')
 
     # update winpcap/npcap services
     os.system("net stop npf")

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -99,7 +98,7 @@ class IOUVM(BaseNode):
         """
         Called when the NVRAM file has changed
         """
-        log.debug("NVRAM changed: {}".format(path))
+        log.debug(f"NVRAM changed: {path}")
         self.save_configs()
         self.updated()
 
@@ -139,7 +138,7 @@ class IOUVM(BaseNode):
         """
 
         self._path = self.manager.get_abs_image_path(path, self.project.path)
-        log.info('IOU "{name}" [{id}]: IOU image updated to "{path}"'.format(name=self._name, id=self._id, path=self._path))
+        log.info(f'IOU "{self._name}" [{self._id}]: IOU image updated to "{self._path}"')
 
     @property
     def use_default_iou_values(self):
@@ -161,9 +160,9 @@ class IOUVM(BaseNode):
 
         self._use_default_iou_values = state
         if state:
-            log.info('IOU "{name}" [{id}]: uses the default IOU image values'.format(name=self._name, id=self._id))
+            log.info(f'IOU "{self._name}" [{self._id}]: uses the default IOU image values')
         else:
-            log.info('IOU "{name}" [{id}]: does not use the default IOU image values'.format(name=self._name, id=self._id))
+            log.info(f'IOU "{self._name}" [{self._id}]: does not use the default IOU image values')
 
     async def update_default_iou_values(self):
         """
@@ -179,7 +178,7 @@ class IOUVM(BaseNode):
             if match:
                 self.ram = int(match.group(1))
         except (ValueError, OSError, subprocess.SubprocessError) as e:
-            log.warning("could not find default RAM and NVRAM values for {}: {}".format(os.path.basename(self._path), e))
+            log.warning(f"could not find default RAM and NVRAM values for {os.path.basename(self._path)}: {e}")
 
     async def create(self):
 
@@ -194,24 +193,24 @@ class IOUVM(BaseNode):
             raise IOUError("IOU image is not configured")
         if not os.path.isfile(self._path) or not os.path.exists(self._path):
             if os.path.islink(self._path):
-                raise IOUError("IOU image '{}' linked to '{}' is not accessible".format(self._path, os.path.realpath(self._path)))
+                raise IOUError(f"IOU image '{self._path}' linked to '{os.path.realpath(self._path)}' is not accessible")
             else:
-                raise IOUError("IOU image '{}' is not accessible".format(self._path))
+                raise IOUError(f"IOU image '{self._path}' is not accessible")
 
         try:
             with open(self._path, "rb") as f:
                 # read the first 7 bytes of the file.
                 elf_header_start = f.read(7)
         except OSError as e:
-            raise IOUError("Cannot read ELF header for IOU image '{}': {}".format(self._path, e))
+            raise IOUError(f"Cannot read ELF header for IOU image '{self._path}': {e}")
 
         # IOU images must start with the ELF magic number, be 32-bit or 64-bit, little endian
         # and have an ELF version of 1 normal IOS image are big endian!
         if elf_header_start != b'\x7fELF\x01\x01\x01' and elf_header_start != b'\x7fELF\x02\x01\x01':
-            raise IOUError("'{}' is not a valid IOU image".format(self._path))
+            raise IOUError(f"'{self._path}' is not a valid IOU image")
 
         if not os.access(self._path, os.X_OK):
-            raise IOUError("IOU image '{}' is not executable".format(self._path))
+            raise IOUError(f"IOU image '{self._path}' is not executable")
 
     def __json__(self):
 
@@ -351,14 +350,14 @@ class IOUVM(BaseNode):
                 with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
-                raise IOUError("Could not write the iourc file {}: {}".format(path, e))
+                raise IOUError(f"Could not write the iourc file {path}: {e}")
 
             path = os.path.join(self.temporary_directory, "iourc")
             try:
                 with open(path, "wb") as f:
                     f.write(value.encode("utf-8"))
             except OSError as e:
-                raise IOUError("Could not write the iourc file {}: {}".format(path, e))
+                raise IOUError(f"Could not write the iourc file {path}: {e}")
 
     @property
     def license_check(self):
@@ -378,7 +377,7 @@ class IOUVM(BaseNode):
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output("ldd", self._path)
         except (OSError, subprocess.SubprocessError) as e:
-            log.warning("Could not determine the shared library dependencies for {}: {}".format(self._path, e))
+            log.warning(f"Could not determine the shared library dependencies for {self._path}: {e}")
             return
 
         p = re.compile(r"([\.\w]+)\s=>\s+not found")
@@ -408,27 +407,27 @@ class IOUVM(BaseNode):
 
         config = configparser.ConfigParser()
         try:
-            log.info("Checking IOU license in '{}'".format(self.iourc_path))
+            log.info(f"Checking IOU license in '{self.iourc_path}'")
             with open(self.iourc_path, encoding="utf-8") as f:
                 config.read_file(f)
         except OSError as e:
-            raise IOUError("Could not open iourc file {}: {}".format(self.iourc_path, e))
+            raise IOUError(f"Could not open iourc file {self.iourc_path}: {e}")
         except configparser.Error as e:
-            raise IOUError("Could not parse iourc file {}: {}".format(self.iourc_path, e))
+            raise IOUError(f"Could not parse iourc file {self.iourc_path}: {e}")
         except UnicodeDecodeError as e:
-            raise IOUError("Non ascii characters in iourc file {}, please remove them: {}".format(self.iourc_path, e))
+            raise IOUError(f"Non ascii characters in iourc file {self.iourc_path}, please remove them: {e}")
         if "license" not in config:
-            raise IOUError("License section not found in iourc file {}".format(self.iourc_path))
+            raise IOUError(f"License section not found in iourc file {self.iourc_path}")
         hostname = socket.gethostname()
         if len(hostname) > 15:
-            log.warning("Older IOU images may not boot because hostname '{}' length is above 15 characters".format(hostname))
+            log.warning(f"Older IOU images may not boot because hostname '{hostname}' length is above 15 characters")
         if hostname not in config["license"]:
-            raise IOUError("Hostname \"{}\" not found in iourc file {}".format(hostname, self.iourc_path))
+            raise IOUError(f"Hostname \"{hostname}\" not found in iourc file {self.iourc_path}")
         user_ioukey = config["license"][hostname]
         if user_ioukey[-1:] != ';':
-            raise IOUError("IOU key not ending with ; in iourc file {}".format(self.iourc_path))
+            raise IOUError(f"IOU key not ending with ; in iourc file {self.iourc_path}")
         if len(user_ioukey) != 17:
-            raise IOUError("IOU key length is not 16 characters in iourc file {}".format(self.iourc_path))
+            raise IOUError(f"IOU key length is not 16 characters in iourc file {self.iourc_path}")
         user_ioukey = user_ioukey[:16]
 
         # We can't test this because it's mean distributing a valid licence key
@@ -437,14 +436,14 @@ class IOUVM(BaseNode):
             try:
                 hostid = (await gns3server.utils.asyncio.subprocess_check_output("hostid")).strip()
             except FileNotFoundError as e:
-                raise IOUError("Could not find hostid: {}".format(e))
+                raise IOUError(f"Could not find hostid: {e}")
             except (OSError, subprocess.SubprocessError) as e:
-                raise IOUError("Could not execute hostid: {}".format(e))
+                raise IOUError(f"Could not execute hostid: {e}")
 
             try:
                 ioukey = int(hostid, 16)
             except ValueError:
-                raise IOUError("Invalid hostid detected: {}".format(hostid))
+                raise IOUError(f"Invalid hostid detected: {hostid}")
             for x in hostname:
                 ioukey += ord(x)
             pad1 = b'\x4B\x58\x21\x81\x56\x7B\x0D\xF3\x21\x43\x9B\x7E\xAC\x1D\xE6\x8A'
@@ -459,7 +458,7 @@ class IOUVM(BaseNode):
         """
         Path to the nvram file
         """
-        return os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+        return os.path.join(self.working_dir, f"nvram_{self.application_id:05d}")
 
     def _push_configs_to_nvram(self):
         """
@@ -477,7 +476,7 @@ class IOUVM(BaseNode):
                     with open(nvram_file, "rb") as file:
                         nvram_content = file.read()
             except OSError as e:
-                raise IOUError("Cannot read nvram file {}: {}".format(nvram_file, e))
+                raise IOUError(f"Cannot read nvram file {nvram_file}: {e}")
 
             startup_config_content = startup_config_content.encode("utf-8")
             private_config_content = self.private_config_content
@@ -486,12 +485,12 @@ class IOUVM(BaseNode):
             try:
                 nvram_content = nvram_import(nvram_content, startup_config_content, private_config_content, self.nvram)
             except ValueError as e:
-                raise IOUError("Cannot push configs to nvram {}: {}".format(nvram_file, e))
+                raise IOUError(f"Cannot push configs to nvram {nvram_file}: {e}")
             try:
                 with open(nvram_file, "wb") as file:
                     file.write(nvram_content)
             except OSError as e:
-                raise IOUError("Cannot write nvram file {}: {}".format(nvram_file, e))
+                raise IOUError(f"Cannot write nvram file {nvram_file}: {e}")
 
     async def start(self):
         """
@@ -506,13 +505,13 @@ class IOUVM(BaseNode):
             try:
                 self._rename_nvram_file()
             except OSError as e:
-                raise IOUError("Could not rename nvram files: {}".format(e))
+                raise IOUError(f"Could not rename nvram files: {e}")
 
             iourc_path = self.iourc_path
             if not iourc_path:
                 raise IOUError("Could not find an iourc file (IOU license), please configure an IOU license")
             if not os.path.isfile(iourc_path):
-                raise IOUError("The iourc path '{}' is not a regular file".format(iourc_path))
+                raise IOUError(f"The iourc path '{iourc_path}' is not a regular file")
 
             await self._check_iou_licence()
             await self._start_ubridge()
@@ -541,11 +540,11 @@ class IOUVM(BaseNode):
                     os.unlink(symlink)
                 os.symlink(self.path, symlink)
             except OSError as e:
-                raise IOUError("Could not create symbolic link: {}".format(e))
+                raise IOUError(f"Could not create symbolic link: {e}")
 
             command = await self._build_command()
             try:
-                log.info("Starting IOU: {}".format(command))
+                log.info(f"Starting IOU: {command}")
                 self.command_line = ' '.join(command)
                 self._iou_process = await asyncio.create_subprocess_exec(
                     *command,
@@ -554,17 +553,17 @@ class IOUVM(BaseNode):
                     stderr=subprocess.STDOUT,
                     cwd=self.working_dir,
                     env=env)
-                log.info("IOU instance {} started PID={}".format(self._id, self._iou_process.pid))
+                log.info(f"IOU instance {self._id} started PID={self._iou_process.pid}")
                 self._started = True
                 self.status = "started"
                 callback = functools.partial(self._termination_callback, "IOU")
                 gns3server.utils.asyncio.monitor_process(self._iou_process, callback)
             except FileNotFoundError as e:
-                raise IOUError("Could not start IOU: {}: 32-bit binary support is probably not installed".format(e))
+                raise IOUError(f"Could not start IOU: {e}: 32-bit binary support is probably not installed")
             except (OSError, subprocess.SubprocessError) as e:
                 iou_stdout = self.read_iou_stdout()
-                log.error("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
-                raise IOUError("Could not start IOU {}: {}\n{}".format(self._path, e, iou_stdout))
+                log.error(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
+                raise IOUError(f"Could not start IOU {self._path}: {e}\n{iou_stdout}")
 
             await self.start_console()
 
@@ -605,13 +604,13 @@ class IOUVM(BaseNode):
         Configures the IOL bridge in uBridge.
         """
 
-        bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+        bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
         try:
             # delete any previous bridge if it exists
-            await self._ubridge_send("iol_bridge delete {name}".format(name=bridge_name))
+            await self._ubridge_send(f"iol_bridge delete {bridge_name}")
         except UbridgeError:
             pass
-        await self._ubridge_send("iol_bridge create {name} {bridge_id}".format(name=bridge_name, bridge_id=self.application_id + 512))
+        await self._ubridge_send(f"iol_bridge create {bridge_name} {self.application_id + 512}")
 
         bay_id = 0
         for adapter in self._adapters:
@@ -635,7 +634,7 @@ class IOUVM(BaseNode):
                 unit_id += 1
             bay_id += 1
 
-        await self._ubridge_send("iol_bridge start {name}".format(name=bridge_name))
+        await self._ubridge_send(f"iol_bridge start {bridge_name}")
 
     def _termination_callback(self, process_name, returncode):
         """
@@ -651,7 +650,7 @@ class IOUVM(BaseNode):
                                                                                                                                                                                          returncode,
                                                                                                                                                                                          self.read_iou_stdout())
             else:
-                message = 'IOU VM "{}" process has stopped with return code: {}\n{}'.format(self.name, returncode, self.read_iou_stdout())
+                message = f'IOU VM "{self.name}" process has stopped with return code: {returncode}\n{self.read_iou_stdout()}'
             log.warning(message)
             self.project.emit("log.error", {"message": message})
         if self._telnet_server:
@@ -666,7 +665,7 @@ class IOUVM(BaseNode):
         destination = self._nvram_file()
         for file_path in glob.glob(os.path.join(glob.escape(self.working_dir), "nvram_*")):
             shutil.move(file_path, destination)
-        destination = os.path.join(self.working_dir, "vlan.dat-{:05d}".format(self.application_id))
+        destination = os.path.join(self.working_dir, f"vlan.dat-{self.application_id:05d}")
         for file_path in glob.glob(os.path.join(glob.escape(self.working_dir), "vlan.dat-*")):
             shutil.move(file_path, destination)
 
@@ -691,7 +690,7 @@ class IOUVM(BaseNode):
                     await gns3server.utils.asyncio.wait_for_process_termination(self._iou_process, timeout=3)
                 except asyncio.TimeoutError:
                     if self._iou_process.returncode is None:
-                        log.warning("IOU process {} is still running... killing it".format(self._iou_process.pid))
+                        log.warning(f"IOU process {self._iou_process.pid} is still running... killing it")
                         try:
                             self._iou_process.kill()
                         except ProcessLookupError:
@@ -703,7 +702,7 @@ class IOUVM(BaseNode):
             if os.path.islink(symlink):
                 os.unlink(symlink)
         except OSError as e:
-            log.warning("Could not delete symbolic link: {}".format(e))
+            log.warning(f"Could not delete symbolic link: {e}")
 
         self._started = False
         self.save_configs()
@@ -714,7 +713,7 @@ class IOUVM(BaseNode):
         """
 
         if self._iou_process:
-            log.info('Stopping IOU process for IOU VM "{}" PID={}'.format(self.name, self._iou_process.pid))
+            log.info(f'Stopping IOU process for IOU VM "{self.name}" PID={self._iou_process.pid}')
             try:
                 self._iou_process.terminate()
             # Sometime the process can already be dead when we garbage collect
@@ -751,7 +750,7 @@ class IOUVM(BaseNode):
         """
 
         if self.is_running() and self.console_type != new_console_type:
-            raise IOUError('"{name}" must be stopped to change the console type to {new_console_type}'.format(name=self._name, new_console_type=new_console_type))
+            raise IOUError(f'"{self._name}" must be stopped to change the console type to {new_console_type}')
 
         super(IOUVM, IOUVM).console_type.__set__(self, new_console_type)
 
@@ -772,7 +771,7 @@ class IOUVM(BaseNode):
             log.info("IOU {name} [id={id}]: NETMAP file created".format(name=self._name,
                                                                         id=self._id))
         except OSError as e:
-            raise IOUError("Could not create {}: {}".format(netmap_path, e))
+            raise IOUError(f"Could not create {netmap_path}: {e}")
 
     async def _build_command(self):
         """
@@ -835,7 +834,7 @@ class IOUVM(BaseNode):
                 with open(self._iou_stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warning("could not read {}: {}".format(self._iou_stdout_file, e))
+                log.warning(f"could not read {self._iou_stdout_file}: {e}")
         return output
 
     @property
@@ -925,7 +924,7 @@ class IOUVM(BaseNode):
                                                                                              port_number=port_number))
 
         if self.ubridge:
-            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
             await self._ubridge_send("iol_bridge add_nio_udp {name} {iol_id} {bay} {unit} {lport} {rhost} {rport}".format(name=bridge_name,
                                                                                                                                iol_id=self.application_id,
                                                                                                                                bay=adapter_number,
@@ -955,7 +954,7 @@ class IOUVM(BaseNode):
         :param port_number: port number
         :param filters: Array of filter dictionnary
         """
-        bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+        bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
         location = '{bridge_name} {bay} {unit}'.format(
             bridge_name=bridge_name,
             bay=adapter_number,
@@ -998,7 +997,7 @@ class IOUVM(BaseNode):
                                                                                                  port_number=port_number))
 
         if self.ubridge:
-            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
             await self._ubridge_send("iol_bridge delete_nio_udp {name} {bay} {unit}".format(name=bridge_name,
                                                                                                  bay=adapter_number,
                                                                                                  unit=port_number))
@@ -1052,9 +1051,9 @@ class IOUVM(BaseNode):
 
         self._l1_keepalives = state
         if state:
-            log.info('IOU "{name}" [{id}]: has activated layer 1 keepalive messages'.format(name=self._name, id=self._id))
+            log.info(f'IOU "{self._name}" [{self._id}]: has activated layer 1 keepalive messages')
         else:
-            log.info('IOU "{name}" [{id}]: has deactivated layer 1 keepalive messages'.format(name=self._name, id=self._id))
+            log.info(f'IOU "{self._name}" [{self._id}]: has deactivated layer 1 keepalive messages')
 
     async def _enable_l1_keepalives(self, command):
         """
@@ -1071,9 +1070,9 @@ class IOUVM(BaseNode):
             if re.search(r"-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])
             else:
-                raise IOUError("layer 1 keepalive messages are not supported by {}".format(os.path.basename(self._path)))
+                raise IOUError(f"layer 1 keepalive messages are not supported by {os.path.basename(self._path)}")
         except (OSError, subprocess.SubprocessError) as e:
-            log.warning("could not determine if layer 1 keepalive messages are supported by {}: {}".format(os.path.basename(self._path), e))
+            log.warning(f"could not determine if layer 1 keepalive messages are supported by {os.path.basename(self._path)}: {e}")
 
     @property
     def startup_config_content(self):
@@ -1089,7 +1088,7 @@ class IOUVM(BaseNode):
             with open(config_file, "rb") as f:
                 return f.read().decode("utf-8", errors="replace")
         except OSError as e:
-            raise IOUError("Can't read startup-config file '{}': {}".format(config_file, e))
+            raise IOUError(f"Can't read startup-config file '{config_file}': {e}")
 
     @startup_config_content.setter
     def startup_config_content(self, startup_config):
@@ -1116,15 +1115,15 @@ class IOUVM(BaseNode):
                     startup_config = startup_config.replace("%h", self._name)
                     f.write(startup_config)
 
-            vlan_file = os.path.join(self.working_dir, "vlan.dat-{:05d}".format(self.application_id))
+            vlan_file = os.path.join(self.working_dir, f"vlan.dat-{self.application_id:05d}")
             if os.path.exists(vlan_file):
                 try:
                     os.remove(vlan_file)
                 except OSError as e:
-                    log.error("Could not delete VLAN file '{}': {}".format(vlan_file, e))
+                    log.error(f"Could not delete VLAN file '{vlan_file}': {e}")
 
         except OSError as e:
-            raise IOUError("Can't write startup-config file '{}': {}".format(startup_config_path, e))
+            raise IOUError(f"Can't write startup-config file '{startup_config_path}': {e}")
 
     @property
     def private_config_content(self):
@@ -1140,7 +1139,7 @@ class IOUVM(BaseNode):
             with open(config_file, "rb") as f:
                 return f.read().decode("utf-8", errors="replace")
         except OSError as e:
-            raise IOUError("Can't read private-config file '{}': {}".format(config_file, e))
+            raise IOUError(f"Can't read private-config file '{config_file}': {e}")
 
     @private_config_content.setter
     def private_config_content(self, private_config):
@@ -1167,7 +1166,7 @@ class IOUVM(BaseNode):
                     private_config = private_config.replace("%h", self._name)
                     f.write(private_config)
         except OSError as e:
-            raise IOUError("Can't write private-config file '{}': {}".format(private_config_path, e))
+            raise IOUError(f"Can't write private-config file '{private_config_path}': {e}")
 
     @property
     def startup_config_file(self):
@@ -1254,20 +1253,20 @@ class IOUVM(BaseNode):
         :returns: tuple (startup-config, private-config)
         """
 
-        nvram_file = os.path.join(self.working_dir, "nvram_{:05d}".format(self.application_id))
+        nvram_file = os.path.join(self.working_dir, f"nvram_{self.application_id:05d}")
         if not os.path.exists(nvram_file):
             return None, None
         try:
             with open(nvram_file, "rb") as file:
                 nvram_content = file.read()
         except OSError as e:
-            log.warning("Cannot read nvram file {}: {}".format(nvram_file, e))
+            log.warning(f"Cannot read nvram file {nvram_file}: {e}")
             return None, None
 
         try:
             startup_config_content, private_config_content = nvram_export(nvram_content)
         except ValueError as e:
-            log.warning("Could not export configs from nvram file {}: {}".format(nvram_file, e))
+            log.warning(f"Could not export configs from nvram file {nvram_file}: {e}")
             return None, None
 
         return startup_config_content, private_config_content
@@ -1284,20 +1283,20 @@ class IOUVM(BaseNode):
                 try:
                     config = startup_config_content.decode("utf-8", errors="replace")
                     with open(config_path, "wb") as f:
-                        log.info("saving startup-config to {}".format(config_path))
+                        log.info(f"saving startup-config to {config_path}")
                         f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
-                    raise IOUError("Could not save the startup configuration {}: {}".format(config_path, e))
+                    raise IOUError(f"Could not save the startup configuration {config_path}: {e}")
 
             if private_config_content and private_config_content != b'\nend\n':
                 config_path = os.path.join(self.working_dir, "private-config.cfg")
                 try:
                     config = private_config_content.decode("utf-8", errors="replace")
                     with open(config_path, "wb") as f:
-                        log.info("saving private-config to {}".format(config_path))
+                        log.info(f"saving private-config to {config_path}")
                         f.write(config.encode("utf-8"))
                 except (binascii.Error, OSError) as e:
-                    raise IOUError("Could not save the private configuration {}: {}".format(config_path, e))
+                    raise IOUError(f"Could not save the private configuration {config_path}: {e}")
 
     async def start_capture(self, adapter_number, port_number, output_file, data_link_type="DLT_EN10MB"):
         """
@@ -1322,7 +1321,7 @@ class IOUVM(BaseNode):
                                                                                                                           output_file=output_file))
 
         if self.ubridge:
-            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
             await self._ubridge_send('iol_bridge start_capture {name} {bay} {unit} "{output_file}" {data_link_type}'.format(name=bridge_name,
                                                                                                                                  bay=adapter_number,
                                                                                                                                  unit=port_number,
@@ -1346,7 +1345,7 @@ class IOUVM(BaseNode):
                                                                                                          adapter_number=adapter_number,
                                                                                                          port_number=port_number))
         if self.ubridge:
-            bridge_name = "IOL-BRIDGE-{}".format(self.application_id + 512)
+            bridge_name = f"IOL-BRIDGE-{self.application_id + 512}"
             await self._ubridge_send('iol_bridge stop_capture {name} {bay} {unit}'.format(name=bridge_name,
                                                                                                bay=adapter_number,
                                                                                                unit=port_number))

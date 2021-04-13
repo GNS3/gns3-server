@@ -81,7 +81,7 @@ class StandardPortFactory:
                             adapter=adapter_number,
                             **cls._generate_replacement(interface_number, segment_number))
                     except (IndexError, ValueError, KeyError) as e:
-                        raise ControllerError("Invalid port name format {}: {}".format(port_name_format, str(e)))
+                        raise ControllerError(f"Invalid port name format {port_name_format}: {str(e)}")
 
                     port_name = custom_adapter_settings.get("port_name", port_name)
                     port = PortFactory(port_name, segment_number, adapter_number, port_number, "ethernet")
@@ -106,7 +106,7 @@ class StandardPortFactory:
         if "serial_adapters" in properties:
             for adapter_number in range(adapter_number, properties["serial_adapters"] + adapter_number):
                 for port_number in range(0, port_by_adapter):
-                    ports.append(PortFactory("Serial{}/{}".format(segment_number, port_number), segment_number, adapter_number, port_number, "serial"))
+                    ports.append(PortFactory(f"Serial{segment_number}/{port_number}", segment_number, adapter_number, port_number, "serial"))
                 segment_number += 1
 
         return ports
@@ -206,18 +206,18 @@ class DynamipsPortFactory:
                 if properties[name]:
                     port_class = cls.ADAPTER_MATRIX[properties[name]]["port"]
                     for port_number in range(0, cls.ADAPTER_MATRIX[properties[name]]["nb_ports"]):
-                        name = "{}{}/{}".format(port_class.long_name_type(), adapter_number, port_number)
+                        name = f"{port_class.long_name_type()}{adapter_number}/{port_number}"
                         port = port_class(name, adapter_number, adapter_number, port_number)
-                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), adapter_number, port_number)
+                        port.short_name = f"{port_class.short_name_type()}{adapter_number}/{port_number}"
                         ports.append(port)
                 adapter_number += 1
             elif name.startswith("wic"):
                 if properties[name]:
                     port_class = cls.WIC_MATRIX[properties[name]]["port"]
                     for port_number in range(0, cls.WIC_MATRIX[properties[name]]["nb_ports"]):
-                        name = "{}{}/{}".format(port_class.long_name_type(), 0, display_wic_port_number)
+                        name = f"{port_class.long_name_type()}{0}/{display_wic_port_number}"
                         port = port_class(name, 0, 0, wic_port_number)
-                        port.short_name = "{}{}/{}".format(port_class.short_name_type(), 0, display_wic_port_number)
+                        port.short_name = f"{port_class.short_name_type()}{0}/{display_wic_port_number}"
                         ports.append(port)
                         display_wic_port_number += 1
                         wic_port_number += 1

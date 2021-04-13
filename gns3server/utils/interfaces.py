@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -46,10 +45,10 @@ def _get_windows_interfaces_from_registry():
             hkeycard = winreg.OpenKey(hkey, network_card_id)
             guid, _ = winreg.QueryValueEx(hkeycard, "ServiceName")
             netcard, _ = winreg.QueryValueEx(hkeycard, "Description")
-            connection = r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}" + "\{}\Connection".format(guid)
+            connection = r"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}" + fr"\{guid}\Connection"
             hkeycon = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, connection)
             name, _ = winreg.QueryValueEx(hkeycon, "Name")
-            interface = r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{}".format(guid)
+            interface = fr"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{guid}"
             hkeyinterface = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, interface)
             is_dhcp_enabled, _ = winreg.QueryValueEx(hkeyinterface, "EnableDHCP")
             if is_dhcp_enabled:
@@ -74,7 +73,7 @@ def _get_windows_interfaces_from_registry():
             winreg.CloseKey(hkeycard)
         winreg.CloseKey(hkey)
     except OSError as e:
-        log.error("could not read registry information: {}".format(e))
+        log.error(f"could not read registry information: {e}")
 
     return interfaces
 
@@ -92,7 +91,7 @@ def get_windows_interfaces():
     interfaces = []
     try:
         locator = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-        service = locator.ConnectServer(".", "root\cimv2")
+        service = locator.ConnectServer(".", r"root\cimv2")
         network_configs = service.InstancesOf("Win32_NetworkAdapterConfiguration")
         # more info on Win32_NetworkAdapter: http://msdn.microsoft.com/en-us/library/aa394216%28v=vs.85%29.aspx
         for adapter in service.InstancesOf("Win32_NetworkAdapter"):
@@ -188,7 +187,7 @@ def interfaces():
         net_if_addrs = psutil.net_if_addrs()
         for interface in sorted(net_if_addrs.keys()):
             if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):
-                log.warning("Interface '{}' is not allowed to be used on this server".format(interface))
+                log.warning(f"Interface '{interface}' is not allowed to be used on this server")
                 continue
             ip_address = ""
             mac_address = ""
@@ -221,7 +220,7 @@ def interfaces():
             message = "pywin32 module is not installed, please install it on the server to get the available interface names"
             raise ComputeError(message)
         except Exception as e:
-            log.error("uncaught exception {type}".format(type=type(e)), exc_info=1)
+            log.error(f"uncaught exception {type(e)}", exc_info=1)
             raise ComputeError(f"uncaught exception: {e}")
 
         if service_installed is False:

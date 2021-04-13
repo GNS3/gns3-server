@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -112,7 +111,7 @@ class C1700(Router):
         1720, 1721, 1750, 1751 or 1760
         """
 
-        await self._hypervisor.send('c1700 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
+        await self._hypervisor.send(f'c1700 set_chassis "{self._name}" {chassis}')
 
         log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
                                                                            id=self._id,
@@ -138,7 +137,7 @@ class C1700(Router):
         :param iomem: I/O memory size
         """
 
-        await self._hypervisor.send('c1700 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send(f'c1700 set_iomem "{self._name}" {iomem}')
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

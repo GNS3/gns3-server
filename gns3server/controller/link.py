@@ -226,7 +226,7 @@ class Link:
 
         port = node.get_port(adapter_number, port_number)
         if port is None:
-            raise ControllerNotFoundError("Port {}/{} for {} not found".format(adapter_number, port_number, node.name))
+            raise ControllerNotFoundError(f"Port {adapter_number}/{port_number} for {node.name} not found")
         if port.link is not None:
             raise ControllerError("Port is already used")
 
@@ -245,11 +245,11 @@ class Link:
             if other_port is None:
                 raise ControllerNotFoundError("Port {}/{} for {} not found".format(other_node["adapter_number"], other_node["port_number"], other_node["node"].name))
             if port.link_type != other_port.link_type:
-                raise ControllerError("Connecting a {} interface to a {} interface is not allowed".format(other_port.link_type, port.link_type))
+                raise ControllerError(f"Connecting a {other_port.link_type} interface to a {port.link_type} interface is not allowed")
 
         if label is None:
             label = {
-                "text": html.escape("{}/{}".format(adapter_number, port_number)),
+                "text": html.escape(f"{adapter_number}/{port_number}"),
                 "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;"
             }
 

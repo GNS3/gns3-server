@@ -121,7 +121,7 @@ def get_size(data, default_width=0, default_height=0):
             else:
                 height = _svg_convert_size(height_attr)
         except (AttributeError, IndexError) as e:
-            raise ValueError("Invalid SVG file: {}".format(e))
+            raise ValueError(f"Invalid SVG file: {e}")
 
     return width, height, filetype
 

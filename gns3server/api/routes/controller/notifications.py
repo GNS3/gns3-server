@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -41,7 +40,7 @@ async def http_notification():
         with Controller.instance().notification.controller_queue() as queue:
             while True:
                 msg = await queue.get_json(5)
-                yield ("{}\n".format(msg)).encode("utf-8")
+                yield (f"{msg}\n").encode("utf-8")
 
     return StreamingResponse(event_stream(), media_type="application/json")
 
@@ -62,6 +61,6 @@ async def notification_ws(websocket: WebSocket):
     except (ConnectionClosed, WebSocketDisconnect):
         log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from controller WebSocket")
     except WebSocketException as e:
-        log.warning("Error while sending to controller event to WebSocket client: '{}'".format(e))
+        log.warning(f"Error while sending to controller event to WebSocket client: {e}")
     finally:
         await websocket.close()

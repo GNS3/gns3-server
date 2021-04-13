@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -83,7 +82,7 @@ def list_images(type):
                                 "md5sum": md5sum(os.path.join(root, filename)),
                                 "filesize": os.stat(os.path.join(root, filename)).st_size})
                         except OSError as e:
-                            log.warning("Can't add image {}: {}".format(path, str(e)))
+                            log.warning(f"Can't add image {path}: {str(e)}")
     return images
 
 
@@ -170,7 +169,7 @@ def md5sum(path, stopped_event=None):
         with open(path, 'rb') as f:
             while True:
                 if stopped_event is not None and stopped_event.is_set():
-                    log.error("MD5 sum calculation of `{}` has stopped due to cancellation".format(path))
+                    log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
                     return
                 buf = f.read(128)
                 if not buf:
@@ -182,7 +181,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open('{}.md5sum'.format(path), 'w+') as f:
+        with open(f'{path}.md5sum', 'w+') as f:
             f.write(digest)
     except OSError as e:
         log.error("Can't write digest of %s: %s", path, str(e))
@@ -195,6 +194,6 @@ def remove_checksum(path):
     Remove the checksum of an image from cache if exists
     """
 
-    path = '{}.md5sum'.format(path)
+    path = f'{path}.md5sum'
     if os.path.exists(path):
         os.remove(path)

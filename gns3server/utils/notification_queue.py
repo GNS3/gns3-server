@@ -64,7 +64,7 @@ class NotificationQueue(asyncio.Queue):
             msg["memory_usage_percent"] = psutil.virtual_memory().percent
             msg["disk_usage_percent"] = psutil.disk_usage(get_default_project_directory()).percent
         except OSError as e:
-            log.warning("Could not get CPU and memory usage from psutil: {}".format(e))
+            log.warning(f"Could not get CPU and memory usage from psutil: {e}")
         return msg
 
     async def get_json(self, timeout):

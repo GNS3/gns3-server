@@ -102,7 +102,7 @@ class Node:
                     try:
                         setattr(self, prop, kwargs[prop])
                     except AttributeError as e:
-                        log.critical("Cannot set attribute '{}'".format(prop))
+                        log.critical(f"Cannot set attribute '{prop}'")
                         raise e
                 else:
                     if prop not in self.CONTROLLER_ONLY_PROPERTIES and kwargs[prop] is not None and kwargs[prop] != "":
@@ -292,7 +292,7 @@ class Node:
         try:
             self._width, self._height, filetype = self._project.controller.symbols.get_size(val)
         except (ValueError, OSError) as e:
-            log.error("Could not set symbol: {}".format(e))
+            log.error(f"Could not set symbol: {e}")
             # If symbol is invalid we replace it by the default
             self.symbol = ":/symbols/computer.svg"
         if self._label is None:
@@ -384,7 +384,7 @@ class Node:
         trial = 0
         while trial != 6:
             try:
-                response = await self._compute.post("/projects/{}/{}/nodes".format(self._project.id, self._node_type), data=data, timeout=timeout)
+                response = await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes", data=data, timeout=timeout)
             except ComputeConflict as e:
                 if e.response.get("exception") == "ImageMissingError":
                     res = await self._upload_missing_image(self._node_type, e.response["image"])
@@ -532,7 +532,7 @@ class Node:
             else:
                 await self.post("/start", data=data, timeout=240)
         except asyncio.TimeoutError:
-            raise ControllerTimeoutError("Timeout when starting {}".format(self._name))
+            raise ControllerTimeoutError(f"Timeout when starting {self._name}")
 
     async def stop(self):
         """
@@ -544,7 +544,7 @@ class Node:
         except (ComputeError, ControllerError):
             pass
         except asyncio.TimeoutError:
-            raise ControllerTimeoutError("Timeout when stopping {}".format(self._name))
+            raise ControllerTimeoutError(f"Timeout when stopping {self._name}")
 
     async def suspend(self):
         """
@@ -553,7 +553,7 @@ class Node:
         try:
             await self.post("/suspend", timeout=240)
         except asyncio.TimeoutError:
-            raise ControllerTimeoutError("Timeout when reloading {}".format(self._name))
+            raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
 
     async def reload(self):
         """
@@ -562,7 +562,7 @@ class Node:
         try:
             await self.post("/reload", timeout=240)
         except asyncio.TimeoutError:
-            raise ControllerTimeoutError("Timeout when reloading {}".format(self._name))
+            raise ControllerTimeoutError(f"Timeout when reloading {self._name}")
 
     async def reset_console(self):
         """
@@ -573,25 +573,25 @@ class Node:
             try:
                 await self.post("/console/reset", timeout=240)
             except asyncio.TimeoutError:
-                raise ControllerTimeoutError("Timeout when reset console {}".format(self._name))
+                raise ControllerTimeoutError(f"Timeout when reset console {self._name}")
 
     async def post(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
         if data:
-            return (await self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), data=data, **kwargs))
+            return (await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", data=data, **kwargs))
         else:
-            return (await self._compute.post("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs))
+            return (await self._compute.post(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs))
 
     async def put(self, path, data=None, **kwargs):
         """
         HTTP post on the node
         """
         if path is None:
-            path = "/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id)
+            path = f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}"
         else:
-            path = "/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path)
+            path = f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}"
         if data:
             return (await self._compute.put(path, data=data, **kwargs))
         else:
@@ -602,9 +602,9 @@ class Node:
         HTTP post on the node
         """
         if path is None:
-            return await self._compute.delete("/projects/{}/{}/nodes/{}".format(self._project.id, self._node_type, self._id), **kwargs)
+            return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}", **kwargs)
         else:
-            return await self._compute.delete("/projects/{}/{}/nodes/{}{}".format(self._project.id, self._node_type, self._id, path), **kwargs)
+            return await self._compute.delete(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}{path}", **kwargs)
 
     async def _upload_missing_image(self, type, img):
         """
@@ -615,13 +615,13 @@ class Node:
         for directory in images_directories(type):
             image = os.path.join(directory, img)
             if os.path.exists(image):
-                self.project.emit_notification("log.info", {"message": "Uploading missing image {}".format(img)})
+                self.project.emit_notification("log.info", {"message": f"Uploading missing image {img}"})
                 try:
                     with open(image, 'rb') as f:
-                        await self._compute.post("/{}/images/{}".format(self._node_type, os.path.basename(img)), data=f, timeout=None)
+                        await self._compute.post(f"/{self._node_type}/images/{os.path.basename(img)}", data=f, timeout=None)
                 except OSError as e:
-                    raise ControllerError("Can't upload {}: {}".format(image, str(e)))
-                self.project.emit_notification("log.info", {"message": "Upload finished for {}".format(img)})
+                    raise ControllerError(f"Can't upload {image}: {str(e)}")
+                self.project.emit_notification("log.info", {"message": f"Upload finished for {img}"})
                 return True
         return False
 
@@ -629,13 +629,13 @@ class Node:
         """
         Compute the idle PC for a dynamips node
         """
-        return (await self._compute.get("/projects/{}/{}/nodes/{}/auto_idlepc".format(self._project.id, self._node_type, self._id), timeout=240)).json
+        return (await self._compute.get(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/auto_idlepc", timeout=240)).json
 
     async def dynamips_idlepc_proposals(self):
         """
         Compute a list of potential idle PC
         """
-        return (await self._compute.get("/projects/{}/{}/nodes/{}/idlepc_proposals".format(self._project.id, self._node_type, self._id), timeout=240)).json
+        return (await self._compute.get(f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}/idlepc_proposals", timeout=240)).json
 
     def get_port(self, adapter_number, port_number):
         """
@@ -663,7 +663,7 @@ class Node:
                 atm_port.add(int(dest.split(":")[0]))
             atm_port = sorted(atm_port)
             for port in atm_port:
-                self._ports.append(PortFactory("{}".format(port), 0, 0, port, "atm"))
+                self._ports.append(PortFactory(f"{port}", 0, 0, port, "atm"))
             return
 
         elif self._node_type == "frame_relay_switch":
@@ -674,7 +674,7 @@ class Node:
                 frame_relay_port.add(int(dest.split(":")[0]))
             frame_relay_port = sorted(frame_relay_port)
             for port in frame_relay_port:
-                self._ports.append(PortFactory("{}".format(port), 0, 0, port, "frame_relay"))
+                self._ports.append(PortFactory(f"{port}", 0, 0, port, "frame_relay"))
             return
         elif self._node_type == "dynamips":
             self._ports = DynamipsPortFactory(self._properties)
@@ -686,14 +686,14 @@ class Node:
                     if custom_adapter["adapter_number"] == adapter_number:
                         custom_adapter_settings = custom_adapter
                         break
-                port_name = "eth{}".format(adapter_number)
+                port_name = f"eth{adapter_number}"
                 port_name = custom_adapter_settings.get("port_name", port_name)
                 self._ports.append(PortFactory(port_name, 0, adapter_number, 0, "ethernet", short_name=port_name))
         elif self._node_type in ("ethernet_switch", "ethernet_hub"):
             # Basic node we don't want to have adapter number
             port_number = 0
             for port in self._properties.get("ports_mapping", []):
-                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name="e{}".format(port_number)))
+                self._ports.append(PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=f"e{port_number}"))
                 port_number += 1
         elif self._node_type in ("vpcs", "traceng"):
             self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
@@ -706,7 +706,7 @@ class Node:
             self._ports = StandardPortFactory(self._properties, self._port_by_adapter, self._first_port_name, self._port_name_format, self._port_segment_size, self._custom_adapters)
 
     def __repr__(self):
-        return "<gns3server.controller.Node {} {}>".format(self._node_type, self._name)
+        return f"<gns3server.controller.Node {self._node_type} {self._name}>"
 
     def __eq__(self, other):
         if not isinstance(other, Node):

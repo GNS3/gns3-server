@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -150,7 +149,7 @@ class Dynamips(BaseManager):
         """
         self._dynamips_ids.setdefault(project_id, set())
         if dynamips_id in self._dynamips_ids[project_id]:
-            raise DynamipsError("Dynamips identifier {} is already used by another router".format(dynamips_id))
+            raise DynamipsError(f"Dynamips identifier {dynamips_id} is already used by another router")
         self._dynamips_ids[project_id].add(dynamips_id)
 
     def release_dynamips_id(self, project_id, dynamips_id):
@@ -178,7 +177,7 @@ class Dynamips(BaseManager):
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not stop device hypervisor {}".format(e), exc_info=1)
+                    log.error(f"Could not stop device hypervisor {e}", exc_info=1)
                     continue
 
     async def project_closing(self, project):
@@ -201,7 +200,7 @@ class Dynamips(BaseManager):
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not delete device {}".format(e), exc_info=1)
+                    log.error(f"Could not delete device {e}", exc_info=1)
 
     async def project_closed(self, project):
         """
@@ -222,12 +221,12 @@ class Dynamips(BaseManager):
         files += glob.glob(os.path.join(glob.escape(project_dir), "*", "c[0-9][0-9][0-9][0-9]_i[0-9]*_log.txt"))
         for file in files:
             try:
-                log.debug("Deleting file {}".format(file))
+                log.debug(f"Deleting file {file}")
                 if file in self._ghost_files:
                     self._ghost_files.remove(file)
                 await wait_run_in_executor(os.remove, file)
             except OSError as e:
-                log.warning("Could not delete file {}: {}".format(file, e))
+                log.warning(f"Could not delete file {file}: {e}")
                 continue
 
         # Release the dynamips ids if we want to reload the same project
@@ -255,9 +254,9 @@ class Dynamips(BaseManager):
         if not dynamips_path:
             raise DynamipsError("Could not find Dynamips")
         if not os.path.isfile(dynamips_path):
-            raise DynamipsError("Dynamips {} is not accessible".format(dynamips_path))
+            raise DynamipsError(f"Dynamips {dynamips_path} is not accessible")
         if not os.access(dynamips_path, os.X_OK):
-            raise DynamipsError("Dynamips {} is not executable".format(dynamips_path))
+            raise DynamipsError(f"Dynamips {dynamips_path} is not executable")
 
         self._dynamips_path = dynamips_path
         return dynamips_path
@@ -284,7 +283,7 @@ class Dynamips(BaseManager):
         try:
             info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
             if not info:
-                raise DynamipsError("getaddrinfo returns an empty list on {}".format(server_host))
+                raise DynamipsError(f"getaddrinfo returns an empty list on {server_host}")
             for res in info:
                 af, socktype, proto, _, sa = res
                 # let the OS find an unused port for the Dynamips hypervisor
@@ -293,17 +292,17 @@ class Dynamips(BaseManager):
                     port = sock.getsockname()[1]
                     break
         except OSError as e:
-            raise DynamipsError("Could not find free port for the Dynamips hypervisor: {}".format(e))
+            raise DynamipsError(f"Could not find free port for the Dynamips hypervisor: {e}")
 
         port_manager = PortManager.instance()
         hypervisor = Hypervisor(self._dynamips_path, working_dir, server_host, port, port_manager.console_host)
 
-        log.info("Creating new hypervisor {}:{} with working directory {}".format(hypervisor.host, hypervisor.port, working_dir))
+        log.info(f"Creating new hypervisor {hypervisor.host}:{hypervisor.port} with working directory {working_dir}")
         await hypervisor.start()
-        log.info("Hypervisor {}:{} has successfully started".format(hypervisor.host, hypervisor.port))
+        log.info(f"Hypervisor {hypervisor.host}:{hypervisor.port} has successfully started")
         await hypervisor.connect()
         if parse_version(hypervisor.version) < parse_version('0.2.11'):
-            raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(hypervisor.version))
+            raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {hypervisor.version}")
 
         return hypervisor
 
@@ -315,7 +314,7 @@ class Dynamips(BaseManager):
                 try:
                     await self._set_ghost_ios(vm)
                 except GeneratorExit:
-                    log.warning("Could not create ghost IOS image {} (GeneratorExit)".format(vm.name))
+                    log.warning(f"Could not create ghost IOS image {vm.name} (GeneratorExit)")
 
     async def create_nio(self, node, nio_settings):
         """
@@ -335,13 +334,13 @@ class Dynamips(BaseManager):
             try:
                 info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
                 if not info:
-                    raise DynamipsError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                    raise DynamipsError(f"getaddrinfo returns an empty list on {rhost}:{rport}")
                 for res in info:
                     af, socktype, proto, _, sa = res
                     with socket.socket(af, socktype, proto) as sock:
                         sock.connect(sa)
             except OSError as e:
-                raise DynamipsError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
+                raise DynamipsError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(node, lport, rhost, rport)
             nio.filters = nio_settings.get("filters", {})
             nio.suspend = nio_settings.get("suspend", False)
@@ -355,11 +354,11 @@ class Dynamips(BaseManager):
                     if interface["name"] == ethernet_device:
                         npf_interface = interface["id"]
                 if not npf_interface:
-                    raise DynamipsError("Could not find interface {} on this host".format(ethernet_device))
+                    raise DynamipsError(f"Could not find interface {ethernet_device} on this host")
                 else:
                     ethernet_device = npf_interface
             if not is_interface_up(ethernet_device):
-                raise DynamipsError("Ethernet interface {} is down".format(ethernet_device))
+                raise DynamipsError(f"Ethernet interface {ethernet_device} is down")
             nio = NIOGenericEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_linux_ethernet":
             if sys.platform.startswith("win"):
@@ -371,7 +370,7 @@ class Dynamips(BaseManager):
             nio = NIOTAP(node.hypervisor, tap_device)
             if not is_interface_up(tap_device):
                 # test after the TAP interface has been created (if it doesn't exist yet)
-                raise DynamipsError("TAP interface {} is down".format(tap_device))
+                raise DynamipsError(f"TAP interface {tap_device} is down")
         elif nio_settings["type"] == "nio_unix":
             local_file = nio_settings["local_file"]
             remote_file = nio_settings["remote_file"]
@@ -425,7 +424,7 @@ class Dynamips(BaseManager):
                 finally:
                     await ghost.clean_delete()
             except DynamipsError as e:
-                log.warning("Could not create ghost instance: {}".format(e))
+                log.warning(f"Could not create ghost instance: {e}")
 
         if vm.ghost_file != ghost_file and os.path.isfile(ghost_file_path):
             # set the ghost file to the router
@@ -442,8 +441,8 @@ class Dynamips(BaseManager):
 
         for name, value in settings.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
-                if hasattr(vm, "set_{}".format(name)):
-                    setter = getattr(vm, "set_{}".format(name))
+                if hasattr(vm, f"set_{name}"):
+                    setter = getattr(vm, f"set_{name}")
                     await setter(value)
             elif name.startswith("slot") and value in ADAPTER_MATRIX:
                 slot_id = int(name[-1])
@@ -455,14 +454,14 @@ class Dynamips(BaseManager):
                     if not isinstance(vm.slots[slot_id], type(adapter)):
                         await vm.slot_add_binding(slot_id, adapter)
                 except IndexError:
-                    raise DynamipsError("Slot {} doesn't exist on this router".format(slot_id))
+                    raise DynamipsError(f"Slot {slot_id} doesn't exist on this router")
             elif name.startswith("slot") and (value is None or value == ""):
                 slot_id = int(name[-1])
                 try:
                     if vm.slots[slot_id]:
                         await vm.slot_remove_binding(slot_id)
                 except IndexError:
-                    raise DynamipsError("Slot {} doesn't exist on this router".format(slot_id))
+                    raise DynamipsError(f"Slot {slot_id} doesn't exist on this router")
             elif name.startswith("wic") and value in WIC_MATRIX:
                 wic_slot_id = int(name[-1])
                 wic_name = value
@@ -473,14 +472,14 @@ class Dynamips(BaseManager):
                     if not isinstance(vm.slots[0].wics[wic_slot_id], type(wic)):
                         await vm.install_wic(wic_slot_id, wic)
                 except IndexError:
-                    raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
+                    raise DynamipsError(f"WIC slot {wic_slot_id} doesn't exist on this router")
             elif name.startswith("wic") and (value is None or value == ""):
                 wic_slot_id = int(name[-1])
                 try:
                     if vm.slots[0].wics and vm.slots[0].wics[wic_slot_id]:
                         await vm.uninstall_wic(wic_slot_id)
                 except IndexError:
-                    raise DynamipsError("WIC slot {} doesn't exist on this router".format(wic_slot_id))
+                    raise DynamipsError(f"WIC slot {wic_slot_id} doesn't exist on this router")
 
         mmap_support = self.config.settings.Dynamips.mmap_support
         if mmap_support is False:
@@ -523,12 +522,12 @@ class Dynamips(BaseManager):
         :returns: relative path to the created config file
         """
 
-        log.info("Creating config file {}".format(path))
+        log.info(f"Creating config file {path}")
         config_dir = os.path.dirname(path)
         try:
             os.makedirs(config_dir, exist_ok=True)
         except OSError as e:
-            raise DynamipsError("Could not create Dynamips configs directory: {}".format(e))
+            raise DynamipsError(f"Could not create Dynamips configs directory: {e}")
 
         if content is None or len(content) == 0:
             content = "!\n"
@@ -542,7 +541,7 @@ class Dynamips(BaseManager):
                     content = content.replace('%h', vm.name)
                     f.write(content.encode("utf-8"))
         except OSError as e:
-            raise DynamipsError("Could not create config file '{}': {}".format(path, e))
+            raise DynamipsError(f"Could not create config file '{path}': {e}")
 
         return os.path.join("configs", os.path.basename(path))
 
@@ -574,10 +573,10 @@ class Dynamips(BaseManager):
                 if not match:
                    continue
                 await vm.set_idlepc(idlepc.split()[0])
-                log.debug("Auto Idle-PC: trying idle-PC value {}".format(vm.idlepc))
+                log.debug(f"Auto Idle-PC: trying idle-PC value {vm.idlepc}")
                 start_time = time.time()
                 initial_cpu_usage = await vm.get_cpu_usage()
-                log.debug("Auto Idle-PC: initial CPU usage is {}%".format(initial_cpu_usage))
+                log.debug(f"Auto Idle-PC: initial CPU usage is {initial_cpu_usage}%")
                 await asyncio.sleep(3)  # wait 3 seconds to probe the cpu again
                 elapsed_time = time.time() - start_time
                 cpu_usage = await vm.get_cpu_usage()
@@ -585,10 +584,10 @@ class Dynamips(BaseManager):
                 cpu_usage = abs(cpu_elapsed_usage * 100.0 / elapsed_time)
                 if cpu_usage > 100:
                     cpu_usage = 100
-                log.debug("Auto Idle-PC: CPU usage is {}% after {:.2} seconds".format(cpu_usage, elapsed_time))
+                log.debug(f"Auto Idle-PC: CPU usage is {cpu_usage}% after {elapsed_time:.2} seconds")
                 if cpu_usage < 70:
                     validated_idlepc = vm.idlepc
-                    log.debug("Auto Idle-PC: idle-PC value {} has been validated".format(validated_idlepc))
+                    log.debug(f"Auto Idle-PC: idle-PC value {validated_idlepc} has been validated")
                     break
 
             if validated_idlepc is None:

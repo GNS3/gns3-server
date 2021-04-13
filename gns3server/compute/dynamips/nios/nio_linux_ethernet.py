@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -38,7 +37,7 @@ class NIOLinuxEthernet(NIO):
 
     def __init__(self, hypervisor, ethernet_device):
         # create an unique name
-        name = 'linux_ethernet-{}'.format(uuid.uuid4())
+        name = f'linux_ethernet-{uuid.uuid4()}'
         self._ethernet_device = ethernet_device
         super().__init__(name, hypervisor)
 

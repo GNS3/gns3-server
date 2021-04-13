@@ -54,7 +54,7 @@ async def get_symbol(symbol_id: str):
         symbol = controller.symbols.get_path(symbol_id)
         return FileResponse(symbol)
     except (KeyError, OSError) as e:
-        return ControllerNotFoundError("Could not get symbol file: {}".format(e))
+        return ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
 @router.get("/{symbol_id:path}/dimensions",
@@ -70,7 +70,7 @@ async def get_symbol_dimensions(symbol_id: str):
         symbol_dimensions = {'width': width, 'height': height}
         return symbol_dimensions
     except (KeyError, OSError, ValueError) as e:
-        return ControllerNotFoundError("Could not get symbol file: {}".format(e))
+        return ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
 @router.post("/{symbol_id:path}/raw",
@@ -87,7 +87,7 @@ async def upload_symbol(symbol_id: str, request: Request):
         with open(path, "wb") as f:
             f.write(await request.body())
     except (UnicodeEncodeError, OSError) as e:
-        raise ControllerError("Could not write symbol file '{}': {}".format(path, e))
+        raise ControllerError(f"Could not write symbol file '{path}': {e}")
 
     # Reset the symbol list
     controller.symbols.list()

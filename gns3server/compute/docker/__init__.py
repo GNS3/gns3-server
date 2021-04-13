@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -68,9 +67,8 @@ class Docker(BaseManager):
             docker_version = parse_version(version['ApiVersion'])
 
             if docker_version < parse_version(DOCKER_MINIMUM_API_VERSION):
-                raise DockerError(
-                    "Docker version is {}. GNS3 requires a minimum version of {}".format(version["Version"],
-                                                                                         DOCKER_MINIMUM_VERSION))
+                raise DockerError(f"Docker version is {version['Version']}. "
+                                  f"GNS3 requires a minimum version of {DOCKER_MINIMUM_VERSION}")
 
             preferred_api_version = parse_version(DOCKER_PREFERRED_API_VERSION)
             if docker_version >= preferred_api_version:
@@ -150,7 +148,7 @@ class Docker(BaseManager):
                                                    headers={"content-type": "application/json", },
                                                    timeout=timeout)
         except aiohttp.ClientError as e:
-            raise DockerError("Docker has returned an error: {}".format(str(e)))
+            raise DockerError(f"Docker has returned an error: {e}")
         except (asyncio.TimeoutError):
             raise DockerError("Docker timeout " + method + " " + path)
         if response.status >= 300:
@@ -159,13 +157,13 @@ class Docker(BaseManager):
                 body = json.loads(body.decode("utf-8"))["message"]
             except ValueError:
                 pass
-            log.debug("Query Docker %s %s params=%s data=%s Response: %s", method, path, params, data, body)
+            log.debug(f"Query Docker {method} {path} params={params} data={data} Response: {body}")
             if response.status == 304:
-                raise DockerHttp304Error("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerHttp304Error(f"Docker has returned an error: {response.status} {body}")
             elif response.status == 404:
-                raise DockerHttp404Error("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerHttp404Error(f"Docker has returned an error: {response.status} {body}")
             else:
-                raise DockerError("Docker has returned an error: {} {}".format(response.status, body))
+                raise DockerError(f"Docker has returned an error: {response.status} {body}")
         return response
 
     async def websocket_query(self, path, params={}):
@@ -191,27 +189,28 @@ class Docker(BaseManager):
         """
 
         try:
-            await self.query("GET", "images/{}/json".format(image))
+            await self.query("GET", f"images/{image}/json")
             return  # We already have the image skip the download
         except DockerHttp404Error:
             pass
 
         if progress_callback:
-            progress_callback("Pulling '{}' from docker hub".format(image))
+            progress_callback(f"Pulling '{image}' from docker hub")
         try:
             response = await self.http_query("POST", "images/create", params={"fromImage": image}, timeout=None)
         except DockerError as e:
-            raise DockerError("Could not pull the '{}' image from Docker Hub, please check your Internet connection (original error: {})".format(image, e))
+            raise DockerError(f"Could not pull the '{image}' image from Docker Hub, "
+                              f"please check your Internet connection (original error: {e})")
         # The pull api will stream status via an HTTP JSON stream
         content = ""
         while True:
             try:
                 chunk = await response.content.read(CHUNK_SIZE)
             except aiohttp.ServerDisconnectedError:
-                log.error("Disconnected from server while pulling Docker image '{}' from docker hub".format(image))
+                log.error(f"Disconnected from server while pulling Docker image '{image}' from docker hub")
                 break
             except asyncio.TimeoutError:
-                log.error("Timeout while pulling Docker image '{}' from docker hub".format(image))
+                log.error(f"Timeout while pulling Docker image '{image}' from docker hub")
                 break
             if not chunk:
                 break
@@ -228,7 +227,7 @@ class Docker(BaseManager):
                 pass
         response.close()
         if progress_callback:
-            progress_callback("Success pulling image {}".format(image))
+            progress_callback(f"Success pulling image {image}")
 
     async def list_images(self):
         """

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -58,7 +57,7 @@ class NodeConcurrency(APIRoute):
             project_id = request.path_params.get("project_id")
 
             if node_id and "pcap" not in request.url.path and not request.url.path.endswith("console/ws"):
-                lock_key = "{}:{}".format(project_id, node_id)
+                lock_key = f"{project_id}:{node_id}"
                 node_locks.setdefault(lock_key, {"lock": asyncio.Lock(), "concurrency": 0})
                 node_locks[lock_key]["concurrency"] += 1
 
@@ -323,11 +322,9 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)):
         raise ControllerForbiddenError("It is forbidden to get a file outside the project directory")
 
     node_type = node.node_type
-    path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+    path = f"/project-files/{node_type}/{node.id}/{path}"
 
-    res = await node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=node.project.id, path=path),
-                                        timeout=None,
-                                        raw=True)
+    res = await node.compute.http_query("GET", f"/projects/{node.project.id}/files{path}", timeout=None, raw=True)
     return Response(res.body, media_type="application/octet-stream")
 
 
@@ -345,14 +342,11 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
         raise ControllerForbiddenError("Cannot write outside the node directory")
 
     node_type = node.node_type
-    path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
+    path = f"/project-files/{node_type}/{node.id}/{path}"
 
     data = await request.body()  #FIXME: are we handling timeout or large files correctly?
 
-    await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=node.project.id, path=path),
-                                  data=data,
-                                  timeout=None,
-                                  raw=True)
+    await node.compute.http_query("POST", f"/projects/{node.project.id}/files{path}", data=data, timeout=None, raw=True)
 
 
 @router.websocket("/{node_id}/console/ws")

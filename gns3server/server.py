@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2021 GNS3 Technologies Inc.
 #
@@ -71,24 +70,23 @@ class Server:
         try:
             language, encoding = locale.getlocale()
         except ValueError as e:
-            log.error("Could not determine the current locale: {}".format(e))
+            log.error(f"Could not determine the current locale: {e}")
         if not language and not encoding:
             try:
                 log.warning("Could not find a default locale, switching to C.UTF-8...")
                 locale.setlocale(locale.LC_ALL, ("C", "UTF-8"))
             except locale.Error as e:
-                log.error("Could not switch to the C.UTF-8 locale: {}".format(e))
+                log.error(f"Could not switch to the C.UTF-8 locale: {e}")
                 raise SystemExit
         elif encoding != "UTF-8":
-            log.warning(
-                "Your locale {}.{} encoding is not UTF-8, switching to the UTF-8 version...".format(language, encoding))
+            log.warning(f"Your locale {language}.{encoding} encoding is not UTF-8, switching to the UTF-8 version...")
             try:
                 locale.setlocale(locale.LC_ALL, (language, "UTF-8"))
             except locale.Error as e:
-                log.error("Could not set an UTF-8 encoding for the {} locale: {}".format(language, e))
+                log.error(f"Could not set an UTF-8 encoding for the {language} locale: {e}")
                 raise SystemExit
         else:
-            log.info("Current locale is {}.{}".format(language, encoding))
+            log.info(f"Current locale is {language}.{encoding}")
 
     def _parse_arguments(self, argv):
         """
@@ -97,7 +95,7 @@ class Server:
         :params args: Array of command line arguments
         """
 
-        parser = argparse.ArgumentParser(description="GNS3 server version {}".format(__version__))
+        parser = argparse.ArgumentParser(description=f"GNS3 server version {__version__}")
         parser.add_argument("-v", "--version", help="show the version", action="version", version=__version__)
         parser.add_argument("--host", help="run on the given host/IP address")
         parser.add_argument("--port", help="run on the given port", type=int)
@@ -179,10 +177,10 @@ class Server:
 
             try:
                 if signame == "SIGHUP":
-                    log.info("Server has got signal {}, reloading...".format(signame))
+                    log.info(f"Server has got signal {signame}, reloading...")
                     asyncio.ensure_future(self.reload_server())
                 else:
-                    log.info("Server has got signal {}, exiting...".format(signame))
+                    log.info(f"Server has got signal {signame}, exiting...")
                     os.kill(os.getpid(), signal.SIGTERM)
             except asyncio.CancelledError:
                 pass
@@ -260,12 +258,12 @@ class Server:
             self._pid_lock(args.pid)
             self._kill_ghosts()
 
-        log.info("GNS3 server version {}".format(__version__))
+        log.info(f"GNS3 server version {__version__}")
         current_year = datetime.date.today().year
-        log.info("Copyright (c) 2007-{} GNS3 Technologies Inc.".format(current_year))
+        log.info(f"Copyright (c) 2007-{current_year} GNS3 Technologies Inc.")
 
         for config_file in Config.instance().get_config_files():
-            log.info("Config file {} loaded".format(config_file))
+            log.info(f"Config file '{config_file}' loaded")
 
         self._set_config_defaults_from_command_line(args)
         config = Config.instance().settings
@@ -274,7 +272,7 @@ class Server:
             log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
         if config.Server.enable_http_auth:
-            log.info("HTTP authentication is enabled with username '{}'".format(config.Server.user))
+            log.info(f"HTTP authentication is enabled with username '{config.Server.user}'")
 
         # we only support Python 3 version >= 3.6
         if sys.version_info < (3, 6, 0):
@@ -302,7 +300,7 @@ class Server:
         self._signal_handling()
 
         try:
-            log.info("Starting server on {}:{}".format(host, port))
+            log.info(f"Starting server on {host}:{port}")
 
             # only show uvicorn access logs in debug mode
             access_log = False

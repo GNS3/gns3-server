@@ -121,7 +121,7 @@ class EmbedShell:
                 found = True
                 break
         if not found:
-            res = ('Command not found {}\n'.format(cmd[0]) + (await self.help()))
+            res = (f'Command not found {cmd[0]}\n' + (await self.help()))
         return res
 
     async def run(self):
@@ -196,7 +196,7 @@ class UnstoppableEventLoop(EventLoop):
 
 class ShellConnection(TelnetConnection):
     def __init__(self, reader, writer, shell, window_size_changed_callback, loop):
-        super(ShellConnection, self).__init__(reader, writer, window_size_changed_callback)
+        super().__init__(reader, writer, window_size_changed_callback)
         self._shell = shell
         self._loop = loop
         self._cli = None

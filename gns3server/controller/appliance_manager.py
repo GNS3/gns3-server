@@ -90,7 +90,7 @@ class ApplianceManager:
                     path = os.path.join(directory, file)
                     appliance_id = uuid.uuid3(uuid.NAMESPACE_URL, path)  # Generate UUID from path to avoid change between reboots
                     try:
-                        with open(path, 'r', encoding='utf-8') as f:
+                        with open(path, encoding='utf-8') as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
                             json_data = appliance.__json__()  # Check if loaded without error
                             if appliance.status != 'broken':
@@ -142,20 +142,20 @@ class ApplianceManager:
         Download a custom appliance symbol from our GitHub registry repository.
         """
 
-        symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
+        symbol_url = f"https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{symbol}"
         async with HTTPClient.get(symbol_url) as response:
             if response.status != 200:
-                log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
+                log.warning(f"Could not retrieve appliance symbol {symbol} from GitHub due to HTTP error code {response.status}")
             else:
                 try:
                     symbol_data = await response.read()
-                    log.info("Saving {} symbol to {}".format(symbol, destination_path))
+                    log.info(f"Saving {symbol} symbol to {destination_path}")
                     with open(destination_path, 'wb') as f:
                         f.write(symbol_data)
                 except asyncio.TimeoutError:
-                    log.warning("Timeout while downloading '{}'".format(symbol_url))
+                    log.warning(f"Timeout while downloading '{symbol_url}'")
                 except OSError as e:
-                    log.warning("Could not write appliance symbol '{}': {}".format(destination_path, e))
+                    log.warning(f"Could not write appliance symbol '{destination_path}': {e}")
 
     @locking
     async def download_appliances(self):
@@ -166,15 +166,15 @@ class ApplianceManager:
         try:
             headers = {}
             if self._appliances_etag:
-                log.info("Checking if appliances are up-to-date (ETag {})".format(self._appliances_etag))
+                log.info(f"Checking if appliances are up-to-date (ETag {self._appliances_etag})")
                 headers["If-None-Match"] = self._appliances_etag
 
             async with HTTPClient.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
                 if response.status == 304:
-                    log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
+                    log.info(f"Appliances are already up-to-date (ETag {self._appliances_etag})")
                     return
                 elif response.status != 200:
-                    raise ControllerError("Could not retrieve appliances from GitHub due to HTTP error code {}".format(response.status))
+                    raise ControllerError(f"Could not retrieve appliances from GitHub due to HTTP error code {response.status}")
                 etag = response.headers.get("ETag")
                 if etag:
                     self._appliances_etag = etag
@@ -198,11 +198,11 @@ class ApplianceManager:
                             continue
                         path = os.path.join(appliances_dir, appliance_name)
                         try:
-                            log.info("Saving {} file to {}".format(appliance_name, path))
+                            log.info(f"Saving {appliance_name} file to {path}")
                             with open(path, 'wb') as f:
                                 f.write(appliance_data)
                         except OSError as e:
-                            raise ControllerError("Could not write appliance file '{}': {}".format(path, e))
+                            raise ControllerError(f"Could not write appliance file '{path}': {e}")
                         downloaded_appliance_files.append(appliance_name)
 
             # delete old appliance files
@@ -212,14 +212,14 @@ class ApplianceManager:
                     continue
                 try:
                     if os.path.isfile(file_path) or os.path.islink(file_path):
-                        log.info("Deleting old appliance file {}".format(file_path))
+                        log.info(f"Deleting old appliance file {file_path}")
                         os.unlink(file_path)
                 except OSError as e:
-                    log.warning("Could not delete old appliance file '{}': {}".format(file_path, e))
+                    log.warning(f"Could not delete old appliance file '{file_path}': {e}")
                     continue
 
         except ValueError as e:
-            raise ControllerError("Could not read appliances information from GitHub: {}".format(e))
+            raise ControllerError(f"Could not read appliances information from GitHub: {e}")
 
         # download the custom symbols
         await self.download_custom_symbols()

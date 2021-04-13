@@ -68,7 +68,7 @@ def create_startup_handler(app: FastAPI) -> Callable:
         asyncio.ensure_future(Qemu.instance().list_images())
 
         for module in MODULES:
-            log.debug("Loading module {}".format(module.__name__))
+            log.debug(f"Loading module {module.__name__}")
             m = module.instance()
             m.port_manager = PortManager.instance()
 
@@ -82,14 +82,14 @@ def create_shutdown_handler(app: FastAPI) -> Callable:
         await Controller.instance().stop()
 
         for module in MODULES:
-            log.debug("Unloading module {}".format(module.__name__))
+            log.debug(f"Unloading module {module.__name__}")
             m = module.instance()
             await m.unload()
 
         if PortManager.instance().tcp_ports:
-            log.warning("TCP ports are still used {}".format(PortManager.instance().tcp_ports))
+            log.warning(f"TCP ports are still used {PortManager.instance().tcp_ports}")
 
         if PortManager.instance().udp_ports:
-            log.warning("UDP ports are still used {}".format(PortManager.instance().udp_ports))
+            log.warning(f"UDP ports are still used {PortManager.instance().udp_ports}")
 
     return shutdown_handler

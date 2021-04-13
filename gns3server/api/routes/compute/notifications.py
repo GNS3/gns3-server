@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 GNS3 Technologies Inc.
 #
@@ -46,7 +45,7 @@ async def notification_ws(websocket: WebSocket):
     except (ConnectionClosed, WebSocketDisconnect):
         log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
     except WebSocketException as e:
-        log.warning("Error while sending to controller event to WebSocket client: '{}'".format(e))
+        log.warning(f"Error while sending to controller event to WebSocket client: {e}")
     finally:
         await websocket.close()
 

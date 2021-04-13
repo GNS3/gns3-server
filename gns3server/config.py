@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2021 GNS3 Technologies Inc.
 #
@@ -61,7 +60,7 @@ class Config:
         self._watch_callback = []
 
         appname = "GNS3"
-        version = "{}.{}".format(__version_info__[0], __version_info__[1])
+        version = f"{__version_info__[0]}.{__version_info__[1]}"
 
         if sys.platform.startswith("win"):
 
@@ -132,7 +131,7 @@ class Config:
                 if not os.path.exists(new_server_config) and os.path.exists(old_server_config):
                     shutil.copyfile(old_server_config, new_server_config)
             except OSError as e:
-                log.error("Cannot migrate old config files: {}".format(e))
+                log.error(f"Cannot migrate old config files: {e}")
 
             self._main_config_file = os.path.join(versioned_user_dir, server_filename)
             for file in self._files:

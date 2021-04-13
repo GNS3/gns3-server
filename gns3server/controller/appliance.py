@@ -37,7 +37,7 @@ class Appliance:
             del self._data["appliance_id"]
 
         if self.status != 'broken':
-            log.debug('Appliance "{name}" [{id}] loaded'.format(name=self.name, id=self._id))
+            log.debug(f'Appliance "{self.name}" [{self._id}] loaded')
 
     @property
     def id(self):

@@ -54,7 +54,7 @@ class Symbols:
     def theme(self, theme):
 
         if not self._themes.get(theme):
-            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(theme))
+            raise ControllerNotFoundError(f"Could not find symbol theme '{theme}'")
         self._current_theme = theme
 
     def default_symbols(self):
@@ -65,10 +65,10 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            raise ControllerNotFoundError("Could not find symbol theme '{}'".format(symbol_theme))
+            raise ControllerNotFoundError(f"Could not find symbol theme '{symbol_theme}'")
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
-            log.warning("Default symbol {} was not found".format(symbol_path))
+            log.warning(f"Default symbol {symbol_path} was not found")
             return None
         return symbol_path
 
@@ -119,7 +119,7 @@ class Symbols:
             try:
                 os.makedirs(directory, exist_ok=True)
             except OSError as e:
-                log.error("Could not create symbol directory '{}': {}".format(directory, e))
+                log.error(f"Could not create symbol directory '{directory}': {e}")
                 return None
         return directory
 
@@ -132,12 +132,12 @@ class Symbols:
                 return self._symbols_path[symbol_id]
             except (OSError, KeyError):
                 # try to return a symbol with the same name from the classic theme
-                symbol = self._symbols_path.get(":/symbols/classic/{}".format(os.path.basename(symbol_id)))
+                symbol = self._symbols_path.get(f":/symbols/classic/{os.path.basename(symbol_id)}")
                 if symbol:
                     return symbol
                 else:
                     # return the default computer symbol
-                    log.warning("Could not retrieve symbol '{}', returning default symbol...".format(symbol_id))
+                    log.warning(f"Could not retrieve symbol '{symbol_id}', returning default symbol...")
                     return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):

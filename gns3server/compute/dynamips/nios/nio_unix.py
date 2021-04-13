@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -40,7 +39,7 @@ class NIOUNIX(NIO):
     def __init__(self, hypervisor, local_file, remote_file):
 
         # create an unique name
-        name = 'unix-{}'.format(uuid.uuid4())
+        name = f'unix-{uuid.uuid4()}'
         self._local_file = local_file
         self._remote_file = remote_file
         super().__init__(name, hypervisor)

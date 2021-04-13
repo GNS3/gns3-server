@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -58,7 +57,7 @@ LINEMO = 34     # Line Mode
 READ_SIZE = 1024
 
 
-class TelnetConnection(object):
+class TelnetConnection:
     """Default implementation of telnet connection which may but may not be used."""
     def __init__(self, reader, writer, window_size_changed_callback=None):
         self.is_closing = False
@@ -310,7 +309,7 @@ class AsyncioTelnetServer:
         command, payload = data[0], data[1:]
         if command == NAWS:
             if len(payload) == 4:
-                columns, rows = struct.unpack(str('!HH'), bytes(payload))
+                columns, rows = struct.unpack('!HH', bytes(payload))
                 await connection.window_size_changed(columns, rows)
             else:
                 log.warning('Wrong number of NAWS bytes')
@@ -358,7 +357,7 @@ class AsyncioTelnetServer:
                     pass
                 else:
                     log.debug("Unhandled telnet command: "
-                              "{0:#x} {1:#x}".format(*iac_cmd))
+                              "{:#x} {:#x}".format(*iac_cmd))
             elif iac_cmd[1] == SB:  # starts negotiation commands
                 negotiation = []
                 for pos in range(2, self.MAX_NEGOTIATION_READ):
@@ -383,28 +382,28 @@ class AsyncioTelnetServer:
                 if iac_cmd[1] == DO:
                     if iac_cmd[2] not in [ECHO, SGA, BINARY]:
                         network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                        log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                        log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
                     else:
                         if iac_cmd[2] == SGA:
                             if self._binary:
                                 network_writer.write(bytes([IAC, WILL, iac_cmd[2]]))
                             else:
                                 network_writer.write(bytes([IAC, WONT, iac_cmd[2]]))
-                                log.debug("Telnet WON'T {:#x}".format(iac_cmd[2]))
+                                log.debug(f"Telnet WON'T {iac_cmd[2]:#x}")
 
                 elif iac_cmd[1] == DONT:
                     log.debug("Unhandled DONT telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                              "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WILL:
                     if iac_cmd[2] not in [BINARY, NAWS]:
                         log.debug("Unhandled WILL telnet command: "
-                                  "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                                  "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 elif iac_cmd[1] == WONT:
                     log.debug("Unhandled WONT telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                              "{:#x} {:#x} {:#x}".format(*iac_cmd))
                 else:
                     log.debug("Unhandled telnet command: "
-                              "{0:#x} {1:#x} {2:#x}".format(*iac_cmd))
+                              "{:#x} {:#x} {:#x}".format(*iac_cmd))
 
             # Remove the entire TELNET command from the buffer
             buf = buf.replace(iac_cmd, b'', 1)

@@ -56,7 +56,7 @@ def _get_compressor(compress_type):
         return None
 
 
-class PointerIO(object):
+class PointerIO:
 
     def __init__(self, mode='wb'):
         if mode not in ('wb', ):

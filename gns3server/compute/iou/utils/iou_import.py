@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # To use python v2.7 change the first line to:
 #!/usr/bin/env python
@@ -55,7 +54,7 @@ def checksum(data, start, end):
         chk += word
 
     # add remaining words, ignoring old checksum at offset 4
-    struct_format = '>{:d}H'.format((end - start - 6) // 2)
+    struct_format = f'>{(end - start - 6) // 2:d}H'
     for word in struct.unpack_from(struct_format, data, start+6):
         chk += word
 
@@ -209,20 +208,20 @@ if __name__ == '__main__':
             fd = open(args.private, 'rb')
             private = fd.read()
             fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error reading file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error reading file: {err}\n")
         sys.exit(1)
 
     try:
         nvram = nvram_import(nvram, startup, private, args.create)
     except ValueError as err:
-        sys.stderr.write("nvram_import: {}\n".format(err))
+        sys.stderr.write(f"nvram_import: {err}\n")
         sys.exit(3)
 
     try:
         fd = open(args.nvram, 'wb')
         fd.write(nvram)
         fd.close()
-    except (IOError, OSError) as err:
-        sys.stderr.write("Error writing file: {}\n".format(err))
+    except OSError as err:
+        sys.stderr.write(f"Error writing file: {err}\n")
         sys.exit(1)

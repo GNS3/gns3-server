@@ -153,5 +153,5 @@ async def add_extra_headers(request: Request, call_next):
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    response.headers["X-GNS3-Server-Version"] = "{}".format(__version__)
+    response.headers["X-GNS3-Server-Version"] = f"{__version__}"
     return response

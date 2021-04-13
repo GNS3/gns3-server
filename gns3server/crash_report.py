@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -77,7 +76,7 @@ class CrashReport:
                 if cacert_resource is not None and os.path.isfile(cacert_resource):
                     cacert = cacert_resource
                 else:
-                    log.error("The SSL certificate bundle file '{}' could not be found".format(cacert_resource))
+                    log.error(f"The SSL certificate bundle file '{cacert_resource}' could not be found")
 
             # Don't send log records as events.
             sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
@@ -92,7 +91,7 @@ class CrashReport:
                 "os:name": platform.system(),
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
-                "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
+                "os:mac": f"{platform.mac_ver()[0]} {platform.mac_ver()[2]}",
                 "os:linux": " ".join(distro.linux_distribution()),
 
             }
@@ -162,9 +161,9 @@ class CrashReport:
                         sentry_sdk.capture_exception()
                 else:
                     sentry_sdk.capture_exception()
-                log.info("Crash report sent with event ID: {}".format(sentry_sdk.last_event_id()))
+                log.info(f"Crash report sent with event ID: {sentry_sdk.last_event_id()}")
             except Exception as e:
-                log.warning("Can't send crash report to Sentry: {}".format(e))
+                log.warning(f"Can't send crash report to Sentry: {e}")
 
     @classmethod
     def instance(cls):

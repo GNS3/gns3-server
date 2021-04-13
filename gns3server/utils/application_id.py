@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2017 GNS3 Technologies Inc.
 #
@@ -38,7 +37,7 @@ def get_next_application_id(projects, computes):
         if project.status == "opened":
             nodes.extend(list(project.nodes.values()))
 
-    used = set([n.properties["application_id"] for n in nodes if n.node_type == "iou" and n.compute.id in computes])
+    used = {n.properties["application_id"] for n in nodes if n.node_type == "iou" and n.compute.id in computes}
     pool = set(range(1, 512))
     try:
         application_id = (pool - used).pop()

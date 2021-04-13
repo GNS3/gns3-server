@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -58,7 +57,7 @@ class Hypervisor(UBridgeHypervisor):
                 port = None
                 info = socket.getaddrinfo(host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
                 if not info:
-                    raise UbridgeError("getaddrinfo returns an empty list on {}".format(host))
+                    raise UbridgeError(f"getaddrinfo returns an empty list on {host}")
                 for res in info:
                     af, socktype, proto, _, sa = res
                     # let the OS find an unused port for the uBridge hypervisor
@@ -68,7 +67,7 @@ class Hypervisor(UBridgeHypervisor):
                         port = sock.getsockname()[1]
                         break
             except OSError as e:
-                raise UbridgeError("Could not find free port for the uBridge hypervisor: {}".format(e))
+                raise UbridgeError(f"Could not find free port for the uBridge hypervisor: {e}")
 
         super().__init__(host, port)
         self._project = project
@@ -146,11 +145,11 @@ class Hypervisor(UBridgeHypervisor):
                     # to work for IOU nodes.
                     minimum_required_version = "0.9.14"
                 if parse_version(self._version) < parse_version(minimum_required_version):
-                    raise UbridgeError("uBridge executable version must be >= {}".format(minimum_required_version))
+                    raise UbridgeError(f"uBridge executable version must be >= {minimum_required_version}")
             else:
-                raise UbridgeError("Could not determine uBridge version for {}".format(self._path))
+                raise UbridgeError(f"Could not determine uBridge version for {self._path}")
         except (OSError, subprocess.SubprocessError) as e:
-            raise UbridgeError("Error while looking for uBridge version: {}".format(e))
+            raise UbridgeError(f"Error while looking for uBridge version: {e}")
 
     async def start(self):
         """
@@ -166,9 +165,9 @@ class Hypervisor(UBridgeHypervisor):
         await self._check_ubridge_version(env)
         try:
             command = self._build_command()
-            log.info("starting ubridge: {}".format(command))
+            log.info(f"starting ubridge: {command}")
             self._stdout_file = os.path.join(self._working_dir, "ubridge.log")
-            log.info("logging to {}".format(self._stdout_file))
+            log.info(f"logging to {self._stdout_file}")
             with open(self._stdout_file, "w", encoding="utf-8") as fd:
                 self._process = await asyncio.create_subprocess_exec(*command,
                                                                           stdout=fd,
@@ -176,14 +175,14 @@ class Hypervisor(UBridgeHypervisor):
                                                                           cwd=self._working_dir,
                                                                           env=env)
 
-            log.info("ubridge started PID={}".format(self._process.pid))
+            log.info(f"ubridge started PID={self._process.pid}")
             # recv: Bad address is received by uBridge when a docker image stops by itself
             # see https://github.com/GNS3/gns3-gui/issues/2957
             #monitor_process(self._process, self._termination_callback)
         except (OSError, subprocess.SubprocessError) as e:
             ubridge_stdout = self.read_stdout()
-            log.error("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
-            raise UbridgeError("Could not start ubridge: {}\n{}".format(e, ubridge_stdout))
+            log.error(f"Could not start ubridge: {e}\n{ubridge_stdout}")
+            raise UbridgeError(f"Could not start ubridge: {e}\n{ubridge_stdout}")
 
     def _termination_callback(self, returncode):
         """
@@ -193,7 +192,7 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         if returncode != 0:
-            error_msg = "uBridge process has stopped, return code: {}\n{}\n".format(returncode, self.read_stdout())
+            error_msg = f"uBridge process has stopped, return code: {returncode}\n{self.read_stdout()}\n"
             log.error(error_msg)
             self._project.emit("log.error", {"message": error_msg})
         else:
@@ -205,13 +204,13 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         if self.is_running():
-            log.info("Stopping uBridge process PID={}".format(self._process.pid))
+            log.info(f"Stopping uBridge process PID={self._process.pid}")
             await UBridgeHypervisor.stop(self)
             try:
                 await wait_for_process_termination(self._process, timeout=3)
             except asyncio.TimeoutError:
                 if self._process and self._process.returncode is None:
-                    log.warning("uBridge process {} is still running... killing it".format(self._process.pid))
+                    log.warning(f"uBridge process {self._process.pid} is still running... killing it")
                     try:
                         self._process.kill()
                     except ProcessLookupError:
@@ -221,7 +220,7 @@ class Hypervisor(UBridgeHypervisor):
             try:
                 os.remove(self._stdout_file)
             except OSError as e:
-                log.warning("could not delete temporary uBridge log file: {}".format(e))
+                log.warning(f"could not delete temporary uBridge log file: {e}")
         self._process = None
         self._started = False
 
@@ -237,7 +236,7 @@ class Hypervisor(UBridgeHypervisor):
                 with open(self._stdout_file, "rb") as file:
                     output = file.read().decode("utf-8", errors="replace")
             except OSError as e:
-                log.warning("could not read {}: {}".format(self._stdout_file, e))
+                log.warning(f"could not read {self._stdout_file}: {e}")
         return output
 
     def is_running(self):
@@ -258,7 +257,7 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         command = [self._path]
-        command.extend(["-H", "{}:{}".format(self._host, self._port)])
+        command.extend(["-H", f"{self._host}:{self._port}"])
         if log.getEffectiveLevel() == logging.DEBUG:
             command.extend(["-d", "1"])
         return command

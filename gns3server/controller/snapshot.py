@@ -85,13 +85,13 @@ class Snapshot:
         """
 
         if os.path.exists(self.path):
-            raise ControllerError("The snapshot file '{}' already exists".format(self.name))
+            raise ControllerError(f"The snapshot file '{self.name}' already exists")
 
         snapshot_directory = os.path.join(self._project.path, "snapshots")
         try:
             os.makedirs(snapshot_directory, exist_ok=True)
         except OSError as e:
-            raise ControllerError("Could not create the snapshot directory '{}': {}".format(snapshot_directory, e))
+            raise ControllerError(f"Could not create the snapshot directory '{snapshot_directory}': {e}")
 
         try:
             begin = time.time()
@@ -102,9 +102,9 @@ class Snapshot:
                     async with aiofiles.open(self.path, 'wb') as f:
                         async for chunk in zstream:
                             await f.write(chunk)
-            log.info("Snapshot '{}' created in {:.4f} seconds".format(self.name, time.time() - begin))
+            log.info(f"Snapshot '{self.name}' created in {time.time() - begin:.4f} seconds")
         except (ValueError, OSError, RuntimeError) as e:
-            raise ControllerError("Could not create snapshot file '{}': {}".format(self.path, e))
+            raise ControllerError(f"Could not create snapshot file '{self.path}': {e}")
 
     async def restore(self):
         """

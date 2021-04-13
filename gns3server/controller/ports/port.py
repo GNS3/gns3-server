@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2014 GNS3 Technologies Inc.
 #
@@ -86,8 +85,8 @@ class Port:
             return self._short_name
         elif '/' in self._name:
             return self._name.replace(self.long_name_type(), self.short_name_type())
-        elif self._name.startswith("{}{}".format(self.long_name_type(), self._interface_number)):
-            return self.short_name_type() + "{}".format(self._interface_number)
+        elif self._name.startswith(f"{self.long_name_type()}{self._interface_number}"):
+            return self.short_name_type() + f"{self._interface_number}"
         return self._name
 
     @short_name.setter

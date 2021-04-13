@@ -102,7 +102,7 @@ async def _asyncio_open_serial_windows(path):
     try:
         await wait_for_named_pipe_creation(path)
     except asyncio.TimeoutError:
-        raise NodeError('Pipe file "{}" is missing'.format(path))
+        raise NodeError(f'Pipe file "{path}" is missing')
     return WindowsPipe(path)
 
 
@@ -117,13 +117,13 @@ async def _asyncio_open_serial_unix(path):
         # wait for VM to create the pipe file.
         await wait_for_file_creation(path)
     except asyncio.TimeoutError:
-        raise NodeError('Pipe file "{}" is missing'.format(path))
+        raise NodeError(f'Pipe file "{path}" is missing')
 
     output = SerialReaderWriterProtocol()
     try:
         await asyncio.get_event_loop().create_unix_connection(lambda: output, path)
     except ConnectionRefusedError:
-        raise NodeError('Can\'t open pipe file "{}"'.format(path))
+        raise NodeError(f'Can\'t open pipe file "{path}"')
     return output
 
 

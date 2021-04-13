@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -144,12 +143,12 @@ class BaseManager:
                 try:
                     future.result()
                 except (Exception, GeneratorExit) as e:
-                    log.error("Could not close node {}".format(e), exc_info=1)
+                    log.error(f"Could not close node: {e}", exc_info=1)
                     continue
 
         if hasattr(BaseManager, "_instance"):
             BaseManager._instance = None
-        log.debug("Module {} unloaded".format(self.module_name))
+        log.debug(f"Module {self.module_name} unloaded")
 
     def get_node(self, node_id, project_id=None):
         """
@@ -168,15 +167,15 @@ class BaseManager:
         try:
             UUID(node_id, version=4)
         except ValueError:
-            raise ComputeError("Node ID {} is not a valid UUID".format(node_id))
+            raise ComputeError(f"Node ID {node_id} is not a valid UUID")
 
         if node_id not in self._nodes:
-            raise ComputeNotFoundError("Node ID {} doesn't exist".format(node_id))
+            raise ComputeNotFoundError(f"Node ID {node_id} doesn't exist")
 
         node = self._nodes[node_id]
         if project_id:
             if node.project.id != project.id:
-                raise ComputeNotFoundError("Project ID {} doesn't belong to node {}".format(project_id, node.name))
+                raise ComputeNotFoundError("Project ID {project_id} doesn't belong to node {node.name}")
 
         return node
 
@@ -226,7 +225,7 @@ class BaseManager:
             shutil.rmtree(destination_dir)
             shutil.copytree(source_node.working_dir, destination_dir, symlinks=True, ignore_dangling_symlinks=True)
         except OSError as e:
-            raise ComputeError("Cannot duplicate node data: {}".format(e))
+            raise ComputeError(f"Cannot duplicate node data: {e}")
 
         # We force a refresh of the name. This forces the rewrite
         # of some configuration files
@@ -326,7 +325,7 @@ class BaseManager:
                 if struct.unpack("<IIIII", caps)[1] & 1 << 13:
                     return True
         except (AttributeError, OSError) as e:
-            log.error("could not determine if CAP_NET_RAW capability is set for {}: {}".format(executable, e))
+            log.error(f"Could not determine if CAP_NET_RAW capability is set for {executable}: {e}")
 
         return False
 
@@ -347,13 +346,13 @@ class BaseManager:
             try:
                 info = socket.getaddrinfo(rhost, rport, socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
                 if not info:
-                    raise ComputeError("getaddrinfo returns an empty list on {}:{}".format(rhost, rport))
+                    raise ComputeError(f"getaddrinfo returned an empty list on {rhost}:{rport}")
                 for res in info:
                     af, socktype, proto, _, sa = res
                     with socket.socket(af, socktype, proto) as sock:
                         sock.connect(sa)
             except OSError as e:
-                raise ComputeError("Could not create an UDP connection to {}:{}: {}".format(rhost, rport, e))
+                raise ComputeError(f"Could not create an UDP connection to {rhost}:{rport}: {e}")
             nio = NIOUDP(lport, rhost, rport)
             nio.filters = nio_settings.get("filters", {})
             nio.suspend = nio_settings.get("suspend", False)
@@ -368,7 +367,7 @@ class BaseManager:
         elif nio_settings["type"] in ("nio_generic_ethernet", "nio_ethernet"):
             ethernet_device = nio_settings["ethernet_device"]
             if not is_interface_up(ethernet_device):
-                raise ComputeError("Ethernet interface {} does not exist or is down".format(ethernet_device))
+                raise ComputeError(f"Ethernet interface {ethernet_device} does not exist or is down")
             nio = NIOEthernet(ethernet_device)
         assert nio is not None
         return nio
@@ -400,9 +399,9 @@ class BaseManager:
                         continue
                     yield data
         except FileNotFoundError:
-            raise ComputeNotFoundError("File '{}' not found".format(path))
+            raise ComputeNotFoundError(f"File '{path}' not found")
         except PermissionError:
-            raise ComputeForbiddenError("File '{}' cannot be accessed".format(path))
+            raise ComputeForbiddenError(f"File '{path}' cannot be accessed")
 
     def get_abs_image_path(self, path, extra_dir=None):
         """
@@ -426,17 +425,17 @@ class BaseManager:
         # Windows path should not be send to a unix server
         if not sys.platform.startswith("win"):
             if re.match(r"^[A-Z]:", path) is not None:
-                raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'".format(path, img_directory))
+                raise NodeError(f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'")
 
         if not os.path.isabs(path):
             for directory in valid_directory_prefices:
-                log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
+                log.debug(f"Searching for image '{orig_path}' in '{directory}'")
                 path = self._recursive_search_file_in_directory(directory, orig_path)
                 if path:
                     return force_unix_path(path)
 
             # Not found we try the default directory
-            log.debug("Searching for image '{}' in default directory".format(orig_path))
+            log.debug(f"Searching for image '{orig_path}' in default directory")
             s = os.path.split(orig_path)
             path = force_unix_path(os.path.join(img_directory, *s))
             if os.path.exists(path):
@@ -445,7 +444,7 @@ class BaseManager:
 
         # For local server we allow using absolute path outside image directory
         if Config.instance().settings.Server.local is True:
-            log.debug("Searching for '{}'".format(orig_path))
+            log.debug(f"Searching for '{orig_path}'")
             path = force_unix_path(path)
             if os.path.exists(path):
                 return path
@@ -454,12 +453,12 @@ class BaseManager:
         # Check to see if path is an absolute path to a valid directory
         path = force_unix_path(path)
         for directory in valid_directory_prefices:
-            log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
+            log.debug(f"Searching for image '{orig_path}' in '{directory}'")
             if os.path.commonprefix([directory, path]) == directory:
                 if os.path.exists(path):
                     return path
                 raise ImageMissingError(orig_path)
-        raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'".format(path, img_directory))
+        raise NodeError(f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'")
 
     def _recursive_search_file_in_directory(self, directory, searched_file):
         """
@@ -518,7 +517,7 @@ class BaseManager:
         try:
             return list_images(self._NODE_TYPE)
         except OSError as e:
-            raise ComputeError("Can not list images {}".format(e))
+            raise ComputeError(f"Can not list images {e}")
 
     def get_images_directory(self):
         """
@@ -534,8 +533,8 @@ class BaseManager:
         directory = self.get_images_directory()
         path = os.path.abspath(os.path.join(directory, *os.path.split(filename)))
         if os.path.commonprefix([directory, path]) != directory:
-            raise ComputeForbiddenError("Could not write image: {}, {} is forbidden".format(filename, path))
-        log.info("Writing image file to '{}'".format(path))
+            raise ComputeForbiddenError(f"Could not write image: {filename}, '{path}' is forbidden")
+        log.info(f"Writing image file to '{path}'")
         try:
             remove_checksum(path)
             # We store the file under his final name only when the upload is finished
@@ -548,7 +547,7 @@ class BaseManager:
             shutil.move(tmp_path, path)
             await cancellable_wait_run_in_executor(md5sum, path)
         except OSError as e:
-            raise ComputeError("Could not write image: {} because {}".format(filename, e))
+            raise ComputeError(f"Could not write image '{filename}': {e}")
 
     def reset(self):
         """

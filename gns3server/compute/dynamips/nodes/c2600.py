@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -122,7 +121,7 @@ class C2600(Router):
         2620XM, 2621XM, 2650XM or 2651XM
         """
 
-        await self._hypervisor.send('c2600 set_chassis "{name}" {chassis}'.format(name=self._name, chassis=chassis))
+        await self._hypervisor.send(f'c2600 set_chassis "{self._name}" {chassis}')
 
         log.info('Router "{name}" [{id}]: chassis set to {chassis}'.format(name=self._name,
                                                                            id=self._id,
@@ -147,7 +146,7 @@ class C2600(Router):
         :param iomem: I/O memory size
         """
 
-        await self._hypervisor.send('c2600 set_iomem "{name}" {size}'.format(name=self._name, size=iomem))
+        await self._hypervisor.send(f'c2600 set_iomem "{self._name}" {iomem}')
 
         log.info('Router "{name}" [{id}]: I/O memory updated from {old_iomem}% to {new_iomem}%'.format(name=self._name,
                                                                                                        id=self._id,

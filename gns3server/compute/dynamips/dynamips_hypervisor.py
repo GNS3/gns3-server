@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -87,9 +86,9 @@ class DynamipsHypervisor:
             break
 
         if not connection_success:
-            raise DynamipsError("Couldn't connect to hypervisor on {}:{} :{}".format(host, self._port, last_exception))
+            raise DynamipsError(f"Couldn't connect to hypervisor on {host}:{self._port} :{last_exception}")
         else:
-            log.info("Connected to Dynamips hypervisor on {}:{} after {:.4f} seconds".format(host, self._port, time.time() - begin))
+            log.info(f"Connected to Dynamips hypervisor on {host}:{self._port} after {time.time() - begin:.4f} seconds")
 
         try:
             version = await self.send("hypervisor version")
@@ -134,7 +133,7 @@ class DynamipsHypervisor:
                 await self._writer.drain()
                 self._writer.close()
         except OSError as e:
-            log.debug("Stopping hypervisor {}:{} {}".format(self._host, self._port, e))
+            log.debug(f"Stopping hypervisor {self._host}:{self._port} {e}")
         self._reader = self._writer = None
 
     async def reset(self):
@@ -152,9 +151,9 @@ class DynamipsHypervisor:
         """
 
         # encase working_dir in quotes to protect spaces in the path
-        await self.send('hypervisor working_dir "{}"'.format(working_dir))
+        await self.send(f'hypervisor working_dir "{working_dir}"')
         self._working_dir = working_dir
-        log.debug("Working directory set to {}".format(self._working_dir))
+        log.debug(f"Working directory set to {self._working_dir}")
 
     @property
     def working_dir(self):
@@ -244,7 +243,7 @@ class DynamipsHypervisor:
 
             try:
                 command = command.strip() + '\n'
-                log.debug("sending {}".format(command))
+                log.debug(f"sending {command}")
                 self._writer.write(command.encode())
                 await self._writer.drain()
             except OSError as e:
@@ -269,7 +268,7 @@ class DynamipsHypervisor:
                         # Sometimes WinError 64 (ERROR_NETNAME_DELETED) is returned here on Windows.
                         # These happen if connection reset is received before IOCP could complete
                         # a previous operation. Ignore and try again....
-                        log.warning("Connection reset received while reading Dynamips response: {}".format(e))
+                        log.warning(f"Connection reset received while reading Dynamips response: {e}")
                         continue
                     if not chunk:
                         if retries > max_retries:
@@ -300,7 +299,7 @@ class DynamipsHypervisor:
 
                 # Does it contain an error code?
                 if self.error_re.search(data[-1]):
-                    raise DynamipsError("Dynamips error when running command '{}': {}".format(command, data[-1][4:]))
+                    raise DynamipsError(f"Dynamips error when running command '{command}': {data[-1][4:]}")
 
                 # Or does the last line begin with '100-'? Then we are done!
                 if data[-1][:4] == '100-':
@@ -314,5 +313,5 @@ class DynamipsHypervisor:
                 if self.success_re.search(data[index]):
                     data[index] = data[index][4:]
 
-            log.debug("returned result {}".format(data))
+            log.debug(f"returned result {data}")
             return data

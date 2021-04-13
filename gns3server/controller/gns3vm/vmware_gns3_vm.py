@@ -49,7 +49,7 @@ class VMwareGNS3VM(BaseGNS3VM):
             result = await self._vmware_manager.execute(subcommand, args, timeout, log_level=log_level)
             return (''.join(result))
         except VMwareError as e:
-            raise GNS3VMError("Error while executing VMware command: {}".format(e))
+            raise GNS3VMError(f"Error while executing VMware command: {e}")
 
     async def _is_running(self):
         result = await self._vmware_manager.execute("list", [])
@@ -67,13 +67,13 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # memory must be a multiple of 4 (VMware requirement)
         if ram % 4 != 0:
-            raise GNS3VMError("Allocated memory {} for the GNS3 VM must be a multiple of 4".format(ram))
+            raise GNS3VMError(f"Allocated memory {ram} for the GNS3 VM must be a multiple of 4")
 
         available_vcpus = psutil.cpu_count(logical=True)
         if not float(vcpus).is_integer():
-            raise GNS3VMError("The allocated vCPUs value is not an integer: {}".format(vcpus))
+            raise GNS3VMError(f"The allocated vCPUs value is not an integer: {vcpus}")
         if vcpus > available_vcpus:
-            raise GNS3VMError("You have allocated too many vCPUs for the GNS3 VM! (max available is {} vCPUs)".format(available_vcpus))
+            raise GNS3VMError(f"You have allocated too many vCPUs for the GNS3 VM! (max available is {available_vcpus} vCPUs)")
 
         try:
             pairs = VMware.parse_vmware_file(self._vmx_path)
@@ -84,9 +84,9 @@ class VMwareGNS3VM(BaseGNS3VM):
                     pairs["cpuid.corespersocket"] = str(cores_per_sockets)
                 pairs["memsize"] = str(ram)
                 VMware.write_vmx_file(self._vmx_path, pairs)
-            log.info("GNS3 VM vCPU count set to {} and RAM amount set to {}".format(vcpus, ram))
+            log.info(f"GNS3 VM vCPU count set to {vcpus} and RAM amount set to {ram}")
         except OSError as e:
-            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+            raise GNS3VMError(f'Could not read/write VMware VMX file "{self._vmx_path}": {e}')
 
     async def _set_extra_options(self):
         try:
@@ -103,13 +103,13 @@ class VMwareGNS3VM(BaseGNS3VM):
                 if key not in pairs.keys():
                     pairs[key] = value
                     updated = True
-                    log.info("GNS3 VM VMX `{}` set to `{}`".format(key, value))
+                    log.info(f"GNS3 VM VMX `{key}` set to `{value}`")
 
             if updated:
                 VMware.write_vmx_file(self._vmx_path, pairs)
                 log.info("GNS3 VM VMX has been updated.")
         except OSError as e:
-            raise GNS3VMError('Could not read/write VMware VMX file "{}": {}'.format(self._vmx_path, e))
+            raise GNS3VMError(f'Could not read/write VMware VMX file "{self._vmx_path}": {e}')
 
     async def list(self):
         """
@@ -119,7 +119,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             return (await self._vmware_manager.list_vms())
         except VMwareError as e:
-            raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
+            raise GNS3VMError(f"Could not list VMware VMs: {str(e)}")
 
     async def start(self):
         """
@@ -134,19 +134,19 @@ class VMwareGNS3VM(BaseGNS3VM):
 
         # check we have a valid VMX file path
         if not self._vmx_path:
-            raise GNS3VMError("VMWare VM {} not found".format(self.vmname))
+            raise GNS3VMError(f"VMWare VM {self.vmname} not found")
         if not os.path.exists(self._vmx_path):
-            raise GNS3VMError("VMware VMX file {} doesn't exist".format(self._vmx_path))
+            raise GNS3VMError(f"VMware VMX file {self._vmx_path} doesn't exist")
 
         # check if the VMware guest tools are installed
         vmware_tools_state = await self._execute("checkToolsState", [self._vmx_path])
         if vmware_tools_state not in ("installed", "running"):
-            raise GNS3VMError("VMware tools are not installed in {}".format(self.vmname))
+            raise GNS3VMError(f"VMware tools are not installed in {self.vmname}")
 
         try:
             running = await self._is_running()
         except VMwareError as e:
-            raise GNS3VMError("Could not list VMware VMs: {}".format(str(e)))
+            raise GNS3VMError(f"Could not list VMware VMs: {str(e)}")
         if not running:
             # set the number of vCPUs and amount of RAM
             if self.allocate_vcpus_ram:
@@ -180,12 +180,12 @@ class VMwareGNS3VM(BaseGNS3VM):
                     guest_ip_address = await self._execute("getGuestIPAddress", [self._vmx_path, "-wait"], timeout=120)
                     break
             except GNS3VMError as e:
-                log.debug("{}".format(e))
+                log.debug(f"{e}")
             await asyncio.sleep(1)
         if not guest_ip_address:
-            raise GNS3VMError("Could not find guest IP address for {}".format(self.vmname))
+            raise GNS3VMError(f"Could not find guest IP address for {self.vmname}")
         self.ip_address = guest_ip_address
-        log.info("GNS3 VM IP address set to {}".format(guest_ip_address))
+        log.info(f"GNS3 VM IP address set to {guest_ip_address}")
         self.running = True
 
     async def suspend(self):
@@ -198,7 +198,7 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             await self._execute("suspend", [self._vmx_path])
         except GNS3VMError as e:
-            log.warning("Error when suspending the VM: {}".format(str(e)))
+            log.warning(f"Error when suspending the VM: {str(e)}")
         log.info("GNS3 VM has been suspended")
         self.running = False
 
@@ -212,6 +212,6 @@ class VMwareGNS3VM(BaseGNS3VM):
         try:
             await self._execute("stop", [self._vmx_path, "soft"])
         except GNS3VMError as e:
-            log.warning("Error when stopping the VM: {}".format(str(e)))
+            log.warning(f"Error when stopping the VM: {str(e)}")
         log.info("GNS3 VM has been stopped")
         self.running = False

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 GNS3 Technologies Inc.
 #
@@ -51,7 +50,7 @@ class EthernetHub(BaseNode):
         """
 
         super().create()
-        log.info('Ethernet hub "{name}" [{id}] has been created'.format(name=self._name, id=self._id))
+        log.info(f'Ethernet hub "{self._name}" [{self._id}] has been created')
 
     async def delete(self):
         """

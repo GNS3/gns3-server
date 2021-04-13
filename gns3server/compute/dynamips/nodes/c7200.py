@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -123,7 +122,7 @@ class C7200(Router):
         if (await self.is_running()):
             raise DynamipsError("Cannot change NPE on running router")
 
-        await self._hypervisor.send('c7200 set_npe "{name}" {npe}'.format(name=self._name, npe=npe))
+        await self._hypervisor.send(f'c7200 set_npe "{self._name}" {npe}')
 
         log.info('Router "{name}" [{id}]: NPE updated from {old_npe} to {new_npe}'.format(name=self._name,
                                                                                           id=self._id,
@@ -148,7 +147,7 @@ class C7200(Router):
         :returns: midplane model string (e.g. "vxr" or "std")
         """
 
-        await self._hypervisor.send('c7200 set_midplane "{name}" {midplane}'.format(name=self._name, midplane=midplane))
+        await self._hypervisor.send(f'c7200 set_midplane "{self._name}" {midplane}')
 
         log.info('Router "{name}" [{id}]: midplane updated from {old_midplane} to {new_midplane}'.format(name=self._name,
                                                                                                          id=self._id,

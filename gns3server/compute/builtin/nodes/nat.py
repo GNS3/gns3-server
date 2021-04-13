@@ -40,7 +40,7 @@ class Nat(Cloud):
             if not nat_interface:
                 nat_interface = "virbr0"
             if nat_interface not in [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]:
-                raise NodeError("NAT interface {} is missing, please install libvirt".format(nat_interface))
+                raise NodeError(f"NAT interface {nat_interface} is missing, please install libvirt")
             interface = nat_interface
         else:
             nat_interface = Config.instance().settings.Server.default_nat_interface
@@ -49,10 +49,11 @@ class Nat(Cloud):
             interfaces = list(filter(lambda x: nat_interface in x.lower(),
                            [interface["name"] for interface in gns3server.utils.interfaces.interfaces()]))
             if not len(interfaces):
-                raise NodeError("NAT interface {} is missing. You need to install VMware or use the NAT node on GNS3 VM".format(nat_interface))
+                raise NodeError(f"NAT interface {nat_interface} is missing. "
+                                f"You need to install VMware or use the NAT node on GNS3 VM")
             interface = interfaces[0]  # take the first available interface containing the vmnet8 name
 
-        log.info("NAT node '{}' configured to use NAT interface '{}'".format(name, interface))
+        log.info(f"NAT node '{name}' configured to use NAT interface '{interface}'")
         ports = [
             {
                 "name": "nat0",

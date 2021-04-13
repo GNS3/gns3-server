@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 GNS3 Technologies Inc.
 #
@@ -40,7 +39,7 @@ class NIOVDE(NIO):
     def __init__(self, hypervisor, control_file, local_file):
 
         # create an unique name
-        name = 'vde-{}'.format(uuid.uuid4())
+        name = f'vde-{uuid.uuid4()}'
         self._control_file = control_file
         self._local_file = local_file
         super().__init__(name, hypervisor)

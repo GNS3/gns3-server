@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 GNS3 Technologies Inc.
 #
@@ -32,6 +31,6 @@ if "dev" in __version__:
         import subprocess
         if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git")):
             r = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
-            __version__ = "{}-{}".format(__version__, r)
+            __version__ = f"{__version__}-{r}"
     except Exception as e:
         print(e)

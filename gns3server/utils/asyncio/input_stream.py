@@ -4,12 +4,10 @@ Parser for VT100 input stream.
 
 # Copied from prompt_toolkit/terminal/vt100_input.py due to dependency on termios (which is not available on Windows)
 
-from __future__ import unicode_literals
 
 import re
 import six
 
-from six.moves import range
 
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.input_processor import KeyPress
@@ -41,7 +39,7 @@ _cpr_response_prefix_re = re.compile('^' + re.escape('\x1b[') + r'[\d;]*\Z')
 _mouse_event_prefix_re = re.compile('^' + re.escape('\x1b[') + r'(<?[\d;]*|M.{0,2})\Z')
 
 
-class _Flush(object):
+class _Flush:
     """ Helper object to indicate flush operation to the parser. """
     pass
 
@@ -217,7 +215,7 @@ class _IsPrefixOfLongerMatchCache(dict):
 _IS_PREFIX_OF_LONGER_MATCH_CACHE = _IsPrefixOfLongerMatchCache()
 
 
-class InputStream(object):
+class InputStream:
     """
     Parser for VT100 input stream.
 
@@ -345,7 +343,7 @@ class InputStream(object):
 
         :param data: Input string (unicode).
         """
-        assert isinstance(data, six.text_type)
+        assert isinstance(data, str)
 
         if _DEBUG_RENDERER_INPUT:
             self.LOG.write(repr(data).encode('utf-8') + b'\n')
