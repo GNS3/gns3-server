@@ -36,7 +36,6 @@ class NodeType(str, Enum):
     docker = "docker"
     dynamips = "dynamips"
     vpcs = "vpcs"
-    traceng = "traceng"
     virtualbox = "virtualbox"
     vmware = "vmware"
     iou = "iou"

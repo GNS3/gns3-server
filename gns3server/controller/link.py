@@ -397,7 +397,6 @@ class Link:
         for node in self._nodes:
             if node["node"].node_type in (
                 "vpcs",
-                "traceng",
                 "vmware",
                 "dynamips",
                 "qemu",

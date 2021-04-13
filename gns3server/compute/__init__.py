@@ -23,9 +23,8 @@ from .virtualbox import VirtualBox
 from .dynamips import Dynamips
 from .qemu import Qemu
 from .vmware import VMware
-from .traceng import TraceNG
 
-MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware, TraceNG]
+MODULES = [Builtin, VPCS, VirtualBox, Dynamips, Qemu, VMware]
 
 if (
     sys.platform.startswith("linux")

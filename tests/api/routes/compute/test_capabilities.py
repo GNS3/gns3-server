@@ -34,7 +34,7 @@ async def test_get(app: FastAPI, client: AsyncClient, windows_platform) -> None:
 
     response = await client.get(app.url_path_for("get_capabilities"))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
+    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
                                'version': __version__,
                                'platform': sys.platform,
                                'cpus': psutil.cpu_count(logical=True),
@@ -48,7 +48,7 @@ async def test_get_on_gns3vm(app: FastAPI, client: AsyncClient, on_gns3vm) -> No
 
     response = await client.get(app.url_path_for("get_capabilities"))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'traceng', 'docker', 'iou'],
+    assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
                                'version': __version__,
                                'platform': sys.platform,
                                'cpus': psutil.cpu_count(logical=True),

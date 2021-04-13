@@ -139,7 +139,7 @@ class Node:
         :returns: Boolean True if the node is always running
         like ethernet switch
         """
-        return self.node_type not in ("qemu", "docker", "dynamips", "vpcs", "vmware", "virtualbox", "iou", "traceng")
+        return self.node_type not in ("qemu", "docker", "dynamips", "vpcs", "vmware", "virtualbox", "iou")
 
     @property
     def id(self):
@@ -753,7 +753,7 @@ class Node:
                     PortFactory(port["name"], 0, 0, port_number, "ethernet", short_name=f"e{port_number}")
                 )
                 port_number += 1
-        elif self._node_type in ("vpcs", "traceng"):
+        elif self._node_type in ("vpcs"):
             self._ports.append(PortFactory("Ethernet0", 0, 0, 0, "ethernet", short_name="e0"))
         elif self._node_type in ("cloud", "nat"):
             port_number = 0
