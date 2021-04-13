@@ -37,11 +37,11 @@ from gns3server import schemas
 import logging
 log = logging.getLogger(__name__)
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or link"}
 }
+
+router = APIRouter(responses=responses)
 
 
 async def dep_link(project_id: UUID, link_id: UUID):
@@ -95,8 +95,7 @@ async def create_link(project_id: UUID, link_data: schemas.Link):
     return link.__json__()
 
 
-@router.get("/{link_id}/available_filters",
-            responses=responses)
+@router.get("/{link_id}/available_filters")
 async def get_filters(link: Link = Depends(dep_link)):
     """
     Return all filters available for a given link.
@@ -107,8 +106,7 @@ async def get_filters(link: Link = Depends(dep_link)):
 
 @router.get("/{link_id}",
             response_model=schemas.Link,
-            response_model_exclude_unset=True,
-            responses=responses)
+            response_model_exclude_unset=True)
 async def get_link(link: Link = Depends(dep_link)):
     """
     Return a link.
@@ -119,8 +117,7 @@ async def get_link(link: Link = Depends(dep_link)):
 
 @router.put("/{link_id}",
             response_model=schemas.Link,
-            response_model_exclude_unset=True,
-            responses=responses)
+            response_model_exclude_unset=True)
 async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
     """
     Update a link.
@@ -137,8 +134,7 @@ async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
 
 
 @router.delete("/{link_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_link(project_id: UUID, link: Link = Depends(dep_link)):
     """
     Delete a link.
@@ -149,8 +145,7 @@ async def delete_link(project_id: UUID, link: Link = Depends(dep_link)):
 
 
 @router.post("/{link_id}/reset",
-             response_model=schemas.Link,
-             responses=responses)
+             response_model=schemas.Link)
 async def reset_link(link: Link = Depends(dep_link)):
     """
     Reset a link.
@@ -162,8 +157,7 @@ async def reset_link(link: Link = Depends(dep_link)):
 
 @router.post("/{link_id}/capture/start",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Link,
-             responses=responses)
+             response_model=schemas.Link)
 async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
     """
     Start packet capture on the link.
@@ -175,8 +169,7 @@ async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
 
 
 @router.post("/{link_id}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(link: Link = Depends(dep_link)):
     """
     Stop packet capture on the link.
@@ -185,8 +178,7 @@ async def stop_capture(link: Link = Depends(dep_link)):
     await link.stop_capture()
 
 
-@router.get("/{link_id}/capture/stream",
-            responses=responses)
+@router.get("/{link_id}/capture/stream")
 async def stream_pcap(request: Request, link: Link = Depends(dep_link)):
     """
     Stream the PCAP capture file from compute.

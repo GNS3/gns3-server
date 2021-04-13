@@ -30,11 +30,11 @@ from gns3server import schemas
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -85,8 +85,7 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate):
 
 
 @router.get("/{node_id}",
-            response_model=schemas.Docker,
-            responses=responses)
+            response_model=schemas.Docker)
 def get_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Return a Docker node.
@@ -96,8 +95,7 @@ def get_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.put("/{node_id}",
-            response_model=schemas.Docker,
-            responses=responses)
+            response_model=schemas.Docker)
 async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)):
     """
     Update a Docker node.
@@ -124,8 +122,7 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def start_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Start a Docker node.
@@ -135,8 +132,7 @@ async def start_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Stop a Docker node.
@@ -146,8 +142,7 @@ async def stop_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Suspend a Docker node.
@@ -157,8 +152,7 @@ async def suspend_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reload_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Reload a Docker node.
@@ -168,8 +162,7 @@ async def reload_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/pause",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def pause_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Pause a Docker node.
@@ -179,8 +172,7 @@ async def pause_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/unpause",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def unpause_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Unpause a Docker node.
@@ -190,8 +182,7 @@ async def unpause_docker_node(node: DockerVM = Depends(dep_node)):
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_docker_node(node: DockerVM = Depends(dep_node)):
     """
     Delete a Docker node.
@@ -202,8 +193,7 @@ async def delete_docker_node(node: DockerVM = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.Docker,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_docker_node(destination_node_id: UUID = Body(..., embed=True), node: DockerVM = Depends(dep_node)):
     """
     Duplicate a Docker node.
@@ -215,8 +205,7 @@ async def duplicate_docker_node(destination_node_id: UUID = Body(..., embed=True
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_docker_node_nio(adapter_number: int,
                                 port_number: int,
                                 nio_data: schemas.UDPNIO,
@@ -233,8 +222,7 @@ async def create_docker_node_nio(adapter_number: int,
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO,
-            responses=responses)
+            response_model=schemas.UDPNIO)
 async def update_docker_node_nio(adapter_number: int,
                                  port_number: int, nio_data: schemas.UDPNIO,
                                  node: DockerVM = Depends(dep_node)):
@@ -251,8 +239,7 @@ async def update_docker_node_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_docker_node_nio(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -262,8 +249,7 @@ async def delete_docker_node_nio(adapter_number: int, port_number: int, node: Do
     await node.adapter_remove_nio_binding(adapter_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_docker_node_capture(adapter_number: int,
                                     port_number: int,
                                     node_capture_data: schemas.NodeCapture,
@@ -279,8 +265,7 @@ async def start_docker_node_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_docker_node_capture(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -290,8 +275,7 @@ async def stop_docker_node_capture(adapter_number: int, port_number: int, node: 
     await node.stop_capture(adapter_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: DockerVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
@@ -313,8 +297,7 @@ async def console_ws(websocket: WebSocket, node: DockerVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: DockerVM = Depends(dep_node)):
 
     await node.reset_console()

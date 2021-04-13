@@ -30,11 +30,11 @@ from gns3server import schemas
 from gns3server.compute.vpcs import VPCS
 from gns3server.compute.vpcs.vpcs_vm import VPCSVM
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -69,8 +69,7 @@ async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate):
 
 
 @router.get("/{node_id}",
-            response_model=schemas.VPCS,
-            responses=responses)
+            response_model=schemas.VPCS)
 def get_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Return a VPCS node.
@@ -80,8 +79,7 @@ def get_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.put("/{node_id}",
-            response_model=schemas.VPCS,
-            responses=responses)
+            response_model=schemas.VPCS)
 def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)):
     """
     Update a VPCS node.
@@ -96,8 +94,7 @@ def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_n
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Delete a VPCS node.
@@ -108,8 +105,7 @@ async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.VPCS,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_vpcs_node(destination_node_id: UUID = Body(..., embed=True), node: VPCSVM = Depends(dep_node)):
     """
     Duplicate a VPCS node.
@@ -120,8 +116,7 @@ async def duplicate_vpcs_node(destination_node_id: UUID = Body(..., embed=True),
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def start_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Start a VPCS node.
@@ -131,8 +126,7 @@ async def start_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Stop a VPCS node.
@@ -142,8 +136,7 @@ async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Suspend a VPCS node.
@@ -154,8 +147,7 @@ async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)):
     """
     Reload a VPCS node.
@@ -166,8 +158,7 @@ async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_vpcs_node_nio(adapter_number: int,
                                port_number: int,
                                nio_data: schemas.UDPNIO,
@@ -184,8 +175,7 @@ async def create_vpcs_node_nio(adapter_number: int,
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO,
-            responses=responses)
+            response_model=schemas.UDPNIO)
 async def update_vpcs_node_nio(adapter_number: int,
                                port_number: int,
                                nio_data: schemas.UDPNIO,
@@ -203,8 +193,7 @@ async def update_vpcs_node_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_vpcs_node_nio(adapter_number: int,
                                port_number: int,
                                node: VPCSVM = Depends(dep_node)):
@@ -216,8 +205,7 @@ async def delete_vpcs_node_nio(adapter_number: int,
     await node.port_remove_nio_binding(port_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_vpcs_node_capture(adapter_number: int,
                                   port_number: int,
                                   node_capture_data: schemas.NodeCapture,
@@ -233,8 +221,7 @@ async def start_vpcs_node_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_vpcs_node_capture(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -245,15 +232,13 @@ async def stop_vpcs_node_capture(adapter_number: int, port_number: int, node: VP
 
 
 @router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: VPCSVM = Depends(dep_node)):
 
     await node.reset_console()
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
     """
     Stream the pcap capture file.

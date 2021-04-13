@@ -33,11 +33,13 @@ from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from gns3server import schemas
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}
 }
+
+router = APIRouter(responses=responses)
+
+
 
 DEFAULT_CHASSIS = {
     "c1700": "1720",
@@ -87,8 +89,7 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate):
 
 
 @router.get("/{node_id}",
-            response_model=schemas.Dynamips,
-            responses=responses)
+            response_model=schemas.Dynamips)
 def get_router(node: Router = Depends(dep_node)):
     """
     Return Dynamips router.
@@ -98,8 +99,7 @@ def get_router(node: Router = Depends(dep_node)):
 
 
 @router.put("/{node_id}",
-            response_model=schemas.Dynamips,
-            responses=responses)
+            response_model=schemas.Dynamips)
 async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depends(dep_node)):
     """
     Update a Dynamips router.
@@ -111,8 +111,7 @@ async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depend
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_router(node: Router = Depends(dep_node)):
     """
     Delete a Dynamips router.
@@ -122,8 +121,7 @@ async def delete_router(node: Router = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def start_router(node: Router = Depends(dep_node)):
     """
     Start a Dynamips router.
@@ -137,8 +135,7 @@ async def start_router(node: Router = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_router(node: Router = Depends(dep_node)):
     """
     Stop a Dynamips router.
@@ -148,16 +145,14 @@ async def stop_router(node: Router = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_router(node: Router = Depends(dep_node)):
 
     await node.suspend()
 
 
 @router.post("/{node_id}/resume",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def resume_router(node: Router = Depends(dep_node)):
     """
     Resume a suspended Dynamips router.
@@ -167,8 +162,7 @@ async def resume_router(node: Router = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reload_router(node: Router = Depends(dep_node)):
     """
     Reload a suspended Dynamips router.
@@ -179,8 +173,7 @@ async def reload_router(node: Router = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: Router = Depends(dep_node)):
     """
     Add a NIO (Network Input/Output) to the node.
@@ -193,8 +186,7 @@ async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UD
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO,
-            responses=responses)
+            response_model=schemas.UDPNIO)
 async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: Router = Depends(dep_node)):
     """
     Update a NIO (Network Input/Output) on the node.
@@ -208,8 +200,7 @@ async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UD
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nio(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -219,8 +210,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: Router = Depen
     await nio.delete()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(adapter_number: int,
                         port_number: int,
                         node_capture_data: schemas.NodeCapture,
@@ -243,8 +233,7 @@ async def start_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -253,8 +242,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: Router = Dep
     await node.stop_capture(adapter_number, port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: Router = Depends(dep_node)):
     """
     Stream the pcap capture file.
@@ -265,8 +253,7 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: Router =
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-@router.get("/{node_id}/idlepc_proposals",
-            responses=responses)
+@router.get("/{node_id}/idlepc_proposals")
 async def get_idlepcs(node: Router = Depends(dep_node)) -> List[str]:
     """
     Retrieve Dynamips idle-pc proposals
@@ -276,8 +263,7 @@ async def get_idlepcs(node: Router = Depends(dep_node)) -> List[str]:
     return await node.get_idle_pc_prop()
 
 
-@router.get("/{node_id}/auto_idlepc",
-            responses=responses)
+@router.get("/{node_id}/auto_idlepc")
 async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
     """
     Get an automatically guessed best idle-pc value.
@@ -288,8 +274,7 @@ async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
 
 
 @router.post("/{node_id}/duplicate",
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep_node)):
     """
     Duplicate a router.
@@ -309,8 +294,7 @@ async def console_ws(websocket: WebSocket, node: Router = Depends(dep_node)):
 
 
 @router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: Router = Depends(dep_node)):
 
     await node.reset_console()

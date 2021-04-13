@@ -32,11 +32,11 @@ from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or VirtualBox node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -83,8 +83,7 @@ async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBox
 
 
 @router.get("/{node_id}",
-            response_model=schemas.VirtualBox,
-            responses=responses)
+            response_model=schemas.VirtualBox)
 def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Return a VirtualBox node.
@@ -94,8 +93,7 @@ def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.put("/{node_id}",
-            response_model=schemas.VirtualBox,
-            responses=responses)
+            response_model=schemas.VirtualBox)
 async def update_virtualbox_node(node_data: schemas.VirtualBoxUpdate, node: VirtualBoxVM = Depends(dep_node)):
     """
     Update a VirtualBox node.
@@ -138,8 +136,7 @@ async def update_virtualbox_node(node_data: schemas.VirtualBoxUpdate, node: Virt
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Delete a VirtualBox node.
@@ -149,8 +146,7 @@ async def delete_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def start_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Start a VirtualBox node.
@@ -165,8 +161,7 @@ async def start_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Stop a VirtualBox node.
@@ -176,8 +171,7 @@ async def stop_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def suspend_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Suspend a VirtualBox node.
@@ -187,8 +181,7 @@ async def suspend_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/resume",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def resume_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Resume a VirtualBox node.
@@ -198,8 +191,7 @@ async def resume_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reload_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     """
     Reload a VirtualBox node.
@@ -210,8 +202,7 @@ async def reload_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_virtualbox_node_nio(adapter_number: int,
                                      port_number: int,
                                      nio_data: schemas.UDPNIO,
@@ -228,8 +219,7 @@ async def create_virtualbox_node_nio(adapter_number: int,
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
-            response_model=schemas.UDPNIO,
-            responses=responses)
+            response_model=schemas.UDPNIO)
 async def update_virtualbox_node_nio(adapter_number: int,
                                      port_number: int,
                                      nio_data: schemas.UDPNIO,
@@ -249,8 +239,7 @@ async def update_virtualbox_node_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_virtualbox_node_nio(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -260,8 +249,7 @@ async def delete_virtualbox_node_nio(adapter_number: int, port_number: int, node
     await node.adapter_remove_nio_binding(adapter_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_virtualbox_node_capture(adapter_number: int,
                                         port_number: int,
                                         node_capture_data: schemas.NodeCapture,
@@ -277,8 +265,7 @@ async def start_virtualbox_node_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_virtualbox_node_capture(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -288,8 +275,7 @@ async def stop_virtualbox_node_capture(adapter_number: int, port_number: int, no
     await node.stop_capture(adapter_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: VirtualBoxVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
@@ -311,8 +297,7 @@ async def console_ws(websocket: WebSocket, node: VirtualBoxVM = Depends(dep_node
 
 
 @router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: VirtualBoxVM = Depends(dep_node)):
 
     await node.reset_console()

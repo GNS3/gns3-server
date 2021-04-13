@@ -30,11 +30,11 @@ from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.frame_relay_switch import FrameRelaySwitch
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Frame Relay switch node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -68,8 +68,7 @@ async def create_frame_relay_switch(project_id: UUID, node_data: schemas.FrameRe
 
 
 @router.get("/{node_id}",
-            response_model=schemas.FrameRelaySwitch,
-            responses=responses)
+            response_model=schemas.FrameRelaySwitch)
 def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     """
     Return a Frame Relay switch node.
@@ -80,8 +79,7 @@ def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.FrameRelaySwitch,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_frame_relay_switch(destination_node_id: UUID = Body(..., embed=True),
                                        node: FrameRelaySwitch = Depends(dep_node)):
     """
@@ -93,8 +91,7 @@ async def duplicate_frame_relay_switch(destination_node_id: UUID = Body(..., emb
 
 
 @router.put("/{node_id}",
-            response_model=schemas.FrameRelaySwitch,
-            responses=responses)
+            response_model=schemas.FrameRelaySwitch)
 async def update_frame_relay_switch(node_data: schemas.FrameRelaySwitchUpdate,
                                     node: FrameRelaySwitch = Depends(dep_node)):
     """
@@ -111,8 +108,7 @@ async def update_frame_relay_switch(node_data: schemas.FrameRelaySwitchUpdate,
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     """
     Delete a Frame Relay switch node.
@@ -122,8 +118,7 @@ async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     """
     Start a Frame Relay switch node.
@@ -134,8 +129,7 @@ def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     """
     Stop a Frame Relay switch node.
@@ -146,8 +140,7 @@ def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     """
     Suspend a Frame Relay switch node.
@@ -159,8 +152,7 @@ def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_nio(adapter_number: int,
                      port_number: int,
                      nio_data: schemas.UDPNIO,
@@ -176,8 +168,7 @@ async def create_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nio(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
     """
     Remove a NIO (Network Input/Output) from the node.
@@ -188,8 +179,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: FrameRelaySwit
     await nio.delete()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(adapter_number: int,
                         port_number: int,
                         node_capture_data: schemas.NodeCapture,
@@ -205,8 +195,7 @@ async def start_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -216,8 +205,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: FrameRelaySw
     await node.stop_capture(port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
     """
     Stream the pcap capture file.

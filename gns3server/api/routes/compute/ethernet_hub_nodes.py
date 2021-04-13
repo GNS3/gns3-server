@@ -30,11 +30,11 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.ethernet_hub import EthernetHub
 from gns3server import schemas
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or Ethernet hub node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -68,8 +68,7 @@ async def create_ethernet_hub(project_id: UUID, node_data: schemas.EthernetHubCr
 
 
 @router.get("/{node_id}",
-            response_model=schemas.EthernetHub,
-            responses=responses)
+            response_model=schemas.EthernetHub)
 def get_ethernet_hub(node: EthernetHub = Depends(dep_node)):
     """
     Return an Ethernet hub.
@@ -80,8 +79,7 @@ def get_ethernet_hub(node: EthernetHub = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.EthernetHub,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_ethernet_hub(destination_node_id: UUID = Body(..., embed=True),
                                  node: EthernetHub = Depends(dep_node)):
     """
@@ -93,8 +91,7 @@ async def duplicate_ethernet_hub(destination_node_id: UUID = Body(..., embed=Tru
 
 
 @router.put("/{node_id}",
-            response_model=schemas.EthernetHub,
-            responses=responses)
+            response_model=schemas.EthernetHub)
 async def update_ethernet_hub(node_data: schemas.EthernetHubUpdate, node: EthernetHub = Depends(dep_node)):
     """
     Update an Ethernet hub.
@@ -110,8 +107,7 @@ async def update_ethernet_hub(node_data: schemas.EthernetHubUpdate, node: Ethern
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_ethernet_hub(node: EthernetHub = Depends(dep_node)):
     """
     Delete an Ethernet hub.
@@ -121,8 +117,7 @@ async def delete_ethernet_hub(node: EthernetHub = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def start_ethernet_hub(node: EthernetHub = Depends(dep_node)):
     """
     Start an Ethernet hub.
@@ -133,8 +128,7 @@ def start_ethernet_hub(node: EthernetHub = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def stop_ethernet_hub(node: EthernetHub = Depends(dep_node)):
     """
     Stop an Ethernet hub.
@@ -145,8 +139,7 @@ def stop_ethernet_hub(node: EthernetHub = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def suspend_ethernet_hub(node: EthernetHub = Depends(dep_node)):
     """
     Suspend an Ethernet hub.
@@ -158,8 +151,7 @@ def suspend_ethernet_hub(node: EthernetHub = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_nio(adapter_number: int,
                      port_number: int,
                      nio_data: schemas.UDPNIO,
@@ -175,8 +167,7 @@ async def create_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nio(adapter_number: int, port_number: int, node: EthernetHub = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -187,8 +178,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: EthernetHub = 
     await nio.delete()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(adapter_number: int,
                         port_number: int,
                         node_capture_data: schemas.NodeCapture,
@@ -204,8 +194,7 @@ async def start_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(adapter_number: int, port_number: int, node: EthernetHub = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -215,8 +204,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: EthernetHub 
     await node.stop_capture(port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: EthernetHub = Depends(dep_node)):
     """
     Stream the pcap capture file.

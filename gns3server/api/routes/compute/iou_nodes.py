@@ -31,11 +31,11 @@ from gns3server import schemas
 from gns3server.compute.iou import IOU
 from gns3server.compute.iou.iou_vm import IOUVM
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or IOU node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_node(project_id: UUID, node_id: UUID):
@@ -82,8 +82,7 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
 
 
 @router.get("/{node_id}",
-            response_model=schemas.IOU,
-            responses=responses)
+            response_model=schemas.IOU)
 def get_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Return an IOU node.
@@ -93,8 +92,7 @@ def get_iou_node(node: IOUVM = Depends(dep_node)):
 
 
 @router.put("/{node_id}",
-            response_model=schemas.IOU,
-            responses=responses)
+            response_model=schemas.IOU)
 async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(dep_node)):
     """
     Update an IOU node.
@@ -116,8 +114,7 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Delete an IOU node.
@@ -128,8 +125,7 @@ async def delete_iou_node(node: IOUVM = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.IOU,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), node: IOUVM = Depends(dep_node)):
     """
     Duplicate an IOU node.
@@ -140,8 +136,7 @@ async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), 
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep_node)):
     """
     Start an IOU node.
@@ -157,8 +152,7 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Stop an IOU node.
@@ -168,8 +162,7 @@ async def stop_iou_node(node: IOUVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def suspend_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Suspend an IOU node.
@@ -180,8 +173,7 @@ def suspend_iou_node(node: IOUVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reload_iou_node(node: IOUVM = Depends(dep_node)):
     """
     Reload an IOU node.
@@ -192,8 +184,7 @@ async def reload_iou_node(node: IOUVM = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-             responses=responses)
+             response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
 async def create_iou_node_nio(adapter_number: int,
                               port_number: int,
                               nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
@@ -209,8 +200,7 @@ async def create_iou_node_nio(adapter_number: int,
 
 @router.put("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
             status_code=status.HTTP_201_CREATED,
-            response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
-            responses=responses)
+            response_model=Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO])
 async def update_iou_node_nio(adapter_number: int,
                               port_number: int,
                               nio_data: Union[schemas.EthernetNIO, schemas.TAPNIO, schemas.UDPNIO],
@@ -227,8 +217,7 @@ async def update_iou_node_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -237,8 +226,7 @@ async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM
     await node.adapter_remove_nio_binding(adapter_number, port_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_iou_node_capture(adapter_number: int,
                                  port_number: int,
                                  node_capture_data: schemas.NodeCapture,
@@ -253,8 +241,7 @@ async def start_iou_node_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -263,8 +250,7 @@ async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOU
     await node.stop_capture(adapter_number, port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)):
     """
     Stream the pcap capture file.
@@ -285,8 +271,7 @@ async def console_ws(websocket: WebSocket, node: IOUVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/console/reset",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def reset_console(node: IOUVM = Depends(dep_node)):
 
     await node.reset_console()

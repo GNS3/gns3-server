@@ -46,12 +46,11 @@ from gns3server.controller.export_project import export_project as export_contro
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.config import Config
 
-
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project"}
 }
+
+router = APIRouter(responses=responses)
 
 
 def dep_project(project_id: UUID):
@@ -94,8 +93,7 @@ async def create_project(project_data: schemas.ProjectCreate):
 
 
 @router.get("/{project_id}",
-            response_model=schemas.Project,
-            responses=responses)
+            response_model=schemas.Project)
 def get_project(project: Project = Depends(dep_project)):
     """
     Return a project.
@@ -106,8 +104,7 @@ def get_project(project: Project = Depends(dep_project)):
 
 @router.put("/{project_id}",
             response_model=schemas.Project,
-            response_model_exclude_unset=True,
-            responses=responses)
+            response_model_exclude_unset=True)
 async def update_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
     """
     Update a project.
@@ -118,8 +115,7 @@ async def update_project(project_data: schemas.ProjectUpdate, project: Project =
 
 
 @router.delete("/{project_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(project: Project = Depends(dep_project)):
     """
     Delete a project.
@@ -130,8 +126,7 @@ async def delete_project(project: Project = Depends(dep_project)):
     controller.remove_project(project)
 
 
-@router.get("/{project_id}/stats",
-            responses=responses)
+@router.get("/{project_id}/stats")
 def get_project_stats(project: Project = Depends(dep_project)):
     """
     Return a project statistics.
@@ -253,8 +248,7 @@ async def notification_ws(project_id: UUID, websocket: WebSocket):
                 await project.close()
 
 
-@router.get("/{project_id}/export",
-            responses=responses)
+@router.get("/{project_id}/export")
 async def export_project(project: Project = Depends(dep_project),
                          include_snapshots: bool = False,
                          include_images: bool = False,
@@ -304,8 +298,7 @@ async def export_project(project: Project = Depends(dep_project),
 
 @router.post("/{project_id}/import",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.Project,
-             responses=responses)
+             response_model=schemas.Project)
 async def import_project(project_id: UUID, request: Request, path: Optional[Path] = None, name: Optional[str] = None):
     """
     Import a project from a portable archive.

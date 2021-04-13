@@ -30,11 +30,11 @@ from gns3server import schemas
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.atm_switch import ATMSwitch
 
-router = APIRouter()
-
 responses = {
     404: {"model": schemas.ErrorMessage, "description": "Could not find project or ATM switch node"}
 }
+
+router = APIRouter(responses=responses)
 
 
 async def dep_node(project_id: UUID, node_id: UUID):
@@ -68,8 +68,7 @@ async def create_atm_switch(project_id: UUID, node_data: schemas.ATMSwitchCreate
 
 
 @router.get("/{node_id}",
-            response_model=schemas.ATMSwitch,
-            responses=responses)
+            response_model=schemas.ATMSwitch)
 def get_atm_switch(node: ATMSwitch = Depends(dep_node)):
     """
     Return an ATM switch node.
@@ -80,8 +79,7 @@ def get_atm_switch(node: ATMSwitch = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate",
              response_model=schemas.ATMSwitch,
-             status_code=status.HTTP_201_CREATED,
-             responses=responses)
+             status_code=status.HTTP_201_CREATED)
 async def duplicate_atm_switch(destination_node_id: UUID = Body(..., embed=True), node: ATMSwitch = Depends(dep_node)):
     """
     Duplicate an ATM switch node.
@@ -92,8 +90,7 @@ async def duplicate_atm_switch(destination_node_id: UUID = Body(..., embed=True)
 
 
 @router.put("/{node_id}",
-            response_model=schemas.ATMSwitch,
-            responses=responses)
+            response_model=schemas.ATMSwitch)
 async def update_atm_switch(node_data: schemas.ATMSwitchUpdate, node: ATMSwitch = Depends(dep_node)):
     """
     Update an ATM switch node.
@@ -109,8 +106,7 @@ async def update_atm_switch(node_data: schemas.ATMSwitchUpdate, node: ATMSwitch 
 
 
 @router.delete("/{node_id}",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_atm_switch_node(node: ATMSwitch = Depends(dep_node)):
     """
     Delete an ATM switch node.
@@ -120,8 +116,7 @@ async def delete_atm_switch_node(node: ATMSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def start_atm_switch(node: ATMSwitch = Depends(dep_node)):
     """
     Start an ATM switch node.
@@ -132,8 +127,7 @@ def start_atm_switch(node: ATMSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def stop_atm_switch(node: ATMSwitch = Depends(dep_node)):
     """
     Stop an ATM switch node.
@@ -144,8 +138,7 @@ def stop_atm_switch(node: ATMSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)):
     """
     Suspend an ATM switch node.
@@ -157,8 +150,7 @@ def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)):
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
              status_code=status.HTTP_201_CREATED,
-             response_model=schemas.UDPNIO,
-             responses=responses)
+             response_model=schemas.UDPNIO)
 async def create_nio(adapter_number: int,
                      port_number: int,
                      nio_data: schemas.UDPNIO,
@@ -174,8 +166,7 @@ async def create_nio(adapter_number: int,
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
-               status_code=status.HTTP_204_NO_CONTENT,
-               responses=responses)
+               status_code=status.HTTP_204_NO_CONTENT)
 async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = Depends(dep_node)):
     """
     Remove a NIO (Network Input/Output) from the node.
@@ -186,8 +177,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = De
     await nio.delete()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
-             responses=responses)
+@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(adapter_number: int,
                         port_number: int,
                         node_capture_data: schemas.NodeCapture,
@@ -203,8 +193,7 @@ async def start_capture(adapter_number: int,
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop_capture",
-             status_code=status.HTTP_204_NO_CONTENT,
-             responses=responses)
+             status_code=status.HTTP_204_NO_CONTENT)
 async def stop_capture(adapter_number: int, port_number: int, node: ATMSwitch = Depends(dep_node)):
     """
     Stop a packet capture on the node.
@@ -214,8 +203,7 @@ async def stop_capture(adapter_number: int, port_number: int, node: ATMSwitch = 
     await node.stop_capture(port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
-            responses=responses)
+@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
 async def stream_pcap_file(adapter_number: int, port_number: int, node: ATMSwitch = Depends(dep_node)):
     """
     Stream the pcap capture file.
