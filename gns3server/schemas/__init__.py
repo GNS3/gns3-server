@@ -14,46 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# General schemas
 from .config import ServerConfig
-from .iou_license import IOULicense
-from .links import Link
 from .common import ErrorMessage
 from .version import Version
-from .computes import ComputeCreate, ComputeUpdate, AutoIdlePC, Compute
-from .templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
-from .drawings import Drawing
-from .gns3vm import GNS3VM
-from .nodes import NodeUpdate, NodeDuplicate, NodeCapture, Node
-from .projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
-from .users import UserCreate, UserUpdate, User
-from .tokens import Token
-from .snapshots import SnapshotCreate, Snapshot
-from .capabilities import Capabilities
-from .nios import UDPNIO, TAPNIO, EthernetNIO
-from .atm_switch_nodes import ATMSwitchCreate, ATMSwitchUpdate, ATMSwitch
-from .cloud_nodes import CloudCreate, CloudUpdate, Cloud
-from .docker_nodes import DockerCreate, DockerUpdate, Docker
-from .dynamips_nodes import DynamipsCreate, DynamipsUpdate, Dynamips
-from .ethernet_hub_nodes import EthernetHubCreate, EthernetHubUpdate, EthernetHub
-from .ethernet_switch_nodes import EthernetSwitchCreate, EthernetSwitchUpdate, EthernetSwitch
-from .frame_relay_switch_nodes import FrameRelaySwitchCreate, FrameRelaySwitchUpdate, FrameRelaySwitch
-from .qemu_nodes import QemuCreate, QemuUpdate, QemuImageCreate, QemuImageUpdate, QemuDiskResize, Qemu
-from .iou_nodes import IOUCreate, IOUUpdate, IOUStart, IOU
-from .nat_nodes import NATCreate, NATUpdate, NAT
-from .vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
-from .vmware_nodes import VMwareCreate, VMwareUpdate, VMware
-from .virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
 
-from .vpcs_templates import VPCSTemplate
-from .cloud_templates import CloudTemplate
-from .iou_templates import IOUTemplate
-from .docker_templates import DockerTemplate
-from .ethernet_hub_templates import EthernetHubTemplate
-from .ethernet_switch_templates import EthernetSwitchTemplate
-from .virtualbox_templates import VirtualBoxTemplate
-from .vmware_templates import VMwareTemplate
-from .qemu_templates import QemuTemplate
-from .dynamips_templates import (
+# Controller schemas
+from .controller.links import Link
+from .controller.computes import ComputeCreate, ComputeUpdate, AutoIdlePC, Compute
+from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
+from .controller.drawings import Drawing
+from .controller.gns3vm import GNS3VM
+from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
+from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
+from .controller.users import UserCreate, UserUpdate, User
+from .controller.tokens import Token
+from .controller.snapshots import SnapshotCreate, Snapshot
+from .controller.iou_license import IOULicense
+from .controller.capabilities import Capabilities
+
+# Controller template schemas
+from .controller.templates.vpcs_templates import VPCSTemplate
+from .controller.templates.cloud_templates import CloudTemplate
+from .controller.templates.iou_templates import IOUTemplate
+from .controller.templates.docker_templates import DockerTemplate
+from .controller.templates.ethernet_hub_templates import EthernetHubTemplate
+from .controller.templates.ethernet_switch_templates import EthernetSwitchTemplate
+from .controller.templates.virtualbox_templates import VirtualBoxTemplate
+from .controller.templates.vmware_templates import VMwareTemplate
+from .controller.templates.qemu_templates import QemuTemplate
+from .controller.templates.dynamips_templates import (
     DynamipsTemplate,
     C1700DynamipsTemplate,
     C2600DynamipsTemplate,
@@ -63,3 +53,19 @@ from .dynamips_templates import (
     C3745DynamipsTemplate,
     C7200DynamipsTemplate,
 )
+
+# Compute schemas
+from .compute.nios import UDPNIO, TAPNIO, EthernetNIO
+from .compute.atm_switch_nodes import ATMSwitchCreate, ATMSwitchUpdate, ATMSwitch
+from .compute.cloud_nodes import CloudCreate, CloudUpdate, Cloud
+from .compute.docker_nodes import DockerCreate, DockerUpdate, Docker
+from .compute.dynamips_nodes import DynamipsCreate, DynamipsUpdate, Dynamips
+from .compute.ethernet_hub_nodes import EthernetHubCreate, EthernetHubUpdate, EthernetHub
+from .compute.ethernet_switch_nodes import EthernetSwitchCreate, EthernetSwitchUpdate, EthernetSwitch
+from .compute.frame_relay_switch_nodes import FrameRelaySwitchCreate, FrameRelaySwitchUpdate, FrameRelaySwitch
+from .compute.qemu_nodes import QemuCreate, QemuUpdate, QemuImageCreate, QemuImageUpdate, QemuDiskResize, Qemu
+from .compute.iou_nodes import IOUCreate, IOUUpdate, IOUStart, IOU
+from .compute.nat_nodes import NATCreate, NATUpdate, NAT
+from .compute.vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
+from .compute.vmware_nodes import VMwareCreate, VMwareUpdate, VMware
+from .compute.virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox

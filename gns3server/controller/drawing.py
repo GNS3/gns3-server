@@ -203,6 +203,7 @@ class Drawing:
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """
+
         if topology_dump:
             return {
                 "drawing_id": self._id,

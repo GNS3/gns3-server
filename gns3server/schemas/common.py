@@ -16,6 +16,7 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, Union
+from enum import Enum
 
 
 class ErrorMessage(BaseModel):
@@ -26,14 +27,45 @@ class ErrorMessage(BaseModel):
     message: str
 
 
-class Label(BaseModel):
+class NodeStatus(str, Enum):
     """
-    Label data.
-
+    Supported node statuses.
     """
 
-    text: str
-    style: Optional[Union[str, None]] = Field(None, description="SVG style attribute. Apply default style if null")
-    x: Optional[Union[int, None]] = Field(None, description="Relative X position of the label. Center it if null")
-    y: Optional[int] = Field(None, description="Relative Y position of the label")
-    rotation: Optional[int] = Field(None, ge=-359, le=360, description="Rotation of the label")
+    stopped = "stopped"
+    started = "started"
+    suspended = "suspended"
+
+
+class CustomAdapter(BaseModel):
+    """
+    Custom adapter data.
+    """
+
+    adapter_number: int
+    port_name: Optional[str] = None
+    adapter_type: Optional[str] = None
+    mac_address: Optional[str] = Field(None, regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+
+
+class ConsoleType(str, Enum):
+    """
+    Supported console types.
+    """
+
+    vnc = "vnc"
+    telnet = "telnet"
+    http = "http"
+    https = "https"
+    spice = "spice"
+    spice_agent = "spice+agent"
+    none = "none"
+
+
+class AuxType(str, Enum):
+    """
+    Supported auxiliary console types.
+    """
+
+    telnet = "telnet"
+    none = "none"

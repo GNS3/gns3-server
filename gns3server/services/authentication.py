@@ -21,7 +21,7 @@ from passlib.context import CryptContext
 
 from typing import Optional
 from fastapi import HTTPException, status
-from gns3server.schemas.tokens import TokenData
+from gns3server.schemas.controller.tokens import TokenData
 from gns3server.config import Config
 from pydantic import ValidationError
 

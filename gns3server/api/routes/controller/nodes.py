@@ -108,7 +108,7 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
         409: {"model": schemas.ErrorMessage, "description": "Could not create node"},
     },
 )
-async def create_node(node_data: schemas.Node, project: Project = Depends(dep_project)):
+async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)):
     """
     Create a new node.
     """

@@ -344,13 +344,27 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
         module._instance = None
 
     config.settings.Controller.jwt_secret_key = DEFAULT_JWT_SECRET_KEY
-    config.settings.Server.secrets_dir = os.path.join(tmppath, 'secrets')
 
-    os.makedirs(os.path.join(tmppath, 'projects'))
-    config.settings.Server.projects_path = os.path.join(tmppath, 'projects')
-    config.settings.Server.symbols_path = os.path.join(tmppath, 'symbols')
-    config.settings.Server.images_path = os.path.join(tmppath, 'images')
-    config.settings.Server.appliances_path = os.path.join(tmppath, 'appliances')
+    secrets_dir = os.path.join(tmppath, 'secrets')
+    os.makedirs(secrets_dir)
+    config.settings.Server.secrets_dir = secrets_dir
+
+    projects_dir = os.path.join(tmppath, 'projects')
+    os.makedirs(projects_dir)
+    config.settings.Server.projects_path = projects_dir
+
+    symbols_dir = os.path.join(tmppath, 'symbols')
+    os.makedirs(symbols_dir)
+    config.settings.Server.symbols_path = symbols_dir
+
+    images_dir = os.path.join(tmppath, 'images')
+    os.makedirs(images_dir)
+    config.settings.Server.images_path = images_dir
+
+    appliances_dir = os.path.join(tmppath, 'appliances')
+    os.makedirs(appliances_dir)
+    config.settings.Server.appliances_path = appliances_dir
+
     config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
     config.settings.Server.local = True
     config.settings.Server.enable_http_auth = False

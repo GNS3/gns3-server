@@ -47,7 +47,7 @@ from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
 
-from gns3server.schemas.qemu_nodes import Qemu, QemuPlatform
+from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
 
 import logging
 

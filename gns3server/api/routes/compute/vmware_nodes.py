@@ -117,11 +117,6 @@ async def start_vmware_node(node: VMwareVM = Depends(dep_node)):
     Start a VMware node.
     """
 
-    if node.check_hw_virtualization():
-        pm = ProjectManager.instance()
-        if pm.check_hardware_virtualization(node) is False:
-            pass  # FIXME: check this
-            # raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
     await node.start()
 
 

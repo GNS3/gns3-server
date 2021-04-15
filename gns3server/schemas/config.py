@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from pydantic import BaseModel, Field, SecretStr, FilePath, validator
+from pydantic import BaseModel, Field, SecretStr, FilePath, DirectoryPath, validator
 from typing import List
 
 
@@ -113,7 +113,7 @@ class ServerSettings(BaseModel):
     protocol: ServerProtocol = ServerProtocol.http
     host: str = "0.0.0.0"
     port: int = Field(3080, gt=0, le=65535)
-    secrets_dir: str = None
+    secrets_dir: DirectoryPath = None
     certfile: FilePath = None
     certkey: FilePath = None
     enable_ssl: bool = False
@@ -167,7 +167,7 @@ class ServerSettings(BaseModel):
 
         if v is True:
             if "user" not in values or not values["user"]:
-                raise ValueError("HTTP authentication is enabled but no username is configured")
+                raise ValueError("HTTP authentication is enabled but user is not configured")
         return v
 
     @validator("enable_ssl")
