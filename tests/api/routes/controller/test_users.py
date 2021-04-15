@@ -27,7 +27,7 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 from gns3server.config import Config
-from gns3server.schemas.users import User
+from gns3server.schemas.controller.users import User
 
 pytestmark = pytest.mark.asyncio
 

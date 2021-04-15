@@ -23,7 +23,7 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.api.routes.controller.dependencies.database import get_db_session
 from gns3server import schemas
-from gns3server.schemas.computes import Protocol
+from gns3server.schemas.controller.computes import Protocol
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
