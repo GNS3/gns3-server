@@ -17,14 +17,15 @@
 
 import copy
 import uuid
-
 import logging
 
 log = logging.getLogger(__name__)
 
 
 class Appliance:
+
     def __init__(self, appliance_id, data, builtin=True):
+
         if appliance_id is None:
             self._id = str(uuid.uuid4())
         elif isinstance(appliance_id, uuid.UUID):

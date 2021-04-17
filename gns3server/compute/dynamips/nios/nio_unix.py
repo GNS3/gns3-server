@@ -81,4 +81,8 @@ class NIOUNIX(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_unix", "local_file": self._local_file, "remote_file": self._remote_file}
+        return {
+            "type": "nio_unix",
+            "local_file": self._local_file,
+            "remote_file": self._remote_file
+        }

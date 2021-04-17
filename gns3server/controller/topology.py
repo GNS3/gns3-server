@@ -121,7 +121,8 @@ def load_topology(path):
     """
     Open a topology file, patch it for last GNS3 release and return it
     """
-    log.debug("Read topology %s", path)
+
+    log.debug(f"Read topology {path}")
     try:
         with open(path, encoding="utf-8") as f:
             topo = json.load(f)

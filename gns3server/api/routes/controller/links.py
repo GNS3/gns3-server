@@ -71,7 +71,7 @@ async def get_links(project_id: UUID):
         409: {"model": schemas.ErrorMessage, "description": "Could not create link"},
     },
 )
-async def create_link(project_id: UUID, link_data: schemas.Link):
+async def create_link(project_id: UUID, link_data: schemas.LinkCreate):
     """
     Create a new link.
     """
@@ -116,7 +116,7 @@ async def get_link(link: Link = Depends(dep_link)):
 
 
 @router.put("/{link_id}", response_model=schemas.Link, response_model_exclude_unset=True)
-async def update_link(link_data: schemas.Link, link: Link = Depends(dep_link)):
+async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_link)):
     """
     Update a link.
     """

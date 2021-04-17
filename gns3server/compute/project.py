@@ -79,7 +79,11 @@ class Project:
 
     def __json__(self):
 
-        return {"name": self._name, "project_id": self._id, "variables": self._variables}
+        return {
+            "name": self._name,
+            "project_id": self._id,
+            "variables": self._variables
+        }
 
     def is_local(self):
 

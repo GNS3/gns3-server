@@ -81,4 +81,8 @@ class NIOVDE(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_vde", "local_file": self._local_file, "control_file": self._control_file}
+        return {
+            "type": "nio_vde",
+            "local_file": self._local_file,
+            "control_file": self._control_file
+        }

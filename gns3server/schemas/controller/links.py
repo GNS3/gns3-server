@@ -17,7 +17,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from .labels import Label
 
@@ -42,24 +42,45 @@ class LinkType(str, Enum):
     serial = "serial"
 
 
-class Link(BaseModel):
+class LinkBase(BaseModel):
     """
     Link data.
     """
 
-    link_id: Optional[UUID] = None
-    project_id: Optional[UUID] = None
-    nodes: Optional[List[LinkNode]] = None
+    nodes: Optional[List[LinkNode]] = Field(None, min_items=0, max_items=2)
     suspend: Optional[bool] = None
     filters: Optional[dict] = None
-    capturing: Optional[bool] = Field(None, description="Read only property. True if a capture running on the link")
+
+
+class LinkCreate(LinkBase):
+
+    link_id: UUID = Field(default_factory=uuid4)
+    nodes: List[LinkNode] = Field(..., min_items=2, max_items=2)
+
+
+class LinkUpdate(LinkBase):
+
+    pass
+
+
+class Link(LinkBase):
+
+    link_id: UUID
+    project_id: Optional[UUID] = None
+    link_type: Optional[LinkType] = None
+    capturing: Optional[bool] = Field(
+        None,
+        description="Read only property. True if a capture running on the link"
+    )
     capture_file_name: Optional[str] = Field(
-        None, description="Read only property. The name of the capture file if a capture is running"
+        None,
+        description="Read only property. The name of the capture file if a capture is running"
     )
     capture_file_path: Optional[str] = Field(
-        None, description="Read only property. The full path of the capture file if a capture is running"
+        None,
+        description="Read only property. The full path of the capture file if a capture is running"
     )
     capture_compute_id: Optional[str] = Field(
-        None, description="Read only property. The compute identifier where a capture is running"
+        None,
+        description="Read only property. The compute identifier where a capture is running"
     )
-    link_type: Optional[LinkType] = None

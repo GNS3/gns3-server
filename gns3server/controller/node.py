@@ -390,7 +390,6 @@ class Node:
         data["node_id"] = self._id
         if self._node_type == "docker":
             timeout = None
-
         else:
             timeout = 1200
         trial = 0
@@ -543,7 +542,7 @@ class Node:
         if self.custom_adapters:
             data["custom_adapters"] = self.custom_adapters
 
-        # None properties are not be send. Because it can mean the emulator doesn't support it
+        # None properties are not be sent because it can mean the emulator doesn't support it
         for key in list(data.keys()):
             if data[key] is None or data[key] is {} or key in self.CONTROLLER_ONLY_PROPERTIES:
                 del data[key]
@@ -628,7 +627,7 @@ class Node:
 
     async def put(self, path, data=None, **kwargs):
         """
-        HTTP post on the node
+        HTTP put on the node
         """
         if path is None:
             path = f"/projects/{self._project.id}/{self._node_type}/nodes/{self._id}"
@@ -780,11 +779,10 @@ class Node:
 
     def __json__(self, topology_dump=False):
         """
-        :param topology_dump: Filter to keep only properties require for saving on disk
+        :param topology_dump: Filter to keep only properties required for saving on disk
         """
 
-        if topology_dump:
-            return {
+        topology = {
                 "compute_id": str(self._compute.id),
                 "node_id": self._id,
                 "node_type": self._node_type,
@@ -808,35 +806,18 @@ class Node:
                 "port_segment_size": self._port_segment_size,
                 "first_port_name": self._first_port_name,
                 "custom_adapters": self._custom_adapters,
-            }
-        return {
-            "compute_id": str(self._compute.id),
-            "project_id": self._project.id,
-            "node_id": self._id,
-            "template_id": self._template_id,
-            "node_type": self._node_type,
-            "node_directory": self._node_directory,
-            "name": self._name,
-            "console": self._console,
-            "console_host": str(self._compute.console_host),
-            "console_type": self._console_type,
-            "aux": self._aux,
-            "aux_type": self._aux_type,
-            "console_auto_start": self._console_auto_start,
-            "command_line": self._command_line,
-            "properties": self._properties,
-            "status": self._status,
-            "label": self._label,
-            "x": self._x,
-            "y": self._y,
-            "z": self._z,
-            "locked": self._locked,
-            "width": self._width,
-            "height": self._height,
-            "symbol": self._symbol,
-            "port_name_format": self._port_name_format,
-            "port_segment_size": self._port_segment_size,
-            "first_port_name": self._first_port_name,
-            "custom_adapters": self._custom_adapters,
-            "ports": [port.__json__() for port in self.ports],
         }
+
+        if topology_dump:
+            return topology
+
+        additional_data = {
+            "project_id": self._project.id,
+            "command_line": self._command_line,
+            "status": self._status,
+            "console_host": str(self._compute.console_host),
+            "node_directory": self._node_directory,
+            "ports": [port.__json__() for port in self.ports]
+        }
+        topology.update(additional_data)
+        return topology

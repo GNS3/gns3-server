@@ -20,7 +20,7 @@ from .common import ErrorMessage
 from .version import Version
 
 # Controller schemas
-from .controller.links import Link
+from .controller.links import LinkCreate, LinkUpdate, Link
 from .controller.computes import ComputeCreate, ComputeUpdate, AutoIdlePC, Compute
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
 from .controller.drawings import Drawing

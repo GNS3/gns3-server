@@ -633,7 +633,7 @@ class Project:
     def _get_closed_data(self, section, id_key):
         """
         Get the data for a project from the .gns3 when
-        the project is close
+        the project is closed
 
         :param section: The section name in the .gns3
         :param id_key: The key for the element unique id
@@ -1117,7 +1117,7 @@ class Project:
         try:
             topo = project_to_topology(self)
             path = self._topology_file()
-            log.debug("Write %s", path)
+            log.debug(f"Write topology file '{path}'")
             with open(path + ".tmp", "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
             shutil.move(path + ".tmp", path)
@@ -1176,6 +1176,7 @@ class Project:
         :param z: Z position
         :returns: New node
         """
+
         if node.status != "stopped" and not node.is_always_running():
             raise ControllerError("Cannot duplicate node data while the node is running")
 

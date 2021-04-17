@@ -28,6 +28,7 @@ class Notification:
     """
 
     def __init__(self, controller):
+
         self._controller = controller
         self._project_listeners = {}
         self._controller_listeners = set()
@@ -71,19 +72,6 @@ class Notification:
         :param event: Event to send
         """
 
-        # If use in tests for documentation we save a sample
-        if os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-            os.makedirs("docs/api/notifications", exist_ok=True)
-            try:
-                import json
-
-                data = json.dumps(event, indent=4, sort_keys=True)
-                if "MagicMock" not in data:
-                    with open(os.path.join("docs/api/notifications", action + ".json"), "w+") as f:
-                        f.write(data)
-            except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
-                pass
-
         for controller_listener in self._controller_listeners:
             controller_listener.put_nowait((action, event, {}))
 
@@ -126,19 +114,6 @@ class Notification:
         :param action: Action name
         :param event: Event to send
         """
-
-        # If use in tests for documentation we save a sample
-        if os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1":
-            os.makedirs("docs/api/notifications", exist_ok=True)
-            try:
-                import json
-
-                data = json.dumps(event, indent=4, sort_keys=True)
-                if "MagicMock" not in data:
-                    with open(os.path.join("docs/api/notifications", action + ".json"), "w+") as f:
-                        f.write(data)
-            except TypeError:  # If we receive a mock as an event it will raise TypeError when using json dump
-                pass
 
         if "project_id" in event or project_id:
             self._send_event_to_project(event.get("project_id", project_id), action, event)

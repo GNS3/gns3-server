@@ -20,7 +20,7 @@ import time
 
 class CpuPercent:
     """
-    Ensures a minumum interval between two cpu_percent() calls
+    Ensures a minimum interval between two cpu_percent() calls
     """
 
     _last_measurement = None  # time of last measurement

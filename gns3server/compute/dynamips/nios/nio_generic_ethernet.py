@@ -67,4 +67,7 @@ class NIOGenericEthernet(NIO):
 
     def __json__(self):
 
-        return {"type": "nio_generic_ethernet", "ethernet_device": self._ethernet_device}
+        return {
+            "type": "nio_generic_ethernet",
+            "ethernet_device": self._ethernet_device
+        }
