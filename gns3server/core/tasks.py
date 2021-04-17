@@ -82,7 +82,7 @@ def create_startup_handler(app: FastAPI) -> Callable:
 
 def create_shutdown_handler(app: FastAPI) -> Callable:
     """
-    Tasks to be performed when the server is shutdown.
+    Tasks to be performed when the server is exiting.
     """
 
     async def shutdown_handler() -> None:

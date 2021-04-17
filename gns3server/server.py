@@ -38,7 +38,6 @@ from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
 from gns3server.api.server import app
-
 from pydantic import ValidationError
 
 import logging
@@ -170,22 +169,16 @@ class Server:
         config.Server.certkey = args.certkey
         config.Server.enable_ssl = args.ssl
 
-    async def reload_server(self):
-        """
-        Reload the server.
-        """
-
-        await Controller.instance().reload()
-
     def _signal_handling(self):
         def signal_handler(signame, *args):
 
             try:
                 if signame == "SIGHUP":
                     log.info(f"Server has got signal {signame}, reloading...")
-                    asyncio.ensure_future(self.reload_server())
+                    asyncio.ensure_future(Controller.instance().reload())
                 else:
                     log.info(f"Server has got signal {signame}, exiting...")
+                    # send SIGTERM to the server PID so uvicorn can shutdown the process
                     os.kill(os.getpid(), signal.SIGTERM)
             except asyncio.CancelledError:
                 pass
