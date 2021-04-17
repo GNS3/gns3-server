@@ -162,7 +162,7 @@ class Compute:
         if self._http_session and not self._http_session.closed:
             await self._http_session.close()
         self._connected = False
-        self._controller.notification.controller_emit("compute.updated", self.__json__())
+        self._controller.notification.controller_emit("compute.updated", self.asdict())
         self._controller.save()
 
     async def close(self):
@@ -290,7 +290,7 @@ class Compute:
     def disk_usage_percent(self):
         return self._disk_usage_percent
 
-    def __json__(self, topology_dump=False):
+    def asdict(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """
@@ -444,7 +444,7 @@ class Compute:
             self._connected = True
             self._connection_failure = 0
             self._last_error = None
-            self._controller.notification.controller_emit("compute.updated", self.__json__())
+            self._controller.notification.controller_emit("compute.updated", self.asdict())
 
     async def _connect_notification(self):
         """
@@ -466,7 +466,7 @@ class Compute:
                             self._memory_usage_percent = event["memory_usage_percent"]
                             self._disk_usage_percent = event["disk_usage_percent"]
                             # FIXME: slow down number of compute events
-                            self._controller.notification.controller_emit("compute.updated", self.__json__())
+                            self._controller.notification.controller_emit("compute.updated", self.asdict())
                         else:
                             await self._controller.notification.dispatch(
                                 action, event, project_id=project_id, compute_id=self.id
@@ -494,7 +494,7 @@ class Compute:
         self._cpu_usage_percent = None
         self._memory_usage_percent = None
         self._disk_usage_percent = None
-        self._controller.notification.controller_emit("compute.updated", self.__json__())
+        self._controller.notification.controller_emit("compute.updated", self.asdict())
 
     def _getUrl(self, path):
         host = self._host
@@ -523,8 +523,8 @@ class Compute:
             if data == {}:
                 data = None
             elif data is not None:
-                if hasattr(data, "__json__"):
-                    data = json.dumps(data.__json__())
+                if hasattr(data, "asdict"):
+                    data = json.dumps(data.asdict())
                 elif isinstance(data, aiohttp.streams.EmptyStreamReader):
                     data = None
                 # Stream the request

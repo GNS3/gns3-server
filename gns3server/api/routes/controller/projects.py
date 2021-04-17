@@ -70,7 +70,7 @@ def get_projects():
     """
 
     controller = Controller.instance()
-    return [p.__json__() for p in controller.projects.values()]
+    return [p.asdict() for p in controller.projects.values()]
 
 
 @router.post(
@@ -87,7 +87,7 @@ async def create_project(project_data: schemas.ProjectCreate):
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.__json__()
+    return project.asdict()
 
 
 @router.get("/{project_id}", response_model=schemas.Project)
@@ -96,7 +96,7 @@ def get_project(project: Project = Depends(dep_project)):
     Return a project.
     """
 
-    return project.__json__()
+    return project.asdict()
 
 
 @router.put("/{project_id}", response_model=schemas.Project, response_model_exclude_unset=True)
@@ -106,7 +106,7 @@ async def update_project(project_data: schemas.ProjectUpdate, project: Project =
     """
 
     await project.update(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.__json__()
+    return project.asdict()
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -154,7 +154,7 @@ async def open_project(project: Project = Depends(dep_project)):
     """
 
     await project.open()
-    return project.__json__()
+    return project.asdict()
 
 
 @router.post(
@@ -176,7 +176,7 @@ async def load_project(path: str = Body(..., embed=True)):
     project = await controller.load_project(
         dot_gns3_file,
     )
-    return project.__json__()
+    return project.asdict()
 
 
 @router.get("/{project_id}/notifications")
@@ -323,7 +323,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
         raise ControllerError(f"Could not import the project: {e}")
-    return project.__json__()
+    return project.asdict()
 
 
 @router.post(
@@ -348,7 +348,7 @@ async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Pro
     new_project = await project.duplicate(
         name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
     )
-    return new_project.__json__()
+    return new_project.asdict()
 
 
 @router.get("/{project_id}/files/{file_path:path}")

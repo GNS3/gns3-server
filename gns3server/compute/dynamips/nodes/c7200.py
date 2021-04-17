@@ -92,7 +92,7 @@ class C7200(Router):
         if chassis is not None:
             raise DynamipsError("c7200 routers do not have chassis")
 
-    def __json__(self):
+    def asdict(self):
 
         c7200_router_info = {
             "npe": self._npe,
@@ -101,7 +101,7 @@ class C7200(Router):
             "power_supplies": self._power_supplies,
         }
 
-        router_info = Router.__json__(self)
+        router_info = Router.asdict(self)
         router_info.update(c7200_router_info)
         return router_info
 

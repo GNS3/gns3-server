@@ -72,7 +72,7 @@ class NIOUDP(NIO):
 
         return "NIO UDP"
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "type": "nio_udp",

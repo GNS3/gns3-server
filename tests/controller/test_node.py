@@ -112,7 +112,7 @@ async def test_eq(compute, project, node, controller):
 
 def test_json(node, compute):
 
-    assert node.__json__() == {
+    assert node.asdict() == {
         "compute_id": str(compute.id),
         "project_id": node.project.id,
         "node_id": node.id,
@@ -153,7 +153,7 @@ def test_json(node, compute):
         ]
     }
 
-    assert node.__json__(topology_dump=True) == {
+    assert node.asdict(topology_dump=True) == {
         "compute_id": str(compute.id),
         "node_id": node.id,
         "template_id": None,
@@ -327,7 +327,7 @@ async def test_update(node, compute, project, controller):
     assert node._console == 2048
     assert node.x == 42
     assert node._properties == {"startup_script": "echo test"}
-    #controller._notification.emit.assert_called_with("node.updated", node.__json__())
+    #controller._notification.emit.assert_called_with("node.updated", node.asdict())
     assert project.dump.called
 
 
@@ -355,7 +355,7 @@ async def test_update_properties(node, compute, controller):
 
     # The notif should contain the old properties because it's the compute that will emit
     # the correct info
-    #node_notif = copy.deepcopy(node.__json__())
+    #node_notif = copy.deepcopy(node.asdict())
     #node_notif["properties"]["startup_script"] = "echo test"
     #controller._notification.emit.assert_called_with("node.updated", node_notif)
 
@@ -373,7 +373,7 @@ async def test_update_only_controller(node, compute):
     await node.update(x=42)
     assert not compute.put.called
     assert node.x == 42
-    node._project.emit_notification.assert_called_with("node.updated", node.__json__())
+    node._project.emit_notification.assert_called_with("node.updated", node.asdict())
 
     # If nothing change a second notif should not be sent
     node._project.emit_notification = AsyncioMagicMock()

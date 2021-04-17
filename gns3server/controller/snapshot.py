@@ -133,10 +133,10 @@ class Snapshot:
         except (OSError, PermissionError) as e:
             raise ControllerError(str(e))
         await project.open()
-        self._project.emit_notification("snapshot.restored", self.__json__())
+        self._project.emit_notification("snapshot.restored", self.asdict())
         return self._project
 
-    def __json__(self):
+    def asdict(self):
         return {
             "snapshot_id": self._id,
             "name": self._name,

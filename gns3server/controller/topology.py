@@ -30,6 +30,10 @@ from ..version import __version__
 from ..utils.qt import qt_font_to_style
 from ..compute.dynamips import PLATFORMS_DEFAULT_RAM
 from .controller_error import ControllerError
+from .compute import Compute
+from .drawing import Drawing
+from .node import Node
+from .link import Link
 
 from gns3server.schemas.controller.topology import Topology
 from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
@@ -89,23 +93,23 @@ def project_to_topology(project):
     }
 
     for node in project.nodes.values():
-        if hasattr(node, "__json__"):
-            data["topology"]["nodes"].append(node.__json__(topology_dump=True))
+        if isinstance(node, Node):
+            data["topology"]["nodes"].append(node.asdict(topology_dump=True))
         else:
             data["topology"]["nodes"].append(node)
     for link in project.links.values():
-        if hasattr(link, "__json__"):
-            data["topology"]["links"].append(link.__json__(topology_dump=True))
+        if isinstance(link, Link):
+            data["topology"]["links"].append(link.asdict(topology_dump=True))
         else:
             data["topology"]["links"].append(link)
     for drawing in project.drawings.values():
-        if hasattr(drawing, "__json__"):
-            data["topology"]["drawings"].append(drawing.__json__(topology_dump=True))
+        if isinstance(drawing, Drawing):
+            data["topology"]["drawings"].append(drawing.asdict(topology_dump=True))
         else:
             data["topology"]["drawings"].append(drawing)
     for compute in project.computes:
-        if hasattr(compute, "__json__"):
-            compute = compute.__json__(topology_dump=True)
+        if isinstance(compute, Compute):
+            compute = compute.asdict(topology_dump=True)
             if compute["compute_id"] not in (
                 "vm",
                 "local",

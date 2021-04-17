@@ -36,7 +36,7 @@ from gns3server.version import __version__
 #         data = json.load(f)
 #         assert data["version"] == __version__
 #         assert data["iou_license"] == controller.iou_license
-#         assert data["gns3vm"] == controller.gns3vm.__json__()
+#         assert data["gns3vm"] == controller.gns3vm.asdict()
 #
 #
 # def test_load_controller_settings(controller, controller_config_path):
@@ -115,10 +115,10 @@ async def test_add_compute(controller):
 
     controller._notification = MagicMock()
     c = await controller.add_compute(compute_id="test1", connect=False)
-    controller._notification.controller_emit.assert_called_with("compute.created", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.created", c.asdict())
     assert len(controller.computes) == 1
     await controller.add_compute(compute_id="test1", connect=False)
-    controller._notification.controller_emit.assert_called_with("compute.updated", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.updated", c.asdict())
     assert len(controller.computes) == 1
     await controller.add_compute(compute_id="test2", connect=False)
     assert len(controller.computes) == 2
@@ -156,7 +156,7 @@ async def test_deleteComputeProjectOpened(controller, controller_config_path):
     c._connected = True
     await controller.delete_compute("test1")
     assert len(controller.computes) == 0
-    controller._notification.controller_emit.assert_called_with("compute.deleted", c.__json__())
+    controller._notification.controller_emit.assert_called_with("compute.deleted", c.asdict())
     assert c.connected is False
 
     # Project 1 use this compute it should be close before deleting the compute
@@ -383,12 +383,12 @@ def test_appliances(controller, config, tmpdir):
     controller.appliance_manager.load_appliances()
     assert len(controller.appliance_manager.appliances) > 0
     for appliance in controller.appliance_manager.appliances.values():
-        assert appliance.__json__()["status"] != "broken"
-    assert "Alpine Linux" in [c.__json__()["name"] for c in controller.appliance_manager.appliances.values()]
-    assert "My Appliance" in [c.__json__()["name"] for c in controller.appliance_manager.appliances.values()]
+        assert appliance.asdict()["status"] != "broken"
+    assert "Alpine Linux" in [c.asdict()["name"] for c in controller.appliance_manager.appliances.values()]
+    assert "My Appliance" in [c.asdict()["name"] for c in controller.appliance_manager.appliances.values()]
 
     for c in controller.appliance_manager.appliances.values():
-        j = c.__json__()
+        j = c.asdict()
         if j["name"] == "Alpine Linux":
             assert j["builtin"]
         elif j["name"] == "My Appliance":

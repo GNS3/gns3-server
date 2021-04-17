@@ -82,7 +82,7 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate):
             if hasattr(container, name) and getattr(container, name) != value:
                 setattr(container, name, value)
 
-    return container.__json__()
+    return container.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.Docker)
@@ -91,7 +91,7 @@ def get_docker_node(node: DockerVM = Depends(dep_node)):
     Return a Docker node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Docker)
@@ -128,7 +128,7 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
     if changed:
         await node.update()
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
@@ -201,7 +201,7 @@ async def duplicate_docker_node(destination_node_id: UUID = Body(..., embed=True
     """
 
     new_node = await Docker.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post(
@@ -219,7 +219,7 @@ async def create_docker_node_nio(
 
     nio = Docker.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.adapter_add_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -239,7 +239,7 @@ async def update_docker_node_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.adapter_update_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

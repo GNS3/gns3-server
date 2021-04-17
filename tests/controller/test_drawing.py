@@ -47,7 +47,7 @@ def test_init_with_uuid(project):
 def test_json(project):
 
     i = Drawing(project, None, svg="<svg></svg>")
-    assert i.__json__() == {
+    assert i.asdict() == {
         "drawing_id": i.id,
         "project_id": project.id,
         "x": i.x,
@@ -57,7 +57,7 @@ def test_json(project):
         "svg": i.svg,
         "rotation": i.rotation
     }
-    assert i.__json__(topology_dump=True) == {
+    assert i.asdict(topology_dump=True) == {
         "drawing_id": i.id,
         "x": i.x,
         "y": i.y,

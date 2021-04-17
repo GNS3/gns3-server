@@ -48,7 +48,7 @@ class NIOTAP(NIO):
 
         return "NIO TAP"
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "type": "nio_tap",

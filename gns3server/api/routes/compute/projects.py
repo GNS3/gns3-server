@@ -58,7 +58,7 @@ def get_compute_projects():
     """
 
     pm = ProjectManager.instance()
-    return [p.__json__() for p in pm.projects]
+    return [p.asdict() for p in pm.projects]
 
 
 @router.post("/projects", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
@@ -75,7 +75,7 @@ def create_compute_project(project_data: schemas.ProjectCreate):
         project_id=project_data.get("project_id"),
         variables=project_data.get("variables", None),
     )
-    return project.__json__()
+    return project.asdict()
 
 
 @router.put("/projects/{project_id}", response_model=schemas.Project)
@@ -85,7 +85,7 @@ async def update_compute_project(project_data: schemas.ProjectUpdate, project: P
     """
 
     await project.update(variables=project_data.variables)
-    return project.__json__()
+    return project.asdict()
 
 
 @router.get("/projects/{project_id}", response_model=schemas.Project)
@@ -94,7 +94,7 @@ def get_compute_project(project: Project = Depends(dep_project)):
     Return a project from the compute.
     """
 
-    return project.__json__()
+    return project.asdict()
 
 
 @router.post("/projects/{project_id}/close", status_code=status.HTTP_204_NO_CONTENT)
@@ -152,8 +152,8 @@ async def delete_compute_project(project: Project = Depends(dep_project)):
 #     while True:
 #         try:
 #             (action, msg) = await asyncio.wait_for(queue.get(), 5)
-#             if hasattr(msg, "__json__"):
-#                 msg = json.dumps({"action": action, "event": msg.__json__()}, sort_keys=True)
+#             if hasattr(msg, "asdict"):
+#                 msg = json.dumps({"action": action, "event": msg.asdict()}, sort_keys=True)
 #             else:
 #                 msg = json.dumps({"action": action, "event": msg}, sort_keys=True)
 #             log.debug("Send notification: %s", msg)

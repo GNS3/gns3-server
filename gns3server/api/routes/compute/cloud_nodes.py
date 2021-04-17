@@ -72,7 +72,7 @@ async def create_cloud(project_id: UUID, node_data: schemas.CloudCreate):
     node.remote_console_type = node_data.get("remote_console_type", node.remote_console_type)
     node.remote_console_http_path = node_data.get("remote_console_http_path", node.remote_console_http_path)
     node.usage = node_data.get("usage", "")
-    return node.__json__()
+    return node.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.Cloud)
@@ -81,7 +81,7 @@ def get_cloud(node: Cloud = Depends(dep_node)):
     Return a cloud node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Cloud)
@@ -95,7 +95,7 @@ def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)
         if hasattr(node, name) and getattr(node, name) != value:
             setattr(node, name, value)
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -154,7 +154,7 @@ async def create_cloud_nio(
 
     nio = Builtin.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.add_nio(nio, port_number)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -177,7 +177,7 @@ async def update_cloud_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.update_nio(port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

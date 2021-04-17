@@ -73,11 +73,11 @@ class C3600(Router):
         self._chassis = chassis
         self._clock_divisor = 4
 
-    def __json__(self):
+    def asdict(self):
 
         c3600_router_info = {"iomem": self._iomem, "chassis": self._chassis}
 
-        router_info = Router.__json__(self)
+        router_info = Router.asdict(self)
         router_info.update(c3600_router_info)
         return router_info
 

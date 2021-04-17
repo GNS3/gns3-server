@@ -66,7 +66,7 @@ async def test_list(controller):
 async def test_json(controller):
 
     vm = GNS3VM(controller)
-    assert vm.__json__() == vm._settings
+    assert vm.asdict() == vm._settings
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")

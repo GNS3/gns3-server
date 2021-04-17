@@ -112,7 +112,7 @@ async def test_variables():
 async def test_json():
 
     p = Project(project_id=str(uuid4()))
-    assert p.__json__() == {
+    assert p.asdict() == {
         "name": p.name,
         "project_id": p.id,
         "variables": None
@@ -124,7 +124,7 @@ async def test_json_with_variables():
 
     variables = [{"name": "VAR1", "value": "VAL1"}]
     p = Project(project_id=str(uuid4()), variables=variables)
-    assert p.__json__() == {
+    assert p.asdict() == {
         "name": p.name,
         "project_id": p.id,
         "variables": variables

@@ -36,4 +36,4 @@ async def get_appliances(update: Optional[bool] = None, symbol_theme: Optional[s
     if update:
         await controller.appliance_manager.download_appliances()
     controller.appliance_manager.load_appliances(symbol_theme=symbol_theme)
-    return [c.__json__() for c in controller.appliance_manager.appliances.values()]
+    return [c.asdict() for c in controller.appliance_manager.appliances.values()]

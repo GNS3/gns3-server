@@ -127,7 +127,7 @@ class PortManager:
             cls._instance = cls()
         return cls._instance
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "console_port_range": self._console_port_range,

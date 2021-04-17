@@ -66,7 +66,7 @@ async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate):
         startup_script=node_data.get("startup_script"),
     )
 
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.VPCS)
@@ -75,7 +75,7 @@ def get_vpcs_node(node: VPCSVM = Depends(dep_node)):
     Return a VPCS node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.VPCS)
@@ -89,7 +89,7 @@ def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_n
     node.console = node_data.get("console", node.console)
     node.console_type = node_data.get("console_type", node.console_type)
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -108,7 +108,7 @@ async def duplicate_vpcs_node(destination_node_id: UUID = Body(..., embed=True),
     """
 
     new_node = await VPCS.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,7 +163,7 @@ async def create_vpcs_node_nio(
 
     nio = VPCS.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.port_add_nio_binding(port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -183,7 +183,7 @@ async def update_vpcs_node_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.port_update_nio_binding(port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

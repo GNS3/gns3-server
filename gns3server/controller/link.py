@@ -160,14 +160,14 @@ class Link:
             self._filters = new_filters
             if self._created:
                 await self.update()
-                self._project.emit_notification("link.updated", self.__json__())
+                self._project.emit_notification("link.updated", self.asdict())
                 self._project.dump()
 
     async def update_suspend(self, value):
         if value != self._suspended:
             self._suspended = value
             await self.update()
-            self._project.emit_notification("link.updated", self.__json__())
+            self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
 
     @property
@@ -231,7 +231,7 @@ class Link:
                 n["node"].add_link(self)
                 n["port"].link = self
             self._created = True
-            self._project.emit_notification("link.created", self.__json__())
+            self._project.emit_notification("link.created", self.asdict())
 
         if dump:
             self._project.dump()
@@ -244,7 +244,7 @@ class Link:
                     label = node_data.get("label")
                     if label:
                         port["label"] = label
-        self._project.emit_notification("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.asdict())
         self._project.dump()
 
     async def create(self):
@@ -286,7 +286,7 @@ class Link:
 
         self._capturing = True
         self._capture_file_name = capture_file_name
-        self._project.emit_notification("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.asdict())
 
     async def stop_capture(self):
         """
@@ -294,7 +294,7 @@ class Link:
         """
 
         self._capturing = False
-        self._project.emit_notification("link.updated", self.__json__())
+        self._project.emit_notification("link.updated", self.asdict())
 
     def pcap_streaming_url(self):
         """
@@ -417,7 +417,7 @@ class Link:
     def __hash__(self):
         return hash(self._id)
 
-    def __json__(self, topology_dump=False):
+    def asdict(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """

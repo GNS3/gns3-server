@@ -98,7 +98,7 @@ class Notification:
                 project = self._controller.get_project(event["project_id"])
                 node = project.get_node(event["node_id"])
                 await node.parse_node_response(event)
-                self.project_emit("node.updated", node.__json__())
+                self.project_emit("node.updated", node.asdict())
             except ControllerError:  # Project closing
                 return
         elif action == "ping":

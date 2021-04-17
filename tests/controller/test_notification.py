@@ -126,4 +126,4 @@ def test_various_notification(controller, node):
     notif.project_emit("log.info", {"message": "Image uploaded"})
     notif.project_emit("log.warning", {"message": "Warning ASA 8 is not officially supported by GNS3"})
     notif.project_emit("log.error", {"message": "Permission denied on /tmp"})
-    notif.project_emit("node.updated", node.__json__())
+    notif.project_emit("node.updated", node.asdict())

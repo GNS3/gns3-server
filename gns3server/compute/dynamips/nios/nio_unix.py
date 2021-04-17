@@ -79,7 +79,7 @@ class NIOUNIX(NIO):
 
         return self._remote_file
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "type": "nio_unix",

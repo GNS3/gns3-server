@@ -64,7 +64,7 @@ class NIOLinuxEthernet(NIO):
 
         return self._ethernet_device
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "type": "nio_linux_ethernet",

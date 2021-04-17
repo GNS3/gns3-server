@@ -76,7 +76,7 @@ async def create_qemu_node(project_id: UUID, node_data: schemas.QemuCreate):
         if hasattr(vm, name) and getattr(vm, name) != value:
             setattr(vm, name, value)
 
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.Qemu)
@@ -85,7 +85,7 @@ def get_qemu_node(node: QemuVM = Depends(dep_node)):
     Return a Qemu node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Qemu)
@@ -101,7 +101,7 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
         if hasattr(node, name) and getattr(node, name) != value:
             await node.update_property(name, value)
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -120,7 +120,7 @@ async def duplicate_qemu_node(destination_node_id: UUID = Body(..., embed=True),
     """
 
     new_node = await Qemu.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
@@ -196,7 +196,7 @@ async def create_qemu_node_nio(
 
     nio = Qemu.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.adapter_add_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -218,7 +218,7 @@ async def update_qemu_node_nio(
     if nio_data.suspend:
         nio.suspend = nio_data.suspend
     await node.adapter_update_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

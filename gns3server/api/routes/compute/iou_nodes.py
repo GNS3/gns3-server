@@ -79,7 +79,7 @@ async def create_iou_node(project_id: UUID, node_data: schemas.IOUCreate):
             if node_data.get("use_default_iou_values") and (name == "ram" or name == "nvram"):
                 continue
             setattr(vm, name, value)
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.IOU)
@@ -88,7 +88,7 @@ def get_iou_node(node: IOUVM = Depends(dep_node)):
     Return an IOU node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.IOU)
@@ -109,7 +109,7 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
         # this is important to have the correct NVRAM amount in order to correctly push the configs to the NVRAM
         await node.update_default_iou_values()
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -128,7 +128,7 @@ async def duplicate_iou_node(destination_node_id: UUID = Body(..., embed=True), 
     """
 
     new_node = await IOU.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
@@ -143,7 +143,7 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
             setattr(node, name, value)
 
     await node.start()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
@@ -191,7 +191,7 @@ async def create_iou_node_nio(
 
     nio = IOU.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.adapter_add_nio_binding(adapter_number, port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -213,7 +213,7 @@ async def update_iou_node_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.adapter_update_nio_binding(adapter_number, port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

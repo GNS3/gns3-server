@@ -77,7 +77,7 @@ class Nat(Cloud):
     def is_supported(self):
         return True
 
-    def __json__(self):
+    def asdict(self):
         return {
             "name": self.name,
             "usage": self.usage,

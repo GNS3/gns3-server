@@ -120,7 +120,7 @@ class VPCSVM(BaseNode):
 
         await self._check_vpcs_version()
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "name": self.name,

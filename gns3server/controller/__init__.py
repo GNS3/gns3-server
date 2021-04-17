@@ -355,12 +355,12 @@ class Controller:
             if connect:
                 # call compute.connect() later to give time to the controller to be fully started
                 asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
-            self.notification.controller_emit("compute.created", compute.__json__())
+            self.notification.controller_emit("compute.created", compute.asdict())
             return compute
         else:
             if connect:
                 await self._computes[compute_id].connect()
-            self.notification.controller_emit("compute.updated", self._computes[compute_id].__json__())
+            self.notification.controller_emit("compute.updated", self._computes[compute_id].asdict())
             return self._computes[compute_id]
 
     async def close_compute_projects(self, compute):
@@ -399,7 +399,7 @@ class Controller:
         await compute.close()
         del self._computes[compute_id]
         # self.save()
-        self.notification.controller_emit("compute.deleted", compute.__json__())
+        self.notification.controller_emit("compute.deleted", compute.asdict())
 
     @property
     def notification(self):

@@ -75,7 +75,7 @@ class VMwareVM(BaseNode):
     def ethernet_adapters(self):
         return self._ethernet_adapters
 
-    def __json__(self):
+    def asdict(self):
 
         json = {
             "name": self.name,

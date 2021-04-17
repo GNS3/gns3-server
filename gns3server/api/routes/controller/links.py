@@ -59,7 +59,7 @@ async def get_links(project_id: UUID):
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
-    return [v.__json__() for v in project.links.values()]
+    return [v.asdict() for v in project.links.values()]
 
 
 @router.post(
@@ -94,7 +94,7 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate):
     except ControllerError as e:
         await project.delete_link(link.id)
         raise e
-    return link.__json__()
+    return link.asdict()
 
 
 @router.get("/{link_id}/available_filters")
@@ -112,7 +112,7 @@ async def get_link(link: Link = Depends(dep_link)):
     Return a link.
     """
 
-    return link.__json__()
+    return link.asdict()
 
 
 @router.put("/{link_id}", response_model=schemas.Link, response_model_exclude_unset=True)
@@ -128,7 +128,7 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
         await link.update_suspend(link_data["suspend"])
     if "nodes" in link_data:
         await link.update_nodes(link_data["nodes"])
-    return link.__json__()
+    return link.asdict()
 
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -148,7 +148,7 @@ async def reset_link(link: Link = Depends(dep_link)):
     """
 
     await link.reset()
-    return link.__json__()
+    return link.asdict()
 
 
 @router.post("/{link_id}/capture/start", status_code=status.HTTP_201_CREATED, response_model=schemas.Link)
@@ -161,7 +161,7 @@ async def start_capture(capture_data: dict, link: Link = Depends(dep_link)):
         data_link_type=capture_data.get("data_link_type", "DLT_EN10MB"),
         capture_file_name=capture_data.get("capture_file_name"),
     )
-    return link.__json__()
+    return link.asdict()
 
 
 @router.post("/{link_id}/capture/stop", status_code=status.HTTP_204_NO_CONTENT)

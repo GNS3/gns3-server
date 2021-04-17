@@ -52,7 +52,7 @@ async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Projec
     """
 
     snapshot = await project.snapshot(snapshot_data.name)
-    return snapshot.__json__()
+    return snapshot.asdict()
 
 
 @router.get("", response_model=List[schemas.Snapshot], response_model_exclude_unset=True)
@@ -62,7 +62,7 @@ def get_snapshots(project: Project = Depends(dep_project)):
     """
 
     snapshots = [s for s in project.snapshots.values()]
-    return [s.__json__() for s in sorted(snapshots, key=lambda s: (s.created_at, s.name))]
+    return [s.asdict() for s in sorted(snapshots, key=lambda s: (s.created_at, s.name))]
 
 
 @router.delete("/{snapshot_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -82,4 +82,4 @@ async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_pro
 
     snapshot = project.get_snapshot(str(snapshot_id))
     project = await snapshot.restore()
-    return project.__json__()
+    return project.asdict()

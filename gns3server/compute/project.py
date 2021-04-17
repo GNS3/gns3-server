@@ -77,7 +77,7 @@ class Project:
 
         log.info(f"Project {self._id} with path '{self._path}' created")
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "name": self._name,

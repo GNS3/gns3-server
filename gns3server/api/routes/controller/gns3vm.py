@@ -54,7 +54,7 @@ async def get_gns3vm_settings():
     Return the GNS3 VM settings.
     """
 
-    return Controller.instance().gns3vm.__json__()
+    return Controller.instance().gns3vm.asdict()
 
 
 @router.put("", response_model=schemas.GNS3VM, response_model_exclude_unset=True)
@@ -67,4 +67,4 @@ async def update_gns3vm_settings(gns3vm_data: schemas.GNS3VM):
     gns3_vm = controller.gns3vm
     await gns3_vm.update_settings(jsonable_encoder(gns3vm_data, exclude_unset=True))
     controller.save()
-    return gns3_vm.__json__()
+    return gns3_vm.asdict()

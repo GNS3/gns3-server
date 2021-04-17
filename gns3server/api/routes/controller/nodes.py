@@ -117,7 +117,7 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
     compute = controller.get_compute(str(node_data.compute_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
-    return node.__json__()
+    return node.asdict()
 
 
 @router.get("", response_model=List[schemas.Node], response_model_exclude_unset=True)
@@ -126,7 +126,7 @@ async def get_nodes(project: Project = Depends(dep_project)):
     Return all nodes belonging to a given project.
     """
 
-    return [v.__json__() for v in project.nodes.values()]
+    return [v.asdict() for v in project.nodes.values()]
 
 
 @router.post("/start", status_code=status.HTTP_204_NO_CONTENT)
@@ -172,7 +172,7 @@ def get_node(node: Node = Depends(dep_node)):
     Return a node from a given project.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Node, response_model_exclude_unset=True)
@@ -189,7 +189,7 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     node_data.pop("compute_id", None)
 
     await node.update(**node_data)
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete(
@@ -212,7 +212,7 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
     """
 
     new_node = await node.project.duplicate_node(node, duplicate_data.x, duplicate_data.y, duplicate_data.z)
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
@@ -259,7 +259,7 @@ async def get_node_links(node: Node = Depends(dep_node)):
 
     links = []
     for link in node.links:
-        links.append(link.__json__())
+        links.append(link.asdict())
     return links
 
 

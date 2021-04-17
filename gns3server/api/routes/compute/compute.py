@@ -72,7 +72,7 @@ def network_ports() -> dict:
     """
 
     m = PortManager.instance()
-    return m.__json__()
+    return m.asdict()
 
 
 @router.get("/version")

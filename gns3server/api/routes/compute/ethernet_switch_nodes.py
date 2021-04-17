@@ -68,13 +68,13 @@ async def create_ethernet_switch(project_id: UUID, node_data: schemas.EthernetSw
         ports=node_data.get("ports_mapping"),
     )
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.EthernetSwitch)
 def get_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.EthernetSwitch, status_code=status.HTTP_201_CREATED)
@@ -86,7 +86,7 @@ async def duplicate_ethernet_switch(
     """
 
     new_node = await Dynamips.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.EthernetSwitch)
@@ -104,7 +104,7 @@ async def update_ethernet_switch(node_data: schemas.EthernetSwitchUpdate, node: 
     if "console_type" in node_data:
         node.console_type = node_data["console_type"]
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -157,7 +157,7 @@ async def create_nio(
 
     nio = await Dynamips.instance().create_nio(node, jsonable_encoder(nio_data, exclude_unset=True))
     await node.add_nio(nio, port_number)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

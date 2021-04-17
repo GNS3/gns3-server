@@ -62,7 +62,7 @@ def test_snapshot_filename(project):
 def test_json(project):
 
     snapshot = Snapshot(project, filename="test1_260716_100439.gns3project")
-    assert snapshot.__json__() == {
+    assert snapshot.asdict() == {
         "snapshot_id": snapshot._id,
         "name": "test1",
         "project_id": project.id,

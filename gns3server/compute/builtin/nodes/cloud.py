@@ -77,7 +77,7 @@ class Cloud(BaseNode):
     def _interfaces(self):
         return gns3server.utils.interfaces.interfaces()
 
-    def __json__(self):
+    def asdict(self):
 
         host_interfaces = []
         network_interfaces = gns3server.utils.interfaces.interfaces()

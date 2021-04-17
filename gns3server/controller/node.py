@@ -419,7 +419,7 @@ class Node:
 
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
-        old_json = self.__json__()
+        old_json = self.asdict()
 
         compute_properties = None
         # Update node properties with additional elements
@@ -449,9 +449,9 @@ class Node:
             data = self._node_data(properties=compute_properties)
             response = await self.put(None, data=data)
             await self.parse_node_response(response.json)
-        elif old_json != self.__json__():
+        elif old_json != self.asdict():
             # We send notif only if object has changed
-            self.project.emit_notification("node.updated", self.__json__())
+            self.project.emit_notification("node.updated", self.asdict())
         self.project.dump()
 
     async def parse_node_response(self, response):
@@ -777,7 +777,7 @@ class Node:
             return False
         return self.id == other.id and other.project.id == self.project.id
 
-    def __json__(self, topology_dump=False):
+    def asdict(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties required for saving on disk
         """
@@ -817,7 +817,7 @@ class Node:
             "status": self._status,
             "console_host": str(self._compute.console_host),
             "node_directory": self._node_directory,
-            "ports": [port.__json__() for port in self.ports]
+            "ports": [port.asdict() for port in self.ports]
         }
         topology.update(additional_data)
         return topology

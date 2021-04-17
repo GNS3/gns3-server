@@ -145,4 +145,4 @@ async def create_node_from_template(
     node = await project.add_node_from_template(
         template, x=template_usage.x, y=template_usage.y, compute_id=template_usage.compute_id
     )
-    return node.__json__()
+    return node.asdict()

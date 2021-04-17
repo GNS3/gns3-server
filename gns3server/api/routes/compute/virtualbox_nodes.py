@@ -80,7 +80,7 @@ async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBox
             if hasattr(vm, name) and getattr(vm, name) != value:
                 setattr(vm, name, value)
 
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.VirtualBox)
@@ -89,7 +89,7 @@ def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)):
     Return a VirtualBox node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.VirtualBox)
@@ -131,7 +131,7 @@ async def update_virtualbox_node(node_data: schemas.VirtualBoxUpdate, node: Virt
             setattr(node, name, value)
 
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -203,7 +203,7 @@ async def create_virtualbox_node_nio(
 
     nio = VirtualBox.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.adapter_add_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -225,7 +225,7 @@ async def update_virtualbox_node_nio(
     if nio_data.suspend:
         nio.suspend = nio_data.suspend
     await node.adapter_update_nio_binding(adapter_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

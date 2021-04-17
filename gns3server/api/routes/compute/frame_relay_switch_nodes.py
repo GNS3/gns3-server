@@ -65,7 +65,7 @@ async def create_frame_relay_switch(project_id: UUID, node_data: schemas.FrameRe
         node_type="frame_relay_switch",
         mappings=node_data.get("mappings"),
     )
-    return node.__json__()
+    return node.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.FrameRelaySwitch)
@@ -74,7 +74,7 @@ def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     Return a Frame Relay switch node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.FrameRelaySwitch, status_code=status.HTTP_201_CREATED)
@@ -86,7 +86,7 @@ async def duplicate_frame_relay_switch(
     """
 
     new_node = await Dynamips.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.FrameRelaySwitch)
@@ -103,7 +103,7 @@ async def update_frame_relay_switch(
     if "mappings" in node_data:
         node.mappings = node_data["mappings"]
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -160,7 +160,7 @@ async def create_nio(
 
     nio = await Dynamips.instance().create_nio(node, jsonable_encoder(nio_data, exclude_unset=True))
     await node.add_nio(nio, port_number)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)

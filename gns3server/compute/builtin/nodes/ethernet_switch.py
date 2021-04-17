@@ -38,7 +38,7 @@ class EthernetSwitch(BaseNode):
 
         super().__init__(name, node_id, project, manager)
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "name": self.name,

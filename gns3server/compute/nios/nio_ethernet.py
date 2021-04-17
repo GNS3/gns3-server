@@ -48,7 +48,7 @@ class NIOEthernet(NIO):
 
         return "NIO Ethernet"
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "type": "nio_ethernet",

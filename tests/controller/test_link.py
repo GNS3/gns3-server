@@ -81,7 +81,7 @@ async def test_add_node(project, compute):
     await link.add_node(node2, 0, 4)
 
     assert link.create.called
-    link._project.emit_notification.assert_called_with("link.created", link.__json__())
+    link._project.emit_notification.assert_called_with("link.created", link.asdict())
     assert link in node2.links
 
 
@@ -197,7 +197,7 @@ async def test_json(project, compute):
     link.create = AsyncioMagicMock()
     await link.add_node(node1, 0, 4)
     await link.add_node(node2, 1, 3)
-    assert link.__json__() == {
+    assert link.asdict() == {
         "link_id": link.id,
         "project_id": project.id,
         "nodes": [
@@ -228,7 +228,7 @@ async def test_json(project, compute):
         "capture_file_path": None,
         "capture_compute_id": None
     }
-    assert link.__json__(topology_dump=True) == {
+    assert link.asdict(topology_dump=True) == {
         "link_id": link.id,
         "nodes": [
             {
@@ -267,7 +267,7 @@ async def test_json_serial_link(project, compute):
     link.create = AsyncioMagicMock()
     await link.add_node(node1, 0, 4)
     await link.add_node(node2, 1, 3)
-    assert link.__json__()["link_type"] == "serial"
+    assert link.asdict()["link_type"] == "serial"
 
 
 @pytest.mark.asyncio
@@ -297,7 +297,7 @@ async def test_start_capture(link):
     await link.start_capture(capture_file_name="test.pcap")
     assert link._capturing
     assert link._capture_file_name == "test.pcap"
-    link._project.emit_notification.assert_called_with("link.updated", link.__json__())
+    link._project.emit_notification.assert_called_with("link.updated", link.asdict())
 
 
 @pytest.mark.asyncio
@@ -307,7 +307,7 @@ async def test_stop_capture(link):
     link._project.emit_notification = MagicMock()
     await link.stop_capture()
     assert link._capturing is False
-    link._project.emit_notification.assert_called_with("link.updated", link.__json__())
+    link._project.emit_notification.assert_called_with("link.updated", link.asdict())
 
 
 @pytest.mark.asyncio

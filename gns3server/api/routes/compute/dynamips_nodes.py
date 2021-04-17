@@ -81,7 +81,7 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate):
         node_type="dynamips",
     )
     await dynamips_manager.update_vm_settings(vm, node_data)
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.Dynamips)
@@ -90,7 +90,7 @@ def get_router(node: Router = Depends(dep_node)):
     Return Dynamips router.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Dynamips)
@@ -101,7 +101,7 @@ async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depend
 
     await Dynamips.instance().update_vm_settings(node, jsonable_encoder(node_data, exclude_unset=True))
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -171,7 +171,7 @@ async def create_nio(adapter_number: int, port_number: int, nio_data: schemas.UD
 
     nio = await Dynamips.instance().create_nio(node, jsonable_encoder(nio_data, exclude_unset=True))
     await node.slot_add_nio_binding(adapter_number, port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -188,7 +188,7 @@ async def update_nio(adapter_number: int, port_number: int, nio_data: schemas.UD
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.slot_update_nio_binding(adapter_number, port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
@@ -273,7 +273,7 @@ async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep
     """
 
     new_node = await Dynamips.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.websocket("/{node_id}/console/ws")

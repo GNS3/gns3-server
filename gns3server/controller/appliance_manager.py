@@ -104,7 +104,7 @@ class ApplianceManager:
                     try:
                         with open(path, encoding="utf-8") as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
-                            json_data = appliance.__json__()  # Check if loaded without error
+                            json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
