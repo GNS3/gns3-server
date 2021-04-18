@@ -54,7 +54,13 @@ class ComputeCreate(ComputeBase):
 
     class Config:
         schema_extra = {
-            "example": {"name": "My compute", "host": "127.0.0.1", "port": 3080, "user": "user", "password": "password"}
+            "example": {
+                "name": "My compute",
+                "host": "127.0.0.1",
+                "port": 3080,
+                "user": "user",
+                "password": "password"
+            }
         }
 
     @validator("name", always=True)

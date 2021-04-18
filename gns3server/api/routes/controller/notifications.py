@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def http_notification():
+async def http_notification() -> StreamingResponse:
     """
     Receive controller notifications about the controller from HTTP stream.
     """
@@ -47,7 +47,7 @@ async def http_notification():
 
 
 @router.websocket("/ws")
-async def notification_ws(websocket: WebSocket):
+async def notification_ws(websocket: WebSocket) -> None:
     """
     Receive project notifications about the controller from WebSocket.
     """

@@ -59,7 +59,7 @@ class UsersRepository(BaseRepository):
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
 
-        hashed_password = self._auth_service.hash_password(user.password)
+        hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
             username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
         )
@@ -73,7 +73,7 @@ class UsersRepository(BaseRepository):
         update_values = user_update.dict(exclude_unset=True)
         password = update_values.pop("password", None)
         if password:
-            update_values["hashed_password"] = self._auth_service.hash_password(password=password)
+            update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
 
         query = update(models.User).where(models.User.user_id == user_id).values(update_values)
 

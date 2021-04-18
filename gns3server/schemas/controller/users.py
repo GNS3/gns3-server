@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Optional
-from pydantic import EmailStr, BaseModel, Field
+from pydantic import EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
 
 from .base import DateTimeModelMixin
@@ -37,7 +37,7 @@ class UserCreate(UserBase):
     """
 
     username: str = Field(..., min_length=3, regex="[a-zA-Z0-9_-]+$")
-    password: str = Field(..., min_length=7, max_length=100)
+    password: SecretStr = Field(..., min_length=7, max_length=100)
 
 
 class UserUpdate(UserBase):
@@ -45,7 +45,7 @@ class UserUpdate(UserBase):
     Properties to update an user.
     """
 
-    password: Optional[str] = Field(None, min_length=7, max_length=100)
+    password: Optional[SecretStr] = Field(None, min_length=7, max_length=100)
 
 
 class User(DateTimeModelMixin, UserBase):

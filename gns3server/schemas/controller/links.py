@@ -30,7 +30,7 @@ class LinkNode(BaseModel):
     node_id: UUID
     adapter_number: int
     port_number: int
-    label: Optional[Label]
+    label: Optional[Label] = None
 
 
 class LinkType(str, Enum):

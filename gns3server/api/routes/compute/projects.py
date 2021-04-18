@@ -41,7 +41,7 @@ router = APIRouter()
 _notifications_listening = {}
 
 
-def dep_project(project_id: UUID):
+def dep_project(project_id: UUID) -> Project:
     """
     Dependency to retrieve a project.
     """
@@ -52,7 +52,7 @@ def dep_project(project_id: UUID):
 
 
 @router.get("/projects", response_model=List[schemas.Project])
-def get_compute_projects():
+def get_compute_projects() -> List[schemas.Project]:
     """
     Get all projects opened on the compute.
     """
@@ -62,7 +62,7 @@ def get_compute_projects():
 
 
 @router.post("/projects", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
-def create_compute_project(project_data: schemas.ProjectCreate):
+def create_compute_project(project_data: schemas.ProjectCreate) -> schemas.Project:
     """
     Create a new project on the compute.
     """
@@ -79,7 +79,10 @@ def create_compute_project(project_data: schemas.ProjectCreate):
 
 
 @router.put("/projects/{project_id}", response_model=schemas.Project)
-async def update_compute_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
+async def update_compute_project(
+        project_data: schemas.ProjectUpdate,
+        project: Project = Depends(dep_project)
+) -> schemas.Project:
     """
     Update project on the compute.
     """
@@ -89,7 +92,7 @@ async def update_compute_project(project_data: schemas.ProjectUpdate, project: P
 
 
 @router.get("/projects/{project_id}", response_model=schemas.Project)
-def get_compute_project(project: Project = Depends(dep_project)):
+def get_compute_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project from the compute.
     """
@@ -98,7 +101,7 @@ def get_compute_project(project: Project = Depends(dep_project)):
 
 
 @router.post("/projects/{project_id}/close", status_code=status.HTTP_204_NO_CONTENT)
-async def close_compute_project(project: Project = Depends(dep_project)):
+async def close_compute_project(project: Project = Depends(dep_project)) -> None:
     """
     Close a project on the compute.
     """
@@ -116,7 +119,7 @@ async def close_compute_project(project: Project = Depends(dep_project)):
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_compute_project(project: Project = Depends(dep_project)):
+async def delete_compute_project(project: Project = Depends(dep_project)) -> None:
     """
     Delete project from the compute.
     """
@@ -180,7 +183,7 @@ async def delete_compute_project(project: Project = Depends(dep_project)):
 
 
 @router.get("/projects/{project_id}/files", response_model=List[schemas.ProjectFile])
-async def get_compute_project_files(project: Project = Depends(dep_project)):
+async def get_compute_project_files(project: Project = Depends(dep_project)) -> List[schemas.ProjectFile]:
     """
     Return files belonging to a project.
     """
@@ -189,7 +192,7 @@ async def get_compute_project_files(project: Project = Depends(dep_project)):
 
 
 @router.get("/projects/{project_id}/files/{file_path:path}")
-async def get_compute_project_file(file_path: str, project: Project = Depends(dep_project)):
+async def get_compute_project_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Get a file from a project.
     """
@@ -208,7 +211,7 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
 
 
 @router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)):
+async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
 
     path = os.path.normpath(file_path)
 

@@ -20,6 +20,7 @@ import os
 
 from fastapi import APIRouter, status
 from fastapi.encoders import jsonable_encoder
+from typing import List
 
 from gns3server.config import Config
 from gns3server.controller import Controller
@@ -40,7 +41,7 @@ router = APIRouter()
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
 )
-async def shutdown():
+async def shutdown() -> None:
     """
     Shutdown the local server
     """
@@ -71,7 +72,7 @@ async def shutdown():
 
 
 @router.get("/version", response_model=schemas.Version)
-def get_version():
+def get_version() -> dict:
     """
     Return the server version number.
     """
@@ -86,7 +87,7 @@ def get_version():
     response_model_exclude_defaults=True,
     responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}},
 )
-def check_version(version: schemas.Version):
+def check_version(version: schemas.Version) -> dict:
     """
     Check if version is the same as the server.
 
@@ -102,7 +103,7 @@ def check_version(version: schemas.Version):
 
 
 @router.get("/iou_license", response_model=schemas.IOULicense)
-def get_iou_license():
+def get_iou_license() -> schemas.IOULicense:
     """
     Return the IOU license settings
     """
@@ -111,7 +112,7 @@ def get_iou_license():
 
 
 @router.put("/iou_license", status_code=status.HTTP_201_CREATED, response_model=schemas.IOULicense)
-async def update_iou_license(iou_license: schemas.IOULicense):
+async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
     """
     Update the IOU license settings.
     """
@@ -124,7 +125,7 @@ async def update_iou_license(iou_license: schemas.IOULicense):
 
 
 @router.get("/statistics")
-async def statistics():
+async def statistics() -> List[dict]:
     """
     Return server statistics.
     """

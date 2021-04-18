@@ -19,13 +19,13 @@ API routes for appliances.
 """
 
 from fastapi import APIRouter
-from typing import Optional
+from typing import Optional, List
 
 router = APIRouter()
 
 
 @router.get("")
-async def get_appliances(update: Optional[bool] = None, symbol_theme: Optional[str] = "Classic"):
+async def get_appliances(update: Optional[bool] = None, symbol_theme: Optional[str] = "Classic") -> List[dict]:
     """
     Return all appliances known by the controller.
     """

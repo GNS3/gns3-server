@@ -20,7 +20,7 @@ API routes for Ethernet switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, status
+from fastapi import APIRouter, Depends, Body, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -34,7 +34,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-def dep_node(project_id: UUID, node_id: UUID):
+def dep_node(project_id: UUID, node_id: UUID) -> EthernetSwitch:
     """
     Dependency to retrieve a node.
     """
@@ -50,7 +50,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Ethernet switch node"}},
 )
-async def create_ethernet_switch(project_id: UUID, node_data: schemas.EthernetSwitchCreate):
+async def create_ethernet_switch(project_id: UUID, node_data: schemas.EthernetSwitchCreate) -> schemas.EthernetSwitch:
     """
     Create a new Ethernet switch.
     """
@@ -72,15 +72,16 @@ async def create_ethernet_switch(project_id: UUID, node_data: schemas.EthernetSw
 
 
 @router.get("/{node_id}", response_model=schemas.EthernetSwitch)
-def get_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
+def get_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> schemas.EthernetSwitch:
 
     return node.asdict()
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.EthernetSwitch, status_code=status.HTTP_201_CREATED)
 async def duplicate_ethernet_switch(
-    destination_node_id: UUID = Body(..., embed=True), node: EthernetSwitch = Depends(dep_node)
-):
+        destination_node_id: UUID = Body(..., embed=True),
+        node: EthernetSwitch = Depends(dep_node)
+) -> schemas.EthernetSwitch:
     """
     Duplicate an Ethernet switch.
     """
@@ -90,7 +91,10 @@ async def duplicate_ethernet_switch(
 
 
 @router.put("/{node_id}", response_model=schemas.EthernetSwitch)
-async def update_ethernet_switch(node_data: schemas.EthernetSwitchUpdate, node: EthernetSwitch = Depends(dep_node)):
+async def update_ethernet_switch(
+        node_data: schemas.EthernetSwitchUpdate,
+        node: EthernetSwitch = Depends(dep_node)
+) -> schemas.EthernetSwitch:
     """
     Update an Ethernet switch.
     """
@@ -108,7 +112,7 @@ async def update_ethernet_switch(node_data: schemas.EthernetSwitchUpdate, node: 
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
+async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Delete an Ethernet switch.
     """
@@ -117,7 +121,7 @@ async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
+def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Start an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
@@ -127,7 +131,7 @@ def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
+def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Stop an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
@@ -137,7 +141,7 @@ def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
+def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     """
     Suspend an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
@@ -152,8 +156,12 @@ def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)):
     response_model=schemas.UDPNIO,
 )
 async def create_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: EthernetSwitch = Depends(dep_node)
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        nio_data: schemas.UDPNIO,
+        node: EthernetSwitch = Depends(dep_node)
+) -> schemas.UDPNIO:
 
     nio = await Dynamips.instance().create_nio(node, jsonable_encoder(nio_data, exclude_unset=True))
     await node.add_nio(nio, port_number)
@@ -161,7 +169,12 @@ async def create_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_nio(adapter_number: int, port_number: int, node: EthernetSwitch = Depends(dep_node)):
+async def delete_nio(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: EthernetSwitch = Depends(dep_node)
+) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the switch is always 0.
@@ -173,11 +186,12 @@ async def delete_nio(adapter_number: int, port_number: int, node: EthernetSwitch
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(
-    adapter_number: int,
-    port_number: int,
-    node_capture_data: schemas.NodeCapture,
-    node: EthernetSwitch = Depends(dep_node),
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node_capture_data: schemas.NodeCapture,
+        node: EthernetSwitch = Depends(dep_node),
+) -> dict:
     """
     Start a packet capture on the node.
     The adapter number on the switch is always 0.
@@ -191,7 +205,12 @@ async def start_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_capture(adapter_number: int, port_number: int, node: EthernetSwitch = Depends(dep_node)):
+async def stop_capture(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: EthernetSwitch = Depends(dep_node)
+) -> None:
     """
     Stop a packet capture on the node.
     The adapter number on the switch is always 0.
@@ -201,7 +220,12 @@ async def stop_capture(adapter_number: int, port_number: int, node: EthernetSwit
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
-async def stream_pcap_file(adapter_number: int, port_number: int, node: EthernetSwitch = Depends(dep_node)):
+async def stream_pcap_file(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: EthernetSwitch = Depends(dep_node)
+) -> StreamingResponse:
     """
     Stream the pcap capture file.
     The adapter number on the switch is always 0.

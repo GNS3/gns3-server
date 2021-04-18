@@ -32,7 +32,7 @@ router = APIRouter(responses=responses)
 
 
 @router.get("", response_model=List[schemas.Drawing], response_model_exclude_unset=True)
-async def get_drawings(project_id: UUID):
+async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     """
     Return the list of all drawings for a given project.
     """
@@ -42,7 +42,7 @@ async def get_drawings(project_id: UUID):
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.Drawing)
-async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing):
+async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Create a new drawing.
     """
@@ -53,7 +53,7 @@ async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing):
 
 
 @router.get("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
-async def get_drawing(project_id: UUID, drawing_id: UUID):
+async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     """
     Return a drawing.
     """
@@ -64,7 +64,7 @@ async def get_drawing(project_id: UUID, drawing_id: UUID):
 
 
 @router.put("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
-async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing):
+async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Update a drawing.
     """
@@ -76,7 +76,7 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schem
 
 
 @router.delete("/{drawing_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_drawing(project_id: UUID, drawing_id: UUID):
+async def delete_drawing(project_id: UUID, drawing_id: UUID) -> None:
     """
     Delete a drawing.
     """

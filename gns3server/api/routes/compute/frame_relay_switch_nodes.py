@@ -20,7 +20,7 @@ API routes for Frame Relay switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, status
+from fastapi import APIRouter, Depends, Body, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -34,7 +34,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-def dep_node(project_id: UUID, node_id: UUID):
+def dep_node(project_id: UUID, node_id: UUID) -> FrameRelaySwitch:
     """
     Dependency to retrieve a node.
     """
@@ -50,7 +50,10 @@ def dep_node(project_id: UUID, node_id: UUID):
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Frame Relay switch node"}},
 )
-async def create_frame_relay_switch(project_id: UUID, node_data: schemas.FrameRelaySwitchCreate):
+async def create_frame_relay_switch(
+        project_id: UUID,
+        node_data: schemas.FrameRelaySwitchCreate
+) -> schemas.FrameRelaySwitch:
     """
     Create a new Frame Relay switch node.
     """
@@ -69,7 +72,7 @@ async def create_frame_relay_switch(project_id: UUID, node_data: schemas.FrameRe
 
 
 @router.get("/{node_id}", response_model=schemas.FrameRelaySwitch)
-def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
+def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> schemas.FrameRelaySwitch:
     """
     Return a Frame Relay switch node.
     """
@@ -79,8 +82,9 @@ def get_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 @router.post("/{node_id}/duplicate", response_model=schemas.FrameRelaySwitch, status_code=status.HTTP_201_CREATED)
 async def duplicate_frame_relay_switch(
-    destination_node_id: UUID = Body(..., embed=True), node: FrameRelaySwitch = Depends(dep_node)
-):
+        destination_node_id: UUID = Body(..., embed=True),
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> schemas.FrameRelaySwitch:
     """
     Duplicate a Frame Relay switch node.
     """
@@ -91,8 +95,9 @@ async def duplicate_frame_relay_switch(
 
 @router.put("/{node_id}", response_model=schemas.FrameRelaySwitch)
 async def update_frame_relay_switch(
-    node_data: schemas.FrameRelaySwitchUpdate, node: FrameRelaySwitch = Depends(dep_node)
-):
+        node_data: schemas.FrameRelaySwitchUpdate,
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> schemas.FrameRelaySwitch:
     """
     Update an Frame Relay switch node.
     """
@@ -107,7 +112,7 @@ async def update_frame_relay_switch(
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
+async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Delete a Frame Relay switch node.
     """
@@ -116,7 +121,7 @@ async def delete_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
+def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Start a Frame Relay switch node.
     This endpoint results in no action since Frame Relay switch nodes are always on.
@@ -126,7 +131,7 @@ def start_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
+def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Stop a Frame Relay switch node.
     This endpoint results in no action since Frame Relay switch nodes are always on.
@@ -136,7 +141,7 @@ def stop_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
+def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)) -> None:
     """
     Suspend a Frame Relay switch node.
     This endpoint results in no action since Frame Relay switch nodes are always on.
@@ -151,8 +156,12 @@ def suspend_frame_relay_switch(node: FrameRelaySwitch = Depends(dep_node)):
     response_model=schemas.UDPNIO,
 )
 async def create_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: FrameRelaySwitch = Depends(dep_node)
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        nio_data: schemas.UDPNIO,
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> schemas.UDPNIO:
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the switch is always 0.
@@ -164,7 +173,12 @@ async def create_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_nio(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
+async def delete_nio(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> None:
     """
     Remove a NIO (Network Input/Output) from the node.
     The adapter number on the switch is always 0.
@@ -176,11 +190,12 @@ async def delete_nio(adapter_number: int, port_number: int, node: FrameRelaySwit
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_capture(
-    adapter_number: int,
-    port_number: int,
-    node_capture_data: schemas.NodeCapture,
-    node: FrameRelaySwitch = Depends(dep_node),
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node_capture_data: schemas.NodeCapture,
+        node: FrameRelaySwitch = Depends(dep_node),
+) -> dict:
     """
     Start a packet capture on the node.
     The adapter number on the switch is always 0.
@@ -194,7 +209,12 @@ async def start_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_capture(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
+async def stop_capture(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> None:
     """
     Stop a packet capture on the node.
     The adapter number on the switch is always 0.
@@ -204,7 +224,12 @@ async def stop_capture(adapter_number: int, port_number: int, node: FrameRelaySw
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
-async def stream_pcap_file(adapter_number: int, port_number: int, node: FrameRelaySwitch = Depends(dep_node)):
+async def stream_pcap_file(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: FrameRelaySwitch = Depends(dep_node)
+) -> StreamingResponse:
     """
     Stream the pcap capture file.
     The adapter number on the hub is always 0.

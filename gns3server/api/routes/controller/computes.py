@@ -93,7 +93,7 @@ async def update_compute(
 @router.delete("/{compute_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
-):
+) -> None:
     """
     Delete a compute from the controller.
     """
@@ -102,7 +102,7 @@ async def delete_compute(
 
 
 @router.get("/{compute_id}/{emulator}/images")
-async def get_images(compute_id: Union[str, UUID], emulator: str):
+async def get_images(compute_id: Union[str, UUID], emulator: str) -> List[str]:
     """
     Return the list of images available on a compute for a given emulator type.
     """
@@ -113,7 +113,7 @@ async def get_images(compute_id: Union[str, UUID], emulator: str):
 
 
 @router.get("/{compute_id}/{emulator}/{endpoint_path:path}")
-async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str):
+async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str) -> dict:
     """
     Forward a GET request to a compute.
     Read the full compute API documentation for available routes.
@@ -125,7 +125,7 @@ async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path
 
 
 @router.post("/{compute_id}/{emulator}/{endpoint_path:path}")
-async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
+async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
     """
     Forward a POST request to a compute.
     Read the full compute API documentation for available routes.
@@ -136,7 +136,7 @@ async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_pat
 
 
 @router.put("/{compute_id}/{emulator}/{endpoint_path:path}")
-async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict):
+async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
     """
     Forward a PUT request to a compute.
     Read the full compute API documentation for available routes.
@@ -147,7 +147,7 @@ async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path
 
 
 @router.post("/{compute_id}/auto_idlepc")
-async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC):
+async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC) -> str:
     """
     Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
     """

@@ -36,7 +36,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-def dep_project(project_id: UUID):
+def dep_project(project_id: UUID) -> Project:
     """
     Dependency to retrieve a project.
     """
@@ -46,7 +46,10 @@ def dep_project(project_id: UUID):
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.Snapshot)
-async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Project = Depends(dep_project)):
+async def create_snapshot(
+        snapshot_data: schemas.SnapshotCreate,
+        project: Project = Depends(dep_project)
+) -> schemas.Snapshot:
     """
     Create a new snapshot of a project.
     """
@@ -56,7 +59,7 @@ async def create_snapshot(snapshot_data: schemas.SnapshotCreate, project: Projec
 
 
 @router.get("", response_model=List[schemas.Snapshot], response_model_exclude_unset=True)
-def get_snapshots(project: Project = Depends(dep_project)):
+def get_snapshots(project: Project = Depends(dep_project)) -> List[schemas.Snapshot]:
     """
     Return all snapshots belonging to a given project.
     """
@@ -66,7 +69,7 @@ def get_snapshots(project: Project = Depends(dep_project)):
 
 
 @router.delete("/{snapshot_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
+async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)) -> None:
     """
     Delete a snapshot.
     """
@@ -75,7 +78,7 @@ async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_proj
 
 
 @router.post("/{snapshot_id}/restore", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
-async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)):
+async def restore_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Restore a snapshot.
     """
