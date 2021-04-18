@@ -79,8 +79,12 @@ async def db_session(db_engine):
     # preferred and faster way would be to rollback the session/transaction
     # but it doesn't work for some reason
     async with db_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+        # Speed up tests by avoiding to hash the 'admin' password everytime the default super admin is added
+        # to the database using the "after_create" sqlalchemy event
+        hashed_password = "$2b$12$jPsNU9IS7.EWEqXahtDfo.26w6VLOLCuFEHKNvDpOjxs5e0WpqJfa"
+        with patch("gns3server.services.authentication.AuthService.hash_password", return_value=hashed_password):
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
 
     session = AsyncSession(db_engine)
     try:
@@ -152,6 +156,16 @@ def authorized_client(client: AsyncClient, test_user: User) -> AsyncClient:
     }
     return client
 
+@pytest.fixture
+async def admin_client(client: AsyncClient) -> AsyncClient:
+
+    # user "admin" is automatically created when the users table is created
+    access_token = auth_service.create_access_token("admin")
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {access_token}",
+    }
+    return client
 
 @pytest.fixture
 def controller_config_path(tmpdir):

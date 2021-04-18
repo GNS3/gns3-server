@@ -28,7 +28,7 @@ from gns3server import schemas
 from gns3server.controller.controller_error import (
     ControllerBadRequestError,
     ControllerNotFoundError,
-    ControllerUnauthorizedError,
+    ControllerForbiddenError,
 )
 
 from gns3server.db.repositories.users import UsersRepository
@@ -110,8 +110,8 @@ async def delete_user(
     Delete an user.
     """
 
-    if current_user.is_superuser:
-        raise ControllerUnauthorizedError("The super user cannot be deleted")
+    if current_user.is_superadmin:
+        raise ControllerForbiddenError("The super user cannot be deleted")
 
     success = await users_repo.delete_user(user_id)
     if not success:

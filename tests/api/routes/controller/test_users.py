@@ -118,7 +118,7 @@ class TestUserRoutes:
 
         response = await client.get(app.url_path_for("get_users"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 3  # user1, user2 and user3 should exist
+        assert len(response.json()) == 4  # admin, user1, user2 and user3 should exist
 
 
 class TestAuthTokens:
@@ -265,3 +265,30 @@ class TestUserMe:
 
         res = await client.get(app.url_path_for("get_current_active_user"))
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestSuperAdmin:
+
+    async def test_super_admin_exists(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession
+    ) -> None:
+
+        user_repo = UsersRepository(db_session)
+        admin_in_db = await user_repo.get_user_by_username("admin")
+        assert admin_in_db is not None
+        assert auth_service.verify_password("admin", admin_in_db.hashed_password)
+
+    async def test_cannot_delete_super_admin(
+            self,
+            app: FastAPI,
+            admin_client: AsyncClient,
+            db_session: AsyncSession
+    ) -> None:
+
+        user_repo = UsersRepository(db_session)
+        admin_in_db = await user_repo.get_user_by_username("admin")
+        res = await admin_client.delete(app.url_path_for("delete_user", user_id=admin_in_db.user_id))
+        assert res.status_code == status.HTTP_403_FORBIDDEN
