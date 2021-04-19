@@ -37,6 +37,7 @@ class User(BaseTable):
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
 
+
 @event.listens_for(User.__table__, 'after_create')
 def create_default_super_admin(target, connection, **kw):
 
@@ -49,4 +50,4 @@ def create_default_super_admin(target, connection, **kw):
     )
     connection.execute(stmt)
     connection.commit()
-    log.info("Default super admin account added")
+    log.info("The default super admin account has been created in the database")

@@ -37,7 +37,7 @@ class UserCreate(UserBase):
     """
 
     username: str = Field(..., min_length=3, regex="[a-zA-Z0-9_-]+$")
-    password: SecretStr = Field(..., min_length=7, max_length=100)
+    password: SecretStr = Field(..., min_length=6, max_length=100)
 
 
 class UserUpdate(UserBase):
@@ -45,7 +45,7 @@ class UserUpdate(UserBase):
     Properties to update an user.
     """
 
-    password: Optional[SecretStr] = Field(None, min_length=7, max_length=100)
+    password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
 
 
 class User(DateTimeModelMixin, UserBase):

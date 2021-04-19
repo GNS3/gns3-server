@@ -45,7 +45,10 @@ router = APIRouter()
 
 
 @router.get("", response_model=List[schemas.User])
-async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRepository))) -> List[schemas.User]:
+async def get_users(
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        current_user: schemas.User = Depends(get_current_active_user)
+) -> List[schemas.User]:
     """
     Get all users.
     """
@@ -55,7 +58,9 @@ async def get_users(users_repo: UsersRepository = Depends(get_repository(UsersRe
 
 @router.post("", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create_user(
-    user_create: schemas.UserCreate, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        user_create: schemas.UserCreate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        current_user: schemas.User = Depends(get_current_active_user)
 ) -> schemas.User:
     """
     Create a new user.
@@ -70,9 +75,11 @@ async def create_user(
     return await users_repo.create_user(user_create)
 
 
-@router.get("/{user_id}", response_model=schemas.User)
+@router.get("/{user_id}",response_model=schemas.User)
 async def get_user(
-    user_id: UUID, users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        user_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        current_user: schemas.User = Depends(get_current_active_user)
 ) -> schemas.User:
     """
     Get an user.
@@ -86,9 +93,10 @@ async def get_user(
 
 @router.put("/{user_id}", response_model=schemas.User)
 async def update_user(
-    user_id: UUID,
-    user_update: schemas.UserUpdate,
-    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        user_id: UUID,
+        user_update: schemas.UserUpdate,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        current_user: schemas.User = Depends(get_current_active_user)
 ) -> schemas.User:
     """
     Update an user.
@@ -111,7 +119,7 @@ async def delete_user(
     """
 
     if current_user.is_superadmin:
-        raise ControllerForbiddenError("The super user cannot be deleted")
+        raise ControllerForbiddenError("The super admin cannot be deleted")
 
     success = await users_repo.delete_user(user_id)
     if not success:

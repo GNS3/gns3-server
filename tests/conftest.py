@@ -94,7 +94,7 @@ async def db_session(db_engine):
 
 
 @pytest.fixture
-async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
+async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 
     async def _get_test_db():
         try:
@@ -108,8 +108,8 @@ async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
             app=app,
             base_url="http://test-api",
             headers={"Content-Type": "application/json"}
-    ) as client:
-        yield client
+    ) as async_client:
+        yield async_client
 
 
 @pytest.fixture
@@ -147,25 +147,33 @@ async def test_compute(db_session: AsyncSession) -> Compute:
 
 
 @pytest.fixture
-def authorized_client(client: AsyncClient, test_user: User) -> AsyncClient:
+def unauthorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
+    return base_client
 
-    access_token = auth_service.create_access_token(test_user.username)
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {access_token}",
-    }
-    return client
 
 @pytest.fixture
-async def admin_client(client: AsyncClient) -> AsyncClient:
+def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
 
-    # user "admin" is automatically created when the users table is created
-    access_token = auth_service.create_access_token("admin")
-    client.headers = {
-        **client.headers,
+    access_token = auth_service.create_access_token(test_user.username)
+    base_client.headers = {
+        **base_client.headers,
         "Authorization": f"Bearer {access_token}",
     }
-    return client
+    return base_client
+
+
+@pytest.fixture
+async def client(base_client: AsyncClient) -> AsyncClient:
+
+    # The super admin is automatically created when the users table is created
+    # this account that can access all endpoints without restrictions.
+    access_token = auth_service.create_access_token("admin")
+    base_client.headers = {
+        **base_client.headers,
+        "Authorization": f"Bearer {access_token}",
+    }
+    return base_client
+
 
 @pytest.fixture
 def controller_config_path(tmpdir):

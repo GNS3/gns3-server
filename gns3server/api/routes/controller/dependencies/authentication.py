@@ -44,6 +44,10 @@ async def get_user_from_token(
 
 async def get_current_active_user(current_user: schemas.User = Depends(get_user_from_token)) -> schemas.User:
 
+    # Super admin is always authorized
+    if current_user.is_superadmin:
+        return current_user
+
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
