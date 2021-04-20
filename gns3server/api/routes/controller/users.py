@@ -171,7 +171,7 @@ async def delete_user(
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
 
-@router.get("/users/me/", response_model=schemas.User)
+@router.get("/me/", response_model=schemas.User)
 async def get_current_active_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
     """
     Get the current active user.
