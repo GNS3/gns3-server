@@ -214,6 +214,22 @@ class TestUserLogin:
         assert "token_type" in res.json()
         assert res.json().get("token_type") == "bearer"
 
+    async def test_user_can_authenticate_using_json(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+            config: Config
+    ) -> None:
+
+        credentials = {
+            "username": test_user.username,
+            "password": "user1_password",
+        }
+        res = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert res.status_code == status.HTTP_200_OK
+        assert res.json().get("access_token")
+
     @pytest.mark.parametrize(
         "username, password, status_code",
         (

@@ -24,7 +24,7 @@ from gns3server.services import auth_service
 
 from .database import get_repository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")  # FIXME: URL prefix
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")
 
 
 async def get_user_from_token(

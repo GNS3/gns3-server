@@ -56,3 +56,9 @@ class User(DateTimeModelMixin, UserBase):
 
     class Config:
         orm_mode = True
+
+
+class Credentials(BaseModel):
+
+    username: str
+    password: str

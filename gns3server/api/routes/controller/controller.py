@@ -18,7 +18,7 @@ import asyncio
 import signal
 import os
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from typing import List
 
@@ -28,6 +28,7 @@ from gns3server.version import __version__
 from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
 from gns3server import schemas
 
+from .dependencies.authentication import get_current_active_user
 
 import logging
 
@@ -36,8 +37,39 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.get(
+    "/version",
+    response_model=schemas.Version,
+)
+def get_version() -> dict:
+    """
+    Return the server version number.
+    """
+
+    local_server = Config.instance().settings.Server.local
+    return {"version": __version__, "local": local_server}
+
+
+@router.post(
+    "/version",
+    response_model=schemas.Version,
+    response_model_exclude_defaults=True,
+    responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}},
+)
+def check_version(version: schemas.Version) -> dict:
+    """
+    Check if version is the same as the server.
+    """
+
+    print(version.version)
+    if version.version != __version__:
+        raise ControllerError(f"Client version {version.version} is not the same as server version {__version__}")
+    return {"version": __version__}
+
+
 @router.post(
     "/shutdown",
+    dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
 )
@@ -71,38 +103,11 @@ async def shutdown() -> None:
     os.kill(os.getpid(), signal.SIGTERM)
 
 
-@router.get("/version", response_model=schemas.Version)
-def get_version() -> dict:
-    """
-    Return the server version number.
-    """
-
-    local_server = Config.instance().settings.Server.local
-    return {"version": __version__, "local": local_server}
-
-
-@router.post(
-    "/version",
-    response_model=schemas.Version,
-    response_model_exclude_defaults=True,
-    responses={409: {"model": schemas.ErrorMessage, "description": "Invalid version"}},
+@router.get(
+    "/iou_license",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=schemas.IOULicense
 )
-def check_version(version: schemas.Version) -> dict:
-    """
-    Check if version is the same as the server.
-
-    :param request:
-    :param response:
-    :return:
-    """
-
-    print(version.version)
-    if version.version != __version__:
-        raise ControllerError(f"Client version {version.version} is not the same as server version {__version__}")
-    return {"version": __version__}
-
-
-@router.get("/iou_license", response_model=schemas.IOULicense)
 def get_iou_license() -> schemas.IOULicense:
     """
     Return the IOU license settings
@@ -111,7 +116,12 @@ def get_iou_license() -> schemas.IOULicense:
     return Controller.instance().iou_license
 
 
-@router.put("/iou_license", status_code=status.HTTP_201_CREATED, response_model=schemas.IOULicense)
+@router.put(
+    "/iou_license",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.IOULicense
+)
 async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULicense:
     """
     Update the IOU license settings.
@@ -124,7 +134,7 @@ async def update_iou_license(iou_license: schemas.IOULicense) -> schemas.IOULice
     return current_iou_license
 
 
-@router.get("/statistics")
+@router.get("/statistics", dependencies=[Depends(get_current_active_user)])
 async def statistics() -> List[dict]:
     """
     Return server statistics.

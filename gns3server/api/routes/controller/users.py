@@ -44,10 +44,53 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("", response_model=List[schemas.User])
+@router.post("/login", response_model=schemas.Token)
+async def login(
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    form_data: OAuth2PasswordRequestForm = Depends(),
+) -> schemas.Token:
+    """
+    Default user login method using forms (x-www-form-urlencoded).
+    Example: curl http://host:port/v3/users/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin"
+    """
+
+    user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication was unsuccessful.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
+    return token
+
+
+@router.post("/authenticate", response_model=schemas.Token)
+async def authenticate(
+    user_credentials: schemas.Credentials,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+) -> schemas.Token:
+    """
+    Alternative authentication method using json.
+    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"}'
+    """
+
+    user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication was unsuccessful.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
+    return token
+
+
+@router.get("", response_model=List[schemas.User], dependencies=[Depends(get_current_active_user)])
 async def get_users(
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        current_user: schemas.User = Depends(get_current_active_user)
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> List[schemas.User]:
     """
     Get all users.
@@ -56,11 +99,15 @@ async def get_users(
     return await users_repo.get_users()
 
 
-@router.post("", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=schemas.User,
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_201_CREATED
+)
 async def create_user(
         user_create: schemas.UserCreate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        current_user: schemas.User = Depends(get_current_active_user)
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Create a new user.
@@ -75,11 +122,10 @@ async def create_user(
     return await users_repo.create_user(user_create)
 
 
-@router.get("/{user_id}",response_model=schemas.User)
+@router.get("/{user_id}", dependencies=[Depends(get_current_active_user)], response_model=schemas.User)
 async def get_user(
         user_id: UUID,
         users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        current_user: schemas.User = Depends(get_current_active_user)
 ) -> schemas.User:
     """
     Get an user.
@@ -91,12 +137,11 @@ async def get_user(
     return user
 
 
-@router.put("/{user_id}", response_model=schemas.User)
+@router.put("/{user_id}", dependencies=[Depends(get_current_active_user)], response_model=schemas.User)
 async def update_user(
         user_id: UUID,
         user_update: schemas.UserUpdate,
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        current_user: schemas.User = Depends(get_current_active_user)
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
     Update an user.
@@ -124,27 +169,6 @@ async def delete_user(
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
-
-
-@router.post("/login", response_model=schemas.Token)
-async def login(
-    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-    form_data: OAuth2PasswordRequestForm = Depends(),
-) -> schemas.Token:
-    """
-    User login.
-    """
-
-    user = await users_repo.authenticate_user(username=form_data.username, password=form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication was unsuccessful.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
-    return token
 
 
 @router.get("/users/me/", response_model=schemas.User)
