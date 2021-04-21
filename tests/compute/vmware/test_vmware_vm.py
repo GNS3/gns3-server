@@ -49,10 +49,10 @@ async def test_vm(vm):
 @pytest.mark.asyncio
 async def test_json(vm, tmpdir, compute_project):
 
-    assert vm.__json__()["node_directory"] is not None
+    assert vm.asdict()["node_directory"] is not None
     compute_project._path = str(tmpdir)
     vm._linked_clone = True
-    assert vm.__json__()["node_directory"] is not None
+    assert vm.asdict()["node_directory"] is not None
 
 
 @pytest.mark.asyncio

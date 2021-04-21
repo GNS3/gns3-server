@@ -47,7 +47,7 @@ from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
 
-from gns3server.schemas.qemu_nodes import Qemu, QemuPlatform
+from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
 
 import logging
 
@@ -1112,7 +1112,7 @@ class QemuVM(BaseNode):
 
         # In case user upload image manually we don't have md5 sums.
         # We need generate hashes at this point, otherwise they will be generated
-        # at __json__ but not on separate thread.
+        # at asdict but not on separate thread.
         await cancellable_wait_run_in_executor(md5sum, self._hda_disk_image)
         await cancellable_wait_run_in_executor(md5sum, self._hdb_disk_image)
         await cancellable_wait_run_in_executor(md5sum, self._hdc_disk_image)
@@ -2506,7 +2506,7 @@ class QemuVM(BaseNode):
                 raise QemuError(f"Invalid additional options: {additional_options} error {e}")
         return command
 
-    def __json__(self):
+    def asdict(self):
         answer = {"project_id": self.project.id, "node_id": self.id, "node_directory": self.working_path}
         # Qemu has a long list of options. The JSON schema is the single source of information
         for field in Qemu.schema()["properties"]:

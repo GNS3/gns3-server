@@ -219,7 +219,7 @@ class IOUVM(BaseNode):
         if not os.access(self._path, os.X_OK):
             raise IOUError(f"IOU image '{self._path}' is not executable")
 
-    def __json__(self):
+    def asdict(self):
 
         iou_vm_info = {
             "name": self.name,

@@ -133,7 +133,7 @@ class DockerVM(BaseNode):
             )
         )
 
-    def __json__(self):
+    def asdict(self):
         return {
             "name": self._name,
             "usage": self.usage,

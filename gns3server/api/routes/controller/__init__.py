@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from . import controller
 from . import appliances
@@ -30,17 +30,80 @@ from . import symbols
 from . import templates
 from . import users
 
+from .dependencies.authentication import get_current_active_user
+
 router = APIRouter()
+
 router.include_router(controller.router, tags=["Controller"])
 router.include_router(users.router, prefix="/users", tags=["Users"])
-router.include_router(appliances.router, prefix="/appliances", tags=["Appliances"])
-router.include_router(computes.router, prefix="/computes", tags=["Computes"])
-router.include_router(drawings.router, prefix="/projects/{project_id}/drawings", tags=["Drawings"])
-router.include_router(gns3vm.router, prefix="/gns3vm", tags=["GNS3 VM"])
-router.include_router(links.router, prefix="/projects/{project_id}/links", tags=["Links"])
-router.include_router(nodes.router, prefix="/projects/{project_id}/nodes", tags=["Nodes"])
-router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
-router.include_router(projects.router, prefix="/projects", tags=["Projects"])
-router.include_router(snapshots.router, prefix="/projects/{project_id}/snapshots", tags=["Snapshots"])
-router.include_router(symbols.router, prefix="/symbols", tags=["Symbols"])
-router.include_router(templates.router, tags=["Templates"])
+
+router.include_router(
+    appliances.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/appliances",
+    tags=["Appliances"]
+)
+
+router.include_router(
+    computes.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/computes",
+    tags=["Computes"]
+)
+
+router.include_router(
+    drawings.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/drawings",
+    tags=["Drawings"])
+
+router.include_router(
+    gns3vm.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/gns3vm",
+    tags=["GNS3 VM"]
+)
+
+router.include_router(
+    links.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/links",
+    tags=["Links"]
+)
+
+router.include_router(
+    nodes.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/nodes",
+    tags=["Nodes"]
+)
+
+router.include_router(
+    notifications.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/notifications",
+    tags=["Notifications"])
+
+router.include_router(
+    projects.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects",
+    tags=["Projects"])
+
+router.include_router(
+    snapshots.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/snapshots",
+    tags=["Snapshots"])
+
+router.include_router(
+    symbols.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/symbols", tags=["Symbols"]
+)
+
+router.include_router(
+    templates.router,
+    dependencies=[Depends(get_current_active_user)],
+    tags=["Templates"]
+)

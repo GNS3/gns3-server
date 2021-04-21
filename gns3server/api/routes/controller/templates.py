@@ -44,7 +44,7 @@ router = APIRouter(responses=responses)
 async def create_template(
     template_create: schemas.TemplateCreate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> dict:
+) -> schemas.Template:
     """
     Create a new template.
     """
@@ -58,7 +58,7 @@ async def get_template(
     request: Request,
     response: Response,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> dict:
+) -> schemas.Template:
     """
     Return a template.
     """
@@ -79,7 +79,7 @@ async def update_template(
     template_id: UUID,
     template_update: schemas.TemplateUpdate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> dict:
+) -> schemas.Template:
     """
     Update a template.
     """
@@ -104,7 +104,7 @@ async def delete_template(
 @router.get("/templates", response_model=List[schemas.Template], response_model_exclude_unset=True)
 async def get_templates(
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> List[dict]:
+) -> List[schemas.Template]:
     """
     Return all templates.
     """
@@ -115,7 +115,7 @@ async def get_templates(
 @router.post("/templates/{template_id}/duplicate", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def duplicate_template(
     template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
-) -> dict:
+) -> schemas.Template:
     """
     Duplicate a template.
     """
@@ -145,4 +145,4 @@ async def create_node_from_template(
     node = await project.add_node_from_template(
         template, x=template_usage.x, y=template_usage.y, compute_id=template_usage.compute_id
     )
-    return node.__json__()
+    return node.asdict()

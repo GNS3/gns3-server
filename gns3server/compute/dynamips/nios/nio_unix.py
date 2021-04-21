@@ -79,6 +79,10 @@ class NIOUNIX(NIO):
 
         return self._remote_file
 
-    def __json__(self):
+    def asdict(self):
 
-        return {"type": "nio_unix", "local_file": self._local_file, "remote_file": self._remote_file}
+        return {
+            "type": "nio_unix",
+            "local_file": self._local_file,
+            "remote_file": self._remote_file
+        }

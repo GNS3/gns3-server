@@ -72,7 +72,7 @@ def network_ports() -> dict:
     """
 
     m = PortManager.instance()
-    return m.__json__()
+    return m.asdict()
 
 
 @router.get("/version")
@@ -123,13 +123,15 @@ def compute_statistics() -> dict:
 
 
 @router.get("/qemu/binaries")
-async def get_qemu_binaries(archs: Optional[List[str]] = Body(None, embed=True)):
+async def get_qemu_binaries(
+        archs: Optional[List[str]] = Body(None, embed=True)
+) -> List[str]:
 
     return await Qemu.binary_list(archs)
 
 
 @router.get("/qemu/img-binaries")
-async def get_image_binaries():
+async def get_image_binaries() -> List[str]:
 
     return await Qemu.img_binary_list()
 
@@ -148,7 +150,7 @@ async def get_qemu_capabilities() -> dict:
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}},
 )
-async def create_qemu_image(image_data: schemas.QemuImageCreate):
+async def create_qemu_image(image_data: schemas.QemuImageCreate) -> None:
     """
     Create a Qemu image.
     """
@@ -167,7 +169,7 @@ async def create_qemu_image(image_data: schemas.QemuImageCreate):
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}},
 )
-async def update_qemu_image(image_data: schemas.QemuImageUpdate):
+async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> None:
     """
     Update a Qemu image.
     """
@@ -181,13 +183,13 @@ async def update_qemu_image(image_data: schemas.QemuImageUpdate):
 
 
 @router.get("/virtualbox/vms", response_model=List[dict])
-async def get_virtualbox_vms():
+async def get_virtualbox_vms() -> List[dict]:
 
     vbox_manager = VirtualBox.instance()
     return await vbox_manager.list_vms()
 
 
 @router.get("/vmware/vms", response_model=List[dict])
-async def get_vms():
+async def get_vms() -> List[dict]:
     vmware_manager = VMware.instance()
     return await vmware_manager.list_vms()

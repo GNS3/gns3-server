@@ -20,7 +20,7 @@ API routes for VPCS nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -34,7 +34,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-def dep_node(project_id: UUID, node_id: UUID):
+def dep_node(project_id: UUID, node_id: UUID) -> VPCSVM:
     """
     Dependency to retrieve a node.
     """
@@ -50,7 +50,7 @@ def dep_node(project_id: UUID, node_id: UUID):
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VMware node"}},
 )
-async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate):
+async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate) -> schemas.VPCS:
     """
     Create a new VPCS node.
     """
@@ -66,20 +66,20 @@ async def create_vpcs_node(project_id: UUID, node_data: schemas.VPCSCreate):
         startup_script=node_data.get("startup_script"),
     )
 
-    return vm.__json__()
+    return vm.asdict()
 
 
 @router.get("/{node_id}", response_model=schemas.VPCS)
-def get_vpcs_node(node: VPCSVM = Depends(dep_node)):
+def get_vpcs_node(node: VPCSVM = Depends(dep_node)) -> schemas.VPCS:
     """
     Return a VPCS node.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.VPCS)
-def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)):
+def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_node)) -> schemas.VPCS:
     """
     Update a VPCS node.
     """
@@ -89,11 +89,11 @@ def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_n
     node.console = node_data.get("console", node.console)
     node.console_type = node_data.get("console_type", node.console_type)
     node.updated()
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)):
+async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Delete a VPCS node.
     """
@@ -102,17 +102,19 @@ async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.VPCS, status_code=status.HTTP_201_CREATED)
-async def duplicate_vpcs_node(destination_node_id: UUID = Body(..., embed=True), node: VPCSVM = Depends(dep_node)):
+async def duplicate_vpcs_node(
+        destination_node_id: UUID = Body(..., embed=True),
+        node: VPCSVM = Depends(dep_node)) -> None:
     """
     Duplicate a VPCS node.
     """
 
     new_node = await VPCS.instance().duplicate_node(node.id, str(destination_node_id))
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_vpcs_node(node: VPCSVM = Depends(dep_node)):
+async def start_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Start a VPCS node.
     """
@@ -121,7 +123,7 @@ async def start_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)):
+async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Stop a VPCS node.
     """
@@ -130,7 +132,7 @@ async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)):
+async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Suspend a VPCS node.
     Does nothing, suspend is not supported by VPCS.
@@ -140,7 +142,7 @@ async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)):
+async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Reload a VPCS node.
     """
@@ -154,8 +156,12 @@ async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)):
     response_model=schemas.UDPNIO,
 )
 async def create_vpcs_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VPCSVM = Depends(dep_node)
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        nio_data: schemas.UDPNIO,
+        node: VPCSVM = Depends(dep_node)
+) -> schemas.UDPNIO:
     """
     Add a NIO (Network Input/Output) to the node.
     The adapter number on the VPCS node is always 0.
@@ -163,7 +169,7 @@ async def create_vpcs_node_nio(
 
     nio = VPCS.instance().create_nio(jsonable_encoder(nio_data, exclude_unset=True))
     await node.port_add_nio_binding(port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.put(
@@ -172,8 +178,12 @@ async def create_vpcs_node_nio(
     response_model=schemas.UDPNIO,
 )
 async def update_vpcs_node_nio(
-    adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: VPCSVM = Depends(dep_node)
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        nio_data: schemas.UDPNIO,
+        node: VPCSVM = Depends(dep_node)
+) -> schemas.UDPNIO:
     """
     Update a NIO (Network Input/Output) on the node.
     The adapter number on the VPCS node is always 0.
@@ -183,11 +193,16 @@ async def update_vpcs_node_nio(
     if nio_data.filters:
         nio.filters = nio_data.filters
     await node.port_update_nio_binding(port_number, nio)
-    return nio.__json__()
+    return nio.asdict()
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vpcs_node_nio(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
+async def delete_vpcs_node_nio(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: VPCSVM = Depends(dep_node)
+) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the VPCS node is always 0.
@@ -198,8 +213,12 @@ async def delete_vpcs_node_nio(adapter_number: int, port_number: int, node: VPCS
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
 async def start_vpcs_node_capture(
-    adapter_number: int, port_number: int, node_capture_data: schemas.NodeCapture, node: VPCSVM = Depends(dep_node)
-):
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node_capture_data: schemas.NodeCapture,
+        node: VPCSVM = Depends(dep_node)
+) -> dict:
     """
     Start a packet capture on the node.
     The adapter number on the VPCS node is always 0.
@@ -213,7 +232,12 @@ async def start_vpcs_node_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_vpcs_node_capture(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
+async def stop_vpcs_node_capture(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: VPCSVM = Depends(dep_node)
+) -> None:
     """
     Stop a packet capture on the node.
     The adapter number on the VPCS node is always 0.
@@ -223,13 +247,18 @@ async def stop_vpcs_node_capture(adapter_number: int, port_number: int, node: VP
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: VPCSVM = Depends(dep_node)):
+async def reset_console(node: VPCSVM = Depends(dep_node)) -> None:
 
     await node.reset_console()
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
-async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM = Depends(dep_node)):
+async def stream_pcap_file(
+        *,
+        adapter_number: int = Path(..., ge=0, le=0),
+        port_number: int,
+        node: VPCSVM = Depends(dep_node)
+) -> StreamingResponse:
     """
     Stream the pcap capture file.
     The adapter number on the VPCS node is always 0.
@@ -241,7 +270,7 @@ async def stream_pcap_file(adapter_number: int, port_number: int, node: VPCSVM =
 
 
 @router.websocket("/{node_id}/console/ws")
-async def console_ws(websocket: WebSocket, node: VPCSVM = Depends(dep_node)):
+async def console_ws(websocket: WebSocket, node: VPCSVM = Depends(dep_node)) -> None:
     """
     Console WebSocket.
     """

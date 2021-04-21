@@ -53,7 +53,7 @@ async def vm(compute_project, manager):
 
 def test_json(vm, compute_project):
 
-    assert vm.__json__() == {
+    assert vm.asdict() == {
         'container_id': 'e90e34656842',
         'image': 'ubuntu:latest',
         'name': 'test',

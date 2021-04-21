@@ -25,7 +25,7 @@ from fastapi import FastAPI, Request
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
+from uvicorn.main import Server as UvicornServer
 
 from gns3server.controller.controller_error import (
     ControllerError,
@@ -81,6 +81,18 @@ def get_application() -> FastAPI:
 
 
 app = get_application()
+
+# Monkey Patch uvicorn signal handler to detect the application is shutting down
+app.state.exiting = False
+unicorn_exit_handler = UvicornServer.handle_exit
+
+
+def handle_exit(*args, **kwargs):
+    app.state.exiting = True
+    unicorn_exit_handler(*args, **kwargs)
+
+
+UvicornServer.handle_exit = handle_exit
 
 
 @app.exception_handler(ControllerError)

@@ -82,14 +82,12 @@ async def test_vmware_get(app: FastAPI, client: AsyncClient, compute_project: Pr
 
 async def test_vmware_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.check_hw_virtualization", return_value=True) as mock1:
-        with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.start", return_value=True) as mock2:
-            response = await client.post(app.url_path_for("start_vmware_node",
-                                                          project_id=vm["project_id"],
-                                                          node_id=vm["node_id"]))
-            assert mock1.called
-            assert mock2.called
-            assert response.status_code == status.HTTP_204_NO_CONTENT
+    with asyncio_patch("gns3server.compute.vmware.vmware_vm.VMwareVM.start", return_value=True) as mock:
+        response = await client.post(app.url_path_for("start_vmware_node",
+                                                      project_id=vm["project_id"],
+                                                      node_id=vm["node_id"]))
+        assert mock.called
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 async def test_vmware_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:

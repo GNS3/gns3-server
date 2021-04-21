@@ -472,7 +472,7 @@ async def test_set_process_priority_normal(vm, fake_qemu_img_binary):
 
 def test_json(vm, compute_project):
 
-    json = vm.__json__()
+    json = vm.asdict()
     assert json["name"] == vm.name
     assert json["project_id"] == compute_project.id
 

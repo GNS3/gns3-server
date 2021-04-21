@@ -169,14 +169,14 @@ class Project:
         :param kwargs: Project properties
         """
 
-        old_json = self.__json__()
+        old_json = self.asdict()
 
         for prop in kwargs:
             setattr(self, prop, kwargs[prop])
 
         # We send notif only if object has changed
-        if old_json != self.__json__():
-            self.emit_notification("project.updated", self.__json__())
+        if old_json != self.asdict():
+            self.emit_notification("project.updated", self.asdict())
             self.dump()
 
             # update on computes
@@ -589,7 +589,7 @@ class Project:
                 node = await self._create_node(compute, name, node_id, node_type, **kwargs)
         else:
             node = await self._create_node(compute, name, node_id, node_type, **kwargs)
-        self.emit_notification("node.created", node.__json__())
+        self.emit_notification("node.created", node.asdict())
         if dump:
             self.dump()
         return node
@@ -618,7 +618,7 @@ class Project:
         # refresh the compute IDs list
         self._computes = [n.compute.id for n in self.nodes.values()]
         self.dump()
-        self.emit_notification("node.deleted", node.__json__())
+        self.emit_notification("node.deleted", node.asdict())
 
     @open_required
     def get_node(self, node_id):
@@ -633,7 +633,7 @@ class Project:
     def _get_closed_data(self, section, id_key):
         """
         Get the data for a project from the .gns3 when
-        the project is close
+        the project is closed
 
         :param section: The section name in the .gns3
         :param id_key: The key for the element unique id
@@ -683,7 +683,7 @@ class Project:
         if drawing_id not in self._drawings:
             drawing = Drawing(self, drawing_id=drawing_id, **kwargs)
             self._drawings[drawing.id] = drawing
-            self.emit_notification("drawing.created", drawing.__json__())
+            self.emit_notification("drawing.created", drawing.asdict())
             if dump:
                 self.dump()
             return drawing
@@ -706,7 +706,7 @@ class Project:
             raise ControllerError(f"Drawing ID {drawing_id} cannot be deleted because it is locked")
         del self._drawings[drawing.id]
         self.dump()
-        self.emit_notification("drawing.deleted", drawing.__json__())
+        self.emit_notification("drawing.deleted", drawing.asdict())
 
     @open_required
     async def add_link(self, link_id=None, dump=True):
@@ -733,7 +733,7 @@ class Project:
             if force_delete is False:
                 raise
         self.dump()
-        self.emit_notification("link.deleted", link.__json__())
+        self.emit_notification("link.deleted", link.asdict())
 
     @open_required
     def get_link(self, link_id):
@@ -810,7 +810,7 @@ class Project:
         self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
-            self.emit_notification("project.closed", self.__json__())
+            self.emit_notification("project.closed", self.asdict())
         self.reset()
         self._closing = False
 
@@ -1117,7 +1117,7 @@ class Project:
         try:
             topo = project_to_topology(self)
             path = self._topology_file()
-            log.debug("Write %s", path)
+            log.debug(f"Write topology file '{path}'")
             with open(path + ".tmp", "w+", encoding="utf-8") as f:
                 json.dump(topo, f, indent=4, sort_keys=True)
             shutil.move(path + ".tmp", path)
@@ -1176,10 +1176,11 @@ class Project:
         :param z: Z position
         :returns: New node
         """
+
         if node.status != "stopped" and not node.is_always_running():
             raise ControllerError("Cannot duplicate node data while the node is running")
 
-        data = copy.deepcopy(node.__json__(topology_dump=True))
+        data = copy.deepcopy(node.asdict(topology_dump=True))
         # Some properties like internal ID should not be duplicated
         for unique_property in (
             "node_id",
@@ -1219,7 +1220,7 @@ class Project:
             "snapshots": len(self._snapshots),
         }
 
-    def __json__(self):
+    def asdict(self):
         return {
             "name": self._name,
             "project_id": self._id,

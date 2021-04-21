@@ -36,10 +36,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# The string use to extract the date from the filename
-FILENAME_TIME_FORMAT = "%d%m%y_%H%M%S"
-
-
 class Snapshot:
     """
     A snapshot object
@@ -59,7 +55,7 @@ class Snapshot:
             filename = (
                 self._name
                 + "_"
-                + datetime.utcfromtimestamp(self._created_at).replace(tzinfo=None).strftime(FILENAME_TIME_FORMAT)
+                + datetime.utcfromtimestamp(self._created_at).replace(tzinfo=None).strftime("%d%m%y_%H%M%S")
                 + ".gns3project"
             )
         else:
@@ -67,7 +63,7 @@ class Snapshot:
             datestring = filename.replace(self._name + "_", "").split(".")[0]
             try:
                 self._created_at = (
-                    datetime.strptime(datestring, FILENAME_TIME_FORMAT).replace(tzinfo=timezone.utc).timestamp()
+                    datetime.strptime(datestring, "%d%m%y_%H%M%S").replace(tzinfo=timezone.utc).timestamp()
                 )
             except ValueError:
                 self._created_at = datetime.utcnow().timestamp()
@@ -137,10 +133,10 @@ class Snapshot:
         except (OSError, PermissionError) as e:
             raise ControllerError(str(e))
         await project.open()
-        self._project.emit_notification("snapshot.restored", self.__json__())
+        self._project.emit_notification("snapshot.restored", self.asdict())
         return self._project
 
-    def __json__(self):
+    def asdict(self):
         return {
             "snapshot_id": self._id,
             "name": self._name,

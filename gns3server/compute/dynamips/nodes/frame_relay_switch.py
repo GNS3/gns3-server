@@ -51,7 +51,7 @@ class FrameRelaySwitch(Device):
         if mappings:
             self._mappings = mappings
 
-    def __json__(self):
+    def asdict(self):
 
         mappings = {}
         for source, destination in self._mappings.items():

@@ -23,6 +23,7 @@ import os
 
 from fastapi import APIRouter, Request, status
 from fastapi.responses import FileResponse
+from typing import List
 
 from gns3server.controller import Controller
 from gns3server import schemas
@@ -37,7 +38,7 @@ router = APIRouter()
 
 
 @router.get("")
-def get_symbols():
+def get_symbols() -> List[str]:
 
     controller = Controller.instance()
     return controller.symbols.list()
@@ -46,7 +47,7 @@ def get_symbols():
 @router.get(
     "/{symbol_id:path}/raw", responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}}
 )
-async def get_symbol(symbol_id: str):
+async def get_symbol(symbol_id: str) -> FileResponse:
     """
     Download a symbol file.
     """
@@ -63,7 +64,7 @@ async def get_symbol(symbol_id: str):
     "/{symbol_id:path}/dimensions",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
 )
-async def get_symbol_dimensions(symbol_id: str):
+async def get_symbol_dimensions(symbol_id: str) -> dict:
     """
     Get a symbol dimensions.
     """
@@ -78,7 +79,7 @@ async def get_symbol_dimensions(symbol_id: str):
 
 
 @router.post("/{symbol_id:path}/raw", status_code=status.HTTP_204_NO_CONTENT)
-async def upload_symbol(symbol_id: str, request: Request):
+async def upload_symbol(symbol_id: str, request: Request) -> None:
     """
     Upload a symbol file.
     """
@@ -97,7 +98,7 @@ async def upload_symbol(symbol_id: str, request: Request):
 
 
 @router.get("/default_symbols")
-def get_default_symbols():
+def get_default_symbols() -> dict:
     """
     Return all default symbols.
     """

@@ -59,7 +59,7 @@ async def test_json():
 
     p = Project(name="Test")
 
-    assert p.__json__() == {
+    assert p.asdict() == {
         "name": "Test",
         "project_id": p.id,
         "path": p.path,
@@ -90,7 +90,7 @@ async def test_update(controller):
     assert project.name == "Hello"
     await project.update(name="World")
     assert project.name == "World"
-    project.emit_notification.assert_any_call("project.updated", project.__json__())
+    project.emit_notification.assert_any_call("project.updated", project.asdict())
 
 
 @pytest.mark.asyncio
@@ -180,7 +180,7 @@ async def test_add_node_local(controller):
                                        'name': 'test'},
                                  timeout=1200)
     assert compute in project._project_created_on_compute
-    project.emit_notification.assert_any_call("node.created", node.__json__())
+    project.emit_notification.assert_any_call("node.created", node.asdict())
 
 
 @pytest.mark.asyncio
@@ -208,7 +208,7 @@ async def test_add_node_non_local(controller):
                                                                                      'startup_script': 'test.cfg',
                                                                                      'name': 'test'}, timeout=1200)
     assert compute in project._project_created_on_compute
-    project.emit_notification.assert_any_call("node.created", node.__json__())
+    project.emit_notification.assert_any_call("node.created", node.asdict())
 
 
 @pytest.mark.asyncio
@@ -373,7 +373,7 @@ async def test_add_node_iou_no_id_available(controller):
 #     })
 #
 #     assert compute in project._project_created_on_compute
-#     project.emit_notification.assert_any_call("node.created", node.__json__())
+#     project.emit_notification.assert_any_call("node.created", node.asdict())
 #
 #
 # @pytest.mark.asyncio
@@ -392,7 +392,7 @@ async def test_add_node_iou_no_id_available(controller):
 #     }, builtin=True)
 #
 #     controller.template_manager.templates[template.id] = template
-#     template.__json__()
+#     template.asdict()
 #     controller._computes["local"] = compute
 #
 #     response = MagicMock()
@@ -407,7 +407,7 @@ async def test_add_node_iou_no_id_available(controller):
 #     })
 #
 #     assert compute in project._project_created_on_compute
-#     project.emit_notification.assert_any_call("node.created", node.__json__())
+#     project.emit_notification.assert_any_call("node.created", node.asdict())
 
 
 @pytest.mark.asyncio
@@ -429,7 +429,7 @@ async def test_delete_node(controller):
     assert node.id not in project._nodes
 
     compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
-    project.emit_notification.assert_any_call("node.deleted", node.__json__())
+    project.emit_notification.assert_any_call("node.deleted", node.asdict())
 
 
 @pytest.mark.asyncio
@@ -476,8 +476,8 @@ async def test_delete_node_delete_link(controller):
     assert link.id not in project._links
 
     compute.delete.assert_any_call('/projects/{}/vpcs/nodes/{}'.format(project.id, node.id))
-    project.emit_notification.assert_any_call("node.deleted", node.__json__())
-    project.emit_notification.assert_any_call("link.deleted", link.__json__())
+    project.emit_notification.assert_any_call("node.deleted", node.asdict())
+    project.emit_notification.assert_any_call("link.deleted", link.asdict())
 
 
 @pytest.mark.asyncio
@@ -541,7 +541,7 @@ async def test_add_link(project):
         await link.add_node(vm2, 4, 2)
     assert mock_udp_create.called
     assert len(link._nodes) == 2
-    project.emit_notification.assert_any_call("link.created", link.__json__())
+    project.emit_notification.assert_any_call("link.created", link.asdict())
 
 
 @pytest.mark.asyncio
@@ -587,7 +587,7 @@ async def test_delete_link(project):
     assert len(project._links) == 1
     project.emit_notification = MagicMock()
     await project.delete_link(link.id)
-    project.emit_notification.assert_any_call("link.deleted", link.__json__())
+    project.emit_notification.assert_any_call("link.deleted", link.asdict())
     assert len(project._links) == 0
 
 
@@ -597,7 +597,7 @@ async def test_add_drawing(project):
     project.emit_notification = MagicMock()
     drawing = await project.add_drawing(None, svg="<svg></svg>")
     assert len(project._drawings) == 1
-    project.emit_notification.assert_any_call("drawing.created", drawing.__json__())
+    project.emit_notification.assert_any_call("drawing.created", drawing.asdict())
 
 
 @pytest.mark.asyncio
@@ -628,7 +628,7 @@ async def test_delete_drawing(project):
     assert len(project._drawings) == 1
     project.emit_notification = MagicMock()
     await project.delete_drawing(drawing.id)
-    project.emit_notification.assert_any_call("drawing.deleted", drawing.__json__())
+    project.emit_notification.assert_any_call("drawing.deleted", drawing.asdict())
     assert len(project._drawings) == 0
 
 
@@ -703,7 +703,7 @@ async def test_open_close(controller):
     project.emit_notification = MagicMock()
     await project.close()
     assert project.status == "closed"
-    project.emit_notification.assert_any_call("project.closed", project.__json__())
+    project.emit_notification.assert_any_call("project.closed", project.asdict())
 
 
 @pytest.mark.asyncio

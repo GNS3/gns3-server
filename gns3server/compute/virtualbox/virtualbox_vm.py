@@ -86,7 +86,7 @@ class VirtualBoxVM(BaseNode):
         self._ram = 0
         self._adapter_type = "Intel PRO/1000 MT Desktop (82540EM)"
 
-    def __json__(self):
+    def asdict(self):
 
         json = {
             "name": self.name,

@@ -155,7 +155,7 @@ class Router(BaseNode):
                     log.error(f"Can't move {path}: {str(e)}")
                     continue
 
-    def __json__(self):
+    def asdict(self):
 
         router_info = {
             "name": self.name,

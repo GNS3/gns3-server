@@ -81,7 +81,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(route_class=NodeConcurrency, responses=responses)
 
 
-async def dep_project(project_id: UUID):
+async def dep_project(project_id: UUID) -> Project:
     """
     Dependency to retrieve a project.
     """
@@ -90,7 +90,7 @@ async def dep_project(project_id: UUID):
     return project
 
 
-async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
+async def dep_node(node_id: UUID, project: Project = Depends(dep_project)) -> None:
     """
     Dependency to retrieve a node.
     """
@@ -108,7 +108,7 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)):
         409: {"model": schemas.ErrorMessage, "description": "Could not create node"},
     },
 )
-async def create_node(node_data: schemas.Node, project: Project = Depends(dep_project)):
+async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
     """
     Create a new node.
     """
@@ -117,20 +117,20 @@ async def create_node(node_data: schemas.Node, project: Project = Depends(dep_pr
     compute = controller.get_compute(str(node_data.compute_id))
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     node = await project.add_node(compute, node_data.pop("name"), node_data.pop("node_id", None), **node_data)
-    return node.__json__()
+    return node.asdict()
 
 
 @router.get("", response_model=List[schemas.Node], response_model_exclude_unset=True)
-async def get_nodes(project: Project = Depends(dep_project)):
+async def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
     """
 
-    return [v.__json__() for v in project.nodes.values()]
+    return [v.asdict() for v in project.nodes.values()]
 
 
 @router.post("/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_all_nodes(project: Project = Depends(dep_project)):
+async def start_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Start all nodes belonging to a given project.
     """
@@ -139,7 +139,7 @@ async def start_all_nodes(project: Project = Depends(dep_project)):
 
 
 @router.post("/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_all_nodes(project: Project = Depends(dep_project)):
+async def stop_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Stop all nodes belonging to a given project.
     """
@@ -148,7 +148,7 @@ async def stop_all_nodes(project: Project = Depends(dep_project)):
 
 
 @router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_all_nodes(project: Project = Depends(dep_project)):
+async def suspend_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Suspend all nodes belonging to a given project.
     """
@@ -157,7 +157,7 @@ async def suspend_all_nodes(project: Project = Depends(dep_project)):
 
 
 @router.post("/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_all_nodes(project: Project = Depends(dep_project)):
+async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reload all nodes belonging to a given project.
     """
@@ -167,16 +167,16 @@ async def reload_all_nodes(project: Project = Depends(dep_project)):
 
 
 @router.get("/{node_id}", response_model=schemas.Node)
-def get_node(node: Node = Depends(dep_node)):
+def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Return a node from a given project.
     """
 
-    return node.__json__()
+    return node.asdict()
 
 
 @router.put("/{node_id}", response_model=schemas.Node, response_model_exclude_unset=True)
-async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)):
+async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Update a node.
     """
@@ -189,7 +189,7 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     node_data.pop("compute_id", None)
 
     await node.update(**node_data)
-    return node.__json__()
+    return node.asdict()
 
 
 @router.delete(
@@ -197,7 +197,7 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}},
 )
-async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
+async def delete_node(node_id: UUID, project: Project = Depends(dep_project)) -> None:
     """
     Delete a node from a project.
     """
@@ -206,17 +206,17 @@ async def delete_node(node_id: UUID, project: Project = Depends(dep_project)):
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.Node, status_code=status.HTTP_201_CREATED)
-async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)):
+async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Duplicate a node.
     """
 
     new_node = await node.project.duplicate_node(node, duplicate_data.x, duplicate_data.y, duplicate_data.z)
-    return new_node.__json__()
+    return new_node.asdict()
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_node(start_data: dict, node: Node = Depends(dep_node)):
+async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> None:
     """
     Start a node.
     """
@@ -225,7 +225,7 @@ async def start_node(start_data: dict, node: Node = Depends(dep_node)):
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_node(node: Node = Depends(dep_node)):
+async def stop_node(node: Node = Depends(dep_node)) -> None:
     """
     Stop a node.
     """
@@ -234,7 +234,7 @@ async def stop_node(node: Node = Depends(dep_node)):
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_node(node: Node = Depends(dep_node)):
+async def suspend_node(node: Node = Depends(dep_node)) -> None:
     """
     Suspend a node.
     """
@@ -243,7 +243,7 @@ async def suspend_node(node: Node = Depends(dep_node)):
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_node(node: Node = Depends(dep_node)):
+async def reload_node(node: Node = Depends(dep_node)) -> None:
     """
     Reload a node.
     """
@@ -252,19 +252,19 @@ async def reload_node(node: Node = Depends(dep_node)):
 
 
 @router.get("/{node_id}/links", response_model=List[schemas.Link], response_model_exclude_unset=True)
-async def get_node_links(node: Node = Depends(dep_node)):
+async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     """
     Return all the links connected to a node.
     """
 
     links = []
     for link in node.links:
-        links.append(link.__json__())
+        links.append(link.asdict())
     return links
 
 
 @router.get("/{node_id}/dynamips/auto_idlepc")
-async def auto_idlepc(node: Node = Depends(dep_node)):
+async def auto_idlepc(node: Node = Depends(dep_node)) -> str:
     """
     Compute an Idle-PC value for a Dynamips node
     """
@@ -273,7 +273,7 @@ async def auto_idlepc(node: Node = Depends(dep_node)):
 
 
 @router.get("/{node_id}/dynamips/idlepc_proposals")
-async def idlepc_proposals(node: Node = Depends(dep_node)):
+async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
     """
     Compute a list of potential idle-pc values for a Dynamips node
     """
@@ -281,8 +281,8 @@ async def idlepc_proposals(node: Node = Depends(dep_node)):
     return await node.dynamips_idlepc_proposals()
 
 
-@router.post("/{node_id}/resize_disk", status_code=status.HTTP_201_CREATED)
-async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)):
+@router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
+async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)) -> None:
     """
     Resize a disk image.
     """
@@ -290,7 +290,7 @@ async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)):
 
 
 @router.get("/{node_id}/files/{file_path:path}")
-async def get_file(file_path: str, node: Node = Depends(dep_node)):
+async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     """
     Return a file in the node directory
     """
@@ -309,7 +309,7 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)):
 
 
 @router.post("/{node_id}/files/{file_path:path}", status_code=status.HTTP_201_CREATED)
-async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
+async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)) -> dict:
     """
     Write a file in the node directory.
     """
@@ -329,7 +329,7 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
 
 
 @router.websocket("/{node_id}/console/ws")
-async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
+async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> None:
     """
     WebSocket console.
     """
@@ -377,7 +377,7 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)):
 
 
 @router.post("/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console_all_nodes(project: Project = Depends(dep_project)):
+async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reset console for all nodes belonging to the project.
     """
@@ -386,6 +386,6 @@ async def reset_console_all_nodes(project: Project = Depends(dep_project)):
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def console_reset(node: Node = Depends(dep_node)):
+async def console_reset(node: Node = Depends(dep_node)) -> None:
 
     await node.post("/console/reset")  # , request.json)

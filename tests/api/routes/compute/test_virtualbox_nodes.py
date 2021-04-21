@@ -75,14 +75,13 @@ async def test_vbox_get(app: FastAPI, client: AsyncClient, compute_project: Proj
 
 async def test_vbox_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.check_hw_virtualization", return_value=True):
-        with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
+    with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
 
-            response = await client.post(app.url_path_for("start_virtualbox_node",
-                                                 project_id=vm["project_id"],
-                                                 node_id=vm["node_id"]))
-            assert mock.called
-            assert response.status_code == status.HTTP_204_NO_CONTENT
+        response = await client.post(app.url_path_for("start_virtualbox_node",
+                                     project_id=vm["project_id"],
+                                    node_id=vm["node_id"]))
+        assert mock.called
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 async def test_vbox_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:

@@ -15,9 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Boolean, Column, String
+from sqlalchemy import Boolean, Column, String, event
 
 from .base import BaseTable, generate_uuid, GUID
+from gns3server.services import auth_service
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class User(BaseTable):
@@ -30,4 +35,19 @@ class User(BaseTable):
     full_name = Column(String)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
+    is_superadmin = Column(Boolean, default=False)
+
+
+@event.listens_for(User.__table__, 'after_create')
+def create_default_super_admin(target, connection, **kw):
+
+    hashed_password = auth_service.hash_password("admin")
+    stmt = target.insert().values(
+        username="admin",
+        full_name="Super Administrator",
+        hashed_password=hashed_password,
+        is_superadmin=True
+    )
+    connection.execute(stmt)
+    connection.commit()
+    log.info("The default super admin account has been created in the database")

@@ -20,25 +20,25 @@ import struct
 import stat
 import asyncio
 import aiofiles
-
 import socket
 import shutil
 import re
-
 import logging
-
-from gns3server.utils.asyncio import cancellable_wait_run_in_executor
-from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
 
 log = logging.getLogger(__name__)
 
-from uuid import UUID, uuid4
+from gns3server.utils.asyncio import cancellable_wait_run_in_executor
+from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError, ComputeNotFoundError
 from gns3server.utils.interfaces import is_interface_up
+
+from uuid import UUID, uuid4
+from typing import Type
 from ..config import Config
 from ..utils.asyncio import wait_run_in_executor
 from ..utils import force_unix_path
 from .project_manager import ProjectManager
 from .port_manager import PortManager
+from .base_node import BaseNode
 
 from .nios.nio_udp import NIOUDP
 from .nios.nio_tap import NIOTAP
@@ -150,7 +150,7 @@ class BaseManager:
             BaseManager._instance = None
         log.debug(f"Module {self.module_name} unloaded")
 
-    def get_node(self, node_id, project_id=None):
+    def get_node(self, node_id, project_id=None) -> Type[BaseNode]:
         """
         Returns a Node instance.
 

@@ -126,6 +126,11 @@ class NIOUDP(NIO):
 
         return self._rport
 
-    def __json__(self):
+    def asdict(self):
 
-        return {"type": "nio_udp", "lport": self._lport, "rport": self._rport, "rhost": self._rhost}
+        return {
+            "type": "nio_udp",
+            "lport": self._lport,
+            "rport": self._rport,
+            "rhost": self._rhost
+        }

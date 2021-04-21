@@ -93,11 +93,11 @@ class C2600(Router):
         self._clock_divisor = 8
         self._sparsemem = False  # never activate sparsemem for c2600 (unstable)
 
-    def __json__(self):
+    def asdict(self):
 
         c2600_router_info = {"iomem": self._iomem, "chassis": self._chassis, "sparsemem": self._sparsemem}
 
-        router_info = Router.__json__(self)
+        router_info = Router.asdict(self)
         router_info.update(c2600_router_info)
         return router_info
 

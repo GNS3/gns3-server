@@ -26,6 +26,10 @@ import gns3server.db.models as models
 from gns3server import schemas
 from gns3server.services import auth_service
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class UsersRepository(BaseRepository):
     def __init__(self, db_session: AsyncSession) -> None:
@@ -59,7 +63,7 @@ class UsersRepository(BaseRepository):
 
     async def create_user(self, user: schemas.UserCreate) -> models.User:
 
-        hashed_password = self._auth_service.hash_password(user.password)
+        hashed_password = self._auth_service.hash_password(user.password.get_secret_value())
         db_user = models.User(
             username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password
         )
@@ -73,7 +77,7 @@ class UsersRepository(BaseRepository):
         update_values = user_update.dict(exclude_unset=True)
         password = update_values.pop("password", None)
         if password:
-            update_values["hashed_password"] = self._auth_service.hash_password(password=password)
+            update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
 
         query = update(models.User).where(models.User.user_id == user_id).values(update_values)
 
@@ -93,6 +97,13 @@ class UsersRepository(BaseRepository):
         user = await self.get_user_by_username(username)
         if not user:
             return None
+        # Allow user to be authenticated if hashed password in the db is null
+        # this is useful for manual password recovery like:
+        # sqlite3 gns3_controller.db "UPDATE users SET hashed_password = null WHERE username = 'admin';"
+        if user.hashed_password is None:
+            log.warning(f"User '{username}' has been authenticated without a password "
+                        f"configured. Please set a new password.")
+            return user
         if not self._auth_service.verify_password(password, user.hashed_password):
             return None
         return user

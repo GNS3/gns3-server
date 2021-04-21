@@ -38,9 +38,14 @@ class EthernetHub(BaseNode):
 
         super().__init__(name, node_id, project, manager)
 
-    def __json__(self):
+    def asdict(self):
 
-        return {"name": self.name, "usage": self.usage, "node_id": self.id, "project_id": self.project.id}
+        return {
+            "name": self.name,
+            "usage": self.usage,
+            "node_id": self.id,
+            "project_id": self.project.id
+        }
 
     async def create(self):
         """

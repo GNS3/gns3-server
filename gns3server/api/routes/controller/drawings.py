@@ -32,39 +32,39 @@ router = APIRouter(responses=responses)
 
 
 @router.get("", response_model=List[schemas.Drawing], response_model_exclude_unset=True)
-async def get_drawings(project_id: UUID):
+async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     """
     Return the list of all drawings for a given project.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
-    return [v.__json__() for v in project.drawings.values()]
+    return [v.asdict() for v in project.drawings.values()]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.Drawing)
-async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing):
+async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Create a new drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     drawing = await project.add_drawing(**jsonable_encoder(drawing_data, exclude_unset=True))
-    return drawing.__json__()
+    return drawing.asdict()
 
 
 @router.get("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
-async def get_drawing(project_id: UUID, drawing_id: UUID):
+async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     """
     Return a drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     drawing = project.get_drawing(str(drawing_id))
-    return drawing.__json__()
+    return drawing.asdict()
 
 
 @router.put("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
-async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing):
+async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Update a drawing.
     """
@@ -72,11 +72,11 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schem
     project = await Controller.instance().get_loaded_project(str(project_id))
     drawing = project.get_drawing(str(drawing_id))
     await drawing.update(**jsonable_encoder(drawing_data, exclude_unset=True))
-    return drawing.__json__()
+    return drawing.asdict()
 
 
 @router.delete("/{drawing_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_drawing(project_id: UUID, drawing_id: UUID):
+async def delete_drawing(project_id: UUID, drawing_id: UUID) -> None:
     """
     Delete a drawing.
     """

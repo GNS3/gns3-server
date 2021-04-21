@@ -71,8 +71,8 @@ class NotificationQueue(asyncio.Queue):
         Get a message as a JSON
         """
         (action, msg, kwargs) = await self.get(timeout)
-        if hasattr(msg, "__json__"):
-            msg = {"action": action, "event": msg.__json__()}
+        if hasattr(msg, "asdict"):
+            msg = {"action": action, "event": msg.asdict()}
         else:
             msg = {"action": action, "event": msg}
         msg.update(kwargs)

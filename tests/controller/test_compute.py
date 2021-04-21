@@ -121,7 +121,7 @@ async def test_compute_httpQueryAuth(compute):
 #         mock.assert_any_call("POST", "https://example.com:84/v2/compute/projects", data=b'{"a": "b"}', headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=20)
 #     #assert compute._connected
 #     assert compute._capabilities["version"] == __version__
-#     controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
+#     controller.notification.controller_emit.assert_called_with("compute.updated", compute.asdict())
 #     await compute.close()
 
 
@@ -148,7 +148,7 @@ async def test_compute_httpQueryAuth(compute):
 #     assert controller.gns3vm.start.called
 #     #assert compute._connected
 #     assert compute._capabilities["version"] == __version__
-#     controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
+#     controller.notification.controller_emit.assert_called_with("compute.updated", compute.asdict())
 #     await compute.close()
 
 
@@ -226,7 +226,7 @@ async def test_compute_httpQuery_project(compute):
         response.status = 200
         project = Project(name="Test")
         await compute.post("/projects", project)
-        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=json.dumps(project.__json__()), headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=20)
+        mock.assert_called_with("POST", "https://example.com:84/v3/compute/projects", data=json.dumps(project.asdict()), headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=20)
         await compute.close()
 
 # FIXME: https://github.com/aio-libs/aiohttp/issues/2525
@@ -298,7 +298,7 @@ async def test_compute_httpQuery_project(compute):
 async def test_json(compute):
 
     compute.user = "test"
-    assert compute.__json__() == {
+    assert compute.asdict() == {
         "compute_id": "my_compute_id",
         "name": compute.name,
         "protocol": "https",
@@ -319,7 +319,7 @@ async def test_json(compute):
             "node_types": []
         }
     }
-    assert compute.__json__(topology_dump=True) == {
+    assert compute.asdict(topology_dump=True) == {
         "compute_id": "my_compute_id",
         "name": compute.name,
         "protocol": "https",
@@ -358,7 +358,7 @@ async def test_update(compute, controller):
     await compute.update(name="Test 2")
     assert compute.name == "Test 2"
     assert compute.host == "example.org"
-    controller.notification.controller_emit.assert_called_with("compute.updated", compute.__json__())
+    controller.notification.controller_emit.assert_called_with("compute.updated", compute.asdict())
     assert compute.connected is False
     assert compute._controller.save.called
 

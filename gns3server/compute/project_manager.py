@@ -120,18 +120,3 @@ class ProjectManager:
         if project_id not in self._projects:
             raise ComputeNotFoundError(f"Project ID {project_id} doesn't exist")
         del self._projects[project_id]
-
-    def check_hardware_virtualization(self, source_node):
-        """
-        Checks if hardware virtualization can be used.
-
-        :returns: boolean
-        """
-
-        for project in self._projects.values():
-            for node in project.nodes:
-                if node == source_node:
-                    continue
-                if node.hw_virtualization and node.__class__.__name__ != source_node.__class__.__name__:
-                    return False
-        return True

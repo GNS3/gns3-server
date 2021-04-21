@@ -257,7 +257,7 @@ class GNS3VM:
             return self._engines["remote"]
         raise NotImplementedError(f"The engine {engine} for the GNS3 VM is not supported")
 
-    def __json__(self):
+    def asdict(self):
         return self._settings
 
     @locking

@@ -33,6 +33,10 @@ log = logging.getLogger(__name__)
 
 
 def create_startup_handler(app: FastAPI) -> Callable:
+    """
+    Tasks to be performed when the server is starting.
+    """
+
     async def start_app() -> None:
         loop = asyncio.get_event_loop()
         logger = logging.getLogger("asyncio")
@@ -77,6 +81,10 @@ def create_startup_handler(app: FastAPI) -> Callable:
 
 
 def create_shutdown_handler(app: FastAPI) -> Callable:
+    """
+    Tasks to be performed when the server is exiting.
+    """
+
     async def shutdown_handler() -> None:
         await HTTPClient.close_session()
         await Controller.instance().stop()

@@ -23,7 +23,7 @@ from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.api.routes.controller.dependencies.database import get_db_session
 from gns3server import schemas
-from gns3server.schemas.computes import Protocol
+from gns3server.schemas.controller.computes import Protocol
 from gns3server.services import auth_service
 from gns3server.services.authentication import DEFAULT_JWT_SECRET_KEY
 
@@ -79,8 +79,12 @@ async def db_session(db_engine):
     # preferred and faster way would be to rollback the session/transaction
     # but it doesn't work for some reason
     async with db_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+        # Speed up tests by avoiding to hash the 'admin' password everytime the default super admin is added
+        # to the database using the "after_create" sqlalchemy event
+        hashed_password = "$2b$12$jPsNU9IS7.EWEqXahtDfo.26w6VLOLCuFEHKNvDpOjxs5e0WpqJfa"
+        with patch("gns3server.services.authentication.AuthService.hash_password", return_value=hashed_password):
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
 
     session = AsyncSession(db_engine)
     try:
@@ -90,7 +94,7 @@ async def db_session(db_engine):
 
 
 @pytest.fixture
-async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
+async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 
     async def _get_test_db():
         try:
@@ -104,8 +108,8 @@ async def client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
             app=app,
             base_url="http://test-api",
             headers={"Content-Type": "application/json"}
-    ) as client:
-        yield client
+    ) as async_client:
+        yield async_client
 
 
 @pytest.fixture
@@ -143,14 +147,32 @@ async def test_compute(db_session: AsyncSession) -> Compute:
 
 
 @pytest.fixture
-def authorized_client(client: AsyncClient, test_user: User) -> AsyncClient:
+def unauthorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
+    return base_client
+
+
+@pytest.fixture
+def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
 
     access_token = auth_service.create_access_token(test_user.username)
-    client.headers = {
-        **client.headers,
+    base_client.headers = {
+        **base_client.headers,
         "Authorization": f"Bearer {access_token}",
     }
-    return client
+    return base_client
+
+
+@pytest.fixture
+async def client(base_client: AsyncClient) -> AsyncClient:
+
+    # The super admin is automatically created when the users table is created
+    # this account that can access all endpoints without restrictions.
+    access_token = auth_service.create_access_token("admin")
+    base_client.headers = {
+        **base_client.headers,
+        "Authorization": f"Bearer {access_token}",
+    }
+    return base_client
 
 
 @pytest.fixture
@@ -344,13 +366,27 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
         module._instance = None
 
     config.settings.Controller.jwt_secret_key = DEFAULT_JWT_SECRET_KEY
-    config.settings.Server.secrets_dir = os.path.join(tmppath, 'secrets')
 
-    os.makedirs(os.path.join(tmppath, 'projects'))
-    config.settings.Server.projects_path = os.path.join(tmppath, 'projects')
-    config.settings.Server.symbols_path = os.path.join(tmppath, 'symbols')
-    config.settings.Server.images_path = os.path.join(tmppath, 'images')
-    config.settings.Server.appliances_path = os.path.join(tmppath, 'appliances')
+    secrets_dir = os.path.join(tmppath, 'secrets')
+    os.makedirs(secrets_dir)
+    config.settings.Server.secrets_dir = secrets_dir
+
+    projects_dir = os.path.join(tmppath, 'projects')
+    os.makedirs(projects_dir)
+    config.settings.Server.projects_path = projects_dir
+
+    symbols_dir = os.path.join(tmppath, 'symbols')
+    os.makedirs(symbols_dir)
+    config.settings.Server.symbols_path = symbols_dir
+
+    images_dir = os.path.join(tmppath, 'images')
+    os.makedirs(images_dir)
+    config.settings.Server.images_path = images_dir
+
+    appliances_dir = os.path.join(tmppath, 'appliances')
+    os.makedirs(appliances_dir)
+    config.settings.Server.appliances_path = appliances_dir
+
     config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
     config.settings.Server.local = True
     config.settings.Server.enable_http_auth = False

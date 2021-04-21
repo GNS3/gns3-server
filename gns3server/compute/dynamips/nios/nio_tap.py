@@ -58,6 +58,9 @@ class NIOTAP(NIO):
 
         return self._tap_device
 
-    def __json__(self):
+    def asdict(self):
 
-        return {"type": "nio_tap", "tap_device": self._tap_device}
+        return {
+            "type": "nio_tap",
+            "tap_device": self._tap_device
+        }

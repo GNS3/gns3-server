@@ -53,7 +53,7 @@ class EthernetHub(Bridge):
         else:
             self._ports = ports
 
-    def __json__(self):
+    def asdict(self):
 
         return {
             "name": self.name,

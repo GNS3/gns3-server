@@ -46,6 +46,6 @@ class NIONull(NIO):
         await self._hypervisor.send(f"nio create_null {self._name}")
         log.info(f"NIO NULL {self._name} created.")
 
-    def __json__(self):
+    def asdict(self):
 
         return {"type": "nio_null"}

@@ -193,16 +193,17 @@ class Drawing:
                     # To avoid spamming client with large data we don't send the svg if the SVG didn't change
                     svg_changed = True
                 setattr(self, prop, kwargs[prop])
-        data = self.__json__()
+        data = self.asdict()
         if not svg_changed:
             del data["svg"]
         self._project.emit_notification("drawing.updated", data)
         self._project.dump()
 
-    def __json__(self, topology_dump=False):
+    def asdict(self, topology_dump=False):
         """
         :param topology_dump: Filter to keep only properties require for saving on disk
         """
+
         if topology_dump:
             return {
                 "drawing_id": self._id,

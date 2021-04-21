@@ -109,7 +109,7 @@ class EthernetSwitch(Device):
         else:
             self._ports = ports
 
-    def __json__(self):
+    def asdict(self):
 
         ethernet_switch_info = {
             "name": self.name,

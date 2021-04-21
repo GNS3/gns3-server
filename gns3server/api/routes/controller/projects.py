@@ -51,7 +51,7 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-def dep_project(project_id: UUID):
+def dep_project(project_id: UUID) -> Project:
     """
     Dependency to retrieve a project.
     """
@@ -64,13 +64,13 @@ CHUNK_SIZE = 1024 * 8  # 8KB
 
 
 @router.get("", response_model=List[schemas.Project], response_model_exclude_unset=True)
-def get_projects():
+def get_projects() -> List[schemas.Project]:
     """
     Return all projects.
     """
 
     controller = Controller.instance()
-    return [p.__json__() for p in controller.projects.values()]
+    return [p.asdict() for p in controller.projects.values()]
 
 
 @router.post(
@@ -80,37 +80,40 @@ def get_projects():
     response_model_exclude_unset=True,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}},
 )
-async def create_project(project_data: schemas.ProjectCreate):
+async def create_project(project_data: schemas.ProjectCreate) -> schemas.Project:
     """
     Create a new project.
     """
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.__json__()
+    return project.asdict()
 
 
 @router.get("/{project_id}", response_model=schemas.Project)
-def get_project(project: Project = Depends(dep_project)):
+def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
     """
 
-    return project.__json__()
+    return project.asdict()
 
 
 @router.put("/{project_id}", response_model=schemas.Project, response_model_exclude_unset=True)
-async def update_project(project_data: schemas.ProjectUpdate, project: Project = Depends(dep_project)):
+async def update_project(
+        project_data: schemas.ProjectUpdate,
+        project: Project = Depends(dep_project)
+) -> schemas.Project:
     """
     Update a project.
     """
 
     await project.update(**jsonable_encoder(project_data, exclude_unset=True))
-    return project.__json__()
+    return project.asdict()
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project: Project = Depends(dep_project)):
+async def delete_project(project: Project = Depends(dep_project)) -> None:
     """
     Delete a project.
     """
@@ -121,7 +124,7 @@ async def delete_project(project: Project = Depends(dep_project)):
 
 
 @router.get("/{project_id}/stats")
-def get_project_stats(project: Project = Depends(dep_project)):
+def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
     Return a project statistics.
     """
@@ -134,7 +137,7 @@ def get_project_stats(project: Project = Depends(dep_project)):
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}},
 )
-async def close_project(project: Project = Depends(dep_project)):
+async def close_project(project: Project = Depends(dep_project)) -> None:
     """
     Close a project.
     """
@@ -148,13 +151,13 @@ async def close_project(project: Project = Depends(dep_project)):
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
 )
-async def open_project(project: Project = Depends(dep_project)):
+async def open_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Open a project.
     """
 
     await project.open()
-    return project.__json__()
+    return project.asdict()
 
 
 @router.post(
@@ -163,7 +166,7 @@ async def open_project(project: Project = Depends(dep_project)):
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}},
 )
-async def load_project(path: str = Body(..., embed=True)):
+async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     """
     Load a project (local server only).
     """
@@ -176,11 +179,11 @@ async def load_project(path: str = Body(..., embed=True)):
     project = await controller.load_project(
         dot_gns3_file,
     )
-    return project.__json__()
+    return project.asdict()
 
 
 @router.get("/{project_id}/notifications")
-async def notification(project_id: UUID):
+async def notification(project_id: UUID) -> StreamingResponse:
     """
     Receive project notifications about the controller from HTTP stream.
     """
@@ -211,7 +214,7 @@ async def notification(project_id: UUID):
 
 
 @router.websocket("/{project_id}/notifications/ws")
-async def notification_ws(project_id: UUID, websocket: WebSocket):
+async def notification_ws(project_id: UUID, websocket: WebSocket) -> None:
     """
     Receive project notifications about the controller from WebSocket.
     """
@@ -248,7 +251,7 @@ async def export_project(
     include_images: bool = False,
     reset_mac_addresses: bool = False,
     compression: str = "zip",
-):
+) -> StreamingResponse:
     """
     Export a project as a portable archive.
     """
@@ -294,7 +297,12 @@ async def export_project(
 
 
 @router.post("/{project_id}/import", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)
-async def import_project(project_id: UUID, request: Request, path: Optional[Path] = None, name: Optional[str] = None):
+async def import_project(
+        project_id: UUID,
+        request: Request,
+        path: Optional[Path] = None,
+        name: Optional[str] = None
+) -> schemas.Project:
     """
     Import a project from a portable archive.
     """
@@ -323,7 +331,7 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
         raise ControllerError(f"Could not import the project: {e}")
-    return project.__json__()
+    return project.asdict()
 
 
 @router.post(
@@ -332,7 +340,10 @@ async def import_project(project_id: UUID, request: Request, path: Optional[Path
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}},
 )
-async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Project = Depends(dep_project)):
+async def duplicate_project(
+        project_data: schemas.ProjectDuplicate,
+        project: Project = Depends(dep_project)
+) -> schemas.Project:
     """
     Duplicate a project.
     """
@@ -348,11 +359,11 @@ async def duplicate_project(project_data: schemas.ProjectDuplicate, project: Pro
     new_project = await project.duplicate(
         name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
     )
-    return new_project.__json__()
+    return new_project.asdict()
 
 
 @router.get("/{project_id}/files/{file_path:path}")
-async def get_file(file_path: str, project: Project = Depends(dep_project)):
+async def get_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return a file from a project.
     """
@@ -371,7 +382,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)):
 
 
 @router.post("/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)):
+async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
     """
     Write a file from a project.
     """

@@ -79,6 +79,10 @@ class NIOVDE(NIO):
 
         return self._local_file
 
-    def __json__(self):
+    def asdict(self):
 
-        return {"type": "nio_vde", "local_file": self._local_file, "control_file": self._control_file}
+        return {
+            "type": "nio_vde",
+            "local_file": self._local_file,
+            "control_file": self._control_file
+        }

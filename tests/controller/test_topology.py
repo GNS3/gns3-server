@@ -82,10 +82,10 @@ async def test_basic_topology(controller):
 
     topo = project_to_topology(project)
     assert len(topo["topology"]["nodes"]) == 2
-    assert node1.__json__(topology_dump=True) in topo["topology"]["nodes"]
-    assert topo["topology"]["links"][0] == link.__json__(topology_dump=True)
-    assert topo["topology"]["computes"][0] == compute.__json__(topology_dump=True)
-    assert topo["topology"]["drawings"][0] == drawing.__json__(topology_dump=True)
+    assert node1.asdict(topology_dump=True) in topo["topology"]["nodes"]
+    assert topo["topology"]["links"][0] == link.asdict(topology_dump=True)
+    assert topo["topology"]["computes"][0] == compute.asdict(topology_dump=True)
+    assert topo["topology"]["drawings"][0] == drawing.asdict(topology_dump=True)
 
 
 @pytest.mark.asyncio

@@ -77,11 +77,11 @@ class C3725(Router):
         if chassis is not None:
             raise DynamipsError("c3725 routers do not have chassis")
 
-    def __json__(self):
+    def asdict(self):
 
         c3725_router_info = {"iomem": self._iomem}
 
-        router_info = Router.__json__(self)
+        router_info = Router.asdict(self)
         router_info.update(c3725_router_info)
         return router_info
 

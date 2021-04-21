@@ -93,7 +93,7 @@ class Port:
     def short_name(self, val):
         self._short_name = val
 
-    def __json__(self):
+    def asdict(self):
         info = {
             "name": self._name,
             "short_name": self.short_name,

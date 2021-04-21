@@ -24,7 +24,7 @@ from gns3server.services import auth_service
 
 from .database import get_repository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")  # FIXME: URL prefix
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")
 
 
 async def get_user_from_token(
@@ -43,6 +43,10 @@ async def get_user_from_token(
 
 
 async def get_current_active_user(current_user: schemas.User = Depends(get_user_from_token)) -> schemas.User:
+
+    # Super admin is always authorized
+    if current_user.is_superadmin:
+        return current_user
 
     if not current_user.is_active:
         raise HTTPException(
