@@ -84,7 +84,7 @@ class TestComputeRoutes:
         params = {
             "protocol": "http",
             "host": "localhost",
-            "port": 84,
+            "port": 42,
             "user": "julien",
             "password": "secure"
         }
@@ -133,7 +133,7 @@ class TestComputeFeatures:
         params = {
             "protocol": "http",
             "host": "localhost",
-            "port": 84,
+            "port": 4242,
             "user": "julien",
             "password": "secure"
         }
@@ -151,7 +151,7 @@ class TestComputeFeatures:
         params = {
             "protocol": "http",
             "host": "localhost",
-            "port": 84,
+            "port": 4284,
             "user": "julien",
             "password": "secure"
         }
