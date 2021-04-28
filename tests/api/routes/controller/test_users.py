@@ -235,7 +235,7 @@ class TestUserLogin:
         (
             ("wrong_username", "user1_password", status.HTTP_401_UNAUTHORIZED),
             ("user1", "wrong_password", status.HTTP_401_UNAUTHORIZED),
-            ("user1", None, status.HTTP_401_UNAUTHORIZED),
+            ("user1", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
         ),
     )
     async def test_user_with_wrong_creds_doesnt_receive_token(
