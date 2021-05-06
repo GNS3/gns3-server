@@ -76,14 +76,16 @@ Finally these commands will install the server as well as the rest of the depend
 .. code:: bash
 
    cd gns3-server-master
+   python3 -m venv venv-gns3server
+   source venv-gns3server/bin/activate
    sudo python3 setup.py install
-   gns3server
+   python3 -m gns3server --local
 
 To run tests use:
 
 .. code:: bash
 
-   py.test -v
+   python3 -m pytest tests
 
 
 Docker container
