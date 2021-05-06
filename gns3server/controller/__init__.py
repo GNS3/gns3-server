@@ -17,7 +17,6 @@
 
 import os
 import sys
-import json
 import uuid
 import socket
 import shutil
@@ -30,7 +29,6 @@ from .appliance_manager import ApplianceManager
 from .compute import Compute, ComputeError
 from .notification import Notification
 from .symbols import Symbols
-from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
 from ..utils.get_resource import get_resource
