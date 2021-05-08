@@ -43,12 +43,12 @@ async def connect_to_db(app: FastAPI) -> None:
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     try:
-        async with engine.begin() as conn:
+        async with engine.connect() as conn:
             await conn.run_sync(Base.metadata.create_all)
             log.info(f"Successfully connected to database '{db_url}'")
         app.state._db_engine = engine
     except SQLAlchemyError as e:
-        log.error(f"Error while connecting to database '{db_url}: {e}")
+        log.fatal(f"Error while connecting to database '{db_url}: {e}")
 
 
 @event.listens_for(Engine, "connect")

@@ -78,7 +78,7 @@ async def db_session(db_engine):
     # recreate database tables for each class
     # preferred and faster way would be to rollback the session/transaction
     # but it doesn't work for some reason
-    async with db_engine.begin() as conn:
+    async with db_engine.connect() as conn:
         # Speed up tests by avoiding to hash the 'admin' password everytime the default super admin is added
         # to the database using the "after_create" sqlalchemy event
         hashed_password = "$2b$12$jPsNU9IS7.EWEqXahtDfo.26w6VLOLCuFEHKNvDpOjxs5e0WpqJfa"
@@ -86,7 +86,7 @@ async def db_session(db_engine):
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
-    session = AsyncSession(db_engine)
+    session = AsyncSession(db_engine, expire_on_commit=False)
     try:
         yield session
     finally:
