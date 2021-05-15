@@ -11,7 +11,7 @@
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
     "usage": "User root, password gns3",
-    "first_port_name": "fxp0",
+    "first_port_name": "em0",
     "port_name_format": "em{0}",
     "qemu": {
         "adapter_type": "e1000",
