@@ -494,14 +494,8 @@ class BaseManager:
             if re.match(r"^[A-Z]:", path) is not None:
                 raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'".format(path, img_directory))
 
-        # For local server we allow using absolute path outside image directory
-        if server_config.getboolean("local", False) is True:
-            log.debug("Searching for '{}'".format(orig_path))
-            path = force_unix_path(path)
-            if os.path.exists(path):
-                return path
-            raise ImageMissingError(orig_path)
-        else:
+        if not os.path.isabs(orig_path):
+
             for directory in valid_directory_prefices:
                 log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
                 path = self._recursive_search_file_in_directory(directory, orig_path)
@@ -512,17 +506,33 @@ class BaseManager:
             log.debug("Searching for image '{}' in default directory".format(orig_path))
 
             # check that the image path is in the default image directory
-            requested_path = os.path.relpath(orig_path, start=img_directory)
-            requested_path = os.path.abspath(requested_path)
-            common_prefix = os.path.commonprefix([requested_path, img_directory])
-            if common_prefix != img_directory:
-                raise NodeError("{} is not allowed. Please only use a file from '{}'".format(orig_path, img_directory))
+            #common_prefix = os.path.commonprefix([orig_path, img_directory])
+            #if common_prefix != img_directory:
+            #    raise NodeError("{} is not allowed. Please only use a file from '{}'".format(orig_path, img_directory))
 
             s = os.path.split(orig_path)
             path = force_unix_path(os.path.join(img_directory, *s))
             if os.path.exists(path):
                 return path
             raise ImageMissingError(orig_path)
+
+        # For local server we allow using absolute path outside image directory
+        if server_config.getboolean("local", False) is True:
+            log.debug("Searching for '{}'".format(orig_path))
+            path = force_unix_path(path)
+            if os.path.exists(path):
+                return path
+            raise ImageMissingError(orig_path)
+
+        path = force_unix_path(path)
+        for directory in valid_directory_prefices:
+            log.debug("Searching for image '{}' in '{}'".format(orig_path, directory))
+            if os.path.commonprefix([directory, path]) == directory:
+                if os.path.exists(path):
+                    return path
+                raise ImageMissingError(orig_path)
+        raise NodeError("{} is not allowed on this remote server. Please only use a file from '{}'"
+                        .format(path, img_directory))
 
     def _recursive_search_file_in_directory(self, directory, searched_file):
         """
@@ -535,7 +545,7 @@ class BaseManager:
         for root, dirs, files in os.walk(directory):
             for file in files:
                 # If filename is the same
-                if s[1] == file and (s[0] == '' or s[0] == os.path.basename(root)):
+                if s[1] == file and (s[0] == '' or os.path.basename(s[0]) == os.path.basename(root)):
                     path = os.path.normpath(os.path.join(root, s[1]))
                     if os.path.exists(path):
                         return path

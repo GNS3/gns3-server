@@ -218,6 +218,7 @@ async def test_get_file(controller_api, project, node, compute):
 
     response = MagicMock()
     response.body = b"world"
+    response.status = 200
     compute.http_query = AsyncioMagicMock(return_value=response)
 
     response = await controller_api.get("/projects/{project_id}/nodes/{node_id}/files/hello".format(project_id=project.id, node_id=node.id))
@@ -232,7 +233,9 @@ async def test_get_file(controller_api, project, node, compute):
 
 async def test_post_file(controller_api, project, node, compute):
 
-    compute.http_query = AsyncioMagicMock()
+    response = MagicMock()
+    response.status = 201
+    compute.http_query = AsyncioMagicMock(return_value=response)
     response = await controller_api.post("/projects/{project_id}/nodes/{node_id}/files/hello".format(project_id=project.id, node_id=node.id), body=b"hello", raw=True)
     assert response.status == 201
 
@@ -247,6 +250,7 @@ async def test_get_and_post_with_nested_paths_normalization(controller_api, proj
 
     response = MagicMock()
     response.body = b"world"
+    response.status = 200
     compute.http_query = AsyncioMagicMock(return_value=response)
     response = await controller_api.get("/projects/{project_id}/nodes/{node_id}/files/hello\\nested".format(project_id=project.id, node_id=node.id))
     assert response.status == 200
@@ -254,7 +258,9 @@ async def test_get_and_post_with_nested_paths_normalization(controller_api, proj
 
     compute.http_query.assert_called_with("GET", "/projects/{project_id}/files/project-files/vpcs/{node_id}/hello/nested".format(project_id=project.id, node_id=node.id), timeout=None, raw=True)
 
-    compute.http_query = AsyncioMagicMock()
+    response = MagicMock()
+    response.status = 201
+    compute.http_query = AsyncioMagicMock(return_value=response)
     response = await controller_api.post("/projects/{project_id}/nodes/{node_id}/files/hello\\nested".format(project_id=project.id, node_id=node.id), body=b"hello", raw=True)
     assert response.status == 201
 

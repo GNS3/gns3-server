@@ -43,8 +43,7 @@ def is_safe_path(file_path, directory):
     (the file is stored inside directory or one of its sub-directory)
     """
 
-    requested_path = os.path.relpath(file_path, start=directory)
-    requested_path = os.path.abspath(requested_path)
+    requested_path = os.path.abspath(file_path)
     common_prefix = os.path.commonprefix([requested_path, directory])
     return common_prefix != directory
 

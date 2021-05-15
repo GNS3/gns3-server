@@ -422,7 +422,6 @@ class NodeHandler:
             response.enable_chunked_encoding()
             await response.prepare(request)
             await response.write(res.body)
-        # await response.write_eof() #FIXME: shound't be needed anymore
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",
