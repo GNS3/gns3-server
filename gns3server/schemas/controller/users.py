@@ -58,6 +58,39 @@ class User(DateTimeModelMixin, UserBase):
         orm_mode = True
 
 
+class UserGroupBase(BaseModel):
+    """
+    Common user group properties.
+    """
+
+    name: Optional[str] = Field(None, min_length=3, regex="[a-zA-Z0-9_-]+$")
+
+
+class UserGroupCreate(UserGroupBase):
+    """
+    Properties to create an user group.
+    """
+
+    name: Optional[str] = Field(..., min_length=3, regex="[a-zA-Z0-9_-]+$")
+
+
+class UserGroupUpdate(UserGroupBase):
+    """
+    Properties to update an user group.
+    """
+
+    pass
+
+
+class UserGroup(DateTimeModelMixin, UserGroupBase):
+
+    user_group_id: UUID
+    is_updatable: bool
+
+    class Config:
+        orm_mode = True
+
+
 class Credentials(BaseModel):
 
     username: str

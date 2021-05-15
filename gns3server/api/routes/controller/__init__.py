@@ -29,6 +29,7 @@ from . import snapshots
 from . import symbols
 from . import templates
 from . import users
+from . import groups
 
 from .dependencies.authentication import get_current_active_user
 
@@ -36,6 +37,13 @@ router = APIRouter()
 
 router.include_router(controller.router, tags=["Controller"])
 router.include_router(users.router, prefix="/users", tags=["Users"])
+
+router.include_router(
+    groups.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/groups",
+    tags=["Users groups"]
+)
 
 router.include_router(
     appliances.router,

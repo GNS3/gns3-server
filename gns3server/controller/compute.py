@@ -487,7 +487,7 @@ class Compute:
 
         # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         from gns3server.api.server import app
-        if not app.state.exiting and not hasattr(sys, "_called_from_test") or not sys._called_from_test:
+        if not app.state.exiting and not hasattr(sys, "_called_from_test"):
             log.info(f"Reconnecting to to compute '{self._id}' WebSocket '{ws_url}'")
             asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
 

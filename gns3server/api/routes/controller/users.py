@@ -185,3 +185,15 @@ async def get_current_active_user(current_user: schemas.User = Depends(get_curre
     """
 
     return current_user
+
+
+@router.get("/{user_id}/groups", response_model=List[schemas.UserGroup])
+async def get_user_memberships(
+        user_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> List[schemas.UserGroup]:
+    """
+    Get user memberships.
+    """
+
+    return await users_repo.get_user_memberships(user_id)
