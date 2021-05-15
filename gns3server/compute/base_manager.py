@@ -417,7 +417,7 @@ class BaseManager:
 
         if not path or path == ".":
             return ""
-        orig_path = path
+        orig_path = os.path.normpath(path)
 
         img_directory = self.get_images_directory()
         valid_directory_prefices = images_directories(self._NODE_TYPE)
@@ -431,7 +431,8 @@ class BaseManager:
                     f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'"
                 )
 
-        if not os.path.isabs(path):
+        if not os.path.isabs(orig_path):
+
             for directory in valid_directory_prefices:
                 log.debug(f"Searching for image '{orig_path}' in '{directory}'")
                 path = self._recursive_search_file_in_directory(directory, orig_path)
@@ -475,7 +476,7 @@ class BaseManager:
         for root, dirs, files in os.walk(directory):
             for file in files:
                 # If filename is the same
-                if s[1] == file and (s[0] == "" or s[0] == os.path.basename(root)):
+                if s[1] == file and (s[0] == '' or os.path.basename(s[0]) == os.path.basename(root)):
                     path = os.path.normpath(os.path.join(root, s[1]))
                     if os.path.exists(path):
                         return path
