@@ -305,11 +305,11 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     path = f"/project-files/{node_type}/{node.id}/{path}"
 
     res = await node.compute.http_query("GET", f"/projects/{node.project.id}/files{path}", timeout=None, raw=True)
-    return Response(res.body, media_type="application/octet-stream")
+    return Response(res.body, media_type="application/octet-stream", status_code=res.status)
 
 
 @router.post("/{node_id}/files/{file_path:path}", status_code=status.HTTP_201_CREATED)
-async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)) -> dict:
+async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
     """
     Write a file in the node directory.
     """
@@ -324,8 +324,8 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
     path = f"/project-files/{node_type}/{node.id}/{path}"
 
     data = await request.body()  # FIXME: are we handling timeout or large files correctly?
-
     await node.compute.http_query("POST", f"/projects/{node.project.id}/files{path}", data=data, timeout=None, raw=True)
+    # FIXME: response with correct status code (from compute)
 
 
 @router.websocket("/{node_id}/console/ws")

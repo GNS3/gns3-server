@@ -32,6 +32,7 @@ from uuid import UUID
 
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.project import Project
+from gns3server.utils.path import is_safe_path
 from gns3server import schemas
 
 
@@ -200,7 +201,7 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)
@@ -216,7 +217,7 @@ async def write_compute_project_file(file_path: str, request: Request, project: 
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)

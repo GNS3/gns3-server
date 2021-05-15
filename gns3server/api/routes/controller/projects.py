@@ -44,6 +44,7 @@ from gns3server.controller.controller_error import ControllerError, ControllerFo
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.utils.asyncio import aiozipstream
+from gns3server.utils.path import is_safe_path
 from gns3server.config import Config
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
@@ -371,7 +372,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
     path = os.path.normpath(file_path).strip("/")
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)
@@ -390,7 +391,7 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
     path = os.path.normpath(file_path).strip("/")
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)

@@ -186,6 +186,13 @@ async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) 
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
+async def test_download_image_escape(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+
+    file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+    response = await client.get(app.url_path_for("download_dynamips_image", filename=file_path))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 @pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
 async def test_upload_image_permission_denied(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 

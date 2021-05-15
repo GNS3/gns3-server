@@ -69,12 +69,14 @@ async def download_dynamips_image(filename: str) -> FileResponse:
     Download a Dynamips IOS image.
     """
 
-    dynamips_manager = Dynamips.instance()
     filename = urllib.parse.unquote(filename)
-    image_path = dynamips_manager.get_abs_image_path(filename)
 
-    if filename[0] == ".":
+    # Raise error if user try to escape
+    if filename[0] == "." or os.path.sep in filename:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    dynamips_manager = Dynamips.instance()
+    image_path = dynamips_manager.get_abs_image_path(filename)
 
     if not os.path.exists(image_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -108,13 +110,14 @@ async def download_iou_image(filename: str) -> FileResponse:
     Download an IOU image.
     """
 
-    iou_manager = IOU.instance()
     filename = urllib.parse.unquote(filename)
-    image_path = iou_manager.get_abs_image_path(filename)
 
-    if filename[0] == ".":
+    # Raise error if user try to escape
+    if filename[0] == "." or os.path.sep in filename:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
+    iou_manager = IOU.instance()
+    image_path = iou_manager.get_abs_image_path(filename)
     if not os.path.exists(image_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -138,13 +141,13 @@ async def upload_qemu_image(filename: str, request: Request) -> None:
 @router.get("/qemu/images/{filename:path}")
 async def download_qemu_image(filename: str) -> FileResponse:
 
-    qemu_manager = Qemu.instance()
     filename = urllib.parse.unquote(filename)
 
     # Raise error if user try to escape
-    if filename[0] == ".":
+    if filename[0] == "." or os.path.sep in filename:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
+    qemu_manager = Qemu.instance()
     image_path = qemu_manager.get_abs_image_path(filename)
 
     if not os.path.exists(image_path):
