@@ -484,15 +484,15 @@ class DynamipsVMHandler:
         raw=True,
         description="Download a Dynamips IOS image")
     async def download_image(request, response):
+
         filename = request.match_info["filename"]
+
+        # Raise error if user try to escape
+        if filename[0] == "." or os.path.sep in filename:
+            raise aiohttp.web.HTTPForbidden()
 
         dynamips_manager = Dynamips.instance()
         image_path = dynamips_manager.get_abs_image_path(filename)
-
-        # Raise error if user try to escape
-        if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden()
-
         await response.stream_file(image_path)
 
     @Route.post(

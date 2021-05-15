@@ -20,12 +20,12 @@ import asyncio
 import json
 import os
 import psutil
-import tempfile
 
 from gns3server.web.route import Route
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute import MODULES
 from gns3server.utils.cpu_percent import CpuPercent
+from gns3server.utils.path import is_safe_path
 
 from gns3server.schemas.project import (
     PROJECT_OBJECT_SCHEMA,
@@ -247,14 +247,13 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        path = request.match_info["path"]
-        path = os.path.normpath(path)
+        path = os.path.normpath(request.match_info["path"])
 
         # Raise error if user try to escape
-        if path[0] == ".":
+        if not is_safe_path(path, project.path):
             raise aiohttp.web.HTTPForbidden()
-        path = os.path.join(project.path, path)
 
+        path = os.path.join(project.path, path)
         await response.stream_file(path)
 
     @Route.post(
@@ -273,15 +272,14 @@ class ProjectHandler:
 
         pm = ProjectManager.instance()
         project = pm.get_project(request.match_info["project_id"])
-        path = request.match_info["path"]
-        path = os.path.normpath(path)
+        path = os.path.normpath(request.match_info["path"])
 
         # Raise error if user try to escape
-        if path[0] == ".":
+        if not is_safe_path(path, project.path):
             raise aiohttp.web.HTTPForbidden()
-        path = os.path.join(project.path, path)
 
-        response.set_status(200)
+        path = os.path.join(project.path, path)
+        response.set_status(201)
 
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)

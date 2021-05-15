@@ -318,7 +318,7 @@ async def test_get_file(controller_api, project):
 async def test_write_file(controller_api, project):
 
     response = await controller_api.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
-    assert response.status == 200
+    assert response.status == 201
 
     with open(os.path.join(project.path, "hello")) as f:
         assert f.read() == "world"

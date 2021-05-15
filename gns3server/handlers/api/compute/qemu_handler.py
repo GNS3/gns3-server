@@ -566,15 +566,15 @@ class QEMUHandler:
         raw=True,
         description="Download Qemu image")
     async def download_image(request, response):
+
         filename = request.match_info["filename"]
+
+        # Raise error if user try to escape
+        if filename[0] == "." or os.path.sep in filename:
+            raise aiohttp.web.HTTPForbidden()
 
         qemu_manager = Qemu.instance()
         image_path = qemu_manager.get_abs_image_path(filename)
-
-        # Raise error if user try to escape
-        if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden()
-
         await response.stream_file(image_path)
 
     @Route.get(

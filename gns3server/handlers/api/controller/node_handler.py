@@ -409,21 +409,19 @@ class NodeHandler:
         path = request.match_info["path"]
         path = force_unix_path(path)
 
-
         # Raise error if user try to escape
-        if path[0] == ".":
+        if path[0] == "." or "/../" in path:
             raise aiohttp.web.HTTPForbidden()
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
-
         res = await node.compute.http_query("GET", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), timeout=None, raw=True)
-        response.set_status(200)
-        response.content_type = "application/octet-stream"
-        response.enable_chunked_encoding()
-        await response.prepare(request)
-        await response.write(res.body)
-        # await response.write_eof() #FIXME: shound't be needed anymore
+        response.set_status(res.status)
+        if res.status == 200:
+            response.content_type = "application/octet-stream"
+            response.enable_chunked_encoding()
+            await response.prepare(request)
+            await response.write(res.body)
 
     @Route.post(
         r"/projects/{project_id}/nodes/{node_id}/files/{path:.+}",
@@ -446,14 +444,14 @@ class NodeHandler:
         path = force_unix_path(path)
 
         # Raise error if user try to escape
-        if path[0] == ".":
+        if path[0] == "." or "/../" in path:
             raise aiohttp.web.HTTPForbidden()
 
         node_type = node.node_type
         path = "/project-files/{}/{}/{}".format(node_type, node.id, path)
         data = await request.content.read()  #FIXME: are we handling timeout or large files correctly?
-        await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
-        response.set_status(201)
+        res = await node.compute.http_query("POST", "/projects/{project_id}/files{path}".format(project_id=project.id, path=path), data=data, timeout=None, raw=True)
+        response.set_status(res.status)
 
     @Route.get(
         r"/projects/{project_id}/nodes/{node_id}/console/ws",
