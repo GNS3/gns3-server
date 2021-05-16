@@ -19,6 +19,7 @@ from sqlalchemy import Table, Boolean, Column, String, ForeignKey, event
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
+from gns3server.config import Config
 from gns3server.services import auth_service
 
 import logging
@@ -50,9 +51,12 @@ class User(BaseTable):
 @event.listens_for(User.__table__, 'after_create')
 def create_default_super_admin(target, connection, **kw):
 
-    hashed_password = auth_service.hash_password("admin")
+    config = Config.instance().settings
+    default_admin_username = config.Server.default_admin_username
+    default_admin_password = config.Server.default_admin_password.get_secret_value()
+    hashed_password = auth_service.hash_password(default_admin_password)
     stmt = target.insert().values(
-        username="admin",
+        username=default_admin_username,
         full_name="Super Administrator",
         hashed_password=hashed_password,
         is_superadmin=True
@@ -96,7 +100,7 @@ def add_admin_to_group(target, connection, **kw):
     user_group_id = result.first().user_group_id
 
     users_table = User.__table__
-    stmt = users_table.select().where(users_table.c.username == "admin")
+    stmt = users_table.select().where(users_table.c.is_superadmin.is_(True))
     result = connection.execute(stmt)
     user_id = result.first().user_id
 

@@ -134,6 +134,8 @@ class ServerSettings(BaseModel):
     user: str = None
     password: SecretStr = None
     enable_http_auth: bool = False
+    default_admin_username: str = "admin"
+    default_admin_password: SecretStr = SecretStr("admin")
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
     allow_remote_console: bool = False
