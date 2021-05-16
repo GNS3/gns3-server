@@ -17,6 +17,7 @@
 
 import os
 import aiohttp
+from pathlib import Path
 
 from ..config import Config
 
@@ -37,15 +38,14 @@ def get_default_project_directory():
     return path
 
 
-def is_safe_path(file_path, directory):
+def is_safe_path(file_path: str, basedir: str) -> bool:
     """
     Check that file path is safe.
     (the file is stored inside directory or one of its sub-directory)
     """
 
-    requested_path = os.path.abspath(file_path)
-    common_prefix = os.path.commonprefix([requested_path, directory])
-    return common_prefix != directory
+    test_path = (Path(basedir) / file_path).resolve()
+    return Path(basedir).resolve() in test_path.resolve().parents
 
 
 def check_path_allowed(path):

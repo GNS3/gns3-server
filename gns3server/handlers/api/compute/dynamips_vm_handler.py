@@ -470,7 +470,8 @@ class DynamipsVMHandler:
     async def upload_image(request, response):
 
         dynamips_manager = Dynamips.instance()
-        await dynamips_manager.write_image(request.match_info["filename"], request.content)
+        filename = os.path.normpath(request.match_info["filename"])
+        await dynamips_manager.write_image(filename, request.content)
         response.set_status(204)
 
     @Route.get(
@@ -485,7 +486,7 @@ class DynamipsVMHandler:
         description="Download a Dynamips IOS image")
     async def download_image(request, response):
 
-        filename = request.match_info["filename"]
+        filename = os.path.normpath(request.match_info["filename"])
 
         # Raise error if user try to escape
         if filename[0] == "." or os.path.sep in filename:
