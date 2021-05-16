@@ -203,7 +203,7 @@ class Controller:
             if iou_config.iourc_path:
                 iourc_path = iou_config.iourc_path
             else:
-                os.makedirs(os.path.dirname(server_config.secrets_dir), exist_ok=True)
+                os.makedirs(server_config.secrets_dir, exist_ok=True)
                 iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
 
             try:
@@ -213,9 +213,17 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot write IOU license file '{iourc_path}': {e}")
 
-        # if self._appliance_manager.appliances_etag:
-        #     config._config.set("Controller", "appliances_etag", self._appliance_manager.appliances_etag)
-        # config.write_config()
+        if self._appliance_manager.appliances_etag:
+            etag_directory = os.path.dirname(Config.instance().server_config)
+            os.makedirs(etag_directory, exist_ok=True)
+            etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
+
+            try:
+                with open(etag_appliances_path, "w+") as f:
+                    f.write(self._appliance_manager.appliances_etag)
+                log.info(f"etag appliances file '{etag_appliances_path}' saved")
+            except OSError as e:
+                log.error(f"Cannot write Etag appliance file '{etag_appliances_path}': {e}")
 
     def _load_controller_settings(self):
         """
@@ -261,8 +269,19 @@ class Controller:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
 
         self._iou_license_settings["license_check"] = iou_config.license_check
-        # self._appliance_manager.appliances_etag = controller_config.get("appliances_etag", None)
-        # self._appliance_manager.load_appliances()
+
+        etag_directory = os.path.dirname(Config.instance().server_config)
+        etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
+        self._appliance_manager.appliances_etag = None
+        if os.path.exists(etag_appliances_path):
+            try:
+                with open(etag_appliances_path) as f:
+                    self._appliance_manager.appliances_etag = f.read()
+                log.info(f"etag appliances file '{etag_appliances_path}' loaded")
+            except OSError as e:
+                log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
+
+        self._appliance_manager.load_appliances()
         self._config_loaded = True
 
     async def load_projects(self):

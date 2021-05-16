@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_appliances(update: Optional[bool] = None, symbol_theme: Optional[str] = "Classic") -> List[dict]:
+async def get_appliances(update: Optional[bool] = False, symbol_theme: Optional[str] = "Classic") -> List[dict]:
     """
     Return all appliances known by the controller.
     """

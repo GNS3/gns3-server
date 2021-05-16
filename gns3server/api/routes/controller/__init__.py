@@ -67,6 +67,7 @@ router.include_router(
 
 router.include_router(
     gns3vm.router,
+    deprecated=True,
     dependencies=[Depends(get_current_active_user)],
     prefix="/gns3vm",
     tags=["GNS3 VM"]
