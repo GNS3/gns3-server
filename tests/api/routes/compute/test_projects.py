@@ -179,6 +179,21 @@ async def test_get_file(app: FastAPI, client: AsyncClient, config, tmpdir) -> No
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+async def test_get_file_forbidden_location(app: FastAPI, client: AsyncClient, config, tmpdir) -> None:
+
+    config.settings.Server.projects_path = str(tmpdir)
+    project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+    file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+    response = await client.get(
+        app.url_path_for(
+            "get_compute_project_file",
+            project_id=project.id,
+            file_path=file_path
+        )
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 async def test_write_file(app: FastAPI, client: AsyncClient, config, tmpdir) -> None:
 
     config.settings.Server.projects_path = str(tmpdir)
@@ -196,3 +211,15 @@ async def test_write_file(app: FastAPI, client: AsyncClient, config, tmpdir) -> 
                                                   project_id=project.id,
                                                   file_path="../hello"))
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_write_file_forbidden_location(app: FastAPI, client: AsyncClient, config, tmpdir) -> None:
+
+    config.settings.Server.projects_path = str(tmpdir)
+    project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
+
+    file_path = "%2e%2e/hello"
+    response = await client.post(app.url_path_for("write_compute_project_file",
+                                                  project_id=project.id,
+                                                  file_path=file_path), content=b"world")
+    assert response.status_code == status.HTTP_403_FORBIDDEN

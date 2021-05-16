@@ -24,6 +24,7 @@ import tempfile
 import zipfile
 import aiofiles
 import time
+import urllib.parse
 
 import logging
 
@@ -369,7 +370,8 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
     Return a file from a project.
     """
 
-    path = os.path.normpath(file_path).strip("/")
+    file_path = urllib.parse.unquote(file_path)
+    path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
     if not is_safe_path(path, project.path):
@@ -388,7 +390,8 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
     Write a file from a project.
     """
 
-    path = os.path.normpath(file_path).strip("/")
+    file_path = urllib.parse.unquote(file_path)
+    path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
     if not is_safe_path(path, project.path):

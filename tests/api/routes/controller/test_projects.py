@@ -330,6 +330,13 @@ async def test_get_file(app: FastAPI, client: AsyncClient, project: Project) -> 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+async def test_get_file_forbidden_location(app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+    file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+    response = await client.get(app.url_path_for("get_file", project_id=project.id, file_path=file_path))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 async def test_write_file(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
     response = await client.post(app.url_path_for("write_file", project_id=project.id, file_path="hello"),
@@ -343,6 +350,14 @@ async def test_write_file(app: FastAPI, client: AsyncClient, project: Project) -
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+async def test_write_file_forbidden_location(app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+    file_path = "%2e%2e/hello"
+    response = await client.post(app.url_path_for("write_file", project_id=project.id, file_path=file_path),
+                                 content=b"world")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 async def test_write_and_get_file_with_leading_slashes_in_filename(
         app: FastAPI,
         client: AsyncClient,
@@ -350,11 +365,10 @@ async def test_write_and_get_file_with_leading_slashes_in_filename(
 
     response = await client.post(app.url_path_for("write_file", project_id=project.id, file_path="//hello"),
                                  content=b"world")
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
     response = await client.get(app.url_path_for("get_file", project_id=project.id, file_path="//hello"))
-    assert response.status_code == status.HTTP_200_OK
-    assert response.content == b"world"
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_import(app: FastAPI, client: AsyncClient, tmpdir, controller: Controller) -> None:
