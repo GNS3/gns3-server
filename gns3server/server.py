@@ -319,6 +319,7 @@ class Server:
                 access_log=access_log,
                 ssl_certfile=config.Server.certfile,
                 ssl_keyfile=config.Server.certkey,
+                lifespan="on"
             )
 
             # overwrite uvicorn loggers with our own logger

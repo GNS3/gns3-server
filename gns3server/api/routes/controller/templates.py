@@ -139,7 +139,7 @@ async def create_node_from_template(
     Create a new node from a template.
     """
 
-    template = TemplatesService(templates_repo).get_template(template_id)
+    template = await TemplatesService(templates_repo).get_template(template_id)
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
     node = await project.add_node_from_template(

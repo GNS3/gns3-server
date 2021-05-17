@@ -401,10 +401,10 @@ async def test_images(app: FastAPI, client: AsyncClient, fake_iou_bin: str) -> N
     assert response.json() == [{"filename": "iou.bin", "path": "iou.bin", "filesize": 7, "md5sum": "e573e8f5c93c6c00783f20c7a170aa6c"}]
 
 
-async def test_image_vm(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+async def test_upload_image(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     with patch("gns3server.compute.IOU.get_images_directory", return_value=str(tmpdir)):
-        response = await client.post(app.url_path_for("download_iou_image", filename="test2"), content=b"TEST")
+        response = await client.post(app.url_path_for("upload_iou_image", filename="test2"), content=b"TEST")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(str(tmpdir / "test2")) as f:
@@ -413,6 +413,29 @@ async def test_image_vm(app: FastAPI, client: AsyncClient, tmpdir) -> None:
     with open(str(tmpdir / "test2.md5sum")) as f:
         checksum = f.read()
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
+
+
+async def test_upload_image_forbidden_location(app: FastAPI, client: AsyncClient) -> None:
+
+    file_path = "%2e%2e/hello"
+    response = await client.post(app.url_path_for("upload_dynamips_image", filename=file_path), content=b"TEST")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_download_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+
+    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test3"), content=b"TEST")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    response = await client.get(app.url_path_for("download_dynamips_image", filename="test3"))
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_download_image_forbidden(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+
+    file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
+    response = await client.get(app.url_path_for("download_iou_image", filename=file_path))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_iou_duplicate(app: FastAPI, client: AsyncClient, vm: dict, base_params: dict) -> None:

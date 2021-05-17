@@ -11,29 +11,29 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password is vyatta/vyatta.  DANOS will live boot and drop into a shell. DANOS can then be installed inside the VM by typing install image.  Defaults to using a telnet console, but the vnc console can provide additional help if it's not booting.",
+    "usage": "Default username / password is tmpuser / tmppwd.  DANOS will live boot and drop into a shell. DANOS can then be installed inside the VM by typing install image.  Defaults to using a telnet console, but the vnc console can provide additional help if it's not booting.",
     "symbol": ":/symbols/affinity/circle/gray/router_cloud.svg",
-    "port_name_format": "dp0p{1}s{0}",
+    "port_name_format": "dp0s{3}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
-        "adapters": 3,
+        "adapters": 8,
         "ram": 4096,
-        "cpus": 2,
+        "cpus": 4,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
-        "boot_priority": "dc",
-        "kvm": "allow",
+        "boot_priority": "cd",
+        "kvm": "require",
         "options": "-cpu host"
     },
     "images": [
         {
-            "filename": "danos-1908-amd64-vrouter.iso",
-            "version": "1908",
-            "md5sum": "e850b6aa2859de1075c11b9149fa50f4",
-            "filesize": 409993216,
-            "download_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/753667/DANOS+1908",
-            "direct_download_url": "http://repos.danosproject.org.s3-website-us-west-1.amazonaws.com/images/danos-1908-amd64-vrouter.iso"
+            "filename": "danos-2012-base-amd64.iso",
+            "version": "2012",
+            "md5sum": "fb7a60dc9afecdb274464832b3ab1ccb",
+            "filesize": 441450496,
+            "download_url": "https://danosproject.atlassian.net/wiki/spaces/DAN/pages/892141595/DANOS+2012",
+            "direct_download_url": "https://s3-us-west-1.amazonaws.com/2012.repos.danosproject.org/2012/iso/danos-2012-base-amd64.iso"
         },
         {
             "filename": "empty8G.qcow2",
@@ -46,10 +46,10 @@
     ],
     "versions": [
         {
-            "name": "1908",
+            "name": "2012",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "danos-1908-amd64-vrouter.iso"
+                "cdrom_image": "danos-2012-base-amd64.iso"
             }
         }
     ]

@@ -45,7 +45,7 @@ class CloudTemplate(Template):
 
     __tablename__ = "cloud_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     ports_mapping = Column(PickleType)
     remote_console_host = Column(String)
     remote_console_port = Column(Integer)
@@ -59,7 +59,7 @@ class DockerTemplate(Template):
 
     __tablename__ = "docker_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     image = Column(String)
     adapters = Column(Integer)
     start_command = Column(String)
@@ -83,7 +83,7 @@ class DynamipsTemplate(Template):
 
     __tablename__ = "dynamips_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     platform = Column(String)
     chassis = Column(String)
     image = Column(String)
@@ -126,7 +126,7 @@ class EthernetHubTemplate(Template):
 
     __tablename__ = "ethernet_hub_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     ports_mapping = Column(PickleType)
 
     __mapper_args__ = {"polymorphic_identity": "ethernet_hub", "polymorphic_load": "selectin"}
@@ -136,7 +136,7 @@ class EthernetSwitchTemplate(Template):
 
     __tablename__ = "ethernet_switch_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     ports_mapping = Column(PickleType)
     console_type = Column(String)
 
@@ -147,7 +147,7 @@ class IOUTemplate(Template):
 
     __tablename__ = "iou_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     path = Column(String)
     ethernet_adapters = Column(Integer)
     serial_adapters = Column(Integer)
@@ -167,7 +167,7 @@ class QemuTemplate(Template):
 
     __tablename__ = "qemu_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     qemu_path = Column(String)
     platform = Column(String)
     linked_clone = Column(Boolean)
@@ -213,7 +213,7 @@ class VirtualBoxTemplate(Template):
 
     __tablename__ = "virtualbox_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     vmname = Column(String)
     ram = Column(Integer)
     linked_clone = Column(Boolean)
@@ -236,7 +236,7 @@ class VMwareTemplate(Template):
 
     __tablename__ = "vmware_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     vmx_path = Column(String)
     linked_clone = Column(Boolean)
     first_port_name = Column(String)
@@ -258,7 +258,7 @@ class VPCSTemplate(Template):
 
     __tablename__ = "vpcs_templates"
 
-    template_id = Column(GUID, ForeignKey("templates.template_id"), primary_key=True)
+    template_id = Column(GUID, ForeignKey("templates.template_id", ondelete="CASCADE"), primary_key=True)
     base_script_file = Column(String)
     console_type = Column(String)
     console_auto_start = Column(Boolean, default=False)

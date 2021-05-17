@@ -111,7 +111,7 @@ class LogFilter:
     """
 
     def filter(record):
-        if "/settings" in record.msg and "200" in record.msg:
+        if isinstance(record.msg, str) and "/settings" in record.msg and "200" in record.msg:
             return 0
         return 1
 

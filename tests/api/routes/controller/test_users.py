@@ -56,8 +56,8 @@ class TestUserRoutes:
         assert user_in_db is None
 
         # register the user
-        res = await client.post(app.url_path_for("create_user"), json=params)
-        assert res.status_code == status.HTTP_201_CREATED
+        response = await client.post(app.url_path_for("create_user"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
 
         # make sure the user does exists in the database now
         user_in_db = await user_repo.get_user_by_username(params["username"])
@@ -66,7 +66,7 @@ class TestUserRoutes:
         assert user_in_db.username == params["username"]
 
         # check that the user returned in the response is equal to the user in the database
-        created_user = User(**res.json()).json()
+        created_user = User(**response.json()).json()
         assert created_user == User.from_orm(user_in_db).json()
 
     @pytest.mark.parametrize(
@@ -91,8 +91,8 @@ class TestUserRoutes:
 
         new_user = {"email": "not_taken@email.com", "username": "not_taken_username", "password": "test_password"}
         new_user[attr] = value
-        res = await client.post(app.url_path_for("create_user"), json=new_user)
-        assert res.status_code == status_code
+        response = await client.post(app.url_path_for("create_user"), json=new_user)
+        assert response.status_code == status_code
 
     async def test_users_saved_password_is_hashed(
         self,
@@ -105,8 +105,8 @@ class TestUserRoutes:
         new_user = {"username": "user3", "email": "user3@email.com", "password": "test_password"}
 
         # send post request to create user and ensure it is successful
-        res = await client.post(app.url_path_for("create_user"), json=new_user)
-        assert res.status_code == status.HTTP_201_CREATED
+        response = await client.post(app.url_path_for("create_user"), json=new_user)
+        assert response.status_code == status.HTTP_201_CREATED
 
         # ensure that the users password is hashed in the db
         # and that we can verify it using our auth service
@@ -156,7 +156,6 @@ class TestAuthTokens:
         username = auth_service.get_username_from_token(token)
         assert username == test_user.username
 
-
     @pytest.mark.parametrize(
         "wrong_secret, wrong_token",
         (
@@ -200,19 +199,19 @@ class TestUserLogin:
             "username": test_user.username,
             "password": "user1_password",
         }
-        res = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
-        assert res.status_code == status.HTTP_200_OK
+        response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
+        assert response.status_code == status.HTTP_200_OK
 
         # check that token exists in response and has user encoded within it
-        token = res.json().get("access_token")
+        token = response.json().get("access_token")
         payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
         assert "sub" in payload
         username = payload.get("sub")
         assert username == test_user.username
 
         # check that token is proper type
-        assert "token_type" in res.json()
-        assert res.json().get("token_type") == "bearer"
+        assert "token_type" in response.json()
+        assert response.json().get("token_type") == "bearer"
 
     async def test_user_can_authenticate_using_json(
             self,
@@ -226,16 +225,16 @@ class TestUserLogin:
             "username": test_user.username,
             "password": "user1_password",
         }
-        res = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
-        assert res.status_code == status.HTTP_200_OK
-        assert res.json().get("access_token")
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json().get("access_token")
 
     @pytest.mark.parametrize(
         "username, password, status_code",
         (
             ("wrong_username", "user1_password", status.HTTP_401_UNAUTHORIZED),
             ("user1", "wrong_password", status.HTTP_401_UNAUTHORIZED),
-            ("user1", None, status.HTTP_401_UNAUTHORIZED),
+            ("user1", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
         ),
     )
     async def test_user_with_wrong_creds_doesnt_receive_token(
@@ -253,9 +252,9 @@ class TestUserLogin:
             "username": username,
             "password": password,
         }
-        res = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
-        assert res.status_code == status_code
-        assert "access_token" not in res.json()
+        response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
+        assert response.status_code == status_code
+        assert "access_token" not in response.json()
 
 
 class TestUserMe:
@@ -267,9 +266,9 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        res = await authorized_client.get(app.url_path_for("get_current_active_user"))
-        assert res.status_code == status.HTTP_200_OK
-        user = User(**res.json())
+        response = await authorized_client.get(app.url_path_for("get_current_active_user"))
+        assert response.status_code == status.HTTP_200_OK
+        user = User(**response.json())
         assert user.username == test_user.username
         assert user.email == test_user.email
         assert user.user_id == test_user.user_id
@@ -280,8 +279,8 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        res = await unauthorized_client.get(app.url_path_for("get_current_active_user"))
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        response = await unauthorized_client.get(app.url_path_for("get_current_active_user"))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 class TestSuperAdmin:
@@ -307,8 +306,8 @@ class TestSuperAdmin:
 
         user_repo = UsersRepository(db_session)
         admin_in_db = await user_repo.get_user_by_username("admin")
-        res = await client.delete(app.url_path_for("delete_user", user_id=admin_in_db.user_id))
-        assert res.status_code == status.HTTP_403_FORBIDDEN
+        response = await client.delete(app.url_path_for("delete_user", user_id=admin_in_db.user_id))
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_admin_can_login_after_password_recovery(
             self,
@@ -327,5 +326,18 @@ class TestSuperAdmin:
             "username": "admin",
             "password": "whatever",
         }
-        res = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
-        assert res.status_code == status.HTTP_200_OK
+        response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_super_admin_belongs_to_admin_group(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession
+    ) -> None:
+
+        user_repo = UsersRepository(db_session)
+        admin_in_db = await user_repo.get_user_by_username("admin")
+        response = await client.get(app.url_path_for("get_user_memberships", user_id=admin_in_db.user_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) == 1

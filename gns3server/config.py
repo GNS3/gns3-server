@@ -153,8 +153,6 @@ class Config:
         Return the settings.
         """
 
-        if self._settings is None:
-            return ServerConfig()
         return self._settings
 
     def listen_for_config_changes(self, callback):
@@ -273,6 +271,7 @@ class Config:
             return
         if not parsed_files:
             log.warning("No configuration file could be found or read")
+            self._settings = ServerConfig()
             return
 
         for file in parsed_files:

@@ -28,96 +28,96 @@
             "version": "2019.3",
             "md5sum": "9c6fb00558f78ed06992d89f745ef975",
             "filesize": 3037736960,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2019.3/kali-linux-2019.3-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2019.3",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2019.3/kali-linux-2019.3-amd64.iso"
         },
         {
             "filename": "kali-linux-2019.2-amd64.iso",
             "version": "2019.2",
             "md5sum": "0f89b6225d7ea9c18682f7cc541c1179",
             "filesize": 3353227264,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2019.2/kali-linux-2019.2-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2019.2",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2019.2/kali-linux-2019.2-amd64.iso"
         },
         {
             "filename": "kali-linux-mate-2019.2-amd64.iso",
             "version": "2019.2 (MATE)",
             "md5sum": "fec8dd7009f932c51a74323df965a709",
             "filesize": 3313217536,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2019.2/kali-linux-mate-2019.2-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2019.2",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2019.2/kali-linux-mate-2019.2-amd64.iso"
         },
         {
             "filename": "kali-linux-2019.1a-amd64.iso",
             "version": "2019.1a",
             "md5sum": "58c6111ed0be1919ea87267e7e65ab0f",
             "filesize": 3483873280,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2019.1a/kali-linux-2019.1a-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2019.1a",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2019.1a/kali-linux-2019.1a-amd64.iso"
         },
         {
             "filename": "kali-linux-2018.4-amd64.iso",
             "version": "2018.4",
             "md5sum": "1b2d598bb8d2003e6207c119c0ba42fe",
             "filesize": 3139436544,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2018.4/kali-linux-2018.4-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2018.4",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2018.4/kali-linux-2018.4-amd64.iso"
         },
         {
             "filename": "kali-linux-2018.3a-amd64.iso",
             "version": "2018.3a",
             "md5sum": "2da675d016bd690c05e180e33aa98b94",
             "filesize": 3192651776,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2018.3a/kali-linux-2018.3a-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2018.3a",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2018.3a/kali-linux-2018.3a-amd64.iso"
         },
         {
             "filename": "kali-linux-2018.1-amd64.iso",
             "version": "2018.1",
             "md5sum": "a3feb90df5b71b3c7f4a02bdddf221d7",
             "filesize": 3028500480,
-            "download_url": "https://www.kali.org/downloads/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2018.1/kali-linux-2018.1-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2018.1",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2018.1/kali-linux-2018.1-amd64.iso"
         },
         {
             "filename": "kali-linux-2017.3-amd64.iso",
             "version": "2017.3",
             "md5sum": "b465580c897e94675ac1daf031fa66b9",
             "filesize": 2886402048,
-            "download_url": "http://cdimage.kali.org/kali-2017.3/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2017.3/kali-linux-2017.3-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2017.3/",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2017.3/kali-linux-2017.3-amd64.iso"
         },
         {
             "filename": "kali-linux-2017.2-amd64.iso",
             "version": "2017.2",
             "md5sum": "541654f8f818450dc0db866a0a0f6eec",
             "filesize": 3020619776,
-            "download_url": "http://cdimage.kali.org/kali-2017.2/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2017.2/kali-linux-2017.2-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2017.2/",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2017.2/kali-linux-2017.2-amd64.iso"
         },
         {
             "filename": "kali-linux-2017.1-amd64.iso",
             "version": "2017.1",
             "md5sum": "c8e742283929d7a12dbe7c58e398ff08",
             "filesize": 2794307584,
-            "download_url": "http://cdimage.kali.org/kali-2017.1/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2017.1/kali-linux-2017.1-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2017.1/",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2017.1/kali-linux-2017.1-amd64.iso"
         },
         {
             "filename": "kali-linux-2016.2-amd64.iso",
             "version": "2016.2",
             "md5sum": "3d163746bc5148e61ad689d94bc263f9",
             "filesize": 3076767744,
-            "download_url": "http://cdimage.kali.org/kali-2016.2/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2016.2/kali-linux-2016.2-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2016.2/",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2016.2/kali-linux-2016.2-amd64.iso"
         },
         {
             "filename": "kali-linux-2016.1-amd64.iso",
             "version": "2016.1",
             "md5sum": "2e1230dc14036935b3279dfe3e49ad39",
             "filesize": 2945482752,
-            "download_url": "http://cdimage.kali.org/kali-2016.1/",
-            "direct_download_url": "http://cdimage.kali.org/kali-2016.1/kali-linux-2016.1-amd64.iso"
+            "download_url": "http://old.kali.org/kali-images/kali-2016.1/",
+            "direct_download_url": "http://old.kali.org/kali-images/kali-2016.1/kali-linux-2016.1-amd64.iso"
         },
         {
             "filename": "kali-linux-2.0-amd64.iso",

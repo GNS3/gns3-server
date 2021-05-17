@@ -19,6 +19,7 @@ API routes for projects.
 """
 
 import os
+import urllib.parse
 
 import logging
 
@@ -32,6 +33,7 @@ from uuid import UUID
 
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.project import Project
+from gns3server.utils.path import is_safe_path
 from gns3server import schemas
 
 
@@ -197,10 +199,11 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
     Get a file from a project.
     """
 
+    file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)
@@ -213,10 +216,11 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
 @router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
 
+    file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)
 
     # Raise error if user try to escape
-    if path[0] == ".":
+    if not is_safe_path(path, project.path):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     path = os.path.join(project.path, path)

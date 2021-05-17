@@ -43,6 +43,7 @@ class GUID(TypeDecorator):
     """
 
     impl = CHAR
+    cache_ok = True
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
@@ -75,8 +76,8 @@ class BaseTable(Base):
 
     __abstract__ = True
 
-    created_at = Column(DateTime, default=func.current_timestamp())
-    updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    created_at = Column(DateTime, server_default=func.current_timestamp())
+    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
 
 def generate_uuid():

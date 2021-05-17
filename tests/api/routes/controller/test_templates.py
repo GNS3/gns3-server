@@ -97,7 +97,7 @@ class TestTemplateRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "VPCS_TEST_RENAMED"
 
-    async def test_template_delete(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
+    async def test_template_delete(self, app: FastAPI, client: AsyncClient) -> None:
 
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,

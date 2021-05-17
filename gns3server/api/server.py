@@ -25,6 +25,7 @@ from fastapi import FastAPI, Request
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from uvicorn.main import Server as UvicornServer
 
 from gns3server.controller.controller_error import (
@@ -55,6 +56,8 @@ def get_application() -> FastAPI:
     origins = [
         "http://127.0.0.1",
         "http://localhost",
+        "http://localhost:4200",
+        "http://127.0.0.1:4200"
         "http://127.0.0.1:8080",
         "http://localhost:8080",
         "http://127.0.0.1:3080",
@@ -155,6 +158,15 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.detail},
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
+    log.error(f"Controller database error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Database error detected, please check logs to find details"},
     )
 
 

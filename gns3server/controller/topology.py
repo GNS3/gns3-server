@@ -50,7 +50,7 @@ class DynamipsNodeValidation(DynamipsCreate):
     name: Optional[str] = None
 
 
-def _check_topology_schema(topo):
+def _check_topology_schema(topo, path):
     try:
         Topology.parse_obj(topo)
 
@@ -60,7 +60,7 @@ def _check_topology_schema(topo):
                 DynamipsNodeValidation.parse_obj(node.get("properties", {}))
 
     except pydantic.ValidationError as e:
-        error = f"Invalid data in topology file: {e}"
+        error = f"Invalid data in topology file {path}: {e}"
         log.critical(error)
         raise ControllerError(error)
 
@@ -117,7 +117,7 @@ def project_to_topology(project):
                 data["topology"]["computes"].append(compute)
         elif isinstance(compute, dict):
             data["topology"]["computes"].append(compute)
-    _check_topology_schema(data)
+    _check_topology_schema(data, project.path)
     return data
 
 
@@ -187,7 +187,7 @@ def load_topology(path):
             topo["variables"] = [var for var in variables if var.get("name")]
 
     try:
-        _check_topology_schema(topo)
+        _check_topology_schema(topo, path)
     except ControllerError as e:
         log.error("Can't load the topology %s", path)
         raise e

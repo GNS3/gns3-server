@@ -240,6 +240,7 @@ async def test_get_file(app: FastAPI, client: AsyncClient, project: Project, com
 
     response = MagicMock()
     response.body = b"world"
+    response.status = status.HTTP_200_OK
     compute.http_query = AsyncioMagicMock(return_value=response)
 
     response = await client.get(app.url_path_for("get_file", project_id=project.id, node_id=node.id, file_path="hello"))

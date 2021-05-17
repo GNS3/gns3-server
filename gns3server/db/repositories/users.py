@@ -16,9 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, Union
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from .base import BaseRepository
 
@@ -107,3 +108,105 @@ class UsersRepository(BaseRepository):
         if not self._auth_service.verify_password(password, user.hashed_password):
             return None
         return user
+
+    async def get_user_memberships(self, user_id: UUID) -> List[models.UserGroup]:
+
+        query = select(models.UserGroup).\
+            join(models.UserGroup.users).\
+            filter(models.User.user_id == user_id)
+
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
+
+    async def get_user_group(self, user_group_id: UUID) -> Optional[models.UserGroup]:
+
+        query = select(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def get_user_group_by_name(self, name: str) -> Optional[models.UserGroup]:
+
+        query = select(models.UserGroup).where(models.UserGroup.name == name)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def get_user_groups(self) -> List[models.UserGroup]:
+
+        query = select(models.UserGroup)
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
+
+    async def create_user_group(self, user_group: schemas.UserGroupCreate) -> models.UserGroup:
+
+        db_user_group = models.UserGroup(name=user_group.name)
+        self._db_session.add(db_user_group)
+        await self._db_session.commit()
+        await self._db_session.refresh(db_user_group)
+        return db_user_group
+
+    async def update_user_group(
+            self,
+            user_group_id: UUID,
+            user_group_update: schemas.UserGroupUpdate
+    ) -> Optional[models.UserGroup]:
+
+        update_values = user_group_update.dict(exclude_unset=True)
+        query = update(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id).values(update_values)
+
+        await self._db_session.execute(query)
+        await self._db_session.commit()
+        return await self.get_user_group(user_group_id)
+
+    async def delete_user_group(self, user_group_id: UUID) -> bool:
+
+        query = delete(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        await self._db_session.commit()
+        return result.rowcount > 0
+
+    async def add_member_to_user_group(
+            self,
+            user_group_id: UUID,
+            user: models.User
+    ) -> Union[None, models.UserGroup]:
+
+        query = select(models.UserGroup).\
+            options(selectinload(models.UserGroup.users)).\
+            where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        user_group_db = result.scalars().first()
+        if not user_group_db:
+            return None
+
+        user_group_db.users.append(user)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_group_db)
+        return user_group_db
+
+    async def remove_member_from_user_group(
+            self,
+            user_group_id: UUID,
+            user: models.User
+    ) -> Union[None, models.UserGroup]:
+
+        query = select(models.UserGroup).\
+            options(selectinload(models.UserGroup.users)).\
+            where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        user_group_db = result.scalars().first()
+        if not user_group_db:
+            return None
+
+        user_group_db.users.remove(user)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_group_db)
+        return user_group_db
+
+    async def get_user_group_members(self, user_group_id: UUID) -> List[models.User]:
+
+        query = select(models.User).\
+            join(models.User.groups).\
+            filter(models.UserGroup.user_group_id == user_group_id)
+
+        result = await self._db_session.execute(query)
+        return result.scalars().all()

@@ -1,0 +1,18 @@
+{
+    "name": "mcjoin",
+    "category": "guest",
+    "description": "mcjoin is a very simple and easy-to-use tool to test IPv4 and IPv6 multicast.",
+    "vendor_name": "Joachim Nilsson",
+    "vendor_url": "https://github.com/troglobit",
+    "product_name": "mcjoin",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "symbol": "linux_guest.svg",
+    "docker": {
+        "adapters": 1,
+        "image": "troglobit/mcjoin:latest",
+        "console_type": "telnet"
+    }
+}

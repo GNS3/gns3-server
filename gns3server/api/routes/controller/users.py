@@ -153,22 +153,29 @@ async def update_user(
     return user
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_user(
     user_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-    current_user: schemas.User = Depends(get_current_active_user),
 ) -> None:
     """
     Delete an user.
     """
 
-    if current_user.is_superadmin:
+    user = await users_repo.get_user(user_id)
+    if not user:
+        raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    if user.is_superadmin:
         raise ControllerForbiddenError("The super admin cannot be deleted")
 
     success = await users_repo.delete_user(user_id)
     if not success:
-        raise ControllerNotFoundError(f"User '{user_id}' not found")
+        raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
 
 
 @router.get("/me/", response_model=schemas.User)
@@ -178,3 +185,19 @@ async def get_current_active_user(current_user: schemas.User = Depends(get_curre
     """
 
     return current_user
+
+
+@router.get(
+    "/{user_id}/groups",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=List[schemas.UserGroup]
+)
+async def get_user_memberships(
+        user_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> List[schemas.UserGroup]:
+    """
+    Get user memberships.
+    """
+
+    return await users_repo.get_user_memberships(user_id)

@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
+
 from pydantic import BaseModel, Field, SecretStr, validator
 from typing import List, Optional, Union
-from uuid import UUID, uuid4
 from enum import Enum
 
 from .nodes import NodeType
@@ -49,7 +50,7 @@ class ComputeCreate(ComputeBase):
     Data to create a compute.
     """
 
-    compute_id: Union[str, UUID] = Field(default_factory=uuid4)
+    compute_id: Union[str, uuid.UUID] = None
     password: Optional[SecretStr] = None
 
     class Config:
@@ -63,7 +64,18 @@ class ComputeCreate(ComputeBase):
             }
         }
 
-    @validator("name", always=True)
+    @validator("compute_id", pre=True, always=True)
+    def default_compute_id(cls, v, values):
+
+        if v is not None:
+            return v
+        else:
+            protocol = values.get("protocol")
+            host = values.get("host")
+            port = values.get("port")
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"{protocol}://{host}:{port}")
+
+    @validator("name", pre=True, always=True)
     def generate_name(cls, name, values):
 
         if name is not None:
@@ -119,7 +131,7 @@ class Compute(DateTimeModelMixin, ComputeBase):
     Data returned for a compute.
     """
 
-    compute_id: Union[str, UUID]
+    compute_id: Union[str, uuid.UUID]
     name: str
     connected: Optional[bool] = Field(None, description="Whether the controller is connected to the compute or not")
     cpu_usage_percent: Optional[float] = Field(None, description="CPU usage of the compute", ge=0, le=100)

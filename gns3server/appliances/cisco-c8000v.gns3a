@@ -1,0 +1,55 @@
+{
+    "name": "Cisco Catalyst 8000V",
+    "category": "router",
+    "description": "The Cisco Catalyst 8000V Edge Software is a virtual, form-factor router deployed on a virtual machine (VM) running on an x86 server hardware.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://www.cisco.com/c/en/us/td/docs/routers/C8000V/Configuration/c8000v-installation-configuration-guide.html",
+    "product_name": "c8000v",
+    "product_url": "https://www.cisco.com/c/en/us/support/routers/catalyst-8000v-edge-software/series.html",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "There is no default password and enable password. A default configuration is present.",
+    "port_name_format": "Gi{port1}",
+    "qemu": {
+        "adapter_type": "vmxnet3",
+        "adapters": 4,
+        "ram": 4096,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "c8000v-universalk9_8G_serial.17.04.01a.qcow2",
+            "version": "17.04.01a 8G",
+            "md5sum": "5c1dd1d3757ea43b5b02e0af7a010525",
+            "filesize": 1623130112,
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Bengaluru-17.4.1a"
+        },
+        {
+            "filename": "c8000v-universalk9_8G_serial.17.04.01b.qcow2",
+            "version": "17.04.01b 8G",
+            "md5sum": "84aebb7f5f38bdd4df8e7607643027be",
+            "filesize": 1623130112,
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Bengaluru-17.4.1b"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.04.01a 8G",
+            "images": {
+                "hda_disk_image": "c8000v-universalk9_8G_serial.17.04.01a.qcow2"
+            }
+        },
+        {
+            "name": "17.04.01b 8G",
+            "images": {
+                "hda_disk_image": "c8000v-universalk9_8G_serial.17.04.01b.qcow2"
+            }
+        }
+    ]
+}

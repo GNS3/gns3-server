@@ -27,7 +27,7 @@ from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
 from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
 from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
-from .controller.users import UserCreate, UserUpdate, User, Credentials
+from .controller.users import UserCreate, UserUpdate, User, Credentials, UserGroupCreate, UserGroupUpdate, UserGroup
 from .controller.tokens import Token
 from .controller.snapshots import SnapshotCreate, Snapshot
 from .controller.iou_license import IOULicense

@@ -17,6 +17,7 @@
 
 import os
 
+from pathlib import Path
 from fastapi import HTTPException, status
 from ..config import Config
 
@@ -35,6 +36,16 @@ def get_default_project_directory():
     except OSError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Could not create project directory: {e}")
     return path
+
+
+def is_safe_path(file_path: str, basedir: str) -> bool:
+    """
+    Check that file path is safe.
+    (the file is stored inside directory or one of its sub-directory)
+    """
+
+    test_path = (Path(basedir) / file_path).resolve()
+    return Path(basedir).resolve() in test_path.resolve().parents
 
 
 def check_path_allowed(path):

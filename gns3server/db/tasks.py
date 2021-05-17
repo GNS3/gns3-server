@@ -22,6 +22,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import ValidationError
 
 from typing import List
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from gns3server.db.repositories.computes import ComputesRepository
@@ -41,12 +43,22 @@ async def connect_to_db(app: FastAPI) -> None:
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
     try:
-        async with engine.begin() as conn:
+        async with engine.connect() as conn:
             await conn.run_sync(Base.metadata.create_all)
             log.info(f"Successfully connected to database '{db_url}'")
         app.state._db_engine = engine
     except SQLAlchemyError as e:
-        log.error(f"Error while connecting to database '{db_url}: {e}")
+        log.fatal(f"Error while connecting to database '{db_url}: {e}")
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+
+    # Enable SQL foreign key support for SQLite
+    # https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#foreign-key-support
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 async def get_computes(app: FastAPI) -> List[dict]:
