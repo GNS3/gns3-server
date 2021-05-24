@@ -121,7 +121,9 @@ class Snapshot:
             if os.path.exists(project_files_path):
                 await wait_run_in_executor(shutil.rmtree, project_files_path)
             with open(self._path, "rb") as f:
-                project = await import_project(self._project.controller, self._project.id, f, location=self._project.path)
+                project = await import_project(self._project.controller, self._project.id, f, location=self._project.path,
+                                               auto_start=self._project.auto_start, auto_open=self._project.auto_open,
+                                               auto_close=self._project.auto_close)
         except (OSError, PermissionError) as e:
             raise aiohttp.web.HTTPConflict(text=str(e))
         await project.open()
