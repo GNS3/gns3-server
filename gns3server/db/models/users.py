@@ -19,6 +19,8 @@ from sqlalchemy import Table, Boolean, Column, String, ForeignKey, event
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
+from .roles import role_group_link
+
 from gns3server.config import Config
 from gns3server.services import auth_service
 
@@ -26,11 +28,11 @@ import logging
 
 log = logging.getLogger(__name__)
 
-users_group_members = Table(
-    "users_group_members",
+user_group_link = Table(
+    "users_groups_link",
     Base.metadata,
     Column("user_id", GUID, ForeignKey("users.user_id", ondelete="CASCADE")),
-    Column("user_group_id", GUID, ForeignKey("users_group.user_group_id", ondelete="CASCADE"))
+    Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"))
 )
 
 
@@ -45,7 +47,9 @@ class User(BaseTable):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
-    groups = relationship("UserGroup", secondary=users_group_members, back_populates="users")
+    groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")
+    permission_id = Column(GUID, ForeignKey('permissions.permission_id', ondelete="CASCADE"))
+    permissions = relationship("Permission")
 
 
 @event.listens_for(User.__table__, 'after_create')
@@ -68,12 +72,13 @@ def create_default_super_admin(target, connection, **kw):
 
 class UserGroup(BaseTable):
 
-    __tablename__ = "users_group"
+    __tablename__ = "user_groups"
 
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_updatable = Column(Boolean, default=True)
-    users = relationship("User", secondary=users_group_members, back_populates="groups")
+    users = relationship("User", secondary=user_group_link, back_populates="groups")
+    roles = relationship("Role", secondary=role_group_link, back_populates="groups")
 
 
 @event.listens_for(UserGroup.__table__, 'after_create')
@@ -91,11 +96,11 @@ def create_default_user_groups(target, connection, **kw):
     log.info("The default user groups have been created in the database")
 
 
-@event.listens_for(users_group_members, 'after_create')
+@event.listens_for(user_group_link, 'after_create')
 def add_admin_to_group(target, connection, **kw):
 
-    users_group_table = UserGroup.__table__
-    stmt = users_group_table.select().where(users_group_table.c.name == "Administrators")
+    user_groups_table = UserGroup.__table__
+    stmt = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
     result = connection.execute(stmt)
     user_group_id = result.first().user_group_id
 

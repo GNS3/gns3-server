@@ -210,3 +210,51 @@ class UsersRepository(BaseRepository):
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
+
+    async def add_role_to_user_group(
+            self,
+            user_group_id: UUID,
+            role: models.Role
+    ) -> Union[None, models.UserGroup]:
+
+        query = select(models.UserGroup).\
+            options(selectinload(models.UserGroup.roles)).\
+            where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        user_group_db = result.scalars().first()
+        if not user_group_db:
+            return None
+
+        user_group_db.roles.append(role)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_group_db)
+        return user_group_db
+
+    async def remove_role_from_user_group(
+            self,
+            user_group_id: UUID,
+            role: models.Role
+    ) -> Union[None, models.UserGroup]:
+
+        query = select(models.UserGroup).\
+            options(selectinload(models.UserGroup.roles)).\
+            where(models.UserGroup.user_group_id == user_group_id)
+        result = await self._db_session.execute(query)
+        user_group_db = result.scalars().first()
+        if not user_group_db:
+            return None
+
+        user_group_db.roles.remove(role)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_group_db)
+        return user_group_db
+
+    async def get_user_group_roles(self, user_group_id: UUID) -> List[models.Role]:
+
+        query = select(models.Role). \
+            options(selectinload(models.Role.permissions)). \
+            join(models.UserGroup.roles). \
+            filter(models.UserGroup.user_group_id == user_group_id)
+
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
