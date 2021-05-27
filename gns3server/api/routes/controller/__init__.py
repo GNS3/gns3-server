@@ -55,7 +55,7 @@ router.include_router(
 )
 
 router.include_router(
-    roles.router,
+    permissions.router,
     dependencies=[Depends(get_current_active_user)],
     prefix="/permissions",
     tags=["Permissions"]

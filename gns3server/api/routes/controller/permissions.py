@@ -60,8 +60,9 @@ async def create_permission(
     Create a new permission.
     """
 
-    # if await rbac_repo.get_role_by_path(role_create.name):
-    #     raise ControllerBadRequestError(f"Role '{role_create.name}' already exists")
+    if await rbac_repo.check_permission_exists(permission_create):
+        raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
+                                        f"{permission_create.action}' already exists")
 
     return await rbac_repo.create_permission(permission_create)
 
@@ -95,9 +96,6 @@ async def update_permission(
     if not permission:
         raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
 
-    #if not user_group.is_updatable:
-    #    raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be updated")
-
     return await rbac_repo.update_permission(permission_id, permission_update)
 
 
@@ -113,9 +111,6 @@ async def delete_permission(
     permission = await rbac_repo.get_permission(permission_id)
     if not permission:
         raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
-
-    #if not user_group.is_updatable:
-    #    raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be deleted")
 
     success = await rbac_repo.delete_permission(permission_id)
     if not success:

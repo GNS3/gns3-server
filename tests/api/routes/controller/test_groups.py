@@ -50,7 +50,7 @@ class TestGroupRoutes:
 
         response = await client.get(app.url_path_for("get_user_groups"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 4  # 3 default groups + group1
+        assert len(response.json()) == 3  # 2 default groups + group1
 
     async def test_update_group(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -206,8 +206,10 @@ class TestGroupRolesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         roles = await user_repo.get_user_group_roles(group_in_db.user_group_id)
-        assert len(roles) == 1
-        assert roles[0].name == test_role.name
+        assert len(roles) == 2  # 1 default role + 1 custom role
+        for role in roles:
+            if not role.builtin:
+                assert role.name == test_role.name
 
     async def test_get_user_group_roles(
             self,
@@ -224,7 +226,7 @@ class TestGroupRolesRoutes:
                 user_group_id=group_in_db.user_group_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 1
+        assert len(response.json()) == 2  # 1 default role + 1 custom role
 
     async def test_remove_role_from_group(
             self,
@@ -246,4 +248,5 @@ class TestGroupRolesRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         roles = await user_repo.get_user_group_roles(group_in_db.user_group_id)
-        assert len(roles) == 0
+        assert len(roles) == 1  # 1 default role
+        assert roles[0].name != test_role.name

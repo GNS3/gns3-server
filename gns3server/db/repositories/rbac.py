@@ -24,6 +24,7 @@ from sqlalchemy.orm import selectinload
 from .base import BaseRepository
 
 import gns3server.db.models as models
+from gns3server.schemas.controller.rbac import HTTPMethods, PermissionAction
 from gns3server import schemas
 
 import logging
@@ -38,6 +39,9 @@ class RbacRepository(BaseRepository):
         super().__init__(db_session)
 
     async def get_role(self, role_id: UUID) -> Optional[models.Role]:
+        """
+        Get a role by its ID.
+        """
 
         query = select(models.Role).\
             options(selectinload(models.Role.permissions)).\
@@ -46,6 +50,9 @@ class RbacRepository(BaseRepository):
         return result.scalars().first()
 
     async def get_role_by_name(self, name: str) -> Optional[models.Role]:
+        """
+        Get a role by its name.
+        """
 
         query = select(models.Role).\
             options(selectinload(models.Role.permissions)).\
@@ -55,12 +62,18 @@ class RbacRepository(BaseRepository):
         return result.scalars().first()
 
     async def get_roles(self) -> List[models.Role]:
+        """
+        Get all roles.
+        """
 
         query = select(models.Role).options(selectinload(models.Role.permissions))
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
     async def create_role(self, role_create: schemas.RoleCreate) -> models.Role:
+        """
+        Create a new role.
+        """
 
         db_role = models.Role(
             name=role_create.name,
@@ -76,6 +89,9 @@ class RbacRepository(BaseRepository):
             role_id: UUID,
             role_update: schemas.RoleUpdate
     ) -> Optional[models.Role]:
+        """
+        Update a role.
+        """
 
         update_values = role_update.dict(exclude_unset=True)
         query = update(models.Role).where(models.Role.role_id == role_id).values(update_values)
@@ -85,6 +101,9 @@ class RbacRepository(BaseRepository):
         return await self.get_role(role_id)
 
     async def delete_role(self, role_id: UUID) -> bool:
+        """
+        Delete a role.
+        """
 
         query = delete(models.Role).where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
@@ -96,6 +115,9 @@ class RbacRepository(BaseRepository):
             role_id: UUID,
             permission: models.Permission
     ) -> Union[None, models.Role]:
+        """
+        Add a permission to a role.
+        """
 
         query = select(models.Role).\
             options(selectinload(models.Role.permissions)).\
@@ -115,6 +137,9 @@ class RbacRepository(BaseRepository):
             role_id: UUID,
             permission: models.Permission
     ) -> Union[None, models.Role]:
+        """
+        Remove a permission from a role.
+        """
 
         query = select(models.Role).\
             options(selectinload(models.Role.permissions)).\
@@ -130,6 +155,9 @@ class RbacRepository(BaseRepository):
         return role_db
 
     async def get_role_permissions(self, role_id: UUID) -> List[models.Permission]:
+        """
+        Get all the role permissions.
+        """
 
         query = select(models.Permission).\
             join(models.Permission.roles).\
@@ -139,30 +167,48 @@ class RbacRepository(BaseRepository):
         return result.scalars().all()
 
     async def get_permission(self, permission_id: UUID) -> Optional[models.Permission]:
+        """
+        Get a permission by its ID.
+        """
 
         query = select(models.Permission).where(models.Permission.permission_id == permission_id)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_permission_by_path(self, path: str) -> Optional[models.Permission]:
+        """
+        Get a permission by its path.
+        """
 
         query = select(models.Permission).where(models.Permission.path == path)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
     async def get_permissions(self) -> List[models.Permission]:
+        """
+        Get all permissions.
+        """
 
         query = select(models.Permission)
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
-    async def create_permission(self, permission_create: schemas.PermissionCreate) -> models.Permission:
+    async def check_permission_exists(self, permission_create: schemas.PermissionCreate) -> bool:
+        """
+        Check if a permission exists.
+        """
 
-        create_values = permission_create.dict(exclude_unset=True)
-        # action = create_values.pop("action", "deny")
-        # is_allowed = False
-        # if action == "allow":
-        #     is_allowed = True
+        query = select(models.Permission).\
+            where(models.Permission.methods == permission_create.methods,
+                  models.Permission.path == permission_create.path,
+                  models.Permission.action == permission_create.action)
+        result = await self._db_session.execute(query)
+        return result.scalars().first() is not None
+
+    async def create_permission(self, permission_create: schemas.PermissionCreate) -> models.Permission:
+        """
+        Create a new permission.
+        """
 
         db_permission = models.Permission(
             methods=permission_create.methods,
@@ -170,7 +216,6 @@ class RbacRepository(BaseRepository):
             action=permission_create.action,
         )
         self._db_session.add(db_permission)
-
         await self._db_session.commit()
         await self._db_session.refresh(db_permission)
         return db_permission
@@ -180,6 +225,9 @@ class RbacRepository(BaseRepository):
             permission_id: UUID,
             permission_update: schemas.PermissionUpdate
     ) -> Optional[models.Permission]:
+        """
+        Update a permission.
+        """
 
         update_values = permission_update.dict(exclude_unset=True)
         query = update(models.Permission).where(models.Permission.permission_id == permission_id).values(update_values)
@@ -189,8 +237,110 @@ class RbacRepository(BaseRepository):
         return await self.get_permission(permission_id)
 
     async def delete_permission(self, permission_id: UUID) -> bool:
+        """
+        Delete a permission.
+        """
 
         query = delete(models.Permission).where(models.Permission.permission_id == permission_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
+
+    def _match_permission(
+            self,
+            permissions: List[models.Permission],
+            method: str,
+            path: str
+    ) -> Union[None, models.Permission]:
+        """
+        Match the methods and path with a permission.
+        """
+
+        for permission in permissions:
+            log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
+            if method not in permission.methods:
+                continue
+            if permission.path.endswith("*") and path.startswith(permission.path[:-1]):
+                return permission
+            elif permission.path == path:
+                return permission
+
+    async def check_user_is_authorized(self, user_id: UUID, method: str, path: str) -> bool:
+        """
+        Check if an user is authorized to access a resource.
+        """
+
+        query = select(models.Permission).\
+            join(models.Permission.roles). \
+            join(models.Role.groups). \
+            join(models.UserGroup.users). \
+            filter(models.User.user_id == user_id).\
+            order_by(models.Permission.path)
+
+        result = await self._db_session.execute(query)
+        permissions = result.scalars().all()
+        log.debug(f"RBAC: checking authorization for '{user_id}' on {method} '{path}'")
+        matched_permission = self._match_permission(permissions, method, path)
+        if matched_permission:
+            log.debug(f"RBAC: matched role permission {matched_permission.methods} "
+                      f"{matched_permission.path} {matched_permission.action}")
+            if matched_permission.action == "DENY":
+                return False
+            return True
+
+        log.debug(f"RBAC: could not find a role permission, checking user permissions...")
+        query = select(models.Permission).\
+            join(models.User.permissions). \
+            filter(models.User.user_id == user_id).\
+            order_by(models.Permission.path)
+
+        result = await self._db_session.execute(query)
+        permissions = result.scalars().all()
+        matched_permission = self._match_permission(permissions, method, path)
+        if matched_permission:
+            log.debug(f"RBAC: matched user permission {matched_permission.methods} "
+                      f"{matched_permission.path} {matched_permission.action}")
+            if matched_permission.action == "DENY":
+                return False
+            return True
+
+        return False
+
+    async def add_permission_to_user(self, user_id: UUID, path: str) -> Union[None, models.User]:
+        """
+        Add a permission to an user.
+        """
+
+        # Create a new permission with full rights
+        new_permission = schemas.PermissionCreate(
+            methods=[HTTPMethods.get, HTTPMethods.head, HTTPMethods.post, HTTPMethods.put, HTTPMethods.delete],
+            path=path,
+            action=PermissionAction.allow
+        )
+        permission_db = await self.create_permission(new_permission)
+
+        # Add the permission to the user
+        query = select(models.User).\
+            options(selectinload(models.User.permissions)).\
+            where(models.User.user_id == user_id)
+
+        result = await self._db_session.execute(query)
+        user_db = result.scalars().first()
+        if not user_db:
+            return None
+
+        user_db.permissions.append(permission_db)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_db)
+        return user_db
+
+    async def delete_all_permissions_matching_path(self, path: str) -> None:
+        """
+        Delete all permissions matching with path.
+        """
+
+        query = delete(models.Permission).\
+            where(models.Permission.path.startswith(path)).\
+            execution_options(synchronize_session=False)
+        result = await self._db_session.execute(query)
+        log.debug(f"{result.rowcount} permission(s) have been deleted")

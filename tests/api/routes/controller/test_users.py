@@ -266,7 +266,7 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        response = await authorized_client.get(app.url_path_for("get_current_active_user"))
+        response = await authorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_200_OK
         user = User(**response.json())
         assert user.username == test_user.username
@@ -279,7 +279,7 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        response = await unauthorized_client.get(app.url_path_for("get_current_active_user"))
+        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -329,15 +329,15 @@ class TestSuperAdmin:
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status.HTTP_200_OK
 
-    async def test_super_admin_belongs_to_admin_group(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            db_session: AsyncSession
-    ) -> None:
-
-        user_repo = UsersRepository(db_session)
-        admin_in_db = await user_repo.get_user_by_username("admin")
-        response = await client.get(app.url_path_for("get_user_memberships", user_id=admin_in_db.user_id))
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 1
+    # async def test_super_admin_belongs_to_admin_group(
+    #         self,
+    #         app: FastAPI,
+    #         client: AsyncClient,
+    #         db_session: AsyncSession
+    # ) -> None:
+    #
+    #     user_repo = UsersRepository(db_session)
+    #     admin_in_db = await user_repo.get_user_by_username("admin")
+    #     response = await client.get(app.url_path_for("get_user_memberships", user_id=admin_in_db.user_id))
+    #     assert response.status_code == status.HTTP_200_OK
+    #     assert len(response.json()) == 1

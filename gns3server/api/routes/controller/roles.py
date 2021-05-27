@@ -95,8 +95,8 @@ async def update_role(
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
-    #if not user_group.is_updatable:
-    #    raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be updated")
+    if role.builtin:
+        raise ControllerForbiddenError(f"Role '{role_id}' cannot be updated")
 
     return await rbac_repo.update_role(role_id, role_update)
 
@@ -114,8 +114,8 @@ async def delete_role(
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
-    #if not user_group.is_updatable:
-    #    raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be deleted")
+    if role.builtin:
+        raise ControllerForbiddenError(f"Role '{role_id}' cannot be deleted")
 
     success = await rbac_repo.delete_role(role_id)
     if not success:

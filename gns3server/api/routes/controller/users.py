@@ -88,6 +88,24 @@ async def authenticate(
     return token
 
 
+@router.get("/me", response_model=schemas.User)
+async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+    """
+    Get the current active user.
+    """
+
+    return current_user
+
+
+@router.get("/me", response_model=schemas.User)
+async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+    """
+    Get the current active user.
+    """
+
+    return current_user
+
+
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(get_current_active_user)])
 async def get_users(
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
@@ -176,15 +194,6 @@ async def delete_user(
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
-
-
-@router.get("/me/", response_model=schemas.User)
-async def get_current_active_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
-    """
-    Get the current active user.
-    """
-
-    return current_user
 
 
 @router.get(

@@ -99,7 +99,7 @@ async def update_user_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    if not user_group.is_updatable:
+    if user_group.builtin:
         raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be updated")
 
     return await users_repo.update_user_group(user_group_id, user_group_update)
@@ -121,7 +121,7 @@ async def delete_user_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    if not user_group.is_updatable:
+    if user_group.builtin:
         raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be deleted")
 
     success = await users_repo.delete_user_group(user_group_id)

@@ -47,6 +47,10 @@ from gns3server.controller.export_project import export_project as export_contro
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 from gns3server.config import Config
+from gns3server.db.repositories.rbac import RbacRepository
+
+from .dependencies.authentication import get_current_active_user
+from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
 
@@ -82,13 +86,18 @@ def get_projects() -> List[schemas.Project]:
     response_model_exclude_unset=True,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}},
 )
-async def create_project(project_data: schemas.ProjectCreate) -> schemas.Project:
+async def create_project(
+        project_data: schemas.ProjectCreate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> schemas.Project:
     """
     Create a new project.
     """
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
+    await rbac_repo.add_permission_to_user(current_user.user_id, f"/projects/{project.id}/*")
     return project.asdict()
 
 
@@ -115,7 +124,10 @@ async def update_project(
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project: Project = Depends(dep_project)) -> None:
+async def delete_project(
+        project: Project = Depends(dep_project),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> None:
     """
     Delete a project.
     """
@@ -123,6 +135,7 @@ async def delete_project(project: Project = Depends(dep_project)) -> None:
     controller = Controller.instance()
     await project.delete()
     controller.remove_project(project)
+    await rbac_repo.delete_all_permissions_matching_path(f"/projects/{project.id}")
 
 
 @router.get("/{project_id}/stats")

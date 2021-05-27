@@ -110,11 +110,11 @@ async def test_permission(db_session: AsyncSession) -> Permission:
 
     new_permission = schemas.PermissionCreate(
         methods=[HTTPMethods.get, HTTPMethods.post],
-        path="/projects",
+        path="/templates",
         action=PermissionAction.allow
     )
     rbac_repo = RbacRepository(db_session)
-    existing_permission = await rbac_repo.get_permission_by_path("/projects")
+    existing_permission = await rbac_repo.get_permission_by_path("/templates")
     if existing_permission:
         return existing_permission
     return await rbac_repo.create_permission(new_permission)
@@ -142,8 +142,7 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 1
-        assert permissions[0].path == test_permission.path
+        assert len(permissions) == 4  # 3 default + 1 custom permissions
 
     async def test_get_role_permissions(
             self,
@@ -161,7 +160,7 @@ class TestRolesPermissionsRoutes:
                 role_id=role_in_db.role_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 1
+        assert len(response.json()) == 4  # 3 default + 1 custom permissions
 
     async def test_remove_role_from_group(
             self,
@@ -183,4 +182,4 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 0
+        assert len(permissions) == 3  # 3 default permissions

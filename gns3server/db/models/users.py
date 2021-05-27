@@ -48,7 +48,6 @@ class User(BaseTable):
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")
-    permission_id = Column(GUID, ForeignKey('permissions.permission_id', ondelete="CASCADE"))
     permissions = relationship("Permission")
 
 
@@ -67,7 +66,7 @@ def create_default_super_admin(target, connection, **kw):
     )
     connection.execute(stmt)
     connection.commit()
-    log.info("The default super admin account has been created in the database")
+    log.debug("The default super admin account has been created in the database")
 
 
 class UserGroup(BaseTable):
@@ -76,7 +75,7 @@ class UserGroup(BaseTable):
 
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
-    is_updatable = Column(Boolean, default=True)
+    builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_link, back_populates="groups")
     roles = relationship("Role", secondary=role_group_link, back_populates="groups")
 
@@ -85,30 +84,29 @@ class UserGroup(BaseTable):
 def create_default_user_groups(target, connection, **kw):
 
     default_groups = [
-        {"name": "Administrators", "is_updatable": False},
-        {"name": "Editors", "is_updatable": False},
-        {"name": "Users", "is_updatable": False}
+        {"name": "Administrators", "builtin": True},
+        {"name": "Users", "builtin": True}
     ]
 
     stmt = target.insert().values(default_groups)
     connection.execute(stmt)
     connection.commit()
-    log.info("The default user groups have been created in the database")
+    log.debug("The default user groups have been created in the database")
 
 
-@event.listens_for(user_group_link, 'after_create')
-def add_admin_to_group(target, connection, **kw):
-
-    user_groups_table = UserGroup.__table__
-    stmt = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
-    result = connection.execute(stmt)
-    user_group_id = result.first().user_group_id
-
-    users_table = User.__table__
-    stmt = users_table.select().where(users_table.c.is_superadmin.is_(True))
-    result = connection.execute(stmt)
-    user_id = result.first().user_id
-
-    stmt = target.insert().values(user_id=user_id, user_group_id=user_group_id)
-    connection.execute(stmt)
-    connection.commit()
+# @event.listens_for(user_group_link, 'after_create')
+# def add_admin_to_group(target, connection, **kw):
+#
+#     user_groups_table = UserGroup.__table__
+#     stmt = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
+#     result = connection.execute(stmt)
+#     user_group_id = result.first().user_group_id
+#
+#     users_table = User.__table__
+#     stmt = users_table.select().where(users_table.c.is_superadmin.is_(True))
+#     result = connection.execute(stmt)
+#     user_id = result.first().user_id
+#
+#     stmt = target.insert().values(user_id=user_id, user_group_id=user_group_id)
+#     connection.execute(stmt)
+#     connection.commit()

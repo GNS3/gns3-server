@@ -40,7 +40,7 @@ class Role(BaseTable):
     role_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String)
     description = Column(String)
-    is_updatable = Column(Boolean, default=True)
+    builtin = Column(Boolean, default=False)
     permissions = relationship("Permission", secondary=permission_role_link, back_populates="roles")
     groups = relationship("UserGroup", secondary=role_group_link, back_populates="roles")
 
@@ -49,11 +49,33 @@ class Role(BaseTable):
 def create_default_roles(target, connection, **kw):
 
     default_roles = [
-        {"name": "Administrator", "description": "Administrator role", "is_updatable": False},
-        {"name": "User", "description": "User role", "is_updatable": False},
+        {"name": "Administrator", "description": "Administrator role", "builtin": True},
+        {"name": "User", "description": "User role", "builtin": True},
     ]
 
     stmt = target.insert().values(default_roles)
     connection.execute(stmt)
     connection.commit()
-    log.info("The default roles have been created in the database")
+    log.debug("The default roles have been created in the database")
+
+
+@event.listens_for(role_group_link, 'after_create')
+def add_admin_to_group(target, connection, **kw):
+
+    from .users import UserGroup
+    user_groups_table = UserGroup.__table__
+    roles_table = Role.__table__
+
+    # Add roles to built-in user groups
+    groups_to_roles = {"Administrators": "Administrator", "Users": "User"}
+    for user_group, role in groups_to_roles.items():
+        stmt = user_groups_table.select().where(user_groups_table.c.name == user_group)
+        result = connection.execute(stmt)
+        user_group_id = result.first().user_group_id
+        stmt = roles_table.select().where(roles_table.c.name == role)
+        result = connection.execute(stmt)
+        role_id = result.first().role_id
+        stmt = target.insert().values(role_id=role_id, user_group_id=user_group_id)
+        connection.execute(stmt)
+
+    connection.commit()
