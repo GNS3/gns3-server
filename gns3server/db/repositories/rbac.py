@@ -313,6 +313,7 @@ class RbacRepository(BaseRepository):
 
         # Create a new permission with full rights
         new_permission = schemas.PermissionCreate(
+            description=f"Allow access to project {path}",
             methods=[HTTPMethods.get, HTTPMethods.head, HTTPMethods.post, HTTPMethods.put, HTTPMethods.delete],
             path=path,
             action=PermissionAction.allow
