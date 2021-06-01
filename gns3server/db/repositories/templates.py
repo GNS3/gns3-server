@@ -70,7 +70,10 @@ class TemplatesRepository(BaseRepository):
 
         update_values = template_update.dict(exclude_unset=True)
 
-        query = update(models.Template).where(models.Template.template_id == template_id).values(update_values)
+        query = not update(models.Template). \
+            where(models.Template.template_id == template_id). \
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()

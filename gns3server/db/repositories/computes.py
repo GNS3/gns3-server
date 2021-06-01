@@ -79,7 +79,10 @@ class ComputesRepository(BaseRepository):
         if password:
             update_values["password"] = password.get_secret_value()
 
-        query = update(models.Compute).where(models.Compute.compute_id == compute_id).values(update_values)
+        query = update(models.Compute).\
+            where(models.Compute.compute_id == compute_id).\
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()

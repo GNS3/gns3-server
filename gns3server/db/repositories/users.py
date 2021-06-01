@@ -102,7 +102,10 @@ class UsersRepository(BaseRepository):
         if password:
             update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
 
-        query = update(models.User).where(models.User.user_id == user_id).values(update_values)
+        query = update(models.User).\
+            where(models.User.user_id == user_id).\
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -197,7 +200,10 @@ class UsersRepository(BaseRepository):
         """
 
         update_values = user_group_update.dict(exclude_unset=True)
-        query = update(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id).values(update_values)
+        query = update(models.UserGroup).\
+            where(models.UserGroup.user_group_id == user_group_id).\
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()
