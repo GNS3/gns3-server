@@ -94,7 +94,10 @@ class RbacRepository(BaseRepository):
         """
 
         update_values = role_update.dict(exclude_unset=True)
-        query = update(models.Role).where(models.Role.role_id == role_id).values(update_values)
+        query = update(models.Role).\
+            where(models.Role.role_id == role_id).\
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()
@@ -230,7 +233,10 @@ class RbacRepository(BaseRepository):
         """
 
         update_values = permission_update.dict(exclude_unset=True)
-        query = update(models.Permission).where(models.Permission.permission_id == permission_id).values(update_values)
+        query = update(models.Permission).\
+            where(models.Permission.permission_id == permission_id).\
+            values(update_values).\
+            execution_options(synchronize_session="fetch")
 
         await self._db_session.execute(query)
         await self._db_session.commit()
