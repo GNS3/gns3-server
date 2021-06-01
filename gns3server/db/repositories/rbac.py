@@ -96,12 +96,14 @@ class RbacRepository(BaseRepository):
         update_values = role_update.dict(exclude_unset=True)
         query = update(models.Role).\
             where(models.Role.role_id == role_id).\
-            values(update_values).\
-            execution_options(synchronize_session="fetch")
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_role(role_id)
+        role_db = await self.get_role(role_id)
+        if role_db:
+            await self._db_session.refresh(role_db)  # force refresh of updated_at value
+        return role_db
 
     async def delete_role(self, role_id: UUID) -> bool:
         """
@@ -235,12 +237,14 @@ class RbacRepository(BaseRepository):
         update_values = permission_update.dict(exclude_unset=True)
         query = update(models.Permission).\
             where(models.Permission.permission_id == permission_id).\
-            values(update_values).\
-            execution_options(synchronize_session="fetch")
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_permission(permission_id)
+        permission_db = await self.get_permission(permission_id)
+        if permission_db:
+            await self._db_session.refresh(permission_db)  # force refresh of updated_at value
+        return permission_db
 
     async def delete_permission(self, permission_id: UUID) -> bool:
         """
