@@ -104,12 +104,14 @@ class UsersRepository(BaseRepository):
 
         query = update(models.User).\
             where(models.User.user_id == user_id).\
-            values(update_values).\
-            execution_options(synchronize_session="fetch")
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_user(user_id)
+        user_db = await self.get_user(user_id)
+        if user_db:
+            await self._db_session.refresh(user_db)  # force refresh of updated_at value
+        return user_db
 
     async def delete_user(self, user_id: UUID) -> bool:
         """
@@ -202,12 +204,14 @@ class UsersRepository(BaseRepository):
         update_values = user_group_update.dict(exclude_unset=True)
         query = update(models.UserGroup).\
             where(models.UserGroup.user_group_id == user_group_id).\
-            values(update_values).\
-            execution_options(synchronize_session="fetch")
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_user_group(user_group_id)
+        user_group_db = await self.get_user_group(user_group_id)
+        if user_group_db:
+            await self._db_session.refresh(user_group_db)  # force refresh of updated_at value
+        return user_group_db
 
     async def delete_user_group(self, user_group_id: UUID) -> bool:
         """
