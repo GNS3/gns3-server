@@ -576,7 +576,8 @@ class DockerVM(BaseNode):
             process = await asyncio.subprocess.create_subprocess_exec(
                 "script",
                 "-qfc",
-                f"docker exec -i -t {self._cid} /gns3/bin/busybox sh -c 'while true; do TERM=vt100 /gns3/bin/busybox sh; done'", "/dev/null",
+                f"docker exec -i -t {self._cid} /gns3/bin/busybox sh -c 'while true; do TERM=vt100 /gns3/bin/busybox sh; done'",
+                "/dev/null",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
                 stdin=asyncio.subprocess.PIPE,
