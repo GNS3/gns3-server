@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Boolean, Column, String, ForeignKey, event
+from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
@@ -45,6 +45,7 @@ class User(BaseTable):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
+    last_login = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")

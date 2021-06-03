@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import Optional
 from pydantic import EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
@@ -51,6 +52,7 @@ class UserUpdate(UserBase):
 class User(DateTimeModelMixin, UserBase):
 
     user_id: UUID
+    last_login: Optional[datetime] = None
     is_active: bool = True
     is_superadmin: bool = False
 
