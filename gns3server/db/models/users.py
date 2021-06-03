@@ -75,7 +75,7 @@ class UserGroup(BaseTable):
 
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
-    builtin = Column(Boolean, default=False)
+    is_builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_link, back_populates="groups")
     roles = relationship("Role", secondary=role_group_link, back_populates="groups")
 
@@ -84,8 +84,8 @@ class UserGroup(BaseTable):
 def create_default_user_groups(target, connection, **kw):
 
     default_groups = [
-        {"name": "Administrators", "builtin": True},
-        {"name": "Users", "builtin": True}
+        {"name": "Administrators", "is_builtin": True},
+        {"name": "Users", "is_builtin": True}
     ]
 
     stmt = target.insert().values(default_groups)
