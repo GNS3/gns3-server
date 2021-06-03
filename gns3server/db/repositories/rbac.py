@@ -216,6 +216,7 @@ class RbacRepository(BaseRepository):
         """
 
         db_permission = models.Permission(
+            description=permission_create.description,
             methods=permission_create.methods,
             path=permission_create.path,
             action=permission_create.action,
@@ -270,60 +271,76 @@ class RbacRepository(BaseRepository):
             log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
             if method not in permission.methods:
                 continue
-            if permission.path.endswith("*") and path.startswith(permission.path[:-1]):
+            if permission.path.endswith("/*") and path.startswith(permission.path[:-2]):
                 return permission
             elif permission.path == path:
                 return permission
 
-    async def check_user_is_authorized(self, user_id: UUID, method: str, path: str) -> bool:
+    async def get_user_permissions(self, user_id: UUID):
         """
-        Check if an user is authorized to access a resource.
+        Get all permissions from an user.
         """
 
-        query = select(models.Permission).\
-            join(models.Permission.roles). \
-            join(models.Role.groups). \
-            join(models.UserGroup.users). \
-            filter(models.User.user_id == user_id).\
-            order_by(models.Permission.path)
-
-        result = await self._db_session.execute(query)
-        permissions = result.scalars().all()
-        log.debug(f"RBAC: checking authorization for '{user_id}' on {method} '{path}'")
-        matched_permission = self._match_permission(permissions, method, path)
-        if matched_permission:
-            log.debug(f"RBAC: matched role permission {matched_permission.methods} "
-                      f"{matched_permission.path} {matched_permission.action}")
-            if matched_permission.action == "DENY":
-                return False
-            return True
-
-        log.debug(f"RBAC: could not find a role permission, checking user permissions...")
         query = select(models.Permission).\
             join(models.User.permissions). \
             filter(models.User.user_id == user_id).\
             order_by(models.Permission.path)
 
         result = await self._db_session.execute(query)
-        permissions = result.scalars().all()
-        matched_permission = self._match_permission(permissions, method, path)
-        if matched_permission:
-            log.debug(f"RBAC: matched user permission {matched_permission.methods} "
-                      f"{matched_permission.path} {matched_permission.action}")
-            if matched_permission.action == "DENY":
-                return False
-            return True
+        return result.scalars().all()
 
-        return False
-
-    async def add_permission_to_user(self, user_id: UUID, path: str) -> Union[None, models.User]:
+    async def add_permission_to_user(
+            self,
+            user_id: UUID,
+            permission: models.Permission
+    ) -> Union[None, models.User]:
         """
         Add a permission to an user.
         """
 
-        # Create a new permission with full rights
+        query = select(models.User).\
+            options(selectinload(models.User.permissions)).\
+            where(models.User.user_id == user_id)
+        result = await self._db_session.execute(query)
+        user_db = result.scalars().first()
+        if not user_db:
+            return None
+
+        user_db.permissions.append(permission)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_db)
+        return user_db
+
+    async def remove_permission_from_user(
+            self,
+            user_id: UUID,
+            permission: models.Permission
+    ) -> Union[None, models.User]:
+        """
+        Remove a permission from a role.
+        """
+
+        query = select(models.User).\
+            options(selectinload(models.User.permissions)).\
+            where(models.User.user_id == user_id)
+        result = await self._db_session.execute(query)
+        user_db = result.scalars().first()
+        if not user_db:
+            return None
+
+        user_db.permissions.remove(permission)
+        await self._db_session.commit()
+        await self._db_session.refresh(user_db)
+        return user_db
+
+    async def add_permission_to_user_with_path(self, user_id: UUID, path: str) -> Union[None, models.User]:
+        """
+        Add a permission to an user.
+        """
+
+        # Create a new permission with full rights on path
         new_permission = schemas.PermissionCreate(
-            description=f"Allow access to project {path}",
+            description=f"Allow access to {path}",
             methods=[HTTPMethods.get, HTTPMethods.head, HTTPMethods.post, HTTPMethods.put, HTTPMethods.delete],
             path=path,
             action=PermissionAction.allow
@@ -345,9 +362,9 @@ class RbacRepository(BaseRepository):
         await self._db_session.refresh(user_db)
         return user_db
 
-    async def delete_all_permissions_matching_path(self, path: str) -> None:
+    async def delete_all_permissions_with_path(self, path: str) -> None:
         """
-        Delete all permissions matching with path.
+        Delete all permissions with path.
         """
 
         query = delete(models.Permission).\
@@ -355,3 +372,38 @@ class RbacRepository(BaseRepository):
             execution_options(synchronize_session=False)
         result = await self._db_session.execute(query)
         log.debug(f"{result.rowcount} permission(s) have been deleted")
+
+    async def check_user_is_authorized(self, user_id: UUID, method: str, path: str) -> bool:
+        """
+        Check if an user is authorized to access a resource.
+        """
+
+        query = select(models.Permission).\
+            join(models.Permission.roles). \
+            join(models.Role.groups). \
+            join(models.UserGroup.users). \
+            filter(models.User.user_id == user_id).\
+            order_by(models.Permission.path)
+
+        result = await self._db_session.execute(query)
+        permissions = result.scalars().all()
+        log.debug(f"RBAC: checking authorization for user '{user_id}' on {method} '{path}'")
+        matched_permission = self._match_permission(permissions, method, path)
+        if matched_permission:
+            log.debug(f"RBAC: matched role permission {matched_permission.methods} "
+                      f"{matched_permission.path} {matched_permission.action}")
+            if matched_permission.action == "DENY":
+                return False
+            return True
+
+        log.debug(f"RBAC: could not find a role permission, checking user permissions...")
+        permissions = await self.get_user_permissions(user_id)
+        matched_permission = self._match_permission(permissions, method, path)
+        if matched_permission:
+            log.debug(f"RBAC: matched user permission {matched_permission.methods} "
+                      f"{matched_permission.path} {matched_permission.action}")
+            if matched_permission.action == "DENY":
+                return False
+            return True
+
+        return False

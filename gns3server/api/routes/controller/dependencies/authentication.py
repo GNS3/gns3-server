@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -60,10 +61,15 @@ async def get_current_active_user(
         )
 
     # remove the prefix (e.g. "/v3") from URL path
-    if request.url.path.startswith("/v3"):
-        path = request.url.path[len("/v3"):]
+    match = re.search(r"^(/v[0-9]+).*", request.url.path)
+    if match:
+        path = request.url.path[len(match.group(1)):]
     else:
         path = request.url.path
+
+    # special case: always authorize access to the "/users/me" endpoint
+    if path == "/users/me":
+        return current_user
 
     authorized = await rbac_repo.check_user_is_authorized(current_user.user_id, request.method, path)
     if not authorized:

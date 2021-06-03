@@ -58,21 +58,27 @@ def create_default_roles(target, connection, **kw):
             "action": "ALLOW"
         },
         {
-            "description": "Allow access to the logged in user",
-            "methods": ["GET"],
-            "path": "/users/me",
-            "action": "ALLOW"
-        },
-        {
-            "description": "Allow to create a project or list projects",
-            "methods": ["GET", "POST"],
+            "description": "Allow to create and list projects",
+            "methods": ["GET", "HEAD", "POST"],
             "path": "/projects",
             "action": "ALLOW"
         },
         {
-            "description": "Allow to access to all symbol endpoints",
-            "methods": ["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"],
-            "path": "/symbols",
+            "description": "Allow to create and list templates",
+            "methods": ["GET", "HEAD", "POST"],
+            "path": "/templates",
+            "action": "ALLOW"
+        },
+        {
+            "description": "Allow to list computes",
+            "methods": ["GET"],
+            "path": "/computes/*",
+            "action": "ALLOW"
+        },
+        {
+            "description": "Allow access to all symbol endpoints",
+            "methods": ["GET", "HEAD", "POST"],
+            "path": "/symbols/*",
             "action": "ALLOW"
         },
     ]
@@ -106,7 +112,7 @@ def add_permissions_to_role(target, connection, **kw):
     role_id = result.first().role_id
 
     # add minimum required paths to the "User" role
-    for path in ("/projects", "/symbols", "/users/me"):
+    for path in ("/projects", "/templates", "/computes/*", "/symbols/*"):
         stmt = permissions_table.select().where(permissions_table.c.path == path)
         result = connection.execute(stmt)
         permission_id = result.first().permission_id

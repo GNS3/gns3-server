@@ -96,7 +96,7 @@ async def update_role(
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
     if role.builtin:
-        raise ControllerForbiddenError(f"Role '{role_id}' cannot be updated")
+        raise ControllerForbiddenError(f"Built-in role '{role_id}' cannot be updated")
 
     return await rbac_repo.update_role(role_id, role_update)
 
@@ -115,7 +115,7 @@ async def delete_role(
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
     if role.builtin:
-        raise ControllerForbiddenError(f"Role '{role_id}' cannot be deleted")
+        raise ControllerForbiddenError(f"Built-in role '{role_id}' cannot be deleted")
 
     success = await rbac_repo.delete_role(role_id)
     if not success:

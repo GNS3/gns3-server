@@ -50,7 +50,7 @@ class TestPermissionRoutes:
 
         response = await client.get(app.url_path_for("get_permissions"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 5  # 4 default permissions + 1 custom permission
+        assert len(response.json()) == 6  # 5 default permissions + 1 custom permission
 
     async def test_update_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 

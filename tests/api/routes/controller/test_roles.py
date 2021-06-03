@@ -64,21 +64,21 @@ class TestRolesRoutes:
         updated_role_in_db = await rbac_repo.get_role(role_in_db.role_id)
         assert updated_role_in_db.name == "role42"
 
-    # async def test_cannot_update_admin_group(
-    #         self,
-    #         app: FastAPI,
-    #         client: AsyncClient,
-    #         db_session: AsyncSession
-    # ) -> None:
-    #
-    #     user_repo = UsersRepository(db_session)
-    #     group_in_db = await user_repo.get_user_group_by_name("Administrators")
-    #     update_group = {"name": "Hackers"}
-    #     response = await client.put(
-    #         app.url_path_for("update_user_group", user_group_id=group_in_db.user_group_id),
-    #         json=update_group
-    #     )
-    #     assert response.status_code == status.HTTP_403_FORBIDDEN
+    async def test_cannot_update_builtin_user_role(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession
+    ) -> None:
+
+        rbac_repo = RbacRepository(db_session)
+        role_in_db = await rbac_repo.get_role_by_name("User")
+        update_role = {"name": "Hackers"}
+        response = await client.put(
+            app.url_path_for("update_role", role_id=role_in_db.role_id),
+            json=update_role
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_delete_role(
             self,
@@ -92,29 +92,29 @@ class TestRolesRoutes:
         response = await client.delete(app.url_path_for("delete_role", role_id=role_in_db.role_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    # async def test_cannot_delete_admin_group(
-    #         self,
-    #         app: FastAPI,
-    #         client: AsyncClient,
-    #         db_session: AsyncSession
-    # ) -> None:
-    #
-    #     user_repo = UsersRepository(db_session)
-    #     group_in_db = await user_repo.get_user_group_by_name("Administrators")
-    #     response = await client.delete(app.url_path_for("delete_user_group", user_group_id=group_in_db.user_group_id))
-    #     assert response.status_code == status.HTTP_403_FORBIDDEN
+    async def test_cannot_delete_builtin_administrator_role(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession
+    ) -> None:
+
+        rbac_repo = RbacRepository(db_session)
+        role_in_db = await rbac_repo.get_role_by_name("Administrator")
+        response = await client.delete(app.url_path_for("delete_role", role_id=role_in_db.role_id))
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.fixture
 async def test_permission(db_session: AsyncSession) -> Permission:
 
     new_permission = schemas.PermissionCreate(
-        methods=[HTTPMethods.get, HTTPMethods.post],
-        path="/templates",
+        methods=[HTTPMethods.get],
+        path="/statistics",
         action=PermissionAction.allow
     )
     rbac_repo = RbacRepository(db_session)
-    existing_permission = await rbac_repo.get_permission_by_path("/templates")
+    existing_permission = await rbac_repo.get_permission_by_path("/statistics")
     if existing_permission:
         return existing_permission
     return await rbac_repo.create_permission(new_permission)
@@ -142,7 +142,7 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 4  # 3 default + 1 custom permissions
+        assert len(permissions) == 5  # 4 default permissions + 1 custom permission
 
     async def test_get_role_permissions(
             self,
@@ -160,7 +160,7 @@ class TestRolesPermissionsRoutes:
                 role_id=role_in_db.role_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 4  # 3 default + 1 custom permissions
+        assert len(response.json()) == 5  # 4 default permissions + 1 custom permission
 
     async def test_remove_role_from_group(
             self,
@@ -182,4 +182,4 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 3  # 3 default permissions
+        assert len(permissions) == 4  # 4 default permissions
