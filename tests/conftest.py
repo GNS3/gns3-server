@@ -124,7 +124,12 @@ async def test_user(db_session: AsyncSession) -> User:
     existing_user = await user_repo.get_user_by_username(new_user.username)
     if existing_user:
         return existing_user
-    return await user_repo.create_user(new_user)
+    user = await user_repo.create_user(new_user)
+
+    # add new user to "Users group
+    group = await user_repo.get_user_group_by_name("Users")
+    await user_repo.add_member_to_user_group(group.user_group_id, user)
+    return user
 
 
 @pytest.fixture

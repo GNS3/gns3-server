@@ -31,6 +31,7 @@ from gns3server.controller.controller_error import (
 )
 
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from .dependencies.database import get_repository
 
 import logging
@@ -98,8 +99,8 @@ async def update_user_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    if not user_group.is_updatable:
-        raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be updated")
+    if user_group.builtin:
+        raise ControllerForbiddenError(f"Built-in user group '{user_group_id}' cannot be updated")
 
     return await users_repo.update_user_group(user_group_id, user_group_update)
 
@@ -120,8 +121,8 @@ async def delete_user_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    if not user_group.is_updatable:
-        raise ControllerForbiddenError(f"User group '{user_group_id}' cannot be deleted")
+    if user_group.builtin:
+        raise ControllerForbiddenError(f"Built-in user group '{user_group_id}' cannot be deleted")
 
     success = await users_repo.delete_user_group(user_group_id)
     if not success:
@@ -180,5 +181,63 @@ async def remove_member_from_group(
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
     user_group = await users_repo.remove_member_from_user_group(user_group_id, user)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+
+@router.get("/{user_group_id}/roles", response_model=List[schemas.Role])
+async def get_user_group_roles(
+        user_group_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> List[schemas.Role]:
+    """
+    Get all user group roles.
+    """
+
+    return await users_repo.get_user_group_roles(user_group_id)
+
+
+@router.put(
+    "/{user_group_id}/roles/{role_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def add_role_to_group(
+        user_group_id: UUID,
+        role_id: UUID,
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> None:
+    """
+    Add role to an user group.
+    """
+
+    role = await rbac_repo.get_role(role_id)
+    if not role:
+        raise ControllerNotFoundError(f"Role '{role_id}' not found")
+
+    user_group = await users_repo.add_role_to_user_group(user_group_id, role)
+    if not user_group:
+        raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
+
+
+@router.delete(
+    "/{user_group_id}/roles/{role_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def remove_role_from_group(
+    user_group_id: UUID,
+    role_id: UUID,
+    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> None:
+    """
+    Remove role from an user group.
+    """
+
+    role = await rbac_repo.get_role(role_id)
+    if not role:
+        raise ControllerNotFoundError(f"Role '{role_id}' not found")
+
+    user_group = await users_repo.remove_role_from_user_group(user_group_id, role)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")

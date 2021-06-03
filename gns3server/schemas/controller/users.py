@@ -85,7 +85,7 @@ class UserGroupUpdate(UserGroupBase):
 class UserGroup(DateTimeModelMixin, UserGroupBase):
 
     user_group_id: UUID
-    is_updatable: bool
+    builtin: bool
 
     class Config:
         orm_mode = True

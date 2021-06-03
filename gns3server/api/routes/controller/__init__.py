@@ -30,6 +30,8 @@ from . import symbols
 from . import templates
 from . import users
 from . import groups
+from . import roles
+from . import permissions
 
 from .dependencies.authentication import get_current_active_user
 
@@ -46,31 +48,36 @@ router.include_router(
 )
 
 router.include_router(
-    appliances.router,
+    roles.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/appliances",
-    tags=["Appliances"]
+    prefix="/roles",
+    tags=["Roles"]
 )
 
 router.include_router(
-    computes.router,
+    permissions.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/computes",
-    tags=["Computes"]
+    prefix="/permissions",
+    tags=["Permissions"]
 )
 
 router.include_router(
-    drawings.router,
+    templates.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/projects/{project_id}/drawings",
-    tags=["Drawings"])
+    tags=["Templates"]
+)
 
 router.include_router(
-    gns3vm.router,
-    deprecated=True,
+    projects.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/gns3vm",
-    tags=["GNS3 VM"]
+    prefix="/projects",
+    tags=["Projects"])
+
+router.include_router(
+    nodes.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/nodes",
+    tags=["Nodes"]
 )
 
 router.include_router(
@@ -81,10 +88,28 @@ router.include_router(
 )
 
 router.include_router(
-    nodes.router,
+    drawings.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/projects/{project_id}/nodes",
-    tags=["Nodes"]
+    prefix="/projects/{project_id}/drawings",
+    tags=["Drawings"])
+
+router.include_router(
+    symbols.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/symbols", tags=["Symbols"]
+)
+
+router.include_router(
+    snapshots.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/projects/{project_id}/snapshots",
+    tags=["Snapshots"])
+
+router.include_router(
+    computes.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/computes",
+    tags=["Computes"]
 )
 
 router.include_router(
@@ -94,25 +119,16 @@ router.include_router(
     tags=["Notifications"])
 
 router.include_router(
-    projects.router,
+    appliances.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/projects",
-    tags=["Projects"])
-
-router.include_router(
-    snapshots.router,
-    dependencies=[Depends(get_current_active_user)],
-    prefix="/projects/{project_id}/snapshots",
-    tags=["Snapshots"])
-
-router.include_router(
-    symbols.router,
-    dependencies=[Depends(get_current_active_user)],
-    prefix="/symbols", tags=["Symbols"]
+    prefix="/appliances",
+    tags=["Appliances"]
 )
 
 router.include_router(
-    templates.router,
+    gns3vm.router,
+    deprecated=True,
     dependencies=[Depends(get_current_active_user)],
-    tags=["Templates"]
+    prefix="/gns3vm",
+    tags=["GNS3 VM"]
 )

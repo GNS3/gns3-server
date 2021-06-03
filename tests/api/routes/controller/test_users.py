@@ -25,9 +25,12 @@ from jose import jwt
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.schemas.controller.rbac import Permission, HTTPMethods, PermissionAction
 from gns3server.services import auth_service
 from gns3server.config import Config
 from gns3server.schemas.controller.users import User
+from gns3server import schemas
 import gns3server.db.models as models
 
 pytestmark = pytest.mark.asyncio
@@ -266,7 +269,7 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        response = await authorized_client.get(app.url_path_for("get_current_active_user"))
+        response = await authorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_200_OK
         user = User(**response.json())
         assert user.username == test_user.username
@@ -279,7 +282,7 @@ class TestUserMe:
             test_user: User,
     ) -> None:
 
-        response = await unauthorized_client.get(app.url_path_for("get_current_active_user"))
+        response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -329,15 +332,91 @@ class TestSuperAdmin:
         response = await unauthorized_client.post(app.url_path_for("login"), data=login_data)
         assert response.status_code == status.HTTP_200_OK
 
-    async def test_super_admin_belongs_to_admin_group(
+    # async def test_super_admin_belongs_to_admin_group(
+    #         self,
+    #         app: FastAPI,
+    #         client: AsyncClient,
+    #         db_session: AsyncSession
+    # ) -> None:
+    #
+    #     user_repo = UsersRepository(db_session)
+    #     admin_in_db = await user_repo.get_user_by_username("admin")
+    #     response = await client.get(app.url_path_for("get_user_memberships", user_id=admin_in_db.user_id))
+    #     assert response.status_code == status.HTTP_200_OK
+    #     assert len(response.json()) == 1
+
+@pytest.fixture
+async def test_permission(db_session: AsyncSession) -> Permission:
+
+    new_permission = schemas.PermissionCreate(
+        methods=[HTTPMethods.get],
+        path="/statistics",
+        action=PermissionAction.allow
+    )
+    rbac_repo = RbacRepository(db_session)
+    existing_permission = await rbac_repo.get_permission_by_path("/statistics")
+    if existing_permission:
+        return existing_permission
+    return await rbac_repo.create_permission(new_permission)
+
+
+class TestUserPermissionsRoutes:
+
+    async def test_add_permission_to_user(
             self,
             app: FastAPI,
             client: AsyncClient,
+            test_user: User,
+            test_permission: Permission,
             db_session: AsyncSession
     ) -> None:
 
-        user_repo = UsersRepository(db_session)
-        admin_in_db = await user_repo.get_user_by_username("admin")
-        response = await client.get(app.url_path_for("get_user_memberships", user_id=admin_in_db.user_id))
+        response = await client.put(
+            app.url_path_for(
+                "add_permission_to_user",
+                user_id=str(test_user.user_id),
+                permission_id=str(test_permission.permission_id)
+            )
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        rbac_repo = RbacRepository(db_session)
+        permissions = await rbac_repo.get_user_permissions(test_user.user_id)
+        assert len(permissions) == 1
+        assert permissions[0].permission_id == test_permission.permission_id
+
+    async def test_get_user_permissions(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession
+    ) -> None:
+
+        response = await client.get(
+            app.url_path_for(
+                "get_user_permissions",
+                user_id=str(test_user.user_id))
+        )
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) == 1
+
+    async def test_remove_permission_from_user(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            test_user: User,
+            test_permission: Permission,
+            db_session: AsyncSession
+    ) -> None:
+
+        response = await client.delete(
+            app.url_path_for(
+                "remove_permission_from_user",
+                user_id=str(test_user.user_id),
+                permission_id=str(test_permission.permission_id)
+            ),
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        rbac_repo = RbacRepository(db_session)
+        permissions = await rbac_repo.get_user_permissions(test_user.user_id)
+        assert len(permissions) == 0
