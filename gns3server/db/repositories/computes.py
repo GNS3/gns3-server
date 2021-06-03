@@ -79,11 +79,16 @@ class ComputesRepository(BaseRepository):
         if password:
             update_values["password"] = password.get_secret_value()
 
-        query = update(models.Compute).where(models.Compute.compute_id == compute_id).values(update_values)
+        query = update(models.Compute).\
+            where(models.Compute.compute_id == compute_id).\
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_compute(compute_id)
+        compute_db = await self.get_compute(compute_id)
+        if compute_db:
+            await self._db_session.refresh(compute_db)  # force refresh of updated_at value
+        return compute_db
 
     async def delete_compute(self, compute_id: UUID) -> bool:
 

@@ -33,6 +33,9 @@ from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
+from gns3server.db.repositories.rbac import RbacRepository
+
+from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find template"}}
@@ -44,12 +47,17 @@ router = APIRouter(responses=responses)
 async def create_template(
     template_create: schemas.TemplateCreate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+    current_user: schemas.User = Depends(get_current_active_user),
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Template:
     """
     Create a new template.
     """
 
-    return await TemplatesService(templates_repo).create_template(template_create)
+    template = await TemplatesService(templates_repo).create_template(template_create)
+    template_id = template.get("template_id")
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+    return template
 
 
 @router.get("/templates/{template_id}", response_model=schemas.Template, response_model_exclude_unset=True)
@@ -92,35 +100,58 @@ async def update_template(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_template(
-    template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        template_id: UUID,
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> None:
     """
     Delete a template.
     """
 
     await TemplatesService(templates_repo).delete_template(template_id)
+    await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
 
 
 @router.get("/templates", response_model=List[schemas.Template], response_model_exclude_unset=True)
 async def get_templates(
-    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> List[schemas.Template]:
     """
     Return all templates.
     """
 
-    return await TemplatesService(templates_repo).get_templates()
+    templates = await TemplatesService(templates_repo).get_templates()
+    if current_user.is_superadmin:
+        return templates
+    else:
+        user_templates = []
+        for template in templates:
+            if template.get("builtin") is True:
+                user_templates.append(template)
+                continue
+            template_id = template.get("template_id")
+            authorized = await rbac_repo.check_user_is_authorized(
+                current_user.user_id, "GET", f"/templates/{template_id}")
+            if authorized:
+                user_templates.append(template)
+    return user_templates
 
 
 @router.post("/templates/{template_id}/duplicate", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def duplicate_template(
-    template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
+        template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Template:
     """
     Duplicate a template.
     """
 
-    return await TemplatesService(templates_repo).duplicate_template(template_id)
+    template = await TemplatesService(templates_repo).duplicate_template(template_id)
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+    return template
 
 
 @router.post(

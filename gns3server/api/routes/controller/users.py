@@ -32,6 +32,7 @@ from gns3server.controller.controller_error import (
 )
 
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
 
 from .dependencies.authentication import get_current_active_user
@@ -86,6 +87,24 @@ async def authenticate(
 
     token = schemas.Token(access_token=auth_service.create_access_token(user.username), token_type="bearer")
     return token
+
+
+@router.get("/me", response_model=schemas.User)
+async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+    """
+    Get the current active user.
+    """
+
+    return current_user
+
+
+@router.get("/me", response_model=schemas.User)
+async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+    """
+    Get the current active user.
+    """
+
+    return current_user
 
 
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(get_current_active_user)])
@@ -178,15 +197,6 @@ async def delete_user(
         raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
 
 
-@router.get("/me/", response_model=schemas.User)
-async def get_current_active_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
-    """
-    Get the current active user.
-    """
-
-    return current_user
-
-
 @router.get(
     "/{user_id}/groups",
     dependencies=[Depends(get_current_active_user)],
@@ -201,3 +211,65 @@ async def get_user_memberships(
     """
 
     return await users_repo.get_user_memberships(user_id)
+
+
+@router.get(
+    "/{user_id}/permissions",
+    dependencies=[Depends(get_current_active_user)],
+    response_model=List[schemas.Permission]
+)
+async def get_user_permissions(
+        user_id: UUID,
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> List[schemas.Permission]:
+    """
+    Get user permissions.
+    """
+
+    return await rbac_repo.get_user_permissions(user_id)
+
+
+@router.put(
+    "/{user_id}/permissions/{permission_id}",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def add_permission_to_user(
+        user_id: UUID,
+        permission_id: UUID,
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> None:
+    """
+    Add a permission to an user.
+    """
+
+    permission = await rbac_repo.get_permission(permission_id)
+    if not permission:
+        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
+
+    user = await rbac_repo.add_permission_to_user(user_id, permission)
+    if not user:
+        raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+
+@router.delete(
+    "/{user_id}/permissions/{permission_id}",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def remove_permission_from_user(
+    user_id: UUID,
+    permission_id: UUID,
+    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> None:
+    """
+    Remove permission from an user.
+    """
+
+    permission = await rbac_repo.get_permission(permission_id)
+    if not permission:
+        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
+
+    user = await rbac_repo.remove_permission_from_user(user_id, permission)
+    if not user:
+        raise ControllerNotFoundError(f"User '{user_id}' not found")

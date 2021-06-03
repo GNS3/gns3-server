@@ -14,14 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from gns3server import schemas
 from gns3server.db.repositories.users import UsersRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
-
 from .database import get_repository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")
@@ -42,7 +43,11 @@ async def get_user_from_token(
     return user
 
 
-async def get_current_active_user(current_user: schemas.User = Depends(get_user_from_token)) -> schemas.User:
+async def get_current_active_user(
+        request: Request,
+        current_user: schemas.User = Depends(get_user_from_token),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> schemas.User:
 
     # Super admin is always authorized
     if current_user.is_superadmin:
@@ -54,4 +59,24 @@ async def get_current_active_user(current_user: schemas.User = Depends(get_user_
             detail="Not an active user",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # remove the prefix (e.g. "/v3") from URL path
+    match = re.search(r"^(/v[0-9]+).*", request.url.path)
+    if match:
+        path = request.url.path[len(match.group(1)):]
+    else:
+        path = request.url.path
+
+    # special case: always authorize access to the "/users/me" endpoint
+    if path == "/users/me":
+        return current_user
+
+    authorized = await rbac_repo.check_user_is_authorized(current_user.user_id, request.method, path)
+    if not authorized:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"User is not authorized '{current_user.user_id}' on {request.method} '{path}'",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return current_user

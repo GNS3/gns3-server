@@ -70,11 +70,16 @@ class TemplatesRepository(BaseRepository):
 
         update_values = template_update.dict(exclude_unset=True)
 
-        query = update(models.Template).where(models.Template.template_id == template_id).values(update_values)
+        query = update(models.Template). \
+            where(models.Template.template_id == template_id). \
+            values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        return await self.get_template(template_id)
+        template_db = await self.get_template(template_id)
+        if template_db:
+            await self._db_session.refresh(template_db)  # force refresh of updated_at value
+        return template_db
 
     async def delete_template(self, template_id: UUID) -> bool:
 

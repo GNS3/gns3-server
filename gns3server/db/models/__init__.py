@@ -17,6 +17,8 @@
 
 from .base import Base
 from .users import User, UserGroup
+from .roles import Role
+from .permissions import Permission
 from .computes import Compute
 from .templates import (
     Template,
