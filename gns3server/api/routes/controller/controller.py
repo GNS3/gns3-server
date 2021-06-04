@@ -68,6 +68,19 @@ def check_version(version: schemas.Version) -> dict:
 
 
 @router.post(
+    "/reload",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def reload() -> None:
+    """
+    Reload the controller
+    """
+
+    await Controller.instance().reload()
+
+
+@router.post(
     "/shutdown",
     dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_204_NO_CONTENT,
@@ -75,7 +88,7 @@ def check_version(version: schemas.Version) -> dict:
 )
 async def shutdown() -> None:
     """
-    Shutdown the local server
+    Shutdown the server
     """
 
     if Config.instance().settings.Server.local is False:
