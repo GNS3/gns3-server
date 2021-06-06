@@ -26,6 +26,7 @@ from typing import List
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -194,7 +195,7 @@ async def delete_user(
 
     success = await users_repo.delete_user(user_id)
     if not success:
-        raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
+        raise ControllerError(f"User '{user_id}' could not be deleted")
 
 
 @router.get(

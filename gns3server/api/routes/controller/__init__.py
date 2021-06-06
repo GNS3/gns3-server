@@ -28,6 +28,7 @@ from . import projects
 from . import snapshots
 from . import symbols
 from . import templates
+from . import images
 from . import users
 from . import groups
 from . import roles
@@ -62,8 +63,16 @@ router.include_router(
 )
 
 router.include_router(
+    images.router,
+    dependencies=[Depends(get_current_active_user)],
+    prefix="/images",
+    tags=["Images"]
+)
+
+router.include_router(
     templates.router,
     dependencies=[Depends(get_current_active_user)],
+    prefix="/templates",
     tags=["Templates"]
 )
 

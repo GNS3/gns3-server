@@ -25,6 +25,7 @@ from typing import List
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -126,7 +127,7 @@ async def delete_user_group(
 
     success = await users_repo.delete_user_group(user_group_id)
     if not success:
-        raise ControllerNotFoundError(f"User group '{user_group_id}' could not be deleted")
+        raise ControllerError(f"User group '{user_group_id}' could not be deleted")
 
 
 @router.get("/{user_group_id}/members", response_model=List[schemas.User])

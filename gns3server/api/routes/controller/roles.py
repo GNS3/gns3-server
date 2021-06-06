@@ -25,6 +25,7 @@ from typing import List
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -119,7 +120,7 @@ async def delete_role(
 
     success = await rbac_repo.delete_role(role_id)
     if not success:
-        raise ControllerNotFoundError(f"Role '{role_id}' could not be deleted")
+        raise ControllerError(f"Role '{role_id}' could not be deleted")
 
 
 @router.get("/{role_id}/permissions", response_model=List[schemas.Permission])

@@ -15,22 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .base import Base
-from .users import User, UserGroup
-from .roles import Role
-from .permissions import Permission
-from .computes import Compute
-from .images import Image
-from .templates import (
-    Template,
-    CloudTemplate,
-    DockerTemplate,
-    DynamipsTemplate,
-    EthernetHubTemplate,
-    EthernetSwitchTemplate,
-    IOUTemplate,
-    QemuTemplate,
-    VirtualBoxTemplate,
-    VMwareTemplate,
-    VPCSTemplate,
-)
+from sqlalchemy import Column, String, Integer
+from sqlalchemy.orm import relationship
+
+from .base import BaseTable
+
+
+class Image(BaseTable):
+
+    __tablename__ = "images"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    filename = Column(String, unique=True, index=True)
+    image_type = Column(String)
+    path = Column(String)
+    checksum = Column(String)
+    checksum_algorithm = Column(String)
+    templates = relationship("Template")

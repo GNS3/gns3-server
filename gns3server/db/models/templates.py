@@ -35,6 +35,8 @@ class Template(BaseTable):
     usage = Column(String)
     template_type = Column(String)
 
+    image_id = Column(Integer, ForeignKey('images.id', ondelete="CASCADE"))
+
     __mapper_args__ = {
         "polymorphic_identity": "templates",
         "polymorphic_on": template_type,

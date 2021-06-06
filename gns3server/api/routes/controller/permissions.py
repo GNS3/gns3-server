@@ -25,6 +25,7 @@ from typing import List
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -114,4 +115,4 @@ async def delete_permission(
 
     success = await rbac_repo.delete_permission(permission_id)
     if not success:
-        raise ControllerNotFoundError(f"Permission '{permission_id}' could not be deleted")
+        raise ControllerError(f"Permission '{permission_id}' could not be deleted")

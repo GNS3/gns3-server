@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2021 GNS3 Technologies Inc.
 #
@@ -15,22 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .base import Base
-from .users import User, UserGroup
-from .roles import Role
-from .permissions import Permission
-from .computes import Compute
-from .images import Image
-from .templates import (
-    Template,
-    CloudTemplate,
-    DockerTemplate,
-    DynamipsTemplate,
-    EthernetHubTemplate,
-    EthernetSwitchTemplate,
-    IOUTemplate,
-    QemuTemplate,
-    VirtualBoxTemplate,
-    VMwareTemplate,
-    VPCSTemplate,
-)
+from pydantic import BaseModel, Field
+from enum import Enum
+
+from .base import DateTimeModelMixin
+
+
+class ImageType(str, Enum):
+
+    qemu = "qemu"
+    ios = "ios"
+    iou = "iou"
+
+
+class ImageBase(BaseModel):
+    """
+    Common image properties.
+    """
+
+    filename: str = Field(..., description="Image name")
+    image_type: ImageType = Field(..., description="Image type")
+    checksum: str = Field(..., description="Checksum value")
+    checksum_algorithm: str = Field(..., description="Checksum algorithm")
+
+
+class Image(DateTimeModelMixin, ImageBase):
+
+    class Config:
+        orm_mode = True
