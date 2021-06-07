@@ -68,6 +68,27 @@ LINK_OBJECT_SCHEMA = {
             "type": "boolean",
             "description": "Suspend the link"
         },
+        "link_style": {
+            "type": "object",
+            "description": "Link line style",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "color": {
+                        "description": "Link line color",
+                        "type": "string"
+                    },
+                    "width": {
+                        "description": "Link line width",
+                        "type": "integer"
+                    },
+                    "type": {
+                        "description": "Link line type",
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "filters": FILTER_OBJECT_SCHEMA,
         "capturing": {
             "description": "Read only property. True if a capture running on the link",

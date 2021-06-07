@@ -64,6 +64,8 @@ class LinkHandler:
         link = await project.add_link()
         if "filters" in request.json:
             await link.update_filters(request.json["filters"])
+        if "link_style" in request.json:
+            await link.update_link_style(request.json["link_style"])
         if "suspend" in request.json:
             await link.update_suspend(request.json["suspend"])
         try:
@@ -135,6 +137,8 @@ class LinkHandler:
         link = project.get_link(request.match_info["link_id"])
         if "filters" in request.json:
             await link.update_filters(request.json["filters"])
+        if "link_style" in request.json:
+            await link.update_link_style(request.json["link_style"])
         if "suspend" in request.json:
             await link.update_suspend(request.json["suspend"])
         if "nodes" in request.json:

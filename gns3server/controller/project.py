@@ -957,6 +957,8 @@ class Project:
                 link = await self.add_link(link_id=link_data["link_id"])
                 if "filters" in link_data:
                     await link.update_filters(link_data["filters"])
+                if "link_style" in link_data:
+                    await link.update_link_style(link_data["link_style"])
                 for node_link in link_data.get("nodes", []):
                     node = self.get_node(node_link["node_id"])
                     port = node.get_port(node_link["adapter_number"], node_link["port_number"])
