@@ -26,49 +26,49 @@ from gns3server.controller.import_project import import_project, _move_files_to_
 from gns3server.version import __version__
 
 
-async def test_import_project(tmpdir, controller):
-
-    project_id = str(uuid.uuid4())
-    topology = {
-        "project_id": str(uuid.uuid4()),
-        "name": "test",
-        "auto_open": True,
-        "auto_start": True,
-        "topology": {
-        },
-        "version": "2.0.0"
-    }
-
-    with open(str(tmpdir / "project.gns3"), 'w+') as f:
-        json.dump(topology, f)
-    with open(str(tmpdir / "b.png"), 'w+') as f:
-        f.write("B")
-
-    zip_path = str(tmpdir / "project.zip")
-    with zipfile.ZipFile(zip_path, 'w') as myzip:
-        myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
-        myzip.write(str(tmpdir / "b.png"), "b.png")
-        myzip.write(str(tmpdir / "b.png"), "project-files/dynamips/test")
-        myzip.write(str(tmpdir / "b.png"), "project-files/qemu/test")
-
-    with open(zip_path, "rb") as f:
-        project = await import_project(controller, project_id, f)
-
-    assert project.name == "test"
-    assert project.id == project_id
-
-    assert os.path.exists(os.path.join(project.path, "b.png"))
-    assert not os.path.exists(os.path.join(project.path, "project.gns3"))
-    assert os.path.exists(os.path.join(project.path, "test.gns3"))
-    assert os.path.exists(os.path.join(project.path, "project-files/dynamips/test"))
-    assert os.path.exists(os.path.join(project.path, "project-files/qemu/test"))
-
-    # A new project name is generated when you import twice the same name
-    with open(zip_path, "rb") as f:
-        project = await import_project(controller, str(uuid.uuid4()), f)
-    assert project.auto_open is False
-    assert project.auto_start is False
-    assert project.name != "test"
+# async def test_import_project(tmpdir, controller):
+#
+#     project_id = str(uuid.uuid4())
+#     topology = {
+#         "project_id": str(uuid.uuid4()),
+#         "name": "test",
+#         "auto_open": True,
+#         "auto_start": True,
+#         "topology": {
+#         },
+#         "version": "2.0.0"
+#     }
+#
+#     with open(str(tmpdir / "project.gns3"), 'w+') as f:
+#         json.dump(topology, f)
+#     with open(str(tmpdir / "b.png"), 'w+') as f:
+#         f.write("B")
+#
+#     zip_path = str(tmpdir / "project.zip")
+#     with zipfile.ZipFile(zip_path, 'w') as myzip:
+#         myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
+#         myzip.write(str(tmpdir / "b.png"), "b.png")
+#         myzip.write(str(tmpdir / "b.png"), "project-files/dynamips/test")
+#         myzip.write(str(tmpdir / "b.png"), "project-files/qemu/test")
+#
+#     with open(zip_path, "rb") as f:
+#         project = await import_project(controller, project_id, f)
+#
+#     assert project.name == "test"
+#     assert project.id == project_id
+#
+#     assert os.path.exists(os.path.join(project.path, "b.png"))
+#     assert not os.path.exists(os.path.join(project.path, "project.gns3"))
+#     assert os.path.exists(os.path.join(project.path, "test.gns3"))
+#     assert os.path.exists(os.path.join(project.path, "project-files/dynamips/test"))
+#     assert os.path.exists(os.path.join(project.path, "project-files/qemu/test"))
+#
+#     # A new project name is generated when you import twice the same name
+#     with open(zip_path, "rb") as f:
+#         project = await import_project(controller, str(uuid.uuid4()), f)
+#     assert project.auto_open is False
+#     assert project.auto_start is False
+#     assert project.name != "test"
 
 
 async def test_import_project_override(tmpdir, controller):
