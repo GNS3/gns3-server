@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.22 10/06/2021
+
+* Fix VMware support on macOS BigSur
+* Link style support. Fixes https://github.com/GNS3/gns3-gui/issues/2461
+* Release web UI version 2.2.22
+* Preserve auto_start/auto_open/auto_close when restoring snapshot
+* Fix uBridge errors for cloud nodes not visible in logs. Fixes #1895
+* Prevent directory traversal. Fixes #1894
+
 ## 2.2.21 10/05/2021
 
 * Release Web-Ui v2.2.21
