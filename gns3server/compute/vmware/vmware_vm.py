@@ -22,9 +22,11 @@ import sys
 import os
 import asyncio
 import tempfile
+import platform
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.serial import asyncio_open_serial
+from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
 from collections import OrderedDict
 from .vmware_error import VMwareError
@@ -260,8 +262,13 @@ class VMwareVM(BaseNode):
             if self._get_vmx_setting(connected):
                 del self._vmx_pairs[connected]
 
+        use_ubridge = True
+        # use alternative method to find vmnet interfaces on macOS >= 11.0 (BigSur)
+        # because "bridge" interfaces are used instead and they are only created on the VM starts
+        if sys.platform.startswith("darwin") and parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
+            use_ubridge = False
+        self.manager.refresh_vmnet_list(ubridge=use_ubridge)
         # then configure VMware network adapters
-        self.manager.refresh_vmnet_list()
         for adapter_number in range(0, self._adapters):
 
             custom_adapter = self._get_custom_adapter_settings(adapter_number)
@@ -347,8 +354,17 @@ class VMwareVM(BaseNode):
         vmnet_interface = os.path.basename(self._vmx_pairs[vnet])
 
         if sys.platform.startswith("darwin"):
-            # special case on OSX, we cannot bind VMnet interfaces using the libpcap
-            await self._ubridge_send(f'bridge add_nio_fusion_vmnet {vnet} "{vmnet_interface}"')
+            if parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
+                # a bridge interface (bridge100, bridge101 etc.) is used instead of a vmnet interface
+                # on macOS >= 11.0 (Big Sur)
+                vmnet_interface = self.manager.find_bridge_interface(vmnet_interface)
+                if not vmnet_interface:
+                    raise VMwareError(f"Could not find bridge interface linked with {vmnet_interface}")
+                block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
+                await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
+            else:
+                # special case on macOS, we cannot bind VMnet interfaces using the libpcap
+                await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=vnet, interface=vmnet_interface))
         else:
             block_host_traffic = self.manager.config.VMware.block_host_traffic
             await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)

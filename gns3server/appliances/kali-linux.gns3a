@@ -24,6 +24,14 @@
     },
     "images": [
         {
+            "filename": "kali-linux-2021.1-live-amd64.iso",
+            "version": "2021.1",
+            "md5sum": "3a3716fef866e5c29a1c1ccfc94264b5",
+            "filesize": 3591385088,
+            "download_url": "http://cdimage.kali.org/kali-2021.1/",
+            "direct_download_url": "http://cdimage.kali.org/kali-2021.1/kali-linux-2021.1-live-amd64.iso"
+        },    
+        {
             "filename": "kali-linux-2019.3-amd64.iso",
             "version": "2019.3",
             "md5sum": "9c6fb00558f78ed06992d89f745ef975",
@@ -137,6 +145,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "2021.1",
+            "images": {
+                "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
+                "cdrom_image": "kali-linux-2021.1-live-amd64.iso"
+            }
+        },    
         {
             "name": "2019.3",
             "images": {
