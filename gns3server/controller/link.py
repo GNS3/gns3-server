@@ -175,7 +175,7 @@ class Link:
         if link_style != self._link_style:
             self._link_style = link_style
             await self.update()
-            self._project.emit_notification("link.updated", self.__json__())
+            self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
 
     @property

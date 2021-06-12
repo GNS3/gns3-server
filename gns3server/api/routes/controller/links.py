@@ -81,6 +81,8 @@ async def create_link(project_id: UUID, link_data: schemas.LinkCreate) -> schema
     link_data = jsonable_encoder(link_data, exclude_unset=True)
     if "filters" in link_data:
         await link.update_filters(link_data["filters"])
+    if "link_style" in link_data:
+        await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
     try:
@@ -124,6 +126,8 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
     link_data = jsonable_encoder(link_data, exclude_unset=True)
     if "filters" in link_data:
         await link.update_filters(link_data["filters"])
+    if "link_style" in link_data:
+        await link.update_link_style(link_data["link_style"])
     if "suspend" in link_data:
         await link.update_suspend(link_data["suspend"])
     if "nodes" in link_data:

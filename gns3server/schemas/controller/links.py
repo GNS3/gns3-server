@@ -42,6 +42,13 @@ class LinkType(str, Enum):
     serial = "serial"
 
 
+class LinkStyle(BaseModel):
+
+    color: Optional[str] = None
+    width: Optional[int] = None
+    type: Optional[int] = None
+
+
 class LinkBase(BaseModel):
     """
     Link data.
@@ -49,6 +56,7 @@ class LinkBase(BaseModel):
 
     nodes: Optional[List[LinkNode]] = Field(None, min_items=0, max_items=2)
     suspend: Optional[bool] = None
+    link_style: Optional[LinkStyle] = None
     filters: Optional[dict] = None
 
 
