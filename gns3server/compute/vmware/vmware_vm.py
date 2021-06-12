@@ -345,7 +345,7 @@ class VMwareVM(BaseNode):
                 # on macOS >= 11.0 (Big Sur)
                 vmnet_interface = self.manager.find_bridge_interface(vmnet_interface)
                 if not vmnet_interface:
-                    raise VMwareError(f"fCould not find bridge interface linked with {vmnet_interface}")
+                    raise VMwareError(f"Could not find bridge interface linked with {vmnet_interface}")
                 block_host_traffic = self.manager.config.get_section_config("VMware").getboolean("block_host_traffic", False)
                 await self._add_ubridge_ethernet_connection(vnet, vmnet_interface, block_host_traffic)
             else:
