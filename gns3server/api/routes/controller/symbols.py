@@ -21,13 +21,15 @@ API routes for symbols.
 
 import os
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request, Depends, status
 from fastapi.responses import FileResponse
 from typing import List
 
 from gns3server.controller import Controller
 from gns3server import schemas
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+
+from .dependencies.authentication import get_current_active_user
 
 import logging
 
@@ -57,7 +59,7 @@ async def get_symbol(symbol_id: str) -> FileResponse:
         symbol = controller.symbols.get_path(symbol_id)
         return FileResponse(symbol)
     except (KeyError, OSError) as e:
-        return ControllerNotFoundError(f"Could not get symbol file: {e}")
+        raise ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
 @router.get(
@@ -75,10 +77,24 @@ async def get_symbol_dimensions(symbol_id: str) -> dict:
         symbol_dimensions = {"width": width, "height": height}
         return symbol_dimensions
     except (KeyError, OSError, ValueError) as e:
-        return ControllerNotFoundError(f"Could not get symbol file: {e}")
+        raise ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
-@router.post("/{symbol_id:path}/raw", status_code=status.HTTP_204_NO_CONTENT)
+@router.get("/default_symbols")
+def get_default_symbols() -> dict:
+    """
+    Return all default symbols.
+    """
+
+    controller = Controller.instance()
+    return controller.symbols.default_symbols()
+
+
+@router.post(
+    "/{symbol_id:path}/raw",
+    dependencies=[Depends(get_current_active_user)],
+    status_code=status.HTTP_204_NO_CONTENT
+)
 async def upload_symbol(symbol_id: str, request: Request) -> None:
     """
     Upload a symbol file.
@@ -95,13 +111,3 @@ async def upload_symbol(symbol_id: str, request: Request) -> None:
 
     # Reset the symbol list
     controller.symbols.list()
-
-
-@router.get("/default_symbols")
-def get_default_symbols() -> dict:
-    """
-    Return all default symbols.
-    """
-
-    controller = Controller.instance()
-    return controller.symbols.default_symbols()
