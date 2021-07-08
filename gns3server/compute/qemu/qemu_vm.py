@@ -1675,6 +1675,24 @@ class QemuVM(BaseNode):
         try:
             qemu_img_path = self._get_qemu_img()
             command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+            try:
+                base_qcow2 = Qcow2(disk_image)
+                if base_qcow2.crypt_method:
+                    # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
+                    # Also embed a secret name so it doesn't have to be passed to qemu -drive ...
+                    options = {
+                        "encrypt.key-secret": os.path.basename(disk_image),
+                        "driver": "qcow2",
+                        "file": {
+                            "driver": "file",
+                            "filename": disk_image,
+                        },
+                    }
+                    command = [qemu_img_path, "create", "-b", "json:"+json.dumps(options, separators=(',', ':')),
+                               "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
+            except Qcow2Error:
+                pass  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
+
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
@@ -1845,6 +1863,7 @@ class QemuVM(BaseNode):
                         log.warning("Qemu image {} is corrupted".format(disk_image))
                         if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
+                    # ignore retcode == 1.  One reason is that the image is encrypted and there is no encrypt.key-secret available
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
@@ -1858,9 +1877,9 @@ class QemuVM(BaseNode):
                     # The disk exists we check if the clone works
                     try:
                         qcow2 = Qcow2(disk)
-                        await qcow2.rebase(qemu_img_path, disk_image)
+                        await qcow2.validate(qemu_img_path)
                     except (Qcow2Error, OSError) as e:
-                        raise QemuError("Could not use qcow2 disk image '{}' for {} {}".format(disk_image, disk_name, e))
+                        raise QemuError("Could not use qcow2 disk image '{}' for {}: {}".format(disk_image, disk_name, e))
 
             else:
                 disk = disk_image
