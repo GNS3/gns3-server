@@ -218,6 +218,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "Additional QEMU options",
             "type": ["string", "null"],
         },
+        "path_snapshot": {
+            "description": "Path of snapshots",
+            "type": "string",
+                                            },
         "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
@@ -412,6 +416,10 @@ QEMU_UPDATE_SCHEMA = {
             "description": "Additional QEMU options",
             "type": ["string", "null"],
         },
+        "path_snapshot": {
+            "description": "Path of snapshots",
+            "type": "string"
+         },
         "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
     },
     "additionalProperties": False,
@@ -622,6 +630,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Additional QEMU options",
             "type": "string",
         },
+        "path_snapshot": {
+            "description": "Path of snapshots",
+            "type": "string"
+         },
         "command_line": {
             "description": "Last command line used by GNS3 to start QEMU",
             "type": "string"
@@ -670,6 +682,7 @@ QEMU_OBJECT_SCHEMA = {
                  "cpu_throttling",
                  "process_priority",
                  "options",
+                 "path_snapshot",
                  "node_directory",
                  "command_line",
                  "status"]

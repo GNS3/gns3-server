@@ -210,6 +210,11 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "string",
         "default": ""
     },
+    "path_snapshot": {
+        "description": "Path of snapshots",
+        "type": "string",
+        "default": ""
+    },
     "custom_adapters": CUSTOM_ADAPTERS_ARRAY_SCHEMA
 }
 
