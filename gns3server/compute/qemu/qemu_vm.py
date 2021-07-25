@@ -615,7 +615,7 @@ class QemuVM(BaseNode):
 
         if not mac_address:
             # use the node UUID to generate a random MAC address
-            self._mac_address = "0c:%s:%s:%s:%s:00" % (self.project.id[-4:-2], self.project.id[-2:], self.id[-4:-2], self.id[-2:])
+            self._mac_address = "0c:%s:%s:%s:00:00" % (self.id[2:4], self.id[4:6], self.id[6:8])
         else:
             self._mac_address = mac_address
 
