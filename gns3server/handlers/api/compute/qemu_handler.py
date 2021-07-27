@@ -207,7 +207,7 @@ class QEMUHandler:
             enable_kvm = qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm")
             if enable_kvm is not None:
                 hardware_accel = enable_kvm
-        if hardware_accel and "-no-kvm" not in vm.options and "-no-hax" not in vm.options:
+        if hardware_accel and "-machine accel=tcg" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
                 raise aiohttp.web.HTTPConflict(text="Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
