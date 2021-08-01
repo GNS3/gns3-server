@@ -23,9 +23,10 @@
 
 function help {
   echo "Usage:" >&2
-  echo "--with-openvpn: Install Open VPN" >&2
+  echo "--with-openvpn: Install OpenVPN" >&2
   echo "--with-iou: Install IOU" >&2
   echo "--with-i386-repository: Add the i386 repositories required by IOU if they are not already available on the system. Warning: this will replace your source.list in order to use the official Ubuntu mirror" >&2
+  echo "--without-kvm: Disable KVM, required if system do not support it (limitation in some hypervisors and cloud providers). Warning: only disable KVM if strictly necessary as this will degrade performance" >&2
   echo "--unstable: Use the GNS3 unstable repository"
   echo "--help: This help" >&2
 }
@@ -45,9 +46,10 @@ fi
 USE_VPN=0
 USE_IOU=0
 I386_REPO=0
+DISABLE_KVM=0
 UNSTABLE=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -68,6 +70,10 @@ while true ; do
           ;;
         --with-i386-repository)
           I386_REPO=1
+          shift
+          ;;
+        --without-kvm)
+          DISABLE_KVM=1
           shift
           ;;
         --unstable)
@@ -147,7 +153,7 @@ apt-get update
 log "Upgrade packages"
 apt-get upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-log " Install GNS3 packages"
+log "Install GNS3 packages"
 apt-get install -y gns3-server
 
 log "Create user GNS3 with /opt/gns3 as home directory"
@@ -171,7 +177,7 @@ usermod -aG docker gns3
 
 if [ $USE_IOU == 1 ]
 then
-    log "IOU setup"
+    log "Setup IOU"
     dpkg --add-architecture i386
     apt-get update
 
@@ -179,6 +185,8 @@ then
 
     # Force the host name to gns3vm
     echo gns3vm > /etc/hostname
+    hostname gns3vm
+    HOSTNAME=$(hostname)
 
     # Force hostid for IOU
     dd if=/dev/zero bs=4 count=1 of=/etc/hostid
@@ -204,9 +212,15 @@ configs_path = /opt/gns3/configs
 report_errors = True
 
 [Qemu]
-enable_kvm = True
-require_kvm = True
+enable_hardware_acceleration = True
+require_hardware_acceleration = True
 EOFC
+
+if [ $DISABLE_KVM == 1 ]
+then
+    log "Disable KVM support"
+    sed -i 's/hardware_acceleration = True/hardware_acceleration = False/g' /etc/gns3/gns3_server.conf
+fi
 
 chown -R gns3:gns3 /etc/gns3
 chmod -R 700 /etc/gns3
@@ -286,24 +300,15 @@ if [ $USE_VPN == 1 ]
 then
 log "Setup VPN"
 
-cat <<EOFSERVER > /etc/gns3/gns3_server.conf
-[Server]
-host = 172.16.253.1
-port = 3080 
-images_path = /opt/gns3/images
-projects_path = /opt/gns3/projects
-report_errors = True
+log "Change GNS3 to listen on VPN interface"
 
-[Qemu]
-enable_kvm = True
-require_kvm = True
-EOFSERVER
+sed -i 's/host = 0.0.0.0/host = 172.16.253.1/' /etc/gns3/gns3_server.conf
 
-log "Install packages for Open VPN"
+log "Install packages for OpenVPN"
 
 apt-get install -y     \
-	openvpn              \
-	uuid                 \
+  openvpn              \
+  uuid                 \
   dnsutils             \
   nginx-light
 
@@ -328,7 +333,6 @@ echo "apt-get remove nginx-light to disable the HTTP server."
 echo "And remove this file with rm /etc/update-motd.d/70-openvpn"
 EOFMOTD
 chmod 755 /etc/update-motd.d/70-openvpn
-
 
 mkdir -p /etc/openvpn/
 
@@ -385,7 +389,7 @@ status openvpn-status-1194.log
 log-append /var/log/openvpn-udp1194.log
 EOFUDP
 
-echo "Setup HTTP server for serving client certificate"
+log "Setup HTTP server for serving client certificate"
 mkdir -p /usr/share/nginx/openvpn/$UUID
 cp /root/client.ovpn /usr/share/nginx/openvpn/$UUID/$HOSTNAME.ovpn
 touch /usr/share/nginx/openvpn/$UUID/index.html
@@ -393,7 +397,7 @@ touch /usr/share/nginx/openvpn/index.html
 
 cat <<EOFNGINX > /etc/nginx/sites-available/openvpn
 server {
-	listen 8003;
+    listen 8003;
     root /usr/share/nginx/openvpn;
 }
 EOFNGINX
@@ -402,11 +406,13 @@ EOFNGINX
 service nginx stop
 service nginx start
 
-log "Restart OpenVPN"
+log "Restart OpenVPN and GNS3"
 
 set +e
 service openvpn stop
 service openvpn start
+service gns3 stop
+service gns3 start
 
 log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
