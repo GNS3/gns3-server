@@ -185,6 +185,8 @@ then
 
     # Force the host name to gns3vm
     echo gns3vm > /etc/hostname
+    hostname gns3vm
+    HOSTNAME=$(hostname)
 
     # Force hostid for IOU
     dd if=/dev/zero bs=4 count=1 of=/etc/hostid
