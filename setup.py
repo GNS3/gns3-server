@@ -58,7 +58,7 @@ setup(
             "gns3loopback = gns3server.utils.windows_loopback:main"
         ]
     },
-    packages=find_packages(".", exclude=["docs", "tests"]),
+    packages=find_packages(".", exclude=["docs", "tests*"]),
     include_package_data=True,
     zip_safe=False,
     platforms="any",

@@ -430,7 +430,7 @@ class BaseNode:
                     telnet_writer.write(msg.data.encode())
                     await telnet_writer.drain()
                 elif msg.type == aiohttp.WSMsgType.BINARY:
-                    await telnet_writer.write(msg.data)
+                    telnet_writer.write(msg.data)
                     await telnet_writer.drain()
                 elif msg.type == aiohttp.WSMsgType.ERROR:
                     log.debug("Websocket connection closed with exception {}".format(ws.exception()))
