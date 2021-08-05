@@ -22,7 +22,7 @@
         "console_type": "telnet",
         "kernel_command_line": "ide_generic.probe_mask=0x01 ide_core.chs=0.0:980,16,32 auto nousb console=ttyS0,9600 bigphysarea=65536 ide1=noprobe no-hlt",
         "kvm": "disable",
-        "options": "-no-kvm -icount auto -hdachs 980,16,32",
+        "options": "-machine accel=tcg -icount auto -hdachs 980,16,32",
         "cpu_throttling": 80,
         "process_priority": "low"
     },

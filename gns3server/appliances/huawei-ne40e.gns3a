@@ -6,7 +6,7 @@
     "vendor_url": "https://www.huawei.com",
     "product_name": "HuaWei NE40E",
     "product_url": "https://e.huawei.com/en/products/enterprise-networking/routers/ne/ne40e",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
@@ -35,10 +35,10 @@
     ],
     "versions": [
         {
+            "name": "V800R011C00SPC607B607",
             "images": {
                 "hda_disk_image": "ne40e-V800R011C00SPC607B607.qcow2"
-            },
-            "name": "V800R011C00SPC607B607"
+            }
         }
     ]
 }

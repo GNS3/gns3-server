@@ -7,7 +7,7 @@
     "documentation_url": "https://access.redhat.com/solutions/641193",
     "product_name": "Red Hat Enterprise Linux KVM Guest Image",
     "product_url": "https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "stable",
     "availability": "service-contract",
     "maintainer": "Neyder Achahuanco",
@@ -56,25 +56,25 @@
     ],
     "versions": [
         {
+            "name": "8.3",
             "images": {
                 "hda_disk_image": "rhel-8.3-x86_64-kvm.qcow2",
                 "cdrom_image": "rhel-cloud-init.iso"
-            },
-            "name": "8.3"
+            }
         },
         {
+            "name": "7.9",
             "images": {
                 "hda_disk_image": "rhel-server-7.9-x86_64-kvm.qcow2",
                 "cdrom_image": "rhel-cloud-init.iso"
-            },
-            "name": "7.9"
+            }
         },
         {
+            "name": "6.10",
             "images": {
                 "hda_disk_image": "rhel-server-6.10-update-11-x86_64-kvm.qcow2",
                 "cdrom_image": "rhel-cloud-init.iso"
-            },
-            "name": "6.10"
+            }
         }
     ]
 }
