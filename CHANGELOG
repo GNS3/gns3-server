@@ -1,5 +1,18 @@
 # Change Log
 
+## 2.2.23 05/08/2021
+
+* Release web UI 2.2.23
+* Fix hostname inconsistencies during script execution
+* Add option `--without-kvm`
+* Add a `reload` server endpoint. Fixes #1926
+* Handle -no-kvm param deprecated in Qemu >= v5.2
+* Fix binary websocket access to the console
+* Change how to generate random MAC addresses
+* setup.py: prevent installing tests directory
+* Support cloning of encrypted qcow2 base image files
+* Fix VMware VM support on Linux and Windows. Fixes #1919
+
 ## 2.2.22 10/06/2021
 
 * Fix VMware support on macOS BigSur
