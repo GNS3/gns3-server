@@ -1,4 +1,4 @@
 -rrequirements.txt
 
-pywin32==300
+pywin32==301
 wmi==1.5.1
