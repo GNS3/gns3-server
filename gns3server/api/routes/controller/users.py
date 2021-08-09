@@ -98,13 +98,20 @@ async def get_logged_in_user(current_user: schemas.User = Depends(get_current_ac
     return current_user
 
 
-@router.get("/me", response_model=schemas.User)
-async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+@router.put("/me", response_model=schemas.User)
+async def update_logged_in_user(
+        user_update: schemas.LoggedInUserUpdate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
     """
-    Get the current active user.
+    Update the current active user.
     """
 
-    return current_user
+    if user_update.email and await users_repo.get_user_by_email(user_update.email):
+        raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
+
+    return await users_repo.update_user(current_user.user_id, user_update)
 
 
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(get_current_active_user)])
@@ -165,6 +172,12 @@ async def update_user(
     """
     Update an user.
     """
+
+    if user_update.username and await users_repo.get_user_by_username(user_update.username):
+        raise ControllerBadRequestError(f"Username '{user_update.username}' is already registered")
+
+    if user_update.email and await users_repo.get_user_by_email(user_update.email):
+        raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
 
     user = await users_repo.update_user(user_id, user_update)
     if not user:

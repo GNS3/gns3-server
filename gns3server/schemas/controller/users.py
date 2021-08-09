@@ -28,6 +28,7 @@ class UserBase(BaseModel):
     """
 
     username: Optional[str] = Field(None, min_length=3, regex="[a-zA-Z0-9_-]+$")
+    is_active: bool = True
     email: Optional[EmailStr]
     full_name: Optional[str]
 
@@ -49,11 +50,20 @@ class UserUpdate(UserBase):
     password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
 
 
+class LoggedInUserUpdate(BaseModel):
+    """
+    Properties to update a logged in user.
+    """
+
+    password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
+    email: Optional[EmailStr]
+    full_name: Optional[str]
+
+
 class User(DateTimeModelMixin, UserBase):
 
     user_id: UUID
     last_login: Optional[datetime] = None
-    is_active: bool = True
     is_superadmin: bool = False
 
     class Config:
