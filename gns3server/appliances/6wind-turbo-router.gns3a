@@ -1,0 +1,46 @@
+{
+    "name": "6WIND Turbo Router",
+    "category": "router",
+    "description": "6WIND Turbo Router is a high performance, ready-to-use software virtual router. It can be deployed bare metal or in virtual machines on commercial-off-the-shelf (COTS) servers. It is a carrier-grade solution for Service Prodivers aiming at using white boxes to deploy network functions. Typical use-cases are transit/peering router, IPsec VPN gateway and CGNAT.",
+    "vendor_name": "6WIND",
+    "vendor_url": "https://www.6wind.com/",
+    "documentation_url": "https://doc.6wind.com/turbo-router-3/latest/turbo-router/",
+    "product_name": "6WIND Turbo Router",
+    "product_url": "https://www.6wind.com/vrouter-solutions/turbo-router/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default username / password is admin / admin.",
+    "symbol": "6wind.svg",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 8,
+        "ram": 4096,
+        "cpus": 4,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-cpu host"
+    },
+    "images": [
+        {
+            "filename": "6wind-vrouter-tr-ae-x86_64-v3.1.4.m1.qcow2",
+            "version": "3.1.4.m1",
+            "md5sum": "bc84b81fba4f2f01eda6a338469e37a5",
+            "filesize": 693829632,
+            "download_url": "https://portal.6wind.com/register.php?utm_campaign=GNS3-2021-EVAL"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.1.4.m1",
+            "images": {
+                "hda_disk_image": "6wind-vrouter-tr-ae-x86_64-v3.1.4.m1.qcow2"
+            }
+        }
+    ]
+}

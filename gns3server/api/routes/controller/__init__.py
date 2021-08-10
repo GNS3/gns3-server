@@ -104,7 +104,6 @@ router.include_router(
 
 router.include_router(
     symbols.router,
-    dependencies=[Depends(get_current_active_user)],
     prefix="/symbols", tags=["Symbols"]
 )
 

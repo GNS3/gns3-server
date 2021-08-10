@@ -97,6 +97,38 @@ class TestUserRoutes:
         response = await client.post(app.url_path_for("create_user"), json=new_user)
         assert response.status_code == status_code
 
+    @pytest.mark.parametrize(
+        "attr, value, status_code",
+        (
+                ("email", "user@email.com", status.HTTP_200_OK),
+                ("email", "user@email.com", status.HTTP_400_BAD_REQUEST),
+                ("username", "user2", status.HTTP_400_BAD_REQUEST),
+                ("email", "invalid_email@one@two.io", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("password", "short", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("username", "user2@#$%^<>", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("username", "ab", status.HTTP_422_UNPROCESSABLE_ENTITY),
+                ("full_name", "John Doe", status.HTTP_200_OK),
+                ("password", "password123", status.HTTP_200_OK),
+                ("is_active", True, status.HTTP_200_OK),
+        )
+    )
+    async def test_update_user(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            attr: str,
+            value: str,
+            status_code: int,
+    ) -> None:
+
+        user_repo = UsersRepository(db_session)
+        user_in_db = await user_repo.get_user_by_username("user2")
+        update_user = {}
+        update_user[attr] = value
+        response = await client.put(app.url_path_for("update_user", user_id=user_in_db.user_id), json=update_user)
+        assert response.status_code == status_code
+
     async def test_users_saved_password_is_hashed(
         self,
         app: FastAPI,
@@ -285,6 +317,46 @@ class TestUserMe:
         response = await unauthorized_client.get(app.url_path_for("get_logged_in_user"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    async def test_authenticated_user_can_update_own_data(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            test_user: User,
+    ) -> None:
+
+        response = await authorized_client.get(app.url_path_for("get_logged_in_user"))
+        assert response.status_code == status.HTTP_200_OK
+        user = User(**response.json())
+        assert user.username == test_user.username
+        assert user.email == test_user.email
+        assert user.user_id == test_user.user_id
+
+    # logged in users can only change their email, full name and password
+    @pytest.mark.parametrize(
+        "attr, value, status_code",
+        (
+                ("email", "user42@email.com", status.HTTP_200_OK),
+                ("email", "user42@email.com", status.HTTP_400_BAD_REQUEST),
+                ("full_name", "John Doe", status.HTTP_200_OK),
+                ("password", "password123", status.HTTP_200_OK),
+        )
+    )
+    async def test_authenticated_user_can_update_own_data(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            attr: str,
+            value: str,
+            status_code: int,
+    ) -> None:
+
+        update_user = {}
+        update_user[attr] = value
+        response = await authorized_client.put(
+            app.url_path_for("update_logged_in_user"),
+            json=update_user
+        )
+        assert response.status_code == status_code
 
 class TestSuperAdmin:
 

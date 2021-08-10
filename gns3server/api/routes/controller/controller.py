@@ -18,7 +18,7 @@ import asyncio
 import signal
 import os
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.encoders import jsonable_encoder
 from typing import List
 
@@ -72,12 +72,13 @@ def check_version(version: schemas.Version) -> dict:
     dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def reload() -> None:
+async def reload() -> Response:
     """
     Reload the controller
     """
 
     await Controller.instance().reload()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -86,7 +87,7 @@ async def reload() -> None:
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
 )
-async def shutdown() -> None:
+async def shutdown() -> Response:
     """
     Shutdown the server
     """
@@ -114,6 +115,7 @@ async def shutdown() -> None:
 
     # then shutdown the server itself
     os.kill(os.getpid(), signal.SIGTERM)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(

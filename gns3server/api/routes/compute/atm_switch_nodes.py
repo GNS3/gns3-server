@@ -20,7 +20,7 @@ API routes for ATM switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, status
+from fastapi import APIRouter, Depends, Body, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -109,42 +109,43 @@ async def update_atm_switch(
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_atm_switch_node(node: ATMSwitch = Depends(dep_node)) -> None:
+async def delete_atm_switch_node(node: ATMSwitch = Depends(dep_node)) -> Response:
     """
     Delete an ATM switch node.
     """
 
     await Dynamips.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-def start_atm_switch(node: ATMSwitch = Depends(dep_node)):
+def start_atm_switch(node: ATMSwitch = Depends(dep_node)) -> Response:
     """
     Start an ATM switch node.
     This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def stop_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
+def stop_atm_switch(node: ATMSwitch = Depends(dep_node)) -> Response:
     """
     Stop an ATM switch node.
     This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)) -> None:
+def suspend_atm_switch(node: ATMSwitch = Depends(dep_node)) -> Response:
     """
     Suspend an ATM switch node.
     This endpoint results in no action since ATM switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -170,7 +171,7 @@ async def create_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = Depends(dep_node)) -> None:
+async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = Depends(dep_node)) -> Response:
     """
     Remove a NIO (Network Input/Output) from the node.
     The adapter number on the switch is always 0.
@@ -178,6 +179,7 @@ async def delete_nio(adapter_number: int, port_number: int, node: ATMSwitch = De
 
     nio = await node.remove_nio(port_number)
     await nio.delete()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -207,13 +209,14 @@ async def stop_capture(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: ATMSwitch = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Stop a packet capture on the node.
     The adapter number on the switch is always 0.
     """
 
     await node.stop_capture(port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")

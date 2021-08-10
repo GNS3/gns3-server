@@ -6,7 +6,7 @@
     "vendor_url": "https://www.huawei.com",
     "product_name": "HuaWei AR1000v",
     "product_url": "https://support.huawei.com/enterprise/en/routers/ar1000v-pid-21768212",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",

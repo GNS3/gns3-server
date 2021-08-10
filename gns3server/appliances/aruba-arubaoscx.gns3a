@@ -29,7 +29,6 @@
         "process_priority": "normal"
     },
     "images": [
-
         {
             "filename": "arubaoscx-disk-image-genericx86-p4-20201110192651.vmdk",
             "version": "10.06.0001",

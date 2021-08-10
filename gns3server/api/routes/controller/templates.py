@@ -25,7 +25,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, Response, HTTPException, Depends, status
+from fastapi import APIRouter, Request, Response, HTTPException, Depends, Response, status
 from typing import List
 from uuid import UUID
 
@@ -99,13 +99,14 @@ async def delete_template(
         template_id: UUID,
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> Response:
     """
     Delete a template.
     """
 
     await TemplatesService(templates_repo).delete_template(template_id)
     await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("", response_model=List[schemas.Template], response_model_exclude_unset=True)

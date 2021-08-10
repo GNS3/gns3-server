@@ -19,7 +19,7 @@
 API routes for roles.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from uuid import UUID
 from typing import List
 
@@ -106,7 +106,7 @@ async def update_role(
 async def delete_role(
     role_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
+) -> Response:
     """
     Delete a role.
     """
@@ -121,6 +121,8 @@ async def delete_role(
     success = await rbac_repo.delete_role(role_id)
     if not success:
         raise ControllerError(f"Role '{role_id}' could not be deleted")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{role_id}/permissions", response_model=List[schemas.Permission])
@@ -143,7 +145,7 @@ async def add_permission_to_role(
         role_id: UUID,
         permission_id: UUID,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> Response:
     """
     Add a permission to a role.
     """
@@ -156,6 +158,8 @@ async def add_permission_to_role(
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.delete(
     "/{role_id}/permissions/{permission_id}",
@@ -165,7 +169,7 @@ async def remove_permission_from_role(
     role_id: UUID,
     permission_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
+) -> Response:
     """
     Remove member from an user group.
     """
@@ -177,3 +181,5 @@ async def remove_permission_from_role(
     role = await rbac_repo.remove_permission_from_role(role_id, permission)
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
