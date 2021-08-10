@@ -19,7 +19,7 @@
 API routes for permissions.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from uuid import UUID
 from typing import List
 
@@ -103,7 +103,7 @@ async def update_permission(
 async def delete_permission(
     permission_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
+) -> Response:
     """
     Delete a permission.
     """
@@ -115,3 +115,5 @@ async def delete_permission(
     success = await rbac_repo.delete_permission(permission_id)
     if not success:
         raise ControllerNotFoundError(f"Permission '{permission_id}' could not be deleted")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

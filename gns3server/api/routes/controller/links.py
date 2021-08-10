@@ -21,7 +21,7 @@ API routes for links.
 import multidict
 import aiohttp
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from typing import List
@@ -136,13 +136,14 @@ async def update_link(link_data: schemas.LinkUpdate, link: Link = Depends(dep_li
 
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_link(project_id: UUID, link: Link = Depends(dep_link)) -> None:
+async def delete_link(project_id: UUID, link: Link = Depends(dep_link)) -> Response:
     """
     Delete a link.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     await project.delete_link(link.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{link_id}/reset", response_model=schemas.Link)
@@ -169,12 +170,13 @@ async def start_capture(capture_data: dict, link: Link = Depends(dep_link)) -> s
 
 
 @router.post("/{link_id}/capture/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_capture(link: Link = Depends(dep_link)) -> None:
+async def stop_capture(link: Link = Depends(dep_link)) -> Response:
     """
     Stop packet capture on the link.
     """
 
     await link.stop_capture()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{link_id}/capture/stream")

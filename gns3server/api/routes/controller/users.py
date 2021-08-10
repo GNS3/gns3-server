@@ -19,7 +19,7 @@
 API routes for users.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from uuid import UUID
 from typing import List
@@ -193,7 +193,7 @@ async def update_user(
 async def delete_user(
     user_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> None:
+) -> Response:
     """
     Delete an user.
     """
@@ -208,6 +208,8 @@ async def delete_user(
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
@@ -251,7 +253,7 @@ async def add_permission_to_user(
         user_id: UUID,
         permission_id: UUID,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> Response:
     """
     Add a permission to an user.
     """
@@ -264,6 +266,8 @@ async def add_permission_to_user(
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.delete(
     "/{user_id}/permissions/{permission_id}",
@@ -274,7 +278,7 @@ async def remove_permission_from_user(
     user_id: UUID,
     permission_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
+) -> Response:
     """
     Remove permission from an user.
     """
@@ -286,3 +290,5 @@ async def remove_permission_from_user(
     user = await rbac_repo.remove_permission_from_user(user_id, permission)
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

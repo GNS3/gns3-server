@@ -21,7 +21,7 @@ API routes for symbols.
 
 import os
 
-from fastapi import APIRouter, Request, Depends, status
+from fastapi import APIRouter, Request, Depends, Response, status
 from fastapi.responses import FileResponse
 from typing import List
 
@@ -95,7 +95,7 @@ def get_default_symbols() -> dict:
     dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def upload_symbol(symbol_id: str, request: Request) -> None:
+async def upload_symbol(symbol_id: str, request: Request) -> Response:
     """
     Upload a symbol file.
     """
@@ -111,3 +111,5 @@ async def upload_symbol(symbol_id: str, request: Request) -> None:
 
     # Reset the symbol list
     controller.symbols.list()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

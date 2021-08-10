@@ -18,7 +18,7 @@
 API routes for drawings.
 """
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 from fastapi.encoders import jsonable_encoder
 from typing import List
 from uuid import UUID
@@ -76,10 +76,11 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schem
 
 
 @router.delete("/{drawing_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_drawing(project_id: UUID, drawing_id: UUID) -> None:
+async def delete_drawing(project_id: UUID, drawing_id: UUID) -> Response:
     """
     Delete a drawing.
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     await project.delete_drawing(str(drawing_id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

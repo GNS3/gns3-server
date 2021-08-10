@@ -20,7 +20,7 @@ API routes for Qemu nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, Path, status
+from fastapi import APIRouter, WebSocket, Depends, Body, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -104,12 +104,13 @@ async def update_qemu_node(node_data: schemas.QemuUpdate, node: QemuVM = Depends
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def delete_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Delete a Qemu node.
     """
 
     await Qemu.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.Qemu, status_code=status.HTTP_201_CREATED)
@@ -126,13 +127,14 @@ async def duplicate_qemu_node(
 
 
 @router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
-async def resize_qemu_node_disk(node_data: schemas.QemuDiskResize, node: QemuVM = Depends(dep_node)) -> None:
+async def resize_qemu_node_disk(node_data: schemas.QemuDiskResize, node: QemuVM = Depends(dep_node)) -> Response:
 
     await node.resize_disk(node_data.drive_name, node_data.extend)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Start a Qemu node.
     """
@@ -145,42 +147,47 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
             pass  # FIXME: check this
             # raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
     await node.start()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def stop_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Stop a Qemu node.
     """
 
     await node.stop()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def reload_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Reload a Qemu node.
     """
 
     await node.reload()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def suspend_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Suspend a Qemu node.
     """
 
     await node.suspend()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
-async def resume_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
+async def resume_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """
     Resume a Qemu node.
     """
 
     await node.resume()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -236,13 +243,14 @@ async def delete_qemu_node_nio(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
         node: QemuVM = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the Qemu node is always 0.
     """
 
     await node.adapter_remove_nio_binding(adapter_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -270,13 +278,14 @@ async def stop_qemu_node_capture(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
         node: QemuVM = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Stop a packet capture on the node.
     The port number on the Qemu node is always 0.
     """
 
     await node.stop_capture(adapter_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
@@ -304,6 +313,7 @@ async def console_ws(websocket: WebSocket, node: QemuVM = Depends(dep_node)) -> 
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: QemuVM = Depends(dep_node)) -> None:
+async def reset_console(node: QemuVM = Depends(dep_node)) -> Response:
 
     await node.reset_console()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
