@@ -1,0 +1,45 @@
+{
+    "name": "RockyLinux",
+    "category": "guest",
+    "description": "Rocky Linux is a community enterprise operating system designed to be 100% bug-for-bug compatible with Red Hat Enterprise Linux (RHEL).",
+    "vendor_name": "Rocky Enterprise Software Foundation",
+    "vendor_url": "https://rockylinux.org",
+    "documentation_url": "https://docs.rockylinux.org",
+    "product_name": "Rocky Linux",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "Bernhard Ehlers",
+    "maintainer_email": "none@b-ehlers.de",
+    "usage": "Username:\trockylinux\nPassword:\trockylinux\nTo become root, use \"sudo su\".\n\nTo improve performance, increase RAM and vCPUs in the VM settings.",
+    "symbol": "linux_guest.svg",
+    "port_name_format": "ens{port4}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1536,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require",
+        "options": "-usbdevice tablet"
+    },
+    "images": [
+        {
+            "filename": "RockyLinux_8.4_VMG_LinuxVMImages.COM.vmdk",
+            "version": "8.4",
+            "md5sum": "3452d5b0fbb4cdcf3ac6fe8de8d0ac08",
+            "filesize": 5273878528,
+            "download_url": "https://www.linuxvmimages.com/images/rockylinux-8",
+            "direct_download_url": "https://sourceforge.net/projects/linuxvmimages/files/VMware/R/rockylinux/8/RockyLinux_8.4_VMM.7z/download",
+            "compression": "7z"
+        }
+    ],
+    "versions": [
+        {
+            "name": "8.4",
+            "images": {
+                "hda_disk_image": "RockyLinux_8.4_VMG_LinuxVMImages.COM.vmdk"
+            }
+        }
+    ]
+}

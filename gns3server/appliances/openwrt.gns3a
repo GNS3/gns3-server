@@ -22,7 +22,7 @@
         "kvm": "allow"
     },
     "images": [
-            {
+        {
             "filename": "openwrt-19.07.7-x86-64-combined-ext4.img",
             "version": "19.07.7",
             "md5sum": "0cfa752fab87014419ab00b18a6cc5a6",

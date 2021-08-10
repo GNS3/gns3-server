@@ -30,7 +30,7 @@
             "filesize": 3591385088,
             "download_url": "http://cdimage.kali.org/kali-2021.1/",
             "direct_download_url": "http://cdimage.kali.org/kali-2021.1/kali-linux-2021.1-live-amd64.iso"
-        },    
+        },
         {
             "filename": "kali-linux-2019.3-amd64.iso",
             "version": "2019.3",
@@ -151,7 +151,7 @@
                 "hda_disk_image": "kali-linux-persistence-1gb.qcow2",
                 "cdrom_image": "kali-linux-2021.1-live-amd64.iso"
             }
-        },    
+        },
         {
             "name": "2019.3",
             "images": {
