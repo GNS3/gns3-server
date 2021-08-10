@@ -139,7 +139,7 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> None:
 
     qemu_manager = Qemu.instance()
     hardware_accel = qemu_manager.config.settings.Qemu.enable_hardware_acceleration
-    if hardware_accel and "-no-kvm" not in node.options and "-no-hax" not in node.options:
+    if hardware_accel and "-machine accel=tcg" not in node.options:
         pm = ProjectManager.instance()
         if pm.check_hardware_virtualization(node) is False:
             pass  # FIXME: check this
