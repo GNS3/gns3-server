@@ -179,15 +179,15 @@
         {
             "name": "6.4.5",
             "images": {
-              "hda_disk_image": "FMG_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
-              "hdb_disk_image": "empty30G.qcow2"
+                "hda_disk_image": "FMG_VM64_KVM-v6-build2288-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
             }
         },
         {
             "name": "6.4.4",
             "images": {
-              "hda_disk_image": "FMG_VM64_KVM-v6-build2253-FORTINET.out.kvm.qcow2",
-              "hdb_disk_image": "empty30G.qcow2"
+                "hda_disk_image": "FMG_VM64_KVM-v6-build2253-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
             }
         },
         {

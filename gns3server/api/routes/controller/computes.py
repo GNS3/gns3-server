@@ -18,7 +18,7 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from typing import List, Union
 from uuid import UUID
 
@@ -93,12 +93,13 @@ async def update_compute(
 @router.delete("/{compute_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
-) -> None:
+) -> Response:
     """
     Delete a compute from the controller.
     """
 
     await ComputesService(computes_repo).delete_compute(compute_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{compute_id}/{emulator}/images")

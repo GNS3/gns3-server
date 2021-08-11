@@ -25,7 +25,7 @@ import logging
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from typing import List
@@ -103,7 +103,7 @@ def get_compute_project(project: Project = Depends(dep_project)) -> schemas.Proj
 
 
 @router.post("/projects/{project_id}/close", status_code=status.HTTP_204_NO_CONTENT)
-async def close_compute_project(project: Project = Depends(dep_project)) -> None:
+async def close_compute_project(project: Project = Depends(dep_project)) -> Response:
     """
     Close a project on the compute.
     """
@@ -118,17 +118,18 @@ async def close_compute_project(project: Project = Depends(dep_project)) -> None
             pass
     else:
         log.warning("Skip project closing, another client is listening for project notifications")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_compute_project(project: Project = Depends(dep_project)) -> None:
+async def delete_compute_project(project: Project = Depends(dep_project)) -> Response:
     """
     Delete project from the compute.
     """
 
     await project.delete()
     ProjectManager.instance().remove_project(project.id)
-
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # @Route.get(
 #     r"/projects/{project_id}/notifications",
@@ -214,7 +215,11 @@ async def get_compute_project_file(file_path: str, project: Project = Depends(de
 
 
 @router.post("/projects/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def write_compute_project_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
+async def write_compute_project_file(
+        file_path: str,
+        request: Request,
+        project: Project = Depends(dep_project)
+) -> Response:
 
     file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)
@@ -238,3 +243,5 @@ async def write_compute_project_file(file_path: str, request: Request, project: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

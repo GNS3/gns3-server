@@ -20,7 +20,7 @@ API routes for IOU nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, status
+from fastapi import APIRouter, WebSocket, Depends, Body, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union
@@ -113,12 +113,13 @@ async def update_iou_node(node_data: schemas.IOUUpdate, node: IOUVM = Depends(de
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_iou_node(node: IOUVM = Depends(dep_node)) -> None:
+async def delete_iou_node(node: IOUVM = Depends(dep_node)) -> Response:
     """
     Delete an IOU node.
     """
 
     await IOU.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.IOU, status_code=status.HTTP_201_CREATED)
@@ -135,7 +136,7 @@ async def duplicate_iou_node(
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep_node)) -> None:
+async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep_node)) -> Response:
     """
     Start an IOU node.
     """
@@ -146,35 +147,37 @@ async def start_iou_node(start_data: schemas.IOUStart, node: IOUVM = Depends(dep
             setattr(node, name, value)
 
     await node.start()
-    return node.asdict()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_iou_node(node: IOUVM = Depends(dep_node)) -> None:
+async def stop_iou_node(node: IOUVM = Depends(dep_node)) -> Response:
     """
     Stop an IOU node.
     """
 
     await node.stop()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_iou_node(node: IOUVM = Depends(dep_node)) -> None:
+def suspend_iou_node(node: IOUVM = Depends(dep_node)) -> Response:
     """
     Suspend an IOU node.
     Does nothing since IOU doesn't support being suspended.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_iou_node(node: IOUVM = Depends(dep_node)) -> None:
+async def reload_iou_node(node: IOUVM = Depends(dep_node)) -> Response:
     """
     Reload an IOU node.
     """
 
     await node.reload()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -220,12 +223,13 @@ async def update_iou_node_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)) -> None:
+async def delete_iou_node_nio(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)) -> Response:
     """
     Delete a NIO (Network Input/Output) from the node.
     """
 
     await node.adapter_remove_nio_binding(adapter_number, port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -247,12 +251,13 @@ async def start_iou_node_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)) -> None:
+async def stop_iou_node_capture(adapter_number: int, port_number: int, node: IOUVM = Depends(dep_node)) -> Response:
     """
     Stop a packet capture on the node.
     """
 
     await node.stop_capture(adapter_number, port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
@@ -280,6 +285,7 @@ async def console_ws(websocket: WebSocket, node: IOUVM = Depends(dep_node)) -> N
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: IOUVM = Depends(dep_node)) -> None:
+async def reset_console(node: IOUVM = Depends(dep_node)) -> Response:
 
     await node.reset_console()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

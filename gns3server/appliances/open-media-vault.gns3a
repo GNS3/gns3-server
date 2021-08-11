@@ -19,7 +19,7 @@
         "ram": 2048,
         "hda_disk_interface": "ide",
         "hdb_disk_interface": "ide",
-		"arch": "x86_64",
+        "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "dc",
         "kvm": "require"

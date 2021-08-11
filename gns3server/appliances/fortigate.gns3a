@@ -254,11 +254,11 @@
     ],
     "versions": [
         {
-          "name": "6.4.5",
-          "images": {
-            "hda_disk_image": "FGT_VM64_KVM-v6-build1828-FORTINET.out.kvm.qcow2",
-            "hdb_disk_image": "empty30G.qcow2"
-          }
+            "name": "6.4.5",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v6-build1828-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
         },
         {
             "name": "6.2.2",

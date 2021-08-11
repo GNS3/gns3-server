@@ -669,7 +669,7 @@ class QemuVM(BaseNode):
 
         if not mac_address:
             # use the node UUID to generate a random MAC address
-            self._mac_address = f"0c:{self.project.id[-4:-2]}:{self.project.id[-2:]}:{self.id[-4:-2]}:{self.id[-2:]}:00"
+            self._mac_address = f"0c:{self.id[2:4]}:{self.id[4:6]}:{self.id[6:8]}:00:00"
         else:
             self._mac_address = mac_address
 
@@ -912,20 +912,26 @@ class QemuVM(BaseNode):
             )
         )
 
-        if not sys.platform.startswith("linux"):
-            if "-no-kvm" in options:
-                options = options.replace("-no-kvm", "")
-            if "-enable-kvm" in options:
+        # "-no-kvm" and "-no-hax' are deprecated since Qemu v5.2
+        if "-no-kvm" in options:
+            options = options.replace("-no-kvm", "-machine accel=tcg")
+        if "-no-hax" in options:
+            options = options.replace("-no-hax", "-machine accel=tcg")
+
+        if "-enable-kvm" in options:
+            if not sys.platform.startswith("linux"):
+                # KVM can only be enabled on Linux
                 options = options.replace("-enable-kvm", "")
-        else:
-            if "-no-hax" in options:
-                options = options.replace("-no-hax", "")
-            if "-enable-hax" in options:
+            else:
+                options = options.replace("-enable-kvm", "-machine accel=kvm")
+
+        if "-enable-hax" in options:
+            if not sys.platform.startswith("win"):
+                # HAXM is only available on Windows
                 options = options.replace("-enable-hax", "")
-            if "-icount" in options and ("-no-kvm" not in options):
-                # automatically add the -no-kvm option if -icount is detected
-                # to help with the migration of ASA VMs created before version 1.4
-                options = "-no-kvm " + options
+            else:
+                options = options.replace("-enable-hax", "-machine accel=hax")
+
         self._options = options.strip()
 
     @property
@@ -1862,6 +1868,24 @@ class QemuVM(BaseNode):
         try:
             qemu_img_path = self._get_qemu_img()
             command = [qemu_img_path, "create", "-o", f"backing_file={disk_image}", "-f", "qcow2", disk]
+            try:
+                base_qcow2 = Qcow2(disk_image)
+                if base_qcow2.crypt_method:
+                    # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
+                    # Also embed a secret name so it doesn't have to be passed to qemu -drive ...
+                    options = {
+                        "encrypt.key-secret": os.path.basename(disk_image),
+                        "driver": "qcow2",
+                        "file": {
+                            "driver": "file",
+                            "filename": disk_image,
+                        },
+                    }
+                    command = [qemu_img_path, "create", "-b", "json:"+json.dumps(options, separators=(',', ':')),
+                               "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
+            except Qcow2Error:
+                pass  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
+
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
@@ -2070,7 +2094,7 @@ class QemuVM(BaseNode):
                     # The disk exists we check if the clone works
                     try:
                         qcow2 = Qcow2(disk)
-                        await qcow2.rebase(qemu_img_path, disk_image)
+                        await qcow2.validate(qemu_img_path)
                     except (Qcow2Error, OSError) as e:
                         raise QemuError(f"Could not use qcow2 disk image '{disk_image}' for {disk_name} {e}")
 
@@ -2310,7 +2334,7 @@ class QemuVM(BaseNode):
 
         enable_hardware_accel = self.manager.config.settings.Qemu.enable_hardware_acceleration
         require_hardware_accel = self.manager.config.settings.Qemu.require_hardware_acceleration
-        if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
+        if enable_hardware_accel and "-machine accel=tcg" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
             if sys.platform.startswith("win"):
                 supported_binaries = [

@@ -20,7 +20,7 @@ API routes for Ethernet switch nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Body, Path, status
+from fastapi import APIRouter, Depends, Body, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -112,42 +112,43 @@ async def update_ethernet_switch(
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
+async def delete_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> Response:
     """
     Delete an Ethernet switch.
     """
 
     await Dynamips.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
+def start_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> Response:
     """
     Start an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
+def stop_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> Response:
     """
     Stop an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
+def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> Response:
     """
     Suspend an Ethernet switch.
     This endpoint results in no action since Ethernet switch nodes are always on.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -174,7 +175,7 @@ async def delete_nio(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: EthernetSwitch = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the switch is always 0.
@@ -182,6 +183,7 @@ async def delete_nio(
 
     nio = await node.remove_nio(port_number)
     await nio.delete()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -210,13 +212,14 @@ async def stop_capture(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: EthernetSwitch = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Stop a packet capture on the node.
     The adapter number on the switch is always 0.
     """
 
     await node.stop_capture(port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")

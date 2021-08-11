@@ -21,7 +21,7 @@ API routes for images.
 import os
 import urllib.parse
 
-from fastapi import APIRouter, Request, status, HTTPException
+from fastapi import APIRouter, Request, status, Response, HTTPException
 from fastapi.responses import FileResponse
 from typing import List
 
@@ -54,13 +54,14 @@ async def get_dynamips_images() -> List[str]:
 
 
 @router.post("/dynamips/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def upload_dynamips_image(filename: str, request: Request) -> None:
+async def upload_dynamips_image(filename: str, request: Request) -> Response:
     """
     Upload a Dynamips IOS image.
     """
 
     dynamips_manager = Dynamips.instance()
     await dynamips_manager.write_image(urllib.parse.unquote(filename), request.stream())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/dynamips/images/{filename:path}")
@@ -95,13 +96,14 @@ async def get_iou_images() -> List[str]:
 
 
 @router.post("/iou/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def upload_iou_image(filename: str, request: Request) -> None:
+async def upload_iou_image(filename: str, request: Request) -> Response:
     """
     Upload an IOU image.
     """
 
     iou_manager = IOU.instance()
     await iou_manager.write_image(urllib.parse.unquote(filename), request.stream())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/iou/images/{filename:path}")
@@ -132,10 +134,11 @@ async def get_qemu_images() -> List[str]:
 
 
 @router.post("/qemu/images/{filename:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def upload_qemu_image(filename: str, request: Request) -> None:
+async def upload_qemu_image(filename: str, request: Request) -> Response:
 
     qemu_manager = Qemu.instance()
     await qemu_manager.write_image(urllib.parse.unquote(filename), request.stream())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/qemu/images/{filename:path}")
