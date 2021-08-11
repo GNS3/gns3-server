@@ -236,9 +236,9 @@ def check_valid_image_header(data: bytes, image_type: str, header_magic_len: int
         # (normal IOS images are big endian!)
         if data[:header_magic_len] != b'\x7fELF\x01\x01\x01' and data[:7] != b'\x7fELF\x02\x01\x01':
             raise InvalidImageError("Invalid IOU file detected")
-    # elif image_type == "qemu":
-    #     if data[:expected_header_magic_len] != b'QFI\xfb':
-    #         raise InvalidImageError("Invalid Qemu file detected (must be raw or qcow2)")
+    elif image_type == "qemu":
+        if data[:header_magic_len] != b'QFI\xfb':
+            raise InvalidImageError("Invalid Qemu file detected (must be qcow2 format)")
 
 
 async def write_image(
@@ -267,8 +267,8 @@ async def write_image(
                 await f.write(chunk)
                 checksum.update(chunk)
 
-        file_size = os.path.getsize(tmp_path)
-        if not file_size or file_size < header_magic_len:
+        image_size = os.path.getsize(tmp_path)
+        if not image_size or image_size < header_magic_len:
             raise InvalidImageError("The image content is empty or too small to be valid")
 
         checksum = checksum.hexdigest()
@@ -280,4 +280,4 @@ async def write_image(
         raise
     os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
     shutil.move(tmp_path, path)
-    return await images_repo.add_image(image_name, image_type, path, checksum, checksum_algorithm="md5")
+    return await images_repo.add_image(image_name, image_type, image_size, path, checksum, checksum_algorithm="md5")

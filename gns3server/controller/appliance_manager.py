@@ -77,6 +77,20 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
+    #TODO: finish
+    def find_appliance_with_image(self, image_checksum):
+
+        for appliance in self._appliances.values():
+            if appliance.images:
+                for image in appliance.images:
+                    if image["md5sum"] == image_checksum:
+                        print(f"APPLIANCE FOUND {appliance.name}")
+                        version = image["version"]
+                        print(f"IMAGE VERSION {version}")
+                        if image.versions:
+                            for version in image.versions:
+                                pass
+
     def load_appliances(self, symbol_theme="Classic"):
         """
         Loads appliance files from disk.

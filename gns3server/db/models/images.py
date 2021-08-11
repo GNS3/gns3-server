@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, BigInteger
 from sqlalchemy.orm import relationship
 
 from .base import BaseTable
@@ -28,6 +28,7 @@ class Image(BaseTable):
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String, unique=True, index=True)
     image_type = Column(String)
+    image_size = Column(BigInteger)
     path = Column(String)
     checksum = Column(String)
     checksum_algorithm = Column(String)

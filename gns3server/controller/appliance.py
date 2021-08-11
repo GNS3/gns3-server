@@ -56,6 +56,14 @@ class Appliance:
     def name(self):
         return self._data.get("name")
 
+    @property
+    def images(self):
+        return self._data.get("images")
+
+    @property
+    def versions(self):
+        return self._data.get("versions")
+
     @symbol.setter
     def symbol(self, new_symbol):
         self._data["symbol"] = new_symbol

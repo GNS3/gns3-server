@@ -56,8 +56,8 @@ async def get_images(
 @router.post("/upload/{image_name}", response_model=schemas.Image, status_code=status.HTTP_201_CREATED)
 async def upload_image(
         image_name: str,
-        image_type: schemas.ImageType,
         request: Request,
+        image_type: schemas.ImageType = schemas.ImageType.qemu,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> schemas.Image:
     """
@@ -77,6 +77,11 @@ async def upload_image(
         image = await write_image(image_name, image_type, path, request.stream(), images_repo)
     except (OSError, InvalidImageError) as e:
         raise ControllerError(f"Could not save {image_type} image '{image_name}': {e}")
+
+    # TODO: automatically create template based on image checksum
+    #from gns3server.controller import Controller
+    #controller = Controller.instance()
+    #controller.appliance_manager.find_appliance_with_image(image.checksum)
 
     return image
 

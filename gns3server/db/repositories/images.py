@@ -57,12 +57,13 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def add_image(self, image_name, image_type, path, checksum, checksum_algorithm) -> models.Image:
+    async def add_image(self, image_name, image_type, image_size, path, checksum, checksum_algorithm) -> models.Image:
 
         db_image = models.Image(
             id=None,
             filename=image_name,
             image_type=image_type,
+            image_size=image_size,
             path=path,
             checksum=checksum,
             checksum_algorithm=checksum_algorithm

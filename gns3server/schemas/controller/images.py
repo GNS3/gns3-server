@@ -34,6 +34,7 @@ class ImageBase(BaseModel):
 
     filename: str = Field(..., description="Image name")
     image_type: ImageType = Field(..., description="Image type")
+    image_size: int = Field(..., description="Image size in bytes")
     checksum: str = Field(..., description="Checksum value")
     checksum_algorithm: str = Field(..., description="Checksum algorithm")
 
