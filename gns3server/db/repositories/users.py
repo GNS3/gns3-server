@@ -17,7 +17,7 @@
 
 from uuid import UUID
 from typing import Optional, List, Union
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -140,6 +140,15 @@ class UsersRepository(BaseRepository):
             return user
         if not self._auth_service.verify_password(password, user.hashed_password):
             return None
+
+        # Backup the updated_at value
+        updated_at = user.updated_at
+        user.last_login = func.current_timestamp()
+        await self._db_session.commit()
+        # Restore the original updated_at value
+        # so it is not affected by the last login update
+        user.updated_at = updated_at
+        await self._db_session.commit()
         return user
 
     async def get_user_memberships(self, user_id: UUID) -> List[models.UserGroup]:

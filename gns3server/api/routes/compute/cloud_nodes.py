@@ -20,7 +20,7 @@ API routes for cloud nodes.
 
 import os
 
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union
@@ -99,41 +99,43 @@ def update_cloud(node_data: schemas.CloudUpdate, node: Cloud = Depends(dep_node)
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_cloud(node: Cloud = Depends(dep_node)) -> None:
+async def delete_cloud(node: Cloud = Depends(dep_node)) -> Response:
     """
     Delete a cloud node.
     """
 
     await Builtin.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_cloud(node: Cloud = Depends(dep_node)) -> None:
+async def start_cloud(node: Cloud = Depends(dep_node)) -> Response:
     """
     Start a cloud node.
     """
 
     await node.start()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_cloud(node: Cloud = Depends(dep_node)) -> None:
+async def stop_cloud(node: Cloud = Depends(dep_node)) -> Response:
     """
     Stop a cloud node.
     This endpoint results in no action since cloud nodes cannot be stopped.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_cloud(node: Cloud = Depends(dep_node)) -> None:
+async def suspend_cloud(node: Cloud = Depends(dep_node)) -> Response:
     """
     Suspend a cloud node.
     This endpoint results in no action since cloud nodes cannot be suspended.
     """
 
-    pass
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -188,13 +190,14 @@ async def delete_cloud_nio(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: Cloud = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Remove a NIO (Network Input/Output) from the node.
     The adapter number on the cloud is always 0.
     """
 
     await node.remove_nio(port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -223,13 +226,14 @@ async def stop_cloud_capture(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: Cloud = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Stop a packet capture on the node.
     The adapter number on the cloud is always 0.
     """
 
     await node.stop_capture(port_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/pcap")

@@ -26,12 +26,19 @@
     },
     "images": [
         {
-            "filename": "vyos-1.3-rolling-202101-qemu.qcow2",
-            "version": "1.3-snapshot-202101",
-            "md5sum": "b05a1f8a879c42342ea90f65ebe62f05",
-            "filesize": 315359232,
-            "download_url": "https://vyos.net/get/snapshots/",
-            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/snapshot/vyos-1.3-rolling-202101/qemu/vyos-1.3-rolling-202101-qemu.qcow2"
+            "filename": "vyos-1.3.0-rc5-amd64.qcow2",
+            "version": "1.3.0-rc5",
+            "md5sum": "dd704f59afc0fccdf601cc750bf2c438",
+            "filesize": 361955328,
+            "download_url": "https://www.b-ehlers.de/GNS3/images/",
+            "direct_download_url": "https://www.b-ehlers.de/GNS3/images/vyos-1.3.0-rc5-amd64.qcow2"
+        },
+        {
+            "filename": "vyos-1.2.8-amd64.iso",
+            "version": "1.2.8",
+            "md5sum": "0ad879db903efdbf1c39dc945e165931",
+            "filesize": 429916160,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-8-generic-iso-image"
         },
         {
             "filename": "vyos-1.2.7-amd64.iso",
@@ -59,9 +66,16 @@
     ],
     "versions": [
         {
-            "name": "1.3-snapshot-202101",
+            "name": "1.3.0-rc5",
             "images": {
-                "hda_disk_image": "vyos-1.3-rolling-202101-qemu.qcow2"
+                "hda_disk_image": "vyos-1.3.0-rc5-amd64.qcow2"
+            }
+        },
+        {
+            "name": "1.2.8",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.2.8-amd64.iso"
             }
         },
         {

@@ -430,6 +430,7 @@ class Cloud(BaseNode):
             await self._add_ubridge_connection(nio, port_number)
             self._nios[port_number] = nio
         except (NodeError, UbridgeError) as e:
+            log.error('Cannot add NIO on cloud "{name}": {error}'.format(name=self._name, error=e))
             await self._stop_ubridge()
             self.status = "stopped"
             self._nios[port_number] = nio

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import Optional
 from pydantic import EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
@@ -27,6 +28,7 @@ class UserBase(BaseModel):
     """
 
     username: Optional[str] = Field(None, min_length=3, regex="[a-zA-Z0-9_-]+$")
+    is_active: bool = True
     email: Optional[EmailStr]
     full_name: Optional[str]
 
@@ -48,10 +50,20 @@ class UserUpdate(UserBase):
     password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
 
 
+class LoggedInUserUpdate(BaseModel):
+    """
+    Properties to update a logged in user.
+    """
+
+    password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
+    email: Optional[EmailStr]
+    full_name: Optional[str]
+
+
 class User(DateTimeModelMixin, UserBase):
 
     user_id: UUID
-    is_active: bool = True
+    last_login: Optional[datetime] = None
     is_superadmin: bool = False
 
     class Config:
@@ -85,7 +97,7 @@ class UserGroupUpdate(UserGroupBase):
 class UserGroup(DateTimeModelMixin, UserGroupBase):
 
     user_group_id: UUID
-    builtin: bool
+    is_builtin: bool
 
     class Config:
         orm_mode = True

@@ -85,6 +85,7 @@ class Link:
         self._link_type = "ethernet"
         self._suspended = False
         self._filters = {}
+        self._link_style = {}
 
     @property
     def filters(self):
@@ -166,6 +167,13 @@ class Link:
     async def update_suspend(self, value):
         if value != self._suspended:
             self._suspended = value
+            await self.update()
+            self._project.emit_notification("link.updated", self.asdict())
+            self._project.dump()
+
+    async def update_link_style(self, link_style):
+        if link_style != self._link_style:
+            self._link_style = link_style
             await self.update()
             self._project.emit_notification("link.updated", self.asdict())
             self._project.dump()
@@ -432,7 +440,13 @@ class Link:
                 }
             )
         if topology_dump:
-            return {"nodes": res, "link_id": self._id, "filters": self._filters, "suspend": self._suspended}
+            return {
+                "nodes": res,
+                "link_id": self._id,
+                "filters": self._filters,
+                "link_style": self._link_style,
+                "suspend": self._suspended,
+            }
         return {
             "nodes": res,
             "link_id": self._id,
@@ -444,4 +458,5 @@ class Link:
             "link_type": self._link_type,
             "filters": self._filters,
             "suspend": self._suspended,
+            "link_style": self._link_style,
         }

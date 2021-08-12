@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Boolean, Column, String, ForeignKey, event
+from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, event
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
@@ -45,6 +45,7 @@ class User(BaseTable):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     hashed_password = Column(String)
+    last_login = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")
@@ -75,7 +76,7 @@ class UserGroup(BaseTable):
 
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
-    builtin = Column(Boolean, default=False)
+    is_builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_link, back_populates="groups")
     roles = relationship("Role", secondary=role_group_link, back_populates="groups")
 
@@ -84,8 +85,8 @@ class UserGroup(BaseTable):
 def create_default_user_groups(target, connection, **kw):
 
     default_groups = [
-        {"name": "Administrators", "builtin": True},
-        {"name": "Users", "builtin": True}
+        {"name": "Administrators", "is_builtin": True},
+        {"name": "Users", "is_builtin": True}
     ]
 
     stmt = target.insert().values(default_groups)

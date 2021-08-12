@@ -38,9 +38,9 @@ class Role(BaseTable):
     __tablename__ = "roles"
 
     role_id = Column(GUID, primary_key=True, default=generate_uuid)
-    name = Column(String)
+    name = Column(String, unique=True)
     description = Column(String)
-    builtin = Column(Boolean, default=False)
+    is_builtin = Column(Boolean, default=False)
     permissions = relationship("Permission", secondary=permission_role_link, back_populates="roles")
     groups = relationship("UserGroup", secondary=role_group_link, back_populates="roles")
 
@@ -49,8 +49,8 @@ class Role(BaseTable):
 def create_default_roles(target, connection, **kw):
 
     default_roles = [
-        {"name": "Administrator", "description": "Administrator role", "builtin": True},
-        {"name": "User", "description": "User role", "builtin": True},
+        {"name": "Administrator", "description": "Administrator role", "is_builtin": True},
+        {"name": "User", "description": "User role", "is_builtin": True},
     ]
 
     stmt = target.insert().values(default_roles)

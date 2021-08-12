@@ -25,12 +25,11 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, Response, HTTPException, Depends, status
+from fastapi import APIRouter, Request, Response, HTTPException, Depends, Response, status
 from typing import List
 from uuid import UUID
 
 from gns3server import schemas
-from gns3server.controller import Controller
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 from gns3server.db.repositories.rbac import RbacRepository
@@ -103,13 +102,14 @@ async def delete_template(
         template_id: UUID,
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> Response:
     """
     Delete a template.
     """
 
     await TemplatesService(templates_repo).delete_template(template_id)
     await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/templates", response_model=List[schemas.Template], response_model_exclude_unset=True)
@@ -152,28 +152,3 @@ async def duplicate_template(
     template = await TemplatesService(templates_repo).duplicate_template(template_id)
     await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
     return template
-
-
-@router.post(
-    "/projects/{project_id}/templates/{template_id}",
-    response_model=schemas.Node,
-    status_code=status.HTTP_201_CREATED,
-    responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or template"}},
-)
-async def create_node_from_template(
-    project_id: UUID,
-    template_id: UUID,
-    template_usage: schemas.TemplateUsage,
-    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-) -> schemas.Node:
-    """
-    Create a new node from a template.
-    """
-
-    template = await TemplatesService(templates_repo).get_template(template_id)
-    controller = Controller.instance()
-    project = controller.get_project(str(project_id))
-    node = await project.add_node_from_template(
-        template, x=template_usage.x, y=template_usage.y, compute_id=template_usage.compute_id
-    )
-    return node.asdict()

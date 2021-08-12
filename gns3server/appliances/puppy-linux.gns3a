@@ -26,7 +26,7 @@
             "filename": "fossapup64-9.5.iso",
             "version": "9.5",
             "md5sum": "6a45e7a305b7d3172ebd9eab5ca460e4",
-            "filesize":  428867584,
+            "filesize": 428867584,
             "download_url": "http://puppylinux.com/index.html",
             "direct_download_url": "http://distro.ibiblio.org/puppylinux/puppy-fossa/fossapup64-9.5.iso"
         },

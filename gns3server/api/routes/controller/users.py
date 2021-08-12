@@ -19,7 +19,7 @@
 API routes for users.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from uuid import UUID
 from typing import List
@@ -98,13 +98,20 @@ async def get_logged_in_user(current_user: schemas.User = Depends(get_current_ac
     return current_user
 
 
-@router.get("/me", response_model=schemas.User)
-async def get_logged_in_user(current_user: schemas.User = Depends(get_current_active_user)) -> schemas.User:
+@router.put("/me", response_model=schemas.User)
+async def update_logged_in_user(
+        user_update: schemas.LoggedInUserUpdate,
+        current_user: schemas.User = Depends(get_current_active_user),
+        users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+) -> schemas.User:
     """
-    Get the current active user.
+    Update the current active user.
     """
 
-    return current_user
+    if user_update.email and await users_repo.get_user_by_email(user_update.email):
+        raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
+
+    return await users_repo.update_user(current_user.user_id, user_update)
 
 
 @router.get("", response_model=List[schemas.User], dependencies=[Depends(get_current_active_user)])
@@ -166,6 +173,12 @@ async def update_user(
     Update an user.
     """
 
+    if user_update.username and await users_repo.get_user_by_username(user_update.username):
+        raise ControllerBadRequestError(f"Username '{user_update.username}' is already registered")
+
+    if user_update.email and await users_repo.get_user_by_email(user_update.email):
+        raise ControllerBadRequestError(f"Email '{user_update.email}' is already registered")
+
     user = await users_repo.update_user(user_id, user_update)
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
@@ -180,7 +193,7 @@ async def update_user(
 async def delete_user(
     user_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> None:
+) -> Response:
     """
     Delete an user.
     """
@@ -195,6 +208,8 @@ async def delete_user(
     success = await users_repo.delete_user(user_id)
     if not success:
         raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
@@ -238,7 +253,7 @@ async def add_permission_to_user(
         user_id: UUID,
         permission_id: UUID,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
+) -> Response:
     """
     Add a permission to an user.
     """
@@ -251,6 +266,8 @@ async def add_permission_to_user(
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.delete(
     "/{user_id}/permissions/{permission_id}",
@@ -261,7 +278,7 @@ async def remove_permission_from_user(
     user_id: UUID,
     permission_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
+) -> Response:
     """
     Remove permission from an user.
     """
@@ -273,3 +290,5 @@ async def remove_permission_from_user(
     user = await rbac_repo.remove_permission_from_user(user_id, permission)
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

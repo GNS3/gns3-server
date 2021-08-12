@@ -6,7 +6,7 @@
     "vendor_url": "https://www.huawei.com",
     "product_name": "HuaWei USG6000v",
     "product_url": "https://e.huawei.com/en/products/enterprise-networking/security/firewall-gateway/usg6000v",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",

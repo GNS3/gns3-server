@@ -114,7 +114,7 @@ class RoleUpdate(RoleBase):
 class Role(DateTimeModelMixin, RoleBase):
 
     role_id: UUID
-    builtin: bool
+    is_builtin: bool
     permissions: List[Permission]
 
     class Config:

@@ -34,7 +34,7 @@ from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.vmware import VMware
 from gns3server import schemas
 
-from fastapi import APIRouter, HTTPException, Body, status
+from fastapi import APIRouter, HTTPException, Body, Response, status
 from fastapi.encoders import jsonable_encoder
 from uuid import UUID
 from typing import Optional, List
@@ -150,7 +150,7 @@ async def get_qemu_capabilities() -> dict:
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}},
 )
-async def create_qemu_image(image_data: schemas.QemuImageCreate) -> None:
+async def create_qemu_image(image_data: schemas.QemuImageCreate) -> Response:
     """
     Create a Qemu image.
     """
@@ -163,13 +163,15 @@ async def create_qemu_image(image_data: schemas.QemuImageCreate) -> None:
         image_data.qemu_img, image_data.path, jsonable_encoder(image_data, exclude_unset=True)
     )
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.put(
     "/qemu/img",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}},
 )
-async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> None:
+async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> Response:
     """
     Update a Qemu image.
     """
@@ -180,6 +182,8 @@ async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> None:
 
     if image_data.extend:
         await Qemu.instance().resize_disk(image_data.qemu_img, image_data.path, image_data.extend)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/virtualbox/vms", response_model=List[dict])

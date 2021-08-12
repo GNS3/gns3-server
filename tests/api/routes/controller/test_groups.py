@@ -208,7 +208,7 @@ class TestGroupRolesRoutes:
         roles = await user_repo.get_user_group_roles(group_in_db.user_group_id)
         assert len(roles) == 2  # 1 default role + 1 custom role
         for role in roles:
-            if not role.builtin:
+            if not role.is_builtin:
                 assert role.name == test_role.name
 
     async def test_get_user_group_roles(

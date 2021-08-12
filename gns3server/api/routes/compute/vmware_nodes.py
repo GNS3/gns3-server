@@ -20,7 +20,7 @@ API routes for VMware nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Path, status
+from fastapi import APIRouter, WebSocket, Depends, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
@@ -103,57 +103,63 @@ def update_vmware_node(node_data: schemas.VMwareUpdate, node: VMwareVM = Depends
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def delete_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Delete a VMware node.
     """
 
     await VMware.instance().delete_node(node.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def start_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Start a VMware node.
     """
 
     await node.start()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def stop_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Stop a VMware node.
     """
 
     await node.stop()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def suspend_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Suspend a VMware node.
     """
 
     await node.suspend()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
-async def resume_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def resume_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Resume a VMware node.
     """
 
     await node.resume()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_vmware_node(node: VMwareVM = Depends(dep_node)) -> None:
+async def reload_vmware_node(node: VMwareVM = Depends(dep_node)) -> Response:
     """
     Reload a VMware node.
     """
 
     await node.reload()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -207,13 +213,14 @@ async def delete_vmware_node_nio(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
         node: VMwareVM = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Delete a NIO (Network Input/Output) from the node.
     The port number on the VMware node is always 0.
     """
 
     await node.adapter_remove_nio_binding(adapter_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -241,13 +248,14 @@ async def stop_vmware_node_capture(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
         node: VMwareVM = Depends(dep_node)
-) -> None:
+) -> Response:
     """
     Stop a packet capture on the node.
     The port number on the VMware node is always 0.
     """
 
     await node.stop_capture(adapter_number)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
@@ -289,6 +297,7 @@ async def console_ws(websocket: WebSocket, node: VMwareVM = Depends(dep_node)) -
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: VMwareVM = Depends(dep_node)) -> None:
+async def reset_console(node: VMwareVM = Depends(dep_node)) -> Response:
 
     await node.reset_console()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
