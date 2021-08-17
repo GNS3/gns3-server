@@ -38,6 +38,26 @@ class TestPermissionRoutes:
         response = await client.post(app.url_path_for("create_permission"), json=new_permission)
         assert response.status_code == status.HTTP_201_CREATED
 
+    async def test_create_wildcard_permission(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_permission = {
+            "methods": ["GET"],
+            "path": "/templates/*",
+            "action": "ALLOW"
+        }
+        response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+        assert response.status_code == status.HTTP_201_CREATED
+
+    async def test_create_invalid_permission(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_permission = {
+            "methods": ["GET"],
+            "path": "/templates/invalid",
+            "action": "ALLOW"
+        }
+        response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     async def test_get_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
@@ -50,7 +70,7 @@ class TestPermissionRoutes:
 
         response = await client.get(app.url_path_for("get_permissions"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 6  # 5 default permissions + 1 custom permission
+        assert len(response.json()) == 7  # 5 default permissions + 2 custom permissions
 
     async def test_update_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 

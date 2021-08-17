@@ -19,9 +19,13 @@
 API routes for permissions.
 """
 
-from fastapi import APIRouter, Depends, Response, status
+import re
+
+from fastapi import APIRouter, Depends, Response, Request, status
+from fastapi.routing import APIRoute
 from uuid import UUID
 from typing import List
+
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
@@ -53,6 +57,7 @@ async def get_permissions(
 
 @router.post("", response_model=schemas.Permission, status_code=status.HTTP_201_CREATED)
 async def create_permission(
+        request: Request,
         permission_create: schemas.PermissionCreate,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Permission:
@@ -64,7 +69,27 @@ async def create_permission(
         raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
                                         f"{permission_create.action}' already exists")
 
-    return await rbac_repo.create_permission(permission_create)
+    for route in request.app.routes:
+        if isinstance(route, APIRoute):
+
+            # remove the prefix (e.g. "/v3") from the route path
+            route_path = re.sub(r"^/v[0-9]", "", route.path)
+            # replace route path ID parameters by an UUID regex
+            route_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", route_path)
+            # replace remaining route path parameters by an word matching regex
+            route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
+
+            # the permission can match multiple routes
+            if permission_create.path.endswith("/*"):
+                route_path += r"/\*"
+
+            if re.fullmatch(route_path, permission_create.path):
+                for method in permission_create.methods:
+                    if method in list(route.methods):
+                        return await rbac_repo.create_permission(permission_create)
+
+    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path}' "
+                                    f"doesn't match any existing endpoint")
 
 
 @router.get("/{permission_id}", response_model=schemas.Permission)
