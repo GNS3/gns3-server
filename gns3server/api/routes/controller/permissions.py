@@ -65,9 +65,10 @@ async def create_permission(
     Create a new permission.
     """
 
-    if await rbac_repo.check_permission_exists(permission_create):
-        raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
-                                        f"{permission_create.action}' already exists")
+    # TODO: should we prevent having multiple permissions with same methods/path?
+    #if await rbac_repo.check_permission_exists(permission_create):
+    #    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
+    #                                    f"{permission_create.action}' already exists")
 
     for route in request.app.routes:
         if isinstance(route, APIRoute):
@@ -141,4 +142,16 @@ async def delete_permission(
     if not success:
         raise ControllerNotFoundError(f"Permission '{permission_id}' could not be deleted")
 
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
+async def prune_permissions(
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> Response:
+    """
+    Prune orphaned permissions.
+    """
+
+    await rbac_repo.prune_permissions()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
