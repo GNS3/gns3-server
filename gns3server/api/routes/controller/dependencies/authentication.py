@@ -61,11 +61,7 @@ async def get_current_active_user(
         )
 
     # remove the prefix (e.g. "/v3") from URL path
-    match = re.search(r"^(/v[0-9]+).*", request.url.path)
-    if match:
-        path = request.url.path[len(match.group(1)):]
-    else:
-        path = request.url.path
+    path = re.sub(r"^/v[0-9]", "", request.url.path)
 
     # special case: always authorize access to the "/users/me" endpoint
     if path == "/users/me":

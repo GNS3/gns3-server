@@ -32,11 +32,31 @@ class TestPermissionRoutes:
 
         new_permission = {
             "methods": ["GET"],
-            "path": "/templates",
+            "path": "/templates/f6113095-a703-4967-b039-ab95ac3eb4f5",
             "action": "ALLOW"
         }
         response = await client.post(app.url_path_for("create_permission"), json=new_permission)
         assert response.status_code == status.HTTP_201_CREATED
+
+    async def test_create_wildcard_permission(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_permission = {
+            "methods": ["GET"],
+            "path": "/templates/*",
+            "action": "ALLOW"
+        }
+        response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+        assert response.status_code == status.HTTP_201_CREATED
+
+    async def test_create_invalid_permission(self, app: FastAPI, client: AsyncClient) -> None:
+
+        new_permission = {
+            "methods": ["GET"],
+            "path": "/templates/invalid",
+            "action": "ALLOW"
+        }
+        response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_get_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -50,12 +70,12 @@ class TestPermissionRoutes:
 
         response = await client.get(app.url_path_for("get_permissions"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 6  # 5 default permissions + 1 custom permission
+        assert len(response.json()) == 7  # 5 default permissions + 2 custom permissions
 
     async def test_update_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
         rbac_repo = RbacRepository(db_session)
-        permission_in_db = await rbac_repo.get_permission_by_path("/templates")
+        permission_in_db = await rbac_repo.get_permission_by_path("/templates/*")
 
         update_permission = {
             "methods": ["GET"],
@@ -81,3 +101,12 @@ class TestPermissionRoutes:
         permission_in_db = await rbac_repo.get_permission_by_path("/appliances")
         response = await client.delete(app.url_path_for("delete_permission", permission_id=permission_in_db.permission_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_prune_permissions(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
+
+        response = await client.post(app.url_path_for("prune_permissions"))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        rbac_repo = RbacRepository(db_session)
+        permissions_in_db = await rbac_repo.get_permissions()
+        assert len(permissions_in_db) == 5  # 5 default permissions
