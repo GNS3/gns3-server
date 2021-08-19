@@ -53,19 +53,19 @@ def create_default_roles(target, connection, **kw):
     default_permissions = [
         {
             "description": "Allow access to all endpoints",
-            "methods": ["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH"],
+            "methods": ["GET", "POST", "PUT", "DELETE"],
             "path": "/",
             "action": "ALLOW"
         },
         {
             "description": "Allow to create and list projects",
-            "methods": ["GET", "HEAD", "POST"],
+            "methods": ["GET", "POST"],
             "path": "/projects",
             "action": "ALLOW"
         },
         {
             "description": "Allow to create and list templates",
-            "methods": ["GET", "HEAD", "POST"],
+            "methods": ["GET", "POST"],
             "path": "/templates",
             "action": "ALLOW"
         },
@@ -77,7 +77,7 @@ def create_default_roles(target, connection, **kw):
         },
         {
             "description": "Allow access to all symbol endpoints",
-            "methods": ["GET", "HEAD", "POST"],
+            "methods": ["GET", "POST"],
             "path": "/symbols/*",
             "action": "ALLOW"
         },
