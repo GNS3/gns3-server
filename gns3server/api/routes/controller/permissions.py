@@ -36,6 +36,7 @@ from gns3server.controller.controller_error import (
 
 from gns3server.db.repositories.rbac import RbacRepository
 from .dependencies.database import get_repository
+from .dependencies.authentication import get_current_active_user
 
 import logging
 
@@ -59,6 +60,7 @@ async def get_permissions(
 async def create_permission(
         request: Request,
         permission_create: schemas.PermissionCreate,
+        current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Permission:
     """
@@ -82,11 +84,16 @@ async def create_permission(
 
             # the permission can match multiple routes
             if permission_create.path.endswith("/*"):
-                route_path += r"/\*"
+                route_path += r"/.*"
 
             if re.fullmatch(route_path, permission_create.path):
                 for method in permission_create.methods:
                     if method in list(route.methods):
+                        # check user has the right to add the permission (i.e has already to right on the path)
+                        if not await rbac_repo.check_user_is_authorized(current_user.user_id, method, permission_create.path):
+                            raise ControllerForbiddenError(f"User '{current_user.username}' doesn't have the rights to "
+                                                           f"add a permission on {method} {permission_create.path} or "
+                                                           f"the endpoint doesn't exist")
                         return await rbac_repo.create_permission(permission_create)
 
     raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path}' "
