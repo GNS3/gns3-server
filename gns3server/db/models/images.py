@@ -15,10 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, String, Integer, BigInteger
+from sqlalchemy import Table, Column, String, Integer, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
-from .base import BaseTable
+from .base import Base, BaseTable, GUID
+
+
+image_template_link = Table(
+    "images_templates_link",
+    Base.metadata,
+    Column("image_id", Integer, ForeignKey("images.id", ondelete="CASCADE")),
+    Column("template_id", GUID, ForeignKey("templates.template_id", ondelete="CASCADE"))
+)
 
 
 class Image(BaseTable):
@@ -32,4 +40,4 @@ class Image(BaseTable):
     path = Column(String)
     checksum = Column(String)
     checksum_algorithm = Column(String)
-    templates = relationship("Template")
+    templates = relationship("Template", secondary=image_template_link, back_populates="images")

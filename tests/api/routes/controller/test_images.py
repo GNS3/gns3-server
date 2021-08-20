@@ -19,8 +19,11 @@ import os
 import pytest
 import hashlib
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+
+from gns3server.db.repositories.images import ImagesRepository
 
 pytestmark = pytest.mark.asyncio
 
@@ -193,3 +196,12 @@ class TestImageRoutes:
         response = await client.delete(app.url_path_for("delete_image", image_name=image_name))
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not os.path.exists(os.path.join(images_dir, "QEMU", image_name))
+
+    async def test_prune_images(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
+
+        response = await client.post(app.url_path_for("prune_images"))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        images_repo = ImagesRepository(db_session)
+        images_in_db = await images_repo.get_images()
+        assert len(images_in_db) == 0

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from typing import Optional, List
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .base import BaseRepository
 
 import gns3server.db.models as models
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class ImagesRepository(BaseRepository):
@@ -31,33 +37,48 @@ class ImagesRepository(BaseRepository):
         super().__init__(db_session)
 
     async def get_image(self, image_name: str) -> Optional[models.Image]:
+        """
+        Get an image by its name (filename).
+        """
 
         query = select(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
+    async def get_image_by_checksum(self, checksum: str) -> Optional[models.Image]:
+        """
+        Get an image by its checksum.
+        """
+
+        query = select(models.Image).where(models.Image.checksum == checksum)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
     async def get_images(self) -> List[models.Image]:
+        """
+        Get all images.
+        """
 
         query = select(models.Image)
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
     async def get_image_templates(self, image_id: int) -> Optional[List[models.Template]]:
+        """
+        Get all templates that an image belongs to.
+        """
 
         query = select(models.Template).\
-            join(models.Image.templates). \
+            join(models.Template.images).\
             filter(models.Image.id == image_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
-    async def get_image_by_checksum(self, checksum: str) -> Optional[models.Image]:
-
-        query = select(models.Image).where(models.Image.checksum == checksum)
-        result = await self._db_session.execute(query)
-        return result.scalars().first()
-
     async def add_image(self, image_name, image_type, image_size, path, checksum, checksum_algorithm) -> models.Image:
+        """
+        Create a new image.
+        """
 
         db_image = models.Image(
             id=None,
@@ -75,8 +96,31 @@ class ImagesRepository(BaseRepository):
         return db_image
 
     async def delete_image(self, image_name: str) -> bool:
+        """
+        Delete an image.
+        """
 
         query = delete(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
+
+    async def prune_images(self) -> int:
+        """
+        Prune images not attached to any template.
+        """
+
+        query = select(models.Image).\
+            filter(~models.Image.templates.any())
+        result = await self._db_session.execute(query)
+        images = result.scalars().all()
+        images_deleted = 0
+        for image in images:
+            try:
+                os.remove(image.path)
+            except OSError:
+                log.warning(f"Could not delete image file {image.path}")
+            if await self.delete_image(image.filename):
+                images_deleted += 1
+        log.info(f"{images_deleted} image have been deleted")
+        return images_deleted

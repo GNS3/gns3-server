@@ -17,8 +17,10 @@
 
 
 from sqlalchemy import Boolean, Column, String, Integer, ForeignKey, PickleType
+from sqlalchemy.orm import relationship
 
 from .base import BaseTable, generate_uuid, GUID
+from .images import image_template_link
 
 
 class Template(BaseTable):
@@ -34,8 +36,7 @@ class Template(BaseTable):
     compute_id = Column(String)
     usage = Column(String)
     template_type = Column(String)
-
-    image_id = Column(Integer, ForeignKey('images.id', ondelete="CASCADE"))
+    images = relationship("Image", secondary=image_template_link, back_populates="templates")
 
     __mapper_args__ = {
         "polymorphic_identity": "templates",

@@ -22,7 +22,7 @@ import os
 import logging
 import urllib.parse
 
-from fastapi import APIRouter, Request, Depends, status
+from fastapi import APIRouter, Request, Response, Depends, status
 from typing import List
 from gns3server import schemas
 
@@ -125,3 +125,15 @@ async def delete_image(
     success = await images_repo.delete_image(image_name)
     if not success:
         raise ControllerError(f"Image '{image_name}' could not be deleted")
+
+
+@router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
+async def prune_images(
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+) -> Response:
+    """
+    Prune images not attached to any template.
+    """
+
+    await images_repo.prune_images()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
