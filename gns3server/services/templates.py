@@ -159,7 +159,7 @@ class TemplatesService:
 
         image = await self._templates_repo.get_image(image_name)
         if not image or not os.path.exists(image.path):
-            raise ControllerNotFoundError(f"Image {image_name} could not be found")
+            raise ControllerNotFoundError(f"Image '{image_name}' could not be found")
         return image
 
     async def _find_images(self, template_type: str, settings: dict) -> List[models.Image]:

@@ -116,6 +116,40 @@ class TestTemplateRoutes:
         response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
+    async def test_template_delete_with_prune_images(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            tmpdir: str,
+    ) -> None:
+
+        path = os.path.join(tmpdir, "test.qcow2")
+        with open(path, "wb+") as f:
+            f.write(b'\x42\x42\x42\x42')
+        images_repo = ImagesRepository(db_session)
+        await images_repo.add_image("test.qcow2", "qemu", 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
+
+        template_id = str(uuid.uuid4())
+        params = {"template_id": template_id,
+                  "name": "QEMU_TEMPLATE",
+                  "compute_id": "local",
+                  "hda_disk_image": "test.qcow2",
+                  "template_type": "qemu"}
+
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        response = await client.delete(
+            app.url_path_for("delete_template", template_id=template_id),
+            params={"prune_images": True}
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        images_repo = ImagesRepository(db_session)
+        images = await images_repo.get_images()
+        assert len(images) == 0
+
     # async def test_create_node_from_template(self, controller_api, controller, project):
     #
     #     id = str(uuid.uuid4())

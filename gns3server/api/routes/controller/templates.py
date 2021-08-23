@@ -25,14 +25,15 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, Response, HTTPException, Depends, Response, status
-from typing import List
+from fastapi import APIRouter, Request, HTTPException, Depends, Response, status
+from typing import List, Optional
 from uuid import UUID
 
 from gns3server import schemas
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.images import ImagesRepository
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
@@ -97,7 +98,9 @@ async def update_template(
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(
         template_id: UUID,
+        prune_images: Optional[bool] = False,
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> Response:
     """
@@ -106,6 +109,8 @@ async def delete_template(
 
     await TemplatesService(templates_repo).delete_template(template_id)
     await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
+    if prune_images:
+        await images_repo.prune_images()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

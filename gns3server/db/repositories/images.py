@@ -117,10 +117,11 @@ class ImagesRepository(BaseRepository):
         images_deleted = 0
         for image in images:
             try:
+                log.debug(f"Deleting image '{image.path}'")
                 os.remove(image.path)
             except OSError:
                 log.warning(f"Could not delete image file {image.path}")
             if await self.delete_image(image.filename):
                 images_deleted += 1
-        log.info(f"{images_deleted} image have been deleted")
+        log.info(f"{images_deleted} image(s) have been deleted")
         return images_deleted
