@@ -544,8 +544,7 @@ class BaseManager:
         s = os.path.split(searched_file)
         for root, dirs, files in os.walk(directory):
             for file in files:
-                # If filename is the same
-                if s[1] == file and (s[0] == '' or os.path.basename(s[0]) == os.path.basename(root)):
+                if s[1] == file and (s[0] == '' or root == os.path.join(directory, s[0])):
                     path = os.path.normpath(os.path.join(root, s[1]))
                     if os.path.exists(path):
                         return path
