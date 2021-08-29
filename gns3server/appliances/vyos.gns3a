@@ -30,8 +30,7 @@
             "version": "1.3.0-rc5",
             "md5sum": "dd704f59afc0fccdf601cc750bf2c438",
             "filesize": 361955328,
-            "download_url": "https://www.b-ehlers.de/GNS3/images/",
-            "direct_download_url": "https://www.b-ehlers.de/GNS3/images/vyos-1.3.0-rc5-amd64.qcow2"
+            "direct_download_url": "https://www.mediafire.com/file/taspgxh4vj0a4j1/vyos-1.3.0-rc5-amd64.qcow2/file"
         },
         {
             "filename": "vyos-1.2.8-amd64.iso",

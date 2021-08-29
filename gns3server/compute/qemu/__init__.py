@@ -152,8 +152,6 @@ class Qemu(BaseManager):
             log.debug(f"Searching for Qemu binaries in '{path}'")
             try:
                 for f in os.listdir(path):
-                    if f.endswith("-spice"):
-                        continue
                     if (
                         (f.startswith("qemu-system") or f.startswith("qemu-kvm") or f == "qemu" or f == "qemu.exe")
                         and os.access(os.path.join(path, f), os.X_OK)

@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.24 25/08/2021
+
+* Release web UI 2.2.24
+* Fix issue when searching for image with relative path. Fixes #1925
+* Fix wrong error when NAT interface is not allowed. Fixes #1943
+* Fix incorrect Qemu binary selected when importing template. Fixes https://github.com/GNS3/gns3-gui/issues/3216
+* Fix error when updating a link style. Fixes https://github.com/GNS3/gns3-gui/issues/2461
+* Some fixes for early support for Python3.10 The loop parameter has been removed from most of asyncio‘s high-level API following deprecation in Python 3.8.
+* Early support for Python3.10 Fixes #1940
+* Bump pywin32 from 300 to 301
+
 ## 2.2.23 05/08/2021
 
 * Release web UI 2.2.23
