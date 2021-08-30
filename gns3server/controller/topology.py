@@ -63,13 +63,13 @@ def _check_topology_schema(topo):
         error = "Invalid data in topology file: {} in schema: {}".format(
             e.message,
             json.dumps(e.schema))
-        log.critical(error)
+        log.debug(error)
         raise aiohttp.web.HTTPConflict(text=error)
 
 
 def project_to_topology(project):
     """
-    :return: A dictionnary with the topology ready to dump to a .gns3
+    :return: A dictionary with the topology ready to dump to a .gns3
     """
     data = {
         "project_id": project.id,

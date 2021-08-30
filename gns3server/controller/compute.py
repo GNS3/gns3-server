@@ -312,7 +312,7 @@ class Compute:
         url = self._getUrl("/projects/{}/files/{}".format(project.id, path))
         response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
-            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(path))
+            raise aiohttp.web.HTTPNotFound(text="File '{}' not found on compute".format(path))
         return response
 
     async def download_image(self, image_type, image):
@@ -327,7 +327,7 @@ class Compute:
         url = self._getUrl("/{}/images/{}".format(image_type, image))
         response = await self._session().request("GET", url, auth=self._auth)
         if response.status == 404:
-            raise aiohttp.web.HTTPNotFound(text="{} not found on compute".format(image))
+            raise aiohttp.web.HTTPNotFound(text="Image '{}' not found on compute".format(image))
         return response
 
     async def http_query(self, method, path, data=None, dont_connect=False, **kwargs):

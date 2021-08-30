@@ -1,5 +1,52 @@
 # Change Log
 
+## 2.2.24 25/08/2021
+
+* Release web UI 2.2.24
+* Fix issue when searching for image with relative path. Fixes #1925
+* Fix wrong error when NAT interface is not allowed. Fixes #1943
+* Fix incorrect Qemu binary selected when importing template. Fixes https://github.com/GNS3/gns3-gui/issues/3216
+* Fix error when updating a link style. Fixes https://github.com/GNS3/gns3-gui/issues/2461
+* Some fixes for early support for Python3.10 The loop parameter has been removed from most of asyncio‘s high-level API following deprecation in Python 3.8.
+* Early support for Python3.10 Fixes #1940
+* Bump pywin32 from 300 to 301
+
+## 2.2.23 05/08/2021
+
+* Release web UI 2.2.23
+* Fix hostname inconsistencies during script execution
+* Add option `--without-kvm`
+* Add a `reload` server endpoint. Fixes #1926
+* Handle -no-kvm param deprecated in Qemu >= v5.2
+* Fix binary websocket access to the console
+* Change how to generate random MAC addresses
+* setup.py: prevent installing tests directory
+* Support cloning of encrypted qcow2 base image files
+* Fix VMware VM support on Linux and Windows. Fixes #1919
+
+## 2.2.22 10/06/2021
+
+* Fix VMware support on macOS BigSur
+* Link style support. Fixes https://github.com/GNS3/gns3-gui/issues/2461
+* Release web UI version 2.2.22
+* Preserve auto_start/auto_open/auto_close when restoring snapshot
+* Fix uBridge errors for cloud nodes not visible in logs. Fixes #1895
+* Prevent directory traversal. Fixes #1894
+
+## 2.2.21 10/05/2021
+
+* Release Web-Ui v2.2.21
+* Improvements for get symbol dimensions endpoint. Ref #1885
+
+## 2.2.20 09/04/2021
+
+* Release Web UI version 2.2.20
+* Fix packet capture with HTTPS remote server. Fixes #1882
+* Sync appliance files and remove old ones after sync with online repo. Fixes #1876
+* Upgrade dependencies
+* Fix export for missing files
+* Fix issue when trying to export temporary Dynamips files.
+
 ## 2.2.19 05/03/2021
 
 * Launch projects marked for auto open after SIGHUP is received

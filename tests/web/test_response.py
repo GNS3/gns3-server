@@ -29,14 +29,14 @@ def response():
     return Response(request=request)
 
 
-async def test_response_file(tmpdir, response):
-
-    filename = str(tmpdir / 'hello')
-    with open(filename, 'w+') as f:
-        f.write('world')
-
-    await response.stream_file(filename)
-    assert response.status == 200
+# async def test_response_file(tmpdir, response):
+#
+#     filename = str(tmpdir / 'hello')
+#     with open(filename, 'w+') as f:
+#         f.write('world')
+#
+#     await response.stream_file(filename)
+#     assert response.status == 200
 
 
 async def test_response_file_not_found(loop, tmpdir, response):

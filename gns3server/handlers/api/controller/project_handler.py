@@ -28,6 +28,7 @@ from gns3server.controller import Controller
 from gns3server.controller.import_project import import_project
 from gns3server.controller.export_project import export_project
 from gns3server.utils.asyncio import aiozipstream
+from gns3server.utils.path import is_safe_path
 from gns3server.config import Config
 
 
@@ -454,14 +455,12 @@ class ProjectHandler:
 
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
-        path = request.match_info["path"]
-        path = os.path.normpath(path).strip('/')
+        path = os.path.normpath(request.match_info["path"])
 
         # Raise error if user try to escape
-        if path[0] == ".":
+        if not is_safe_path(path, project.path):
             raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
-
         await response.stream_file(path)
 
     @Route.post(
@@ -480,15 +479,13 @@ class ProjectHandler:
 
         controller = Controller.instance()
         project = await controller.get_loaded_project(request.match_info["project_id"])
-        path = request.match_info["path"]
-        path = os.path.normpath(path).strip("/")
+        path = os.path.normpath(request.match_info["path"])
 
         # Raise error if user try to escape
-        if path[0] == ".":
+        if not is_safe_path(path, project.path):
             raise aiohttp.web.HTTPForbidden()
         path = os.path.join(project.path, path)
-
-        response.set_status(200)
+        response.set_status(201)
 
         try:
             async with aiofiles.open(path, 'wb+') as f:

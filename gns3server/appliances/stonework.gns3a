@@ -1,0 +1,20 @@
+{
+    "name": "StoneWork",
+    "category": "router",
+    "description": "StoneWork is VPP and Ligato based routing platform",
+    "vendor_name": "Pantheon.tech StoneWork router",
+    "vendor_url": "https://pantheon.tech/",
+    "documentation_url": "https://pantheon.tech/documentation-stonework-gns3/",
+    "product_name": "StoneWork",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "Julius Milan",
+    "maintainer_email": "julius.milan@pantheon.tech",
+    "docker": {
+        "adapters": 5,
+        "image": "ghcr.io/pantheontech/stonework",
+        "start_command": "/root/stonework-gns3-startup.sh",
+        "environment": "INITIAL_LOGLVL=debug,\nMICROSERVICE_LABEL=stonework,\nETCD_CONFIG=,\nCNF_MGMT_SUBNET=127.0.0.1/8"
+    }
+}

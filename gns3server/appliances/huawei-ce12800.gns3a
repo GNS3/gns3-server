@@ -5,7 +5,7 @@
     "vendor_name": "HuaWei",
     "vendor_url": "https://www.huawei.com",
     "product_name": "HuaWei CE12800",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
@@ -33,10 +33,10 @@
     ],
     "versions": [
         {
+            "name": "V200R005C10SPC607B607",
             "images": {
                 "hda_disk_image": "ce12800-V200R005C10SPC607B607.qcow2"
-            },
-            "name": "V200R005C10SPC607B607"
+            }
         }
     ]
 }

@@ -58,11 +58,12 @@ class Qcow2:
         #     uint64_t snapshots_offset;
         # } QCowHeader;
 
-        struct_format = ">IIQi"
+        struct_format = ">IIQiiQi"
         with open(self._path, 'rb') as f:
             content = f.read(struct.calcsize(struct_format))
             try:
-                self.magic, self.version, self.backing_file_offset, self.backing_file_size = struct.unpack_from(struct_format, content)
+                (self.magic, self.version, self.backing_file_offset, self.backing_file_size,
+                    self.cluster_bits, self.size, self.crypt_method) = struct.unpack_from(struct_format, content)
 
             except struct.error:
                 raise Qcow2Error("Invalid file header for {}".format(self._path))
@@ -103,3 +104,15 @@ class Qcow2:
         if retcode != 0:
             raise Qcow2Error("Could not rebase the image")
         self._reload()
+
+    async def validate(self, qemu_img):
+        """
+        Run qemu-img info to validate the file and its backing images
+
+        :param qemu_img: Path to the qemu-img binary
+        """
+        command = [qemu_img, "info", "--backing-chain", self._path]
+        process = await asyncio.create_subprocess_exec(*command)
+        retcode = await process.wait()
+        if retcode != 0:
+            raise Qcow2Error("Could not validate the image")

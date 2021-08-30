@@ -83,7 +83,7 @@ class WebServer:
     def _run_application(self, handler, ssl_context=None):
         try:
             srv = self._loop.create_server(handler, self._host, self._port, ssl=ssl_context)
-            self._server, startup_res = self._loop.run_until_complete(asyncio.gather(srv, self._app.startup(), loop=self._loop))
+            self._server, startup_res = self._loop.run_until_complete(asyncio.gather(srv, self._app.startup()))
         except (RuntimeError, OSError, asyncio.CancelledError) as e:
             log.critical("Could not start the server: {}".format(e))
             return False

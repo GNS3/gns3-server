@@ -23,7 +23,6 @@ import urllib.parse
 from gns3server.web.route import Route
 from gns3server.controller import Controller
 
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -43,6 +42,24 @@ class SymbolHandler:
 
         controller = Controller.instance()
         response.json(controller.symbols.list())
+
+    @Route.get(
+        r"/symbols/{symbol_id:.+}/dimensions",
+        description="Get the symbol dimensions",
+        status_codes={
+            200: "Symbol dimensions returned"
+        })
+    async def get_dimensions(request, response):
+
+        controller = Controller.instance()
+        symbol_id = urllib.parse.unquote(request.match_info["symbol_id"])
+        try:
+            width, height, _ = controller.symbols.get_size(symbol_id)
+            symbol_dimensions = {'width': width, 'height': height}
+            response.json(symbol_dimensions)
+        except (KeyError, OSError, ValueError) as e:
+            log.warning("Could not get symbol dimensions: {}".format(e))
+            response.set_status(404)
 
     @Route.get(
         r"/symbols/{symbol_id:.+}/raw",

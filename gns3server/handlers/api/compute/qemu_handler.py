@@ -207,7 +207,7 @@ class QEMUHandler:
             enable_kvm = qemu_manager.config.get_section_config("Qemu").getboolean("enable_kvm")
             if enable_kvm is not None:
                 hardware_accel = enable_kvm
-        if hardware_accel and "-no-kvm" not in vm.options and "-no-hax" not in vm.options:
+        if hardware_accel and "-machine accel=tcg" not in vm.options:
             pm = ProjectManager.instance()
             if pm.check_hardware_virtualization(vm) is False:
                 raise aiohttp.web.HTTPConflict(text="Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
@@ -552,7 +552,8 @@ class QEMUHandler:
     async def upload_image(request, response):
 
         qemu_manager = Qemu.instance()
-        await qemu_manager.write_image(request.match_info["filename"], request.content)
+        filename = os.path.normpath(request.match_info["filename"])
+        await qemu_manager.write_image(filename, request.content)
         response.set_status(204)
 
     @Route.get(
@@ -566,15 +567,15 @@ class QEMUHandler:
         raw=True,
         description="Download Qemu image")
     async def download_image(request, response):
-        filename = request.match_info["filename"]
+
+        filename = os.path.normpath(request.match_info["filename"])
+
+        # Raise error if user try to escape
+        if filename[0] == "." or os.path.sep in filename:
+            raise aiohttp.web.HTTPForbidden()
 
         qemu_manager = Qemu.instance()
         image_path = qemu_manager.get_abs_image_path(filename)
-
-        # Raise error if user try to escape
-        if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden()
-
         await response.stream_file(image_path)
 
     @Route.get(

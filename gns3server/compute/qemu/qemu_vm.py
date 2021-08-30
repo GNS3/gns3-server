@@ -615,7 +615,7 @@ class QemuVM(BaseNode):
 
         if not mac_address:
             # use the node UUID to generate a random MAC address
-            self._mac_address = "0c:%s:%s:%s:%s:00" % (self.project.id[-4:-2], self.project.id[-2:], self.id[-4:-2], self.id[-2:])
+            self._mac_address = "0c:%s:%s:%s:00:00" % (self.id[2:4], self.id[4:6], self.id[6:8])
         else:
             self._mac_address = mac_address
 
@@ -829,20 +829,26 @@ class QemuVM(BaseNode):
                                                                                         id=self._id,
                                                                                         options=options))
 
-        if not sys.platform.startswith("linux"):
-            if "-no-kvm" in options:
-                options = options.replace("-no-kvm", "")
-            if "-enable-kvm" in options:
+        # "-no-kvm" and "-no-hax' are deprecated since Qemu v5.2
+        if "-no-kvm" in options:
+            options = options.replace("-no-kvm", "-machine accel=tcg")
+        if "-no-hax" in options:
+            options = options.replace("-no-hax", "-machine accel=tcg")
+
+        if "-enable-kvm" in options:
+            if not sys.platform.startswith("linux"):
+                # KVM can only be enabled on Linux
                 options = options.replace("-enable-kvm", "")
-        else:
-            if "-no-hax" in options:
-                options = options.replace("-no-hax", "")
-            if "-enable-hax" in options:
+            else:
+                options = options.replace("-enable-kvm", "-machine accel=kvm")
+
+        if "-enable-hax" in options:
+            if not sys.platform.startswith("win"):
+                # HAXM is only available on Windows
                 options = options.replace("-enable-hax", "")
-            if "-icount" in options and ("-no-kvm" not in options):
-                # automatically add the -no-kvm option if -icount is detected
-                # to help with the migration of ASA VMs created before version 1.4
-                options = "-no-kvm " + options
+            else:
+                options = options.replace("-enable-hax", "-machine accel=hax")
+
         self._options = options.strip()
 
     @property
@@ -1675,6 +1681,24 @@ class QemuVM(BaseNode):
         try:
             qemu_img_path = self._get_qemu_img()
             command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+            try:
+                base_qcow2 = Qcow2(disk_image)
+                if base_qcow2.crypt_method:
+                    # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
+                    # Also embed a secret name so it doesn't have to be passed to qemu -drive ...
+                    options = {
+                        "encrypt.key-secret": os.path.basename(disk_image),
+                        "driver": "qcow2",
+                        "file": {
+                            "driver": "file",
+                            "filename": disk_image,
+                        },
+                    }
+                    command = [qemu_img_path, "create", "-b", "json:"+json.dumps(options, separators=(',', ':')),
+                               "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
+            except Qcow2Error:
+                pass  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
+
             retcode = await self._qemu_img_exec(command)
             if retcode:
                 stdout = self.read_qemu_img_stdout()
@@ -1845,6 +1869,7 @@ class QemuVM(BaseNode):
                         log.warning("Qemu image {} is corrupted".format(disk_image))
                         if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
+                    # ignore retcode == 1.  One reason is that the image is encrypted and there is no encrypt.key-secret available
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
@@ -1858,9 +1883,9 @@ class QemuVM(BaseNode):
                     # The disk exists we check if the clone works
                     try:
                         qcow2 = Qcow2(disk)
-                        await qcow2.rebase(qemu_img_path, disk_image)
+                        await qcow2.validate(qemu_img_path)
                     except (Qcow2Error, OSError) as e:
-                        raise QemuError("Could not use qcow2 disk image '{}' for {} {}".format(disk_image, disk_name, e))
+                        raise QemuError("Could not use qcow2 disk image '{}' for {}: {}".format(disk_image, disk_name, e))
 
             else:
                 disk = disk_image
@@ -2078,7 +2103,7 @@ class QemuVM(BaseNode):
             if require_kvm is not None:
                 require_hardware_accel = require_kvm
 
-        if enable_hardware_accel and "-no-kvm" not in options and "-no-hax" not in options:
+        if enable_hardware_accel and "-machine accel=tcg" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
             if sys.platform.startswith("win"):
                 supported_binaries = ["qemu-system-x86_64.exe", "qemu-system-x86_64w.exe", "qemu-system-i386.exe", "qemu-system-i386w.exe"]

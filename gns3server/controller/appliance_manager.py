@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import json
 import uuid
 import asyncio
@@ -181,6 +182,7 @@ class ApplianceManager:
                         Controller.instance().save()
                     json_data = await response.json()
                 appliances_dir = get_resource('appliances')
+                downloaded_appliance_files = []
                 for appliance in json_data:
                     if appliance["type"] == "file":
                         appliance_name = appliance["name"]
@@ -201,6 +203,21 @@ class ApplianceManager:
                                     f.write(appliance_data)
                             except OSError as e:
                                 raise aiohttp.web.HTTPConflict(text="Could not write appliance file '{}': {}".format(path, e))
+                        downloaded_appliance_files.append(appliance_name)
+
+                # delete old appliance files
+                for filename in os.listdir(appliances_dir):
+                    file_path = os.path.join(appliances_dir, filename)
+                    if filename in downloaded_appliance_files:
+                        continue
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            log.info("Deleting old appliance file {}".format(file_path))
+                            os.unlink(file_path)
+                    except OSError as e:
+                        log.warning("Could not delete old appliance file '{}': {}".format(file_path, e))
+                        continue
+
         except ValueError as e:
             raise aiohttp.web.HTTPConflict(text="Could not read appliances information from GitHub: {}".format(e))
 

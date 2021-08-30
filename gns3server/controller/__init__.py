@@ -53,6 +53,7 @@ class Controller:
         self._notification = Notification(self)
         self.gns3vm = GNS3VM(self)
         self.symbols = Symbols()
+        self._ssl_context = None
         self._appliance_manager = ApplianceManager()
         self._template_manager = TemplateManager()
         self._iou_license_settings = {"iourc_content": "",
@@ -82,9 +83,9 @@ class Controller:
 
         computes = self._load_controller_settings()
         from gns3server.web.web_server import WebServer
-        ssl_context = WebServer.instance(host=host, port=port).ssl_context()
+        self._ssl_context = WebServer.instance(host=host, port=port).ssl_context()
         protocol = server_config.get("protocol", "http")
-        if ssl_context and protocol != "https":
+        if self._ssl_context and protocol != "https":
             log.warning("Protocol changed to 'https' for local compute because SSL is enabled".format(port))
             protocol = "https"
         try:
@@ -97,7 +98,7 @@ class Controller:
                                                         user=server_config.get("user", ""),
                                                         password=server_config.get("password", ""),
                                                         force=True,
-                                                        ssl_context=ssl_context)
+                                                        ssl_context=self._ssl_context)
         except aiohttp.web.HTTPConflict:
             log.fatal("Cannot access to the local server, make sure something else is not running on the TCP port {}".format(port))
             sys.exit(1)
@@ -114,6 +115,13 @@ class Controller:
 
         await self.load_projects()
         await self._project_auto_open()
+
+    def ssl_context(self):
+        """
+        Returns the SSL context for the server.
+        """
+
+        return self._ssl_context
 
     def _update_config(self):
         """

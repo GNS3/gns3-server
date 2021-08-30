@@ -92,7 +92,7 @@ class IndexHandler:
         filename = os.path.join('static', 'web-ui', filename)
 
         # Raise error if user try to escape
-        if filename[0] == ".":
+        if filename[0] == "." or '/../' in filename:
             raise aiohttp.web.HTTPForbidden()
 
         static = get_resource(filename)

@@ -172,7 +172,7 @@ async def test_write_file(compute_api, tmpdir):
         project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     response = await compute_api.post("/projects/{project_id}/files/hello".format(project_id=project.id), body="world", raw=True)
-    assert response.status == 200
+    assert response.status == 201
 
     with open(os.path.join(project.path, "hello")) as f:
         assert f.read() == "world"

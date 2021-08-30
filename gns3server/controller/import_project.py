@@ -38,7 +38,8 @@ Handle the import of project from a .gns3project
 """
 
 
-async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False):
+async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False,
+                         auto_start=False, auto_open=False, auto_close=True):
     """
     Import a project contain in a zip file
 
@@ -98,9 +99,9 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     topology = load_topology(os.path.join(path, "project.gns3"))
     topology["name"] = project_name
     # To avoid unexpected behavior (project start without manual operations just after import)
-    topology["auto_start"] = False
-    topology["auto_open"] = False
-    topology["auto_close"] = True
+    topology["auto_start"] = auto_start
+    topology["auto_open"] = auto_open
+    topology["auto_close"] = auto_close
 
     # Generate a new node id
     node_old_to_new = {}

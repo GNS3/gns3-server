@@ -17,6 +17,7 @@
 
 import os
 import aiohttp
+from pathlib import Path
 
 from ..config import Config
 
@@ -35,6 +36,16 @@ def get_default_project_directory():
     except OSError as e:
         raise aiohttp.web.HTTPInternalServerError(text="Could not create project directory: {}".format(e))
     return path
+
+
+def is_safe_path(file_path: str, basedir: str) -> bool:
+    """
+    Check that file path is safe.
+    (the file is stored inside directory or one of its sub-directory)
+    """
+
+    test_path = (Path(basedir) / file_path).resolve()
+    return Path(basedir).resolve() in test_path.resolve().parents
 
 
 def check_path_allowed(path):

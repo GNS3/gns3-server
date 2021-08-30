@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
     command = ["nc", "localhost", "80"]
     server = AsyncioRawCommandServer(command, replaces=[(b"work", b"{{HOST}}", )])
-    coro = asyncio.start_server(server.run, '0.0.0.0', 4444, loop=loop)
+    coro = asyncio.start_server(server.run, '0.0.0.0', 4444)
     s = loop.run_until_complete(coro)
 
     try:

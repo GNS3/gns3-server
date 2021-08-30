@@ -66,22 +66,26 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
 
     # Export the local files
     for root, dirs, files in os.walk(project._path, topdown=True, followlinks=False):
-        files = [f for f in files if _is_exportable(os.path.join(root, f), include_snapshots)]
-        for file in files:
-            path = os.path.join(root, file)
-            # check if we can export the file
-            try:
-                open(path).close()
-            except OSError as e:
-                msg = "Could not export file {}: {}".format(path, e)
-                log.warning(msg)
-                project.emit_notification("log.warning", {"message": msg})
-                continue
-            # ignore the .gns3 file
-            if file.endswith(".gns3"):
-                continue
-            _patch_mtime(path)
-            zstream.write(path, os.path.relpath(path, project._path))
+        try:
+            files = [f for f in files if _is_exportable(os.path.join(root, f), include_snapshots)]
+            for file in files:
+                path = os.path.join(root, file)
+                # check if we can export the file
+                try:
+                    open(path).close()
+                except OSError as e:
+                    msg = "Could not export file {}: {}".format(path, e)
+                    log.warning(msg)
+                    project.emit_notification("log.warning", {"message": msg})
+                    continue
+                # ignore the .gns3 file
+                if file.endswith(".gns3"):
+                    continue
+                _patch_mtime(path)
+                zstream.write(path, os.path.relpath(path, project._path))
+        except FileNotFoundError as e:
+            log.warning("Cannot export local file: {}".format(e))
+            continue
 
     # Export files from remote computes
     for compute in project.computes:
@@ -91,8 +95,9 @@ async def export_project(zstream, project, temporary_dir, include_images=False, 
                 if _is_exportable(compute_file["path"], include_snapshots):
                     log.debug("Downloading file '{}' from compute '{}'".format(compute_file["path"], compute.id))
                     response = await compute.download_file(project, compute_file["path"])
-                    #if response.status != 200:
-                    #    raise aiohttp.web.HTTPConflict(text="Cannot export file from compute '{}'. Compute returned status code {}.".format(compute.id, response.status))
+                    if response.status != 200:
+                        log.warning("Cannot export file from compute '{}'. Compute returned status code {}.".format(compute.id, response.status))
+                        continue
                     (fd, temp_path) = tempfile.mkstemp(dir=temporary_dir)
                     async with aiofiles.open(fd, 'wb') as f:
                         while True:

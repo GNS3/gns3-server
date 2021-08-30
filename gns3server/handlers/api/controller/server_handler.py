@@ -78,6 +78,22 @@ class ServerHandler:
             pass
         response.set_status(201)
 
+    @classmethod
+    @Route.post(
+        r"/reload",
+        description="Reload the local server",
+        status_codes={
+            200: "Server has reloaded"
+        })
+    async def reload(request, response):
+
+        from gns3server.web.web_server import WebServer
+        server = WebServer.instance()
+        try:
+            asyncio.ensure_future(server.reload_server())
+        except asyncio.CancelledError:
+            pass
+
     @Route.get(
         r"/version",
         description="Retrieve the server version number",

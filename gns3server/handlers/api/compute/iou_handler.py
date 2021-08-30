@@ -428,7 +428,8 @@ class IOUHandler:
     async def upload_image(request, response):
 
         iou_manager = IOU.instance()
-        await iou_manager.write_image(request.match_info["filename"], request.content)
+        filename = os.path.normpath(request.match_info["filename"])
+        await iou_manager.write_image(filename, request.content)
         response.set_status(204)
 
 
@@ -443,15 +444,15 @@ class IOUHandler:
         raw=True,
         description="Download an IOU image")
     async def download_image(request, response):
-        filename = request.match_info["filename"]
+
+        filename = os.path.normpath(request.match_info["filename"])
+
+        # Raise error if user try to escape
+        if filename[0] == "." or os.path.sep in filename:
+            raise aiohttp.web.HTTPForbidden()
 
         iou_manager = IOU.instance()
         image_path = iou_manager.get_abs_image_path(filename)
-
-        # Raise error if user try to escape
-        if filename[0] == ".":
-            raise aiohttp.web.HTTPForbidden()
-
         await response.stream_file(image_path)
 
     @Route.get(

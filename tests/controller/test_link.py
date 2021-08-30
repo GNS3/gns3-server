@@ -213,6 +213,7 @@ async def test_json(project, compute):
             }
         ],
         "filters": {},
+        "link_style": {},
         "suspend": False,
         "link_type": "ethernet",
         "capturing": False,
@@ -242,6 +243,7 @@ async def test_json(project, compute):
                 }
             }
         ],
+        "link_style": {},
         "filters": {},
         "suspend": False
     }

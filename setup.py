@@ -58,7 +58,7 @@ setup(
             "gns3loopback = gns3server.utils.windows_loopback:main"
         ]
     },
-    packages=find_packages(".", exclude=["docs", "tests"]),
+    packages=find_packages(".", exclude=["docs", "tests*"]),
     include_package_data=True,
     zip_safe=False,
     platforms="any",
@@ -79,6 +79,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
 )

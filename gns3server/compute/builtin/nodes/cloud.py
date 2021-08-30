@@ -362,12 +362,12 @@ class Cloud(BaseNode):
         """
 
         # Wireless adapters are not well supported by the libpcap on OSX
-        if (await self._is_wifi_adapter_osx(port_info["interface"])):
+        if await self._is_wifi_adapter_osx(port_info["interface"]):
             raise NodeError("Connecting to a Wireless adapter is not supported on Mac OS")
         if port_info["interface"].startswith("vmnet"):
             # Use a special NIO to connect to VMware vmnet interfaces on OSX (libpcap doesn't support them)
             await self._ubridge_send('bridge add_nio_fusion_vmnet {name} "{interface}"'.format(name=bridge_name,
-                                                                                                    interface=port_info["interface"]))
+                                                                                               interface=port_info["interface"]))
             return
         if not gns3server.utils.interfaces.has_netmask(port_info["interface"]):
             raise NodeError("Interface {} has no netmask, interface down?".format(port_info["interface"]))
@@ -402,6 +402,7 @@ class Cloud(BaseNode):
             await self._add_ubridge_connection(nio, port_number)
             self._nios[port_number] = nio
         except (NodeError, UbridgeError) as e:
+            log.error('Cannot add NIO on cloud "{name}": {error}'.format(name=self._name, error=e))
             await self._stop_ubridge()
             self.status = "stopped"
             self._nios[port_number] = nio
