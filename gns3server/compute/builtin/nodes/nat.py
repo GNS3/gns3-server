@@ -36,7 +36,7 @@ class Nat(Cloud):
 
     def __init__(self, name, node_id, project, manager, ports=None):
 
-        allowed_interfaces = Config.instance().get_section_config("Server").get("allowed_interfaces", None)
+        allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
         if allowed_interfaces:
             allowed_interfaces = allowed_interfaces.split(',')
         if sys.platform.startswith("linux"):
