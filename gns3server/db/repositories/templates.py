@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from uuid import UUID
 from typing import List, Union, Optional
 from sqlalchemy import select, delete
@@ -102,14 +104,19 @@ class TemplatesRepository(BaseRepository):
             await self._db_session.refresh(db_template)
         return db_template
 
-    async def get_image(self, image_name: str) -> Optional[models.Image]:
+    async def get_image(self, image_path: str) -> Optional[models.Image]:
         """
-        Get an image by its name (filename).
+        Get an image by its path.
         """
 
-        query = select(models.Image).where(models.Image.filename == image_name)
+        image_dir, image_name = os.path.split(image_path)
+        if image_dir:
+            query = select(models.Image).\
+                where(models.Image.filename == image_name, models.Image.path.endswith(image_path))
+        else:
+            query = select(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
-        return result.scalars().first()
+        return result.scalars().one_or_none()
 
     async def add_image_to_template(
             self,

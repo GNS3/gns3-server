@@ -36,14 +36,19 @@ class ImagesRepository(BaseRepository):
 
         super().__init__(db_session)
 
-    async def get_image(self, image_name: str) -> Optional[models.Image]:
+    async def get_image(self, image_path: str) -> Optional[models.Image]:
         """
-        Get an image by its name (filename).
+        Get an image by its path.
         """
 
-        query = select(models.Image).where(models.Image.filename == image_name)
+        image_dir, image_name = os.path.split(image_path)
+        if image_dir:
+            query = select(models.Image).\
+                where(models.Image.filename == image_name, models.Image.path.endswith(image_path))
+        else:
+            query = select(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
-        return result.scalars().first()
+        return result.scalars().one_or_none()
 
     async def get_image_by_checksum(self, checksum: str) -> Optional[models.Image]:
         """
@@ -95,12 +100,18 @@ class ImagesRepository(BaseRepository):
         await self._db_session.refresh(db_image)
         return db_image
 
-    async def delete_image(self, image_name: str) -> bool:
+    async def delete_image(self, image_path: str) -> bool:
         """
         Delete an image.
         """
 
-        query = delete(models.Image).where(models.Image.filename == image_name)
+        image_dir, image_name = os.path.split(image_path)
+        if image_dir:
+            query = delete(models.Image).\
+                where(models.Image.filename == image_name, models.Image.path.endswith(image_path)).\
+                execution_options(synchronize_session=False)
+        else:
+            query = delete(models.Image).where(models.Image.filename == image_name)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0

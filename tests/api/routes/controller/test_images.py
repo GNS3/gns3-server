@@ -134,7 +134,7 @@ class TestImageRoutes:
         image_checksum.update(image_data)
 
         response = await client.post(
-            app.url_path_for("upload_image", image_name=image_name),
+            app.url_path_for("upload_image", image_path=image_name),
             params={"image_type": image_type},
             content=image_data)
 
@@ -155,7 +155,7 @@ class TestImageRoutes:
     async def test_image_get(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
-        response = await client.get(app.url_path_for("get_image", image_name=image_name))
+        response = await client.get(app.url_path_for("get_image", image_path=image_name))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["filename"] == image_name
 
@@ -165,21 +165,21 @@ class TestImageRoutes:
         with open(qcow2_image, "rb") as f:
             image_data = f.read()
         response = await client.post(
-            app.url_path_for("upload_image", image_name=image_name),
+            app.url_path_for("upload_image", image_path=image_name),
             params={"image_type": "qemu"},
             content=image_data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    async def test_image_delete(self, app: FastAPI, client: AsyncClient, images_dir: str, qcow2_image: str) -> None:
+    async def test_image_delete(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
-        response = await client.delete(app.url_path_for("delete_image", image_name=image_name))
+        response = await client.delete(app.url_path_for("delete_image", image_path=image_name))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_not_found_image(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
-        response = await client.get(app.url_path_for("get_image", image_name=image_name))
+        response = await client.get(app.url_path_for("get_image", image_path=image_name))
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_image_deleted_on_disk(self, app: FastAPI, client: AsyncClient, images_dir: str, qcow2_image: str) -> None:
@@ -188,14 +188,65 @@ class TestImageRoutes:
         with open(qcow2_image, "rb") as f:
             image_data = f.read()
         response = await client.post(
-            app.url_path_for("upload_image", image_name=image_name),
+            app.url_path_for("upload_image", image_path=image_name),
             params={"image_type": "qemu"},
             content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
-        response = await client.delete(app.url_path_for("delete_image", image_name=image_name))
+        response = await client.delete(app.url_path_for("delete_image", image_path=image_name))
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not os.path.exists(os.path.join(images_dir, "QEMU", image_name))
+
+    @pytest.mark.parametrize(
+        "subdir, expected_result",
+        (
+            ("subdir", status.HTTP_201_CREATED),
+            ("subdir", status.HTTP_400_BAD_REQUEST),
+            ("subdir2", status.HTTP_201_CREATED),
+        ),
+    )
+    async def test_upload_image_subdir(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            images_dir: str,
+            qcow2_image: str,
+            subdir: str,
+            expected_result: int
+    ) -> None:
+
+        image_name = os.path.basename(qcow2_image)
+        with open(qcow2_image, "rb") as f:
+            image_data = f.read()
+        image_path = os.path.join(subdir, image_name)
+        response = await client.post(
+            app.url_path_for("upload_image", image_path=image_path),
+            params={"image_type": "qemu"},
+            content=image_data)
+        assert response.status_code == expected_result
+
+    async def test_image_delete_multiple_match(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            qcow2_image: str
+    ) -> None:
+
+        image_name = os.path.basename(qcow2_image)
+        response = await client.delete(app.url_path_for("delete_image", image_path=image_name))
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    async def test_image_delete_with_subdir(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            qcow2_image: str
+    ) -> None:
+
+        image_name = os.path.basename(qcow2_image)
+        image_path = os.path.join("subdir", image_name)
+        response = await client.delete(app.url_path_for("delete_image", image_path=image_path))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_prune_images(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 

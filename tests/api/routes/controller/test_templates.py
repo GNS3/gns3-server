@@ -1191,6 +1191,37 @@ class TestImageAssociationWithTemplate:
         db_template = await templates_repo.get_template(uuid.UUID(template_id))
         assert len(db_template.images) == 0
 
+    async def test_template_create_with_image_in_subdir(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            tmpdir: str,
+    ) -> None:
+
+        params = {"name": "Qemu template",
+                  "compute_id": "local",
+                  "platform": "i386",
+                  "hda_disk_image": "subdir/image.qcow2",
+                  "ram": 512,
+                  "template_type": "qemu"}
+
+        path = os.path.join(tmpdir, "subdir", "image.qcow2")
+        os.makedirs(os.path.dirname(path))
+        with open(path, "wb+") as f:
+            f.write(b'\x42\x42\x42\x42')
+        images_repo = ImagesRepository(db_session)
+        await images_repo.add_image("image.qcow2", "qemu", 42, path, "e342eb86c1229b6c154367a5476969b5", "md5")
+
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        template_id = response.json()["template_id"]
+
+        templates_repo = TemplatesRepository(db_session)
+        db_template = await templates_repo.get_template(template_id)
+        assert len(db_template.images) == 1
+        assert db_template.images[0].path.endswith("subdir/image.qcow2")
+
     async def test_template_create_with_non_existing_image(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {"name": "Qemu template",

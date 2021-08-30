@@ -34,10 +34,10 @@ class Image(BaseTable):
     __tablename__ = "images"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    filename = Column(String, unique=True, index=True)
+    filename = Column(String)
     image_type = Column(String)
     image_size = Column(BigInteger)
-    path = Column(String)
+    path = Column(String, unique=True, index=True)
     checksum = Column(String)
     checksum_algorithm = Column(String)
     templates = relationship("Template", secondary=image_template_link, back_populates="images")

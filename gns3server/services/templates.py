@@ -155,11 +155,11 @@ class TemplatesService:
             templates.append(jsonable_encoder(builtin_template))
         return templates
 
-    async def _find_image(self, image_name):
+    async def _find_image(self, image_path: str):
 
-        image = await self._templates_repo.get_image(image_name)
+        image = await self._templates_repo.get_image(image_path)
         if not image or not os.path.exists(image.path):
-            raise ControllerNotFoundError(f"Image '{image_name}' could not be found")
+            raise ControllerNotFoundError(f"Image '{image_path}' could not be found")
         return image
 
     async def _find_images(self, template_type: str, settings: dict) -> List[models.Image]:
@@ -228,9 +228,9 @@ class TemplatesService:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
         return template
 
-    async def _remove_image(self, template_id: UUID, image:str) -> None:
+    async def _remove_image(self, template_id: UUID, image_path:str) -> None:
 
-        image = await self._templates_repo.get_image(image)
+        image = await self._templates_repo.get_image(image_path)
         await self._templates_repo.remove_image_from_template(template_id, image)
 
     async def update_template(self, template_id: UUID, template_update: schemas.TemplateUpdate) -> dict:

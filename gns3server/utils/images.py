@@ -273,8 +273,9 @@ async def write_image(
 
         checksum = checksum.hexdigest()
         duplicate_image = await images_repo.get_image_by_checksum(checksum)
-        if duplicate_image:
-            raise InvalidImageError(f"Image {duplicate_image.filename} with same checksum already exists")
+        if duplicate_image and os.path.dirname(duplicate_image.path) == os.path.dirname(path):
+            raise InvalidImageError(f"Image {duplicate_image.filename} with "
+                                    f"same checksum already exists in the same directory")
     except InvalidImageError:
         os.remove(tmp_path)
         raise
