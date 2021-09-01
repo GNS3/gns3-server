@@ -71,7 +71,6 @@ async def test_binary_list(monkeypatch, tmpdir):
         assert {"path": os.path.join(os.environ["PATH"], "qemu-kvm"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x42"), "version": version} in qemus
         assert {"path": os.path.join(os.environ["PATH"], "hello"), "version": version} not in qemus
-        assert {"path": os.path.join(os.environ["PATH"], "qemu-system-x86_64-spice"), "version": version} not in qemus
 
         qemus = await Qemu.binary_list(["x86"])
 

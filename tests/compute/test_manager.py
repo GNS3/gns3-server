@@ -190,7 +190,7 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
     config.set_section_config("Server", {
         "images_path": str(tmpdir / "images1"),
         "local": False})
-    assert qemu.get_abs_image_path("test.ova/test1.bin") == path1
+    assert qemu.get_abs_image_path("demo/test.ova/test1.bin") == path1
     assert qemu.get_abs_image_path("test.ova/test2.bin") == path2
     # Absolute path
     assert qemu.get_abs_image_path(str(path1)) == path1
