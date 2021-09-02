@@ -68,8 +68,8 @@ SERVER_STATISTICS_SCHEMA = {
             "type": "integer",
         },
         "disk_usage_percent": {
-            "description": "Disk usage in percent for all mountpoints",
-            "type": "array",
+            "description": "Disk usage in percent",
+            "type": "integer",
         },
         "load_average_percent": {
             "description": "Average system load over the last 1, 5 and 15 minutes",
