@@ -818,21 +818,21 @@ def test_options(linux_platform, vm):
     assert vm.kvm is False
 
     vm.options = "-no-kvm"
-    assert vm.options == "-no-kvm"
+    assert vm.options == "-machine accel=tcg"
 
     vm.options = "-enable-kvm"
-    assert vm.options == "-enable-kvm"
+    assert vm.options == "-machine accel=kvm"
 
     vm.options = "-icount 12"
-    assert vm.options == "-no-kvm -icount 12"
+    assert vm.options == "-icount 12"
 
     vm.options = "-icount 12 -no-kvm"
-    assert vm.options == "-icount 12 -no-kvm"
+    assert vm.options == "-icount 12 -machine accel=tcg"
 
 
 def test_options_windows(windows_platform, vm):
     vm.options = "-no-kvm"
-    assert vm.options == ""
+    assert vm.options == "-machine accel=tcg"
 
     vm.options = "-enable-kvm"
     assert vm.options == ""
@@ -878,7 +878,7 @@ async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
         vm.manager.config.set("Qemu", "enable_kvm", True)
-        assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "-no-kvm") is False
+        assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "-machine accel=tcg") is False
 
 
 async def test_run_with_kvm_not_x86(linux_platform, vm):
