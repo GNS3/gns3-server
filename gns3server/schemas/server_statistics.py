@@ -69,7 +69,7 @@ SERVER_STATISTICS_SCHEMA = {
         },
         "disk_usage_percent": {
             "description": "Disk usage in percent",
-            "type": "integer",
+            "type": "array",
         },
         "load_average_percent": {
             "description": "Average system load over the last 1, 5 and 15 minutes",

@@ -61,20 +61,39 @@ class ServerHandler:
             load_average_percent = [int(x / psutil.cpu_count() * 100) for x in psutil.getloadavg()]
             memory_percent = int(psutil.virtual_memory().percent)
             swap_percent = int(psutil.swap_memory().percent)
-            disk_usage_percent = int(psutil.disk_usage('/').percent)
+            disk_usage_percent = []
+            allowed_mountpoints = Config.instance().get_section_config("Server").get("allowed_mountpoints", None)
+            if allowed_mountpoints:
+                allowed_mountpoints = allowed_mountpoints.split(',')
+            for partition in psutil.disk_partitions(all=False):
+                # ignore squashfs partitions or partitions with no fstype or containing 'cdrom' in options.
+                if not partition.fstype or partition.fstype == "squashfs" or 'cdrom' in partition.opts:
+                    continue
+                if allowed_mountpoints and partition.mountpoint not in allowed_mountpoints:
+                    continue
+                partition_disk_usage_percent = int(psutil.disk_usage(partition.mountpoint).percent)
+                disk_usage_percent.append(
+                    {
+                        partition.mountpoint: partition_disk_usage_percent
+                    }
+                )
         except psutil.Error as e:
             raise HTTPConflict(text="Psutil error detected: {}".format(e))
-        response.json({"memory_total": memory_total,
-                       "memory_free": memory_free,
-                       "memory_used": memory_used,
-                       "swap_total": swap_total,
-                       "swap_free": swap_free,
-                       "swap_used": swap_used,
-                       "cpu_usage_percent": cpu_percent,
-                       "memory_usage_percent": memory_percent,
-                       "swap_usage_percent": swap_percent,
-                       "disk_usage_percent": disk_usage_percent,
-                       "load_average_percent": load_average_percent})
+        response.json(
+            {
+                "memory_total": memory_total,
+                "memory_free": memory_free,
+                "memory_used": memory_used,
+                "swap_total": swap_total,
+                "swap_free": swap_free,
+                "swap_used": swap_used,
+                "cpu_usage_percent": cpu_percent,
+                "memory_usage_percent": memory_percent,
+                "swap_usage_percent": swap_percent,
+                "disk_usage_percent": disk_usage_percent,
+                "load_average_percent": load_average_percent
+            }
+        )
 
     @Route.get(
         r"/debug",
