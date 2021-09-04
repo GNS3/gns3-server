@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Table, Column, String, Integer, ForeignKey, BigInteger
+from sqlalchemy import Table, Column, String, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, GUID
@@ -24,7 +24,7 @@ from .base import Base, BaseTable, GUID
 image_template_link = Table(
     "images_templates_link",
     Base.metadata,
-    Column("image_id", Integer, ForeignKey("images.id", ondelete="CASCADE")),
+    Column("image_id", BigInteger, ForeignKey("images.image_id", ondelete="CASCADE")),
     Column("template_id", GUID, ForeignKey("templates.template_id", ondelete="CASCADE"))
 )
 
@@ -33,11 +33,11 @@ class Image(BaseTable):
 
     __tablename__ = "images"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    filename = Column(String)
+    image_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    filename = Column(String, index=True)
+    path = Column(String, unique=True)
     image_type = Column(String)
     image_size = Column(BigInteger)
-    path = Column(String, unique=True, index=True)
-    checksum = Column(String)
+    checksum = Column(String, index=True)
     checksum_algorithm = Column(String)
     templates = relationship("Template", secondary=image_template_link, back_populates="images")

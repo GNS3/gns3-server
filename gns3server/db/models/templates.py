@@ -33,9 +33,9 @@ class Template(BaseTable):
     default_name_format = Column(String)
     symbol = Column(String)
     builtin = Column(Boolean, default=False)
-    compute_id = Column(String)
     usage = Column(String)
     template_type = Column(String)
+    compute_id = Column(String)
     images = relationship("Image", secondary=image_template_link, back_populates="templates")
 
     __mapper_args__ = {
