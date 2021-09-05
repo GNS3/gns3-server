@@ -1864,12 +1864,12 @@ class QemuVM(BaseNode):
                     if retcode == 3:
                         # image has leaked clusters, but is not corrupted, let's try to fix it
                         log.warning("Qemu image {} has leaked clusters".format(disk_image))
-                        if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)])) == 3:
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)]) == 3:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' has leaked clusters and could not be fixed".format(disk_image)})
                     elif retcode == 2:
                         # image is corrupted, let's try to fix it
                         log.warning("Qemu image {} is corrupted".format(disk_image))
-                        if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)])) == 2:
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)]) == 2:
                             self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
                     # ignore retcode == 1.  One reason is that the image is encrypted and there is no encrypt.key-secret available
                 except (OSError, subprocess.SubprocessError) as e:
@@ -1882,13 +1882,16 @@ class QemuVM(BaseNode):
                     # create the disk
                     await self._create_linked_clone(disk_name, disk_image, disk)
                 else:
+                    backing_file_format = await self._find_disk_file_format(disk_image)
+                    if not backing_file_format:
+                        raise QemuError("Could not detect format for disk image: {}".format(disk_image))
                     # Rebase the image. This is in case the base image moved to a different directory,
                     # which will be the case if we imported a portable project.  This uses
                     # get_abs_image_path(hdX_disk_image) and ignores the old base path embedded
                     # in the qcow2 file itself.
                     try:
                         qcow2 = Qcow2(disk)
-                        await qcow2.rebase(qemu_img_path, disk_image)
+                        await qcow2.rebase(qemu_img_path, disk_image, backing_file_format)
                     except (Qcow2Error, OSError) as e:
                         raise QemuError("Could not use qcow2 disk image '{}' for {}: {}".format(disk_image, disk_name, e))
 

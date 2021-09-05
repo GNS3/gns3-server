@@ -73,5 +73,5 @@ async def test_rebase(loop, tmpdir):
     qcow2 = Qcow2(str(tmpdir / "linked.qcow2"))
     assert qcow2.version == 3
     assert qcow2.backing_file == "empty8G.qcow2"
-    await qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"))
+    await qcow2.rebase(qemu_img(), str(tmpdir / "empty16G.qcow2"), "qcow2")
     assert qcow2.backing_file == str(tmpdir / "empty16G.qcow2")

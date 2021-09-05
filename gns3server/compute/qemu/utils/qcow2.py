@@ -118,18 +118,19 @@ class Qcow2:
         except Qcow2Error:
             return (base_image, None)  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
 
-    async def rebase(self, qemu_img, base_image):
+    async def rebase(self, qemu_img, base_image, backing_file_format):
         """
         Rebase a linked clone in order to use the correct disk
 
         :param qemu_img: Path to the qemu-img binary
         :param base_image: Path to the base image
+        :param backing_file_format: File format of the base image
         """
 
         if not os.path.exists(base_image):
             raise FileNotFoundError(base_image)
         backing_options, _ = Qcow2.backing_options(base_image)
-        command = [qemu_img, "rebase", "-u", "-b", backing_options, self._path]
+        command = [qemu_img, "rebase", "-u", "-b", backing_options, "-F", backing_file_format, self._path]
         process = await asyncio.create_subprocess_exec(*command)
         retcode = await process.wait()
         if retcode != 0:
