@@ -1647,23 +1647,16 @@ class QemuVM(BaseNode):
     def _get_qemu_img(self):
         """
         Search the qemu-img binary in the same binary of the qemu binary
-        for avoiding version incompatibility.
+        to avoid version incompatibility.
 
         :returns: qemu-img path or raise an error
         """
-        qemu_img_path = ""
+
         qemu_path_dir = os.path.dirname(self.qemu_path)
-        try:
-            for f in os.listdir(qemu_path_dir):
-                if f.startswith("qemu-img"):
-                    qemu_img_path = os.path.join(qemu_path_dir, f)
-        except OSError as e:
-            raise QemuError("Error while looking for qemu-img in {}: {}".format(qemu_path_dir, e))
-
-        if not qemu_img_path:
-            raise QemuError("Could not find qemu-img in {}".format(qemu_path_dir))
-
-        return qemu_img_path
+        qemu_image_path = shutil.which("qemu-img", path=qemu_path_dir)
+        if qemu_image_path:
+            return qemu_image_path
+        raise QemuError("Could not find qemu-img in {}".format(qemu_path_dir))
 
     async def _qemu_img_exec(self, command):
 
@@ -1677,10 +1670,28 @@ class QemuVM(BaseNode):
         log.info("{} returned with {}".format(self._get_qemu_img(), retcode))
         return retcode
 
+    async def _find_disk_file_format(self, disk):
+
+        qemu_img_path = self._get_qemu_img()
+        try:
+            output = await subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
+        except subprocess.SubprocessError as e:
+            raise QemuError("Error received while checking Qemu disk format: {}".format(e))
+        if output:
+            try:
+                json_data = json.loads(output)
+            except ValueError as e:
+                raise QemuError("Invalid JSON data returned by qemu-img: {}".format(e))
+            return json_data.get("format")
+
     async def _create_linked_clone(self, disk_name, disk_image, disk):
+
         try:
             qemu_img_path = self._get_qemu_img()
-            command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-f", "qcow2", disk]
+            backing_file_format = await self._find_disk_file_format(disk_image)
+            if not backing_file_format:
+                raise QemuError("Could not detect format for disk image: {}".format(disk_image))
+            command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image), "-F", backing_file_format, "-f", "qcow2", disk]
             try:
                 base_qcow2 = Qcow2(disk_image)
                 if base_qcow2.crypt_method:
