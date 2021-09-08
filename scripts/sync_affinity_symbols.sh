@@ -33,7 +33,7 @@ for file in $(find "/tmp/gns3-affinity/svg" -name "*.svg")
 do
   sed -i -r 's/width="100%"/width="60"/' $file
   sed -i -r 's/height="100%"/height="60"/' $file
-  svgo --pretty $file
+  svgo --pretty $file  # install instructions for svgo on https://github.com/svg/svgo
 done
 
 rm -rf gns3server/symbols/affinity
