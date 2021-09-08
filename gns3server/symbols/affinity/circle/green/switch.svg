@@ -1,0 +1,8 @@
+<svg width="60" height="60" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2">
+    <circle cx="150" cy="150" r="150" style="fill:#fffefe"/>
+    <path d="M150 0c82.787 0 150 67.213 150 150s-67.213 150-150 150S0 232.787 0 150 67.213 0 150 0Zm0 16c73.957 0 134 60.043 134 134s-60.043 134-134 134S16 223.957 16 150 76.043 16 150 16Z" style="fill:#109e00"/>
+    <path d="M96.579 121.319H150v20.346H96.685l18.912 18.912h-29.29l-29.096-29.096 29.096-29.096h29.206l-18.934 18.934Z" style="fill:#109e00" transform="translate(-11.68 -11.68) scale(1.07787)"/>
+    <path d="M96.579 121.319H150v20.346H96.685l18.912 18.912h-29.29l-29.096-29.096 29.096-29.096h29.206l-18.934 18.934Z" style="fill:#109e00" transform="translate(-11.68 62.188) scale(1.07787)"/>
+    <path d="M96.579 121.319H150v20.346H96.685l18.912 18.912h-29.29l-29.096-29.096 29.096-29.096h29.206l-18.934 18.934Z" style="fill:#109e00" transform="matrix(-1.07787 0 0 1.07787 311.68 28.22)"/>
+    <path d="M96.579 121.319H150v20.346H96.685l18.912 18.912h-29.29l-29.096-29.096 29.096-29.096h29.206l-18.934 18.934Z" style="fill:#109e00" transform="matrix(-1.07787 0 0 1.07787 311.68 -45.647)"/>
+</svg>
