@@ -914,8 +914,8 @@ async def test_run_with_kvm_linux(linux_platform, vm):
 async def test_run_with_kvm_linux_options_no_kvm(linux_platform, vm):
 
     with patch("os.path.exists", return_value=True) as os_path:
-        vm.manager.config.set("Qemu", "enable_kvm", True)
-        assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "-no-kvm") is False
+        vm.manager.config.settings.Qemu.enable_hardware_acceleration = True
+        assert await vm._run_with_hardware_acceleration("qemu-system-x86_64", "-machine accel=tcg") is False
 
 
 @pytest.mark.asyncio
