@@ -267,7 +267,7 @@ class Node:
         try:
             if not val.startswith(":") and os.path.isabs(val):
                 server_config = Config.instance().get_section_config("Server")
-                default_symbol_directory = os.path.expanduser(server_config.get("images_path", "~/GNS3/symbols"))
+                default_symbol_directory = os.path.expanduser(server_config.get("symbols_path", "~/GNS3/symbols"))
                 if os.path.commonprefix([default_symbol_directory, val]) != default_symbol_directory:
                     val = os.path.basename(val)
         except OSError:
