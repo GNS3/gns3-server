@@ -74,7 +74,7 @@ async def authenticate(
 ) -> schemas.Token:
     """
     Alternative authentication method using json.
-    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"}'
+    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"} -H "Content-Type: application/json" '
     """
 
     user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)
