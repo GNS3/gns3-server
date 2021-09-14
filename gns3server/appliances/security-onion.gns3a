@@ -24,6 +24,14 @@
     },
     "images": [
         {
+            "filename": "securityonion-2.3.70-WAZUH.iso",
+            "version": "2.3.70",
+            "md5sum": "cedef3c38089896c252f9e3c75f7cb15",
+            "filesize": 8465154048,
+            "download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/",
+            "direct_download_url": "https://download.securityonion.net/file/securityonion/securityonion-2.3.70-WAZUH.iso"
+        },
+        {
             "filename": "securityonion-16.04.7.1.iso",
             "version": "16.04.7.1",
             "md5sum": "6bd811a05c1ec7973b8fca5c34cec13e",
@@ -48,33 +56,40 @@
             "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso"
         },
         {
-            "filename": "empty30G.qcow2",
+            "filename": "empty100G.qcow2",
             "version": "1.0",
-            "md5sum": "3411a599e822f2ac6be560a26405821a",
-            "filesize": 197120,
-            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         }
     ],
     "versions": [
         {
+            "name": "2.3.70",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "securityonion-2.3.70-WAZUH.iso"
+            }
+        },
+        {
             "name": "16.04.7.1",
             "images": {
-                "hda_disk_image": "empty30G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "securityonion-16.04.7.1.iso"
             }
         },
         {
             "name": "16.04.6.1",
             "images": {
-                "hda_disk_image": "empty30G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "securityonion-16.04.6.1.iso"
             }
         },
         {
             "name": "14.04.5.4",
             "images": {
-                "hda_disk_image": "empty30G.qcow2",
+                "hda_disk_image": "empty100G.qcow2",
                 "cdrom_image": "securityonion-14.04.5.4.iso"
             }
         }
