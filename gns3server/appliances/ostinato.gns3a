@@ -1,24 +1,27 @@
 {
     "name": "Ostinato",
     "category": "guest",
-    "description": "Ostinato is an open-source, cross-platform network packet crafter/traffic generator and analyzer with a friendly GUI. Craft and send packets of several streams with different protocols at different rates.",
+    "description": "Packet crafter and traffic generator for network engineers",
     "vendor_name": "Ostinato",
-    "vendor_url": "http://ostinato.org/",
-    "documentation_url": "http://ostinato.org/docs.html",
+    "vendor_url": "https://ostinato.org/",
+    "documentation_url": "https://ostinato.org/docs",
     "product_name": "Ostinato",
-    "product_url": "http://ostinato.org/",
-    "registry_version": 3,
-    "status": "experimental",
-    "maintainer": "Bernhard Ehlers",
-    "maintainer_email": "be@bernhard-ehlers.de",
-    "usage": "Use interfaces starting with eth1 as traffic interfaces, eth0 is only for the (optional) management of the server/drone.",
-    "symbol": "ostinato-3d-icon.svg",
-    "port_name_format": "eth{0}",
+    "product_url": "https://ostinato.org/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "service-contract",
+    "maintainer": "Srivats P",
+    "maintainer_email": "support@ostinato.org",
+    "symbol": ":/symbols/affinity/circle/gray/cog.svg",
+    "first_port_name": "eth0/mgmt",
+    "port_name_format": "eth{port1}",
+    "linked_clone": true,
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 4,
         "ram": 256,
-        "hda_disk_interface": "ide",
+        "cpus": 2,
+        "hda_disk_interface": "sata",
         "arch": "i386",
         "console_type": "vnc",
         "kvm": "allow",
@@ -26,33 +29,18 @@
     },
     "images": [
         {
-            "filename": "ostinato-0.9-1.qcow2",
-            "version": "0.9",
-            "md5sum": "00b4856ec9fffbcbcab7a8f757355d69",
-            "filesize": 101646336,
-            "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
-            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.9-1.qcow2"
-        },
-        {
-            "filename": "ostinato-0.8-1.qcow2",
-            "version": "0.8",
-            "md5sum": "12e990ba695103cfac82f8771b8015d4",
-            "filesize": 57344000,
-            "download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/index.html",
-            "direct_download_url": "http://www.bernhard-ehlers.de/projects/ostinato4gns3/ostinato-0.8-1.qcow2"
+            "version": "1.1",
+            "filename": "ostinatostd-1.1-1.qcow2",
+            "filesize": 134217728,
+            "md5sum": "aa027e83cefea1c38d0102eb2f28956e",
+            "download_url": "https://ostinato.org/pricing/gns3"
         }
     ],
     "versions": [
         {
-            "name": "0.9",
+            "name": "1.1",
             "images": {
-                "hda_disk_image": "ostinato-0.9-1.qcow2"
-            }
-        },
-        {
-            "name": "0.8",
-            "images": {
-                "hda_disk_image": "ostinato-0.8-1.qcow2"
+                "hda_disk_image": "ostinatostd-1.1-1.qcow2"
             }
         }
     ]
