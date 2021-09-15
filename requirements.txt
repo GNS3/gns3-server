@@ -1,6 +1,7 @@
 uvicorn==0.15.0
 fastapi==0.68.1
-websockets==10.0
+websockets==10.0  ; python_version >= "3.7"
+websockets==9.1  ; python_version < "3.7"
 python-multipart==0.0.5
 aiohttp==3.7.4.post0
 aiofiles==0.7.0
