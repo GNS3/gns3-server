@@ -60,6 +60,17 @@ class TestPermissionRoutes:
         response = await client.post(app.url_path_for("create_permission"), json=new_permission)
         assert response.status_code == status.HTTP_201_CREATED
 
+    async def test_create_generic_permission(self, app: FastAPI, client: AsyncClient, project: Project) -> None:
+
+        new_permission = {
+            "methods": ["PUT"],
+            "path": f"/projects/{{project_id}}/duplicate",
+            "action": "ALLOW"
+        }
+
+        response = await client.post(app.url_path_for("create_permission"), json=new_permission)
+        assert response.status_code == status.HTTP_201_CREATED
+
     async def test_create_permission_not_existing_endpoint(self, app: FastAPI, client: AsyncClient) -> None:
 
         new_permission = {
@@ -92,7 +103,7 @@ class TestPermissionRoutes:
 
         response = await client.get(app.url_path_for("get_permissions"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 10  # 5 default permissions + 5 custom permissions
+        assert len(response.json()) == 12  # 5 default permissions + 7 custom permissions
 
     async def test_update_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project) -> None:
 
@@ -132,4 +143,4 @@ class TestPermissionRoutes:
 
         rbac_repo = RbacRepository(db_session)
         permissions_in_db = await rbac_repo.get_permissions()
-        assert len(permissions_in_db) == 9  # 5 default permissions + 4 custom permissions
+        assert len(permissions_in_db) == 10  # 5 default permissions + 5 custom permissions

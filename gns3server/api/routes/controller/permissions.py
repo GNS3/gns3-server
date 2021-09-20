@@ -67,37 +67,60 @@ async def create_permission(
     Create a new permission.
     """
 
-    # TODO: should we prevent having multiple permissions with same methods/path?
-    #if await rbac_repo.check_permission_exists(permission_create):
-    #    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
-    #                                    f"{permission_create.action}' already exists")
+    # for perm in await rbac_repo.get_permissions():
+    #     print(perm.methods, perm.path)
 
     for route in request.app.routes:
         if isinstance(route, APIRoute):
 
             # remove the prefix (e.g. "/v3") from the route path
             route_path = re.sub(r"^/v[0-9]", "", route.path)
-            # replace route path ID parameters by an UUID regex
-            route_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", route_path)
-            # replace remaining route path parameters by an word matching regex
-            route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
 
-            # the permission can match multiple routes
-            if permission_create.path.endswith("/*"):
-                route_path += r"/.*"
+            # match with generic permission
+            if re.search(r"{\w+_id}", permission_create.path):
+                permission_base_path = re.split(r"/{\w+_id}.*", permission_create.path)[0]
+                if route_path == permission_base_path:
+                    #print("BASE PERM", route_path, list(route.methods), permission_base_path)
+                    for method in ("PUT", "POST"):
+                        if method in list(route.methods):
+                            #print("MATCH GENERIC PERMISSION", route.methods, route_path, permission_create.path)
+                            if not current_user.is_superadmin and not await rbac_repo.check_user_is_authorized(
+                                    current_user.user_id,
+                                    method,
+                                    permission_base_path
+                            ):
+                                raise ControllerForbiddenError(
+                                    f"User '{current_user.username}' doesn't have the rights to "
+                                    f"add a generic permission on {method} {permission_create.path}")
+                            return await rbac_repo.create_permission(permission_create)
+            else:
 
-            if re.fullmatch(route_path, permission_create.path):
-                for method in permission_create.methods:
-                    if method in list(route.methods):
-                        # check user has the right to add the permission (i.e has already to right on the path)
-                        if not await rbac_repo.check_user_is_authorized(current_user.user_id, method, permission_create.path):
-                            raise ControllerForbiddenError(f"User '{current_user.username}' doesn't have the rights to "
-                                                           f"add a permission on {method} {permission_create.path} or "
-                                                           f"the endpoint doesn't exist")
-                        return await rbac_repo.create_permission(permission_create)
+                if permission_create.path.endswith("/*"):
+                    route_path += r"/.*"
 
-    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path}' "
-                                    f"doesn't match any existing endpoint")
+                # replace route path ID parameters by an UUID regex
+                route_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", route_path)
+
+                # replace remaining route path parameters by an word matching regex
+                route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
+
+                # match with specific permission
+                if re.fullmatch(route_path, permission_create.path):
+                    for method in permission_create.methods:
+                        if method in list(route.methods):
+                            #print("MATCH SPECIFIC PERMISSION", route.methods, route_path, permission_create.path)
+                            if not await rbac_repo.check_user_is_authorized(
+                                    current_user.user_id,
+                                    method,
+                                    permission_create.path
+                            ):
+                                raise ControllerForbiddenError(
+                                    f"User '{current_user.username}' doesn't have the rights to "
+                                    f"add a permission on {method} {permission_create.path}")
+                            return await rbac_repo.create_permission(permission_create)
+
+    raise ControllerBadRequestError(f"Permission {permission_create.methods} {permission_create.path} "
+                                    f"does not match with any existing endpoint")
 
 
 @router.get("/{permission_id}", response_model=schemas.Permission)

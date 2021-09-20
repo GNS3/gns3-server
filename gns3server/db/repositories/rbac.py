@@ -274,25 +274,6 @@ class RbacRepository(BaseRepository):
         log.info(f"{permissions_deleted} orphaned permissions have been deleted")
         return permissions_deleted
 
-    def _match_permission(
-            self,
-            permissions: List[models.Permission],
-            method: str,
-            path: str
-    ) -> Union[None, models.Permission]:
-        """
-        Match the methods and path with a permission.
-        """
-
-        for permission in permissions:
-            log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
-            if method not in permission.methods:
-                continue
-            if permission.path.endswith("/*") and path.startswith(permission.path[:-2]):
-                return permission
-            elif permission.path == path:
-                return permission
-
     async def get_user_permissions(self, user_id: UUID):
         """
         Get all permissions from an user.
@@ -390,7 +371,38 @@ class RbacRepository(BaseRepository):
         result = await self._db_session.execute(query)
         log.debug(f"{result.rowcount} permission(s) have been deleted")
 
-    async def check_user_is_authorized(self, user_id: UUID, method: str, path: str) -> bool:
+    def _match_permission(
+            self,
+            permissions: List[models.Permission],
+            method: str,
+            path: str,
+            api_route: str
+    ) -> Union[None, models.Permission]:
+        """
+        Match the methods and path or api_route with a permission.
+        """
+
+        for permission in permissions:
+            log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
+            if method not in permission.methods:
+                continue
+            if permission.path.endswith("/*"):
+                if path.startswith(permission.path[:-2]):
+                    return permission
+                elif api_route and api_route.startswith(permission.path[:-2]):
+                    return permission
+            elif permission.path == path:
+                return permission
+            elif api_route and permission.path == api_route:
+                return permission
+
+    async def check_user_is_authorized(
+            self,
+            user_id: UUID,
+            method: str,
+            path: str,
+            api_route: str = None,
+    ) -> bool:
         """
         Check if an user is authorized to access a resource.
         """
@@ -405,7 +417,7 @@ class RbacRepository(BaseRepository):
         result = await self._db_session.execute(query)
         permissions = result.scalars().all()
         log.debug(f"RBAC: checking authorization for user '{user_id}' on {method} '{path}'")
-        matched_permission = self._match_permission(permissions, method, path)
+        matched_permission = self._match_permission(permissions, method, path, api_route)
         if matched_permission:
             log.debug(f"RBAC: matched role permission {matched_permission.methods} "
                       f"{matched_permission.path} {matched_permission.action}")
@@ -415,7 +427,7 @@ class RbacRepository(BaseRepository):
 
         log.debug(f"RBAC: could not find a role permission, checking user permissions...")
         permissions = await self.get_user_permissions(user_id)
-        matched_permission = self._match_permission(permissions, method, path)
+        matched_permission = self._match_permission(permissions, method, path, api_route)
         if matched_permission:
             log.debug(f"RBAC: matched user permission {matched_permission.methods} "
                       f"{matched_permission.path} {matched_permission.action}")

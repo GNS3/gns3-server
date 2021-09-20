@@ -67,7 +67,12 @@ async def get_current_active_user(
     if path == "/users/me":
         return current_user
 
-    authorized = await rbac_repo.check_user_is_authorized(current_user.user_id, request.method, path)
+    # find the API route
+    api_route = request.url.path
+    for param_name, param_value in request.path_params.items():
+        api_route = api_route.replace(param_value, "{" + param_name + "}")
+
+    authorized = await rbac_repo.check_user_is_authorized(current_user.user_id, request.method, path, api_route)
     if not authorized:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
