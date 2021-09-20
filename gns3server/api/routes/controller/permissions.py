@@ -19,13 +19,16 @@
 API routes for permissions.
 """
 
-from fastapi import APIRouter, Depends, Response, status
+import re
+
+from fastapi import APIRouter, Depends, Response, Request, status
+from fastapi.routing import APIRoute
 from uuid import UUID
 from typing import List
 
+
 from gns3server import schemas
 from gns3server.controller.controller_error import (
-    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -33,6 +36,7 @@ from gns3server.controller.controller_error import (
 
 from gns3server.db.repositories.rbac import RbacRepository
 from .dependencies.database import get_repository
+from .dependencies.authentication import get_current_active_user
 
 import logging
 
@@ -54,18 +58,46 @@ async def get_permissions(
 
 @router.post("", response_model=schemas.Permission, status_code=status.HTTP_201_CREATED)
 async def create_permission(
+        request: Request,
         permission_create: schemas.PermissionCreate,
+        current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Permission:
     """
     Create a new permission.
     """
 
-    if await rbac_repo.check_permission_exists(permission_create):
-        raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
-                                        f"{permission_create.action}' already exists")
+    # TODO: should we prevent having multiple permissions with same methods/path?
+    #if await rbac_repo.check_permission_exists(permission_create):
+    #    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path} "
+    #                                    f"{permission_create.action}' already exists")
 
-    return await rbac_repo.create_permission(permission_create)
+    for route in request.app.routes:
+        if isinstance(route, APIRoute):
+
+            # remove the prefix (e.g. "/v3") from the route path
+            route_path = re.sub(r"^/v[0-9]", "", route.path)
+            # replace route path ID parameters by an UUID regex
+            route_path = re.sub(r"{\w+_id}", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", route_path)
+            # replace remaining route path parameters by an word matching regex
+            route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
+
+            # the permission can match multiple routes
+            if permission_create.path.endswith("/*"):
+                route_path += r"/.*"
+
+            if re.fullmatch(route_path, permission_create.path):
+                for method in permission_create.methods:
+                    if method in list(route.methods):
+                        # check user has the right to add the permission (i.e has already to right on the path)
+                        if not await rbac_repo.check_user_is_authorized(current_user.user_id, method, permission_create.path):
+                            raise ControllerForbiddenError(f"User '{current_user.username}' doesn't have the rights to "
+                                                           f"add a permission on {method} {permission_create.path} or "
+                                                           f"the endpoint doesn't exist")
+                        return await rbac_repo.create_permission(permission_create)
+
+    raise ControllerBadRequestError(f"Permission '{permission_create.methods} {permission_create.path}' "
+                                    f"doesn't match any existing endpoint")
 
 
 @router.get("/{permission_id}", response_model=schemas.Permission)
@@ -115,7 +147,18 @@ async def delete_permission(
 
     success = await rbac_repo.delete_permission(permission_id)
     if not success:
-        raise ControllerError(f"Permission '{permission_id}' could not be deleted")
+        raise ControllerNotFoundError(f"Permission '{permission_id}' could not be deleted")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
+@router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
+async def prune_permissions(
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> Response:
+    """
+    Prune orphaned permissions.
+    """
+
+    await rbac_repo.prune_permissions()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

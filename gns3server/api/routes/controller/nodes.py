@@ -260,6 +260,28 @@ async def reload_node(node: Node = Depends(dep_node)) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post("/{node_id}/isolate", status_code=status.HTTP_204_NO_CONTENT)
+async def isolate_node(node: Node = Depends(dep_node)) -> Response:
+    """
+    Isolate a node (suspend all attached links).
+    """
+
+    for link in node.links:
+        await link.update_suspend(True)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{node_id}/unisolate", status_code=status.HTTP_204_NO_CONTENT)
+async def unisolate_node(node: Node = Depends(dep_node)) -> Response:
+    """
+    Un-isolate a node (resume all attached suspended links).
+    """
+
+    for link in node.links:
+        await link.update_suspend(False)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/{node_id}/links", response_model=List[schemas.Link], response_model_exclude_unset=True)
 async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     """

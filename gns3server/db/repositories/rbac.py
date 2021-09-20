@@ -17,7 +17,7 @@
 
 from uuid import UUID
 from typing import Optional, List, Union
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, null
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -194,7 +194,8 @@ class RbacRepository(BaseRepository):
         Get all permissions.
         """
 
-        query = select(models.Permission)
+        query = select(models.Permission).\
+            order_by(models.Permission.path.desc())
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
@@ -257,6 +258,22 @@ class RbacRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
+    async def prune_permissions(self) -> int:
+        """
+        Prune orphaned permissions.
+        """
+
+        query = select(models.Permission).\
+            filter((~models.Permission.roles.any()) & (models.Permission.user_id == null()))
+        result = await self._db_session.execute(query)
+        permissions = result.scalars().all()
+        permissions_deleted = 0
+        for permission in permissions:
+            if await self.delete_permission(permission.permission_id):
+                permissions_deleted += 1
+        log.info(f"{permissions_deleted} orphaned permissions have been deleted")
+        return permissions_deleted
+
     def _match_permission(
             self,
             permissions: List[models.Permission],
@@ -282,9 +299,9 @@ class RbacRepository(BaseRepository):
         """
 
         query = select(models.Permission).\
-            join(models.User.permissions). \
+            join(models.User.permissions).\
             filter(models.User.user_id == user_id).\
-            order_by(models.Permission.path)
+            order_by(models.Permission.path.desc())
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -379,11 +396,11 @@ class RbacRepository(BaseRepository):
         """
 
         query = select(models.Permission).\
-            join(models.Permission.roles). \
-            join(models.Role.groups). \
-            join(models.UserGroup.users). \
+            join(models.Permission.roles).\
+            join(models.Role.groups).\
+            join(models.UserGroup.users).\
             filter(models.User.user_id == user_id).\
-            order_by(models.Permission.path)
+            order_by(models.Permission.path.desc())
 
         result = await self._db_session.execute(query)
         permissions = result.scalars().all()

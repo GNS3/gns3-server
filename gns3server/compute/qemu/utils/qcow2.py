@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import os
 import asyncio
 import struct
@@ -88,31 +89,50 @@ class Qcow2:
             return None
         return path
 
-    async def rebase(self, qemu_img, base_image):
+    @staticmethod
+    def backing_options(base_image):
+        """
+        If the base_image is encrypted qcow2, return options for the upper layer
+        which include a secret name (equal to the basename)
+
+        :param base_image: Path to the base file (which may or may not be qcow2)
+
+        :returns: (base image string, Qcow2 object representing base image or None)
+        """
+
+        try:
+            base_qcow2 = Qcow2(base_image)
+            if base_qcow2.crypt_method:
+                # Embed a secret name so it doesn't have to be passed to qemu -drive ...
+                options = {
+                    "encrypt.key-secret": os.path.basename(base_image),
+                    "driver": "qcow2",
+                    "file": {
+                        "driver": "file",
+                        "filename": base_image,
+                    },
+                }
+                return ("json:"+json.dumps(options, separators=(',', ':')), base_qcow2)
+            else:
+                return (base_image, base_qcow2)
+        except Qcow2Error:
+            return (base_image, None)  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
+
+    async def rebase(self, qemu_img, base_image, backing_file_format):
         """
         Rebase a linked clone in order to use the correct disk
 
         :param qemu_img: Path to the qemu-img binary
         :param base_image: Path to the base image
+        :param backing_file_format: File format of the base image
         """
 
         if not os.path.exists(base_image):
             raise FileNotFoundError(base_image)
-        command = [qemu_img, "rebase", "-u", "-b", base_image, self._path]
+        backing_options, _ = Qcow2.backing_options(base_image)
+        command = [qemu_img, "rebase", "-u", "-b", backing_options, "-F", backing_file_format, self._path]
         process = await asyncio.create_subprocess_exec(*command)
         retcode = await process.wait()
         if retcode != 0:
             raise Qcow2Error("Could not rebase the image")
         self._reload()
-
-    async def validate(self, qemu_img):
-        """
-        Run qemu-img info to validate the file and its backing images
-
-        :param qemu_img: Path to the qemu-img binary
-        """
-        command = [qemu_img, "info", "--backing-chain", self._path]
-        process = await asyncio.create_subprocess_exec(*command)
-        retcode = await process.wait()
-        if retcode != 0:
-            raise Qcow2Error("Could not validate the image")

@@ -181,6 +181,20 @@ async def test_reload_node(app: FastAPI, client: AsyncClient, project: Project, 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
+async def test_isolate_node(app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node):
+
+    compute.post = AsyncioMagicMock()
+    response = await client.post(app.url_path_for("isolate_node", project_id=project.id, node_id=node.id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_unisolate_node(app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node):
+
+    compute.post = AsyncioMagicMock()
+    response = await client.post(app.url_path_for("unisolate_node", project_id=project.id, node_id=node.id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
 async def test_duplicate_node(
         app: FastAPI,
         client: AsyncClient,

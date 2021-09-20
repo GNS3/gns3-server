@@ -127,7 +127,7 @@ if __name__ == "__main__":
             )
         ],
     )
-    coro = asyncio.start_server(server.run, "0.0.0.0", 4444, loop=loop)
+    coro = asyncio.start_server(server.run, "0.0.0.0", 4444)
     s = loop.run_until_complete(coro)
 
     try:

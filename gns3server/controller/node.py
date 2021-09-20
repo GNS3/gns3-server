@@ -25,6 +25,7 @@ from .compute import ComputeConflict, ComputeError
 from .controller_error import ControllerError, ControllerTimeoutError
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
+from ..config import Config
 from ..utils.qt import qt_font_to_style
 
 
@@ -293,10 +294,11 @@ class Node:
         if val is None:
             val = ":/symbols/computer.svg"
 
-        # No abs path, fix them (bug of 1.X)
         try:
-            if not val.startswith(":") and os.path.abspath(val):
-                val = os.path.basename(val)
+            if not val.startswith(":") and os.path.isabs(val):
+                default_symbol_directory = Config.instance().settings.Server.symbols_path
+                if os.path.commonprefix([default_symbol_directory, val]) != default_symbol_directory:
+                    val = os.path.basename(val)
         except OSError:
             pass
 
