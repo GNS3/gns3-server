@@ -844,7 +844,7 @@ class BaseNode:
         """
 
         available_ram = int(psutil.virtual_memory().available / (1024 * 1024))
-        percentage_left = psutil.virtual_memory().percent
+        percentage_left = 100 - psutil.virtual_memory().percent
         if requested_ram > available_ram:
             message = '"{}" requires {}MB of RAM to run but there is only {}MB - {}% of RAM left on "{}"'.format(self.name,
                                                                                                                  requested_ram,
