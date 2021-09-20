@@ -25,7 +25,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, HTTPException, Depends, Response, status
+from fastapi import APIRouter, Request, Response, HTTPException, Depends, Response, status
 from typing import List
 from uuid import UUID
 
@@ -55,8 +55,7 @@ async def create_template(
 
     template = await TemplatesService(templates_repo).create_template(template_create)
     template_id = template.get("template_id")
-    if not current_user.is_superadmin:
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
     return template
 
 
@@ -151,6 +150,5 @@ async def duplicate_template(
     """
 
     template = await TemplatesService(templates_repo).duplicate_template(template_id)
-    if not current_user.is_superadmin:
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
     return template

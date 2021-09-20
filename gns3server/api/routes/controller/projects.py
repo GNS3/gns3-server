@@ -111,8 +111,7 @@ async def create_project(
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
-    if not current_user.is_superadmin:
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{project.id}/*")
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{project.id}/*")
     return project.asdict()
 
 
@@ -393,8 +392,7 @@ async def duplicate_project(
     new_project = await project.duplicate(
         name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
     )
-    if not current_user.is_superadmin:
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
+    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
 
 
