@@ -104,8 +104,7 @@ class Symbols:
                                     'builtin': False,
                                     'theme': "Custom symbols"})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
-
-        symbols.sort(key=lambda x: x["filename"])
+        symbols.sort(key=lambda x: x["theme"])
         return symbols
 
     def symbols_path(self):
