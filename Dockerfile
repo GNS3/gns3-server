@@ -28,7 +28,7 @@ RUN apt-get install -y vpcs ubridge
 ADD . /server
 WORKDIR /server
 
-RUN pip3 install -r /server/requirements.txt
+RUN pip3 install --no-cache-dir -r /server/requirements.txt
 
 EXPOSE 3080
 
