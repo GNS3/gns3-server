@@ -124,7 +124,7 @@ async def delete_image(
     if not image:
         raise ControllerNotFoundError(f"Image '{image_path}' not found")
 
-    if await images_repo.get_image_templates(image.id):
+    if await images_repo.get_image_templates(image.image_id):
         raise ControllerError(f"Image '{image_path}' is used by one or more templates")
 
     try:

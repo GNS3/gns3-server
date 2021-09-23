@@ -75,7 +75,7 @@ class ImagesRepository(BaseRepository):
 
         query = select(models.Template).\
             join(models.Template.images).\
-            filter(models.Image.id == image_id)
+            filter(models.Image.image_id == image_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
@@ -86,7 +86,7 @@ class ImagesRepository(BaseRepository):
         """
 
         db_image = models.Image(
-            id=None,
+            image_id=None,
             filename=image_name,
             image_type=image_type,
             image_size=image_size,
