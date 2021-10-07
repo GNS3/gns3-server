@@ -1,17 +1,17 @@
 uvicorn==0.15.0
-fastapi==0.68.1
+fastapi==0.68.2
 websockets==10.0  ; python_version >= "3.7"
 websockets==9.1  ; python_version < "3.7"
 python-multipart==0.0.5
 aiohttp==3.7.4.post0
 aiofiles==0.7.0
-Jinja2==3.0.1
-sentry-sdk==1.4.1
+Jinja2==3.0.2
+sentry-sdk==1.4.3
 psutil==5.8.0
 async-timeout==3.0.1
 distro==1.6.0
 py-cpuinfo==8.0.0
-sqlalchemy==1.4.24
+sqlalchemy==1.4.25
 aiosqlite===0.17.0
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
