@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.26 08/10/2021
+
+* Release web UI 2.2.26
+* Sort symbols by theme. Fixes https://github.com/GNS3/gns3-gui/issues/3230
+* Fix memory percentage left warning. Fixes #1966
+* Update affinity symbols. Fixes https://github.com/GNS3/gns3-gui/issues/3232
+
 ## 2.2.25 14/09/2021
 
 * Release web UI 2.2.25
