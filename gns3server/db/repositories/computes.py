@@ -23,15 +23,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .base import BaseRepository
 
 import gns3server.db.models as models
-from gns3server.services import auth_service
 from gns3server import schemas
 
 
 class ComputesRepository(BaseRepository):
+
     def __init__(self, db_session: AsyncSession) -> None:
 
         super().__init__(db_session)
-        self._auth_service = auth_service
 
     async def get_compute(self, compute_id: UUID) -> Optional[models.Compute]:
 

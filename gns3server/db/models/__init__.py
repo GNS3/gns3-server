@@ -20,6 +20,7 @@ from .users import User, UserGroup
 from .roles import Role
 from .permissions import Permission
 from .computes import Compute
+from .images import Image
 from .templates import (
     Template,
     CloudTemplate,

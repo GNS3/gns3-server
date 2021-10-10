@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2021 GNS3 Technologies Inc.
 #
@@ -15,19 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, String, Integer
+from pydantic import BaseModel, Field
+from enum import Enum
 
-from .base import BaseTable, GUID
+from .base import DateTimeModelMixin
 
 
-class Compute(BaseTable):
+class ImageType(str, Enum):
 
-    __tablename__ = "computes"
+    qemu = "qemu"
+    ios = "ios"
+    iou = "iou"
 
-    compute_id = Column(GUID, primary_key=True)
-    name = Column(String, index=True)
-    protocol = Column(String)
-    host = Column(String)
-    port = Column(Integer)
-    user = Column(String)
-    password = Column(String)
+
+class ImageBase(BaseModel):
+    """
+    Common image properties.
+    """
+
+    filename: str = Field(..., description="Image name")
+    image_type: ImageType = Field(..., description="Image type")
+    image_size: int = Field(..., description="Image size in bytes")
+    checksum: str = Field(..., description="Checksum value")
+    checksum_algorithm: str = Field(..., description="Checksum algorithm")
+
+
+class Image(DateTimeModelMixin, ImageBase):
+
+    class Config:
+        orm_mode = True
