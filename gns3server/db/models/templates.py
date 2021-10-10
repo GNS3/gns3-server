@@ -29,6 +29,7 @@ class Template(BaseTable):
 
     template_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, index=True)
+    version = Column(String)
     category = Column(String)
     default_name_format = Column(String)
     symbol = Column(String)

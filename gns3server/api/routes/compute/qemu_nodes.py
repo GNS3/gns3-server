@@ -139,13 +139,6 @@ async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     Start a Qemu node.
     """
 
-    qemu_manager = Qemu.instance()
-    hardware_accel = qemu_manager.config.settings.Qemu.enable_hardware_acceleration
-    if hardware_accel and "-machine accel=tcg" not in node.options:
-        pm = ProjectManager.instance()
-        if pm.check_hardware_virtualization(node) is False:
-            pass  # FIXME: check this
-            # raise ComputeError("Cannot start VM with hardware acceleration (KVM/HAX) enabled because hardware virtualization (VT-x/AMD-V) is already used by another software like VMware or VirtualBox")
     await node.start()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

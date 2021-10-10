@@ -26,9 +26,14 @@ from fastapi import APIRouter, Request, Response, Depends, status
 from sqlalchemy.orm.exc import MultipleResultsFound
 from typing import List
 from gns3server import schemas
+from pydantic import ValidationError
 
 from gns3server.utils.images import InvalidImageError, default_images_directory, write_image
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.services.templates import TemplatesService
+from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
     ControllerError,
     ControllerNotFoundError,
@@ -36,6 +41,7 @@ from gns3server.controller.controller_error import (
     ControllerBadRequestError
 )
 
+from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
@@ -43,7 +49,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=List[schemas.Image])
 async def get_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> List[schemas.Image]:
@@ -60,9 +66,15 @@ async def upload_image(
         request: Request,
         image_type: schemas.ImageType = schemas.ImageType.qemu,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Image:
     """
     Upload an image.
+
+    Example: curl -X POST http://host:port/v3/images/upload/my_image_name.qcow2?image_type=qemu \
+    -H 'Authorization: Bearer <token>' --data-binary @"/path/to/image.qcow2"
     """
 
     image_path = urllib.parse.unquote(image_path)
@@ -70,7 +82,7 @@ async def upload_image(
     directory = default_images_directory(image_type)
     full_path = os.path.abspath(os.path.join(directory, image_dir, image_name))
     if os.path.commonprefix([directory, full_path]) != directory:
-        raise ControllerForbiddenError(f"Could not write image, '{image_path}' is forbidden")
+        raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
     if await images_repo.get_image(image_path):
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
@@ -80,10 +92,24 @@ async def upload_image(
     except (OSError, InvalidImageError) as e:
         raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
 
-    # TODO: automatically create template based on image checksum
-    #from gns3server.controller import Controller
-    #controller = Controller.instance()
-    #controller.appliance_manager.find_appliance_with_image(image.checksum)
+    try:
+        # attempt to automatically create a template based on image checksum
+        template = await Controller.instance().appliance_manager.install_appliance_from_image(
+            image.checksum,
+            images_repo,
+            directory
+        )
+
+        if template:
+            template_create = schemas.TemplateCreate(**template)
+            template = await TemplatesService(templates_repo).create_template(template_create)
+            template_id = template.get("template_id")
+            await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+            log.info(f"Template '{template.get('name')}' version {template.get('version')} "
+                     f"has been created using image '{image_name}'")
+
+    except (ControllerError, ValidationError, InvalidImageError) as e:
+        log.warning(f"Could not automatically create template using image '{image_path}': {e}")
 
     return image
 

@@ -122,6 +122,10 @@ class Symbols:
                 return None
         return directory
 
+    def has_symbol(self, symbol_id):
+
+        return self._symbols_path.get(symbol_id)
+
     def get_path(self, symbol_id):
         try:
             return self._symbols_path[symbol_id]

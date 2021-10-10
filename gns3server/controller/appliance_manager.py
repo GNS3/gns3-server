@@ -16,10 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import shutil
 import json
 import uuid
 import asyncio
+import aiofiles
+
+from aiohttp.client_exceptions import ClientError
 
 from .appliance import Appliance
 from ..config import Config
@@ -27,6 +29,9 @@ from ..utils.asyncio import locking
 from ..utils.get_resource import get_resource
 from ..utils.http_client import HTTPClient
 from .controller_error import ControllerError
+from .appliance_to_template import ApplianceToTemplate
+from ..utils.images import InvalidImageError, write_image, md5sum
+from ..utils.asyncio import wait_run_in_executor
 
 import logging
 
@@ -77,19 +82,89 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    #TODO: finish
-    def find_appliance_with_image(self, image_checksum):
+    def _find_appliance_from_image_checksum(self, image_checksum):
+        """
+        Find an appliance and version that matches an image checksum.
+        """
 
         for appliance in self._appliances.values():
             if appliance.images:
                 for image in appliance.images:
-                    if image["md5sum"] == image_checksum:
-                        print(f"APPLIANCE FOUND {appliance.name}")
-                        version = image["version"]
-                        print(f"IMAGE VERSION {version}")
-                        if image.versions:
-                            for version in image.versions:
-                                pass
+                    if image.get("md5sum") == image_checksum:
+                        return appliance, image.get("version")
+
+    async def _download_image(self, image_dir, image_name, image_type, image_url, images_repo):
+        """
+        Download an image.
+        """
+
+        log.info(f"Downloading image '{image_name}' from '{image_url}'")
+        image_path = os.path.join(image_dir, image_name)
+        try:
+            async with HTTPClient.get(image_url) as response:
+                if response.status != 200:
+                    raise ControllerError(f"Could not download '{image_name}' due to HTTP error code {response.status}")
+                await write_image(image_name, image_type, image_path, response.content.iter_any(), images_repo)
+        except (OSError, InvalidImageError) as e:
+            raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
+        except ClientError as e:
+            raise ControllerError(f"Could not connect to download '{image_name}': {e}")
+        except asyncio.TimeoutError:
+            raise ControllerError(f"Timeout while downloading '{image_name}' from '{image_url}'")
+
+    async def _find_appliance_version_images(self, appliance, version, images_repo, image_dir):
+        """
+        Find all the images belonging to a specific appliance version.
+        """
+
+        version_images = version.get("images")
+        if version_images:
+            for appliance_key, appliance_file in version_images.items():
+                for image in appliance.images:
+                    if appliance_file == image.get("filename"):
+                        image_checksum = image.get("md5sum")
+                        image_in_db = await images_repo.get_image_by_checksum(image_checksum)
+                        if image_in_db:
+                            version_images[appliance_key] = image_in_db.filename
+                        else:
+                            # check if the image is on disk
+                            image_path = os.path.join(image_dir, appliance_file)
+                            if os.path.exists(image_path) and await wait_run_in_executor(md5sum, image_path) == image_checksum:
+                                async with aiofiles.open(image_path, "rb") as f:
+                                    await write_image(appliance_file, appliance.type, image_path, f, images_repo)
+                            else:
+                                # download the image if there is a direct download URL
+                                direct_download_url = image.get("direct_download_url")
+                                if direct_download_url:
+                                    await self._download_image(
+                                        image_dir,
+                                        appliance_file,
+                                        appliance.type,
+                                        direct_download_url,
+                                        images_repo)
+                                else:
+                                    raise ControllerError(f"Could not find '{appliance_file}'")
+
+    async def install_appliance_from_image(self, image_checksum, images_repo, image_dir):
+        """
+        Find the image checksum in appliance files
+        """
+
+        from . import Controller
+
+        appliance_info = self._find_appliance_from_image_checksum(image_checksum)
+        if appliance_info:
+            appliance, image_version = appliance_info
+            if appliance.versions:
+                for version in appliance.versions:
+                    if version.get("name") == image_version:
+                        await self._find_appliance_version_images(appliance, version, images_repo, image_dir)
+                        # downloading missing custom symbol for this appliance
+                        if appliance.symbol and not appliance.symbol.startswith(":/symbols/"):
+                            destination_path = os.path.join(Controller.instance().symbols.symbols_path(), appliance.symbol)
+                            if not os.path.exists(destination_path):
+                                await self._download_symbol(appliance.symbol, destination_path)
+                        return ApplianceToTemplate().new_template(appliance.asdict(), version, "local")  # FIXME: "local"
 
     def load_appliances(self, symbol_theme="Classic"):
         """
@@ -112,15 +187,17 @@ class ApplianceManager:
                     if not file.endswith(".gns3a") and not file.endswith(".gns3appliance"):
                         continue
                     path = os.path.join(directory, file)
-                    appliance_id = uuid.uuid3(
-                        uuid.NAMESPACE_URL, path
-                    )  # Generate UUID from path to avoid change between reboots
+                    # Generate UUID from path to avoid change between reboots
+                    appliance_id = uuid.uuid5(
+                        uuid.NAMESPACE_X500,
+                        path
+                    )
                     try:
                         with open(path, encoding="utf-8") as f:
                             appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
-                                self._appliances[appliance.id] = appliance
+                               self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
                                 default_symbol = self._get_default_symbol(json_data, symbol_theme)
@@ -171,6 +248,7 @@ class ApplianceManager:
         """
 
         symbol_url = f"https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{symbol}"
+        log.info(f"Downloading symbol '{symbol}'")
         async with HTTPClient.get(symbol_url) as response:
             if response.status != 200:
                 log.warning(

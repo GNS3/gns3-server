@@ -58,7 +58,7 @@ DYNAMIPS_PLATFORM_TO_SHEMA = {
 # built-in templates have their compute_id set to None to tell clients to select a compute
 BUILTIN_TEMPLATES = [
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "cloud"),
         "template_type": "cloud",
         "name": "Cloud",
         "default_name_format": "Cloud{0}",
@@ -68,7 +68,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "nat"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "nat"),
         "template_type": "nat",
         "name": "NAT",
         "default_name_format": "NAT{0}",
@@ -78,7 +78,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "vpcs"),
         "template_type": "vpcs",
         "name": "VPCS",
         "default_name_format": "PC{0}",
@@ -89,7 +89,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_switch"),
         "template_type": "ethernet_switch",
         "name": "Ethernet switch",
         "console_type": "none",
@@ -100,7 +100,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_hub"),
         "template_type": "ethernet_hub",
         "name": "Ethernet hub",
         "default_name_format": "Hub{0}",
@@ -110,7 +110,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "frame_relay_switch"),
         "template_type": "frame_relay_switch",
         "name": "Frame Relay switch",
         "default_name_format": "FRSW{0}",
@@ -120,7 +120,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "atm_switch"),
         "template_type": "atm_switch",
         "name": "ATM switch",
         "default_name_format": "ATMSW{0}",

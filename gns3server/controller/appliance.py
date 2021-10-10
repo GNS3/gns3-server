@@ -68,6 +68,16 @@ class Appliance:
     def symbol(self, new_symbol):
         self._data["symbol"] = new_symbol
 
+    @property
+    def type(self):
+
+        if "iou" in self._data:
+            return "iou"
+        elif "dynamips" in self._data:
+            return "dynamips"
+        else:
+            return "qemu"
+
     def asdict(self):
         """
         Appliance data (a hash)

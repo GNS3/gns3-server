@@ -237,8 +237,8 @@ def check_valid_image_header(data: bytes, image_type: str, header_magic_len: int
         if data[:header_magic_len] != b'\x7fELF\x01\x01\x01' and data[:7] != b'\x7fELF\x02\x01\x01':
             raise InvalidImageError("Invalid IOU file detected")
     elif image_type == "qemu":
-        if data[:header_magic_len] != b'QFI\xfb':
-            raise InvalidImageError("Invalid Qemu file detected (must be qcow2 format)")
+        if data[:header_magic_len] != b'QFI\xfb' and data[:header_magic_len] != b'KDMV':
+            raise InvalidImageError("Invalid Qemu file detected (must be qcow2 or VDMK format)")
 
 
 async def write_image(

@@ -41,6 +41,7 @@ class TemplateBase(BaseModel):
 
     template_id: Optional[UUID] = None
     name: Optional[str] = None
+    version: Optional[str] = None
     category: Optional[Category] = None
     default_name_format: Optional[str] = None
     symbol: Optional[str] = None
