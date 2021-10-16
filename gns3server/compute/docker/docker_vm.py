@@ -574,14 +574,9 @@ class DockerVM(BaseNode):
         # https://github.com/GNS3/gns3-gui/issues/1039
         try:
             process = await asyncio.subprocess.create_subprocess_exec(
-                "docker",
-                "exec",
-                "-i",
-                self._cid,
-                "/gns3/bin/busybox",
                 "script",
                 "-qfc",
-                "while true; do TERM=vt100 /gns3/bin/busybox sh; done",
+                f"docker exec -i -t {self._cid} /gns3/bin/busybox sh -c 'while true; do TERM=vt100 /gns3/bin/busybox sh; done'",
                 "/dev/null",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
