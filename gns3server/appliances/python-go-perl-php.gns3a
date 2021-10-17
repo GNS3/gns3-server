@@ -1,4 +1,5 @@
 {
+    "appliance_id": "47ca3e1f-5a35-4631-b75d-010bd9452ca8",
     "name": "Python, Go, Perl, PHP",
     "category": "guest",
     "description": "Container with integrated Python 2 & 3, Perl, PHP, and PHP7.0 interpreters, and a Go compiler.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "bf0a4dd0-9e1f-491e-918a-1d1ac0e23161",
     "name": "6WIND Turbo Router",
     "category": "router",
     "description": "6WIND Turbo Router is a high performance, ready-to-use software virtual router. It can be deployed bare metal or in virtual machines on commercial-off-the-shelf (COTS) servers. It is a carrier-grade solution for Service Prodivers aiming at using white boxes to deploy network functions. Typical use-cases are transit/peering router, IPsec VPN gateway and CGNAT.",

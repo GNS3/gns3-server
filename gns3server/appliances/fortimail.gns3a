@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4089ee66-e13b-4490-aa51-53cdb969e024",
     "name": "FortiMail",
     "category": "guest",
     "description": "FortiMail is a complete Secure Email Gateway offering suitable for any size organization. It provides a single solution to protect against inbound attacks - including advanced malware -, as well as outbound threats and data loss with a wide range of top-rated security capabilities.",

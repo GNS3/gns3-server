@@ -1,4 +1,5 @@
 {
+    "appliance_id": "810c0dbf-21ae-478e-9d42-cc3d803064b7",
     "name": "Kali Linux CLI",
     "category": "guest",
     "description": "From the creators of BackTrack comes Kali Linux, the most advanced and versatile penetration testing platform  ever created. We have a set of amazing features lined up in our security distribution geared at streamlining the penetration testing experience. This version has no GUI.Include packages:\n* nmap\n* metasploit\n* sqlmap\n* hydra\n* telnet client\n* dnsutils (dig)",

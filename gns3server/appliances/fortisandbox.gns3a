@@ -1,4 +1,5 @@
 {
+    "appliance_id": "88252124-93a4-4851-9b0f-b0f264705c1a",
     "name": "FortiSandbox",
     "category": "firewall",
     "description": "Today's threats are increasingly sophisticated and often bypass traditional malware security by masking their malicious activity. A sandbox augments your security architecture by validating threats in a separate, secure environment. FortiSandbox offers a powerful combination of advanced detection, automated mitigation, actionable insight, and flexible deployment to stop targeted attacks and subsequent data loss. It's also a key component of our Advanced Threat Protection solution.",

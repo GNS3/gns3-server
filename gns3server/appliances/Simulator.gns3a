@@ -1,4 +1,5 @@
 {
+    "appliance_id": "2def5797-cb7d-429e-b85e-497ff4b81547",
     "name": "ParrotOS",
     "category": "guest",
     "description": " Parrot is a GNU/Linux distribution based on Debian Testing and designed with Security, Development and Privacy in mind.  It includes a full portable laboratory for security and digital forensics experts, but it also includes all you need to develop your own software or protect your privacy while surfing the net.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4fc11cfb-d600-4dd4-af94-e4b16191be2a",
     "name": "FortiAnalyzer",
     "category": "guest",
     "description": "FortiAnalyzer Network Security Logging, Analysis, and Reporting Appliances securely aggregate log data from Fortinet Security Appliances. A comprehensive suite of easily customable reports allows you to quickly analyze and visualize network threats, inefficiencies and usage.",

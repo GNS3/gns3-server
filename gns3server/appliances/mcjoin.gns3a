@@ -1,4 +1,5 @@
 {
+    "appliance_id": "c80f3423-20bf-4a12-b8fd-3eb2c747eabb",
     "name": "mcjoin",
     "category": "guest",
     "description": "mcjoin is a very simple and easy-to-use tool to test IPv4 and IPv6 multicast.",

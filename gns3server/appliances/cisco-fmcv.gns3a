@@ -1,4 +1,5 @@
 {
+    "appliance_id": "1e409568-f8d6-4f94-8804-53039eb7784a",
     "name": "Cisco FMCv",
     "category": "firewall",
     "description": "This is your administrative nerve center for managing critical Cisco network security solutions. It provides complete and unified management over firewalls, application control, intrusion prevention, URL filtering, and advanced malware protection. Easily go from managing a firewall to controlling applications to investigating and remediating malware outbreaks.",

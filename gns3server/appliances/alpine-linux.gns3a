@@ -1,4 +1,5 @@
 {
+    "appliance_id": "fc520ae2-a4e5-48c3-9a13-516bb2e94668",
     "name": "Alpine Linux",
     "category": "guest",
     "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.",

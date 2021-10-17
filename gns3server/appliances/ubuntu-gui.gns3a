@@ -1,4 +1,5 @@
 {
+    "appliance_id": "72623124-94a5-4911-b818-d606fb37bdf0",
     "name": "Ubuntu Desktop Guest",
     "category": "guest",
     "description": "Ubuntu is a full-featured Linux operating system which is based on Debian distribution and freely available with both community and professional support, it comes with Unity as its default desktop environment. There are other flavors of Ubuntu available with other desktops as default like Ubuntu Gnome, Lubuntu, Xubuntu, and so on. A tightly-integrated selection of excellent applications is included, and an incredible variety of add-on software is just a few clicks away. A default installation of Ubuntu contains a wide range of software that includes LibreOffice, Firefox, Empathy, Transmission, etc.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4b027aee-8214-4c97-ad8b-89abc67641bd",
     "name": "NETem",
     "category": "guest",
     "description": "NETem emulates a network link, typically a WAN link. It supports bandwidth limitation, delay, jitter and packet loss. All this functionality is already build in the linux kernel, NETem is just a menu system to make the configuration user-friendly.",

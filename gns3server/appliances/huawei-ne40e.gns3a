@@ -1,4 +1,5 @@
 {
+    "appliance_id": "03aa586b-5666-49e9-a70c-e5935fdbc23d",
     "name": "HuaWei NE40E",
     "category": "router",
     "description": "Based on a 2T platform, the NetEngine 40E-X series provides the industry\u2019s highest capacity 2T routing line cards. Combining performance with low power consumption, innovative Internet Protocol (IP) hard pipe technology, and quick evolution capabilities, NetEngine 40E-X routers meet the low latency and high reliability requirements of business-critical services as well as mature Wide Area Network (WAN) Software-Defined Networking (SDN) solutions. They can serve as core nodes on enterprise WANs, access nodes on large-scale enterprise networks, interconnection and aggregation nodes on campus networks, and edge nodes on large-scale Internet Data Center (IDC) networks.",

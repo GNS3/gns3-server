@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f8302832-ad07-47e2-a750-004f700bd47c",
     "name": "Internet",
     "category": "router",
     "description": "This appliance simulate a domestic modem. It provide an IP via DHCP and will nat all connection to the internet without the need of using a cloud interface in your topologies. IP will be in the subnet 172.16.0.0/16. Multiple internet will have different IP range from 172.16.1.0/24 to 172.16.253.0/24 .\n\nWARNING USE IT ONLY WITH THE GNS3 VM.",

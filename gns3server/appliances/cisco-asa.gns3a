@@ -1,4 +1,5 @@
 {
+    "appliance_id": "fdbfc23e-413f-4b9f-b930-6cd27527d72b",
     "name": "Cisco ASA",
     "category": "firewall",
     "description": "Cisco ASA firewall",

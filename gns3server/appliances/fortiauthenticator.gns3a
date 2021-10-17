@@ -1,4 +1,5 @@
 {
+    "appliance_id": "57e289b6-68a4-4911-a916-0d3def89ef74",
     "name": "FortiAuthenticator",
     "category": "guest",
     "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",

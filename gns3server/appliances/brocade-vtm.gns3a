@@ -1,4 +1,5 @@
 {
+    "appliance_id": "cabd6cb2-1c70-4f90-b225-6601fea89cfc",
     "name": "vTM DE",
     "category": "router",
     "description": "Take control of your online applications with Brocade virtual Traffic Manager (Developer Edition). Enhance customer experience, inspect traffic in real-time, control service levels to differentiate users and services, and reduce your costs with an extensible delivery platform that can grow with your business using ADC-as-a-Service. A fully functional Developer Edition which needs no license key, is limited to 1 Mbps/100 SSL tps throughput, and has access to the Brocade Community support web pages.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a7eec173-9680-4c1f-bf79-1bf29d485375",
     "name": "cEOS",
     "category": "multilayer_switch",
     "description": "Arista cEOS\u2122 introduces the containerized packaging of EOS software and its agents for deployment in cloud infrastructure with the same proven EOS software image that runs on all Arista products. These flexible deployment options empower cloud network operators that are customizing their operating environments to provide a uniform workflow for development, testing and deployment of differentiated services.",

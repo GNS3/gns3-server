@@ -1,4 +1,5 @@
 {
+    "appliance_id": "c30ea423-b6f8-443e-b599-955ea5647ef0",
     "name": "IP Cop",
     "category": "firewall",
     "description": "The IPCop Firewall is a Linux firewall distribution. It is geared towards home and SOHO users. The IPCop web-interface is very user-friendly and makes usage easy.",

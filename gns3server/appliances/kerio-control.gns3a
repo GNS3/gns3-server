@@ -1,4 +1,5 @@
 {
+    "appliance_id": "dd935ae3-5adb-4316-a963-6e4d8bbeed5f",
     "name": "Kerio Control",
     "category": "firewall",
     "description": "Protect your network from viruses, malware and malicious activity with Kerio Control, the easy-to-administer yet powerful all-in-one security solution.\nKerio Control brings together next-generation firewall capabilities - including a network firewall and router, intrusion detection and prevention (IPS), gateway anti-virus, VPN, and web content and application filtering. These comprehensive capabilities and unmatched deployment flexibility make Kerio Control the ideal choice for small and mid-sized businesses.",

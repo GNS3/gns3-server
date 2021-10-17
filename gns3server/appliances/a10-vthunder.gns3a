@@ -1,4 +1,5 @@
 {
+    "appliance_id": "7aa41b5b-3ae9-40a7-be38-5c109c59e086",
     "name": "A10 vThunder",
     "category": "router",
     "description": "vThunder, part of A10 Networks' award-winning A10 Thunder and AX Series Application Delivery Controller (ADC) family, is designed to meet the growing needs of organizations that require a flexible and easy-to-deploy application delivery and server load balancer solution running within a virtualized infrastructure.",

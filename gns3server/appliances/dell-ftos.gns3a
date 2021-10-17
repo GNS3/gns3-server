@@ -1,4 +1,5 @@
 {
+    "appliance_id": "85441847-4091-4894-9079-802084a1845b",
     "name": "Dell OS9",
     "category": "router",
     "description": "Dell Networking OS9 (formerly FTOS).\nOS9 powers the Dell Networking product portfolio and has been hardened in some of the largest and most demanding environments in the world to meet stringent reliability, scalability and serviceability requirements. \n\nDownload and uncompress zip files from the Dell support site - corresponding to the FTOS/OS9 image name. Please 'Select FTOS for S-Series OS-EMULATOR'. Import the resulting ISO image.",

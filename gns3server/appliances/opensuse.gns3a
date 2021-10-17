@@ -1,4 +1,5 @@
 {
+    "appliance_id": "260d25d8-7cbf-4cc9-9163-7d502fef84b3",
     "name": "openSUSE",
     "category": "guest",
     "description": "openSUSE is a free and Linux-based operating system for PC, Laptop or Server. The openSUSE project is a community program sponsored by Novell. It is a general purpose operating system built on top of the Linux kernel, developed by the community-supported openSUSE Project and sponsored by SUSE and a number of other companies.",

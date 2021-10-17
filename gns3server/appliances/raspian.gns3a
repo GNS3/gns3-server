@@ -1,4 +1,5 @@
 {
+    "appliance_id": "597a01de-4b06-4f57-bd95-8c2e53f7dad6",
     "name": "Raspian",
     "category": "guest",
     "description": "Raspberry Pi Desktop comes pre-installed with plenty of software for education, programming and general use; including Python, Scratch, Sonic Pi, Java, and more.  Appliance created to demonstrate new_appliance.py - read more at https://nextpertise.net.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "130cb709-b000-471c-afe6-11cbaaed4bbc",
     "name": "WordPress",
     "category": "guest",
     "description": "WordPress is a state-of-the-art publishing platform with a focus on aesthetics, web standards, and usability. It is one of the worlds most popular blog publishing applications, includes tons of powerful core functionality, extendable via literally thousands of plugins, and supports full theming. This appliance includes all the standard features in TurnKey Core too.",

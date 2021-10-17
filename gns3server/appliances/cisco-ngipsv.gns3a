@@ -1,4 +1,5 @@
 {
+    "appliance_id": "587dd8e4-0c73-465d-bfdc-5cd7ab67029b",
     "name": "Cisco NGIPSv",
     "category": "firewall",
     "description": "Cisco Firepower Next-Generation IPS (NGIPS) threat appliances combine superior visibility, embedded security intelligence, automated analysis, and industry-leading threat effectiveness.",

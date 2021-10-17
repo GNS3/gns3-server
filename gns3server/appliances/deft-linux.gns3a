@@ -1,4 +1,5 @@
 {
+    "appliance_id": "518a5802-266a-4299-b84b-e6cccb5a39ac",
     "name": "DEFT Linux",
     "category": "guest",
     "description": "DEFT (acronym for Digital Evidence & Forensics Toolkit) is a distribution made for Computer Forensics, with the purpose of running live on systems without tampering or corrupting devices (hard disks, pendrives, etc...) connected to the PC where the boot process takes place.\nThe DEFT system is based on GNU Linux, it can run live (via DVDROM or USB pendrive), installed or run as a Virtual Appliance on VMware or Virtualbox. DEFT employs LXDE as desktop environment and WINE for executing Windows tools under Linux. It features a comfortable mount manager for device management.\nDEFT is paired with DART (acronym for Digital Advanced Response Toolkit), a Forensics System which can be run on Windows and contains the best tools for Forensics and Incident Response. DART features a GUI with logging and integrity check for the instruments here contained.\nBesides all this, the DEFT staff is devoted to implementing and developing applications which are released to Law Enforcement Officers, such as Autopsy 3 for Linux.",

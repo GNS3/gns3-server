@@ -1,4 +1,5 @@
 {
+    "appliance_id": "3b65c68f-cdde-4dde-a0e7-5ef8c9b7ec2c",
     "name": "Junos Space",
     "category": "guest",
     "description": "Junos Space Network Management Platform works with Juniper's management applications to simplify and automate management of Juniper's switching, routing, and security devices. As part of a complete solution, the platform provides broad fault, configuration, accounting, performance, and security management (FCAPS) capability, same day support for new devices and Junos OS releases, a task-specific user interface, and northbound APIs for integration with existing network management systems (NMS) or operations/business support systems (OSS/BSS).\n\nThe platform helps network operators at enterprises and service providers scale operations, reduce complexity, and enable new applications and services to be brought to market quickly, through multilayered network abstractions, operator-centric automation schemes, and a simple point-and-click UI.",

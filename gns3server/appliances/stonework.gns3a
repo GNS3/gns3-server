@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a8897d1f-5ab1-4075-b538-0acdb6785a07",
     "name": "StoneWork",
     "category": "router",
     "description": "StoneWork is VPP and Ligato based routing platform",

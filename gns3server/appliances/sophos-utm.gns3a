@@ -1,4 +1,5 @@
 {
+    "appliance_id": "d297f2a0-f468-4c4d-a501-a065436712a1",
     "name": "Sophos UTM Home Edition",
     "category": "firewall",
     "description": "Sophos Free Home Use Firewall is a fully equipped software version of the Sophos UTM firewall, available at no cost for home users - no strings attached. It features full Network, Web, Mail and Web Application Security with VPN functionality and protects up to 50 IP addresses. The Sophos UTM Free Home Use firewall contains its own operating system and will overwrite all data on the computer during the installation process. Therefore, a separate, dedicated computer or VM is needed, which will change into a fully functional security appliance.",

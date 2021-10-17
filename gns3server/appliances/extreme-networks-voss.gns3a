@@ -1,4 +1,5 @@
 {
+    "appliance_id": "3e81eb47-43c4-4676-bbc5-8dda1d7abe08",
     "name": "VOSS VM",
     "category": "multilayer_switch",
     "description": "The VOSS VM is a software emulation of a VSP8K switch.",

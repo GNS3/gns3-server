@@ -1,4 +1,5 @@
 {
+    "appliance_id": "6fe715ad-4c27-4f65-97f7-f8c1d7cd3e0a",
     "name": "OpenMediaVault",
     "category": "guest",
     "description": "openmediavault is the next generation network attached storage (NAS) solution based on Debian Linux. It contains services like SSH, (S)FTP, SMB/CIFS, DAAP media server, RSync, BitTorrent client and many more.",
@@ -19,7 +20,7 @@
         "ram": 2048,
         "hda_disk_interface": "sata",
         "hdb_disk_interface": "sata",
-		"arch": "x86_64",
+        "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "dc",
         "kvm": "require"
@@ -58,14 +59,14 @@
                 "hdb_disk_image": "empty30G.qcow2",
                 "cdrom_image": "openmediavault_5.6.13-amd64.iso"
             }
-    },
-    {
-        "name": "5.5.11",
-        "images": {
-            "hda_disk_image": "empty30G.qcow2",
-            "hdb_disk_image": "empty30G.qcow2",
-            "cdrom_image": "openmediavault_5.5.11-amd64.iso"
+        },
+        {
+            "name": "5.5.11",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "openmediavault_5.5.11-amd64.iso"
+            }
         }
-    }
     ]
 }

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "adce6f0c-10ae-4f4d-9e00-da833f419eae",
     "name": "Cisco FTDv",
     "category": "firewall",
     "description": "Cisco Firepower Threat Defense Virtual NGFW appliances combine Cisco's proven network firewall with the industry's most effective next-gen IPS and advanced malware protection. All so you can get more visibility, be more flexible, save more, and protect better.",

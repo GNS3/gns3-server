@@ -1,4 +1,5 @@
 {
+    "appliance_id": "2e2b0348-bf5c-43da-823e-aa0a61c0f8fe",
     "name": "Juniper vRR",
     "category": "router",
     "description": "The vRR is a full-featured, carrier-grade virtual route reflector software that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm.",

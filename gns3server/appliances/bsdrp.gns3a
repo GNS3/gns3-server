@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f28432b3-c5fe-48fa-b9e8-4024aa7cbe9e",
     "name": "BSDRP",
     "category": "router",
     "description": "BSD Router Project (BSDRP) is an embedded free and open source router distribution based on FreeBSD with Quagga and Bird.",

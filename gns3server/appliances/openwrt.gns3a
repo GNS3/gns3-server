@@ -1,4 +1,5 @@
 {
+    "appliance_id": "5a6f68c9-62ac-4b80-80cb-959398fb2c03",
     "name": "OpenWrt",
     "category": "router",
     "description": "OpenWrt is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.",

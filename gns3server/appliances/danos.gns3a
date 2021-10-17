@@ -1,4 +1,5 @@
 {
+    "appliance_id": "ccbd2d81-c588-4bbb-80ac-ba20686b613a",
     "name": "DANOS",
     "category": "router",
     "description": "The Disaggregated Network Operating System (DANOS) project enables community collaboration across network hardware, forwarding, and operating system layers. DANOS is initially based on AT&T's \"dNOS\" software framework of a more open, cost-effective and flexible alternative to traditional networking equipment. As part of The Linux Foundation, it now incorporates contributions from complementary open source communities in building a standardized distributed Network Operating System (NOS) to speed the adoption and use of white boxes in a service provider's infrastructure.",

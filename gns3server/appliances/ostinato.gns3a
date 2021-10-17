@@ -1,4 +1,5 @@
 {
+    "appliance_id": "915a93b4-b78f-47b4-9a6e-cadc25d55c0a",
     "name": "Ostinato",
     "category": "guest",
     "description": "Packet crafter and traffic generator for network engineers",
@@ -29,10 +30,10 @@
     },
     "images": [
         {
-            "version": "1.1",
             "filename": "ostinatostd-1.1-1.qcow2",
-            "filesize": 134217728,
+            "version": "1.1",
             "md5sum": "aa027e83cefea1c38d0102eb2f28956e",
+            "filesize": 134217728,
             "download_url": "https://ostinato.org/pricing/gns3"
         }
     ],

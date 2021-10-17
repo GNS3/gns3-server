@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a1903402-919b-4620-9b07-37902f46a4e3",
     "name": "FortiADC Manager",
     "category": "guest",
     "description": "FortiADC Manager allows you to use a web- based user interface to configure remote FortiADC devices. It allows you to simplify and speed up the FortiADC deployment and update process by maintaining configuration templates and policy packages that you can modify and apply as needed.",

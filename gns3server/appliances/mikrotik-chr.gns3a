@@ -1,4 +1,5 @@
 {
+    "appliance_id": "05512118-2b99-4789-90d3-5135665c3ec5",
     "name": "MikroTik CHR",
     "category": "router",
     "description": "Cloud Hosted Router (CHR) is a RouterOS version meant for running as a virtual machine. It supports x86 64-bit architecture and can be used on most of popular hypervisors such as VMWare, Hyper-V, VirtualBox, KVM and others. CHR has full RouterOS features enabled by default but has a different licensing model than other RouterOS versions.",
