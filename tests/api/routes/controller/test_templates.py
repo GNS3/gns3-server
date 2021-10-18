@@ -62,6 +62,7 @@ class TestTemplateRoutes:
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,
                   "name": "VPCS_TEST",
+                  "version": "1.0",
                   "compute_id": "local",
                   "template_type": "vpcs"}
 
@@ -72,9 +73,25 @@ class TestTemplateRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["template_id"] == template_id
 
+    async def test_template_create_same_name_and_version(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller
+    ) -> None:
+
+        params = {"name": "VPCS_TEST",
+                  "version": "1.0",
+                  "compute_id": "local",
+                  "template_type": "vpcs"}
+
+        response = await client.post(app.url_path_for("create_template"), json=params)
+        assert response.status_code == status.HTTP_409_CONFLICT
+
     async def test_template_create_wrong_type(self, app: FastAPI, client: AsyncClient, controller: Controller) -> None:
 
         params = {"name": "VPCS_TEST",
+                  "version": "2.0",
                   "compute_id": "local",
                   "template_type": "invalid_template_type"}
 
@@ -86,6 +103,7 @@ class TestTemplateRoutes:
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,
                   "name": "VPCS_TEST",
+                  "version": "3.0",
                   "compute_id": "local",
                   "template_type": "vpcs"}
 
@@ -107,6 +125,7 @@ class TestTemplateRoutes:
         template_id = str(uuid.uuid4())
         params = {"template_id": template_id,
                   "name": "VPCS_TEST",
+                  "version": "4.0",
                   "compute_id": "local",
                   "template_type": "vpcs"}
 
@@ -426,7 +445,7 @@ class TestDynamipsTemplate:
 
     async def test_c3600_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c3600 template",
+        params = {"name": "Cisco c3600 template with wrong chassis",
                   "platform": "c3600",
                   "chassis": "3650",
                   "compute_id": "local",
@@ -530,7 +549,7 @@ class TestDynamipsTemplate:
 
     async def test_c2600_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c2600 template",
+        params = {"name": "Cisco c2600 template with wrong chassis",
                   "platform": "c2600",
                   "chassis": "2660XM",
                   "compute_id": "local",
@@ -589,7 +608,7 @@ class TestDynamipsTemplate:
 
     async def test_c1700_dynamips_template_create_wrong_chassis(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Cisco c1700 template",
+        params = {"name": "Cisco c1700 template with wrong chassis",
                   "platform": "c1700",
                   "chassis": "1770",
                   "compute_id": "local",
@@ -1200,6 +1219,7 @@ class TestImageAssociationWithTemplate:
     ) -> None:
 
         params = {"name": "Qemu template",
+                  "version": "1.0",
                   "compute_id": "local",
                   "platform": "i386",
                   "hda_disk_image": "subdir/image.qcow2",
@@ -1224,7 +1244,7 @@ class TestImageAssociationWithTemplate:
 
     async def test_template_create_with_non_existing_image(self, app: FastAPI, client: AsyncClient) -> None:
 
-        params = {"name": "Qemu template",
+        params = {"name": "Qemu template with non existing image",
                   "compute_id": "local",
                   "platform": "i386",
                   "hda_disk_image": "unkown_image.qcow2",

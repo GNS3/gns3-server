@@ -18,8 +18,25 @@
 API routes for appliances.
 """
 
-from fastapi import APIRouter
+import os
+import logging
+
+from fastapi import APIRouter, Depends, Response, status
+from fastapi.responses import FileResponse
 from typing import Optional, List
+from uuid import UUID
+
+from gns3server import schemas
+from gns3server.controller import Controller
+from gns3server.controller.controller_error import ControllerNotFoundError
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.db.repositories.rbac import RbacRepository
+
+from .dependencies.authentication import get_current_active_user
+from .dependencies.database import get_repository
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -30,10 +47,50 @@ async def get_appliances(update: Optional[bool] = False, symbol_theme: Optional[
     Return all appliances known by the controller.
     """
 
-    from gns3server.controller import Controller
-
     controller = Controller.instance()
     if update:
         await controller.appliance_manager.download_appliances()
     controller.appliance_manager.load_appliances(symbol_theme=symbol_theme)
     return [c.asdict() for c in controller.appliance_manager.appliances.values()]
+
+
+@router.get("/{appliance_id}/download")
+def download_appliance(appliance_id: UUID) -> FileResponse:
+    """
+    Download an appliance file.
+    """
+
+    controller = Controller.instance()
+    appliance = controller.appliance_manager.appliances.get(str(appliance_id))
+    if not appliance:
+        raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
+
+    if not os.path.exists(appliance.path):
+        raise ControllerNotFoundError(message=f"Could not find appliance file '{appliance.path}'")
+
+    return FileResponse(appliance.path, media_type="application/json")
+
+
+@router.post("/{appliance_id}/install", status_code=status.HTTP_204_NO_CONTENT)
+async def install_appliance(
+        appliance_id: UUID,
+        version: Optional[str] = None,
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> Response:
+    """
+    Install an appliance.
+    """
+
+    controller = Controller.instance()
+    await controller.appliance_manager.install_appliance(
+        appliance_id,
+        version,
+        images_repo,
+        templates_repo,
+        rbac_repo,
+        current_user
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -24,15 +24,11 @@ log = logging.getLogger(__name__)
 
 class Appliance:
 
-    def __init__(self, appliance_id, data, builtin=True):
+    def __init__(self, path, data, builtin=True):
 
-        if appliance_id is None:
-            self._id = str(uuid.uuid4())
-        elif isinstance(appliance_id, uuid.UUID):
-            self._id = str(appliance_id)
-        else:
-            self._id = appliance_id
         self._data = data.copy()
+        self._id = data.get("appliance_id", uuid.uuid5(uuid.NAMESPACE_X500, path))
+        self._path = path
         self._builtin = builtin
         if "appliance_id" in self._data:
             del self._data["appliance_id"]
@@ -43,6 +39,10 @@ class Appliance:
     @property
     def id(self):
         return self._id
+
+    @property
+    def path(self):
+        return self._path
 
     @property
     def status(self):
@@ -75,6 +75,8 @@ class Appliance:
             return "iou"
         elif "dynamips" in self._data:
             return "dynamips"
+        elif "docker" in self._data:
+            return "docker"
         else:
             return "qemu"
 

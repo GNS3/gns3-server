@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2020 GNS3 Technologies Inc.
+# Copyright (C) 2021 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import pytest
+import shutil
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -23,8 +25,44 @@ from httpx import AsyncClient
 pytestmark = pytest.mark.asyncio
 
 
-async def test_appliances_list(app: FastAPI, client: AsyncClient) -> None:
+class TestApplianceRoutes:
 
-    response = await client.get(app.url_path_for("get_appliances"))
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) > 0
+    async def test_appliances_list(self, app: FastAPI, client: AsyncClient) -> None:
+
+        response = await client.get(app.url_path_for("get_appliances"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json()) > 0
+
+    async def test_appliance_download(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "3bf492b6-5717-4257-9bfd-b34617c6f133"  # Cisco IOSv appliance
+        response = await client.get(app.url_path_for("download_appliance", appliance_id=appliance_id))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["appliance_id"] == appliance_id
+
+    async def test_docker_appliance_install(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "fc520ae2-a4e5-48c3-9a13-516bb2e94668"  # Alpine Linux appliance
+        response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_docker_appliance_install_with_version(self, app: FastAPI, client: AsyncClient) -> None:
+
+        appliance_id = "fc520ae2-a4e5-48c3-9a13-516bb2e94668"  # Alpine Linux appliance
+        params = {"version": "123"}
+        response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id), params=params)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    async def test_qemu_appliance_install_with_version(self, app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+
+        shutil.copy("tests/resources/empty8G.qcow2", os.path.join(images_dir, "QEMU", "empty8G.qcow2"))
+        appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
+        params = {"version": "8G"}
+        response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id), params=params)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    async def test_qemu_appliance_install_without_version(self, app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+
+        appliance_id = "1cfdf900-7c30-4cb7-8f03-3f61d2581633"  # Empty VM appliance
+        response = await client.post(app.url_path_for("install_appliance", appliance_id=appliance_id))
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
