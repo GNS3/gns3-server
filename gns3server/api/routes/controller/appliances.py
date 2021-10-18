@@ -18,11 +18,9 @@
 API routes for appliances.
 """
 
-import os
 import logging
 
 from fastapi import APIRouter, Depends, Response, status
-from fastapi.responses import FileResponse
 from typing import Optional, List
 from uuid import UUID
 
@@ -42,7 +40,10 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_appliances(update: Optional[bool] = False, symbol_theme: Optional[str] = "Classic") -> List[dict]:
+async def get_appliances(
+        update: Optional[bool] = False,
+        symbol_theme: Optional[str] = "Classic"
+) -> List[schemas.Appliance]:
     """
     Return all appliances known by the controller.
     """
@@ -54,21 +55,17 @@ async def get_appliances(update: Optional[bool] = False, symbol_theme: Optional[
     return [c.asdict() for c in controller.appliance_manager.appliances.values()]
 
 
-@router.get("/{appliance_id}/download")
-def download_appliance(appliance_id: UUID) -> FileResponse:
+@router.get("/{appliance_id}")
+def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     """
-    Download an appliance file.
+    Get an appliance file.
     """
 
     controller = Controller.instance()
     appliance = controller.appliance_manager.appliances.get(str(appliance_id))
     if not appliance:
         raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
-
-    if not os.path.exists(appliance.path):
-        raise ControllerNotFoundError(message=f"Could not find appliance file '{appliance.path}'")
-
-    return FileResponse(appliance.path, media_type="application/json")
+    return appliance.asdict()
 
 
 @router.post("/{appliance_id}/install", status_code=status.HTTP_204_NO_CONTENT)

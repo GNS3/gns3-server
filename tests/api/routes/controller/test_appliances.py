@@ -33,10 +33,10 @@ class TestApplianceRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.json()) > 0
 
-    async def test_appliance_download(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_get_appliance(self, app: FastAPI, client: AsyncClient) -> None:
 
         appliance_id = "3bf492b6-5717-4257-9bfd-b34617c6f133"  # Cisco IOSv appliance
-        response = await client.get(app.url_path_for("download_appliance", appliance_id=appliance_id))
+        response = await client.get(app.url_path_for("get_appliance", appliance_id=appliance_id))
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["appliance_id"] == appliance_id
 

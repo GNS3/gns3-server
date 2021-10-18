@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import uuid
 import logging
 
 log = logging.getLogger(__name__)
@@ -27,12 +26,9 @@ class Appliance:
     def __init__(self, path, data, builtin=True):
 
         self._data = data.copy()
-        self._id = data.get("appliance_id", uuid.uuid5(uuid.NAMESPACE_X500, path))
+        self._id = self._data.get("appliance_id")
         self._path = path
         self._builtin = builtin
-        if "appliance_id" in self._data:
-            del self._data["appliance_id"]
-
         if self.status != "broken":
             log.debug(f'Appliance "{self.name}" [{self._id}] loaded')
 
@@ -84,6 +80,7 @@ class Appliance:
         """
         Appliance data (a hash)
         """
+
         data = copy.deepcopy(self._data)
         data["builtin"] = self._builtin
         return data

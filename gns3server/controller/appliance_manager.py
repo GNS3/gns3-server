@@ -214,6 +214,10 @@ class ApplianceManager:
 
         appliances_info = self._find_appliances_from_image_checksum(image_checksum)
         for appliance, image_version in appliances_info:
+            try:
+                schemas.Appliance.parse_obj(appliance.asdict())
+            except ValidationError as e:
+                log.warning(message=f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
                 for version in appliance.versions:
                     if version.get("name") == image_version:
@@ -240,6 +244,11 @@ class ApplianceManager:
         appliance = self._appliances.get(str(appliance_id))
         if not appliance:
             raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
+
+        try:
+            schemas.Appliance.parse_obj(appliance.asdict())
+        except ValidationError as e:
+            raise ControllerError(message=f"Could not validate appliance '{appliance_id}': {e}")
 
         if version:
             if not appliance.versions:
@@ -289,16 +298,18 @@ class ApplianceManager:
                     path = os.path.join(directory, file)
                     try:
                         with open(path, encoding="utf-8") as f:
-                            appliance = Appliance(path, json.load(f), builtin=builtin)
-                            json_data = appliance.asdict()  # Check if loaded without error
+                            json_data = json.load(f)
+                            schemas.Appliance.parse_obj(json_data)
+                            appliance = Appliance(path, json_data, builtin=builtin)
+                            appliance_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
-                                default_symbol = self._get_default_symbol(json_data, symbol_theme)
+                                default_symbol = self._get_default_symbol(appliance_data, symbol_theme)
                                 if default_symbol:
                                     appliance.symbol = default_symbol
-                    except (ValueError, OSError, KeyError) as e:
+                    except (ValueError, OSError, KeyError, ValidationError) as e:
                         log.warning(f"Cannot load appliance file '{path}': {e}")
                         continue
 
