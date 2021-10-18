@@ -16,8 +16,6 @@
 
 # Generated from JSON schema using https://github.com/koxudaxi/datamodel-code-generator
 
-from __future__ import annotations
-
 from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
