@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Generated from JSON schema using https://github.com/koxudaxi/datamodel-code-generator
+
+from __future__ import annotations
+
 from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
-
 from pydantic import AnyUrl, BaseModel, EmailStr, Field, confloat, conint, constr
 
 
