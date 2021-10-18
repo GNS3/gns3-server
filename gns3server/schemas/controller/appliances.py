@@ -323,7 +323,7 @@ class Image(BaseModel):
 
     filename: str = Field(..., title='Filename')
     version: str = Field(..., title='Version of the file')
-    md5sum: constr(regex=r'^[a-f0-9]{32}$') = Field(..., title='md5sum of the file')
+    md5sum: str = Field(..., title='md5sum of the file', regex='^[a-f0-9]{32}$')
     filesize: int = Field(..., title='File size in bytes')
     download_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(
         None, title='Download url where you can download the appliance from a browser'
@@ -353,7 +353,7 @@ class Images(BaseModel):
 class Version(BaseModel):
 
     name: str = Field(..., title='Name of the version')
-    idlepc: Optional[constr(regex=r'^0x[0-9a-f]{8}')] = None
+    idlepc: Optional[str] = Field(None, regex='^0x[0-9a-f]{8}')
     images: Optional[Images] = Field(None, title='Images used for this version')
 
 

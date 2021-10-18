@@ -298,19 +298,18 @@ class ApplianceManager:
                     path = os.path.join(directory, file)
                     try:
                         with open(path, encoding="utf-8") as f:
-                            json_data = json.load(f)
-                            schemas.Appliance.parse_obj(json_data)
-                            appliance = Appliance(path, json_data, builtin=builtin)
-                            appliance_data = appliance.asdict()  # Check if loaded without error
+                            appliance = Appliance(path, json.load(f), builtin=builtin)
+                            json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
+                                schemas.Appliance.parse_obj(json_data)
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
-                                default_symbol = self._get_default_symbol(appliance_data, symbol_theme)
+                                default_symbol = self._get_default_symbol(json_data, symbol_theme)
                                 if default_symbol:
                                     appliance.symbol = default_symbol
                     except (ValueError, OSError, KeyError, ValidationError) as e:
-                        log.warning(f"Cannot load appliance file '{path}': {e}")
+                        print(f"Cannot load appliance file '{path}': {e}")
                         continue
 
     def _get_default_symbol(self, appliance: dict, symbol_theme: str) -> str:
