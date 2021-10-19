@@ -317,7 +317,7 @@ class Compression(Enum):
     field_7z = '7z'
 
 
-class Image(BaseModel):
+class ApplianceImage(BaseModel):
 
     filename: str = Field(..., title='Filename')
     version: str = Field(..., title='Version of the file')
@@ -335,7 +335,7 @@ class Image(BaseModel):
     )
 
 
-class Images(BaseModel):
+class ApplianceVersionImages(BaseModel):
 
     kernel_image: Optional[str] = Field(None, title='Kernel image')
     initrd: Optional[str] = Field(None, title='Initrd disk image')
@@ -348,11 +348,11 @@ class Images(BaseModel):
     cdrom_image: Optional[str] = Field(None, title='cdrom image')
 
 
-class Version(BaseModel):
+class ApplianceVersion(BaseModel):
 
     name: str = Field(..., title='Name of the version')
     idlepc: Optional[str] = Field(None, regex='^0x[0-9a-f]{8}')
-    images: Optional[Images] = Field(None, title='Images used for this version')
+    images: Optional[ApplianceVersionImages] = Field(None, title='Images used for this version')
 
 
 class DynamipsSlot(Enum):
@@ -460,5 +460,5 @@ class Appliance(BaseModel):
     iou: Optional[Iou] = Field(None, title='IOU specific options')
     dynamips: Optional[Dynamips] = Field(None, title='Dynamips specific options')
     qemu: Optional[Qemu] = Field(None, title='Qemu specific options')
-    images: Optional[List[Image]] = Field(None, title='Images for this appliance')
-    versions: Optional[List[Version]] = Field(None, title='Versions of the appliance')
+    images: Optional[List[ApplianceImage]] = Field(None, title='Images for this appliance')
+    versions: Optional[List[ApplianceVersion]] = Field(None, title='Versions of the appliance')

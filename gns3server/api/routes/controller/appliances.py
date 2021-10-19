@@ -26,7 +26,12 @@ from uuid import UUID
 
 from gns3server import schemas
 from gns3server.controller import Controller
-from gns3server.controller.controller_error import ControllerNotFoundError
+from gns3server.controller.controller_error import (
+    ControllerError,
+    ControllerBadRequestError,
+    ControllerNotFoundError
+)
+
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -65,6 +70,31 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     appliance = controller.appliance_manager.appliances.get(str(appliance_id))
     if not appliance:
         raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
+    return appliance.asdict()
+
+
+@router.post("/{appliance_id}/version", status_code=status.HTTP_201_CREATED)
+def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> schemas.Appliance:
+    """
+    Add a version to an appliance
+    """
+
+    controller = Controller.instance()
+    appliance = controller.appliance_manager.appliances.get(str(appliance_id))
+    if not appliance:
+        raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
+
+    if not appliance.versions:
+        raise ControllerBadRequestError(message=f"Appliance '{appliance_id}' do not have versions")
+
+    if not appliance_version.images:
+        raise ControllerBadRequestError(message=f"Version '{appliance_version.name}' must contain images")
+
+    for version in appliance.versions:
+        if version.get("name") == appliance_version.name:
+            raise ControllerError(message=f"Appliance '{appliance_id}' already has version '{appliance_version.name}'")
+
+    appliance.versions.append(appliance_version.dict(exclude_unset=True))
     return appliance.asdict()
 
 
