@@ -201,7 +201,6 @@ class QemuTemplate(Template):
     kernel_image = Column(String)
     bios_image = Column(String)
     kernel_command_line = Column(String)
-    legacy_networking = Column(Boolean)
     replicate_network_connection_state = Column(Boolean)
     create_config_disk = Column(Boolean)
     on_close = Column(String)
