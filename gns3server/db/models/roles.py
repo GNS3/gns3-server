@@ -49,8 +49,33 @@ class Role(BaseTable):
 def create_default_roles(target, connection, **kw):
 
     default_roles = [
-        {"name": "Administrator", "description": "Administrator role", "is_builtin": True},
-        {"name": "User", "description": "User role", "is_builtin": True},
+        {
+            "name": "Administrator",
+            "description": "Administrator role",
+            "is_builtin": True
+        },
+        {
+            "name": "User",
+            "description": "User role",
+            "is_builtin": True
+        },
+        {
+            "name": "Template manager",
+            "description": "The template manager role can add, update and remove templates for all users",
+            "is_builtin": True
+        },
+        {
+            "name": "Supervisor",
+            "description": "The supervisor role can update and remove projects for all users",
+            "is_builtin": True
+        },
+        {
+            "name": "Project user",
+            "description": "The project user role can only start/stop/suspend nodes and access the nodes' console in "
+                           "projects that are shared with them. "
+                           "They could also change link filters and capture packets.",
+            "is_builtin": True
+        },
     ]
 
     stmt = target.insert().values(default_roles)

@@ -70,6 +70,12 @@ def create_default_roles(target, connection, **kw):
             "action": "ALLOW"
         },
         {
+            "description": "Allow to add and list images",
+            "methods": ["GET", "POST"],
+            "path": "/images",
+            "action": "ALLOW"
+        },
+        {
             "description": "Allow to list computes",
             "methods": ["GET"],
             "path": "/computes/*",
@@ -112,7 +118,7 @@ def add_permissions_to_role(target, connection, **kw):
     role_id = result.first().role_id
 
     # add minimum required paths to the "User" role
-    for path in ("/projects", "/templates", "/computes/*", "/symbols/*"):
+    for path in ("/projects", "/templates", "images", "/computes/*", "/symbols/*"):
         stmt = permissions_table.select().where(permissions_table.c.path == path)
         result = connection.execute(stmt)
         permission_id = result.first().permission_id
