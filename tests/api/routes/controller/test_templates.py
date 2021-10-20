@@ -748,7 +748,6 @@ class TestQemuTemplate:
                                  "initrd": "",
                                  "kernel_command_line": "",
                                  "kernel_image": "",
-                                 "legacy_networking": False,
                                  "linked_clone": True,
                                  "mac_address": "",
                                  "name": "Qemu template",

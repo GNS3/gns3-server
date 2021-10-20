@@ -195,7 +195,6 @@ class QemuBase(BaseModel):
     mac_address: Optional[str] = Field(
         None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
     )
-    legacy_networking: Optional[bool] = Field(None, description="Use QEMU legagy networking commands (-net syntax)")
     replicate_network_connection_state: Optional[bool] = Field(
         None, description="Replicate the network connection state for links in Qemu"
     )
