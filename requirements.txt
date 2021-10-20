@@ -1,5 +1,5 @@
 uvicorn==0.15.0
-fastapi==0.68.2
+fastapi==0.70.0
 websockets==10.0  ; python_version >= "3.7"
 websockets==9.1  ; python_version < "3.7"
 python-multipart==0.0.5
@@ -11,7 +11,7 @@ psutil==5.8.0
 async-timeout==3.0.1
 distro==1.6.0
 py-cpuinfo==8.0.0
-sqlalchemy==1.4.25
+sqlalchemy==1.4.26
 aiosqlite===0.17.0
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
