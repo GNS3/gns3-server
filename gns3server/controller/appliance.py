@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import uuid
 import logging
 
 log = logging.getLogger(__name__)
@@ -24,25 +23,22 @@ log = logging.getLogger(__name__)
 
 class Appliance:
 
-    def __init__(self, appliance_id, data, builtin=True):
+    def __init__(self, path, data, builtin=True):
 
-        if appliance_id is None:
-            self._id = str(uuid.uuid4())
-        elif isinstance(appliance_id, uuid.UUID):
-            self._id = str(appliance_id)
-        else:
-            self._id = appliance_id
         self._data = data.copy()
+        self._id = self._data.get("appliance_id")
+        self._path = path
         self._builtin = builtin
-        if "appliance_id" in self._data:
-            del self._data["appliance_id"]
-
         if self.status != "broken":
             log.debug(f'Appliance "{self.name}" [{self._id}] loaded')
 
     @property
     def id(self):
         return self._id
+
+    @property
+    def path(self):
+        return self._path
 
     @property
     def status(self):
@@ -75,6 +71,8 @@ class Appliance:
             return "iou"
         elif "dynamips" in self._data:
             return "dynamips"
+        elif "docker" in self._data:
+            return "docker"
         else:
             return "qemu"
 
@@ -82,6 +80,7 @@ class Appliance:
         """
         Appliance data (a hash)
         """
+
         data = copy.deepcopy(self._data)
         data["builtin"] = self._builtin
         return data

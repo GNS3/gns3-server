@@ -24,14 +24,12 @@ import urllib.parse
 
 from fastapi import APIRouter, Request, Response, Depends, status
 from sqlalchemy.orm.exc import MultipleResultsFound
-from typing import List
+from typing import List, Optional
 from gns3server import schemas
-from pydantic import ValidationError
 
 from gns3server.utils.images import InvalidImageError, default_images_directory, write_image
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.services.templates import TemplatesService
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
@@ -68,7 +66,8 @@ async def upload_image(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+        install_appliances: Optional[bool] = True
 ) -> schemas.Image:
     """
     Upload an image.
@@ -92,24 +91,17 @@ async def upload_image(
     except (OSError, InvalidImageError) as e:
         raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
 
-    try:
-        # attempt to automatically create a template based on image checksum
-        template = await Controller.instance().appliance_manager.install_appliance_from_image(
+    if install_appliances:
+        # attempt to automatically create templates based on image checksum
+        await Controller.instance().appliance_manager.install_appliances_from_image(
+            image_path,
             image.checksum,
             images_repo,
+            templates_repo,
+            rbac_repo,
+            current_user,
             directory
         )
-
-        if template:
-            template_create = schemas.TemplateCreate(**template)
-            template = await TemplatesService(templates_repo).create_template(template_create)
-            template_id = template.get("template_id")
-            await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
-            log.info(f"Template '{template.get('name')}' version {template.get('version')} "
-                     f"has been created using image '{image_name}'")
-
-    except (ControllerError, ValidationError, InvalidImageError) as e:
-        log.warning(f"Could not automatically create template using image '{image_path}': {e}")
 
     return image
 
@@ -150,8 +142,10 @@ async def delete_image(
     if not image:
         raise ControllerNotFoundError(f"Image '{image_path}' not found")
 
-    if await images_repo.get_image_templates(image.image_id):
-        raise ControllerError(f"Image '{image_path}' is used by one or more templates")
+    templates = await images_repo.get_image_templates(image.image_id)
+    if templates:
+        template_names = ", ".join([template.name for template in templates])
+        raise ControllerError(f"Image '{image_path}' is used by one or more templates: {template_names}")
 
     try:
         os.remove(image.path)

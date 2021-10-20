@@ -57,6 +57,14 @@ class TemplatesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
+    async def get_template_by_name_and_version(self, name: str, version: str) -> Union[None, models.Template]:
+
+        query = select(models.Template).\
+            options(selectinload(models.Template.images)).\
+            where(models.Template.name == name, models.Template.version == version)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
     async def get_templates(self) -> List[models.Template]:
 
         query = select(models.Template).options(selectinload(models.Template.images))

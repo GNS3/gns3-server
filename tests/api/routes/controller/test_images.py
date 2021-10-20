@@ -23,7 +23,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
+from gns3server.controller import Controller
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.templates import TemplatesRepository
 
 pytestmark = pytest.mark.asyncio
 
@@ -256,3 +258,27 @@ class TestImageRoutes:
         images_repo = ImagesRepository(db_session)
         images_in_db = await images_repo.get_images()
         assert len(images_in_db) == 0
+
+    async def test_image_upload_create_appliance(
+            self, app: FastAPI,
+            client: AsyncClient,
+            db_session: AsyncSession,
+            controller: Controller
+    ) -> None:
+
+        controller.appliance_manager.load_appliances()  # make sure appliances are loaded
+        image_path = "tests/resources/empty30G.qcow2"
+        image_name = os.path.basename(image_path)
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        response = await client.post(
+            app.url_path_for("upload_image", image_path=image_name),
+            params={"image_type": "qemu"},
+            content=image_data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        templates_repo = TemplatesRepository(db_session)
+        templates = await templates_repo.get_templates()
+        assert len(templates) == 1
+        assert templates[0].name == "Empty VM"
+        assert templates[0].version == "30G"

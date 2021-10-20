@@ -34,8 +34,10 @@ class ApplianceToTemplate:
         new_template = {
             "compute_id": server,
             "name": appliance_config["name"],
-            "version": version.get("name")
         }
+
+        if version:
+            new_template["version"] = version.get("name")
 
         if "usage" in appliance_config:
             new_template["usage"] = appliance_config["usage"]

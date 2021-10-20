@@ -385,14 +385,13 @@ def test_appliances(controller, config, tmpdir):
     for appliance in controller.appliance_manager.appliances.values():
         assert appliance.asdict()["status"] != "broken"
     assert "Alpine Linux" in [c.asdict()["name"] for c in controller.appliance_manager.appliances.values()]
-    assert "My Appliance" in [c.asdict()["name"] for c in controller.appliance_manager.appliances.values()]
+    assert "My Appliance" not in [c.asdict()["name"] for c in controller.appliance_manager.appliances.values()]
 
     for c in controller.appliance_manager.appliances.values():
         j = c.asdict()
         if j["name"] == "Alpine Linux":
             assert j["builtin"]
-        elif j["name"] == "My Appliance":
-            assert not j["builtin"]
+
 
 @pytest.mark.asyncio
 async def test_autoidlepc(controller):

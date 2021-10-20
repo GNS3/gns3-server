@@ -17,21 +17,31 @@
 
 import os
 import json
-import uuid
 import asyncio
 import aiofiles
 
+from typing import Tuple, List
 from aiohttp.client_exceptions import ClientError
+
+from uuid import UUID
+from pydantic import ValidationError
 
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
 from ..utils.get_resource import get_resource
 from ..utils.http_client import HTTPClient
-from .controller_error import ControllerError
+from .controller_error import ControllerBadRequestError, ControllerNotFoundError, ControllerError
 from .appliance_to_template import ApplianceToTemplate
 from ..utils.images import InvalidImageError, write_image, md5sum
 from ..utils.asyncio import wait_run_in_executor
+
+from gns3server import schemas
+from gns3server.utils.images import default_images_directory
+from gns3server.db.repositories.images import ImagesRepository
+from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.services.templates import TemplatesService
+from gns3server.db.repositories.rbac import RbacRepository
 
 import logging
 
@@ -49,7 +59,7 @@ class ApplianceManager:
         self._appliances_etag = None
 
     @property
-    def appliances_etag(self):
+    def appliances_etag(self) -> str:
         """
         :returns: ETag for downloaded appliances
         """
@@ -65,14 +75,14 @@ class ApplianceManager:
         self._appliances_etag = etag
 
     @property
-    def appliances(self):
+    def appliances(self) -> dict:
         """
         :returns: The dictionary of appliances managed by GNS3
         """
 
         return self._appliances
 
-    def appliances_path(self):
+    def appliances_path(self) -> str:
         """
         Get the image storage directory
         """
@@ -82,18 +92,27 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def _find_appliance_from_image_checksum(self, image_checksum):
+    def _find_appliances_from_image_checksum(self, image_checksum: str) -> List[Tuple[Appliance, str]]:
         """
-        Find an appliance and version that matches an image checksum.
+        Find appliances that matches an image checksum.
         """
 
+        appliances = []
         for appliance in self._appliances.values():
             if appliance.images:
                 for image in appliance.images:
                     if image.get("md5sum") == image_checksum:
-                        return appliance, image.get("version")
+                        appliances.append((appliance, image.get("version")))
+        return appliances
 
-    async def _download_image(self, image_dir, image_name, image_type, image_url, images_repo):
+    async def _download_image(
+            self,
+            image_dir: str,
+            image_name: str,
+            image_type: str,
+            image_url: str,
+            images_repo: ImagesRepository
+    ) -> None:
         """
         Download an image.
         """
@@ -112,7 +131,13 @@ class ApplianceManager:
         except asyncio.TimeoutError:
             raise ControllerError(f"Timeout while downloading '{image_name}' from '{image_url}'")
 
-    async def _find_appliance_version_images(self, appliance, version, images_repo, image_dir):
+    async def _find_appliance_version_images(
+            self,
+            appliance: Appliance,
+            version: dict,
+            images_repo: ImagesRepository,
+            image_dir: str
+    ) -> None:
         """
         Find all the images belonging to a specific appliance version.
         """
@@ -145,28 +170,112 @@ class ApplianceManager:
                                 else:
                                     raise ControllerError(f"Could not find '{appliance_file}'")
 
-    async def install_appliance_from_image(self, image_checksum, images_repo, image_dir):
+    async def _create_template(self, template_data, templates_repo, rbac_repo, current_user):
         """
-        Find the image checksum in appliance files
+        Create a new template
+        """
+
+        try:
+            template_create = schemas.TemplateCreate(**template_data)
+        except ValidationError as e:
+            raise ControllerError(message=f"Could not validate template data: {e}")
+        template = await TemplatesService(templates_repo).create_template(template_create)
+        template_id = template.get("template_id")
+        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+        log.info(f"Template '{template.get('name')}' has been created")
+
+    async def _appliance_to_template(self, appliance: Appliance, version: str = None) -> dict:
+        """
+        Get template data from appliance
         """
 
         from . import Controller
 
-        appliance_info = self._find_appliance_from_image_checksum(image_checksum)
-        if appliance_info:
-            appliance, image_version = appliance_info
+        # downloading missing custom symbol for this appliance
+        if appliance.symbol and not appliance.symbol.startswith(":/symbols/"):
+            destination_path = os.path.join(Controller.instance().symbols.symbols_path(), appliance.symbol)
+            if not os.path.exists(destination_path):
+                await self._download_symbol(appliance.symbol, destination_path)
+        return ApplianceToTemplate().new_template(appliance.asdict(), version, "local")  # FIXME: "local"
+
+    async def install_appliances_from_image(
+            self,
+            image_path: str,
+            image_checksum: str,
+            images_repo: ImagesRepository,
+            templates_repo: TemplatesRepository,
+            rbac_repo: RbacRepository,
+            current_user: schemas.User,
+            image_dir: str
+    ) -> None:
+        """
+        Install appliances using an image checksum
+        """
+
+        appliances_info = self._find_appliances_from_image_checksum(image_checksum)
+        for appliance, image_version in appliances_info:
+            try:
+                schemas.Appliance.parse_obj(appliance.asdict())
+            except ValidationError as e:
+                log.warning(message=f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
                 for version in appliance.versions:
                     if version.get("name") == image_version:
-                        await self._find_appliance_version_images(appliance, version, images_repo, image_dir)
-                        # downloading missing custom symbol for this appliance
-                        if appliance.symbol and not appliance.symbol.startswith(":/symbols/"):
-                            destination_path = os.path.join(Controller.instance().symbols.symbols_path(), appliance.symbol)
-                            if not os.path.exists(destination_path):
-                                await self._download_symbol(appliance.symbol, destination_path)
-                        return ApplianceToTemplate().new_template(appliance.asdict(), version, "local")  # FIXME: "local"
+                        try:
+                            await self._find_appliance_version_images(appliance, version, images_repo, image_dir)
+                            template_data = await self._appliance_to_template(appliance, version)
+                            await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+                        except (ControllerError, InvalidImageError) as e:
+                            log.warning(f"Could not automatically create template using image '{image_path}': {e}")
 
-    def load_appliances(self, symbol_theme="Classic"):
+    async def install_appliance(
+            self,
+            appliance_id: UUID,
+            version: str,
+            images_repo: ImagesRepository,
+            templates_repo: TemplatesRepository,
+            rbac_repo: RbacRepository,
+            current_user: schemas.User
+    ) -> None:
+        """
+        Install a new appliance
+        """
+
+        appliance = self._appliances.get(str(appliance_id))
+        if not appliance:
+            raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
+
+        try:
+            schemas.Appliance.parse_obj(appliance.asdict())
+        except ValidationError as e:
+            raise ControllerError(message=f"Could not validate appliance '{appliance_id}': {e}")
+
+        if version:
+            if not appliance.versions:
+                raise ControllerBadRequestError(message=f"Appliance '{appliance_id}' do not have versions")
+
+            image_dir = default_images_directory(appliance.type)
+            for appliance_version_info in appliance.versions:
+                if appliance_version_info.get("name") == version:
+                    try:
+                        await self._find_appliance_version_images(appliance, appliance_version_info, images_repo, image_dir)
+                    except InvalidImageError as e:
+                        raise ControllerError(message=f"Image error: {e}")
+                    template_data = await self._appliance_to_template(appliance, appliance_version_info)
+                    return await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+
+            raise ControllerNotFoundError(message=f"Could not find version '{version}' in appliance '{appliance_id}'")
+
+        else:
+            if appliance.versions:
+                # TODO: install appliance versions based on available images
+                raise ControllerBadRequestError(message=f"Selecting a version is required to install "
+                                                        f"appliance '{appliance_id}'")
+
+            template_data = await self._appliance_to_template(appliance)
+            await self._create_template(template_data, templates_repo, rbac_repo, current_user)
+
+    def load_appliances(self, symbol_theme: str = "Classic") -> None:
         """
         Loads appliance files from disk.
         """
@@ -187,27 +296,23 @@ class ApplianceManager:
                     if not file.endswith(".gns3a") and not file.endswith(".gns3appliance"):
                         continue
                     path = os.path.join(directory, file)
-                    # Generate UUID from path to avoid change between reboots
-                    appliance_id = uuid.uuid5(
-                        uuid.NAMESPACE_X500,
-                        path
-                    )
                     try:
                         with open(path, encoding="utf-8") as f:
-                            appliance = Appliance(appliance_id, json.load(f), builtin=builtin)
+                            appliance = Appliance(path, json.load(f), builtin=builtin)
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
-                               self._appliances[appliance.id] = appliance
+                                schemas.Appliance.parse_obj(json_data)
+                                self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol
                                 default_symbol = self._get_default_symbol(json_data, symbol_theme)
                                 if default_symbol:
                                     appliance.symbol = default_symbol
-                    except (ValueError, OSError, KeyError) as e:
-                        log.warning("Cannot load appliance file '%s': %s", path, str(e))
+                    except (ValueError, OSError, KeyError, ValidationError) as e:
+                        print(f"Cannot load appliance file '{path}': {e}")
                         continue
 
-    def _get_default_symbol(self, appliance, symbol_theme):
+    def _get_default_symbol(self, appliance: dict, symbol_theme: str) -> str:
         """
         Returns the default symbol for a given appliance.
         """
@@ -223,7 +328,7 @@ class ApplianceManager:
                 return controller.symbols.get_default_symbol("qemu_guest", symbol_theme)
         return controller.symbols.get_default_symbol(category, symbol_theme)
 
-    async def download_custom_symbols(self):
+    async def download_custom_symbols(self) -> None:
         """
         Download custom appliance symbols from our GitHub registry repository.
         """
@@ -242,7 +347,7 @@ class ApplianceManager:
         # refresh the symbol cache
         Controller.instance().symbols.list()
 
-    async def _download_symbol(self, symbol, destination_path):
+    async def _download_symbol(self, symbol: str, destination_path: str) -> None:
         """
         Download a custom appliance symbol from our GitHub registry repository.
         """
@@ -266,7 +371,7 @@ class ApplianceManager:
                     log.warning(f"Could not write appliance symbol '{destination_path}': {e}")
 
     @locking
-    async def download_appliances(self):
+    async def download_appliances(self) -> None:
         """
         Downloads appliance files from GitHub registry repository.
         """

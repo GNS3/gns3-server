@@ -25,8 +25,8 @@ from typing import List
 from gns3server import schemas
 import gns3server.db.models as models
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -137,6 +137,7 @@ class TemplatesService:
     def __init__(self, templates_repo: TemplatesRepository):
 
         self._templates_repo = templates_repo
+        from gns3server.controller import Controller
         self._controller = Controller.instance()
 
     def get_builtin_template(self, template_id: UUID) -> dict:
@@ -194,6 +195,13 @@ class TemplatesService:
         return images_to_add_to_template
 
     async def create_template(self, template_create: schemas.TemplateCreate) -> dict:
+
+        if await self._templates_repo.get_template_by_name_and_version(template_create.name, template_create.version):
+            if template_create.version:
+                raise ControllerError(f"A template with name '{template_create.name}' and "
+                                      f"version {template_create.version} already exists")
+            else:
+                raise ControllerError(f"A template with name '{template_create.name}' already exists")
 
         try:
             # get the default template settings
