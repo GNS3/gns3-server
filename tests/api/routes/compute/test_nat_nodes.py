@@ -30,7 +30,7 @@ pytestmark = pytest.mark.asyncio
 async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, ubridge_path: str, on_gns3vm) -> dict:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._start_ubridge"):
-        response = await client.post(app.url_path_for("create_nat_node", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_nat_node", project_id=compute_project.id),
                                      json={"name": "Nat 1"})
     assert response.status_code == status.HTTP_201_CREATED
     return response.json()
@@ -39,7 +39,7 @@ async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, ubridg
 async def test_nat_create(app: FastAPI, client: AsyncClient, compute_project: Project, on_gns3vm) -> None:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._start_ubridge"):
-        response = await client.post(app.url_path_for("create_nat_node", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_nat_node", project_id=compute_project.id),
                                      json={"name": "Nat 1"})
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "Nat 1"
@@ -48,7 +48,7 @@ async def test_nat_create(app: FastAPI, client: AsyncClient, compute_project: Pr
 
 async def test_nat_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await client.get(app.url_path_for("get_nat_node", project_id=vm["project_id"], node_id=vm["node_id"]))
+    response = await client.get(app.url_path_for("compute:get_nat_node", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "Nat 1"
     assert response.json()["project_id"] == compute_project.id
@@ -64,7 +64,7 @@ async def test_nat_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) -
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_nat_node_nio",
+    url = app.url_path_for("compute:create_nat_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -85,7 +85,7 @@ async def test_nat_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) -
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_nat_node_nio",
+    url = app.url_path_for("compute:create_nat_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -94,7 +94,7 @@ async def test_nat_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) -
     await client.post(url, json=params)
     params["filters"] = {}
 
-    url = app.url_path_for("update_nat_node_nio",
+    url = app.url_path_for("compute:update_nat_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -113,7 +113,7 @@ async def test_nat_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> No
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_nat_node_nio",
+    url = app.url_path_for("compute:create_nat_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -121,7 +121,7 @@ async def test_nat_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> No
     with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat.add_nio"):
         await client.post(url, json=params)
 
-    url = app.url_path_for("delete_nat_node_nio",
+    url = app.url_path_for("compute:delete_nat_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -134,7 +134,7 @@ async def test_nat_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> No
 
 async def test_nat_delete(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    response = await client.delete(app.url_path_for("delete_nat_node",
+    response = await client.delete(app.url_path_for("compute:delete_nat_node",
                                                     project_id=vm["project_id"],
                                                     node_id=vm["node_id"]))
 
@@ -143,7 +143,7 @@ async def test_nat_delete(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
 async def test_nat_update(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    response = await client.put(app.url_path_for("update_nat_node",
+    response = await client.put(app.url_path_for("compute:update_nat_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]), json={"name": "test"})
     assert response.status_code == status.HTTP_200_OK
@@ -157,7 +157,7 @@ async def test_nat_start_capture(app: FastAPI, client: AsyncClient, vm: dict) ->
         "data_link_type": "DLT_EN10MB"
     }
 
-    url = app.url_path_for("start_nat_node_capture",
+    url = app.url_path_for("compute:start_nat_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -171,7 +171,7 @@ async def test_nat_start_capture(app: FastAPI, client: AsyncClient, vm: dict) ->
 
 async def test_nat_stop_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    url = app.url_path_for("stop_nat_node_capture",
+    url = app.url_path_for("compute:stop_nat_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",

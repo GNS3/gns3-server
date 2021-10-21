@@ -165,7 +165,7 @@ def fake_file(tmpdir) -> str:
 async def test_images(app: FastAPI, client: AsyncClient, tmpdir, fake_image: str, fake_file: str) -> None:
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = await client.get(app.url_path_for("get_dynamips_images"))
+        response = await client.get(app.url_path_for("compute:get_dynamips_images"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == [{"filename": "7200.bin",
                                 "path": "7200.bin",
@@ -175,7 +175,7 @@ async def test_images(app: FastAPI, client: AsyncClient, tmpdir, fake_image: str
 
 async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_dynamips_image", filename="test2"), content=b"TEST")
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(os.path.join(images_dir, "IOS", "test2")) as f:
@@ -189,23 +189,23 @@ async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) 
 async def test_upload_image_forbidden_location(app: FastAPI, client: AsyncClient) -> None:
 
     file_path = "%2e%2e/hello"
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename=file_path), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_dynamips_image", filename=file_path), content=b"TEST")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_download_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test3"), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_dynamips_image", filename="test3"), content=b"TEST")
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    response = await client.get(app.url_path_for("download_dynamips_image", filename="test3"))
+    response = await client.get(app.url_path_for("compute:download_dynamips_image", filename="test3"))
     assert response.status_code == status.HTTP_200_OK
 
 
 async def test_download_image_forbidden(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
-    response = await client.get(app.url_path_for("download_dynamips_image", filename=file_path))
+    response = await client.get(app.url_path_for("compute:download_dynamips_image", filename=file_path))
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -217,5 +217,5 @@ async def test_upload_image_permission_denied(app: FastAPI, client: AsyncClient,
         f.write("")
     os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_dynamips_image", filename="test2"), content=b"TEST")
     assert response.status_code == status.HTTP_409_CONFLICT

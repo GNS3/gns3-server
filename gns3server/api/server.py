@@ -78,7 +78,7 @@ def get_application() -> FastAPI:
     application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
-    application.mount("/v3/compute", compute_api)
+    application.mount("/v3/compute", compute_api, name="compute")
 
     return application
 

@@ -29,21 +29,21 @@ pytestmark = pytest.mark.asyncio
 
 async def test_udp_allocation(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
-    response = await client.post(app.url_path_for("allocate_udp_port", project_id=compute_project.id), json={})
+    response = await client.post(app.url_path_for("compute:allocate_udp_port", project_id=compute_project.id), json={})
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()['udp_port'] is not None
 
 
 async def test_interfaces(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await client.get(app.url_path_for("network_interfaces"))
+    response = await client.get(app.url_path_for("compute:network_interfaces"))
     assert response.status_code == status.HTTP_200_OK
     assert isinstance(response.json(), list)
 
 
 async def test_version_output(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await client.get(app.url_path_for("compute_version"))
+    response = await client.get(app.url_path_for("compute:compute_version"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {'local': True, 'version': __version__}
 
@@ -57,5 +57,5 @@ async def test_version_output(app: FastAPI, client: AsyncClient) -> None:
 
 async def test_statistics_output(app: FastAPI, client: AsyncClient) -> None:
 
-    response = await client.get(app.url_path_for("compute_statistics"))
+    response = await client.get(app.url_path_for("compute:compute_statistics"))
     assert response.status_code == status.HTTP_200_OK

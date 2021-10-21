@@ -38,7 +38,7 @@ async def vm(app: FastAPI, client: AsyncClient, compute_project: Project) -> Non
     }
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True) as mock:
-        response = await client.post(app.url_path_for("create_virtualbox_node", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_virtualbox_node", project_id=compute_project.id),
                                      json=params)
     assert mock.called
     assert response.status_code == status.HTTP_201_CREATED
@@ -56,7 +56,7 @@ async def test_vbox_create(app: FastAPI, client: AsyncClient, compute_project: P
     }
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.create", return_value=True):
-        response = await client.post(app.url_path_for("create_virtualbox_node", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_virtualbox_node", project_id=compute_project.id),
                                      json=params)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["name"] == "VM1"
@@ -65,7 +65,7 @@ async def test_vbox_create(app: FastAPI, client: AsyncClient, compute_project: P
 
 async def test_vbox_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await client.get(app.url_path_for("get_virtualbox_node",
+    response = await client.get(app.url_path_for("compute:get_virtualbox_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
@@ -77,7 +77,7 @@ async def test_vbox_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.start", return_value=True) as mock:
 
-        response = await client.post(app.url_path_for("start_virtualbox_node",
+        response = await client.post(app.url_path_for("compute:start_virtualbox_node",
                                      project_id=vm["project_id"],
                                     node_id=vm["node_id"]))
         assert mock.called
@@ -87,7 +87,7 @@ async def test_vbox_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_vbox_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.stop", return_value=True) as mock:
-        response = await client.post(app.url_path_for("stop_virtualbox_node",
+        response = await client.post(app.url_path_for("compute:stop_virtualbox_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -97,7 +97,7 @@ async def test_vbox_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_vbox_suspend(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.suspend", return_value=True) as mock:
-        response = await client.post(app.url_path_for("suspend_virtualbox_node",
+        response = await client.post(app.url_path_for("compute:suspend_virtualbox_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -107,7 +107,7 @@ async def test_vbox_suspend(app: FastAPI, client: AsyncClient, vm: dict) -> None
 async def test_vbox_resume(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.resume", return_value=True) as mock:
-        response = await client.post(app.url_path_for("resume_virtualbox_node",
+        response = await client.post(app.url_path_for("compute:resume_virtualbox_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -117,7 +117,7 @@ async def test_vbox_resume(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_vbox_reload(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.virtualbox.virtualbox_vm.VirtualBoxVM.reload", return_value=True) as mock:
-        response = await client.post(app.url_path_for("reload_virtualbox_node",
+        response = await client.post(app.url_path_for("compute:reload_virtualbox_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -133,7 +133,7 @@ async def test_vbox_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) 
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_virtualbox_node_nio",
+    url = app.url_path_for("compute:create_virtualbox_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -170,7 +170,7 @@ async def test_vbox_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) 
 
 async def test_vbox_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    url = app.url_path_for("delete_virtualbox_node_nio",
+    url = app.url_path_for("compute:delete_virtualbox_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -192,7 +192,7 @@ async def test_vbox_update(app: FastAPI, client: AsyncClient, vm, free_console_p
         "console": free_console_port
     }
 
-    response = await client.put(app.url_path_for("update_virtualbox_node",
+    response = await client.put(app.url_path_for("compute:update_virtualbox_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]), json=params)
     assert response.status_code == status.HTTP_200_OK
@@ -208,7 +208,7 @@ async def test_virtualbox_start_capture(app: FastAPI, client: AsyncClient, vm):
         "data_link_type": "DLT_EN10MB"
     }
 
-    url = app.url_path_for("start_virtualbox_node_capture",
+    url = app.url_path_for("compute:start_virtualbox_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -225,7 +225,7 @@ async def test_virtualbox_start_capture(app: FastAPI, client: AsyncClient, vm):
 @pytest.mark.asyncio
 async def test_virtualbox_stop_capture(app: FastAPI, client: AsyncClient, vm):
 
-    url = app.url_path_for("stop_virtualbox_node_capture",
+    url = app.url_path_for("compute:stop_virtualbox_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",

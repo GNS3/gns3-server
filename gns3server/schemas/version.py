@@ -20,5 +20,6 @@ from typing import Optional
 
 class Version(BaseModel):
 
+    controller_host: Optional[str] = Field(None, description="Controller hostname or IP address")
     version: str = Field(..., description="Version number")
     local: Optional[bool] = Field(None, description="Whether this is a local server or not")

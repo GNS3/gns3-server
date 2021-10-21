@@ -31,7 +31,7 @@ pytestmark = pytest.mark.asyncio
 async def vm(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
     params = {"name": "PC TEST 1"}
-    response = await client.post(app.url_path_for("create_vpcs_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_vpcs_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     return response.json()
 
@@ -39,7 +39,7 @@ async def vm(app: FastAPI, client: AsyncClient, compute_project: Project) -> Non
 async def test_vpcs_create(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
     params = {"name": "PC TEST 1"}
-    response = await client.post(app.url_path_for("create_vpcs_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_vpcs_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -47,7 +47,7 @@ async def test_vpcs_create(app: FastAPI, client: AsyncClient, compute_project: P
 
 async def test_vpcs_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await client.get(app.url_path_for("get_vpcs_node", project_id=vm["project_id"], node_id=vm["node_id"]))
+    response = await client.get(app.url_path_for("compute:get_vpcs_node", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -61,7 +61,7 @@ async def test_vpcs_create_startup_script(app: FastAPI, client: AsyncClient, com
         "startup_script": "ip 192.168.1.2\necho TEST"
     }
 
-    response = await client.post(app.url_path_for("create_vpcs_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_vpcs_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -77,7 +77,7 @@ async def test_vpcs_create_port(app: FastAPI,
         "console": free_console_port
     }
 
-    response = await client.post(app.url_path_for("create_vpcs_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_vpcs_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -93,7 +93,7 @@ async def test_vpcs_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) 
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_vpcs_node_nio",
+    url = app.url_path_for("compute:create_vpcs_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -114,7 +114,7 @@ async def test_vpcs_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) 
         "rhost": "127.0.0.1"
     }
 
-    url = app.url_path_for("create_vpcs_node_nio",
+    url = app.url_path_for("compute:create_vpcs_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -125,7 +125,7 @@ async def test_vpcs_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) 
     assert response.status_code == status.HTTP_201_CREATED
 
     params["filters"] = {}
-    url = app.url_path_for("update_vpcs_node_nio",
+    url = app.url_path_for("compute:update_vpcs_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -145,14 +145,14 @@ async def test_vpcs_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> N
     }
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM._ubridge_send"):
-        url = app.url_path_for("create_vpcs_node_nio",
+        url = app.url_path_for("compute:create_vpcs_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
                                adapter_number="0",
                                port_number="0")
         await client.post(url, json=params)
 
-        url = app.url_path_for("delete_vpcs_node_nio",
+        url = app.url_path_for("compute:delete_vpcs_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
                                adapter_number="0",
@@ -164,7 +164,7 @@ async def test_vpcs_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> N
 async def test_vpcs_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.start", return_value=True) as mock:
-        response = await client.post(app.url_path_for("start_vpcs_node",
+        response = await client.post(app.url_path_for("compute:start_vpcs_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -175,7 +175,7 @@ async def test_vpcs_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.stop", return_value=True) as mock:
 
-        response = await client.post(app.url_path_for("stop_vpcs_node",
+        response = await client.post(app.url_path_for("compute:stop_vpcs_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -185,7 +185,7 @@ async def test_vpcs_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_vpcs_reload(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vpcs.vpcs_vm.VPCSVM.reload", return_value=True) as mock:
-        response = await client.post(app.url_path_for("reload_vpcs_node",
+        response = await client.post(app.url_path_for("compute:reload_vpcs_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -195,7 +195,7 @@ async def test_vpcs_reload(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_vpcs_delete(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.vpcs.VPCS.delete_node", return_value=True) as mock:
-        response = await client.delete(app.url_path_for("delete_vpcs_node",
+        response = await client.delete(app.url_path_for("compute:delete_vpcs_node",
                                                         project_id=vm["project_id"],
                                                         node_id=vm["node_id"]))
         assert mock.called
@@ -206,11 +206,11 @@ async def test_vpcs_duplicate(app: FastAPI, client: AsyncClient, compute_project
 
     # create destination node first
     params = {"name": "PC TEST 1"}
-    response = await client.post(app.url_path_for("create_vpcs_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_vpcs_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
 
     params = {"destination_node_id": response.json()["node_id"]}
-    response = await client.post(app.url_path_for("duplicate_vpcs_node",
+    response = await client.post(app.url_path_for("compute:duplicate_vpcs_node",
                                                   project_id=vm["project_id"],
                                                   node_id=vm["node_id"]), json=params)
     assert response.status_code == status.HTTP_201_CREATED
@@ -224,7 +224,7 @@ async def test_vpcs_update(app: FastAPI, client: AsyncClient, vm: dict, free_con
         "console": console_port
     }
 
-    response = await client.put(app.url_path_for("update_vpcs_node",
+    response = await client.put(app.url_path_for("compute:update_vpcs_node",
                                                   project_id=vm["project_id"],
                                                   node_id=vm["node_id"]), json=params)
     assert response.status_code == status.HTTP_200_OK
@@ -239,7 +239,7 @@ async def test_vpcs_start_capture(app: FastAPI, client: AsyncClient, vm: dict) -
         "data_link_type": "DLT_EN10MB"
     }
 
-    url = app.url_path_for("start_vpcs_node_capture",
+    url = app.url_path_for("compute:start_vpcs_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -255,7 +255,7 @@ async def test_vpcs_start_capture(app: FastAPI, client: AsyncClient, vm: dict) -
 
 async def test_vpcs_stop_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    url = app.url_path_for("stop_vpcs_node_capture",
+    url = app.url_path_for("compute:stop_vpcs_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
