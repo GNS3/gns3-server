@@ -1,4 +1,5 @@
 {
+    "appliance_id": "5c32105f-0492-463e-bada-1d8dec88dcc7",
     "name": "Juniper vQFX PFE",
     "category": "multilayer_switch",
     "description": "The vQFX10000 makes it easy for you to try out our physical QFX10000 high-performance data center switch without the wait for physical delivery. Although the virtual version has limited performance relative to the physical switch, it lets you quickly emulate the same features for the control plane of the physical switch, or both its control and data planes.",

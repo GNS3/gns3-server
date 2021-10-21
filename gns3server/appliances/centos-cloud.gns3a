@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f8186e9a-5145-4da0-ac18-b5b13cf57d3b",
     "name": "CentOS Cloud Guest",
     "category": "guest",
     "description": "CentOS official image for self-hosted cloud",

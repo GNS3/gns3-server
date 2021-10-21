@@ -1,4 +1,5 @@
 {
+    "appliance_id": "0c8708a6-ff48-489b-8e61-4c1b06c300e7",
     "name": "RHEL",
     "category": "guest",
     "description": "Red Hat Enterprise Linux Server provides core operating system functions and capabilities for application infrastructure.",

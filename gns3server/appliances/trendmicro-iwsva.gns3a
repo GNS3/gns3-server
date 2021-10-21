@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8a0e304f-b6fe-4040-8c51-4e2d1310ff71",
     "name": "IWS VA",
     "category": "firewall",
     "description": "Trend Micro InterScan Web Security Virtual Appliance is a secure web gateway that combines application control with zero-day exploit detection, advanced anti-malware and ransomware scanning, real-time web reputation, and flexible URL filtering to provide superior Internet threat protection.",

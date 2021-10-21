@@ -420,7 +420,7 @@ if __name__ == "__main__":
     )
     server = AsyncioTelnetServer(reader=process.stdout, writer=process.stdin, binary=False, echo=False)
 
-    coro = asyncio.start_server(server.run, "127.0.0.1", 4444, loop=loop)
+    coro = asyncio.start_server(server.run, "127.0.0.1", 4444)
     s = loop.run_until_complete(coro)
 
     try:

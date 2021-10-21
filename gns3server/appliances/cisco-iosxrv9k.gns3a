@@ -1,4 +1,5 @@
 {
+    "appliance_id": "ea678b10-fc52-4079-83de-36769fbd9bc3",
     "name": "Cisco IOS XRv 9000",
     "category": "router",
     "description": "IOS XRv 9000 (aka Sunstone) is the 1st VM released running the 64-bit IOS XR operating system as used on the NCS-6xxx platform. This appliance requires 4 vCPUs and 16GB of memory to run!",

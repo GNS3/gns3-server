@@ -1,4 +1,5 @@
 {
+    "appliance_id": "62a59b15-84c7-4ab3-a785-50e139d94c6c",
     "name": "HuaWei USG6000v",
     "category": "firewall",
     "description": "Huawei USG6000V is a virtual service gateway based on Network Functions Virtualization (NFV). It features high virtual resource usage and provides virtualized gateway services, such as vFW, vIPsec, vLB, vIPS, vAV, and vURL Remote Query.\nHuawei USG6000V is compatible with most mainstream virtual platforms. It provides standard APIs, together with the OpenStack cloud platform, SDN Controller, and MANO to achieve intelligent solutions for cloud security. This gateway meets flexible service customization requirements for frequent security service changes, elastic and on-demand resource allocation, visualized network management, and rapid rollout.",

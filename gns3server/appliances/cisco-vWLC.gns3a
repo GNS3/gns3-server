@@ -1,4 +1,5 @@
 {
+    "appliance_id": "e632ff43-fc14-41f8-a293-b6a62f0e1788",
     "name": "Cisco vWLC",
     "category": "guest",
     "description": "The Virtual Wireless Controller can cost-effectively manage, secure, and optimize the performance of local and branch wireless networks. Ideal for small and medium-sized businesses, the Virtual Wireless Controller facilitates server consolidation and improves business continuity in the face of outages.",

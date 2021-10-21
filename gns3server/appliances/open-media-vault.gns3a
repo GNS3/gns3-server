@@ -1,4 +1,5 @@
 {
+    "appliance_id": "6fe715ad-4c27-4f65-97f7-f8c1d7cd3e0a",
     "name": "OpenMediaVault",
     "category": "guest",
     "description": "openmediavault is the next generation network attached storage (NAS) solution based on Debian Linux. It contains services like SSH, (S)FTP, SMB/CIFS, DAAP media server, RSync, BitTorrent client and many more.",
@@ -7,7 +8,7 @@
     "documentation_url": "hhttps://docs.openmediavault.org",
     "product_name": "OpenMediaVault",
     "product_url": "https://www.openmediavault.org/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Savio D'souza",
     "maintainer_email": "savio2002@yahoo.in",
@@ -17,8 +18,8 @@
         "adapter_type": "e1000",
         "adapters": 1,
         "ram": 2048,
-        "hda_disk_interface": "ide",
-        "hdb_disk_interface": "ide",
+        "hda_disk_interface": "sata",
+        "hdb_disk_interface": "sata",
         "arch": "x86_64",
         "console_type": "vnc",
         "boot_priority": "dc",
@@ -26,12 +27,20 @@
     },
     "images": [
         {
+            "filename": "openmediavault_5.6.13-amd64.iso",
+            "version": "5.6.13",
+            "md5sum": "f08b41a5111fffca0355d53e26ec47ab",
+            "filesize": 652214272,
+            "download_url": "https://www.openmediavault.org/download.html",
+            "direct_download_url": "https://sourceforge.net/projects/openmediavault/files/5.6.13/openmediavault_5.6.13-amd64.iso/download"
+        },
+        {
             "filename": "openmediavault_5.5.11-amd64.iso",
             "version": "5.5.11",
             "md5sum": "76baad8e13dd49bee9b4b4a6936b7296",
             "filesize": 608174080,
             "download_url": "https://www.openmediavault.org/download.html",
-            "direct_download_url": "https://sourceforge.net/projects/openmediavault/files/latest/download"
+            "direct_download_url": "https://sourceforge.net/projects/openmediavault/files/5.5.11/openmediavault_5.5.11-amd64.iso/download"
         },
         {
             "filename": "empty30G.qcow2",
@@ -43,6 +52,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.6.13",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "openmediavault_5.6.13-amd64.iso"
+            }
+        },
         {
             "name": "5.5.11",
             "images": {

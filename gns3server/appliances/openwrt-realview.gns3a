@@ -1,4 +1,5 @@
 {
+    "appliance_id": "c15b0dda-3ac2-4990-9a90-f6d0ead6935b",
     "name": "OpenWrt Realview",
     "category": "router",
     "description": "OpenWrt is a highly extensible GNU/Linux distribution for embedded devices (typically wireless routers). Unlike many other distributions for these routers, OpenWrt is built from the ground up to be a full-featured, easily modifiable operating system for your router. In practice, this means that you can have all the features you need with none of the bloat, powered by a Linux kernel that's more recent than most other distributions.\n\nThe realview platform is meant for use with QEMU for emulating an ARM system.",

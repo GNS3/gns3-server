@@ -1,4 +1,5 @@
 {
+    "appliance_id": "95d17663-f40a-437f-b5f1-dab4779965de",
     "name": "Cisco CSR1000v",
     "category": "router",
     "description": "The Cisco Cloud Services Router 1000V (CSR 1000V) is a router and network services platform in virtual form factor that is intended for deployment in cloud and virtual data centers. It is optimized to serve as a single-tenant or multitenant WAN gateway. Using proven, industry-leading Cisco IOS\u00ae XE Software networking and security features, the CSR 1000V enables enterprises to transparently extend their WANs into external provider-hosted clouds and cloud providers to offer their tenants enterprise-class networking services.",

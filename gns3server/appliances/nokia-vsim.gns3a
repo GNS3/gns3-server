@@ -1,0 +1,47 @@
+{
+    "appliance_id": "98525a92-5146-46e9-996c-b6d9dc0a449f",
+    "name": "Nokia vSIM",
+    "category": "router",
+    "description": "The Nokia Virtualized 7750 SR and 7950 XRS Simulator (vSIM) is a Virtualized Network Function (VNF) that simulates the control, management, and forwarding functions of a 7750 SR or 7950 XRS router. The vSIM runs the same Service Router Operating System (SR OS) as 7750 SR and 7950 XRS hardware-based routers and, therefore, has the same feature set and operational behavior as those platforms.",
+    "vendor_name": "Nokia",
+    "vendor_url": "https://www.nokia.com/networks/",
+    "documentation_url": "https://documentation.nokia.com/",
+    "product_name": "Nokia vSIM",
+    "product_url": "https://www.nokia.com/networks/products/virtualized-service-router/",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "Vinicius Rocha",
+    "maintainer_email": "viniciusatr@gmail.com",
+    "usage": "Login is admin and password is admin. \n\nWe are using one IOM with one MDA 12x100G (w/ breakout).\n\nYou must add your license: file vi cf3:license.txt",
+    "first_port_name": "A/1",
+    "port_name_format": "1/1/{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 13,
+        "ram": 4096,
+        "cpus": 2,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require",
+        "options": "-nographic -smbios type=1,product=TIMOS:license-file=cf3:license.txt\\ slot=A\\ chassis=SR-1\\ card=cpm-1\\ mda/1=me12-100gb-qsfp28"
+    },
+    "images": [
+        {
+            "filename": "sros-vsr-21.7.R1.qcow2",
+            "version": "21.7.R1",
+            "md5sum": "7eed38c01350ebaf9c6105e26ce5307e",
+            "filesize": 568655872,
+            "download_url": "https://customer.nokia.com/support/s/",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "21.7.R1",
+            "images": {
+                "hda_disk_image": "sros-vsr-21.7.R1.qcow2"
+            }
+        }
+    ]
+}

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "c90f3ff3-4ed2-4437-9afb-21232fa92015",
     "name": "Arista vEOS",
     "category": "multilayer_switch",
     "description": "Arista EOS\u00ae is the core of Arista cloud networking solutions for next-generation data centers and cloud networks. Cloud architectures built with Arista EOS scale to tens of thousands of compute and storage nodes with management and provisioning capabilities that work at scale. Through its programmability, EOS enables a set of software applications that deliver workflow automation, high availability, unprecedented network visibility and analytics and rapid integration with a wide range of third-party applications for virtualization, management, automation and orchestration services.\n\nArista Extensible Operating System (EOS) is a fully programmable and highly modular, Linux-based network operation system, using familiar industry standard CLI and runs a single binary software image across the Arista switching family. Architected for resiliency and programmability, EOS has a unique multi-process state sharing architecture that separates state information and packet forwarding from protocol processing and application logic.",
@@ -26,6 +27,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "vEOS-lab-4.26.2F.vmdk",
+            "version": "4.26.2F",
+            "md5sum": "de8ce9750fddb63bd3f71bccfcd7651e",
+            "filesize": 475332608,
+            "download_url": "https://www.arista.com/en/support/software-download"
+        },
         {
             "filename": "vEOS-lab-4.25.3M.vmdk",
             "version": "4.25.3M",
@@ -210,6 +218,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "4.26.2F",
+            "images": {
+                "hda_disk_image": "Aboot-veos-serial-8.0.0.iso",
+                "hdb_disk_image": "vEOS-lab-4.26.2F.vmdk"
+            }
+        },
         {
             "name": "4.25.3M",
             "images": {

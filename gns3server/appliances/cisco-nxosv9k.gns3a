@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f739d949-136b-4a56-8b0f-d39832e5aa30",
     "name": "Cisco NX-OSv 9000",
     "category": "multilayer_switch",
     "description": "The NX-OSv 9000 is a virtual platform that is designed to simulate the control plane aspects of a network element running Cisco Nexus 9000 software. The NX-OSv 9000 shares the same software image running on Cisco Nexus 9000 hardware platform although no specific hardware emulation is implemented. When the software runs as a virtual machine, line card (LC) ASIC provisioning or any interaction from the control plane to hardware ASIC is handled by the NX-OSv 9000 software data plane.\nThe NX-OSv 9000 for the Cisco Nexus 9000 Series provides a useful tool to enable the devops model and rapidly test changes to the infrastructure or to infrastructure automation tools. This enables network simulations in large scale for customers to validate configuration changes on a simulated network prior to applying them on a production network. Some users have also expressed interest in using the simulation system for feature test ,verification, and automation tooling development and test simualtion prior to deployment. NX-OSv 9000 can be used as a programmability vehicle to validate software defined networks (SDNs) and Network Function Virtualization (NFV) based solutions.",
@@ -80,6 +81,13 @@
             "md5sum": "1d7fa4654602d7ffbf62544edfe71986",
             "filesize": 1330315264,
             "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.2%25281%2529"
+        },
+        {
+            "filename": "nxosv-final.7.0.3.I7.9.qcow2",
+            "version": "7.0.3.I7.9",
+            "md5sum": "50678c719f6b822c43dd096dbdf359e8",
+            "filesize": 1003618304,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/7.0(3)I7(9)?i=!pp"
         },
         {
             "filename": "nxosv-final.7.0.3.I7.7.qcow2",
@@ -216,6 +224,13 @@
             "images": {
                 "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nxosv-final.9.2.1.qcow2"
+            }
+        },
+        {
+            "name": "7.0.3.I7.9",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nxosv-final.7.0.3.I7.9.qcow2"
             }
         },
         {

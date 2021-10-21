@@ -146,7 +146,6 @@ class QemuVM(BaseNode):
         self._initrd = ""
         self._kernel_image = ""
         self._kernel_command_line = ""
-        self._legacy_networking = False
         self._replicate_network_connection_state = True
         self._create_config_disk = False
         self._on_close = "power_off"
@@ -678,30 +677,6 @@ class QemuVM(BaseNode):
                 name=self._name, id=self._id, mac_addr=self._mac_address
             )
         )
-
-    @property
-    def legacy_networking(self):
-        """
-        Returns either QEMU legacy networking commands are used.
-
-        :returns: boolean
-        """
-
-        return self._legacy_networking
-
-    @legacy_networking.setter
-    def legacy_networking(self, legacy_networking):
-        """
-        Sets either QEMU legacy networking commands are used.
-
-        :param legacy_networking: boolean
-        """
-
-        if legacy_networking:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled legacy networking')
-        else:
-            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled legacy networking')
-        self._legacy_networking = legacy_networking
 
     @property
     def replicate_network_connection_state(self):
@@ -1832,23 +1807,16 @@ class QemuVM(BaseNode):
     def _get_qemu_img(self):
         """
         Search the qemu-img binary in the same binary of the qemu binary
-        for avoiding version incompatibility.
+        to avoid version incompatibility.
 
         :returns: qemu-img path or raise an error
         """
-        qemu_img_path = ""
+
         qemu_path_dir = os.path.dirname(self.qemu_path)
-        try:
-            for f in os.listdir(qemu_path_dir):
-                if f.startswith("qemu-img"):
-                    qemu_img_path = os.path.join(qemu_path_dir, f)
-        except OSError as e:
-            raise QemuError(f"Error while looking for qemu-img in {qemu_path_dir}: {e}")
-
-        if not qemu_img_path:
-            raise QemuError(f"Could not find qemu-img in {qemu_path_dir}")
-
-        return qemu_img_path
+        qemu_image_path = shutil.which("qemu-img", path=qemu_path_dir)
+        if qemu_image_path:
+            return qemu_image_path
+        raise QemuError(f"Could not find qemu-img in {qemu_path_dir}")
 
     async def _qemu_img_exec(self, command):
 
@@ -1864,27 +1832,36 @@ class QemuVM(BaseNode):
         log.info(f"{self._get_qemu_img()} returned with {retcode}")
         return retcode
 
+    async def _find_disk_file_format(self, disk):
+
+        qemu_img_path = self._get_qemu_img()
+        try:
+            output = await subprocess_check_output(qemu_img_path, "info", "--output=json", disk)
+        except subprocess.SubprocessError as e:
+            raise QemuError(f"Error received while checking Qemu disk format: {e}")
+        if output:
+            try:
+                json_data = json.loads(output)
+            except ValueError as e:
+                raise QemuError(f"Invalid JSON data returned by qemu-img: {e}")
+            return json_data.get("format")
+
     async def _create_linked_clone(self, disk_name, disk_image, disk):
+
         try:
             qemu_img_path = self._get_qemu_img()
-            command = [qemu_img_path, "create", "-o", f"backing_file={disk_image}", "-f", "qcow2", disk]
-            try:
-                base_qcow2 = Qcow2(disk_image)
-                if base_qcow2.crypt_method:
-                    # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
-                    # Also embed a secret name so it doesn't have to be passed to qemu -drive ...
-                    options = {
-                        "encrypt.key-secret": os.path.basename(disk_image),
-                        "driver": "qcow2",
-                        "file": {
-                            "driver": "file",
-                            "filename": disk_image,
-                        },
-                    }
-                    command = [qemu_img_path, "create", "-b", "json:"+json.dumps(options, separators=(',', ':')),
-                               "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
-            except Qcow2Error:
-                pass  # non-qcow2 base images are acceptable (e.g. vmdk, raw image)
+            backing_file_format = await self._find_disk_file_format(disk_image)
+            if not backing_file_format:
+                raise QemuError(f"Could not detect format for disk image: {disk_image}")
+            backing_options, base_qcow2 = Qcow2.backing_options(disk_image)
+            if base_qcow2 and base_qcow2.crypt_method:
+                # Workaround for https://gitlab.com/qemu-project/qemu/-/issues/441
+                # (we have to pass -u and the size).  Also embed secret name.
+                command = [qemu_img_path, "create", "-b", backing_options,
+                           "-F", backing_file_format, "-f", "qcow2", "-u", disk, str(base_qcow2.size)]
+            else:
+                command = [qemu_img_path, "create", "-o", "backing_file={}".format(disk_image),
+                           "-F", backing_file_format, "-f", "qcow2", disk]
 
             retcode = await self._qemu_img_exec(command)
             if retcode:
@@ -2068,19 +2045,14 @@ class QemuVM(BaseNode):
                     if retcode == 3:
                         # image has leaked clusters, but is not corrupted, let's try to fix it
                         log.warning(f"Qemu image {disk_image} has leaked clusters")
-                        if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", f"{disk_image}"])) == 3:
-                            self.project.emit(
-                                "log.warning",
-                                {"message": f"Qemu image '{disk_image}' has leaked clusters and could not be fixed"},
-                            )
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)]) == 3:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' has leaked clusters and could not be fixed".format(disk_image)})
                     elif retcode == 2:
                         # image is corrupted, let's try to fix it
                         log.warning(f"Qemu image {disk_image} is corrupted")
-                        if (await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", f"{disk_image}"])) == 2:
-                            self.project.emit(
-                                "log.warning",
-                                {"message": f"Qemu image '{disk_image}' is corrupted and could not be fixed"},
-                            )
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)]) == 2:
+                            self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
+                    # ignore retcode == 1.  One reason is that the image is encrypted and there is no encrypt.key-secret available
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError(f"Could not check '{disk_name}' disk image: {e}\n{stdout}")
@@ -2091,10 +2063,16 @@ class QemuVM(BaseNode):
                     # create the disk
                     await self._create_linked_clone(disk_name, disk_image, disk)
                 else:
-                    # The disk exists we check if the clone works
+                    backing_file_format = await self._find_disk_file_format(disk_image)
+                    if not backing_file_format:
+                        raise QemuError("Could not detect format for disk image: {}".format(disk_image))
+                    # Rebase the image. This is in case the base image moved to a different directory,
+                    # which will be the case if we imported a portable project.  This uses
+                    # get_abs_image_path(hdX_disk_image) and ignores the old base path embedded
+                    # in the qcow2 file itself.
                     try:
                         qcow2 = Qcow2(disk)
-                        await qcow2.validate(qemu_img_path)
+                        await qcow2.rebase(qemu_img_path, disk_image, backing_file_format)
                     except (Qcow2Error, OSError) as e:
                         raise QemuError(f"Could not use qcow2 disk image '{disk_image}' for {disk_name} {e}")
 
@@ -2205,16 +2183,6 @@ class QemuVM(BaseNode):
             ["-net", "none"]
         )  # we do not want any user networking back-end if no adapter is connected.
 
-        patched_qemu = False
-        if self._legacy_networking:
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version:
-                if parse_version(qemu_version) >= parse_version("2.9.0"):
-                    raise QemuError("Qemu version 2.9.0 and later doesn't support legacy networking mode")
-                if parse_version(qemu_version) < parse_version("1.1.0"):
-                    # this is a patched Qemu if version is below 1.1.0
-                    patched_qemu = True
-
         # Each 32 PCI device we need to add a PCI bridge with max 9 bridges
         pci_devices = 4 + len(self._ethernet_adapters)  # 4 PCI devices are use by default by qemu
         pci_bridges = math.floor(pci_devices / 32)
@@ -2241,72 +2209,40 @@ class QemuVM(BaseNode):
             if custom_mac_address:
                 mac = int_to_macaddress(macaddress_to_int(custom_mac_address))
 
-            if self._legacy_networking:
-                # legacy QEMU networking syntax (-net)
-                if nio:
-                    network_options.extend(["-net", f"nic,vlan={adapter_number},macaddr={mac},model={adapter_type}"])
-                    if isinstance(nio, NIOUDP):
-                        if patched_qemu:
-                            # use patched Qemu syntax
-                            network_options.extend(
-                                [
-                                    "-net",
-                                    "udp,vlan={},name=gns3-{},sport={},dport={},daddr={}".format(
-                                        adapter_number, adapter_number, nio.lport, nio.rport, nio.rhost
-                                    ),
-                                ]
-                            )
-                        else:
-                            # use UDP tunnel support added in Qemu 1.1.0
-                            network_options.extend(
-                                [
-                                    "-net",
-                                    "socket,vlan={},name=gns3-{},udp={}:{},localaddr={}:{}".format(
-                                        adapter_number, adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
-                                    ),
-                                ]
-                            )
-                    elif isinstance(nio, NIOTAP):
-                        network_options.extend(["-net", f"tap,name=gns3-{adapter_number},ifname={nio.tap_device}"])
-                else:
-                    network_options.extend(["-net", f"nic,vlan={adapter_number},macaddr={mac},model={adapter_type}"])
-
+            device_string = f"{adapter_type},mac={mac}"
+            bridge_id = math.floor(pci_device_id / 32)
+            if bridge_id > 0:
+                if pci_bridges_created < bridge_id:
+                    network_options.extend(["-device", f"i82801b11-bridge,id=dmi_pci_bridge{bridge_id}"])
+                    network_options.extend(
+                        [
+                            "-device",
+                            "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(
+                                bridge_id=bridge_id
+                            ),
+                        ]
+                    )
+                    pci_bridges_created += 1
+                addr = pci_device_id % 32
+                device_string = f"{device_string},bus=pci-bridge{bridge_id},addr=0x{addr:02x}"
+            pci_device_id += 1
+            if nio:
+                network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
+                if isinstance(nio, NIOUDP):
+                    network_options.extend(
+                        [
+                            "-netdev",
+                            "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(
+                                adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
+                            ),
+                        ]
+                    )
+                elif isinstance(nio, NIOTAP):
+                    network_options.extend(
+                        ["-netdev", f"tap,id=gns3-{adapter_number},ifname={nio.tap_device},script=no,downscript=no"]
+                    )
             else:
-                # newer QEMU networking syntax
-                device_string = f"{adapter_type},mac={mac}"
-                bridge_id = math.floor(pci_device_id / 32)
-                if bridge_id > 0:
-                    if pci_bridges_created < bridge_id:
-                        network_options.extend(["-device", f"i82801b11-bridge,id=dmi_pci_bridge{bridge_id}"])
-                        network_options.extend(
-                            [
-                                "-device",
-                                "pci-bridge,id=pci-bridge{bridge_id},bus=dmi_pci_bridge{bridge_id},chassis_nr=0x1,addr=0x{bridge_id},shpc=off".format(
-                                    bridge_id=bridge_id
-                                ),
-                            ]
-                        )
-                        pci_bridges_created += 1
-                    addr = pci_device_id % 32
-                    device_string = f"{device_string},bus=pci-bridge{bridge_id},addr=0x{addr:02x}"
-                pci_device_id += 1
-                if nio:
-                    network_options.extend(["-device", f"{device_string},netdev=gns3-{adapter_number}"])
-                    if isinstance(nio, NIOUDP):
-                        network_options.extend(
-                            [
-                                "-netdev",
-                                "socket,id=gns3-{},udp={}:{},localaddr={}:{}".format(
-                                    adapter_number, nio.rhost, nio.rport, "127.0.0.1", nio.lport
-                                ),
-                            ]
-                        )
-                    elif isinstance(nio, NIOTAP):
-                        network_options.extend(
-                            ["-netdev", f"tap,id=gns3-{adapter_number},ifname={nio.tap_device},script=no,downscript=no"]
-                        )
-                else:
-                    network_options.extend(["-device", device_string])
+                network_options.extend(["-device", device_string])
 
         return network_options
 

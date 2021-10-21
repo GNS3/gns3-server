@@ -1,0 +1,5 @@
+<svg width="60" height="60" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2">
+    <circle cx="150" cy="150" r="150" style="fill:#fffefe"/>
+    <path d="M150 0c82.787 0 150 67.213 150 150s-67.213 150-150 150S0 232.787 0 150 67.213 0 150 0Zm0 16c73.957 0 134 60.043 134 134s-60.043 134-134 134S16 223.957 16 150 76.043 16 150 16Z" style="fill:#109e00"/>
+    <path d="M62.539 139.838h43.071v20.346H62.645l18.912 18.912h-29.29L23.171 150l29.096-29.096h29.206l-18.934 18.934Zm185.194 39.258h-29.29l18.912-18.912H194.39v-20.346h43.071l-18.934-18.934h29.206L276.829 150l-29.096 29.096Zm-71.099-18.912h-17.756V139.84h8.922v-.002h8.834v20.346ZM132.2 139.838v.002h8.922v20.344h-17.756v-20.346h8.834Z" style="fill:#109e00" transform="scale(.80896) rotate(-45 210.47 124.952)"/>
+</svg>

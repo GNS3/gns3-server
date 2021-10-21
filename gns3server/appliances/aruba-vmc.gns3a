@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a51fbf46-6350-4db2-8dbc-e90704ed60ef",
     "name": "Aruba VMC",
     "category": "guest",
     "description": "Aruba Virtual Mobility Controller",

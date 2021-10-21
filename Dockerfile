@@ -14,9 +14,8 @@ RUN set -eux \
   && apk add --no-cache --virtual .build-deps build-base \
      gcc libc-dev musl-dev linux-headers python3-dev \
      vpcs qemu libvirt ubridge \
-  && pip install --upgrade pip setuptools wheel \
-  && pip install -r /gns3server/requirements.txt \
-  && rm -rf /root/.cache/pip
+  && pip install --no-cache-dir --upgrade pip setuptools wheel \
+  && pip install --no-cache-dir -r /gns3server/requirements.txt
 
 COPY . /gns3server
 RUN python3 setup.py install

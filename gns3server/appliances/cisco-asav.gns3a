@@ -1,4 +1,5 @@
 {
+    "appliance_id": "886c4059-4a10-4c62-ab59-7f02beeac292",
     "name": "Cisco ASAv",
     "category": "firewall",
     "description": "The Adaptive Security Virtual Appliance is a virtualized network security solution based on the market-leading Cisco ASA 5500-X Series firewalls. It supports both traditional and next-generation software-defined network (SDN) and Cisco Application Centric Infrastructure (ACI) environments to provide policy enforcement and threat inspection across heterogeneous multisite environments.",

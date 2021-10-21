@@ -26,6 +26,7 @@ from typing import List
 
 from gns3server import schemas
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -74,7 +75,7 @@ async def authenticate(
 ) -> schemas.Token:
     """
     Alternative authentication method using json.
-    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"}'
+    Example: curl http://host:port/v3/users/authenticate -d '{"username": "admin", "password": "admin"} -H "Content-Type: application/json" '
     """
 
     user = await users_repo.authenticate_user(username=user_credentials.username, password=user_credentials.password)
@@ -207,7 +208,7 @@ async def delete_user(
 
     success = await users_repo.delete_user(user_id)
     if not success:
-        raise ControllerNotFoundError(f"User '{user_id}' could not be deleted")
+        raise ControllerError(f"User '{user_id}' could not be deleted")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

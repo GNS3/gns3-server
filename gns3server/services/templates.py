@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import uuid
 import pydantic
 
@@ -22,9 +23,10 @@ from fastapi.encoders import jsonable_encoder
 from typing import List
 
 from gns3server import schemas
+import gns3server.db.models as models
 from gns3server.db.repositories.templates import TemplatesRepository
-from gns3server.controller import Controller
 from gns3server.controller.controller_error import (
+    ControllerError,
     ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
@@ -56,7 +58,7 @@ DYNAMIPS_PLATFORM_TO_SHEMA = {
 # built-in templates have their compute_id set to None to tell clients to select a compute
 BUILTIN_TEMPLATES = [
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "cloud"),
         "template_type": "cloud",
         "name": "Cloud",
         "default_name_format": "Cloud{0}",
@@ -66,7 +68,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "nat"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "nat"),
         "template_type": "nat",
         "name": "NAT",
         "default_name_format": "NAT{0}",
@@ -76,7 +78,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "vpcs"),
         "template_type": "vpcs",
         "name": "VPCS",
         "default_name_format": "PC{0}",
@@ -87,7 +89,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_switch"),
         "template_type": "ethernet_switch",
         "name": "Ethernet switch",
         "console_type": "none",
@@ -98,7 +100,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "ethernet_hub"),
         "template_type": "ethernet_hub",
         "name": "Ethernet hub",
         "default_name_format": "Hub{0}",
@@ -108,7 +110,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "frame_relay_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "frame_relay_switch"),
         "template_type": "frame_relay_switch",
         "name": "Frame Relay switch",
         "default_name_format": "FRSW{0}",
@@ -118,7 +120,7 @@ BUILTIN_TEMPLATES = [
         "builtin": True,
     },
     {
-        "template_id": uuid.uuid3(uuid.NAMESPACE_DNS, "atm_switch"),
+        "template_id": uuid.uuid5(uuid.NAMESPACE_X500, "atm_switch"),
         "template_type": "atm_switch",
         "name": "ATM switch",
         "default_name_format": "ATMSW{0}",
@@ -131,9 +133,11 @@ BUILTIN_TEMPLATES = [
 
 
 class TemplatesService:
+
     def __init__(self, templates_repo: TemplatesRepository):
 
         self._templates_repo = templates_repo
+        from gns3server.controller import Controller
         self._controller = Controller.instance()
 
     def get_builtin_template(self, template_id: UUID) -> dict:
@@ -152,7 +156,52 @@ class TemplatesService:
             templates.append(jsonable_encoder(builtin_template))
         return templates
 
+    async def _find_image(self, image_path: str):
+
+        image = await self._templates_repo.get_image(image_path)
+        if not image or not os.path.exists(image.path):
+            raise ControllerNotFoundError(f"Image '{image_path}' could not be found")
+        return image
+
+    async def _find_images(self, template_type: str, settings: dict) -> List[models.Image]:
+
+        images_to_add_to_template = []
+        if template_type == "dynamips":
+            if settings["image"]:
+                image = await self._find_image(settings["image"])
+                if image.image_type != "ios":
+                    raise ControllerBadRequestError(
+                        f"Image '{image.filename}' type is not 'ios' but '{image.image_type}'"
+                    )
+                images_to_add_to_template.append(image)
+        elif template_type == "iou":
+            if settings["path"]:
+                image = await self._find_image(settings["path"])
+                if image.image_type != "iou":
+                    raise ControllerBadRequestError(
+                        f"Image '{image.filename}' type is not 'iou' but '{image.image_type}'"
+                    )
+                images_to_add_to_template.append(image)
+        elif template_type == "qemu":
+            for key, value in settings.items():
+                if key.endswith("_image") and value:
+                    image = await self._find_image(value)
+                    if image.image_type != "qemu":
+                        raise ControllerBadRequestError(
+                            f"Image '{image.filename}' type is not 'qemu' but '{image.image_type}'"
+                        )
+                    if image not in images_to_add_to_template:
+                        images_to_add_to_template.append(image)
+        return images_to_add_to_template
+
     async def create_template(self, template_create: schemas.TemplateCreate) -> dict:
+
+        if await self._templates_repo.get_template_by_name_and_version(template_create.name, template_create.version):
+            if template_create.version:
+                raise ControllerError(f"A template with name '{template_create.name}' and "
+                                      f"version {template_create.version} already exists")
+            else:
+                raise ControllerError(f"A template with name '{template_create.name}' already exists")
 
         try:
             # get the default template settings
@@ -167,7 +216,11 @@ class TemplatesService:
                 settings = dynamips_template_settings_with_defaults.dict()
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
+
+        images_to_add_to_template = await self._find_images(template_create.template_type, settings)
         db_template = await self._templates_repo.create_template(template_create.template_type, settings)
+        for image in images_to_add_to_template:
+            await self._templates_repo.add_image_to_template(db_template.template_id, image)
         template = db_template.asjson()
         self._controller.notification.controller_emit("template.created", template)
         return template
@@ -183,13 +236,34 @@ class TemplatesService:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
         return template
 
+    async def _remove_image(self, template_id: UUID, image_path:str) -> None:
+
+        image = await self._templates_repo.get_image(image_path)
+        await self._templates_repo.remove_image_from_template(template_id, image)
+
     async def update_template(self, template_id: UUID, template_update: schemas.TemplateUpdate) -> dict:
 
         if self.get_builtin_template(template_id):
             raise ControllerForbiddenError(f"Template '{template_id}' cannot be updated because it is built-in")
-        db_template = await self._templates_repo.update_template(template_id, template_update)
+        template_settings = jsonable_encoder(template_update, exclude_unset=True)
+
+        db_template = await self._templates_repo.get_template(template_id)
         if not db_template:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
+
+        images_to_add_to_template = await self._find_images(db_template.template_type, template_settings)
+        if db_template.template_type == "dynamips" and "image" in template_settings:
+            await self._remove_image(db_template.template_id, db_template.image)
+        elif db_template.template_type == "iou" and "path" in template_settings:
+            await self._remove_image(db_template.template_id, db_template.path)
+        elif db_template.template_type == "qemu":
+            for key in template_update.dict().keys():
+                if key.endswith("_image") and key in template_settings:
+                    await self._remove_image(db_template.template_id, db_template.__dict__[key])
+
+        db_template = await self._templates_repo.update_template(db_template, template_settings)
+        for image in images_to_add_to_template:
+            await self._templates_repo.add_image_to_template(db_template.template_id, image)
         template = db_template.asjson()
         self._controller.notification.controller_emit("template.updated", template)
         return template

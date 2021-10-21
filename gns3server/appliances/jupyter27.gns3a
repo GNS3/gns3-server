@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8814bb98-3ae7-4bc3-a3e3-1a4dc1369dbd",
     "name": "Jupyter 2.7",
     "category": "guest",
     "description": "The Jupyter Notebook is an open-source web application that allows you to create and share documents that contain live code, equations, visualizations and explanatory text. Uses include: data cleaning and transformation, numerical simulation, statistical modeling, machine learning and much more. This appliance provide python 2.7.",

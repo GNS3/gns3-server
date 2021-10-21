@@ -358,6 +358,7 @@ class TestUserMe:
         )
         assert response.status_code == status_code
 
+
 class TestSuperAdmin:
 
     async def test_super_admin_exists(

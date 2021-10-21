@@ -1,0 +1,15 @@
+#!/gns3/bin/busybox sh
+
+SCRIPT="/gns3/etc/udhcpc/default.script"
+
+if [ "$(cat "/proc/$PPID/comm" 2>/dev/null)" = ifup ]; then
+	# remove "-n" argument
+	for arg do
+		shift
+		[ "$arg" = "-n" ] || set -- "$@" "$arg"
+	done
+	# add default parameters
+	set -- -t 3 -T 2 -A 1 -b "$@"
+fi
+
+exec /tmp/gns3/bin/udhcpc -s "$SCRIPT" "$@"

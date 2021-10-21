@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f049539d-db46-422f-8d10-ff9b96a2a4ae",
     "name": "DNS",
     "category": "guest",
     "description": "This appliance provides DNS using dnsmasq with the local domain set to \"lab\".",

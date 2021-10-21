@@ -1,4 +1,5 @@
 {
+    "appliance_id": "d2a23e69-9e92-4c3f-83c8-8caa1aa58ece",
     "name": "Ubuntu Server",
     "category": "guest",
     "description": "This is a custom Ubuntu server which comes with Canonical security updates, Xorg and Telnetd",

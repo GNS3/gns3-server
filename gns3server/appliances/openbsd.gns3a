@@ -1,4 +1,5 @@
 {
+    "appliance_id": "88903903-8e64-4439-bc4f-a0ed45e29e56",
     "name": "OpenBSD",
     "category": "guest",
     "description": "The OpenBSD project produces a FREE, multi-platform 4.4BSD-based UNIX-like operating system. Our efforts emphasize portability, standardization, correctness, proactive security and integrated cryptography. As an example of the effect OpenBSD has, the popular OpenSSH software comes from OpenBSD.",

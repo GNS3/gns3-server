@@ -1,0 +1,68 @@
+{
+    "appliance_id": "c21f6df8-64ab-4e24-921b-ec7f889ce32a",
+    "name": "SteelHead",
+    "category": "guest",
+    "description": "SteelHead is the Riverbed Accelerator",
+    "vendor_name": "Riverbed Technology",
+    "vendor_url": "http://www.riverbed.com",
+    "documentation_url": "https://github.com/riverbed/Riverbed-Community-Toolkit/tree/master/SteelHead/GNS3",
+    "product_name": "SteelHead",
+    "product_url": "https://support.riverbed.com/content/support/software/steelhead/cx-appliance.html",
+    "registry_version": 6,
+    "status": "stable",
+    "maintainer": "Riverbed Community",
+    "maintainer_email": "community@riverbed.com",
+    "usage": "Download the KVM image Next Generation Virtual SteelHead VCX Software Image (KVM) from https://support.riverbed.com/content/support/software/steelhead/cx-appliance.html\n Uncompress the .tgz archive using this command: tar xzSf <image_file>\nDefault credentials: admin / password",
+    "symbol": "steelhead-vcx.png",
+    "first_port_name": "PRI",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "custom_adapters": [
+            {
+                "adapter_number": 1,
+                "port_name": "AUX"
+            },
+            {
+                "adapter_number": 2,
+                "port_name": "LAN0_0"
+            },
+            {
+                "adapter_number": 3,
+                "port_name": "WAN0_0"
+            }
+        ],
+        "ram": 2048,
+        "hda_disk_interface": "virtio",
+        "hdb_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "mgmt.qcow2",
+            "version": "9.12.0",
+            "md5sum": "0f45d7cfb75b5e7e915dd37136411580",
+            "filesize": 2381840384,
+            "download_url": "https://support.riverbed.com/content/support/software/steelhead/cx-appliance.html#software-alert"
+        },
+        {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "5d9fec18a980f13002028491259f158d",
+            "filesize": 198656,
+            "download_url": "https://github.com/riverbed/Riverbed-Community-Toolkit/raw/master/SteelHead/GNS3",
+            "direct_download_url": "https://github.com/riverbed/Riverbed-Community-Toolkit/raw/master/SteelHead/GNS3/empty100G.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.12.0",
+            "images": {
+                "hda_disk_image": "mgmt.qcow2",
+                "hdb_disk_image": "empty100G.qcow2"
+            }
+        }
+    ]
+}

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "18c4b920-e467-46c3-a74d-b9e0eed1891f",
     "name": "PA-VM",
     "category": "firewall",
     "description": "The VM-Series combines next-generation firewall security and advanced threat prevention to protect your virtualized environments from advanced cyberthreats. The VM-Series natively analyzes all traffic in a single pass to determine the application identity, the content within, and the user identity.",

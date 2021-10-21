@@ -1,4 +1,5 @@
 {
+    "appliance_id": "31094219-7691-4eb1-8337-bb0a756a24a8",
     "name": "Juniper vMX vFP",
     "category": "router",
     "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is for the Virtual Forwarding Plane (vFP) VM and is meant to be paired with the Virtual Control Plane (vCP) VM.",
@@ -30,6 +31,13 @@
             "filename": "vFPC-20200526.img",
             "version": "20.2R1.10-KVM",
             "md5sum": "400652d7e450b0bf8ad4cc37db46b78c",
+            "filesize": 2447376384,
+            "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
+        },
+        {
+            "filename": "vFPC-20210115.img",
+            "version": "19.4R3-S4.1-OpenStack",
+            "md5sum": "a218029c288d32278d7c483a69de35c0",
             "filesize": 2447376384,
             "download_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/"
         },
@@ -158,6 +166,12 @@
             "name": "20.2R1.10-KVM",
             "images": {
                 "hda_disk_image": "vFPC-20200526.img"
+            }
+        },
+        {
+            "name": "19.4R3-S4.1-OpenStack",
+            "images": {
+                "hda_disk_image": "vFPC-20210115.img"
             }
         },
         {

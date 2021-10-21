@@ -1,4 +1,5 @@
 {
+    "appliance_id": "38c9e478-4a1d-4611-ac61-945d2f2ca376",
     "name": "Aruba VGW",
     "category": "firewall",
     "description": "Aruba Virtual Gateways allow customers to bring their public cloud infrastructure to the SD-WAN fabric and facilitate connectivity between branches and the public cloud.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a013860f-c65d-477d-abfc-d3d98b49e7d6",
     "name": "NetScaler VPX",
     "category": "router",
     "description": "Today's enterprises face more demands than ever, from cloud computing to 24/7 availability to increasing security threats. NetScaler ADC, an advanced software-defined application delivery controller, is your networking power player. It provides outstanding delivery of business applications-to any device and any location-with unmatched security, superior L4-7 load balancing, reliable GSLB, and 100 percent uptime. In fact, NetScaler ADC offers up to five times the performance of our closest competitor. Plus our TriScale technology saves you money by allowing your network to scale up or down without additional hardware costs.",

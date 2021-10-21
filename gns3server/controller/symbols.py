@@ -106,8 +106,7 @@ class Symbols:
                         theme = "Custom symbols"
                     symbols.append({"symbol_id": symbol_file, "filename": filename, "builtin": False, "theme": theme})
                     self._symbols_path[symbol_file] = os.path.join(root, filename)
-
-        symbols.sort(key=lambda x: x["filename"])
+        symbols.sort(key=lambda x: x["theme"])
         return symbols
 
     def symbols_path(self):
@@ -121,6 +120,10 @@ class Symbols:
                 log.error(f"Could not create symbol directory '{directory}': {e}")
                 return None
         return directory
+
+    def has_symbol(self, symbol_id):
+
+        return self._symbols_path.get(symbol_id)
 
     def get_path(self, symbol_id):
         try:

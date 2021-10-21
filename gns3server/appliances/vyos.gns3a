@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f82b74c4-0f30-456f-a582-63daca528502",
     "name": "VyOS",
     "category": "router",
     "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is the monthly snapshot of the rolling release track.",
@@ -11,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password is vyos/vyos.\n\nAt first boot of versions 1.1.x/1.2.x the router will start from the cdrom. Login and then type \"install image\" and follow the instructions.",
+    "usage": "Default username/password is vyos/vyos.\n\nAt first boot the router will start from the cdrom. Login and then type \"install image\" and follow the instructions.",
     "symbol": "vyos.svg",
     "port_name_format": "eth{0}",
     "qemu": {
@@ -26,12 +27,12 @@
     },
     "images": [
         {
-            "filename": "vyos-1.3.0-rc5-amd64.qcow2",
-            "version": "1.3.0-rc5",
-            "md5sum": "dd704f59afc0fccdf601cc750bf2c438",
-            "filesize": 361955328,
-            "download_url": "https://www.b-ehlers.de/GNS3/images/",
-            "direct_download_url": "https://www.b-ehlers.de/GNS3/images/vyos-1.3.0-rc5-amd64.qcow2"
+            "filename": "vyos-1.3.0-epa1-amd64.iso",
+            "version": "1.3.0-epa1",
+            "md5sum": "a2aaa5bd3bc5827909d07a18a9de80a7",
+            "filesize": 331350016,
+            "download_url": "https://vyos.net/get/snapshots/",
+            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/snapshot/vyos-1.3.0-epa1/generic-iso/vyos-1.3.0-epa1-amd64.iso"
         },
         {
             "filename": "vyos-1.2.8-amd64.iso",
@@ -66,9 +67,10 @@
     ],
     "versions": [
         {
-            "name": "1.3.0-rc5",
+            "name": "1.3.0-epa1",
             "images": {
-                "hda_disk_image": "vyos-1.3.0-rc5-amd64.qcow2"
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.3.0-epa1-amd64.iso"
             }
         },
         {

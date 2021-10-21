@@ -1,4 +1,5 @@
 {
+    "appliance_id": "0293ded2-0ca3-4052-913f-8c2d872e46ba",
     "name": "EXOS VM",
     "category": "multilayer_switch",
     "description": "The ExtremeXOS VM is created and maintained by Extreme Networks for users to emulate a network using EXOS switches.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "d223e573-8de5-4f93-b26d-d5d1f2f18226",
     "name": "Cisco Catalyst 8000V",
     "category": "router",
     "description": "The Cisco Catalyst 8000V Edge Software is a virtual, form-factor router deployed on a virtual machine (VM) running on an x86 server hardware.",

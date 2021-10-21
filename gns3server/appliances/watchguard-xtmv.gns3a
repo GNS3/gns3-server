@@ -1,4 +1,5 @@
 {
+    "appliance_id": "816cedad-04ae-46e5-840d-20c2a50b6ba5",
     "name": "WatchGuard",
     "category": "firewall",
     "description": "Organizations of all sizes are turning to virtualization to reduce costs and increase the efficiency, availability, and flexibility of their IT resources. But virtualization comes at a cost. Virtual environments are complex to manage and vulnerable to security threats. IT must be prepared. Now applications can be secured, resources can be maximized and your IT department can reap the rewards of having a single, unified management system - without a security risk in sight. WatchGuard XTMv brings best-in-class network security to the world of virtualization. With real-time monitoring, multi-WAN support and scalable solutions to fit any-sized business, your virtual environments can be just as secure as your physical one.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "ed6b9f98-7de2-4d61-a3ed-ad4c3e323ace",
     "name": "Tiny Core Linux",
     "category": "guest",
     "description": "Core Linux is a smaller variant of Tiny Core without a graphical desktop.\n\nIt provides a complete Linux system using only a few MiB.",

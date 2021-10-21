@@ -16,21 +16,27 @@
 
 import os
 import hashlib
+import stat
+import aiofiles
+import shutil
 
+from typing import AsyncGenerator
 from ..config import Config
 from . import force_unix_path
 
+import gns3server.db.models as models
+from gns3server.db.repositories.images import ImagesRepository
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def list_images(type):
+def list_images(image_type):
     """
-    Scan directories for available image for a type
+    Scan directories for available image for a given type.
 
-    :param type: emulator type (dynamips, qemu, iou)
+    :param image_type: image type (dynamips, qemu, iou)
     """
     files = set()
     images = []
@@ -39,9 +45,9 @@ def list_images(type):
     general_images_directory = os.path.expanduser(server_config.images_path)
 
     # Subfolder of the general_images_directory specific to this VM type
-    default_directory = default_images_directory(type)
+    default_directory = default_images_directory(image_type)
 
-    for directory in images_directories(type):
+    for directory in images_directories(image_type):
 
         # We limit recursion to path outside the default images directory
         # the reason is in the default directory manage file organization and
@@ -58,9 +64,9 @@ def list_images(type):
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
                     elif (
-                        ((filename.endswith(".image") or filename.endswith(".bin")) and type == "dynamips")
-                        or ((filename.endswith(".bin") or filename.startswith("i86bi")) and type == "iou")
-                        or (not filename.endswith(".bin") and not filename.endswith(".image") and type == "qemu")
+                        ((filename.endswith(".image") or filename.endswith(".bin")) and image_type == "dynamips")
+                        or ((filename.endswith(".bin") or filename.startswith("i86bi")) and image_type == "iou")
+                        or (not filename.endswith(".bin") and not filename.endswith(".image") and image_type == "qemu")
                     ):
                         files.add(filename)
 
@@ -71,7 +77,7 @@ def list_images(type):
                             path = os.path.relpath(os.path.join(root, filename), default_directory)
 
                         try:
-                            if type in ["dynamips", "iou"]:
+                            if image_type in ["dynamips", "iou"]:
                                 with open(os.path.join(root, filename), "rb") as f:
                                     # read the first 7 bytes of the file.
                                     elf_header_start = f.read(7)
@@ -110,20 +116,21 @@ def _os_walk(directory, recurse=True, **kwargs):
         yield directory, [], files
 
 
-def default_images_directory(type):
+def default_images_directory(image_type):
     """
-    :returns: Return the default directory for a node type
+    :returns: Return the default directory for an image type.
     """
+
     server_config = Config.instance().settings.Server
     img_dir = os.path.expanduser(server_config.images_path)
-    if type == "qemu":
+    if image_type == "qemu":
         return os.path.join(img_dir, "QEMU")
-    elif type == "iou":
+    elif image_type == "iou":
         return os.path.join(img_dir, "IOU")
-    elif type == "dynamips":
+    elif image_type == "dynamips" or image_type == "ios":
         return os.path.join(img_dir, "IOS")
     else:
-        raise NotImplementedError("%s node type is not supported", type)
+        raise NotImplementedError(f"%s node type is not supported", image_type)
 
 
 def images_directories(type):
@@ -206,3 +213,72 @@ def remove_checksum(path):
     path = f"{path}.md5sum"
     if os.path.exists(path):
         os.remove(path)
+
+
+class InvalidImageError(Exception):
+
+    def __init__(self, message: str):
+        super().__init__()
+        self._message = message
+
+    def __str__(self):
+        return self._message
+
+
+def check_valid_image_header(data: bytes, image_type: str, header_magic_len: int) -> None:
+
+    if image_type == "ios":
+        # file must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
+        if data[:header_magic_len] != b'\x7fELF\x01\x02\x01':
+            raise InvalidImageError("Invalid IOS file detected")
+    elif image_type == "iou":
+        # file must start with the ELF magic number, be 32-bit or 64-bit, little endian and have an ELF version of 1
+        # (normal IOS images are big endian!)
+        if data[:header_magic_len] != b'\x7fELF\x01\x01\x01' and data[:7] != b'\x7fELF\x02\x01\x01':
+            raise InvalidImageError("Invalid IOU file detected")
+    elif image_type == "qemu":
+        if data[:header_magic_len] != b'QFI\xfb' and data[:header_magic_len] != b'KDMV':
+            raise InvalidImageError("Invalid Qemu file detected (must be qcow2 or VDMK format)")
+
+
+async def write_image(
+        image_name: str,
+        image_type: str,
+        path: str,
+        stream: AsyncGenerator[bytes, None],
+        images_repo: ImagesRepository,
+        check_image_header=True
+) -> models.Image:
+
+    log.info(f"Writing image file to '{path}'")
+    # Store the file under its final name only when the upload is completed
+    tmp_path = path + ".tmp"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    checksum = hashlib.md5()
+    header_magic_len = 7
+    if image_type == "qemu":
+        header_magic_len = 4
+    try:
+        async with aiofiles.open(tmp_path, "wb") as f:
+            async for chunk in stream:
+                if check_image_header and len(chunk) >= header_magic_len:
+                    check_image_header = False
+                    check_valid_image_header(chunk, image_type, header_magic_len)
+                await f.write(chunk)
+                checksum.update(chunk)
+
+        image_size = os.path.getsize(tmp_path)
+        if not image_size or image_size < header_magic_len:
+            raise InvalidImageError("The image content is empty or too small to be valid")
+
+        checksum = checksum.hexdigest()
+        duplicate_image = await images_repo.get_image_by_checksum(checksum)
+        if duplicate_image and os.path.dirname(duplicate_image.path) == os.path.dirname(path):
+            raise InvalidImageError(f"Image {duplicate_image.filename} with "
+                                    f"same checksum already exists in the same directory")
+    except InvalidImageError:
+        os.remove(tmp_path)
+        raise
+    os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+    shutil.move(tmp_path, path)
+    return await images_repo.add_image(image_name, image_type, image_size, path, checksum, checksum_algorithm="md5")

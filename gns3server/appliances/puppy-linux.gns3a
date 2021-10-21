@@ -1,4 +1,5 @@
 {
+    "appliance_id": "3c8c2c23-0f14-4dea-9e61-72afcfe1856c",
     "name": "Puppy Linux",
     "category": "guest",
     "description": "Puppy Linux is a unique family of Linux distributions meant for the home-user computers. It was originally created by Barry Kauler in 2003.",

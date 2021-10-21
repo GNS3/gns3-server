@@ -1,4 +1,5 @@
 {
+    "appliance_id": "286b3ba3-6646-41d2-b67c-dd6de9da8a5a",
     "name": "IPFire",
     "category": "firewall",
     "description": "IPFire was designed with both modularity and a high-level of flexibility in mind. You can easily deploy many variations of it, such as a firewall, a proxy server or a VPN gateway. The modular design ensures that it runs exactly what you've configured it for and nothing more. Everything is simple to manage and update through the package manager, making maintenance a breeze.",

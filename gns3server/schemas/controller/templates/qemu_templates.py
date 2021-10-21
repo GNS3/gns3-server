@@ -74,7 +74,6 @@ class QemuTemplate(TemplateBase):
     kernel_image: Optional[str] = Field("", description="QEMU kernel image path")
     bios_image: Optional[str] = Field("", description="QEMU bios image path")
     kernel_command_line: Optional[str] = Field("", description="QEMU kernel command line")
-    legacy_networking: Optional[bool] = Field(False, description="Use QEMU legagy networking commands (-net syntax)")
     replicate_network_connection_state: Optional[bool] = Field(
         True, description="Replicate the network connection state for links in Qemu"
     )
