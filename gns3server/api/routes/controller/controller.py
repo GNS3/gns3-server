@@ -18,8 +18,9 @@ import asyncio
 import signal
 import os
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.routing import Mount
 from typing import List
 
 from gns3server.config import Config
@@ -41,13 +42,24 @@ router = APIRouter()
     "/version",
     response_model=schemas.Version,
 )
-def get_version() -> dict:
+def get_version(request: Request) -> dict:
     """
     Return the server version number.
     """
 
+    # retrieve the controller host information from the mounted
+    # compute subapp
+    controller_host = None
+    for route in request.app.routes:
+        if isinstance(route, Mount) and route.name == "compute":
+            controller_host = route.app.state.controller_host
+
     local_server = Config.instance().settings.Server.local
-    return {"version": __version__, "local": local_server}
+    return {
+        "controller_host": controller_host,
+        "version": __version__,
+        "local": local_server
+    }
 
 
 @router.post(
@@ -61,7 +73,6 @@ def check_version(version: schemas.Version) -> dict:
     Check if version is the same as the server.
     """
 
-    print(version.version)
     if version.version != __version__:
         raise ControllerError(f"Client version {version.version} is not the same as server version {__version__}")
     return {"version": __version__}

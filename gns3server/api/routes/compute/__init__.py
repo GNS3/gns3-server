@@ -56,6 +56,8 @@ compute_api = FastAPI(
     version="v3",
 )
 
+compute_api.state.controller_host = None
+
 
 @compute_api.exception_handler(ComputeError)
 async def controller_error_handler(request: Request, exc: ComputeError):

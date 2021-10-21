@@ -31,7 +31,7 @@ pytestmark = pytest.mark.asyncio
 async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, on_gns3vm) -> dict:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
-        response = await client.post(app.url_path_for("create_cloud", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_cloud", project_id=compute_project.id),
                                      json={"name": "Cloud 1"})
     assert response.status_code == status.HTTP_201_CREATED
     return response.json()
@@ -40,7 +40,7 @@ async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, on_gns
 async def test_cloud_create(app: FastAPI, client: AsyncClient, compute_project: Project) -> None:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):
-        response = await client.post(app.url_path_for("create_cloud", project_id=compute_project.id),
+        response = await client.post(app.url_path_for("compute:create_cloud", project_id=compute_project.id),
                                      json={"name": "Cloud 1"})
     assert response.status_code == 201
     assert response.json()["name"] == "Cloud 1"
@@ -49,7 +49,7 @@ async def test_cloud_create(app: FastAPI, client: AsyncClient, compute_project: 
 
 async def test_get_cloud(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await client.get(app.url_path_for("get_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
+    response = await client.get(app.url_path_for("compute:get_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "Cloud 1"
     assert response.json()["project_id"] == compute_project.id
@@ -63,7 +63,7 @@ async def test_cloud_nio_create_udp(app: FastAPI, client: AsyncClient, compute_p
               "rport": 4343,
               "rhost": "127.0.0.1"}
 
-    url = app.url_path_for("create_cloud_nio",
+    url = app.url_path_for("compute:create_cloud_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -80,7 +80,7 @@ async def test_cloud_nio_update_udp(app: FastAPI, client: AsyncClient, compute_p
               "rport": 4343,
               "rhost": "127.0.0.1"}
 
-    url = app.url_path_for("create_cloud_nio",
+    url = app.url_path_for("compute:create_cloud_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -88,7 +88,7 @@ async def test_cloud_nio_update_udp(app: FastAPI, client: AsyncClient, compute_p
     await client.post(url, json=params)
 
     params["filters"] = {}
-    url = app.url_path_for("create_cloud_nio",
+    url = app.url_path_for("compute:create_cloud_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -105,14 +105,14 @@ async def test_cloud_delete_nio(app: FastAPI, client: AsyncClient, compute_proje
               "rport": 4343,
               "rhost": "127.0.0.1"}
 
-    url = app.url_path_for("create_cloud_nio",
+    url = app.url_path_for("compute:create_cloud_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
                            port_number="0")
     await client.post(url, json=params)
 
-    url = app.url_path_for("delete_cloud_nio",
+    url = app.url_path_for("compute:delete_cloud_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -124,13 +124,13 @@ async def test_cloud_delete_nio(app: FastAPI, client: AsyncClient, compute_proje
 
 async def test_cloud_delete(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict) -> None:
 
-    response = await client.delete(app.url_path_for("delete_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
+    response = await client.delete(app.url_path_for("compute:delete_cloud", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 async def test_cloud_update(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
-    response = await client.put(app.url_path_for("update_cloud", project_id=vm["project_id"], node_id=vm["node_id"]),
+    response = await client.put(app.url_path_for("compute:update_cloud", project_id=vm["project_id"], node_id=vm["node_id"]),
                                 json={"name": "test"})
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "test"
@@ -144,7 +144,7 @@ async def test_cloud_start_capture(app: FastAPI, client: AsyncClient, vm: dict) 
     }
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.start_capture") as mock:
-        response = await client.post(app.url_path_for("start_cloud_capture",
+        response = await client.post(app.url_path_for("compute:start_cloud_capture",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"],
                                                       adapter_number="0",
@@ -158,7 +158,7 @@ async def test_cloud_start_capture(app: FastAPI, client: AsyncClient, vm: dict) 
 async def test_cloud_stop_capture(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud.stop_capture") as mock:
-        response = await client.post(app.url_path_for("stop_cloud_capture",
+        response = await client.post(app.url_path_for("compute:stop_cloud_capture",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"],
                                                       adapter_number="0",

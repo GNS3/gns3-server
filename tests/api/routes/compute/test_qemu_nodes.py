@@ -66,7 +66,7 @@ def base_params(tmpdir, fake_qemu_bin) -> dict:
 @pytest.fixture
 async def vm(app: FastAPI, client: AsyncClient, compute_project: Project, base_params: dict) -> None:
 
-    response = await client.post(app.url_path_for("create_qemu_node", project_id=compute_project.id), json=base_params)
+    response = await client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
     return response.json()
 
@@ -77,7 +77,7 @@ async def test_qemu_create(app: FastAPI,
                            base_params: dict,
                            fake_qemu_bin: str) -> None:
 
-    response = await client.post(app.url_path_for("create_qemu_node", project_id=compute_project.id), json=base_params)
+    response = await client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -93,7 +93,7 @@ async def test_qemu_create_platform(app: FastAPI,
 
     base_params["qemu_path"] = None
     base_params["platform"] = "x86_64"
-    response = await client.post(app.url_path_for("create_qemu_node", project_id=compute_project.id), json=base_params)
+    response = await client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -111,7 +111,7 @@ async def test_qemu_create_with_params(app: FastAPI,
     params = base_params
     params["ram"] = 1024
     params["hda_disk_image"] = "linux载.img"
-    response = await client.post(app.url_path_for("create_qemu_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -127,13 +127,13 @@ async def test_qemu_create_with_project_file(app: FastAPI,
                                              base_params: dict,
                                              fake_qemu_vm: str) -> None:
 
-    response = await client.post(app.url_path_for("write_compute_project_file",
+    response = await client.post(app.url_path_for("compute:write_compute_project_file",
                                                   project_id=compute_project.id,
                                                   file_path="hello.img"), content=b"world")
     assert response.status_code == status.HTTP_204_NO_CONTENT
     params = base_params
     params["hda_disk_image"] = "hello.img"
-    response = await client.post(app.url_path_for("create_qemu_node", project_id=compute_project.id), json=params)
+    response = await client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["hda_disk_image"] == "hello.img"
     assert response.json()["hda_disk_image_md5sum"] == "7d793037a0760186574b0282f2f435e7"
@@ -141,7 +141,7 @@ async def test_qemu_create_with_project_file(app: FastAPI,
 
 async def test_qemu_get(app: FastAPI, client: AsyncClient, compute_project: Project, vm: dict):
 
-    response = await client.get(app.url_path_for("get_qemu_node", project_id=vm["project_id"], node_id=vm["node_id"]))
+    response = await client.get(app.url_path_for("compute:get_qemu_node", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "PC TEST 1"
     assert response.json()["project_id"] == compute_project.id
@@ -154,7 +154,7 @@ async def test_qemu_get(app: FastAPI, client: AsyncClient, compute_project: Proj
 async def test_qemu_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.start", return_value=True) as mock:
-        response = await client.post(app.url_path_for("start_qemu_node",
+        response = await client.post(app.url_path_for("compute:start_qemu_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -164,7 +164,7 @@ async def test_qemu_start(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_qemu_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.stop", return_value=True) as mock:
-        response = await client.post(app.url_path_for("stop_qemu_node",
+        response = await client.post(app.url_path_for("compute:stop_qemu_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -174,7 +174,7 @@ async def test_qemu_stop(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_qemu_reload(app: FastAPI, client: AsyncClient, vm) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.reload", return_value=True) as mock:
-        response = await client.post(app.url_path_for("reload_qemu_node",
+        response = await client.post(app.url_path_for("compute:reload_qemu_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -184,7 +184,7 @@ async def test_qemu_reload(app: FastAPI, client: AsyncClient, vm) -> None:
 async def test_qemu_suspend(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.suspend", return_value=True) as mock:
-        response = await client.post(app.url_path_for("suspend_qemu_node",
+        response = await client.post(app.url_path_for("compute:suspend_qemu_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -194,7 +194,7 @@ async def test_qemu_suspend(app: FastAPI, client: AsyncClient, vm: dict) -> None
 async def test_qemu_resume(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.resume", return_value=True) as mock:
-        response = await client.post(app.url_path_for("resume_qemu_node",
+        response = await client.post(app.url_path_for("compute:resume_qemu_node",
                                                       project_id=vm["project_id"],
                                                       node_id=vm["node_id"]))
         assert mock.called
@@ -204,7 +204,7 @@ async def test_qemu_resume(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 async def test_qemu_delete(app: FastAPI, client: AsyncClient, vm: dict) -> None:
 
     with asyncio_patch("gns3server.compute.qemu.Qemu.delete_node", return_value=True) as mock:
-        response = await client.delete(app.url_path_for("delete_qemu_node",
+        response = await client.delete(app.url_path_for("compute:delete_qemu_node",
                                                         project_id=vm["project_id"],
                                                         node_id=vm["node_id"]))
         assert mock.called
@@ -224,7 +224,7 @@ async def test_qemu_update(app: FastAPI,
         "hdb_disk_image": "linux载.img"
     }
 
-    response = await client.put(app.url_path_for("update_qemu_node",
+    response = await client.put(app.url_path_for("compute:update_qemu_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]), json=params)
     assert response.status_code == status.HTTP_200_OK
@@ -244,11 +244,11 @@ async def test_qemu_nio_create_udp(app: FastAPI, client: AsyncClient, vm: dict) 
     }
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM.add_ubridge_udp_connection"):
-        await client.put(app.url_path_for("update_qemu_node",
+        await client.put(app.url_path_for("compute:update_qemu_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]), json={"adapters": 2})
 
-        url = app.url_path_for("create_qemu_node_nio",
+        url = app.url_path_for("compute:create_qemu_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
                                adapter_number="1",
@@ -267,11 +267,11 @@ async def test_qemu_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) 
         "rhost": "127.0.0.1"
     }
 
-    await client.put(app.url_path_for("update_qemu_node",
+    await client.put(app.url_path_for("compute:update_qemu_node",
                                       project_id=vm["project_id"],
                                       node_id=vm["node_id"]), json={"adapters": 2})
 
-    url = app.url_path_for("create_qemu_node_nio",
+    url = app.url_path_for("compute:create_qemu_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="1",
@@ -281,7 +281,7 @@ async def test_qemu_nio_update_udp(app: FastAPI, client: AsyncClient, vm: dict) 
 
     params["filters"] = {}
 
-    url = app.url_path_for("update_qemu_node_nio",
+    url = app.url_path_for("compute:update_qemu_node_nio",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="1",
@@ -301,18 +301,18 @@ async def test_qemu_delete_nio(app: FastAPI, client: AsyncClient, vm: dict) -> N
     }
 
     with asyncio_patch("gns3server.compute.qemu.qemu_vm.QemuVM._ubridge_send"):
-        await client.put(app.url_path_for("update_qemu_node",
+        await client.put(app.url_path_for("compute:update_qemu_node",
                                                  project_id=vm["project_id"],
                                                  node_id=vm["node_id"]), json={"adapters": 2})
 
-        url = app.url_path_for("create_qemu_node_nio",
+        url = app.url_path_for("compute:create_qemu_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
                                adapter_number="1",
                                port_number="0")
         await client.post(url, json=params)
 
-        url = app.url_path_for("delete_qemu_node_nio",
+        url = app.url_path_for("compute:delete_qemu_node_nio",
                                project_id=vm["project_id"],
                                node_id=vm["node_id"],
                                adapter_number="1",
@@ -327,7 +327,7 @@ async def test_qemu_list_binaries(app: FastAPI, client: AsyncClient, vm: dict) -
            {"path": "/tmp/2", "version": "2.1.0"}]
 
     with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
-        response = await client.get(app.url_path_for("get_qemu_binaries"))
+        response = await client.get(app.url_path_for("compute:get_qemu_binaries"))
         assert mock.called_with(None)
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == ret
@@ -342,7 +342,7 @@ async def test_qemu_list_binaries(app: FastAPI, client: AsyncClient, vm: dict) -
 #     ]
 #
 #     with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
-#         response = await client.get(app.url_path_for("get_qemu_binaries"),
+#         response = await client.get(app.url_path_for("compute:get_qemu_binaries"),
 #                                     json={"archs": ["i386"]})
 #         assert response.status_code == status.HTTP_200_OK
 #         assert mock.called_with(["i386"])
@@ -351,7 +351,7 @@ async def test_qemu_list_binaries(app: FastAPI, client: AsyncClient, vm: dict) -
 
 async def test_images(app: FastAPI, client: AsyncClient, fake_qemu_vm) -> None:
 
-    response = await client.get(app.url_path_for("get_qemu_images"))
+    response = await client.get(app.url_path_for("compute:get_qemu_images"))
     assert response.status_code == status.HTTP_200_OK
     assert {"filename": "linux载.img", "path": "linux载.img", "md5sum": "c4ca4238a0b923820dcc509a6f75849b", "filesize": 1} in response.json()
 
@@ -360,7 +360,7 @@ async def test_upload_image(app: FastAPI, client: AsyncClient, tmpdir: str) -> N
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
 
-        response = await client.post(app.url_path_for("upload_qemu_image",
+        response = await client.post(app.url_path_for("compute:upload_qemu_image",
                                                       filename="test2使"), content=b"TEST")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -376,7 +376,7 @@ async def test_upload_image_ova(app: FastAPI, client: AsyncClient, tmpdir:str) -
 
     with patch("gns3server.compute.Qemu.get_images_directory", return_value=str(tmpdir)):
 
-        response = await client.post(app.url_path_for("upload_qemu_image",
+        response = await client.post(app.url_path_for("compute:upload_qemu_image",
                                                       filename="test2.ova/test2.vmdk"), content=b"TEST")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -390,24 +390,24 @@ async def test_upload_image_ova(app: FastAPI, client: AsyncClient, tmpdir:str) -
 
 async def test_upload_image_forbidden_location(app: FastAPI, client: AsyncClient, tmpdir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_qemu_image",
+    response = await client.post(app.url_path_for("compute:upload_qemu_image",
                                                   filename="/qemu/images/../../test2"), content=b"TEST")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_download_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_qemu_image", filename="test3"), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_qemu_image", filename="test3"), content=b"TEST")
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    response = await client.get(app.url_path_for("download_qemu_image", filename="test3"))
+    response = await client.get(app.url_path_for("compute:download_qemu_image", filename="test3"))
     assert response.status_code == status.HTTP_200_OK
 
 
 async def test_download_image_forbidden_location(app: FastAPI, client: AsyncClient, tmpdir) -> None:
 
     file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
-    response = await client.get(app.url_path_for("download_qemu_image", filename=file_path))
+    response = await client.get(app.url_path_for("compute:download_qemu_image", filename=file_path))
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -418,7 +418,7 @@ async def test_upload_image_permission_denied(app: FastAPI, client: AsyncClient,
         f.write("")
     os.chmod(os.path.join(images_dir, "QEMU", "test2.tmp"), 0)
 
-    response = await client.post(app.url_path_for("upload_qemu_image", filename="test2"), content=b"TEST")
+    response = await client.post(app.url_path_for("compute:upload_qemu_image", filename="test2"), content=b"TEST")
     assert response.status_code == status.HTTP_409_CONFLICT
 
 
@@ -436,7 +436,7 @@ async def test_create_img_relative(app: FastAPI, client: AsyncClient):
         "size": 100
     }
     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await client.post(app.url_path_for("create_qemu_image"), json=params)
+        response = await client.post(app.url_path_for("compute:create_qemu_image"), json=params)
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
@@ -454,7 +454,7 @@ async def test_create_img_absolute_non_local(app: FastAPI, client: AsyncClient, 
         "size": 100
     }
     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await client.post(app.url_path_for("create_qemu_image"), json=params)
+        response = await client.post(app.url_path_for("compute:create_qemu_image"), json=params)
     assert response.status_code == 403
 
 
@@ -471,14 +471,14 @@ async def test_create_img_absolute_local(app: FastAPI, client: AsyncClient, conf
         "size": 100
     }
     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await client.post(app.url_path_for("create_qemu_image"), json=params)
+        response = await client.post(app.url_path_for("compute:create_qemu_image"), json=params)
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 async def test_capabilities(app: FastAPI, client: AsyncClient) -> None:
 
     with asyncio_patch("gns3server.compute.Qemu.get_kvm_archs", return_value=["x86_64"]):
-        response = await client.get(app.url_path_for("get_qemu_capabilities"))
+        response = await client.get(app.url_path_for("compute:get_qemu_capabilities"))
         assert response.json()["kvm"] == ["x86_64"]
 
 
@@ -489,12 +489,12 @@ async def test_qemu_duplicate(app: FastAPI,
                               base_params: dict) -> None:
 
     # create destination node first
-    response = await client.post(app.url_path_for("create_qemu_node",
+    response = await client.post(app.url_path_for("compute:create_qemu_node",
                                                   project_id=vm["project_id"]), json=base_params)
 
     assert response.status_code == status.HTTP_201_CREATED
     params = {"destination_node_id": response.json()["node_id"]}
-    response = await client.post(app.url_path_for("duplicate_qemu_node",
+    response = await client.post(app.url_path_for("compute:duplicate_qemu_node",
                                                   project_id=vm["project_id"], node_id=vm["node_id"]), json=params)
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -507,7 +507,7 @@ async def test_qemu_start_capture(app: FastAPI, client: AsyncClient, vm):
         "data_link_type": "DLT_EN10MB"
     }
 
-    url = app.url_path_for("start_qemu_node_capture",
+    url = app.url_path_for("compute:start_qemu_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",
@@ -524,7 +524,7 @@ async def test_qemu_start_capture(app: FastAPI, client: AsyncClient, vm):
 @pytest.mark.asyncio
 async def test_qemu_stop_capture(app: FastAPI, client: AsyncClient, vm):
 
-    url = app.url_path_for("stop_qemu_node_capture",
+    url = app.url_path_for("compute:stop_qemu_node_capture",
                            project_id=vm["project_id"],
                            node_id=vm["node_id"],
                            adapter_number="0",

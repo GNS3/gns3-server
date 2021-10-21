@@ -21,7 +21,7 @@ API routes for capabilities
 import sys
 import psutil
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from gns3server.version import __version__
 from gns3server.compute import MODULES
@@ -32,11 +32,14 @@ router = APIRouter()
 
 
 @router.get("/capabilities", response_model=schemas.Capabilities)
-def get_capabilities() -> dict:
+def get_capabilities(request: Request) -> dict:
 
     node_types = []
     for module in MODULES:
         node_types.extend(module.node_types())
+
+    # record the controller hostname or IP address
+    request.app.state.controller_host = request.client.host
 
     return {
         "version": __version__,
