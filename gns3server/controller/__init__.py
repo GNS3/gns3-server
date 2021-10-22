@@ -21,6 +21,7 @@ import uuid
 import socket
 import shutil
 import asyncio
+import random
 
 from ..config import Config
 from .project import Project
@@ -438,6 +439,16 @@ class Controller:
         """
         Returns a compute or raise a 404 error.
         """
+
+        if compute_id is None:
+            computes = list(self._computes.values())
+            if len(computes) == 1:
+                # return the only available compute
+                return computes[0]
+            else:
+                # randomly pick a compute until we have proper scalability handling
+                # https://github.com/GNS3/gns3-server/issues/1676
+                return random.choice(computes)
 
         try:
             return self._computes[compute_id]
