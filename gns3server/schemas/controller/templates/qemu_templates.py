@@ -85,3 +85,8 @@ class QemuTemplate(TemplateBase):
     process_priority: Optional[QemuProcessPriority] = Field("normal", description="Process priority for QEMU")
     options: Optional[str] = Field("", description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
+
+
+class QemuTemplateUpdate(QemuTemplate):
+
+    pass

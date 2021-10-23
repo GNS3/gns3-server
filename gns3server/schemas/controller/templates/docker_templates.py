@@ -51,3 +51,8 @@ class DockerTemplate(TemplateBase):
     memory: Optional[int] = Field(0, description="Maximum amount of memory the container can use in MB")
     cpus: Optional[int] = Field(0, description="Maximum amount of CPU resources the container can use")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
+
+
+class DockerTemplateUpdate(DockerTemplate):
+
+    image: Optional[str] = Field(None, description="Docker image name")

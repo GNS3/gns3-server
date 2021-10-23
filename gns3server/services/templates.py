@@ -32,7 +32,7 @@ from gns3server.controller.controller_error import (
     ControllerForbiddenError,
 )
 
-TEMPLATE_TYPE_TO_SHEMA = {
+TEMPLATE_TYPE_TO_SCHEMA = {
     "cloud": schemas.CloudTemplate,
     "ethernet_hub": schemas.EthernetHubTemplate,
     "ethernet_switch": schemas.EthernetSwitchTemplate,
@@ -45,7 +45,19 @@ TEMPLATE_TYPE_TO_SHEMA = {
     "qemu": schemas.QemuTemplate,
 }
 
-DYNAMIPS_PLATFORM_TO_SHEMA = {
+TEMPLATE_TYPE_TO_UPDATE_SCHEMA = {
+    "cloud": schemas.CloudTemplateUpdate,
+    "ethernet_hub": schemas.EthernetHubTemplateUpdate,
+    "ethernet_switch": schemas.EthernetSwitchTemplateUpdate,
+    "docker": schemas.DockerTemplateUpdate,
+    "vpcs": schemas.VPCSTemplateUpdate,
+    "virtualbox": schemas.VirtualBoxTemplateUpdate,
+    "vmware": schemas.VMwareTemplateUpdate,
+    "iou": schemas.IOUTemplateUpdate,
+    "qemu": schemas.QemuTemplateUpdate,
+}
+
+DYNAMIPS_PLATFORM_TO_SCHEMA = {
     "c7200": schemas.C7200DynamipsTemplate,
     "c3745": schemas.C3745DynamipsTemplate,
     "c3725": schemas.C3725DynamipsTemplate,
@@ -53,6 +65,16 @@ DYNAMIPS_PLATFORM_TO_SHEMA = {
     "c2691": schemas.C2691DynamipsTemplate,
     "c2600": schemas.C2600DynamipsTemplate,
     "c1700": schemas.C1700DynamipsTemplate,
+}
+
+DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA = {
+    "c7200": schemas.C7200DynamipsTemplateUpdate,
+    "c3745": schemas.C3745DynamipsTemplateUpdate,
+    "c3725": schemas.C3725DynamipsTemplateUpdate,
+    "c3600": schemas.C3600DynamipsTemplateUpdate,
+    "c2691": schemas.C2691DynamipsTemplateUpdate,
+    "c2600": schemas.C2600DynamipsTemplateUpdate,
+    "c1700": schemas.C1700DynamipsTemplateUpdate,
 }
 
 # built-in templates have their compute_id set to None to tell clients to select a compute
@@ -205,20 +227,18 @@ class TemplatesService:
 
         try:
             # get the default template settings
-            template_settings = jsonable_encoder(template_create, exclude_unset=True)
-            template_schema = TEMPLATE_TYPE_TO_SHEMA[template_create.template_type]
-            template_settings_with_defaults = template_schema.parse_obj(template_settings)
-            settings = template_settings_with_defaults.dict()
+            create_settings = jsonable_encoder(template_create, exclude_unset=True)
+            template_schema = TEMPLATE_TYPE_TO_SCHEMA[template_create.template_type]
+            template_settings = template_schema.parse_obj(create_settings).dict()
             if template_create.template_type == "dynamips":
                 # special case for Dynamips to cover all platform types that contain specific settings
-                dynamips_template_schema = DYNAMIPS_PLATFORM_TO_SHEMA[settings["platform"]]
-                dynamips_template_settings_with_defaults = dynamips_template_schema.parse_obj(template_settings)
-                settings = dynamips_template_settings_with_defaults.dict()
+                dynamips_template_schema = DYNAMIPS_PLATFORM_TO_SCHEMA[template_settings["platform"]]
+                template_settings = dynamips_template_schema.parse_obj(create_settings).dict()
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
 
-        images_to_add_to_template = await self._find_images(template_create.template_type, settings)
-        db_template = await self._templates_repo.create_template(template_create.template_type, settings)
+        images_to_add_to_template = await self._find_images(template_create.template_type, template_settings)
+        db_template = await self._templates_repo.create_template(template_create.template_type, template_settings)
         for image in images_to_add_to_template:
             await self._templates_repo.add_image_to_template(db_template.template_id, image)
         template = db_template.asjson()
@@ -245,11 +265,21 @@ class TemplatesService:
 
         if self.get_builtin_template(template_id):
             raise ControllerForbiddenError(f"Template '{template_id}' cannot be updated because it is built-in")
-        template_settings = jsonable_encoder(template_update, exclude_unset=True)
 
         db_template = await self._templates_repo.get_template(template_id)
         if not db_template:
             raise ControllerNotFoundError(f"Template '{template_id}' not found")
+
+        try:
+            # validate the update settings
+            update_settings = jsonable_encoder(template_update, exclude_unset=True)
+            if db_template.template_type == "dynamips":
+                template_schema = DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA[db_template.platform]
+            else:
+                template_schema = TEMPLATE_TYPE_TO_UPDATE_SCHEMA[db_template.template_type]
+            template_settings = template_schema.parse_obj(update_settings).dict(exclude_unset=True)
+        except pydantic.ValidationError as e:
+            raise ControllerBadRequestError(f"JSON schema error received while updating template: {e}")
 
         images_to_add_to_template = await self._find_images(db_template.template_type, template_settings)
         if db_template.template_type == "dynamips" and "image" in template_settings:

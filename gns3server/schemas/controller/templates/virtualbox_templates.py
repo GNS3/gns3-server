@@ -58,3 +58,8 @@ class VirtualBoxTemplate(TemplateBase):
         False, description="Automatically start the console when the node has started"
     )
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
+
+
+class VirtualBoxTemplateUpdate(VirtualBoxTemplate):
+
+    vmname: Optional[str] = Field(None, description="VirtualBox VM name (in VirtualBox itself)")

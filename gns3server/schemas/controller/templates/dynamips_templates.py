@@ -77,6 +77,12 @@ class C7200DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
+class C7200DynamipsTemplateUpdate(C7200DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
+
+
 class C3725DynamipsTemplate(DynamipsTemplate):
 
     ram: Optional[int] = Field(128, description="Amount of RAM in MB")
@@ -85,12 +91,24 @@ class C3725DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
+class C3725DynamipsTemplateUpdate(C3725DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
+
+
 class C3745DynamipsTemplate(DynamipsTemplate):
 
     ram: Optional[int] = Field(256, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
+
+
+class C3745DynamipsTemplateUpdate(C3745DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C3600ChassisType(str, Enum):
@@ -109,12 +127,24 @@ class C3600DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
+class C3600DynamipsTemplateUpdate(C3600DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
+
+
 class C2691DynamipsTemplate(DynamipsTemplate):
 
     ram: Optional[int] = Field(192, description="Amount of RAM in MB")
     nvram: Optional[int] = Field(256, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(5, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
+
+
+class C2691DynamipsTemplateUpdate(C2691DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
 
 
 class C2600ChassisType(str, Enum):
@@ -139,6 +169,12 @@ class C2600DynamipsTemplate(DynamipsTemplate):
     sparsemem: Optional[bool] = Field(True, description="Sparse memory feature")
 
 
+class C2600DynamipsTemplateUpdate(C2600DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")
+
+
 class C1700ChassisType(str, Enum):
 
     chassis_1720 = "1720"
@@ -155,3 +191,9 @@ class C1700DynamipsTemplate(DynamipsTemplate):
     nvram: Optional[int] = Field(128, description="Amount of NVRAM in KB")
     iomem: Optional[int] = Field(15, ge=0, le=100, description="I/O memory percentage")
     sparsemem: Optional[bool] = Field(False, description="Sparse memory feature")
+
+
+class C1700DynamipsTemplateUpdate(C1700DynamipsTemplate):
+
+    platform: Optional[DynamipsPlatform] = Field(None, description="Cisco router platform")
+    image: Optional[str] = Field(None, description="Path to the IOS image")

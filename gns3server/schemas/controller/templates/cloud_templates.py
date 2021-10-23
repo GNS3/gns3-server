@@ -37,3 +37,8 @@ class CloudTemplate(TemplateBase):
     remote_console_port: Optional[int] = Field(23, gt=0, le=65535, description="Remote console TCP port")
     remote_console_type: Optional[CloudConsoleType] = Field("none", description="Remote console type")
     remote_console_http_path: Optional[str] = Field("/", description="Path of the remote web interface")
+
+
+class CloudTemplateUpdate(CloudTemplate):
+
+    pass
