@@ -16,8 +16,9 @@
 
 import re
 
-from fastapi import Request, Depends, HTTPException, status
+from fastapi import Request, Query, Depends, HTTPException, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
 
 from gns3server import schemas
 from gns3server.db.repositories.users import UsersRepository
@@ -76,3 +77,53 @@ async def get_current_active_user(
         )
 
     return current_user
+
+
+async def get_current_active_user_from_websocket(
+        websocket: WebSocket,
+        token: str = Query(...),
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> Optional[schemas.User]:
+
+    await websocket.accept()
+
+    try:
+        username = auth_service.get_username_from_token(token)
+        user = await user_repo.get_user_by_username(username)
+
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Could not validate credentials for '{username}'"
+            )
+
+        # Super admin is always authorized
+        if user.is_superadmin:
+            return user
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"'{username}' is not an active user"
+            )
+
+        # remove the prefix (e.g. "/v3") from URL path
+        path = re.sub(r"^/v[0-9]", "", websocket.url.path)
+
+        # there are no HTTP methods for web sockets, assuming "GET"...
+        authorized = await rbac_repo.check_user_is_authorized(user.user_id, "GET", path)
+        if not authorized:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User is not authorized '{user.user_id}' on '{path}'",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return user
+
+    except HTTPException as e:
+        websocket_error = {"action": "log.error", "event": {"message": f"Could not authenticate while connecting to "
+                                                                       f"WebSocket: {e.detail}"}}
+        await websocket.send_json(websocket_error)
+        await websocket.close(code=1008)

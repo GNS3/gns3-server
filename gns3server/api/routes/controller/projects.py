@@ -51,7 +51,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 
-from .dependencies.authentication import get_current_active_user
+from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
 from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
@@ -214,7 +214,7 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
 
 
 @router.get("/{project_id}/notifications")
-async def notification(project_id: UUID) -> StreamingResponse:
+async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
     Receive project notifications about the controller from HTTP stream.
     """
@@ -245,14 +245,20 @@ async def notification(project_id: UUID) -> StreamingResponse:
 
 
 @router.websocket("/{project_id}/notifications/ws")
-async def notification_ws(project_id: UUID, websocket: WebSocket) -> None:
+async def project_ws_notifications(
+        project_id: UUID,
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(get_current_active_user_from_websocket)
+) -> None:
     """
     Receive project notifications about the controller from WebSocket.
     """
 
+    if current_user is None:
+        return
+
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
-    await websocket.accept()
 
     log.info(f"New client has connected to the notification stream for project ID '{project.id}' (WebSocket method)")
     try:
