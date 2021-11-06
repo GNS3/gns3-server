@@ -1,0 +1,12 @@
+[Unit]
+Description=GNS3 server
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+User=gns3
+Group=gns3
+ExecStart=/usr/bin/gns3server
+
+[Install]
+WantedBy=multi-user.target
