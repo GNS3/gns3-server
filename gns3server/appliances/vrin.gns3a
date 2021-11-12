@@ -1,4 +1,5 @@
 {
+    "appliance_id": "b91a011d-e975-45b4-9d7a-b0d296f8541f",
     "name": "vRIN",
     "category": "guest",
     "description": "vRIN is a VM appliance capable to inject high number of routes into a network. It was tested on GNS3 topologies using VirtualBox and Qemu with up to 1M BGP routes. Runs Quagga. Supported protocols: BGP (IPv4/6), OSPF, OSPFv3, RIP v2, RIPng",

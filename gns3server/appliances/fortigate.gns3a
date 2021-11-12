@@ -1,4 +1,5 @@
 {
+    "appliance_id": "2b3da0fb-abe3-4131-92b6-4e7fcb50dba5",
     "name": "FortiGate",
     "category": "firewall",
     "description": "FortiGate Virtual Appliance offers the same level of advanced threat prevention features like the physical appliances in private, hybrid and public cloud deployment.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "99920801-829d-4689-8231-7183c21ff878",
     "name": "AAA",
     "category": "guest",
     "description": "This appliance provides RADIUS and TACACS+ services with preconfigured users and groups.",

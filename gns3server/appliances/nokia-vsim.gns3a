@@ -1,4 +1,5 @@
 {
+    "appliance_id": "98525a92-5146-46e9-996c-b6d9dc0a449f",
     "name": "Nokia vSIM",
     "category": "router",
     "description": "The Nokia Virtualized 7750 SR and 7950 XRS Simulator (vSIM) is a Virtualized Network Function (VNF) that simulates the control, management, and forwarding functions of a 7750 SR or 7950 XRS router. The vSIM runs the same Service Router Operating System (SR OS) as 7750 SR and 7950 XRS hardware-based routers and, therefore, has the same feature set and operational behavior as those platforms.",
@@ -18,7 +19,7 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 13,
         "ram": 4096,
-		"cpus": 2,
+        "cpus": 2,
         "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",

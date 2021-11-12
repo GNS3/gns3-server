@@ -1,4 +1,5 @@
 {
+    "appliance_id": "62cc83dc-be46-49b3-80e0-9f0d4d644fc9",
     "name": "FortiWeb",
     "category": "firewall",
     "description": "FortiWeb Web Application Firewalls provide specialized, layered web application threat protection for medium/large enterprises, application service providers, and SaaS providers.",

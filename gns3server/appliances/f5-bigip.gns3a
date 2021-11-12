@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4aa73054-4d54-4829-9c00-b16ad50e7a7e",
     "name": "F5 BIG-IP LTM VE",
     "category": "router",
     "description": "The BIG-IP family of products offers the application intelligence that network managers need to ensure applications are fast, secure, and available. All BIG-IP products share a common underlying architecture, F5's Traffic Management Operating System (TMOS), which provides unified intelligence, flexibility, and programmability. Together, BIG-IP's powerful platforms, advanced modules, and centralized management system make up the most comprehensive set of application delivery tools in the industry. BIG-IP Virtual Edition (VE) is a version of the BIG-IP system that runs as a virtual machine in specifically-supported hypervisors. BIG-IP VE emulates a hardware-based BIG-IP system running a VE-compatible version of BIG-IP software.",

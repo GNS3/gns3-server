@@ -1,4 +1,5 @@
 {
+    "appliance_id": "5a03e6b9-afe3-44f5-ae35-5664c0250b94",
     "name": "CoreOS",
     "category": "guest",
     "description": "CoreOS is designed for security, consistency, and reliability. Instead of installing packages via yum or apt, CoreOS uses Linux containers to manage your services at a higher level of abstraction. A single service's code and all dependencies are packaged within a container that can be run on one or many CoreOS machines.",

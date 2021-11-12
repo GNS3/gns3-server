@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8f8df56b-605d-447c-94a4-4848e3ae8392",
     "name": "Debian 10 Minimal",
     "category": "guest",
     "description": "Debian 10 Custom, with automatic disk resize and ssh/nmap",

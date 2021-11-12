@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a9dc537f-3093-42c2-95d9-fca800e59f82",
     "name": "Web Security Virtual Appliance",
     "category": "firewall",
     "description": "The Cisco WSA was one of the first secure web gateways to combine leading protections to help organizations address the growing challenges of securing and controlling web traffic. It enables simpler, faster deployment with fewer maintenance requirements, reduced latency, and lower operating costs. \"Set and forget\" technology frees staff after initial automated policy settings go live, and automatic security updates are pushed to network devices every 3 to 5 minutes. Flexible deployment options and integration with your existing security infrastructure help you meet quickly evolving security requirements.",

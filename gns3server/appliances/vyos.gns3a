@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f82b74c4-0f30-456f-a582-63daca528502",
     "name": "VyOS",
     "category": "router",
     "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is the monthly snapshot of the rolling release track.",

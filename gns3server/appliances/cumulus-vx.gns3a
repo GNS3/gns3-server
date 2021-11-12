@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f1b83421-6c20-4fa7-8292-568fe08874c4",
     "name": "Cumulus VX",
     "category": "multilayer_switch",
     "description": "Cumulus VX is a community-supported virtual appliance that enables cloud admins and network engineers to preview and test Cumulus Networks technology at zero cost. You can build sandbox environments to learn Open Networking concepts, prototype network operations and script & develop applications risk-free. With Cumulus VX, you can get started with Open Networking at your pace, on your time, and in your environment!",

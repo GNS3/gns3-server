@@ -1,4 +1,5 @@
 {
+    "appliance_id": "2370a587-20e7-468e-ace9-7bd61063aff4",
     "name": "Sophos XG Firewall",
     "category": "firewall",
     "description": "Sophos XG Firewall delivers the ultimate enterprise firewall performance, security, and control.\n\nFastpath packet optimization technology with up to 140Gbps throughput\nRevolutionary Security Heartbeat\u2122 for improved Advanced Threat Protection (ATP) and response\nPatented Layer-8 user identity control and visibility\nUnified App, Web, QoS, and IPS Policy simplifies management\nApp risk factor and user threat quotient monitors risk levels",

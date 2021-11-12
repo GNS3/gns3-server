@@ -1,4 +1,5 @@
 {
+    "appliance_id": "cf5d1f22-953a-434d-a07e-6e17de85acf1",
     "name": "Cisco ISE",
     "category": "firewall",
     "description": "The Cisco ISE platform is a comprehensive, next-generation, contextually-based access control solution. Cisco ISE offers authenticated network access, profiling, posture, guest management, and security group access services along with monitoring, reporting, and troubleshooting capabilities on a single physical or virtual appliance.",

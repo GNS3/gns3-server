@@ -1,4 +1,5 @@
 {
+    "appliance_id": "da509b39-f0ec-4a63-a88c-ad8e9c712ee3",
     "name": "KEMP Free VLM",
     "category": "router",
     "description": "KEMP Technologies free LoadMaster Application Load Balancer is a fully featured member of our award winning and industry leading Load Balancer family. It can be used without charge in production environments with throughput requirements that don't exceed 20 Mbps, and for services that do not directly generate revenue. It is an ideal choice for low traffic web sites and applications, DevOps testing environments, technical training environments, and for any other deployments that suit your non-commercial needs.",

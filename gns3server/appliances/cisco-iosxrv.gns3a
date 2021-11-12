@@ -1,4 +1,5 @@
 {
+    "appliance_id": "78fc5177-c399-4369-a6f8-e9c9b217c2e2",
     "name": "Cisco IOS XRv",
     "category": "router",
     "description": "IOS XRv supports the control plane features introduced in Cisco IOS XR.",

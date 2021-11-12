@@ -1,4 +1,5 @@
 {
+    "appliance_id": "82b0804c-1ded-44d4-a79e-608f3fb505bd",
     "name": "Juniper vMX",
     "category": "router",
     "description": "The vMX is a full-featured, carrier-grade virtual MX Series 3D Universal Edge Router that extends 15+ years of Juniper Networks edge routing expertise to the virtual realm. This appliance is a single VM pre-release version that does not require to be paired with another VM like in the vCP/vFP architecture.",

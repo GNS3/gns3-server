@@ -1,4 +1,5 @@
 {
+    "appliance_id": "b9ce377f-6a6c-497a-a12d-444936a575c3",
     "name": "FortiManager",
     "category": "guest",
     "description": "FortiManager Security Management appliances allow you to centrally manage any number of Fortinet Network Security devices, from several to thousands, including FortiGate, FortiWiFi, and FortiCarrier.",

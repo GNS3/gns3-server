@@ -1,4 +1,5 @@
 {
+    "appliance_id": "9593db48-558a-4914-bb78-a20605f39c65",
     "name": "Cisco IOU L2",
     "category": "multilayer_switch",
     "description": "Cisco IOS on UNIX Layer 2 image.",

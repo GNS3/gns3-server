@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4e0796b3-2ce5-42a8-a1f2-e1f4beea02e1",
     "name": "TacacsGUI",
     "category": "guest",
     "description": "TacacsGUI Free Access Control Server for Your Network Devices. GUI for powerful daemon. The project of Alexey Mochalin, based on tacacs daemon by Marc Huber",

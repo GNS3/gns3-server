@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8bf76d21-7a7b-4708-a415-5a7ace42db3f",
     "name": "Security Onion",
     "category": "guest",
     "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It's based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",

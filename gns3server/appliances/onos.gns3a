@@ -1,4 +1,5 @@
 {
+    "appliance_id": "a5d624de-9af2-4e7e-b8e1-055df9aaa446",
     "name": "Onos",
     "category": "multilayer_switch",
     "description": "The Open Network Operating System (ONOS) is a software defined networking (SDN) OS for service providers that has scalability, high availability, high performance and abstractions to make it easy to create apps and services. The platform is based on a solid architecture and has quickly matured to be feature rich and production ready. The community has grown to include over 50 partners and collaborators that contribute to all aspects of the project including interesting use cases such as CORD",

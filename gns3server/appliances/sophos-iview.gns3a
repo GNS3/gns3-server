@@ -1,4 +1,5 @@
 {
+    "appliance_id": "270475da-094f-4479-8dd4-f2b9cb7a3949",
     "name": "Sophos iView",
     "category": "guest",
     "description": "Monitoring a distributed network across multiple locations can be a challenge. That's where Sophos iView can help. It provides you with an intelligent, uninterrupted view of your network from a single pane of glass. If you have multiple appliances, need consolidated reporting, or could just use help with log management or compliance, Sophos iView is the ideal solution.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "f9a951fe-cafd-4b31-8c83-daef4709943e",
     "name": "VPP",
     "category": "router",
     "description": "Vector Packet Processing (VPP) platform",

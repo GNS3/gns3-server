@@ -1,4 +1,5 @@
 {
+    "appliance_id": "b6319fe9-19d5-4a4d-a857-6eee3c92ca2d",
     "name": "AsteriskNOW / FreePBX",
     "category": "guest",
     "description": "AsteriskNOW makes it easy to create custom telephony solutions by automatically installing the 'plumbing'. It's a complete Linux distribution with Asterisk, the DAHDI driver framework, and, the FreePBX administrative GUI. Much of the complexity of Asterisk and Linux is handled by the installer, the yum package management utility and the administrative GUI. With AsteriskNOW, application developers and integrators can concentrate on building solutions, not maintaining the plumbing.",

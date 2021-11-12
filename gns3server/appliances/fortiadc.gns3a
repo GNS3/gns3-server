@@ -1,4 +1,5 @@
 {
+    "appliance_id": "74e0ff73-7ceb-4871-81f0-b4dd4b35911a",
     "name": "FortiADC",
     "category": "router",
     "description": "Fortinet ADC appliances optimize the availability, user experience, and scalability of enterprise application delivery. They deliver fast, secure, and intelligent acceleration and distribution of even the most demanding enterprise applications.",

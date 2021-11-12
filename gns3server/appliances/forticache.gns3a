@@ -1,4 +1,5 @@
 {
+    "appliance_id": "75df92b4-69d3-4d5d-91b1-c36efa68d9fd",
     "name": "FortiCache",
     "category": "guest",
     "description": "FortiCache VM high performance Web Caching virtual appliances address bandwidth saturation, high latency, and poor performance caused by caching popular internet content locally for carriers, service providers, enterprises and educational networks. FortiCache VM appliances reduce the cost and impact of cached content on the network, while increasing performance and end- user satisfaction by improving the speed of delivery of popular repeated content.",

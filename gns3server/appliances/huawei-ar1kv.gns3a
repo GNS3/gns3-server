@@ -1,4 +1,5 @@
 {
+    "appliance_id": "84b4ff53-5d0a-492c-bf80-5e8d7e0745ae",
     "name": "HuaWei AR1000v",
     "category": "router",
     "description": "Huawei AR1000V Virtual Router (Virtual CPE, vCPE) is an NFV product based on the industry-leading Huawei VRP platform. The product has rich business capabilities, integrating routing, switching, security, VPN, QoS and other functions, with software and hardware decoupling, Features such as easy business deployment and intelligent operation and maintenance can be applied to scenarios such as enterprise interconnection (SD-WAN) corporate headquarters (Hub point), POP point access, and cloud access.",

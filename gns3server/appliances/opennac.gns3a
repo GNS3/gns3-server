@@ -1,4 +1,5 @@
 {
+    "appliance_id": "83a83c12-7265-4761-87f3-e37f2254badb",
     "name": "OpenNAC",
     "category": "guest",
     "description": "openNAC is an opensource Network Access Control for corporate LAN / WAN environments. It enables authentication, authorization and audit policy-based all access to network. It supports diferent network vendors like Cisco, Alcatel, 3Com or Extreme Networks, and different clients like PCs with Windows or Linux, Mac,devices like smartphones and tablets.  Based on open source components and self-development It is based on industry standards such as FreeRadius, 802.1x, AD, ldap, ...It is very extensible, new features can be incorporated because it is architectured in plugins. Easily integrated with existing systems Last but not least, It provides value added services such as configuration management, network, backup configurations, Network Discovery and Network Monitoring.  Download the OVA, then extract the VMDK (tar -xvf FILE.ova), then convert to qcow2 (qemu-img convert -O qcow2 FILE.vmdk FILE.qcow2).",

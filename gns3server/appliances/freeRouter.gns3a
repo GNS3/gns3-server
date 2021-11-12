@@ -1,4 +1,5 @@
 {
+    "appliance_id": "691f6552-725f-4dff-a2ba-220f5e3ab6a6",
     "name": "freeRouter",
     "category": "router",
     "description": "networking swiss army knife - it speaks routing protocols, and (re)encapsulates packets on interfaces",
