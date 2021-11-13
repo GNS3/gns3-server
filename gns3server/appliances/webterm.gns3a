@@ -1,4 +1,5 @@
 {
+    "appliance_id": "42bf9ee2-7278-4346-988a-0b6292198d4f",
     "name": "webterm",
     "category": "guest",
     "description": "webterm is a debian based networking toolbox.\nIt contains the firefox web browser plus the following utilities: net-tools, iproute2, ping, traceroute, curl, host, iperf3, mtr, socat, ssh client, tcpdump, ab(apache benchmark) and the multicast testing tools msend/mreceive.",

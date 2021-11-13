@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8885febc-9067-4c2b-94e9-67090df0c21e",
     "name": "Big Cloud Fabric",
     "category": "router",
     "description": "Big Cloud Fabric\u2122 is the industry's first data center fabric built using whitebox or britebox switches and SDN controller technology. Embracing hyperscale data center design principles, Big Cloud Fabric solution enables rapid innovation, ease of provisioning and management, while reducing overall costs, making it ideal for current and next generation data centers. Big Cloud Fabric is designed from the ground up to satisfy the requirements of physical, virtual, containerized, or a combination of such workloads. Some of the typical OpenStack or VMware data center workloads include NFV, High Performance Computing, Big Data and Software Defined Storage deployments.",

@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.2.27 12/11/2021
+
+* Release web UI 2.2.27
+* Fix unhandled KeyError exception when starting Docker container. Ref #1991
+
 ## 2.2.26 08/10/2021
 
 * Release web UI 2.2.26

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "d6d659ae-b450-4dd8-abf6-face55c3de41",
     "name": "ipxe",
     "category": "guest",
     "description": "boot guest from network via iPXE",

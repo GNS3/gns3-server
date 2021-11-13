@@ -1,0 +1,73 @@
+{
+    "appliance_id": "1cfdf900-7c30-4cb7-8f03-3f61d2581633",
+    "name": "Empty VM",
+    "category": "guest",
+    "description": "An empty VM with empty hard disks 8G, 30G & 100G.",
+    "vendor_name": "GNS3",
+    "vendor_url": "https://gns3.com",
+    "documentation_url": "",
+    "product_name": "QEMU",
+    "product_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Default at first boot the VM will start from the cdrom.",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 1024,
+        "arch": "x86_64",
+        "console_type": "vnc",
+		"hda_disk_interface": "sata",
+        "boot_priority": "d",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "empty8G.qcow2",
+            "version": "8G",
+            "md5sum": "f1d2c25b6990f99bd05b433ab603bdb4",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
+        },
+		    {
+            "filename": "empty30G.qcow2",
+            "version": "30G",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        },
+		    {
+            "filename": "empty100G.qcow2",
+            "version": "100G",
+            "md5sum": "1e6409a4523ada212dea2ebc50e50a65",
+            "filesize": 198656,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "8G",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2"
+            }
+        },
+        {
+            "name": "30G",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2"
+            }
+        },
+		    {
+            "name": "100G",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2"
+            }
+        }
+	]
+}

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "3bf492b6-5717-4257-9bfd-b34617c6f133",
     "name": "Cisco IOSv",
     "category": "router",
     "description": "Cisco Virtual IOS allows user to run IOS on a standard computer.",

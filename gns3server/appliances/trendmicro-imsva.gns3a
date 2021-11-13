@@ -1,4 +1,5 @@
 {
+    "appliance_id": "16ddaaaf-575e-4baa-bcee-b5affd74bca0",
     "name": "IMS VA",
     "category": "firewall",
     "description": "Trend Micro InterScan Messaging Security stops email threats in the cloud with global threat intelligence, protects your data with data loss prevention and encryption, and identifies targeted email attacks,ransomware, and APTs as part of the Trend Micro Network Defense Solution. The hybrid SaaS deployment combines the privacy and control of an on-premises virtual appliance with the proactive protection of a cloud-based pre-filter service. It's the enterprise-level protection you need with the highest spam and phishing detection rates-consistently #1 in quarterly Opus One competitive tests since 2011.",

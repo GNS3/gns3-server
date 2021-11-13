@@ -1,4 +1,5 @@
 {
+    "appliance_id": "46322c6c-10ba-4c6c-823c-12b3ff8b6939",
     "name": "Ubuntu Cloud Guest",
     "category": "guest",
     "description": "The term 'Ubuntu Cloud Guest' refers to the Official Ubuntu images that are available at http://cloud-images.ubuntu.com . These images are built by Canonical. They are then registered on EC2, and compressed tarfiles are made also available for download. For using those images on a public cloud such as Amazon EC2, you simply choose an image and launch it. To use those images on a private cloud, or to run the image on a local hypervisor (such as KVM) you would need to download those images and either publish them to your private cloud, or launch them directly on a hypervisor. The following sections explain in more details how to perform each of those actions",

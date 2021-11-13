@@ -1,4 +1,5 @@
 {
+    "appliance_id": "b103d66a-dd2a-4cf5-8e16-8a96e1660f70",
     "name": "OPNsense",
     "category": "firewall",
     "description": "OPNsense is an open source, easy-to-use and easy-to-build FreeBSD based firewall and routing platform. OPNsense includes most of the features available in expensive commercial firewalls, and more in many cases. It brings the rich feature set of commercial offerings with the benefits of open and verifiable sources.\n\nOPNsense started as a fork of pfSense\u00ae and m0n0wall in 2014, with its first official release in January 2015. The project has evolved very quickly while still retaining  familiar aspects of both m0n0wall and pfSense. A strong focus on security and code quality drives the development of the project.",

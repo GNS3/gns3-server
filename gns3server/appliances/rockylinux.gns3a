@@ -1,4 +1,5 @@
 {
+    "appliance_id": "3c38885f-71c3-4d9c-976c-cf5515b1c875",
     "name": "RockyLinux",
     "category": "guest",
     "description": "Rocky Linux is a community enterprise operating system designed to be 100% bug-for-bug compatible with Red Hat Enterprise Linux (RHEL).",

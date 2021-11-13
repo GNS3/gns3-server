@@ -1,4 +1,5 @@
 {
+    "appliance_id": "8f074218-9d61-4e99-ab89-35ca19ad44ee",
     "name": "ArubaOS-CX Simulation Software",
     "category": "multilayer_switch",
     "description": "The ArubaOS-CX Simulation Software is a virtual platform to enable simulation of the ArubaOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF, BGP (inc. EVPN). Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network.",

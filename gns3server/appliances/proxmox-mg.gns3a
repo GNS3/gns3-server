@@ -1,4 +1,5 @@
 {
+    "appliance_id": "577bdb36-4f56-421a-b716-52fe8df5699d",
     "name": "Proxmox MG",
     "category": "firewall",
     "description": "To ensure efficient email communication and business continuity, IT professionals depend on reliable spam and virus blocking software. With Proxmox Mail Gateway you get the job done.\n\nProxmox Mail Gateway helps you protect your business against all email threats like spam, viruses, phishing and trojans at the moment they emerge. The flexible architecture combined with the userfriendly, web-based management make it simple for you to control all incoming and outgoing emails. You maintain a professional email workflow and gain high business reputation as well as customer satisfaction.",

@@ -1,4 +1,5 @@
 {
+    "appliance_id": "799f2414-7341-4f55-8b6d-2b3f6d11b1d8",
     "name": "F5 BIG-IQ CM",
     "category": "guest",
     "description": "When you go from managing a few boxes to managing a few dozen, your processes, logistics, and needs all change. BIG-IQ Centralized Management brings all of your devices together, so you can discover, track, upgrade, and deploy more efficiently. You can also monitor key metrics from one location, saving yourself both time and effort.\n\nCentrally manage up to 200 physical, virtual, or virtual clustered multiprocessing (vCMP) based BIG-IP devices. BIG-IQ Centralized Management also handles licensing for up to 5,000 unmanaged devices, so you can spin BIG-IP virtual editions (VEs) up or down as needed.",

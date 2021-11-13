@@ -111,7 +111,7 @@ class Docker(BaseManager):
         body = await response.read()
         response.close()
         if body and len(body):
-            if response.headers['CONTENT-TYPE'] == 'application/json':
+            if response.headers.get('CONTENT-TYPE') == 'application/json':
                 body = json.loads(body.decode("utf-8"))
             else:
                 body = body.decode("utf-8")

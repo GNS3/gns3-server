@@ -1,4 +1,5 @@
 {
+    "appliance_id": "b1e84913-1c9b-49f5-bf2e-45f2b42ba404",
     "name": "Centos",
     "category": "guest",
     "description": "The CentOS Linux distribution is a stable, predictable, manageable and reproducible platform derived from the sources of Red Hat Enterprise Linux (RHEL). We are now looking to expand on that by creating the resources needed by other communities to come together and be able to build on the CentOS Linux platform. And today we start the process by delivering a clear governance model, increased transparency and access. In the coming weeks we aim to publish our own roadmap that includes variants of the core CentOS Linux.",

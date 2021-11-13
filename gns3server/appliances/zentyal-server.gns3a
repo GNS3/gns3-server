@@ -1,4 +1,5 @@
 {
+    "appliance_id": "4f5edc3d-f890-4d22-a17d-608c0dba4002",
     "name": "Zentyal Server",
     "category": "guest",
     "description": "The on-premise Mail and Directory server. Native compatibility with Microsoft Active Directory. You can control your IT infrastructure from a single point of user management, regardless of the different offices and locations your business has. True Microsoft Outlook compatibility. Your users can continue using their favorite email clients, without any service interruptions and without having to install any plug-in or connector.",
