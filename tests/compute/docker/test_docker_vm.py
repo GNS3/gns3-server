@@ -66,6 +66,7 @@ def test_json(vm, compute_project):
         'console_http_path': '/',
         'extra_hosts': None,
         'extra_volumes': [],
+        'extra_parameters': None,
         'aux': vm.aux,
         'start_command': vm.start_command,
         'environment': vm.environment,
@@ -223,6 +224,52 @@ async def test_create_with_extra_hosts(compute_project, manager):
             called_kwargs = mock.call_args[1]
             assert "GNS3_EXTRA_HOSTS=199.199.199.1\ttest\n199.199.199.1\ttest2" in called_kwargs["data"]["Env"]
         assert vm._extra_hosts == extra_hosts
+
+async def test_create_with_extra_parameters(compute_project, manager):
+
+    extra_parameters = """{
+    "StopSignal": "SIGRTMIN+3",
+    "HostConfig": {
+        "CapAdd": [
+            "ALL"
+        ],
+        "Runtime": "runc",
+        "Privileged": false,
+        "Binds": [
+            "/sys/fs/cgroup:/sys/fs/cgroup:ro",
+            "/sys/fs/fuse:/sys/fs/fuse"
+        ],
+        "Tmpfs": {
+            "/tmp": "",
+            "/run": "",
+            "/run/lock": ""
+        }
+    }
+}"""
+    ObjTmpfs = {
+        "/tmp": "",
+        "/run": "",
+        "/run/lock": ""
+    }
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response) as mock:
+            vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu", extra_parameters=extra_parameters)
+            await vm.create()
+            called_kwargs = mock.call_args[1]
+            assert called_kwargs["data"]["StopSignal"] == "SIGRTMIN+3"
+            assert ObjTmpfs == called_kwargs["data"]["HostConfig"]["Tmpfs"] # test object to Hostconfig append
+            assert "/sys/fs/cgroup:/sys/fs/cgroup:ro" in called_kwargs["data"]["HostConfig"]["Binds"] # test adding custom binds
+            assert "/sys/fs/fuse:/sys/fs/fuse" in called_kwargs["data"]["HostConfig"]["Binds"]
+            assert len(called_kwargs["data"]["HostConfig"]["Binds"]) > 2 # test other binds are not overwriten
+            assert called_kwargs["data"]["HostConfig"]["Privileged"] == False # test setting privileged
+            assert called_kwargs["data"]["HostConfig"]["Runtime"] == "runc" # test the addition of the runtime param
+
+     
 
 
 async def test_create_with_extra_hosts_wrong_format(compute_project, manager):

@@ -103,6 +103,11 @@ DOCKER_CREATE_SCHEMA = {
                 "type": "string"
             }
         },
+        "extra_parameters": {
+            "description": "Docker extra create parameters (used in docker create)",
+            "type": ["string", "null"],
+            "minLength": 0,
+        },
         "container_id": {
             "description": "Docker container ID Read only",
             "type": "string",
@@ -213,6 +218,11 @@ DOCKER_OBJECT_SCHEMA = {
             "items": {
                 "type": "string",
             }
+        },
+        "extra_parameters": {
+            "description": "Docker extra parameters ()",
+            "type": ["string", "null"],
+            "minLength": 0,
         },
         "node_directory": {
             "description": "Path to the node working directory  Read only",

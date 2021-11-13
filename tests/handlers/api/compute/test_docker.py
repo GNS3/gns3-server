@@ -37,7 +37,8 @@ def base_params():
         "environment": "YES=1\nNO=0",
         "console_type": "telnet",
         "console_resolution": "1280x1024",
-        "extra_hosts": "test:127.0.0.1"
+        "extra_hosts": "test:127.0.0.1",
+        "extra_parameters": """{"StopSignal": "SIGRTMIN+3"}"""
     }
     return params
 
@@ -78,6 +79,7 @@ async def test_docker_create(compute_api, compute_project, base_params):
     assert response.json["environment"] == "YES=1\nNO=0"
     assert response.json["console_resolution"] == "1280x1024"
     assert response.json["extra_hosts"] == "test:127.0.0.1"
+    assert response.json["extra_parameters"] == """{"StopSignal": "SIGRTMIN+3"}"""
 
 
 async def test_docker_start(compute_api, vm):
@@ -174,7 +176,8 @@ async def test_docker_update(compute_api, vm, free_console_port):
         "console": free_console_port,
         "start_command": "yes",
         "environment": "GNS3=1\nGNS4=0",
-        "extra_hosts": "test:127.0.0.1"
+        "extra_hosts": "test:127.0.0.1",
+        "extra_parameters": """{"StopSignal": "SIGRTMIN+3"}"""
     }
 
     with asyncio_patch("gns3server.compute.docker.docker_vm.DockerVM.update") as mock:
@@ -186,6 +189,7 @@ async def test_docker_update(compute_api, vm, free_console_port):
     assert response.json["start_command"] == "yes"
     assert response.json["environment"] == "GNS3=1\nGNS4=0"
     assert response.json["extra_hosts"] == "test:127.0.0.1"
+    assert response.json["extra_parameters"] == """{"StopSignal": "SIGRTMIN+3"}"""
 
 
 async def test_docker_start_capture(compute_api, vm):

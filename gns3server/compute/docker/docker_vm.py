@@ -28,6 +28,7 @@ import aiohttp
 import subprocess
 import os
 import re
+import json
 
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
@@ -65,13 +66,14 @@ class DockerVM(BaseNode):
     :param console_resolution: Resolution of the VNC display
     :param console_http_port: Port to redirect HTTP queries
     :param console_http_path: Url part with the path of the web interface
-    :param extra_hosts: Hosts which will be written into /etc/hosts into docker conainer
+    :param extra_hosts: Hosts which will be written into /etc/hosts into docker container
     :param extra_volumes: Additional directories to make persistent
+    :param extra_parameters: Additional parameters used to create the docker container
     """
 
     def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
                  adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
-                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[]):
+                 console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[], extra_parameters=None):
 
         super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
@@ -94,6 +96,7 @@ class DockerVM(BaseNode):
         self._console_websocket = None
         self._extra_hosts = extra_hosts
         self._extra_volumes = extra_volumes or []
+        self._extra_parameters = extra_parameters
         self._permissions_fixed = False
         self._display = None
         self._closing = False
@@ -132,6 +135,7 @@ class DockerVM(BaseNode):
             "node_directory": self.working_path,
             "extra_hosts": self.extra_hosts,
             "extra_volumes": self.extra_volumes,
+            "extra_parameters": self.extra_parameters
         }
 
     def _get_free_display_port(self):
@@ -210,6 +214,14 @@ class DockerVM(BaseNode):
     @extra_volumes.setter
     def extra_volumes(self, extra_volumes):
         self._extra_volumes = extra_volumes
+
+    @property
+    def extra_parameters(self):
+        return self._extra_parameters
+
+    @extra_parameters.setter
+    def extra_parameters(self, extra_parameters):
+        self._extra_parameters = extra_parameters
 
     async def _get_container_state(self):
         """
@@ -400,6 +412,9 @@ class DockerVM(BaseNode):
             extra_hosts = self._format_extra_hosts(self._extra_hosts)
             if extra_hosts:
                 params["Env"].append("GNS3_EXTRA_HOSTS={}".format(extra_hosts))
+        
+        if self._extra_parameters:
+            params = self._merge_extra_parameters(params)
 
         result = await self.manager.query("POST", "containers/create", data=params)
         self._cid = result['Id']
@@ -424,6 +439,31 @@ class DockerVM(BaseNode):
         except ValueError:
             raise DockerError("Can't apply `ExtraHosts`, wrong format: {}".format(extra_hosts))
         return "\n".join(["{}\t{}".format(h[1], h[0]) for h in hosts])
+    
+    def _merge_extra_parameters(self,params):
+        """
+        Merge the user supplied extra parameters into the default Docker create parameters
+        """
+        try:
+            #TODO: Determine additional validation needed, docker params can be quite complicated and could break the host if
+            #      an a person does something stupid. Validation might be too complex for us to consider all the dangers.
+            #      Also, I create an array of params that cannot/should'nt be overwritten , not sure if it's correct. 
+            extra_params = json.loads(self._extra_parameters)
+     
+            merged = {**params, **extra_params} # merge values , common values will be overwritten so I will manually merge binds(see - if "HostConfig")
+            readonly_params = ["Hostname","Name","Entrypoint","Cmd","Image","Env","NetworkDisabled","Tty","OpenStdin","StdinOnce" ]
+            for param in readonly_params: # prevent certain parameters from being overwritten
+                merged[param] = params[param]
+
+            if "HostConfig" in extra_params:  # If extra params HostConfig sub section exists it would have overwritten GNS3 binds  
+                merged["HostConfig"] = {**params["HostConfig"] , **extra_params["HostConfig"]} # merge the two HostConfig sections
+                if "Binds" in extra_params["HostConfig"]: # Add back the original GNS3 binds to the extra parameters binds 
+                    merged["HostConfig"]["Binds"].extend(params["HostConfig"]["Binds"])
+            params=merged                           # Set params equal to our new merged config
+        
+        except ValueError:  # if the variable text is not a valid json object then log the error
+            raise DockerError("Can't apply `ExtraParameters`, invalid json text:\n {}".format(self._extra_parameters))
+        return params
 
     async def update(self):
         """
