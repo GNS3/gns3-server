@@ -35,6 +35,7 @@ DEFAULT_JWT_SECRET_KEY = "efd08eccec3bd0a1be2e086670e5efa90969c68d07e072d7354a76
 
 
 class AuthService:
+
     def hash_password(self, password: str) -> str:
 
         return pwd_context.hash(password)

@@ -15,12 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from gns3server.controller.gns3vm.gns3_vm_error import GNS3VMError
 from gns3server.compute.error import ImageMissingError, NodeError
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
+
+from .dependencies.authentication import compute_authentication
 
 from gns3server.compute.compute_error import (
     ComputeError,
@@ -49,9 +51,9 @@ from . import virtualbox_nodes
 from . import vmware_nodes
 from . import vpcs_nodes
 
-
 compute_api = FastAPI(
     title="GNS3 compute API",
+    dependencies=[Depends(compute_authentication)],
     description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
     version="v3",
 )

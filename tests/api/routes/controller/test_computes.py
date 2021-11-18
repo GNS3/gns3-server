@@ -190,24 +190,3 @@ class TestComputeFeatures:
     #         response = await client.post(app.url_path_for("autoidlepc", compute_id=compute_id) + "/auto_idlepc", json=params)
     #         assert mock.called
     #         assert response.status_code == status.HTTP_200_OK
-
-
-# FIXME
-# @pytest.mark.asyncio
-# async def test_compute_endpoint(controller_api):
-#
-#     params = {
-#         "compute_id": "my_compute",
-#         "protocol": "http",
-#         "host": "localhost",
-#         "port": 84,
-#         "user": "julien",
-#         "password": "secure"
-#     }
-#
-#     response = await controller_api.post("/computes", params)
-#     assert response.status_code == 201
-#
-#     response = await controller_api.get("/computes/endpoint/my_compute/qemu/images")
-#     assert response.status_code == 200
-#     assert response.json['endpoint'] == 'http://localhost:84/v2/compute/qemu/images'
