@@ -97,8 +97,8 @@ class Controller:
                 host=host,
                 console_host=console_host,
                 port=port,
-                user=server_config.user,
-                password=server_config.password,
+                user=server_config.compute_username,
+                password=server_config.compute_password,
                 force=True,
                 connect=True,
                 ssl_context=self._ssl_context,
@@ -154,8 +154,8 @@ class Controller:
         """
 
         if self._local_server:
-            self._local_server.user = Config.instance().settings.Server.user
-            self._local_server.password = Config.instance().settings.Server.password
+            self._local_server.user = Config.instance().settings.Server.compute_username
+            self._local_server.password = Config.instance().settings.Server.compute_password
 
     async def stop(self):
 

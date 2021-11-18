@@ -18,7 +18,11 @@
 API routes for compute notifications.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import base64
+import binascii
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, HTTPException
+from fastapi.security.utils import get_authorization_scheme_param
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server.compute.notification_manager import NotificationManager
@@ -37,6 +41,32 @@ async def notification_ws(websocket: WebSocket) -> None:
     """
 
     await websocket.accept()
+
+    # handle basic HTTP authentication
+    invalid_user_credentials_exc = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication credentials",
+        headers={"WWW-Authenticate": "Basic"},
+    )
+
+    try:
+        authorization = websocket.headers.get("Authorization")
+        scheme, param = get_authorization_scheme_param(authorization)
+        if not authorization or scheme.lower() != "basic":
+            raise invalid_user_credentials_exc
+        try:
+            data = base64.b64decode(param).decode("ascii")
+        except (ValueError, UnicodeDecodeError, binascii.Error):
+            raise invalid_user_credentials_exc
+        username, separator, password = data.partition(":")
+        if not separator:
+            raise invalid_user_credentials_exc
+    except invalid_user_credentials_exc as e:
+        websocket_error = {"action": "log.error", "event": {"message": f"Could not authenticate while connecting to "
+                                                                       f"compute WebSocket: {e.detail}"}}
+        await websocket.send_json(websocket_error)
+        return await websocket.close(code=1008)
+
     log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
     try:
         with NotificationManager.instance().queue() as queue:

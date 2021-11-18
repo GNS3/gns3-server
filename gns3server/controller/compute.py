@@ -119,6 +119,7 @@ class Compute:
         """
         Set authentication parameters
         """
+
         if user is None or len(user.strip()) == 0:
             self._user = None
             self._password = None
@@ -468,6 +469,8 @@ class Compute:
                             # FIXME: slow down number of compute events
                             self._controller.notification.controller_emit("compute.updated", self.asdict())
                         else:
+                            if action == "log.error":
+                                log.error(event.pop("message"))
                             await self._controller.notification.dispatch(
                                 action, event, project_id=project_id, compute_id=self.id
                             )
