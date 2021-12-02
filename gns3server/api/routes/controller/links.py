@@ -198,7 +198,14 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     async def compute_pcap_stream():
 
         try:
-            async with HTTPClient.request(request.method, pcap_streaming_url, timeout=None, data=body) as response:
+            async with HTTPClient.request(
+                    request.method,
+                    pcap_streaming_url,
+                    user=compute.user,
+                    password=compute.password,
+                    timeout=None,
+                    data=body
+            ) as response:
                 async for data in response.content.iter_any():
                     if not data:
                         break
