@@ -4,17 +4,9 @@ Wants=network-online.target
 After=network.target network-online.target
 
 [Service]
-Type=forking
 User=gns3
 Group=gns3
-PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/log/gns3 /var/run/gns3
-ExecStartPre=/bin/chown -R gns3:gns3 /var/log/gns3 /var/run/gns3
-ExecStart=/usr/local/bin/gns3server --log /var/log/gns3/gns3.log \
- --pid /var/run/gns3/gns3.pid --daemon
-ExecReload=/bin/kill -s HUP $MAINPID
-Restart=on-abort
-PIDFile=/var/run/gns3/gns3.pid
+ExecStart=/usr/bin/gns3server
 
 [Install]
 WantedBy=multi-user.target

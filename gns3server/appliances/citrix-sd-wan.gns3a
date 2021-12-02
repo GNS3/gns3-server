@@ -1,0 +1,46 @@
+{
+    "appliance_id": "2d5634dc-ad39-46cf-a2fd-17b291abab91",
+    "name": "Citrix SD-WAN",
+    "category": "router",
+    "description": "A software-defined wide area network (SD-WAN) is a virtual WAN architecture, in which any blend of network transport types — not only multiprotocol label switching (MPLS) but also broadband internet, cellular, and satellite — can be virtualized and bonded then centrally managed in software, to securely connect users to applications and desktops in accordance with policy. Essentially, SD-WAN is software-defined networking (SDN) for the WAN.",
+    "vendor_name": "Citrix",
+    "vendor_url": "http://www.citrix.com/",
+    "documentation_url": "https://docs.citrix.com/en-us/citrix-sd-wan",
+    "product_name": "Citrix SD-WAN",
+    "product_url": "https://docs.citrix.com/en-us/citrix-sd-wan",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Kiel Czu",
+    "maintainer_email": "kielczu@gmail.com",
+    "usage": "The image file is large (3GB), make sure you have enough space. Default credentials: admin/ password",
+    "port_name_format": "1/{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 4096,
+        "cpus": 4,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-cpu Nehalem"
+    },
+    "images": [
+        {
+            "filename": "ctx-sdw-os-11.4.1.27_kvm.qcow2",
+            "version": "11.4.1.27",
+            "md5sum": "e57d8fcf8c136cc3fd2359103d885462",
+            "filesize": 3235315712,
+            "download_url": "https://www.citrix.com/pl-pl/downloads/citrix-sd-wan/standard-premium-edition/vpx-release-114127.html"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.4.1.27",
+            "images": {
+                "hda_disk_image": "ctx-sdw-os-11.4.1.27_kvm.qcow2"
+            }
+        }
+    ]
+}

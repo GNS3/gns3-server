@@ -114,7 +114,7 @@ class DockerVM(BaseNode):
         self._extra_volumes = extra_volumes or []
         self._memory = memory
         self._cpus = cpus
-        self._permissions_fixed = False
+        self._permissions_fixed = True
         self._display = None
         self._closing = False
 
