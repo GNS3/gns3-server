@@ -182,7 +182,7 @@ class TemplatesService:
 
         image = await self._templates_repo.get_image(image_path)
         if not image:
-            raise ControllerNotFoundError(f"Image '{image.filename}' could not be found in the controller database")
+            raise ControllerNotFoundError(f"Image '{image_path}' could not be found in the controller database")
         if not os.path.exists(image.path):
             raise ControllerNotFoundError(f"Image '{image.path}' could not be found on disk")
         return image

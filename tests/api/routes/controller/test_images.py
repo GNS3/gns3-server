@@ -273,7 +273,7 @@ class TestImageRoutes:
             image_data = f.read()
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
-            params={"image_type": "qemu"},
+            params={"image_type": "qemu", "install_appliances": "true"},
             content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
