@@ -271,7 +271,10 @@ async def project_ws_notifications(
     except WebSocketException as e:
         log.warning(f"Error while sending to project event to WebSocket client: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except OSError:
+            pass  # ignore OSError: [Errno 107] Transport endpoint is not connected
         if project.auto_close:
             # To avoid trouble with client connecting disconnecting we sleep few seconds before checking
             # if someone else is not connected

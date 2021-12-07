@@ -72,4 +72,7 @@ async def controller_ws_notifications(
     except WebSocketException as e:
         log.warning(f"Error while sending to controller event to WebSocket client: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except OSError:
+            pass  # ignore OSError: [Errno 107] Transport endpoint is not connected
