@@ -519,6 +519,9 @@ class Controller:
         :param load: Load the topology
         """
 
+        if not os.path.exists(path):
+            raise ControllerError(f"'{path}' does not exist on the controller")
+
         topo_data = load_topology(path)
         topo_data.pop("topology")
         topo_data.pop("version")
@@ -529,7 +532,10 @@ class Controller:
             project = self._projects[topo_data["project_id"]]
         else:
             project = await self.add_project(
-                path=os.path.dirname(path), status="closed", filename=os.path.basename(path), **topo_data
+                path=os.path.dirname(path),
+                status="closed",
+                filename=os.path.basename(path),
+                **topo_data
             )
         if load or project.auto_open:
             await project.open()

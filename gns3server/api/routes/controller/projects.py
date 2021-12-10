@@ -204,12 +204,7 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
 
     controller = Controller.instance()
     dot_gns3_file = path
-    if Config.instance().settings.Server.local is False:
-        log.error(f"Cannot load '{dot_gns3_file}' because the server has not been started with the '--local' parameter")
-        raise ControllerForbiddenError("Cannot load project when server is not local")
-    project = await controller.load_project(
-        dot_gns3_file,
-    )
+    project = await controller.load_project(dot_gns3_file)
     return project.asdict()
 
 
