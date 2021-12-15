@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "pfSense-CE-2.5.2-RELEASE-amd64.iso",
+            "version": "2.5.2",
+            "md5sum": "8c85a55f6ea0c33d6eba3fb9926c016b",
+            "filesize": 651773952,
+            "download_url": "https://www.pfsense.org/download/mirror.php?section=downloads"
+        },
+        {
             "filename": "pfSense-CE-2.4.5-RELEASE-p1-amd64.iso",
             "version": "2.4.5-p1",
             "md5sum": "bd1120494be5f36cba3a7ab34e8278da",
@@ -55,6 +62,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.5.2",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "pfSense-CE-2.5.2-RELEASE-amd64.iso"
+            }
+        },
         {
             "name": "2.4.5-p1",
             "images": {

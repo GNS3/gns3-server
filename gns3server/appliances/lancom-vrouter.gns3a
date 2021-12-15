@@ -1,0 +1,45 @@
+{
+    "appliance_id": "c83b42bb-7f8f-4273-94a5-395384898da4",
+    "name": "LANCOM vRouter",
+    "category": "router",
+    "description": "\"The LANCOM vRouter is a software-based router for operation in virtualized environments [..]. With its comprehensive range of functions and the numerous security features based on the operating system LCOS, it offers the best basis for modern infrastructures. Be it as a virtual VPN router (vCPE), as central-site VPN gateway (vGateway), or as WLAN controller (vWLC), [..].\" quote from 'product_url'",
+    "vendor_name": "LANCOM Systems GmbH",
+    "vendor_url": "https://www.lancom-systems.com",
+    "product_name": "vRouter",
+    "product_url": "https://www.lancom-systems.com/products/routers-vpn-gateways/central-site-vpn-gateways/lancom-vrouter/",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free-to-try",
+    "maintainer": "hirnpfirsich",
+    "maintainer_email": "hirnpfirsich@brainpeach.de",
+    "usage": "The vRouter installs itself on first boot\nAfterwards set the root/administrative password via the console\nETH-0 is the LAN facing interface. If there is already an dhcp server on ETH-0 the vRouter requests an address. Otherwise it will run it's own dhcp server (172.23.56.254)\nConfigure via console/ssh(root@<ip>)/WebGUI(https://<ip>)/LANConfig/...",
+    "port_name_format": "ETH-{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 5,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "LANCOM-VROUTER-installer-10.50.0145-Rel.img",
+            "version": "10.50.0145-Rel-KVM",
+            "md5sum": "afa50e257d2703acb3ed3257962b2fb5",
+            "filesize": 536870912,
+            "download_url": "https://www.lancom-systems.de/downloads/",
+            "direct_download_url": "https://www.lancom-systems.de/download/firmware/?id=fece9b54978e2af8f7a161798fff2a16&file=LC-vRouter/LC-vRouter-10.50.0145-Rel-img.zip",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "10.50.0145-Rel-KVM",
+            "images": {
+                "hda_disk_image": "LANCOM-VROUTER-installer-10.50.0145-Rel.img"
+            }
+        }
+    ]
+}

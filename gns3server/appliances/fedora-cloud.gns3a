@@ -1,0 +1,53 @@
+{
+    "appliance_id": "0d505121-14e3-4414-88ab-b7f102ea6176",
+    "name": "Fedora Cloud Base",
+    "category": "guest",
+    "description": "Fedora Official image for self-hosted cloud",
+    "vendor_name": "The Fedora Project",
+    "vendor_url": "https://getfedora.org/",
+    "documentation_url": "https://docs.fedoraproject.org/en-US/docs/",
+    "product_name": "Fedora Cloud Base",
+    "product_url": "https://alt.fedoraproject.org/cloud/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Da-Geek",
+    "maintainer_email": "dageek@dageeks-geeks.gg",
+    "usage": "Username: fedora\nPassword: fedora",
+    "port_name_format": "Eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic"
+    },
+    "images": [
+        {
+            "filename": "Fedora-Cloud-Base-35-1.2.x86_64.qcow2",
+            "version": "35-1.2",
+            "md5sum": "cfa9cdcfb946e5f4cf9dd4d7906008d0",
+            "filesize": 376897536,
+            "download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/35/Cloud/x86_64/images/Fedora-Cloud-Base-35-1.2.x86_64.qcow2"
+        },
+        {
+            "filename": "fedora-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "3d0d6391d3f5ece1180c70b9667c4dca",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/fedora-cloud/fedora-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+       {
+            "name": "35-1.2",
+            "images": {
+                "hda_disk_image": "Fedora-Cloud-Base-35-1.2.x86_64.qcow2",
+                "cdrom_image": "fedora-cloud-init-data.iso"
+            }
+        }
+    ]
+}
