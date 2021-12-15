@@ -952,6 +952,7 @@ async def test_stop(vm):
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="running"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+            vm._permissions_fixed = False
             await vm.stop()
             mock_query.assert_called_with("POST", "containers/e90e34656842/stop", params={"t": 5})
     assert mock.stop.called
