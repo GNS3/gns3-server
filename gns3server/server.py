@@ -201,9 +201,9 @@ class Server:
                 loop.add_signal_handler(getattr(signal, signal_name), callback)
 
     @staticmethod
-    def _kill_ghosts(self):
+    def _kill_ghosts():
         """
-        Kill process from previous GNS3 session
+        Kill processes from previous GNS3 session
         """
         detect_process = ["vpcs", "ubridge", "dynamips"]
         for proc in psutil.process_iter():
@@ -216,7 +216,7 @@ class Server:
                 pass
 
     @staticmethod
-    def _pid_lock(self, path):
+    def _pid_lock(path):
         """
         Write the file in a file on the system.
         Check if the process is not already running.
