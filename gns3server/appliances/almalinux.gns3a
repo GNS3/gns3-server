@@ -10,9 +10,9 @@
     "product_url": "https://almalinux.org/",
     "registry_version": 4,
     "status": "stable",
-    "maintainer": "GNS3 Team",
-    "maintainer_email": "developers@gns3.net",
-    "usage": "Username:\talmalinux\nPassword:\talmalinux\nTo become root, use \"sudo su\".\n",
+    "maintainer": "Da-Geek",
+    "maintainer_email": "dageek@dageeks-geeks.gg",
+    "usage": "Username:\talmalinux\nPassword:\talmalinux\nTo become root, use \"sudo -i\".\n",
     "port_name_format": "eth{0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
@@ -25,12 +25,12 @@
     },
     "images": [
         {
-            "filename": "AlmaLinux-8-GenericCloud-8.4-20210727.x86_64.qcow2",
-            "version": "8.4",
-            "md5sum": "999014244f676097fdeaf87612a75e81",
-            "filesize": 534266880,
+            "filename": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
+            "version": "8.5",
+            "md5sum": "a64ece809ae06180ac59cfa622d98af0",
+            "filesize": 561774592,
             "download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/",
-            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.4-20210727.x86_64.qcow2"
+            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2"
         },
         {
             "filename": "almalinux-cloud-init-data.iso",
@@ -42,9 +42,9 @@
     ],
     "versions": [
         {
-            "name": "8.4",
+            "name": "8.5",
             "images": {
-                "hda_disk_image": "AlmaLinux-8-GenericCloud-8.4-20210727.x86_64.qcow2",
+                "hda_disk_image": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
                 "cdrom_image": "almalinux-cloud-init-data.iso"
             }
         }

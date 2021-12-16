@@ -13,7 +13,7 @@
     "availability": "service-contract",
     "maintainer": "Neyder Achahuanco",
     "maintainer_email": "neyder@neyder.net",
-    "usage": "You should download Red Hat Enterprise Linux KVM Guest Image from https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.3/x86_64/product-software attach/customize cloud-init.iso and start.\nusername: cloud-user\npassword: redhat",
+    "usage": "You should download Red Hat Enterprise Linux KVM Guest Image from https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.5/x86_64/product-software attach/customize cloud-init.iso and start.\nusername: cloud-user\npassword: redhat",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 1,
@@ -26,6 +26,20 @@
         "options": "-nographic"
     },
     "images": [
+        {
+            "filename": "rhel-8.5-x86_64-kvm.qcow2",
+            "version": "8.5",
+            "md5sum": "1efb78dbb2033ba4ac6589a06c95c2d4",
+            "filesize": 779419648,
+            "download_url": "https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.5/x86_64/product-software"
+        },
+        {
+            "filename": "rhel-8.4-x86_64-kvm.qcow2",
+            "version": "8.4",
+            "md5sum": "db4c3a72857b784dc6e96120351f2894",
+            "filesize": 727449600,
+            "download_url": "https://access.redhat.com/downloads/content/479/ver=/rhel---8/8.4/x86_64/product-software"
+        },
         {
             "filename": "rhel-8.3-x86_64-kvm.qcow2",
             "version": "8.3",
@@ -56,6 +70,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "8.5",
+            "images": {
+                "hda_disk_image": "rhel-8.5-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            }
+        },
+        {
+            "name": "8.4",
+            "images": {
+                "hda_disk_image": "rhel-8.4-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            }
+        },
         {
             "name": "8.3",
             "images": {

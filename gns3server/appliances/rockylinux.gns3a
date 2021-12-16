@@ -7,39 +7,47 @@
     "vendor_url": "https://rockylinux.org",
     "documentation_url": "https://docs.rockylinux.org",
     "product_name": "Rocky Linux",
-    "registry_version": 4,
-    "status": "experimental",
-    "maintainer": "Bernhard Ehlers",
-    "maintainer_email": "none@b-ehlers.de",
-    "usage": "Username:\trockylinux\nPassword:\trockylinux\nTo become root, use \"sudo su\".\n\nTo improve performance, increase RAM and vCPUs in the VM settings.",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Da-Geek",
+    "maintainer_email": "dageek@dageeks-geeks.gg",
+    "usage": "Username:\trocky\nPassword:\trocky\nTo become root, use \"sudo -i\".\n\nTo improve performance, increase RAM and vCPUs in the VM settings.",
     "symbol": "linux_guest.svg",
     "port_name_format": "ens{port4}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 1,
-        "ram": 1536,
-        "hda_disk_interface": "sata",
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
-        "console_type": "vnc",
+        "console_type": "telnet",
+        "boot_priority": "c",
         "kvm": "require",
-        "options": "-usbdevice tablet"
+        "options": "-nographic"
     },
     "images": [
         {
-            "filename": "RockyLinux_8.4_VMG_LinuxVMImages.COM.vmdk",
-            "version": "8.4",
-            "md5sum": "3452d5b0fbb4cdcf3ac6fe8de8d0ac08",
-            "filesize": 5273878528,
-            "download_url": "https://www.linuxvmimages.com/images/rockylinux-8",
-            "direct_download_url": "https://sourceforge.net/projects/linuxvmimages/files/VMware/R/rockylinux/8/RockyLinux_8.4_VMM.7z/download",
-            "compression": "7z"
+            "filename": "Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2",
+            "version": "8.5",
+            "md5sum": "44982ddace75a1dba17942401086d72c",
+            "filesize": 1502701568,
+            "download_url": "https://download.rockylinux.org/pub/rocky/8/images/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/8/images/Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2"
+        },
+        {
+            "filename": "rocky-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "33ffda3a81436e305f37fb913edd6d43",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/rocky-cloud/rocky-cloud-init-data.iso"
         }
     ],
     "versions": [
         {
-            "name": "8.4",
+            "name": "8.5",
             "images": {
-                "hda_disk_image": "RockyLinux_8.4_VMG_LinuxVMImages.COM.vmdk"
+                "hda_disk_image": "Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2",
+                "cdrom_image": "rocky-cloud-init-data.iso"
             }
         }
     ]
