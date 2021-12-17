@@ -56,8 +56,8 @@ class User(BaseTable):
 def create_default_super_admin(target, connection, **kw):
 
     config = Config.instance().settings
-    default_admin_username = config.Server.default_admin_username
-    default_admin_password = config.Server.default_admin_password.get_secret_value()
+    default_admin_username = config.Controller.default_admin_username
+    default_admin_password = config.Controller.default_admin_password.get_secret_value()
     hashed_password = auth_service.hash_password(default_admin_password)
     stmt = target.insert().values(
         username=default_admin_username,

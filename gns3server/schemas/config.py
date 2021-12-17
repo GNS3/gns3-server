@@ -24,6 +24,8 @@ class ControllerSettings(BaseModel):
     jwt_secret_key: str = None
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 1440  # 24 hours
+    default_admin_username: str = "admin"
+    default_admin_password: SecretStr = SecretStr("admin")
 
     class Config:
         validate_assignment = True
@@ -133,8 +135,6 @@ class ServerSettings(BaseModel):
     ubridge_path: str = "ubridge"
     compute_username: str = "admin"
     compute_password: SecretStr = SecretStr("")
-    default_admin_username: str = "admin"
-    default_admin_password: SecretStr = SecretStr("admin")
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
     allow_remote_console: bool = False
