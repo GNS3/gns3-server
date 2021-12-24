@@ -19,7 +19,7 @@ API routes for computes.
 """
 
 from fastapi import APIRouter, Depends, Response, status
-from typing import List, Union
+from typing import List, Union, Optional
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -47,12 +47,25 @@ router = APIRouter(responses=responses)
 async def create_compute(
     compute_create: schemas.ComputeCreate,
     computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository)),
+    connect: Optional[bool] = False
 ) -> schemas.Compute:
     """
     Create a new compute on the controller.
     """
 
-    return await ComputesService(computes_repo).create_compute(compute_create)
+    return await ComputesService(computes_repo).create_compute(compute_create, connect)
+
+
+@router.post("/{compute_id}/connect", status_code=status.HTTP_204_NO_CONTENT)
+async def connect_compute(compute_id: Union[str, UUID]) -> Response:
+    """
+    Connect to compute on the controller.
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    if not compute.connected:
+        await compute.connect(report_failed_connection=True)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{compute_id}", response_model=schemas.Compute, response_model_exclude_unset=True)

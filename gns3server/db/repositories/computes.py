@@ -52,18 +52,14 @@ class ComputesRepository(BaseRepository):
 
     async def create_compute(self, compute_create: schemas.ComputeCreate) -> models.Compute:
 
-        password = compute_create.password
-        if password:
-            password = password.get_secret_value()
-
         db_compute = models.Compute(
             compute_id=compute_create.compute_id,
             name=compute_create.name,
-            protocol=compute_create.protocol.value,
+            protocol=compute_create.protocol,
             host=compute_create.host,
             port=compute_create.port,
             user=compute_create.user,
-            password=password,
+            password=compute_create.password.get_secret_value(),
         )
         self._db_session.add(db_compute)
         await self._db_session.commit()

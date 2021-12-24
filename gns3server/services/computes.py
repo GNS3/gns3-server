@@ -41,17 +41,17 @@ class ComputesService:
         db_computes = await self._computes_repo.get_computes()
         return db_computes
 
-    async def create_compute(self, compute_create: schemas.ComputeCreate) -> models.Compute:
+    async def create_compute(self, compute_create: schemas.ComputeCreate, connect: bool = False) -> models.Compute:
 
         if await self._computes_repo.get_compute(compute_create.compute_id):
             raise ControllerBadRequestError(f"Compute '{compute_create.compute_id}' is already registered")
         db_compute = await self._computes_repo.create_compute(compute_create)
-        await self._controller.add_compute(
+        compute = await self._controller.add_compute(
             compute_id=str(db_compute.compute_id),
-            connect=False,
+            connect=connect,
             **compute_create.dict(exclude_unset=True, exclude={"compute_id"}),
         )
-        self._controller.notification.controller_emit("compute.created", db_compute.asjson())
+        self._controller.notification.controller_emit("compute.created", compute.asdict())
         return db_compute
 
     async def get_compute(self, compute_id: Union[str, UUID]) -> models.Compute:
@@ -70,7 +70,7 @@ class ComputesService:
         db_compute = await self._computes_repo.update_compute(compute_id, compute_update)
         if not db_compute:
             raise ControllerNotFoundError(f"Compute '{compute_id}' not found")
-        self._controller.notification.controller_emit("compute.updated", db_compute.asjson())
+        self._controller.notification.controller_emit("compute.updated", compute.asdict())
         return db_compute
 
     async def delete_compute(self, compute_id: Union[str, UUID]) -> None:

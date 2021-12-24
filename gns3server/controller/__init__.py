@@ -74,10 +74,6 @@ class Controller:
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        name = socket.gethostname()
-        if name == "gns3vm":
-            name = "Main server"
-
         self._load_controller_settings()
 
         if server_config.enable_ssl:
@@ -93,7 +89,7 @@ class Controller:
         try:
             self._local_server = await self.add_compute(
                 compute_id="local",
-                name=name,
+                name=f"{socket.gethostname()} (controller)",
                 protocol=protocol,
                 host=host,
                 console_host=console_host,
@@ -102,6 +98,7 @@ class Controller:
                 password=server_config.compute_password,
                 force=True,
                 connect=True,
+                wait_connection=False,
                 ssl_context=self._ssl_context,
             )
         except ControllerError:
@@ -113,7 +110,12 @@ class Controller:
         if computes:
             for c in computes:
                 try:
-                    await self.add_compute(**c, connect=False)
+                    #FIXME: Task exception was never retrieved
+                    await self.add_compute(
+                        compute_id=str(c.compute_id),
+                        connect=False,
+                        **c.dict(exclude_unset=True, exclude={"compute_id", "created_at", "updated_at"}),
+                    )
                 except (ControllerError, KeyError):
                     pass  # Skip not available servers at loading
 
@@ -341,7 +343,7 @@ class Controller:
         os.makedirs(configs_path, exist_ok=True)
         return configs_path
 
-    async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
+    async def add_compute(self, compute_id=None, name=None, force=False, connect=True, wait_connection=True, **kwargs):
         """
         Add a server to the dictionary of computes controlled by this controller
 
@@ -371,8 +373,11 @@ class Controller:
             self._computes[compute.id] = compute
             # self.save()
             if connect:
-                # call compute.connect() later to give time to the controller to be fully started
-                asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
+                if wait_connection:
+                    await compute.connect()
+                else:
+                    # call compute.connect() later to give time to the controller to be fully started
+                    asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(compute.connect()))
             self.notification.controller_emit("compute.created", compute.asdict())
             return compute
         else:

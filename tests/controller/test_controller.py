@@ -248,7 +248,7 @@ async def test_start(controller):
     await controller.start()
     #assert mock.called
     assert len(controller.computes) == 1  # Local compute is created
-    assert controller.computes["local"].name == socket.gethostname()
+    assert controller.computes["local"].name == f"{socket.gethostname()} (controller)"
 
 
 @pytest.mark.asyncio

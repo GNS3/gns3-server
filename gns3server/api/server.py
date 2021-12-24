@@ -21,8 +21,7 @@ FastAPI app
 
 import time
 
-from fastapi import FastAPI, Request
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -140,11 +139,12 @@ async def controller_bad_request_error_handler(request: Request, exc: Controller
 
 
 # make sure the content key is "message", not "detail" per default
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.detail},
+        headers=exc.headers
     )
 
 
