@@ -139,7 +139,7 @@ Windows
 -------
 
 
-Please use our `all-in-one installer <https://community.gns3.com/community/software/download>`_ to install the stable build.
+Please use our `all-in-one installer <https://community.gns3.com/software/download>`_ to install the stable build.
 
 If you install via source you need to first install:
 
