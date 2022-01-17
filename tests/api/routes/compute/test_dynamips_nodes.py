@@ -162,10 +162,10 @@ def fake_file(tmpdir) -> str:
     return path
 
 
-async def test_images(app: FastAPI, client: AsyncClient, tmpdir, fake_image: str, fake_file: str) -> None:
+async def test_images(app: FastAPI, compute_client: AsyncClient, tmpdir, fake_image: str, fake_file: str) -> None:
 
     with patch("gns3server.utils.images.default_images_directory", return_value=str(tmpdir)):
-        response = await client.get(app.url_path_for("get_dynamips_images"))
+        response = await compute_client.get(app.url_path_for("compute:get_dynamips_images"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == [{"filename": "7200.bin",
                                 "path": "7200.bin",
@@ -173,9 +173,9 @@ async def test_images(app: FastAPI, client: AsyncClient, tmpdir, fake_image: str
                                 "md5sum": "b0d5aa897d937aced5a6b1046e8f7e2e"}]
 
 
-async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+async def test_upload_image(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    response = await compute_client.post(app.url_path_for("compute:upload_dynamips_image", filename="test2"), content=b"TEST")
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     with open(os.path.join(images_dir, "IOS", "test2")) as f:
@@ -186,36 +186,36 @@ async def test_upload_image(app: FastAPI, client: AsyncClient, images_dir: str) 
         assert checksum == "033bd94b1168d7e4f0d644c3c95e35bf"
 
 
-async def test_upload_image_forbidden_location(app: FastAPI, client: AsyncClient) -> None:
+async def test_upload_image_forbidden_location(app: FastAPI, compute_client: AsyncClient) -> None:
 
     file_path = "%2e%2e/hello"
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename=file_path), content=b"TEST")
+    response = await compute_client.post(app.url_path_for("compute:upload_dynamips_image", filename=file_path), content=b"TEST")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-async def test_download_image(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+async def test_download_image(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test3"), content=b"TEST")
+    response = await compute_client.post(app.url_path_for("compute:upload_dynamips_image", filename="test3"), content=b"TEST")
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    response = await client.get(app.url_path_for("download_dynamips_image", filename="test3"))
+    response = await compute_client.get(app.url_path_for("compute:download_dynamips_image", filename="test3"))
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_download_image_forbidden(app: FastAPI, client: AsyncClient, tmpdir) -> None:
+async def test_download_image_forbidden(app: FastAPI, compute_client: AsyncClient, tmpdir) -> None:
 
     file_path = "foo/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd"
-    response = await client.get(app.url_path_for("download_dynamips_image", filename=file_path))
+    response = await compute_client.get(app.url_path_for("compute:download_dynamips_image", filename=file_path))
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
-async def test_upload_image_permission_denied(app: FastAPI, client: AsyncClient, images_dir: str) -> None:
+async def test_upload_image_permission_denied(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
 
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)
     with open(os.path.join(images_dir, "IOS", "test2.tmp"), "w+") as f:
         f.write("")
     os.chmod(os.path.join(images_dir, "IOS", "test2.tmp"), 0)
 
-    response = await client.post(app.url_path_for("upload_dynamips_image", filename="test2"), content=b"TEST")
+    response = await compute_client.post(app.url_path_for("compute:upload_dynamips_image", filename="test2"), content=b"TEST")
     assert response.status_code == status.HTTP_409_CONFLICT

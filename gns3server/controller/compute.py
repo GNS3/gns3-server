@@ -119,6 +119,7 @@ class Compute:
         """
         Set authentication parameters
         """
+
         if user is None or len(user.strip()) == 0:
             self._user = None
             self._password = None
@@ -153,6 +154,7 @@ class Compute:
         return self._interfaces_cache
 
     async def update(self, **kwargs):
+
         for kw in kwargs:
             if kw not in ("user", "password"):
                 setattr(self, kw, kwargs[kw])
@@ -372,7 +374,7 @@ class Compute:
             pass
 
     @locking
-    async def connect(self):
+    async def connect(self, report_failed_connection=False):
         """
         Check if remote server is accessible
         """
@@ -382,6 +384,8 @@ class Compute:
                 log.info(f"Connecting to compute '{self._id}'")
                 response = await self._run_http_query("GET", "/capabilities")
             except ComputeError as e:
+                if report_failed_connection:
+                    raise
                 log.warning(f"Cannot connect to compute '{self._id}': {e}")
                 # Try to reconnect after 5 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
@@ -468,6 +472,8 @@ class Compute:
                             # FIXME: slow down number of compute events
                             self._controller.notification.controller_emit("compute.updated", self.asdict())
                         else:
+                            if action == "log.error":
+                                log.error(event.pop("message"))
                             await self._controller.notification.dispatch(
                                 action, event, project_id=project_id, compute_id=self.id
                             )
@@ -488,7 +494,7 @@ class Compute:
         # Try to reconnect after 1 second if server unavailable only if not during tests (otherwise we create a ressources usage bomb)
         from gns3server.api.server import app
         if not app.state.exiting and not hasattr(sys, "_called_from_test"):
-            log.info(f"Reconnecting to to compute '{self._id}' WebSocket '{ws_url}'")
+            log.info(f"Reconnecting to compute '{self._id}' WebSocket '{ws_url}'")
             asyncio.get_event_loop().call_later(1, lambda: asyncio.ensure_future(self.connect()))
 
         self._cpu_usage_percent = None
@@ -569,7 +575,7 @@ class Compute:
                 msg = ""
 
             if response.status == 401:
-                raise ControllerUnauthorizedError(f"Invalid authentication for compute {self.id}")
+                raise ControllerUnauthorizedError(f"Invalid authentication for compute '{self.name}' [{self.id}]")
             elif response.status == 403:
                 raise ControllerForbiddenError(msg)
             elif response.status == 404:

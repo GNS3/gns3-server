@@ -41,8 +41,12 @@ class ComputeBase(BaseModel):
     protocol: Protocol
     host: str
     port: int = Field(..., gt=0, le=65535)
-    user: Optional[str] = None
+    user: str = None
+    password: Optional[SecretStr] = None
     name: Optional[str] = None
+
+    class Config:
+        use_enum_values = True
 
 
 class ComputeCreate(ComputeBase):
@@ -51,7 +55,6 @@ class ComputeCreate(ComputeBase):
     """
 
     compute_id: Union[str, uuid.UUID] = None
-    password: Optional[SecretStr] = None
 
     class Config:
         schema_extra = {
@@ -102,6 +105,7 @@ class ComputeUpdate(ComputeBase):
     protocol: Optional[Protocol] = None
     host: Optional[str] = None
     port: Optional[int] = Field(None, gt=0, le=65535)
+    user: Optional[str] = None
     password: Optional[SecretStr] = None
 
     class Config:

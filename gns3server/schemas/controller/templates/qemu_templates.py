@@ -37,7 +37,7 @@ class QemuTemplate(TemplateBase):
     default_name_format: Optional[str] = "{name}-{0}"
     symbol: Optional[str] = ":/symbols/qemu_guest.svg"
     qemu_path: Optional[str] = Field("", description="Qemu executable path")
-    platform: Optional[QemuPlatform] = Field("i386", description="Platform to emulate")
+    platform: Optional[QemuPlatform] = Field("x86_64", description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
     ram: Optional[int] = Field(256, description="Amount of RAM in MB")
     cpus: Optional[int] = Field(1, ge=1, le=255, description="Number of vCPUs")
@@ -85,3 +85,8 @@ class QemuTemplate(TemplateBase):
     process_priority: Optional[QemuProcessPriority] = Field("normal", description="Process priority for QEMU")
     options: Optional[str] = Field("", description="Additional QEMU options")
     custom_adapters: Optional[List[CustomAdapter]] = Field(default_factory=list, description="Custom adapters")
+
+
+class QemuTemplateUpdate(QemuTemplate):
+
+    pass

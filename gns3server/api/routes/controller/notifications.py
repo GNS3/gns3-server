@@ -18,14 +18,14 @@
 API routes for controller notifications.
 """
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
-from gns3server.services import auth_service
 from gns3server.controller import Controller
+from gns3server import schemas
 
-from .dependencies.authentication import get_current_active_user
+from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
 
 import logging
 
@@ -35,7 +35,7 @@ router = APIRouter()
 
 
 @router.get("", dependencies=[Depends(get_current_active_user)])
-async def http_notification() -> StreamingResponse:
+async def controller_http_notifications() -> StreamingResponse:
     """
     Receive controller notifications about the controller from HTTP stream.
     """
@@ -50,19 +50,16 @@ async def http_notification() -> StreamingResponse:
 
 
 @router.websocket("/ws")
-async def notification_ws(websocket: WebSocket, token: str = Query(None)) -> None:
+async def controller_ws_notifications(
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(get_current_active_user_from_websocket)
+) -> None:
     """
     Receive project notifications about the controller from WebSocket.
     """
-    await websocket.accept()
 
-    if token:
-        try:
-            username = auth_service.get_username_from_token(token)
-        except HTTPException:
-            log.error("Invalid token received")
-            await websocket.close(code=1008)
-            return
+    if current_user is None:
+        return
 
     log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to controller WebSocket")
     try:
@@ -75,4 +72,7 @@ async def notification_ws(websocket: WebSocket, token: str = Query(None)) -> Non
     except WebSocketException as e:
         log.warning(f"Error while sending to controller event to WebSocket client: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except OSError:
+            pass  # ignore OSError: [Errno 107] Transport endpoint is not connected

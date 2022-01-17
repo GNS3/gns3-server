@@ -15,13 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Callable, Type
-from fastapi import Depends, Request
+from fastapi import Depends
+from starlette.requests import HTTPConnection
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gns3server.db.repositories.base import BaseRepository
 
 
-async def get_db_session(request: Request) -> AsyncSession:
+async def get_db_session(request: HTTPConnection) -> AsyncSession:
 
     session = AsyncSession(request.app.state._db_engine, expire_on_commit=False)
     try:

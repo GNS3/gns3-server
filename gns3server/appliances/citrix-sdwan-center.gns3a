@@ -1,0 +1,46 @@
+{
+    "appliance_id": "9021f581-a54d-48e0-bb84-8286ce6e08f0",
+    "name": "Citrix SD-WAN Center",
+    "category": "guest",
+    "description": "Citrix SD-WAN Center is a centralized management system that enables you to configure, monitor, and analyze all the Citrix SD-WAN appliances on your WAN.",
+    "vendor_name": "Citrix",
+    "vendor_url": "http://www.citrix.com/",
+    "documentation_url": "https://docs.citrix.com/en-us/citrix-sd-wan",
+    "product_name": "Citrix SD-WAN Center",
+    "product_url": "https://docs.citrix.com/en-us/citrix-sd-wan",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Kiel Czu",
+    "maintainer_email": "kielczu@gmail.com",
+    "usage": "The image file is large (1.6 GB), make sure you have enough space. Default credentials: admin/ password",
+    "port_name_format": "1/{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 8192,
+	"cpus": 4,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "cd",
+        "kvm": "require",
+        "options": "-smbios type=2,product='440BX Desktop Reference Platform'"
+    },
+    "images": [
+        {
+            "filename": "ctx-sdwc-11.4.1.27.qcow2",
+            "version": "11.4.1.27",
+            "md5sum": "d788035384a53a7b73c853383efae49a",
+            "filesize": 1661861888,
+            "download_url": "https://www.citrix.com/pl-pl/downloads/citrix-sd-wan/citrix-sd-wan-standard-premium-advance-edition/management-console-release-114127.html"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.4.1.27",
+            "images": {
+                "hda_disk_image": "ctx-sdwc-11.4.1.27.qcow2"
+            }
+        }
+    ]
+}

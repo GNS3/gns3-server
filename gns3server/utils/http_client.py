@@ -52,7 +52,7 @@ class HTTPClient:
             if not password:
                 password = ""
             try:
-                basic_auth = aiohttp.BasicAuth(user, password, "utf-8")
+                basic_auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
             except ValueError as e:
                 log.error(f"Basic authentication set-up error: {e}")
 

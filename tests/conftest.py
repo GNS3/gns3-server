@@ -6,6 +6,7 @@ import sys
 import os
 import uuid
 import configparser
+import base64
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -176,6 +177,18 @@ async def client(base_client: AsyncClient) -> AsyncClient:
     base_client.headers = {
         **base_client.headers,
         "Authorization": f"Bearer {access_token}",
+    }
+    return base_client
+
+
+@pytest.fixture
+async def compute_client(base_client: AsyncClient) -> AsyncClient:
+
+    # default compute username is 'admin'
+    base64_credentials = base64.b64encode(b"admin:").decode("ascii")
+    base_client.headers = {
+        **base_client.headers,
+        "Authorization": f"Basic {base64_credentials}",
     }
     return base_client
 
@@ -394,7 +407,6 @@ def run_around_tests(monkeypatch, config, port_manager):#port_manager, controlle
 
     config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
     config.settings.Server.local = True
-    config.settings.Server.enable_http_auth = False
 
     # Prevent executions of the VM if we forgot to mock something
     config.settings.VirtualBox.vboxmanage_path = tmppath

@@ -32,3 +32,8 @@ class VPCSTemplate(TemplateBase):
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )
+
+
+class VPCSTemplateUpdate(VPCSTemplate):
+
+    pass

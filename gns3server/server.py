@@ -30,6 +30,8 @@ import asyncio
 import signal
 import functools
 import uvicorn
+import secrets
+import string
 
 from gns3server.controller import Controller
 from gns3server.compute.port_manager import PortManager
@@ -38,7 +40,7 @@ from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
 from gns3server.api.server import app
-from pydantic import ValidationError
+from pydantic import ValidationError, SecretStr
 
 import logging
 
@@ -199,9 +201,9 @@ class Server:
                 loop.add_signal_handler(getattr(signal, signal_name), callback)
 
     @staticmethod
-    def _kill_ghosts(self):
+    def _kill_ghosts():
         """
-        Kill process from previous GNS3 session
+        Kill processes from previous GNS3 session
         """
         detect_process = ["vpcs", "ubridge", "dynamips"]
         for proc in psutil.process_iter():
@@ -214,7 +216,7 @@ class Server:
                 pass
 
     @staticmethod
-    def _pid_lock(self, path):
+    def _pid_lock(path):
         """
         Write the file in a file on the system.
         Check if the process is not already running.
@@ -269,8 +271,15 @@ class Server:
         if config.Server.local:
             log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
 
-        if config.Server.enable_http_auth:
-            log.info(f"HTTP authentication is enabled with username '{config.Server.user}'")
+        if not config.Server.compute_password.get_secret_value():
+            alphabet = string.ascii_letters + string.digits + string.punctuation
+            generated_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+            config.Server.compute_password = SecretStr(generated_password)
+            log.warning(f"Compute authentication is enabled with username '{config.Server.compute_username}' and "
+                        f"a randomly generated password. Please set a password in the config file if this compute "
+                        f"is to be used by an external controller")
+        else:
+            log.info(f"Compute authentication is enabled with username '{config.Server.compute_username}'")
 
         # we only support Python 3 version >= 3.6
         if sys.version_info < (3, 6, 0):

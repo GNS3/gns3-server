@@ -11,7 +11,7 @@
     "availability": "service-contract",
     "maintainer": "Aruba",
     "maintainer_email": "vincent.giles@hpe.com",
-    "usage": "Default username admin has to be set at first login.",
+    "usage": "Default username: admin, no password. New Password has to be set at first login.",
     "symbol": ":/symbols/route_switch_processor.svg",
     "first_port_name": "mgmt",
     "port_name_format": "1/1/{port1}",
@@ -30,6 +30,34 @@
         "process_priority": "normal"
     },
     "images": [
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20211206170615.vmdk",
+            "version": "10.09.0002",
+            "md5sum": "3c772546482013495e31fc9cb0591b46",
+            "filesize": 555656704,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20210812172945.vmdk",
+            "version": "10.08.0001",
+            "md5sum": "762b139432aef1012d8be5afdfcb286e",
+            "filesize": 542237696,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20210610000730.vmdk",
+            "version": "10.07.0010",
+            "md5sum": "396dc7ad964b7c517e01bc408e3bf84a",
+            "filesize": 531603968,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20210316185909.vmdk",
+            "version": "10.06.0110",
+            "md5sum": "f1ed67d5c7e009e21bfb6a91d9183e8e",
+            "filesize": 381285376,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
         {
             "filename": "arubaoscx-disk-image-genericx86-p4-20201110192651.vmdk",
             "version": "10.06.0001",
@@ -53,6 +81,30 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.09.0002",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20211206170615.vmdk"
+            }
+        },
+        {
+            "name": "10.08.0001",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20210812172945.vmdk"
+            }
+        },
+        {
+            "name": "10.07.0010",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20210610000730.vmdk"
+            }
+        },
+        {
+            "name": "10.06.0110",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20210316185909.vmdk"
+            }
+        },
         {
             "name": "10.06.0001",
             "images": {

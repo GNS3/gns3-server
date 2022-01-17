@@ -50,9 +50,6 @@ class TemplateBase(BaseModel):
     compute_id: Optional[str] = None
     usage: Optional[str] = ""
 
-    class Config:
-        extra = "allow"
-
 
 class TemplateCreate(TemplateBase):
     """
@@ -61,12 +58,15 @@ class TemplateCreate(TemplateBase):
 
     name: str
     template_type: NodeType
-    compute_id: str
+
+    class Config:
+        extra = "allow"
 
 
 class TemplateUpdate(TemplateBase):
 
-    pass
+    class Config:
+        extra = "allow"
 
 
 class Template(DateTimeModelMixin, TemplateBase):
@@ -77,9 +77,9 @@ class Template(DateTimeModelMixin, TemplateBase):
     symbol: str
     builtin: bool
     template_type: NodeType
-    compute_id: Union[str, None]
 
     class Config:
+        extra = "allow"
         orm_mode = True
 
 

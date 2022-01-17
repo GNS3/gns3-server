@@ -68,9 +68,7 @@ async def get_computes(app: FastAPI) -> List[dict]:
         db_computes = await ComputesRepository(db_session).get_computes()
         for db_compute in db_computes:
             try:
-                compute = jsonable_encoder(
-                    schemas.Compute.from_orm(db_compute), exclude_unset=True, exclude={"created_at", "updated_at"}
-                )
+                compute = schemas.Compute.from_orm(db_compute)
             except ValidationError as e:
                 log.error(f"Could not load compute '{db_compute.compute_id}' from database: {e}")
                 continue

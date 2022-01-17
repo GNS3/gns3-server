@@ -67,7 +67,7 @@ async def upload_image(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        install_appliances: Optional[bool] = True
+        install_appliances: Optional[bool] = False
 ) -> schemas.Image:
     """
     Upload an image.

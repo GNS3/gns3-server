@@ -92,7 +92,7 @@ class TestPermissionRoutes:
 
         response = await client.get(app.url_path_for("get_permissions"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 10  # 5 default permissions + 5 custom permissions
+        assert len(response.json()) == 11  # 6 default permissions + 5 custom permissions
 
     async def test_update_permission(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession, project: Project) -> None:
 
@@ -132,4 +132,4 @@ class TestPermissionRoutes:
 
         rbac_repo = RbacRepository(db_session)
         permissions_in_db = await rbac_repo.get_permissions()
-        assert len(permissions_in_db) == 9  # 5 default permissions + 4 custom permissions
+        assert len(permissions_in_db) == 10  # 6 default permissions + 4 custom permissions

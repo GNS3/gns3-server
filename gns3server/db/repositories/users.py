@@ -125,7 +125,7 @@ class UsersRepository(BaseRepository):
 
     async def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
         """
-        Authenticate an user.
+        Authenticate user.
         """
 
         user = await self.get_user_by_username(username)

@@ -99,10 +99,10 @@ def test_reload(tmpdir):
 
 def test_server_password_hidden():
 
-    server_settings = {"Server": {"password": "password123"}}
+    server_settings = {"Server": {"compute_password": "password123"}}
     config = ServerConfig(**server_settings)
-    assert str(config.Server.password) == "**********"
-    assert config.Server.password.get_secret_value() == "password123"
+    assert str(config.Server.compute_password) == "**********"
+    assert config.Server.compute_password.get_secret_value() == "password123"
 
 
 @pytest.mark.parametrize(
@@ -124,10 +124,7 @@ def test_server_password_hidden():
             ({"enable_ssl": True, "certfile": "/path/to/certfile", "certkey": "/path/to/certkey"}, True),
             ({"enable_ssl": True}, True),
             ({"enable_ssl": True, "certfile": "/path/to/certfile"}, True),
-            ({"enable_ssl": True, "certkey": "/path/to/certkey"}, True),
-            ({"enable_http_auth": True, "user": "user1"}, False),
-            ({"enable_http_auth": True, "user": ""}, True),
-            ({"enable_http_auth": True}, True),
+            ({"enable_ssl": True, "certkey": "/path/to/certkey"}, True)
     )
 )
 def test_server_settings(settings: dict, exception_expected: bool):

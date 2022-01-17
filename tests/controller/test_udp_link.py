@@ -259,7 +259,7 @@ async def test_capture(project):
     await link.start_capture()
     assert link.capturing
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/start_capture".format(project.id, node_vpcs.id), data={
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/start".format(project.id, node_vpcs.id), data={
         "capture_file_name": link.default_capture_file_name(),
         "data_link_type": "DLT_EN10MB"
     })
@@ -267,7 +267,7 @@ async def test_capture(project):
     await link.stop_capture()
     assert link.capturing is False
 
-    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/stop_capture".format(project.id, node_vpcs.id))
+    compute1.post.assert_any_call("/projects/{}/vpcs/nodes/{}/adapters/0/ports/4/capture/stop".format(project.id, node_vpcs.id))
 
 
 @pytest.mark.asyncio

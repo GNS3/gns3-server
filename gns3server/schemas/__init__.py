@@ -37,24 +37,31 @@ from .controller.iou_license import IOULicense
 from .controller.capabilities import Capabilities
 
 # Controller template schemas
-from .controller.templates.vpcs_templates import VPCSTemplate
-from .controller.templates.cloud_templates import CloudTemplate
-from .controller.templates.iou_templates import IOUTemplate
-from .controller.templates.docker_templates import DockerTemplate
-from .controller.templates.ethernet_hub_templates import EthernetHubTemplate
-from .controller.templates.ethernet_switch_templates import EthernetSwitchTemplate
-from .controller.templates.virtualbox_templates import VirtualBoxTemplate
-from .controller.templates.vmware_templates import VMwareTemplate
-from .controller.templates.qemu_templates import QemuTemplate
+from .controller.templates.vpcs_templates import VPCSTemplate, VPCSTemplateUpdate
+from .controller.templates.cloud_templates import CloudTemplate, CloudTemplateUpdate
+from .controller.templates.iou_templates import IOUTemplate, IOUTemplateUpdate
+from .controller.templates.docker_templates import DockerTemplate, DockerTemplateUpdate
+from .controller.templates.ethernet_hub_templates import EthernetHubTemplate, EthernetHubTemplateUpdate
+from .controller.templates.ethernet_switch_templates import EthernetSwitchTemplate, EthernetSwitchTemplateUpdate
+from .controller.templates.virtualbox_templates import VirtualBoxTemplate, VirtualBoxTemplateUpdate
+from .controller.templates.vmware_templates import VMwareTemplate, VMwareTemplateUpdate
+from .controller.templates.qemu_templates import QemuTemplate, QemuTemplateUpdate
 from .controller.templates.dynamips_templates import (
     DynamipsTemplate,
     C1700DynamipsTemplate,
+    C1700DynamipsTemplateUpdate,
     C2600DynamipsTemplate,
+    C2600DynamipsTemplateUpdate,
     C2691DynamipsTemplate,
+    C2691DynamipsTemplateUpdate,
     C3600DynamipsTemplate,
+    C3600DynamipsTemplateUpdate,
     C3725DynamipsTemplate,
+    C3725DynamipsTemplateUpdate,
     C3745DynamipsTemplate,
+    C3745DynamipsTemplateUpdate,
     C7200DynamipsTemplate,
+    C7200DynamipsTemplateUpdate
 )
 
 # Compute schemas

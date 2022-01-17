@@ -40,3 +40,8 @@ class IOUTemplate(TemplateBase):
     console_auto_start: Optional[bool] = Field(
         False, description="Automatically start the console when the node has started"
     )
+
+
+class IOUTemplateUpdate(IOUTemplate):
+
+    path: Optional[str] = Field(None, description="Path of IOU executable")

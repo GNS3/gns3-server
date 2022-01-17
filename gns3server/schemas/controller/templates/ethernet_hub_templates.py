@@ -39,3 +39,8 @@ class EthernetHubTemplate(TemplateBase):
     default_name_format: Optional[str] = "Hub{0}"
     symbol: Optional[str] = ":/symbols/hub.svg"
     ports_mapping: Optional[List[EthernetHubPort]] = Field(DEFAULT_PORTS, description="Ports")
+
+
+class EthernetHubTemplateUpdate(EthernetHubTemplate):
+
+    pass

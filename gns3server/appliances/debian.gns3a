@@ -1,0 +1,66 @@
+{
+    "appliance_id": "fb5797d0-512e-4ab2-a588-d4766a441000",
+    "name": "Debian",
+    "category": "guest",
+    "description": "Debian is a GNU/Linux distribution composed of free and open-source software, developed by the community-supported Debian Project.",
+    "vendor_name": "Debian",
+    "vendor_url": "https://www.debian.org",
+    "product_name": "Debian",
+    "registry_version": 3,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username:\tdebian\nPassword:\tdebian\nTo become root, use \"sudo -s\".\n\nNetwork configuration:\n- In \"/etc/network/interfaces\" comment out \"source-directory /run/network/interfaces.d\"\n- Remove \"/etc/network/interfaces.d/50-cloud-init\"\n- Create \"/etc/network/interfaces.d/10-ens4\", for example:\n\nauto ens4\n#iface ens4 inet dhcp\niface ens4 inet static\n    address 10.1.1.100/24\n    gateway 10.1.1.1\n    dns-nameservers 10.1.1.1\n",
+    "symbol": "linux_guest.svg",
+    "port_name_format": "ens{port4}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 512,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "debian-11-genericcloud-amd64-20211220-862.qcow2",
+            "version": "11.2",
+            "md5sum": "3bdc52b0b3622a72095efdd001780a45",
+            "filesize": 253231104,
+            "download_url": "https://cloud.debian.org/images/cloud/bullseye/",
+            "direct_download_url": "https://cloud.debian.org/images/cloud/bullseye/20211220-862/debian-11-genericcloud-amd64-20211220-862.qcow2"
+        },
+        {
+            "filename": "debian-10-genericcloud-amd64-20211011-792.qcow2",
+            "version": "10.11",
+            "md5sum": "ea4de19b17d114b6db813ee64a6b8284",
+            "filesize": 232980480,
+            "download_url": "https://cloud.debian.org/images/cloud/buster/",
+            "direct_download_url": "https://cloud.debian.org/images/cloud/buster/20211011-792/debian-10-genericcloud-amd64-20211011-792.qcow2"
+        },
+        {
+            "filename": "debian-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "43f6bf70c178a9d3c270b5c24971e578",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/Debian/debian-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+        {
+            "name": "11.2",
+            "images": {
+                "hda_disk_image": "debian-11-genericcloud-amd64-20211220-862.qcow2",
+                "cdrom_image": "debian-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "10.11",
+            "images": {
+                "hda_disk_image": "debian-10-genericcloud-amd64-20211011-792.qcow2",
+                "cdrom_image": "debian-cloud-init-data.iso"
+            }
+        }
+    ]
+}

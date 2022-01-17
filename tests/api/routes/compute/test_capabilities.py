@@ -30,9 +30,9 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-async def test_get(app: FastAPI, client: AsyncClient, windows_platform) -> None:
+async def test_get(app: FastAPI, compute_client: AsyncClient, windows_platform) -> None:
 
-    response = await client.get(app.url_path_for("get_capabilities"))
+    response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
                                'version': __version__,
@@ -44,9 +44,9 @@ async def test_get(app: FastAPI, client: AsyncClient, windows_platform) -> None:
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-async def test_get_on_gns3vm(app: FastAPI, client: AsyncClient, on_gns3vm) -> None:
+async def test_get_on_gns3vm(app: FastAPI, compute_client: AsyncClient, on_gns3vm) -> None:
 
-    response = await client.get(app.url_path_for("get_capabilities"))
+    response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {'node_types': ['cloud', 'ethernet_hub', 'ethernet_switch', 'nat', 'vpcs', 'virtualbox', 'dynamips', 'frame_relay_switch', 'atm_switch', 'qemu', 'vmware', 'docker', 'iou'],
                                'version': __version__,

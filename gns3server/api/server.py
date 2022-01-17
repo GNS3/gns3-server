@@ -21,8 +21,7 @@ FastAPI app
 
 import time
 
-from fastapi import FastAPI, Request
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -53,22 +52,9 @@ def get_application() -> FastAPI:
         title="GNS3 controller API", description="This page describes the public controller API for GNS3", version="v3"
     )
 
-    origins = [
-        "http://127.0.0.1",
-        "http://localhost",
-        "http://localhost:4200",
-        "http://127.0.0.1:4200"
-        "http://127.0.0.1:8080",
-        "http://localhost:8080",
-        "http://127.0.0.1:3080",
-        "http://localhost:3080",
-        "http://gns3.github.io",
-        "https://gns3.github.io",
-    ]
-
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origin_regex=r"http(s)?://(localhost|127.0.0.1)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -78,7 +64,7 @@ def get_application() -> FastAPI:
     application.add_event_handler("shutdown", tasks.create_shutdown_handler(application))
     application.include_router(index.router, tags=["Index"])
     application.include_router(controller.router, prefix="/v3")
-    application.mount("/v3/compute", compute_api)
+    application.mount("/v3/compute", compute_api, name="compute")
 
     return application
 
@@ -153,11 +139,12 @@ async def controller_bad_request_error_handler(request: Request, exc: Controller
 
 
 # make sure the content key is "message", not "detail" per default
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.detail},
+        headers=exc.headers
     )
 
 

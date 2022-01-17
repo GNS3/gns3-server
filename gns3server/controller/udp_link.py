@@ -183,7 +183,7 @@ class UDPLink(Link):
         self._capture_node = self._choose_capture_side()
         data = {"capture_file_name": capture_file_name, "data_link_type": data_link_type}
         await self._capture_node["node"].post(
-            "/adapters/{adapter_number}/ports/{port_number}/start_capture".format(
+            "/adapters/{adapter_number}/ports/{port_number}/capture/start".format(
                 adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]
             ),
             data=data,
@@ -196,7 +196,7 @@ class UDPLink(Link):
         """
         if self._capture_node:
             await self._capture_node["node"].post(
-                "/adapters/{adapter_number}/ports/{port_number}/stop_capture".format(
+                "/adapters/{adapter_number}/ports/{port_number}/capture/stop".format(
                     adapter_number=self._capture_node["adapter_number"], port_number=self._capture_node["port_number"]
                 )
             )

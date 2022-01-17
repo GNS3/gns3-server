@@ -1,21 +1,37 @@
-FROM python:3.6-alpine3.11
+FROM ubuntu:focal
 
 WORKDIR /gns3server
+
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y \
+    locales \
+    locales-all
 
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONBUFFERED 1
 
 COPY ./requirements.txt /gns3server/requirements.txt
 
-RUN set -eux \
-  && apk add --no-cache --virtual .build-deps build-base \
-     gcc libc-dev musl-dev linux-headers python3-dev \
-     vpcs qemu libvirt ubridge \
-  && pip install --no-cache-dir --upgrade pip setuptools wheel \
-  && pip install --no-cache-dir -r /gns3server/requirements.txt
+RUN DEBIAN_FRONTEND=noninteractive apt install -y \
+    locales \
+    software-properties-common \
+    python3-pip \
+    python3-all \
+    python3-setuptools \
+    python3-dev \
+    busybox-static \
+    gcc \
+    qemu-kvm \
+    libvirt-daemon-system
+
+RUN add-apt-repository ppa:gns3/ppa && apt update && DEBIAN_FRONTEND=noninteractive apt install -y \
+    vpcs \
+    ubridge \
+    dynamips
 
 COPY . /gns3server
+
+RUN mkdir -p ~/.config/GNS3/3.0/
+RUN cp scripts/gns3_server.conf ~/.config/GNS3/3.0/
+
 RUN python3 setup.py install

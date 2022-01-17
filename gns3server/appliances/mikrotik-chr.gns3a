@@ -28,200 +28,80 @@
     },
     "images": [
         {
-            "filename": "chr-7.0beta8.img",
-            "version": "7.0beta8",
-            "md5sum": "dbc5b9a1d7cc0e56d5361a0e212dbd96",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/7.0beta8/chr-7.0beta8.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.47.img",
-            "version": "6.47",
-            "md5sum": "39dea5d6a58708eebfa73332456566f4",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.47/chr-6.47.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.46.5.img",
-            "version": "6.46.5",
-            "md5sum": "f9ea37f5a5ac3110f8f5de33e24a7749",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.46.5/chr-6.46.5.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.45.8.img",
-            "version": "6.45.8",
-            "md5sum": "73cc01e22e0b301dc29416f59ced8a7d",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.45.8/chr-6.45.8.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.45.6.img",
-            "version": "6.45.6",
-            "md5sum": "e68db699ba23ac7e4fba95b3075c1c6b",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.45.6/chr-6.45.6.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.44.5.img",
-            "version": "6.44.5",
-            "md5sum": "19aa21073c8ea4540daacde69bacda24",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.44.5/chr-6.44.5.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.44.3.img",
-            "version": "6.44.3",
-            "md5sum": "c46b33125d536faa24473a519abbb89d",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.44.3/chr-6.44.3.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.44.2.img",
-            "version": "6.44.2",
-            "md5sum": "f1ddaa47829e12c1f9f023d8c06b88cc",
-            "filesize": 67108864,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.44.2/chr-6.44.2.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.44.img",
-            "version": "6.44",
-            "md5sum": "86fdf9f0093b4e8f9e7b1c8019fb37b5",
-            "filesize": 33621035,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.44/chr-6.44.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.43.8.img",
-            "version": "6.43.8",
-            "md5sum": "9437133fc7e77779dc3ff62b98f30dc2",
+            "filename": "chr-7.1rc7.img",
+            "version": "7.1rc7",
+            "md5sum": "04bc0ae1e5fbbda1522135bc57cf6560",
             "filesize": 134217728,
             "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.43.8/chr-6.43.8.img.zip",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.1rc7/chr-7.1rc7.img.zip",
             "compression": "zip"
         },
         {
-            "filename": "chr-6.42.12.img",
-            "version": "6.42.12",
-            "md5sum": "8485c606eb38e629fb1f5356d31bbc86",
-            "filesize": 45537201,
-            "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.42.12/chr-6.42.12.img.zip",
-            "compression": "zip"
-        },
-        {
-            "filename": "chr-6.42.9.img",
-            "version": "6.42.9",
-            "md5sum": "1f856978cfc3ceb4b5e18e4e079f2e32",
+            "filename": "chr-7.1.img",
+            "version": "7.1",
+            "md5sum": "41545bc7b55717fe5bb1e489ee39ca45",
             "filesize": 134217728,
             "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.42.9/chr-6.42.9.img.zip",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.1/chr-7.1.img.zip",
             "compression": "zip"
         },
         {
-            "filename": "chr-6.42.img",
-            "version": "6.42",
-            "md5sum": "279bb518497b40f41c8585128916a2fb",
-            "filesize": 134217728,
+            "filename": "chr-6.49rc2.img",
+            "version": "6.49rc2",
+            "md5sum": "e1088f8f64ac3d6ecf2e56ac96261226",
+            "filesize": 67108864,
             "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/6.42/chr-6.42.img.zip",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.49rc2/chr-6.49rc2.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.49.1.img",
+            "version": "6.49.1",
+            "md5sum": "6c896c4c853de99f2ea77f0f4b102261",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.49.1/chr-6.49.1.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.48.5.img",
+            "version": "6.48.5",
+            "md5sum": "d14debd4cd989f16f695b5b075960703",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.48.5/chr-6.48.5.img.zip",
             "compression": "zip"
         }
     ],
     "versions": [
         {
-            "name": "7.0beta8",
+            "name": "7.1rc7",
             "images": {
-                "hda_disk_image": "chr-7.0beta8.img"
+                "hda_disk_image": "chr-7.1rc7.img"
             }
         },
         {
-            "name": "6.47",
+            "name": "7.1",
             "images": {
-                "hda_disk_image": "chr-6.47.img"
+                "hda_disk_image": "chr-7.1.img"
             }
         },
         {
-            "name": "6.46.5",
+            "name": "6.49rc2",
             "images": {
-                "hda_disk_image": "chr-6.46.5.img"
+                "hda_disk_image": "chr-6.49rc2.img"
             }
         },
         {
-            "name": "6.45.8",
+            "name": "6.49.1",
             "images": {
-                "hda_disk_image": "chr-6.45.8.img"
+                "hda_disk_image": "chr-6.49.1.img"
             }
         },
         {
-            "name": "6.45.6",
+            "name": "6.48.5",
             "images": {
-                "hda_disk_image": "chr-6.45.6.img"
-            }
-        },
-        {
-            "name": "6.44.5",
-            "images": {
-                "hda_disk_image": "chr-6.44.5.img"
-            }
-        },
-        {
-            "name": "6.44.3",
-            "images": {
-                "hda_disk_image": "chr-6.44.3.img"
-            }
-        },
-        {
-            "name": "6.44.2",
-            "images": {
-                "hda_disk_image": "chr-6.44.2.img"
-            }
-        },
-        {
-            "name": "6.44",
-            "images": {
-                "hda_disk_image": "chr-6.44.img"
-            }
-        },
-        {
-            "name": "6.43.8",
-            "images": {
-                "hda_disk_image": "chr-6.43.8.img"
-            }
-        },
-        {
-            "name": "6.42.12",
-            "images": {
-                "hda_disk_image": "chr-6.42.12.img"
-            }
-        },
-        {
-            "name": "6.42.9",
-            "images": {
-                "hda_disk_image": "chr-6.42.9.img"
-            }
-        },
-        {
-            "name": "6.42",
-            "images": {
-                "hda_disk_image": "chr-6.42.img"
+                "hda_disk_image": "chr-6.48.5.img"
             }
         }
     ]

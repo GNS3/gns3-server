@@ -24,6 +24,8 @@ class ControllerSettings(BaseModel):
     jwt_secret_key: str = None
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 1440  # 24 hours
+    default_admin_username: str = "admin"
+    default_admin_password: SecretStr = SecretStr("admin")
 
     class Config:
         validate_assignment = True
@@ -131,11 +133,8 @@ class ServerSettings(BaseModel):
     udp_start_port_range: int = Field(10000, gt=0, le=65535)
     udp_end_port_range: int = Field(30000, gt=0, le=65535)
     ubridge_path: str = "ubridge"
-    user: str = None
-    password: SecretStr = None
-    enable_http_auth: bool = False
-    default_admin_username: str = "admin"
-    default_admin_password: SecretStr = SecretStr("admin")
+    compute_username: str = "admin"
+    compute_password: SecretStr = SecretStr("")
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
     allow_remote_console: bool = False
@@ -162,14 +161,6 @@ class ServerSettings(BaseModel):
     def vnc_console_port_range(cls, v, values):
         if "vnc_console_start_port_range" in values and v <= values["vnc_console_start_port_range"]:
             raise ValueError("vnc_console_end_port_range must be > vnc_console_start_port_range")
-        return v
-
-    @validator("enable_http_auth")
-    def validate_enable_auth(cls, v, values):
-
-        if v is True:
-            if "user" not in values or not values["user"]:
-                raise ValueError("HTTP authentication is enabled but user is not configured")
         return v
 
     @validator("enable_ssl")

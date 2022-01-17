@@ -1,0 +1,52 @@
+{
+    "appliance_id": "5c09a704-0e38-48ac-8392-52e0c5890cf3",
+    "name": "AlmaLinux",
+    "category": "guest",
+    "description": "An Open Source, community-governed and forever-free enterprise Linux distribution, focused on long-term stability, providing a robust production-grade platform. AlmaLinux OS is 1:1 binary compatible with RHEL and pre-Stream CentOS.",
+    "vendor_name": "Alma Linux",
+    "vendor_url": "https://almalinux.org/",
+    "documentation_url": "https://wiki.almalinux.org/",
+    "product_name": "Alma Linux",
+    "product_url": "https://almalinux.org/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Da-Geek",
+    "maintainer_email": "dageek@dageeks-geeks.gg",
+    "usage": "Username:\talmalinux\nPassword:\talmalinux\nTo become root, use \"sudo -i\".\n",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1536,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
+            "version": "8.5",
+            "md5sum": "a64ece809ae06180ac59cfa622d98af0",
+            "filesize": 561774592,
+            "download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/",
+            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2"
+        },
+        {
+            "filename": "almalinux-cloud-init-data.iso",
+            "version": "1.0",
+            "md5sum": "72fb52af76e9561d125dd99224e2c1d1",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/AlmaLinux/almalinux-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+        {
+            "name": "8.5",
+            "images": {
+                "hda_disk_image": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
+                "cdrom_image": "almalinux-cloud-init-data.iso"
+            }
+        }
+    ]
+}

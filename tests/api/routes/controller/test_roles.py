@@ -142,7 +142,7 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 5  # 4 default permissions + 1 custom permission
+        assert len(permissions) == 6  # 5 default permissions + 1 custom permission
 
     async def test_get_role_permissions(
             self,
@@ -160,7 +160,7 @@ class TestRolesPermissionsRoutes:
                 role_id=role_in_db.role_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 5  # 4 default permissions + 1 custom permission
+        assert len(response.json()) == 6  # 5 default permissions + 1 custom permission
 
     async def test_remove_role_from_group(
             self,
@@ -182,4 +182,4 @@ class TestRolesPermissionsRoutes:
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
         permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 4  # 4 default permissions
+        assert len(permissions) == 5  # 5 default permissions
