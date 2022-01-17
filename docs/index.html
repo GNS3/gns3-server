@@ -14,16 +14,16 @@
     <script>
     const ui = SwaggerUIBundle({
         url: 'openapi.json',
-    oauth2RedirectUrl: window.location.origin + '/docs/oauth2-redirect',
-        dom_id: '#swagger-ui',
-        presets: [
+    "dom_id": "#swagger-ui",
+"layout": "BaseLayout",
+"deepLinking": true,
+"showExtensions": true,
+"showCommonExtensions": true,
+oauth2RedirectUrl: window.location.origin + '/docs/oauth2-redirect',
+    presets: [
         SwaggerUIBundle.presets.apis,
         SwaggerUIBundle.SwaggerUIStandalonePreset
         ],
-        layout: "BaseLayout",
-        deepLinking: true,
-        showExtensions: true,
-        showCommonExtensions: true
     })
     </script>
     </body>
