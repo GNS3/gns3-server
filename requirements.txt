@@ -1,5 +1,5 @@
 uvicorn==0.17.0
-fastapi==0.71.0
+fastapi==0.72.0
 python-multipart==0.0.5
 websockets==10.1  ; python_version >= "3.7"
 websockets==9.1  ; python_version < "3.7"
