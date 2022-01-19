@@ -118,11 +118,6 @@ class Hypervisor(DynamipsHypervisor):
 
         self._command = self._build_command()
         env = os.environ.copy()
-        if sys.platform.startswith("win"):
-            # add the Npcap directory to $PATH to force Dynamips to use npcap DLL instead of Winpcap (if installed)
-            system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
-            if os.path.isdir(system_root):
-                env["PATH"] = system_root + ";" + env["PATH"]
         try:
             log.info(f"Starting Dynamips: {self._command}")
             self._stdout_file = os.path.join(self.working_dir, f"dynamips_i{self._id}_stdout.txt")

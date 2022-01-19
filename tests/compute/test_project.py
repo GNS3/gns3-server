@@ -162,7 +162,7 @@ async def test_project_delete():
     assert os.path.exists(directory) is False
 
 
-@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any project")
+@pytest.mark.skipif(os.getuid() == 0, reason="Root can delete any project")
 @pytest.mark.asyncio
 async def test_project_delete_permission_issue():
 

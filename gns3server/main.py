@@ -29,19 +29,6 @@ import gns3server.utils.get_resource
 
 import os
 import sys
-import types
-
-
-# To avoid strange bug later we switch the event loop before any other operation
-if sys.platform.startswith("win"):
-    import asyncio
-
-    # use the Proactor event loop on Windows
-    loop = asyncio.ProactorEventLoop()
-    asyncio.set_event_loop(loop)
-
-if sys.platform.startswith("win"):
-    sys.modules["termios"] = types.ModuleType("termios")
 
 
 def daemonize():
@@ -77,9 +64,10 @@ def main():
     Entry point for GNS3 server
     """
 
-    if not sys.platform.startswith("win"):
-        if "--daemon" in sys.argv:
-            daemonize()
+    if sys.platform.startswith("win"):
+        raise SystemExit("Windows is not a supported platform to run the GNS3 server")
+    if "--daemon" in sys.argv:
+        daemonize()
     from gns3server.server import Server
 
     Server().run()

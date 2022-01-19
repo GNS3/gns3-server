@@ -21,7 +21,6 @@ import socket
 import struct
 import psutil
 
-from .windows_service import check_windows_service_is_running
 from gns3server.compute.compute_error import ComputeError
 from gns3server.config import Config
 
@@ -197,55 +196,36 @@ def interfaces():
     """
 
     results = []
-    if not sys.platform.startswith("win"):
-        allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
-        net_if_addrs = psutil.net_if_addrs()
-        for interface in sorted(net_if_addrs.keys()):
-            if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):
-                log.warning(f"Interface '{interface}' is not allowed to be used on this server")
-                continue
-            ip_address = ""
-            mac_address = ""
-            netmask = ""
-            interface_type = "ethernet"
-            for addr in net_if_addrs[interface]:
-                # get the first available IPv4 address only
-                if addr.family == socket.AF_INET:
-                    ip_address = addr.address
-                    netmask = addr.netmask
-                if addr.family == psutil.AF_LINK:
-                    mac_address = addr.address
-            if interface.startswith("tap"):
-                # found no way to reliably detect a TAP interface
-                interface_type = "tap"
-            results.append(
-                {
-                    "id": interface,
-                    "name": interface,
-                    "ip_address": ip_address,
-                    "netmask": netmask,
-                    "mac_address": mac_address,
-                    "type": interface_type,
-                }
-            )
-    else:
-        try:
-            service_installed = True
-            if not check_windows_service_is_running("npf") and not check_windows_service_is_running("npcap"):
-                service_installed = False
-            else:
-                results = get_windows_interfaces()
-        except ImportError:
-            message = (
-                "pywin32 module is not installed, please install it on the server to get the available interface names"
-            )
-            raise ComputeError(message)
-        except Exception as e:
-            log.error(f"uncaught exception {type(e)}", exc_info=1)
-            raise ComputeError(f"uncaught exception: {e}")
-
-        if service_installed is False:
-            raise ComputeError("The Winpcap or Npcap is not installed or running")
+    allowed_interfaces = Config.instance().settings.Server.allowed_interfaces
+    net_if_addrs = psutil.net_if_addrs()
+    for interface in sorted(net_if_addrs.keys()):
+        if allowed_interfaces and interface not in allowed_interfaces and not interface.startswith("gns3tap"):
+            log.warning(f"Interface '{interface}' is not allowed to be used on this server")
+            continue
+        ip_address = ""
+        mac_address = ""
+        netmask = ""
+        interface_type = "ethernet"
+        for addr in net_if_addrs[interface]:
+            # get the first available IPv4 address only
+            if addr.family == socket.AF_INET:
+                ip_address = addr.address
+                netmask = addr.netmask
+            if addr.family == psutil.AF_LINK:
+                mac_address = addr.address
+        if interface.startswith("tap"):
+            # found no way to reliably detect a TAP interface
+            interface_type = "tap"
+        results.append(
+            {
+                "id": interface,
+                "name": interface,
+                "ip_address": ip_address,
+                "netmask": netmask,
+                "mac_address": mac_address,
+                "type": interface_type,
+            }
+        )
 
     # This interface have special behavior
     for result in results:

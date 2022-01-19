@@ -114,29 +114,15 @@ class Qemu(BaseManager):
         else:
             log.warning("The PATH environment variable doesn't exist")
         # look for Qemu binaries in the current working directory and $PATH
-        if sys.platform.startswith("win"):
-            # add specific Windows paths
-            if hasattr(sys, "frozen"):
-                # add any qemu dir in the same location as gns3server.exe to the list of paths
+        if sys.platform.startswith("darwin") and hasattr(sys, "frozen"):
+            # add specific locations on Mac OS X regardless of what's in $PATH
+            paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
+            try:
                 exec_dir = os.path.dirname(os.path.abspath(sys.executable))
-                for f in os.listdir(exec_dir):
-                    if f.lower().startswith("qemu"):
-                        paths.add(os.path.join(exec_dir, f))
-
-            if "PROGRAMFILES(X86)" in os.environ and os.path.exists(os.environ["PROGRAMFILES(X86)"]):
-                paths.add(os.path.join(os.environ["PROGRAMFILES(X86)"], "qemu"))
-            if "PROGRAMFILES" in os.environ and os.path.exists(os.environ["PROGRAMFILES"]):
-                paths.add(os.path.join(os.environ["PROGRAMFILES"], "qemu"))
-        elif sys.platform.startswith("darwin"):
-            if hasattr(sys, "frozen"):
-                # add specific locations on Mac OS X regardless of what's in $PATH
-                paths.update(["/usr/bin", "/usr/local/bin", "/opt/local/bin"])
-                try:
-                    exec_dir = os.path.dirname(os.path.abspath(sys.executable))
-                    paths.add(os.path.abspath(os.path.join(exec_dir, "qemu/bin")))
-                # If the user run the server by hand from outside
-                except FileNotFoundError:
-                    paths.add("/Applications/GNS3.app/Contents/MacOS/qemu/bin")
+                paths.add(os.path.abspath(os.path.join(exec_dir, "qemu/bin")))
+            # If the user run the server by hand from outside
+            except FileNotFoundError:
+                paths.add("/Applications/GNS3.app/Contents/MacOS/qemu/bin")
         return paths
 
     @staticmethod
@@ -205,31 +191,16 @@ class Qemu(BaseManager):
         :param qemu_path: path to Qemu executable.
         """
 
-        if sys.platform.startswith("win"):
-            # Qemu on Windows doesn't return anything with parameter -version
-            # look for a version number in version.txt file in the same directory instead
-            version_file = os.path.join(os.path.dirname(qemu_path), "version.txt")
-            if os.path.isfile(version_file):
-                try:
-                    with open(version_file, "rb") as file:
-                        version = file.read().decode("utf-8").strip()
-                        match = re.search(r"[0-9\.]+", version)
-                        if match:
-                            return version
-                except (UnicodeDecodeError, OSError) as e:
-                    log.warning(f"could not read {version_file}: {e}")
-            return ""
-        else:
-            try:
-                output = await subprocess_check_output(qemu_path, "-version", "-nographic")
-                match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
-                if match:
-                    version = match.group(1)
-                    return version
-                else:
-                    raise QemuError(f"Could not determine the Qemu version for {qemu_path}")
-            except (OSError, subprocess.SubprocessError) as e:
-                raise QemuError(f"Error while looking for the Qemu version: {e}")
+        try:
+            output = await subprocess_check_output(qemu_path, "-version", "-nographic")
+            match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
+            if match:
+                version = match.group(1)
+                return version
+            else:
+                raise QemuError(f"Could not determine the Qemu version for {qemu_path}")
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError(f"Error while looking for the Qemu version: {e}")
 
     @staticmethod
     async def _get_qemu_img_version(qemu_img_path):
@@ -249,38 +220,6 @@ class Qemu(BaseManager):
                 raise QemuError(f"Could not determine the Qemu-img version for {qemu_img_path}")
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError(f"Error while looking for the Qemu-img version: {e}")
-
-    @staticmethod
-    def get_haxm_windows_version():
-        """
-        Gets the HAXM version number (Windows).
-
-        :returns: HAXM version number. Returns None if HAXM is not installed.
-        """
-
-        assert sys.platform.startswith("win")
-        import winreg
-
-        hkey = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products"
-        )
-        version = None
-        for index in range(winreg.QueryInfoKey(hkey)[0]):
-            product_id = winreg.EnumKey(hkey, index)
-            try:
-                product_key = winreg.OpenKey(hkey, fr"{product_id}\InstallProperties")
-                try:
-                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith(
-                        "Hardware Accelerated Execution Manager"
-                    ):
-                        version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
-                        break
-                finally:
-                    winreg.CloseKey(product_key)
-            except OSError:
-                continue
-        winreg.CloseKey(hkey)
-        return version
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):

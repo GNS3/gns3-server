@@ -32,20 +32,6 @@ sys._called_from_test = True
 sys.original_platform = sys.platform
 
 
-if sys.platform.startswith("win") and sys.version_info < (3, 8):
-    @pytest.fixture(scope="session")
-    def event_loop(request):
-        """
-        Overwrite pytest_asyncio event loop on Windows for Python < 3.8
-        As of Python 3.8, the default event loop on Windows is Proactor
-        """
-
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
-        yield loop
-        asyncio.set_event_loop(None)
-
-
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
 # this event_loop is used by pytest-asyncio, and redefining it
 # is currently the only way of changing the scope of this fixture

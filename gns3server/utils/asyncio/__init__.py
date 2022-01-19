@@ -136,22 +136,6 @@ async def wait_for_file_creation(path, timeout=60):
     raise asyncio.TimeoutError()
 
 
-async def wait_for_named_pipe_creation(pipe_path, timeout=60):
-
-    import win32pipe
-    import pywintypes
-
-    while timeout > 0:
-        try:
-            win32pipe.WaitNamedPipe(pipe_path, 1)
-        except pywintypes.error:
-            await asyncio.sleep(0.5)
-            timeout -= 0.5
-        else:
-            return
-    raise asyncio.TimeoutError()
-
-
 def locking(f):
     @functools.wraps(f)
     async def wrapper(oself, *args, **kwargs):

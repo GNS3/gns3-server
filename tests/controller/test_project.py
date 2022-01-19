@@ -134,7 +134,6 @@ async def test_init_path(tmpdir):
     assert p.path == str(tmpdir)
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_changing_path_with_quote_not_allowed(tmpdir):
 

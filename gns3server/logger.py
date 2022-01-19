@@ -38,7 +38,7 @@ class ColouredFormatter(logging.Formatter):
 
         message = super().format(record)
 
-        if not colour or sys.platform.startswith("win"):
+        if not colour:
             return message.replace("#RESET#", "")
 
         level_no = record.levelno
@@ -147,11 +147,6 @@ def init_logger(level, logfile=None, max_bytes=10000000, backup_count=10, compre
             stream_handler = CompressedRotatingFileHandler(logfile, maxBytes=max_bytes, backupCount=backup_count)
         else:
             stream_handler = RotatingFileHandler(logfile, maxBytes=max_bytes, backupCount=backup_count)
-        stream_handler.formatter = ColouredFormatter(
-            "{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{"
-        )
-    elif sys.platform.startswith("win"):
-        stream_handler = WinStreamHandler(sys.stdout)
         stream_handler.formatter = ColouredFormatter(
             "{asctime} {levelname} {filename}:{lineno} {message}", "%Y-%m-%d %H:%M:%S", "{"
         )
