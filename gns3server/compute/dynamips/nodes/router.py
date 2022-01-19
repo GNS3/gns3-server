@@ -103,10 +103,7 @@ class Router(BaseNode):
         self._idlesleep = 30
         self._ghost_file = ""
         self._ghost_status = 0
-        if sys.platform.startswith("win"):
-            self._exec_area = 16  # 16 MB by default on Windows (Cygwin)
-        else:
-            self._exec_area = 64  # 64 MB on other systems
+        self._exec_area = 64
         self._disk0 = 0  # Megabytes
         self._disk1 = 0  # Megabytes
         self._auto_delete_disks = False
@@ -711,29 +708,6 @@ class Router(BaseNode):
         log.info(f'Router "{self._name}" [{self._id}]: idle-PC set to {idlepc}')
         self._idlepc = idlepc
 
-    def set_process_priority_windows(self, pid, priority=None):
-        """
-        Sets process priority on Windows
-
-        :param pid: process PID
-        """
-
-        import win32api
-        import win32process
-        import win32con
-        import pywintypes
-
-        old_priority = None
-        try:
-            handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
-            old_priority = win32process.GetPriorityClass(handle)
-            if priority is None:
-                priority = win32process.BELOW_NORMAL_PRIORITY_CLASS
-            win32process.SetPriorityClass(handle, priority)
-        except pywintypes.error as e:
-            log.error(f"Cannot set priority for Dynamips process (PID={pid}) ")
-        return old_priority
-
     async def get_idle_pc_prop(self):
         """
         Gets the idle PC proposals.
@@ -751,13 +725,8 @@ class Router(BaseNode):
             await asyncio.sleep(20)  # leave time to the router to boot
 
         log.info(f'Router "{self._name}" [{self._id}] has started calculating Idle-PC values')
-        old_priority = None
-        if sys.platform.startswith("win"):
-            old_priority = self.set_process_priority_windows(self._hypervisor.process.pid)
         begin = time.time()
         idlepcs = await self._hypervisor.send(f'vm get_idle_pc_prop "{self._name}" 0')
-        if old_priority is not None:
-            self.set_process_priority_windows(self._hypervisor.process.pid, old_priority)
         log.info(
             'Router "{name}" [{id}] has finished calculating Idle-PC values after {time:.4f} seconds'.format(
                 name=self._name, id=self._id, time=time.time() - begin

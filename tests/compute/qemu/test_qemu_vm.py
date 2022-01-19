@@ -57,10 +57,7 @@ def fake_qemu_img_binary(monkeypatch, tmpdir):
 def fake_qemu_binary(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
-    if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.exe")
-    else:
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -190,7 +187,6 @@ async def test_termination_callback(vm):
         assert event == vm
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_termination_callback_error(vm, tmpdir):
 
@@ -276,10 +272,7 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         vm.qemu_path = None
 
     # Should not crash with unicode characters
-    if sys.platform.startswith("win"):
-        path = str(tmpdir / "\u62FF" / "qemu-system-mipsw.exe")
-    else:
-        path = str(tmpdir / "\u62FF" / "qemu-system-mips")
+    path = str(tmpdir / "\u62FF" / "qemu-system-mips")
 
     os.makedirs(str(tmpdir / "\u62FF"))
 
@@ -291,10 +284,9 @@ def test_set_qemu_path(vm, tmpdir, fake_qemu_binary):
         f.write("1")
 
     # Raise because file is not executable
-    if not sys.platform.startswith("win"):
-        with pytest.raises(QemuError):
-            vm.qemu_path = path
-        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    with pytest.raises(QemuError):
+        vm.qemu_path = path
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = path
     assert vm.qemu_path == path
@@ -314,8 +306,7 @@ def test_set_qemu_path_windows(vm):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.EXE")
     open(bin_path, "w+").close()
-    if not sys.platform.startswith("win"):
-        os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = bin_path
 
@@ -327,8 +318,7 @@ def test_set_qemu_path_old_windows(vm):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu.exe")
     open(bin_path, "w+").close()
-    if not sys.platform.startswith("win"):
-        os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     vm.qemu_path = bin_path
 
@@ -336,7 +326,6 @@ def test_set_qemu_path_old_windows(vm):
     assert vm.platform == "i386"
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 def test_set_qemu_path_kvm_binary(vm, fake_qemu_binary):
 
     bin_path = os.path.join(os.environ["PATH"], "qemu-kvm")
@@ -358,10 +347,7 @@ async def test_set_platform(compute_project, manager):
     with patch("shutil.which", return_value="/bin/qemu-system-x86_64") as which_mock:
         with patch("gns3server.compute.qemu.QemuVM._check_qemu_path"):
             vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, platform="x86_64")
-            if sys.platform.startswith("win"):
-                which_mock.assert_called_with("qemu-system-x86_64w.exe", path=mock.ANY)
-            else:
-                which_mock.assert_called_with("qemu-system-x86_64", path=mock.ANY)
+            which_mock.assert_called_with("qemu-system-x86_64", path=mock.ANY)
     assert vm.platform == "x86_64"
     assert vm.qemu_path == "/bin/qemu-system-x86_64"
 
@@ -447,7 +433,6 @@ async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
     ]
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_set_process_priority(vm, fake_qemu_img_binary):
 
@@ -461,7 +446,6 @@ async def test_set_process_priority(vm, fake_qemu_img_binary):
         assert args == ("renice", "-n", "5", "-p", "42")
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_set_process_priority_normal(vm, fake_qemu_img_binary):
 
@@ -634,7 +618,6 @@ async def test_build_command_kvm_2_4(linux_platform, vm, fake_qemu_binary):
             ]
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_build_command_without_display(vm):
 
@@ -757,7 +740,6 @@ async def test_build_command_large_number_of_adapters(vm):
         await vm._build_command()
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_build_command_with_invalid_options(vm):
 

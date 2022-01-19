@@ -348,23 +348,10 @@ class Dynamips(BaseManager):
             nio.suspend = nio_settings.get("suspend", False)
         elif nio_settings["type"] == "nio_generic_ethernet":
             ethernet_device = nio_settings["ethernet_device"]
-            if sys.platform.startswith("win"):
-                # replace the interface name by the GUID on Windows
-                windows_interfaces = interfaces()
-                npf_interface = None
-                for interface in windows_interfaces:
-                    if interface["name"] == ethernet_device:
-                        npf_interface = interface["id"]
-                if not npf_interface:
-                    raise DynamipsError(f"Could not find interface {ethernet_device} on this host")
-                else:
-                    ethernet_device = npf_interface
             if not is_interface_up(ethernet_device):
                 raise DynamipsError(f"Ethernet interface {ethernet_device} is down")
             nio = NIOGenericEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_linux_ethernet":
-            if sys.platform.startswith("win"):
-                raise DynamipsError("This NIO type is not supported on Windows")
             ethernet_device = nio_settings["ethernet_device"]
             nio = NIOLinuxEthernet(node.hypervisor, ethernet_device)
         elif nio_settings["type"] == "nio_tap":
@@ -564,7 +551,6 @@ class Dynamips(BaseManager):
 
         await vm.set_idlepc("0x0")
         was_auto_started = False
-        old_priority = None
         try:
             status = await vm.get_status()
             if status != "running":
@@ -576,8 +562,6 @@ class Dynamips(BaseManager):
             if not idlepcs:
                 raise DynamipsError("No Idle-PC values found")
 
-            if sys.platform.startswith("win"):
-                old_priority = vm.set_process_priority_windows(vm.hypervisor.process.pid)
             for idlepc in idlepcs:
                 match = re.search(r"^0x[0-9a-f]{8}$", idlepc.split()[0])
                 if not match:
@@ -606,8 +590,6 @@ class Dynamips(BaseManager):
         except DynamipsError:
             raise
         finally:
-            if old_priority is not None:
-                vm.set_process_priority_windows(vm.hypervisor.process.pid, old_priority)
             if was_auto_started:
                 await vm.stop()
         return validated_idlepc

@@ -69,7 +69,6 @@ async def test_json(controller):
     assert vm.asdict() == vm._settings
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 @pytest.mark.asyncio
 async def test_update_settings(controller):
 
@@ -88,7 +87,6 @@ async def test_update_settings(controller):
     assert "vm" not in controller.computes
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 @pytest.mark.asyncio
 async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     """
@@ -106,7 +104,6 @@ async def test_auto_start(controller, dummy_gns3vm, dummy_engine):
     assert controller.computes["vm"].password.get_secret_value() == "world"
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working well on Windows")
 @pytest.mark.asyncio
 async def test_auto_start_with_error(controller, dummy_gns3vm, dummy_engine):
 

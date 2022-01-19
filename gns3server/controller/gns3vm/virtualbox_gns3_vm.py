@@ -243,22 +243,11 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             )
 
         if not (await self._check_vboxnet_exists(vboxnet)):
-            if sys.platform.startswith("win") and vboxnet == "vboxnet0":
-                # The GNS3 VM is configured with vboxnet0 by default which is not available
-                # on Windows. Try to patch this with the first available vboxnet we find.
-                first_available_vboxnet = await self._find_first_available_vboxnet()
-                if first_available_vboxnet is None:
-                    raise GNS3VMError(
-                        f'Please add a VirtualBox host-only network with DHCP enabled and attached it to network adapter {hostonly_interface_number} for "{self._vmname}"'
-                    )
-                await self.set_hostonly_network(hostonly_interface_number, first_available_vboxnet)
-                vboxnet = first_available_vboxnet
-            else:
-                raise GNS3VMError(
-                    'VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(
-                        vboxnet, hostonly_interface_number, self._vmname
-                    )
+            raise GNS3VMError(
+                'VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(
+                    vboxnet, hostonly_interface_number, self._vmname
                 )
+            )
 
         if not (await self._check_dhcp_server(vboxnet)):
             raise GNS3VMError(f'DHCP must be enabled on VirtualBox host-only network "{vboxnet}"')

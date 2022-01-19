@@ -63,63 +63,32 @@ class Config:
         appname = "GNS3"
         version = f"{__version_info__[0]}.{__version_info__[1]}"
 
-        if sys.platform.startswith("win"):
+        # On UNIX-like platforms, the configuration file location can be one of the following:
+        # 1: $HOME/.config/GNS3/gns3_server.conf
+        # 2: $HOME/.config/GNS3.conf
+        # 3: /etc/xdg/GNS3/gns3_server.conf
+        # 4: /etc/xdg/GNS3.conf
+        # 5: gns3_server.conf in the current working directory
 
-            # On windows, the configuration file location can be one of the following:
-            # 1: %APPDATA%/GNS3/gns3_server.ini
-            # 2: %APPDATA%/GNS3.ini
-            # 3: %COMMON_APPDATA%/GNS3/gns3_server.ini
-            # 4: %COMMON_APPDATA%/GNS3.ini
-            # 5: server.ini in the current working directory
+        home = os.path.expanduser("~")
+        server_filename = "gns3_server.conf"
 
-            appdata = os.path.expandvars("%APPDATA%")
-            common_appdata = os.path.expandvars("%COMMON_APPDATA%")
-
-            if self._profile:
-                legacy_user_dir = os.path.join(appdata, appname, "profiles", self._profile)
-                versioned_user_dir = os.path.join(appdata, appname, version, "profiles", self._profile)
-            else:
-                legacy_user_dir = os.path.join(appdata, appname)
-                versioned_user_dir = os.path.join(appdata, appname, version)
-
-            server_filename = "gns3_server.ini"
-
-            if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [
-                    os.path.join(os.getcwd(), server_filename),
-                    os.path.join(versioned_user_dir, server_filename),
-                    os.path.join(appdata, appname + ".ini"),
-                    os.path.join(common_appdata, appname, server_filename),
-                    os.path.join(common_appdata, appname + ".ini"),
-                ]
+        if self._profile:
+            legacy_user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
+            versioned_user_dir = os.path.join(home, ".config", appname, version, "profiles", self._profile)
         else:
+            legacy_user_dir = os.path.join(home, ".config", appname)
+            versioned_user_dir = os.path.join(home, ".config", appname, version)
 
-            # On UNIX-like platforms, the configuration file location can be one of the following:
-            # 1: $HOME/.config/GNS3/gns3_server.conf
-            # 2: $HOME/.config/GNS3.conf
-            # 3: /etc/xdg/GNS3/gns3_server.conf
-            # 4: /etc/xdg/GNS3.conf
-            # 5: gns3_server.conf in the current working directory
-
-            home = os.path.expanduser("~")
-            server_filename = "gns3_server.conf"
-
-            if self._profile:
-                legacy_user_dir = os.path.join(home, ".config", appname, "profiles", self._profile)
-                versioned_user_dir = os.path.join(home, ".config", appname, version, "profiles", self._profile)
-            else:
-                legacy_user_dir = os.path.join(home, ".config", appname)
-                versioned_user_dir = os.path.join(home, ".config", appname, version)
-
-            if self._files is None and not hasattr(sys, "_called_from_test"):
-                self._files = [
-                    os.path.join(os.getcwd(), server_filename),
-                    os.path.join(versioned_user_dir, server_filename),
-                    os.path.join(home, ".config", appname + ".conf"),
-                    os.path.join("/etc/gns3", server_filename),
-                    os.path.join("/etc/xdg", appname, server_filename),
-                    os.path.join("/etc/xdg", appname + ".conf"),
-                ]
+        if self._files is None and not hasattr(sys, "_called_from_test"):
+            self._files = [
+                os.path.join(os.getcwd(), server_filename),
+                os.path.join(versioned_user_dir, server_filename),
+                os.path.join(home, ".config", appname + ".conf"),
+                os.path.join("/etc/gns3", server_filename),
+                os.path.join("/etc/xdg", appname, server_filename),
+                os.path.join("/etc/xdg", appname + ".conf"),
+            ]
 
         if self._files is None:
             self._files = []
@@ -182,10 +151,7 @@ class Config:
         Return the server configuration file path.
         """
 
-        if sys.platform.startswith("win"):
-            server_config_filename = "gns3_server.ini"
-        else:
-            server_config_filename = "gns3_server.conf"
+        server_config_filename = "gns3_server.conf"
         return os.path.join(self.config_dir, server_config_filename)
 
     def clear(self):

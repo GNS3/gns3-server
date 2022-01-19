@@ -38,10 +38,6 @@ from gns3server.compute.nios.nio_udp import NIOUDP
 from gns3server.compute.adapters.ethernet_adapter import EthernetAdapter
 from gns3server.compute.base_node import BaseNode
 
-if sys.platform.startswith("win"):
-    import msvcrt
-    import win32file
-
 import logging
 
 log = logging.getLogger(__name__)
@@ -839,14 +835,11 @@ class VirtualBoxVM(BaseNode):
         :returns: pipe path (string)
         """
 
-        if sys.platform.startswith("win"):
-            pipe_name = fr"\\.\pipe\gns3_vbox\{self.id}"
-        else:
-            pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vbox", f"{self.id}")
-            try:
-                os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
-            except OSError as e:
-                raise VirtualBoxError(f"Could not create the VirtualBox pipe directory: {e}")
+        pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vbox", f"{self.id}")
+        try:
+            os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
+        except OSError as e:
+            raise VirtualBoxError(f"Could not create the VirtualBox pipe directory: {e}")
         return pipe_name
 
     async def _set_serial_console(self):

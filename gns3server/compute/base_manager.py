@@ -301,10 +301,6 @@ class BaseManager:
         :returns: True or False
         """
 
-        if sys.platform.startswith("win"):
-            # do not check anything on Windows
-            return True
-
         if sys.platform.startswith("darwin"):
             if os.stat(executable).st_uid == 0:
                 return True
@@ -425,11 +421,10 @@ class BaseManager:
             valid_directory_prefices.append(extra_dir)
 
         # Windows path should not be send to a unix server
-        if not sys.platform.startswith("win"):
-            if re.match(r"^[A-Z]:", path) is not None:
-                raise NodeError(
-                    f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'"
-                )
+        if re.match(r"^[A-Z]:", path) is not None:
+            raise NodeError(
+                f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'"
+            )
 
         if not os.path.isabs(orig_path):
 

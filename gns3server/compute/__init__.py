@@ -32,10 +32,7 @@ if (
     or os.environ.get("PYTEST_BUILD_DOCUMENTATION") == "1"
 ):
     # IOU & Docker only runs on Linux but test suite works on UNIX platform
-    if not sys.platform.startswith("win"):
-        from .docker import Docker
-
-        MODULES.append(Docker)
-        from .iou import IOU
-
-        MODULES.append(IOU)
+    from .docker import Docker
+    from .iou import IOU
+    MODULES.append(Docker)
+    MODULES.append(IOU)

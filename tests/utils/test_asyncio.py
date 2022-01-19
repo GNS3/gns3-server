@@ -45,7 +45,6 @@ async def test_exception_wait_run_in_executor():
         await wait_run_in_executor(raise_exception)
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_subprocess_check_output(tmpdir):
 

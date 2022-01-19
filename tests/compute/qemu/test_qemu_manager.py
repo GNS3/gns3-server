@@ -43,10 +43,7 @@ async def test_get_qemu_version():
 
     with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard"):
         version = await Qemu.get_qemu_version("/tmp/qemu-test")
-        if sys.platform.startswith("win"):
-            assert version == ""
-        else:
-            assert version == "2.2.0"
+        assert version == "2.2.0"
 
 
 @pytest.mark.asyncio
@@ -62,10 +59,7 @@ async def test_binary_list(monkeypatch, tmpdir):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     with asyncio_patch("gns3server.compute.qemu.subprocess_check_output", return_value="QEMU emulator version 2.2.0, Copyright (c) 2003-2008 Fabrice Bellard") as mock:
-        if sys.platform.startswith("win"):
-            version = ""
-        else:
-            version = "2.2.0"
+        version = "2.2.0"
 
         qemus = await Qemu.binary_list()
 

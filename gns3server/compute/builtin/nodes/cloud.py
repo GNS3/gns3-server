@@ -310,30 +310,26 @@ class Cloud(BaseNode):
                     "uBridge requires root access or the capability to interact with Ethernet and TAP adapters"
                 )
 
-            if sys.platform.startswith("win"):
-                await self._add_ubridge_ethernet_connection(bridge_name, port_info["interface"])
-
-            else:
-                if port_info["type"] == "ethernet":
-                    network_interfaces = [interface["name"] for interface in self._interfaces()]
-                    if not port_info["interface"] in network_interfaces:
-                        raise NodeError(
-                            f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
-                        )
-
-                    if sys.platform.startswith("linux"):
-                        await self._add_linux_ethernet(port_info, bridge_name)
-                    elif sys.platform.startswith("darwin"):
-                        await self._add_osx_ethernet(port_info, bridge_name)
-                    else:
-                        await self._add_windows_ethernet(port_info, bridge_name)
-
-                elif port_info["type"] == "tap":
-                    await self._ubridge_send(
-                        'bridge add_nio_tap {name} "{interface}"'.format(
-                            name=bridge_name, interface=port_info["interface"]
-                        )
+            if port_info["type"] == "ethernet":
+                network_interfaces = [interface["name"] for interface in self._interfaces()]
+                if not port_info["interface"] in network_interfaces:
+                    raise NodeError(
+                        f"Interface '{port_info['interface']}' could not be found on this system, please update '{self.name}'"
                     )
+
+                if sys.platform.startswith("linux"):
+                    await self._add_linux_ethernet(port_info, bridge_name)
+                elif sys.platform.startswith("darwin"):
+                    await self._add_osx_ethernet(port_info, bridge_name)
+                else:
+                    await self._add_windows_ethernet(port_info, bridge_name)
+
+            elif port_info["type"] == "tap":
+                await self._ubridge_send(
+                    'bridge add_nio_tap {name} "{interface}"'.format(
+                        name=bridge_name, interface=port_info["interface"]
+                    )
+                )
 
         elif port_info["type"] == "udp":
             await self._ubridge_send(

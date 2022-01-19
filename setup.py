@@ -79,8 +79,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
-            "gns3vmnet = gns3server.utils.vmnet:main",
-            "gns3loopback = gns3server.utils.windows_loopback:main"
+            "gns3vmnet = gns3server.utils.vmnet:main"
         ]
     },
     packages=find_packages(".", exclude=["docs", "tests*"]),

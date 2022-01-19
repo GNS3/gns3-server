@@ -34,11 +34,7 @@ pytestmark = pytest.mark.asyncio
 def fake_qemu_bin(monkeypatch, tmpdir) -> str:
 
     monkeypatch.setenv("PATH", str(tmpdir))
-    if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.exe")
-    else:
-
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
+    bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -120,7 +116,6 @@ async def test_qemu_create_with_params(app: FastAPI,
     assert response.json()["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 async def test_qemu_create_with_project_file(app: FastAPI,
                                              compute_client: AsyncClient,
                                              compute_project: Project,
@@ -411,7 +406,7 @@ async def test_download_image_forbidden_location(app: FastAPI, compute_client: A
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
+@pytest.mark.skipif(os.getuid() == 0, reason="Root can delete any image")
 async def test_upload_image_permission_denied(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
 
     with open(os.path.join(images_dir, "QEMU", "test2.tmp"), "w+") as f:

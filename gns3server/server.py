@@ -64,8 +64,8 @@ class Server:
         or there: http://robjwells.com/post/61198832297/get-your-us-ascii-out-of-my-face
         """
 
-        # no need to check on Windows or when this application is frozen
-        if sys.platform.startswith("win") or hasattr(sys, "frozen"):
+        # no need to check when this application is frozen
+        if hasattr(sys, "frozen"):
             return
 
         language = encoding = None
@@ -185,20 +185,11 @@ class Server:
             except asyncio.CancelledError:
                 pass
 
-        signals = []  # SIGINT and SIGTERM are already registered by uvicorn
-        if sys.platform.startswith("win"):
-            signals.extend(["SIGBREAK"])
-        else:
-            signals.extend(["SIGHUP", "SIGQUIT"])
-
+        signals = ["SIGHUP", "SIGQUIT"]  # SIGINT and SIGTERM are already registered by uvicorn
         for signal_name in signals:
             callback = functools.partial(signal_handler, signal_name)
-            if sys.platform.startswith("win"):
-                # add_signal_handler() is not yet supported on Windows
-                signal.signal(getattr(signal, signal_name), callback)
-            else:
-                loop = asyncio.get_event_loop()
-                loop.add_signal_handler(getattr(signal, signal_name), callback)
+            loop = asyncio.get_event_loop()
+            loop.add_signal_handler(getattr(signal, signal_name), callback)
 
     @staticmethod
     def _kill_ghosts():
@@ -249,10 +240,6 @@ class Server:
     def run(self):
 
         args = self._parse_arguments(sys.argv[1:])
-
-        if args.daemon and sys.platform.startswith("win"):
-            log.critical("Daemon is not supported on Windows")
-            sys.exit(1)
 
         if args.pid:
             self._pid_lock(args.pid)
@@ -316,9 +303,6 @@ class Server:
                 access_log = True
 
             if config.Server.enable_ssl:
-                if sys.platform.startswith("win"):
-                    log.critical("SSL mode is not supported on Windows")
-                    raise SystemExit
                 log.info("SSL is enabled")
 
             config = uvicorn.Config(
@@ -346,10 +330,6 @@ class Server:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(server.serve())
 
-        except OSError as e:
-            # This is to ignore OSError: [WinError 0] The operation completed successfully exception on Windows.
-            if not sys.platform.startswith("win") or not e.winerror == 0:
-                raise
         except Exception as e:
             log.critical(f"Critical error while running the server: {e}", exc_info=1)
             CrashReport.instance().capture_exception()

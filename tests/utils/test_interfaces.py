@@ -33,18 +33,13 @@ def test_interfaces():
         assert "name" in interface
         assert "ip_address" in interface
         assert "mac_address" in interface
-        if sys.platform.startswith("win"):
-            assert "netcard" in interface
         assert "type" in interface
         assert "netmask" in interface
 
 
 def test_has_netmask(config):
 
-    if sys.platform.startswith("win"):
-        # No loopback
-        pass
-    elif sys.platform.startswith("darwin"):
+    if sys.platform.startswith("darwin"):
         assert has_netmask("lo0") is True
     else:
         assert has_netmask("lo") is True
@@ -52,10 +47,7 @@ def test_has_netmask(config):
 
 def test_is_interface_up():
 
-    if sys.platform.startswith("win"):
-        # is_interface_up() always returns True on Windows
-        pass
-    elif sys.platform.startswith("darwin"):
+    if sys.platform.startswith("darwin"):
         assert is_interface_up("lo0") is True
     else:
         assert is_interface_up("lo") is True
