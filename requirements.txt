@@ -8,4 +8,4 @@ psutil==5.9.0
 async-timeout==3.0.1
 distro==1.6.0
 py-cpuinfo==8.0.0
-setuptools
+setuptools==60.6.0  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084
