@@ -388,6 +388,12 @@ class DockerVM(BaseNode):
                     continue
                 if not e.startswith("GNS3_"):
                     formatted = self._format_env(variables, e)
+                    vm_name = self._name.replace(",", ",,")
+                    project_path = self.project.path.replace(",", ",,")
+                    formatted = formatted.replace("%vm-name%", '"' + vm_name.replace('"', '\\"') + '"')
+                    formatted = formatted.replace("%vm-id%", self._id)
+                    formatted = formatted.replace("%project-id%", self.project.id)
+                    formatted = formatted.replace("%project-path%", '"' + project_path.replace('"', '\\"') + '"')
                     params["Env"].append(formatted)
 
         if self._console_type == "vnc":
