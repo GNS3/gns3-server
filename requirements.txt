@@ -8,4 +8,5 @@ psutil==5.9.0
 async-timeout==3.0.1
 distro==1.6.0
 py-cpuinfo==8.0.0
-setuptools==60.6.0  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084
+setuptools==60.6.0; python_version >= '3.7'  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084
+setuptools==59.6.0; python_version < '3.7'  # v59.7.0 dropped support for Python 3.6
