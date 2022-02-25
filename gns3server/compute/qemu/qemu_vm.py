@@ -258,7 +258,7 @@ class QemuVM(BaseNode):
         if not self.linked_clone:
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
-                    raise QemuError("Sorry a node without the linked base setting enabled can only be used once on your server. {} is already used by {}".format(value, node.name))
+                    raise QemuError("Sorry a node without the linked base setting enabled can only be used once on your server. {} is already used by {} in project {}".format(value, node.name, node.project.name))
         setattr(self, "_" + variable, value)
         log.info('QEMU VM "{name}" [{id}] has set the QEMU {variable} path to {disk_image}'.format(name=self._name,
                                                                                                    variable=variable,
