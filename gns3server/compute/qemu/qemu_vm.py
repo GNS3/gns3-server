@@ -285,7 +285,7 @@ class QemuVM(BaseNode):
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
                     raise QemuError(
-                        f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name}"
+                        f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name} in project {node.project.name}"
                     )
         setattr(self, "_" + variable, value)
         log.info(

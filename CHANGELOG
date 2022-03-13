@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.2.31 26/02/2022
+
+* Install setuptools v59.6.0 when using Python 3.6
+
+## 2.2.30 25/02/2022
+
+* Support GNS3 variables in Docker environment variables. Fixes #2033
+* Release web UI 2.2.30
+* Set setuptools to v60.6.0
+* qemu_vm.py Linked node test.
+* Fix dead link in README.rst Fixes #2022
+
 ## 2.2.29 08/01/2022
 
 * Release web UI 2.2.29
