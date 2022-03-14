@@ -268,9 +268,9 @@ class Server:
         else:
             log.info(f"Compute authentication is enabled with username '{config.Server.compute_username}'")
 
-        # we only support Python 3 version >= 3.6
-        if sys.version_info < (3, 6, 0):
-            raise SystemExit("Python 3.6 or higher is required")
+        # we only support Python 3 version >= 3.7
+        if sys.version_info < (3, 7, 0):
+            raise SystemExit("Python 3.7 or higher is required")
 
         log.info(
             "Running with Python {major}.{minor}.{micro} and has PID {pid}".format(
