@@ -74,7 +74,7 @@ setup(
     license="GNU General Public License v3 (GPLv3)",
     cmdclass={"test": PyTest},
     description="GNS3 server",
-    long_description=open("README.rst", "r").read(),
+    long_description=open("README.md", "r").read(),
     install_requires=dependencies,
     entry_points={
         "console_scripts": [
