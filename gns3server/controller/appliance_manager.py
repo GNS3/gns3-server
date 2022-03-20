@@ -123,7 +123,7 @@ class ApplianceManager:
             async with HTTPClient.get(image_url) as response:
                 if response.status != 200:
                     raise ControllerError(f"Could not download '{image_name}' due to HTTP error code {response.status}")
-                await write_image(image_name, image_type, image_path, response.content.iter_any(), images_repo)
+                await write_image(image_name, image_path, response.content.iter_any(), images_repo)
         except (OSError, InvalidImageError) as e:
             raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
         except ClientError as e:
@@ -156,7 +156,7 @@ class ApplianceManager:
                             image_path = os.path.join(image_dir, appliance_file)
                             if os.path.exists(image_path) and await wait_run_in_executor(md5sum, image_path) == image_checksum:
                                 async with aiofiles.open(image_path, "rb") as f:
-                                    await write_image(appliance_file, appliance.type, image_path, f, images_repo)
+                                    await write_image(appliance_file, image_path, f, images_repo)
                             else:
                                 # download the image if there is a direct download URL
                                 direct_download_url = image.get("direct_download_url")
@@ -217,7 +217,7 @@ class ApplianceManager:
             try:
                 schemas.Appliance.parse_obj(appliance.asdict())
             except ValidationError as e:
-                log.warning(message=f"Could not validate appliance '{appliance.id}': {e}")
+                log.warning(f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
                 for version in appliance.versions:
                     if version.get("name") == image_version:

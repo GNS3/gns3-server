@@ -32,7 +32,8 @@ class ImageBase(BaseModel):
     Common image properties.
     """
 
-    filename: str = Field(..., description="Image name")
+    filename: str = Field(..., description="Image filename")
+    path: str = Field(..., description="Image path")
     image_type: ImageType = Field(..., description="Image type")
     image_size: int = Field(..., description="Image size in bytes")
     checksum: str = Field(..., description="Checksum value")
