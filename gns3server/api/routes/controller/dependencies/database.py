@@ -24,11 +24,11 @@ from gns3server.db.repositories.base import BaseRepository
 
 async def get_db_session(request: HTTPConnection) -> AsyncSession:
 
-    session = AsyncSession(request.app.state._db_engine, expire_on_commit=False)
-    try:
-        yield session
-    finally:
-        await session.close()
+    async with AsyncSession(request.app.state._db_engine, expire_on_commit=False) as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
 
 def get_repository(repo: Type[BaseRepository]) -> Callable:
