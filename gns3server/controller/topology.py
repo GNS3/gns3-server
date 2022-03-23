@@ -223,7 +223,7 @@ def _convert_2_1_0(topo, topo_path):
             if node["node_type"] in ("qemu", "vmware", "virtualbox"):
                 if "acpi_shutdown" in node["properties"]:
                     if node["properties"]["acpi_shutdown"] is True:
-                        node["properties"]["on_close"] = "save_vm_sate"
+                        node["properties"]["on_close"] = "save_vm_state"
                     else:
                         node["properties"]["on_close"] = "power_off"
                     del node["properties"]["acpi_shutdown"]
