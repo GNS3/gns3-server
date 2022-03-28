@@ -27,11 +27,12 @@ import subprocess
 import logging
 import codecs
 import ipaddress
+import shlex
 
 from collections import OrderedDict
 from gns3server.utils.interfaces import interfaces
 from gns3server.utils.asyncio import subprocess_check_output
-from gns3server.utils import parse_version, shlex_quote
+from gns3server.utils import parse_version
 
 log = logging.getLogger(__name__)
 
@@ -53,10 +54,7 @@ class VMware(BaseManager):
         self._vmnets = []
         self._vmnets_info = {}
         self._vmnet_start_range = 2
-        if sys.platform.startswith("win"):
-            self._vmnet_end_range = 19
-        else:
-            self._vmnet_end_range = 255
+        self._vmnet_end_range = 255
 
     @property
     def vmrun_path(self):
@@ -95,15 +93,7 @@ class VMware(BaseManager):
         # look for vmrun
         vmrun_path = self.config.settings.VMware.vmrun_path
         if not vmrun_path:
-            if sys.platform.startswith("win"):
-                vmrun_path = shutil.which("vmrun")
-                if vmrun_path is None:
-                    # look for vmrun.exe using the VMware Workstation directory listed in the registry
-                    vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
-                    if vmrun_path is None:
-                        # look for vmrun.exe using the VIX directory listed in the registry
-                        vmrun_path = self._find_vmrun_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware VIX")
-            elif sys.platform.startswith("darwin"):
+            if sys.platform.startswith("darwin"):
                 vmrun_path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
             else:
                 vmrun_path = "vmrun"
@@ -197,84 +187,44 @@ class VMware(BaseManager):
         Check VMware version
         """
 
-        if sys.platform.startswith("win"):
-            # look for vmrun.exe using the directory listed in the registry
-            ws_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Workstation")
-            if ws_version is None:
-                player_version = self._find_vmware_version_registry(r"SOFTWARE\Wow6432Node\VMware, Inc.\VMware Player")
-                if player_version:
-                    log.debug(f"VMware Player version {player_version} detected")
-                    await self._check_vmware_player_requirements(player_version)
-                else:
-                    log.warning("Could not find VMware version")
-                    self._host_type = "ws"
-            else:
-                log.debug(f"VMware Workstation version {ws_version} detected")
-                await self._check_vmware_workstation_requirements(ws_version)
-        else:
-            if sys.platform.startswith("darwin"):
-                if not os.path.isdir("/Applications/VMware Fusion.app"):
-                    raise VMwareError(
-                        "VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app"
-                    )
-                self._host_type = "fusion"
-                return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
+        if sys.platform.startswith("darwin"):
+            if not os.path.isdir("/Applications/VMware Fusion.app"):
+                raise VMwareError(
+                    "VMware Fusion is not installed in the standard location /Applications/VMware Fusion.app"
+                )
+            self._host_type = "fusion"
+            return  # FIXME: no version checking on Mac OS X but we support all versions of fusion
 
-            vmware_path = VMware._get_linux_vmware_binary()
-            if vmware_path is None:
-                raise VMwareError("VMware is not installed (vmware or vmplayer executable could not be found in $PATH)")
+        vmware_path = VMware._get_linux_vmware_binary()
+        if vmware_path is None:
+            raise VMwareError("VMware is not installed (vmware or vmplayer executable could not be found in $PATH)")
 
-            try:
-                output = await subprocess_check_output(vmware_path, "-v")
-                match = re.search(r"VMware Workstation ([0-9]+)\.", output)
-                version = None
-                if match:
-                    # VMware Workstation has been detected
-                    version = match.group(1)
-                    log.debug(f"VMware Workstation version {version} detected")
-                    await self._check_vmware_workstation_requirements(version)
-                match = re.search(r"VMware Player ([0-9]+)\.", output)
-                if match:
-                    # VMware Player has been detected
-                    version = match.group(1)
-                    log.debug(f"VMware Player version {version} detected")
-                    await self._check_vmware_player_requirements(version)
-                if version is None:
-                    log.warning(f"Could not find VMware version. Output of VMware: {output}")
-                    raise VMwareError(f"Could not find VMware version. Output of VMware: {output}")
-            except (OSError, subprocess.SubprocessError) as e:
-                log.error(f"Error while looking for the VMware version: {e}")
-                raise VMwareError(f"Error while looking for the VMware version: {e}")
-
-    @staticmethod
-    def _get_vmnet_interfaces_registry():
-
-        import winreg
-
-        vmnet_interfaces = []
-        regkey = r"SOFTWARE\Wow6432Node\VMware, Inc.\VMnetLib\VMnetConfig"
         try:
-            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey)
-            for index in range(winreg.QueryInfoKey(hkey)[0]):
-                vmnet = winreg.EnumKey(hkey, index)
-                hkeyvmnet = winreg.OpenKey(hkey, vmnet)
-                if winreg.QueryInfoKey(hkeyvmnet)[1]:
-                    # the vmnet has not been configure if the key has no values
-                    vmnet = vmnet.replace("vm", "VM")
-                    if vmnet not in ("VMnet0", "VMnet1", "VMnet8"):
-                        vmnet_interfaces.append(vmnet)
-                winreg.CloseKey(hkeyvmnet)
-            winreg.CloseKey(hkey)
-        except OSError as e:
-            raise VMwareError(f"Could not read registry key {regkey}: {e}")
-        return vmnet_interfaces
+            output = await subprocess_check_output(vmware_path, "-v")
+            match = re.search(r"VMware Workstation ([0-9]+)\.", output)
+            version = None
+            if match:
+                # VMware Workstation has been detected
+                version = match.group(1)
+                log.debug(f"VMware Workstation version {version} detected")
+                await self._check_vmware_workstation_requirements(version)
+            match = re.search(r"VMware Player ([0-9]+)\.", output)
+            if match:
+                # VMware Player has been detected
+                version = match.group(1)
+                log.debug(f"VMware Player version {version} detected")
+                await self._check_vmware_player_requirements(version)
+            if version is None:
+                log.warning(f"Could not find VMware version. Output of VMware: {output}")
+                raise VMwareError(f"Could not find VMware version. Output of VMware: {output}")
+        except (OSError, subprocess.SubprocessError) as e:
+            log.error(f"Error while looking for the VMware version: {e}")
+            raise VMwareError(f"Error while looking for the VMware version: {e}")
 
     @staticmethod
     def _get_vmnet_interfaces():
 
-        if sys.platform.startswith("win"):
-            return VMware._get_vmnet_interfaces_registry()
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
             vmware_networking_file = "/Library/Preferences/VMware Fusion/networking"
         else:
             # location on Linux
@@ -310,17 +260,7 @@ class VMware(BaseManager):
 
         vmnet_interfaces = []
         for interface in interfaces():
-            if sys.platform.startswith("win"):
-                if "netcard" in interface:
-                    windows_name = interface["netcard"]
-                else:
-                    windows_name = interface["name"]
-                match = re.search(r"(VMnet[0-9]+)", windows_name)
-                if match:
-                    vmnet = match.group(1)
-                    if vmnet not in ("VMnet0", "VMnet1", "VMnet8"):
-                        vmnet_interfaces.append(vmnet)
-            elif interface["name"].startswith("vmnet"):
+            if interface["name"].startswith("vmnet"):
                 vmnet = interface["name"]
                 if vmnet not in ("vmnet0", "vmnet1", "vmnet8"):
                     vmnet_interfaces.append(interface["name"])
@@ -428,7 +368,7 @@ class VMware(BaseManager):
 
         command = [vmrun_path, "-T", self.host_type, subcommand]
         command.extend(args)
-        command_string = " ".join([shlex_quote(c) for c in command])
+        command_string = " ".join([shlex.quote(c) for c in command])
         log.log(log_level, f"Executing vmrun with command: {command_string}")
         try:
             process = await asyncio.create_subprocess_exec(
@@ -677,9 +617,7 @@ class VMware(BaseManager):
         :returns: path to the inventory file
         """
 
-        if sys.platform.startswith("win"):
-            return os.path.expandvars(r"%APPDATA%\Vmware\Inventory.vmls")
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
             return os.path.expanduser("~/Library/Application Support/VMware Fusion/vmInventory")
         else:
             return os.path.expanduser("~/.vmware/inventory.vmls")
@@ -692,9 +630,7 @@ class VMware(BaseManager):
         :returns: path to the preferences file
         """
 
-        if sys.platform.startswith("win"):
-            return os.path.expandvars(r"%APPDATA%\VMware\preferences.ini")
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
             return os.path.expanduser("~/Library/Preferences/VMware Fusion/preferences")
         else:
             return os.path.expanduser("~/.vmware/preferences")
@@ -707,15 +643,7 @@ class VMware(BaseManager):
         :returns: path to the default VM directory
         """
 
-        if sys.platform.startswith("win"):
-            import ctypes
-            import ctypes.wintypes
-
-            path = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-            ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, path)
-            documents_folder = path.value
-            return [fr"{documents_folder}\My Virtual Machines", fr"{documents_folder}\Virtual Machines"]
-        elif sys.platform.startswith("darwin"):
+        if sys.platform.startswith("darwin"):
             return [os.path.expanduser("~/Documents/Virtual Machines.localized")]
         else:
             return [os.path.expanduser("~/vmware")]

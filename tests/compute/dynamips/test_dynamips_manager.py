@@ -44,7 +44,6 @@ def test_vm_invalid_dynamips_path(manager, config):
         manager.find_dynamips()
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported by Windows")
 def test_vm_non_executable_dynamips_path(manager, config):
 
     tmpfile = tempfile.NamedTemporaryFile()

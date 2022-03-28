@@ -27,7 +27,6 @@ import re
 
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import wait_for_process_termination
-from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.asyncio import subprocess_check_output
 from .ubridge_hypervisor import UBridgeHypervisor
 from .ubridge_error import UbridgeError
@@ -139,7 +138,7 @@ class Hypervisor(UBridgeHypervisor):
             match = re.search(r"ubridge version ([0-9a-z\.]+)", output)
             if match:
                 self._version = match.group(1)
-                if sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+                if sys.platform.startswith("darwin"):
                     minimum_required_version = "0.9.12"
                 else:
                     # uBridge version 0.9.14 is required for packet filters
@@ -158,11 +157,6 @@ class Hypervisor(UBridgeHypervisor):
         """
 
         env = os.environ.copy()
-        if sys.platform.startswith("win"):
-            # add the Npcap directory to $PATH to force uBridge to use npcap DLL instead of Winpcap (if installed)
-            system_root = os.path.join(os.path.expandvars("%SystemRoot%"), "System32", "Npcap")
-            if os.path.isdir(system_root):
-                env["PATH"] = system_root + ";" + env["PATH"]
         await self._check_ubridge_version(env)
         try:
             command = self._build_command()

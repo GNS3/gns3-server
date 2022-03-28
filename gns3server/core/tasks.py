@@ -42,16 +42,6 @@ def create_startup_handler(app: FastAPI) -> Callable:
         logger = logging.getLogger("asyncio")
         logger.setLevel(logging.ERROR)
 
-        if sys.platform.startswith("win"):
-            # Add a periodic callback to give a chance to process signals on Windows
-            # because asyncio.add_signal_handler() is not supported yet on that platform
-            # otherwise the loop runs outside of signal module's ability to trap signals.
-
-            def wakeup():
-                loop.call_later(0.5, wakeup)
-
-            loop.call_later(0.5, wakeup)
-
         if log.getEffectiveLevel() == logging.DEBUG:
             # On debug version we enable info that
             # coroutine is not called in a way await/await

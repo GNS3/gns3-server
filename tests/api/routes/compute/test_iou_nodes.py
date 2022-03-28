@@ -28,8 +28,7 @@ from unittest.mock import patch
 
 from gns3server.compute.project import Project
 
-pytestmark = [pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows"),
-              pytest.mark.asyncio]
+pytestmark = [pytest.mark.asyncio]
 
 
 @pytest.fixture

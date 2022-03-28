@@ -23,11 +23,13 @@ import logging
 import urllib.parse
 
 from fastapi import APIRouter, Request, Response, Depends, status
+from starlette.requests import ClientDisconnect
 from sqlalchemy.orm.exc import MultipleResultsFound
 from typing import List, Optional
 from gns3server import schemas
 
-from gns3server.utils.images import InvalidImageError, default_images_directory, write_image
+from gns3server.config import Config
+from gns3server.utils.images import InvalidImageError, write_image
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -62,7 +64,6 @@ async def get_images(
 async def upload_image(
         image_path: str,
         request: Request,
-        image_type: schemas.ImageType = schemas.ImageType.qemu,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
@@ -72,24 +73,26 @@ async def upload_image(
     """
     Upload an image.
 
-    Example: curl -X POST http://host:port/v3/images/upload/my_image_name.qcow2?image_type=qemu \
+    Example: curl -X POST http://host:port/v3/images/upload/my_image_name.qcow2 \
     -H 'Authorization: Bearer <token>' --data-binary @"/path/to/image.qcow2"
     """
 
     image_path = urllib.parse.unquote(image_path)
     image_dir, image_name = os.path.split(image_path)
-    directory = default_images_directory(image_type)
-    full_path = os.path.abspath(os.path.join(directory, image_dir, image_name))
-    if os.path.commonprefix([directory, full_path]) != directory:
+    # check if the path is within the default images directory
+    base_images_directory = os.path.expanduser(Config.instance().settings.Server.images_path)
+    full_path = os.path.abspath(os.path.join(base_images_directory, image_dir, image_name))
+    if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
+    print(image_path)
     if await images_repo.get_image(image_path):
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
 
     try:
-        image = await write_image(image_name, image_type, full_path, request.stream(), images_repo)
-    except (OSError, InvalidImageError) as e:
-        raise ControllerError(f"Could not save {image_type} image '{image_path}': {e}")
+        image = await write_image(image_path, full_path, request.stream(), images_repo)
+    except (OSError, InvalidImageError, ClientDisconnect) as e:
+        raise ControllerError(f"Could not save image '{image_path}': {e}")
 
     if install_appliances:
         # attempt to automatically create templates based on image checksum
@@ -100,7 +103,7 @@ async def upload_image(
             templates_repo,
             rbac_repo,
             current_user,
-            directory
+            os.path.dirname(image.path)
         )
 
     return image

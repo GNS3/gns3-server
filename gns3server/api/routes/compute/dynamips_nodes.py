@@ -230,16 +230,6 @@ async def start_capture(
     """
 
     pcap_file_path = os.path.join(node.project.capture_working_directory(), node_capture_data.capture_file_name)
-
-    if sys.platform.startswith("win"):
-        # FIXME: Dynamips (Cygwin actually) doesn't like non ascii paths on Windows
-        try:
-            pcap_file_path.encode("ascii")
-        except UnicodeEncodeError:
-            raise DynamipsError(
-                f"The capture file path '{pcap_file_path}' must only contain ASCII (English) characters"
-            )
-
     await node.start_capture(adapter_number, port_number, pcap_file_path, node_capture_data.data_link_type)
     return {"pcap_file_path": pcap_file_path}
 

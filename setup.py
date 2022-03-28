@@ -23,9 +23,9 @@ import subprocess
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-# we only support Python 3 version >= 3.6
-if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 6, 0):
-    raise SystemExit("Python 3.6 or higher is required")
+# we only support Python 3 version >= 3.7
+if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 7, 0):
+    raise SystemExit("Python 3.7 or higher is required")
 
 
 class PyTest(TestCommand):
@@ -74,13 +74,12 @@ setup(
     license="GNU General Public License v3 (GPLv3)",
     cmdclass={"test": PyTest},
     description="GNS3 server",
-    long_description=open("README.rst", "r").read(),
+    long_description=open("README.md", "r").read(),
     install_requires=dependencies,
     entry_points={
         "console_scripts": [
             "gns3server = gns3server.main:main",
-            "gns3vmnet = gns3server.utils.vmnet:main",
-            "gns3loopback = gns3server.utils.windows_loopback:main"
+            "gns3vmnet = gns3server.utils.vmnet:main"
         ]
     },
     packages=find_packages(".", exclude=["docs", "tests*"]),

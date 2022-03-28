@@ -77,9 +77,6 @@ class Controller:
         self._load_controller_settings()
 
         if server_config.enable_ssl:
-            if sys.platform.startswith("win"):
-                log.critical("SSL mode is not supported on Windows")
-                raise SystemExit
             self._ssl_context = self._create_ssl_context(server_config)
 
         protocol = server_config.protocol

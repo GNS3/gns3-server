@@ -146,9 +146,6 @@ def _patch_mtime(path):
     :param path: file path
     """
 
-    if sys.platform.startswith("win"):
-        # only UNIX type platforms
-        return
     st = os.stat(path)
     file_date = datetime.fromtimestamp(st.st_mtime)
     if file_date.year < 1980:

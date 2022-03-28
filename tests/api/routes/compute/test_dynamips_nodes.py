@@ -209,7 +209,7 @@ async def test_download_image_forbidden(app: FastAPI, compute_client: AsyncClien
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-@pytest.mark.skipif(not sys.platform.startswith("win") and os.getuid() == 0, reason="Root can delete any image")
+@pytest.mark.skipif(os.getuid() == 0, reason="Root can delete any image")
 async def test_upload_image_permission_denied(app: FastAPI, compute_client: AsyncClient, images_dir: str) -> None:
 
     os.makedirs(os.path.join(images_dir, "IOS"), exist_ok=True)

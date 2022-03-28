@@ -882,14 +882,11 @@ class VMwareVM(BaseNode):
         :returns: pipe path (string)
         """
 
-        if sys.platform.startswith("win"):
-            pipe_name = fr"\\.\pipe\gns3_vmware\{self.id}"
-        else:
-            pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vmware", f"{self.id}")
-            try:
-                os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
-            except OSError as e:
-                raise VMwareError(f"Could not create the VMware pipe directory: {e}")
+        pipe_name = os.path.join(tempfile.gettempdir(), "gns3_vmware", f"{self.id}")
+        try:
+            os.makedirs(os.path.dirname(pipe_name), exist_ok=True)
+        except OSError as e:
+            raise VMwareError(f"Could not create the VMware pipe directory: {e}")
         return pipe_name
 
     def _set_serial_console(self):

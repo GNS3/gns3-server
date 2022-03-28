@@ -60,7 +60,7 @@ def ios_image(tmpdir) -> str:
     Create a fake IOS image on disk
     """
 
-    path = os.path.join(tmpdir, "ios.bin")
+    path = os.path.join(tmpdir, "ios_image.bin")
     with open(path, "wb+") as f:
         f.write(b'\x7fELF\x01\x02\x01')
     return path
@@ -74,7 +74,7 @@ def qcow2_image(tmpdir) -> str:
 
     path = os.path.join(tmpdir, "image.qcow2")
     with open(path, "wb+") as f:
-        f.write(b'QFI\xfb')
+        f.write(b'QFI\xfb\x00\x00\x00')
     return path
 
 
@@ -137,7 +137,6 @@ class TestImageRoutes:
 
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
-            params={"image_type": image_type},
             content=image_data)
 
         if valid_request:
@@ -168,7 +167,6 @@ class TestImageRoutes:
             image_data = f.read()
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
-            params={"image_type": "qemu"},
             content=image_data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -191,7 +189,6 @@ class TestImageRoutes:
             image_data = f.read()
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
-            params={"image_type": "qemu"},
             content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 
@@ -214,7 +211,8 @@ class TestImageRoutes:
             images_dir: str,
             qcow2_image: str,
             subdir: str,
-            expected_result: int
+            expected_result: int,
+            db_session: AsyncSession
     ) -> None:
 
         image_name = os.path.basename(qcow2_image)
@@ -223,7 +221,6 @@ class TestImageRoutes:
         image_path = os.path.join(subdir, image_name)
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_path),
-            params={"image_type": "qemu"},
             content=image_data)
         assert response.status_code == expected_result
 
@@ -273,7 +270,7 @@ class TestImageRoutes:
             image_data = f.read()
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
-            params={"image_type": "qemu", "install_appliances": "true"},
+            params={"install_appliances": "true"},
             content=image_data)
         assert response.status_code == status.HTTP_201_CREATED
 

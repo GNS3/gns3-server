@@ -26,14 +26,10 @@ import shutil
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
-from unittest.mock import patch, MagicMock
-
-pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
-
-if not sys.platform.startswith("win"):
-    from gns3server.compute.iou.iou_vm import IOUVM
-    from gns3server.compute.iou.iou_error import IOUError
-    from gns3server.compute.iou import IOU
+from unittest.mock import MagicMock
+from gns3server.compute.iou.iou_vm import IOUVM
+from gns3server.compute.iou.iou_error import IOUError
+from gns3server.compute.iou import IOU
 
 
 @pytest.fixture

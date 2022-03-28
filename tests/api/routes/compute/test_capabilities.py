@@ -29,7 +29,6 @@ from gns3server.utils.path import get_default_project_directory
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 async def test_get(app: FastAPI, compute_client: AsyncClient, windows_platform) -> None:
 
     response = await compute_client.get(app.url_path_for("compute:get_capabilities"))
@@ -43,7 +42,6 @@ async def test_get(app: FastAPI, compute_client: AsyncClient, windows_platform) 
                               }
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 async def test_get_on_gns3vm(app: FastAPI, compute_client: AsyncClient, on_gns3vm) -> None:
 
     response = await compute_client.get(app.url_path_for("compute:get_capabilities"))

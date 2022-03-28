@@ -892,34 +892,6 @@ class BaseNode:
             await self._ubridge_send(
                 'bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface)
             )
-        elif sys.platform.startswith("win"):
-            # on Windows we use Winpcap/Npcap
-            windows_interfaces = interfaces()
-            npf_id = None
-            source_mac = None
-            for interface in windows_interfaces:
-                # Winpcap/Npcap uses a NPF ID to identify an interface on Windows
-                if "netcard" in interface and ethernet_interface in interface["netcard"]:
-                    npf_id = interface["id"]
-                    source_mac = interface["mac_address"]
-                elif ethernet_interface in interface["name"]:
-                    npf_id = interface["id"]
-                    source_mac = interface["mac_address"]
-            if npf_id:
-                await self._ubridge_send(
-                    'bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name, interface=npf_id)
-                )
-            else:
-                raise NodeError(f"Could not find NPF id for interface {ethernet_interface}")
-
-            if block_host_traffic:
-                if source_mac:
-                    await self._ubridge_send(
-                        'bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac)
-                    )
-                    log.info(f"PCAP filter applied on '{ethernet_interface}' for source MAC {source_mac}")
-                else:
-                    log.warning(f"Could not block host network traffic on {ethernet_interface} (no MAC address found)")
         else:
             # on other platforms we just rely on the pcap library
             await self._ubridge_send(

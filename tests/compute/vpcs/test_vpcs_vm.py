@@ -190,10 +190,7 @@ async def test_stop(vm):
                         await vm.stop()
                     assert vm.is_running() is False
 
-                    if sys.platform.startswith("win"):
-                        process.send_signal.assert_called_with(1)
-                    else:
-                        process.terminate.assert_called_with()
+                    process.terminate.assert_called_with()
 
                     await queue.get(1)  #  Ping
                     await queue.get(1)  #  Started
@@ -226,10 +223,7 @@ async def test_reload(vm):
                     await vm.reload()
                 assert vm.is_running() is True
 
-                if sys.platform.startswith("win"):
-                    process.send_signal.assert_called_with(1)
-                else:
-                    process.terminate.assert_called_with()
+                process.terminate.assert_called_with()
 
 
 @pytest.mark.asyncio
@@ -240,7 +234,6 @@ async def test_add_nio_binding_udp(vm):
     assert nio.lport == 4242
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_add_nio_binding_tap(vm, ethernet_device):
 

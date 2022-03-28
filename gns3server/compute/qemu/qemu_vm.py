@@ -32,8 +32,9 @@ import gns3server
 import subprocess
 import time
 import json
+import shlex
 
-from gns3server.utils import parse_version, shlex_quote
+from gns3server.utils import parse_version
 from gns3server.utils.asyncio import subprocess_check_output, cancellable_wait_run_in_executor
 from .qemu_error import QemuError
 from .utils.qcow2 import Qcow2, Qcow2Error
@@ -220,8 +221,6 @@ class QemuVM(BaseNode):
         """
 
         if qemu_path and os.pathsep not in qemu_path:
-            if sys.platform.startswith("win") and ".exe" not in qemu_path.lower():
-                qemu_path += "w.exe"
             new_qemu_path = shutil.which(qemu_path, path=os.pathsep.join(self._manager.paths_list()))
             if new_qemu_path is None:
                 raise QemuError(f"QEMU binary path {qemu_path} is not found in the path")
@@ -271,10 +270,7 @@ class QemuVM(BaseNode):
     def platform(self, platform):
 
         self._platform = platform
-        if sys.platform.startswith("win"):
-            self.qemu_path = f"qemu-system-{platform}w.exe"
-        else:
-            self.qemu_path = f"qemu-system-{platform}"
+        self.qemu_path = f"qemu-system-{platform}"
 
     def _disk_setter(self, variable, value):
         """
@@ -289,7 +285,7 @@ class QemuVM(BaseNode):
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
                     raise QemuError(
-                        f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name}"
+                        f"Sorry a node without the linked base setting enabled can only be used once on your server. {value} is already used by {node.name} in project {node.project.name}"
                     )
         setattr(self, "_" + variable, value)
         log.info(
@@ -901,8 +897,8 @@ class QemuVM(BaseNode):
                 options = options.replace("-enable-kvm", "-machine accel=kvm")
 
         if "-enable-hax" in options:
-            if not sys.platform.startswith("win"):
-                # HAXM is only available on Windows
+            if not sys.platform.startswith("darwin"):
+                # HAXM is only available on macOS
                 options = options.replace("-enable-hax", "")
             else:
                 options = options.replace("-enable-hax", "-machine accel=hax")
@@ -1002,52 +998,25 @@ class QemuVM(BaseNode):
         if self._process_priority == "normal":
             return
 
-        if sys.platform.startswith("win"):
-            try:
-                import win32api
-                import win32con
-                import win32process
-            except ImportError:
-                log.error(f"pywin32 must be installed to change the priority class for QEMU VM {self._name}")
-            else:
-                log.info(f"Setting QEMU VM {self._name} priority class to {self._process_priority}")
-                handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0, self._process.pid)
-                if self._process_priority == "realtime":
-                    priority = win32process.REALTIME_PRIORITY_CLASS
-                elif self._process_priority == "very high":
-                    priority = win32process.HIGH_PRIORITY_CLASS
-                elif self._process_priority == "high":
-                    priority = win32process.ABOVE_NORMAL_PRIORITY_CLASS
-                elif self._process_priority == "low":
-                    priority = win32process.BELOW_NORMAL_PRIORITY_CLASS
-                elif self._process_priority == "very low":
-                    priority = win32process.IDLE_PRIORITY_CLASS
-                else:
-                    priority = win32process.NORMAL_PRIORITY_CLASS
-                try:
-                    win32process.SetPriorityClass(handle, priority)
-                except win32process.error as e:
-                    log.error(f'Could not change process priority for QEMU VM "{self._name}": {e}')
+        if self._process_priority == "realtime":
+            priority = -20
+        elif self._process_priority == "very high":
+            priority = -15
+        elif self._process_priority == "high":
+            priority = -5
+        elif self._process_priority == "low":
+            priority = 5
+        elif self._process_priority == "very low":
+            priority = 19
         else:
-            if self._process_priority == "realtime":
-                priority = -20
-            elif self._process_priority == "very high":
-                priority = -15
-            elif self._process_priority == "high":
-                priority = -5
-            elif self._process_priority == "low":
-                priority = 5
-            elif self._process_priority == "very low":
-                priority = 19
-            else:
-                priority = 0
-            try:
-                process = await asyncio.create_subprocess_exec(
-                    "renice", "-n", str(priority), "-p", str(self._process.pid)
-                )
-                await process.wait()
-            except (OSError, subprocess.SubprocessError) as e:
-                log.error(f'Could not change process priority for QEMU VM "{self._name}": {e}')
+            priority = 0
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "renice", "-n", str(priority), "-p", str(self._process.pid)
+            )
+            await process.wait()
+        except (OSError, subprocess.SubprocessError) as e:
+            log.error(f'Could not change process priority for QEMU VM "{self._name}": {e}')
 
     def _stop_cpulimit(self):
         """
@@ -1070,14 +1039,8 @@ class QemuVM(BaseNode):
             return
 
         try:
-            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
-                cpulimit_exec = os.path.join(
-                    os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe"
-                )
-            else:
-                cpulimit_exec = "cpulimit"
             subprocess.Popen(
-                [cpulimit_exec, "--lazy", f"--pid={self._process.pid}", f"--limit={self._cpu_throttling}"],
+                ["cpulimit", "--lazy", f"--pid={self._process.pid}", f"--limit={self._cpu_throttling}"],
                 cwd=self.working_dir,
             )
             log.info(f"CPU throttled to {self._cpu_throttling}%")
@@ -1133,7 +1096,7 @@ class QemuVM(BaseNode):
             self.check_available_ram(self.ram)
 
             command = await self._build_command()
-            command_string = " ".join(shlex_quote(s) for s in command)
+            command_string = " ".join(shlex.quote(s) for s in command)
             try:
                 log.info(f"Starting QEMU with: {command_string}")
                 self._stdout_file = os.path.join(self.working_dir, "qemu.log")
@@ -1193,8 +1156,7 @@ class QemuVM(BaseNode):
         if self.started:
             log.info("QEMU process has stopped, return code: %d", returncode)
             await self.stop()
-            # A return code of 1 seem fine on Windows
-            if returncode != 0 and (not sys.platform.startswith("win") or returncode != 1):
+            if returncode != 0:
                 self.project.emit(
                     "log.error",
                     {"message": f"QEMU process has stopped, return code: {returncode}\n{self.read_stdout()}"},
@@ -1822,7 +1784,7 @@ class QemuVM(BaseNode):
 
         self._qemu_img_stdout_file = os.path.join(self.working_dir, "qemu-img.log")
         log.info(f"logging to {self._qemu_img_stdout_file}")
-        command_string = " ".join(shlex_quote(s) for s in command)
+        command_string = " ".join(shlex.quote(s) for s in command)
         log.info(f"Executing qemu-img with: {command_string}")
         with open(self._qemu_img_stdout_file, "w", encoding="utf-8") as fd:
             process = await asyncio.create_subprocess_exec(
@@ -2272,15 +2234,7 @@ class QemuVM(BaseNode):
         require_hardware_accel = self.manager.config.settings.Qemu.require_hardware_acceleration
         if enable_hardware_accel and "-machine accel=tcg" not in options:
             # Turn OFF hardware acceleration for non x86 architectures
-            if sys.platform.startswith("win"):
-                supported_binaries = [
-                    "qemu-system-x86_64.exe",
-                    "qemu-system-x86_64w.exe",
-                    "qemu-system-i386.exe",
-                    "qemu-system-i386w.exe",
-                ]
-            else:
-                supported_binaries = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
+            supported_binaries = ["qemu-system-x86_64", "qemu-system-i386", "qemu-kvm"]
             if os.path.basename(qemu_path) not in supported_binaries:
                 if require_hardware_accel:
                     raise QemuError(
@@ -2296,29 +2250,6 @@ class QemuVM(BaseNode):
                     raise QemuError(
                         "KVM acceleration cannot be used (/dev/kvm doesn't exist). It is possible to turn off KVM support in the gns3_server.conf by adding enable_hardware_acceleration = false to the [Qemu] section."
                     )
-                else:
-                    return False
-            elif sys.platform.startswith("win"):
-                if require_hardware_accel:
-                    # HAXM is only available starting with Qemu version 2.9.0
-                    version = await self.manager.get_qemu_version(self.qemu_path)
-                    if version and parse_version(version) < parse_version("2.9.0"):
-                        raise QemuError(
-                            f"HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {version})"
-                        )
-
-                    # check if HAXM is installed
-                    version = self.manager.get_haxm_windows_version()
-                    if version is None:
-                        raise QemuError("HAXM acceleration support is not installed on this host")
-                    log.info(f"HAXM support version {version} detected")
-
-                    # check if the HAXM service is running
-                    from gns3server.utils.windows_service import check_windows_service_is_running
-
-                    if not check_windows_service_is_running("intelhaxm"):
-                        raise QemuError("Intel HAXM service is not running on this host")
-
                 else:
                     return False
             elif sys.platform.startswith("darwin"):
@@ -2440,7 +2371,7 @@ class QemuVM(BaseNode):
                 # https://github.com/GNS3/gns3-server/issues/685
                 if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
                     command.extend(["-machine", "smm=off"])
-            elif sys.platform.startswith("win") or sys.platform.startswith("darwin"):
+            elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
         command.extend(["-boot", f"order={self._boot_priority}"])
         command.extend(self._bios_option())

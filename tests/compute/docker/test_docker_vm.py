@@ -1401,7 +1401,6 @@ async def test_get_image_information(compute_project, manager):
         mock.assert_called_with("GET", "images/ubuntu:latest/json")
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_mount_binds(vm):
 
@@ -1476,7 +1475,6 @@ async def test_create_network_interfaces(vm):
     assert "eth5" not in content
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_fix_permission(vm):
 
@@ -1489,7 +1487,6 @@ async def test_fix_permission(vm):
     assert process.wait.called
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 @pytest.mark.asyncio
 async def test_fix_permission_not_running(vm):
 
