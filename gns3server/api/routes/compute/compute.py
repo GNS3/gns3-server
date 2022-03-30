@@ -25,7 +25,7 @@ import psutil
 from gns3server.config import Config
 from gns3server.utils.cpu_percent import CpuPercent
 from gns3server.version import __version__
-from gns3server.utils.path import get_default_project_directory
+from gns3server.utils.path import get_default_project_directory, is_safe_path
 from gns3server.compute.port_manager import PortManager
 from gns3server.compute.project_manager import ProjectManager
 from gns3server.utils.interfaces import interfaces
@@ -81,8 +81,7 @@ def compute_version() -> dict:
     Retrieve the server version number.
     """
 
-    local_server = Config.instance().settings.Server.local
-    return {"version": __version__, "local": local_server}
+    return {"version": __version__}
 
 
 @router.get("/statistics")
@@ -155,12 +154,17 @@ async def create_qemu_image(image_data: schemas.QemuImageCreate) -> Response:
     Create a Qemu image.
     """
 
-    if os.path.isabs(image_data.path):
-        if Config.instance().settings.Server.local is False:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    #FIXME: move to controller
+    raise NotImplementedError()
+
+    # Raise error if user try to escape
+    #if not is_safe_path(image_data.path, project.path):
+    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     await Qemu.instance().create_disk(
-        image_data.qemu_img, image_data.path, jsonable_encoder(image_data, exclude_unset=True)
+        image_data.qemu_img,
+        image_data.path,
+        jsonable_encoder(image_data, exclude_unset=True, exclude={"qemu_img", "path"})
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -176,9 +180,12 @@ async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> Response:
     Update a Qemu image.
     """
 
-    if os.path.isabs(image_data.path):
-        if Config.instance().settings.Server.local is False:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    #FIXME: move to controller
+    raise NotImplementedError()
+
+    # Raise error if user try to escape
+    #if not is_safe_path(image_data.path, project.path):
+    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     if image_data.extend:
         await Qemu.instance().resize_disk(image_data.qemu_img, image_data.path, image_data.extend)

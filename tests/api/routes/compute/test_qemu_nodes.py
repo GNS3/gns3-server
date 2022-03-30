@@ -417,57 +417,57 @@ async def test_upload_image_permission_denied(app: FastAPI, compute_client: Asyn
     assert response.status_code == status.HTTP_409_CONFLICT
 
 
-@pytest.mark.asyncio
-async def test_create_img_relative(app: FastAPI, compute_client: AsyncClient):
-
-    params = {
-        "qemu_img": "/tmp/qemu-img",
-        "path": "hda.qcow2",
-        "format": "qcow2",
-        "preallocation": "metadata",
-        "cluster_size": 64,
-        "refcount_bits": 12,
-        "lazy_refcounts": "off",
-        "size": 100
-    }
-    with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
-    assert response.status_code == status.HTTP_204_NO_CONTENT
-
-
-async def test_create_img_absolute_non_local(app: FastAPI, compute_client: AsyncClient, config) -> None:
-
-    config.settings.Server.local = False
-    params = {
-        "qemu_img": "/tmp/qemu-img",
-        "path": "/tmp/hda.qcow2",
-        "format": "qcow2",
-        "preallocation": "metadata",
-        "cluster_size": 64,
-        "refcount_bits": 12,
-        "lazy_refcounts": "off",
-        "size": 100
-    }
-    with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
-    assert response.status_code == 403
-
-
-async def test_create_img_absolute_local(app: FastAPI, compute_client: AsyncClient, config) -> None:
-
-    params = {
-        "qemu_img": "/tmp/qemu-img",
-        "path": "/tmp/hda.qcow2",
-        "format": "qcow2",
-        "preallocation": "metadata",
-        "cluster_size": 64,
-        "refcount_bits": 12,
-        "lazy_refcounts": "off",
-        "size": 100
-    }
-    with asyncio_patch("gns3server.compute.Qemu.create_disk"):
-        response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+# @pytest.mark.asyncio
+# async def test_create_img_relative(app: FastAPI, compute_client: AsyncClient):
+#
+#     params = {
+#         "qemu_img": "/tmp/qemu-img",
+#         "path": "hda.qcow2",
+#         "format": "qcow2",
+#         "preallocation": "metadata",
+#         "cluster_size": 64,
+#         "refcount_bits": 12,
+#         "lazy_refcounts": "off",
+#         "size": 100
+#     }
+#     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
+#         response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
+#     assert response.status_code == status.HTTP_204_NO_CONTENT
+#
+#
+# async def test_create_img_absolute_non_local(app: FastAPI, compute_client: AsyncClient, config) -> None:
+#
+#     config.settings.Server.local = False
+#     params = {
+#         "qemu_img": "/tmp/qemu-img",
+#         "path": "/tmp/hda.qcow2",
+#         "format": "qcow2",
+#         "preallocation": "metadata",
+#         "cluster_size": 64,
+#         "refcount_bits": 12,
+#         "lazy_refcounts": "off",
+#         "size": 100
+#     }
+#     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
+#         response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
+#     assert response.status_code == 403
+#
+#
+# async def test_create_img_absolute_local(app: FastAPI, compute_client: AsyncClient, config) -> None:
+#
+#     params = {
+#         "qemu_img": "/tmp/qemu-img",
+#         "path": "/tmp/hda.qcow2",
+#         "format": "qcow2",
+#         "preallocation": "metadata",
+#         "cluster_size": 64,
+#         "refcount_bits": 12,
+#         "lazy_refcounts": "off",
+#         "size": 100
+#     }
+#     with asyncio_patch("gns3server.compute.Qemu.create_disk"):
+#         response = await compute_client.post(app.url_path_for("compute:create_qemu_image"), json=params)
+#     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 async def test_capabilities(app: FastAPI, compute_client: AsyncClient) -> None:

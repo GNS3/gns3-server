@@ -36,35 +36,13 @@ def base_params(tmpdir) -> dict:
 
     params = {
         "name": "test",
-        "path": str(tmpdir),
         "project_id": str(uuid.uuid4())
     }
     return params
 
 
-async def test_create_project_with_path(app: FastAPI, compute_client: AsyncClient, base_params: dict) -> None:
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        response = await compute_client.post(app.url_path_for("compute:create_compute_project"), json=base_params)
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.json()["project_id"] == base_params["project_id"]
-
-
-async def test_create_project_with_path_and_empty_variables(app: FastAPI,
-                                                            compute_client: AsyncClient,
-                                                            base_params: dict) -> None:
-
-    base_params["variables"] = None
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-
-        response = await compute_client.post(app.url_path_for("compute:create_compute_project"), json=base_params)
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.json()["project_id"] == base_params["project_id"]
-
-
 async def test_create_project_without_dir(app: FastAPI, compute_client: AsyncClient, base_params: dict) -> None:
 
-    del base_params["path"]
     response = await compute_client.post(app.url_path_for("compute:create_compute_project"), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["project_id"] == base_params["project_id"]
@@ -158,9 +136,8 @@ async def test_close_project_invalid_uuid(app: FastAPI, compute_client: AsyncCli
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_get_file(app: FastAPI, compute_client: AsyncClient, config, tmpdir) -> None:
+async def test_get_file(app: FastAPI, compute_client: AsyncClient) -> None:
 
-    config.settings.Server.projects_path = str(tmpdir)
     project = ProjectManager.instance().create_project(project_id="01010203-0405-0607-0809-0a0b0c0d0e0b")
 
     with open(os.path.join(project.path, "hello"), "w+") as f:

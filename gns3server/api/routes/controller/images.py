@@ -85,7 +85,6 @@ async def upload_image(
     if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
-    print(image_path)
     if await images_repo.get_image(image_path):
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
 

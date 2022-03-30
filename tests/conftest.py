@@ -359,7 +359,7 @@ def ubridge_path(config):
 
 
 @pytest.fixture(autouse=True)
-def run_around_tests(monkeypatch, config, port_manager):#port_manager, controller, config):
+def run_around_tests(monkeypatch, config, port_manager):
     """
     This setup a temporary project file environment around tests
     """

@@ -23,16 +23,10 @@ from fastapi import HTTPException
 from gns3server.utils.path import check_path_allowed, get_default_project_directory
 
 
-def test_check_path_allowed(config, tmpdir):
+def test_check_path_allowed():
 
-    config.settings.Server.local = False
-    config.settings.Server.projects_path = str(tmpdir)
     with pytest.raises(HTTPException):
         check_path_allowed("/private")
-
-    config.settings.Server.local = True
-    check_path_allowed(str(tmpdir / "hello" / "world"))
-    check_path_allowed("/private")
 
 
 def test_get_default_project_directory(config):

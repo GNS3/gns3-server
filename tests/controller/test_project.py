@@ -128,18 +128,19 @@ def test_path_exist(tmpdir):
 
 
 @pytest.mark.asyncio
-async def test_init_path(tmpdir):
+async def test_init_path(projects_dir):
 
-    p = Project(path=str(tmpdir), project_id=str(uuid4()), name="Test")
-    assert p.path == str(tmpdir)
+    project_id = str(uuid4())
+    p = Project(project_id=project_id, name="Test")
+    assert p.path == os.path.join(projects_dir, project_id)
 
 
 @pytest.mark.asyncio
-async def test_changing_path_with_quote_not_allowed(tmpdir):
+async def test_changing_path_with_quote_not_allowed(projects_dir):
 
     with pytest.raises(ControllerForbiddenError):
         p = Project(project_id=str(uuid4()), name="Test")
-        p.path = str(tmpdir / "project\"53")
+        p.path = os.path.join(projects_dir, "project\"53")
 
 
 @pytest.mark.asyncio
