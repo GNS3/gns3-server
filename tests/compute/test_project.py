@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import uuid
 import pytest
 from uuid import uuid4
@@ -28,7 +27,6 @@ from gns3server.compute.project import Project
 from gns3server.compute.notification_manager import NotificationManager
 from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError
 from gns3server.compute.vpcs import VPCS, VPCSVM
-from gns3server.config import Config
 
 
 @pytest.fixture(scope="function")
@@ -76,28 +74,18 @@ async def test_clean_tmp_directory():
 async def test_path(projects_dir):
 
     directory = projects_dir
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-            p = Project(project_id=str(uuid4()))
-            assert p.path == os.path.join(directory, p.id)
-            assert os.path.exists(os.path.join(directory, p.id))
-
-
-@pytest.mark.asyncio
-async def test_init_path(tmpdir):
-
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        p = Project(path=str(tmpdir), project_id=str(uuid4()))
-        assert p.path == str(tmpdir)
+    with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
+        p = Project(project_id=str(uuid4()))
+        assert p.path == os.path.join(directory, p.id)
+        assert os.path.exists(os.path.join(directory, p.id))
 
 
 @pytest.mark.asyncio
 async def test_changing_path_not_allowed(tmpdir):
 
-    with patch("gns3server.compute.project.Project.is_local", return_value=False):
-        with pytest.raises(ComputeForbiddenError):
-            p = Project(project_id=str(uuid4()))
-            p.path = str(tmpdir)
+    with pytest.raises(ComputeForbiddenError):
+        p = Project(project_id=str(uuid4()))
+        p.path = str(tmpdir)
 
 
 @pytest.mark.asyncio
@@ -135,21 +123,19 @@ async def test_json_with_variables():
 async def test_node_working_directory(node, projects_dir):
 
     directory = projects_dir
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        p = Project(project_id=str(uuid4()))
-        assert p.node_working_directory(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
-        assert os.path.exists(p.node_working_directory(node))
+    p = Project(project_id=str(uuid4()))
+    assert p.node_working_directory(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+    assert os.path.exists(p.node_working_directory(node))
 
 
 @pytest.mark.asyncio
 async def test_node_working_path(node, projects_dir):
 
     directory = projects_dir
-    with patch("gns3server.compute.project.Project.is_local", return_value=True):
-        p = Project(project_id=str(uuid4()))
-        assert p.node_working_path(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
-        # after this execution directory structure should not be created
-        assert not os.path.exists(p.node_working_path(node))
+    p = Project(project_id=str(uuid4()))
+    assert p.node_working_path(node) == os.path.join(directory, p.id, 'project-files', node.module_name, node.id)
+    # after this execution directory structure should not be created
+    assert not os.path.exists(p.node_working_path(node))
 
 
 @pytest.mark.asyncio
@@ -194,9 +180,8 @@ async def test_project_close(node, compute_project):
 
 
 @pytest.mark.asyncio
-async def test_list_files(tmpdir, config):
+async def test_list_files():
 
-    config.settings.Server.projects_path = str(tmpdir)
     project = Project(project_id=str(uuid4()))
     path = project.path
     os.makedirs(os.path.join(path, "vm-1", "dynamips"))

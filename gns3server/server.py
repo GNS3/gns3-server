@@ -255,9 +255,6 @@ class Server:
         self._set_config_defaults_from_command_line(args)
         config = Config.instance().settings
 
-        if config.Server.local:
-            log.warning("Local mode is enabled. Beware, clients will have full control on your filesystem")
-
         if not config.Server.compute_password.get_secret_value():
             alphabet = string.ascii_letters + string.digits + string.punctuation
             generated_password = ''.join(secrets.choice(alphabet) for _ in range(16))

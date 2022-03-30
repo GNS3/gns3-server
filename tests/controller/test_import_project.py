@@ -21,6 +21,7 @@ import uuid
 import json
 import zipfile
 
+from pathlib import Path
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.controller.import_project import import_project, _move_files_to_compute
@@ -74,12 +75,13 @@ async def test_import_project(tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_project_override(tmpdir, controller):
+async def test_import_project_override(projects_dir, controller):
     """
     In the case of snapshot we will import a project for
     override the previous keeping the same project id & location
     """
 
+    tmpdir = Path(projects_dir)
     project_id = str(uuid.uuid4())
     topology = {
         "project_id": project_id,
@@ -523,11 +525,12 @@ async def test_move_files_to_compute(tmpdir):
 
 
 @pytest.mark.asyncio
-async def test_import_project_name_and_location(tmpdir, controller):
+async def test_import_project_name_and_location(projects_dir, controller):
     """
     Import a project with a different location and name
     """
 
+    tmpdir = Path(projects_dir)
     project_id = str(uuid.uuid4())
     topology = {
         "project_id": str(uuid.uuid4()),

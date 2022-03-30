@@ -267,6 +267,7 @@ class Qemu(BaseManager):
             command.append(path)
             command.append(f"{img_size}M")
 
+            print(command)
             process = await asyncio.create_subprocess_exec(*command)
             await process.wait()
         except (OSError, subprocess.SubprocessError) as e:

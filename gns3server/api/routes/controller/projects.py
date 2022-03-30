@@ -342,10 +342,10 @@ async def import_project(
     Import a project from a portable archive.
     """
 
-    controller = Controller.instance()
-    if Config.instance().settings.Server.local is False:
-        raise ControllerForbiddenError("The server is not local")
+    #TODO: import project remotely
+    raise NotImplementedError()
 
+    controller = Controller.instance()
     # We write the content to a temporary location and after we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.
     try:
@@ -385,16 +385,9 @@ async def duplicate_project(
     Duplicate a project.
     """
 
-    if project_data.path:
-        if Config.instance().settings.Server.local is False:
-            raise ControllerForbiddenError("The server is not a local server")
-        location = project_data.path
-    else:
-        location = None
-
     reset_mac_addresses = project_data.reset_mac_addresses
     new_project = await project.duplicate(
-        name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
+        name=project_data.name, reset_mac_addresses=reset_mac_addresses
     )
     await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
@@ -423,7 +416,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
 @router.post("/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> Response:
     """
-    Write a file from a project.
+    Write a file to a project.
     """
 
     file_path = urllib.parse.unquote(file_path)
