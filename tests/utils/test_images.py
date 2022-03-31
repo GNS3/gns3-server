@@ -37,7 +37,6 @@ def test_images_directories(tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
-    config.settings.Server.local = False
 
     # /tmp/null24564 is ignored because doesn't exists
     res = images_directories("qemu")
@@ -140,7 +139,6 @@ def test_list_images(tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
-    config.settings.Server.local = False
 
     assert list_images("dynamips") == [
         {

@@ -392,7 +392,6 @@ def run_around_tests(monkeypatch, config, port_manager):
     config.settings.Server.appliances_path = appliances_dir
 
     config.settings.Server.ubridge_path = os.path.join(tmppath, 'bin', 'ubridge')
-    config.settings.Server.local = True
 
     # Prevent executions of the VM if we forgot to mock something
     config.settings.VirtualBox.vboxmanage_path = tmppath
