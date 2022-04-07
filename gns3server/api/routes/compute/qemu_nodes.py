@@ -26,9 +26,9 @@ from fastapi.responses import StreamingResponse
 from uuid import UUID
 
 from gns3server import schemas
-from gns3server.compute.project_manager import ProjectManager
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_vm import QemuVM
+
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Qemu node"}}
 
@@ -126,10 +126,39 @@ async def duplicate_qemu_node(
     return new_node.asdict()
 
 
-@router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
-async def resize_qemu_node_disk(node_data: schemas.QemuDiskResize, node: QemuVM = Depends(dep_node)) -> Response:
+@router.post(
+    "/{node_id}/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def create_qemu_disk_image(
+        disk_name: str,
+        disk_data: schemas.QemuDiskImageCreate,
+        node: QemuVM = Depends(dep_node)
+) -> Response:
+    """
+    Create a Qemu disk image.
+    """
 
-    await node.resize_disk(node_data.drive_name, node_data.extend)
+    options = jsonable_encoder(disk_data, exclude_unset=True)
+    await node.create_disk_image(disk_name, options)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put(
+    "/{node_id}/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def update_qemu_disk_image(
+        disk_name: str,
+        disk_data: schemas.QemuDiskImageUpdate,
+        node: QemuVM = Depends(dep_node)
+) -> Response:
+    """
+    Update a Qemu disk image.
+    """
+
+    if disk_data.extend:
+        await node.resize_disk_image(disk_name, disk_data.extend)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

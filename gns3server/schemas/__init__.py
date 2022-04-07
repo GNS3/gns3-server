@@ -73,9 +73,12 @@ from .compute.dynamips_nodes import DynamipsCreate, DynamipsUpdate, Dynamips
 from .compute.ethernet_hub_nodes import EthernetHubCreate, EthernetHubUpdate, EthernetHub
 from .compute.ethernet_switch_nodes import EthernetSwitchCreate, EthernetSwitchUpdate, EthernetSwitch
 from .compute.frame_relay_switch_nodes import FrameRelaySwitchCreate, FrameRelaySwitchUpdate, FrameRelaySwitch
-from .compute.qemu_nodes import QemuCreate, QemuUpdate, QemuImageCreate, QemuImageUpdate, QemuDiskResize, Qemu
+from .compute.qemu_nodes import QemuCreate, QemuUpdate, Qemu
 from .compute.iou_nodes import IOUCreate, IOUUpdate, IOUStart, IOU
 from .compute.nat_nodes import NATCreate, NATUpdate, NAT
 from .compute.vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
 from .compute.vmware_nodes import VMwareCreate, VMwareUpdate, VMware
 from .compute.virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
+
+# Schemas for both controller and compute
+from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageUpdate

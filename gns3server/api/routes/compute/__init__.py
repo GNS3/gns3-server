@@ -51,6 +51,11 @@ from . import virtualbox_nodes
 from . import vmware_nodes
 from . import vpcs_nodes
 
+import logging
+
+log = logging.getLogger(__name__)
+
+
 compute_api = FastAPI(
     title="GNS3 compute API",
     dependencies=[Depends(compute_authentication)],
@@ -63,6 +68,7 @@ compute_api.state.controller_host = None
 
 @compute_api.exception_handler(ComputeError)
 async def controller_error_handler(request: Request, exc: ComputeError):
+    log.error(f"Compute error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc)},
@@ -71,6 +77,7 @@ async def controller_error_handler(request: Request, exc: ComputeError):
 
 @compute_api.exception_handler(ComputeTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ComputeTimeoutError):
+    log.error(f"Compute timeout error: {exc}")
     return JSONResponse(
         status_code=408,
         content={"message": str(exc)},
@@ -79,6 +86,7 @@ async def controller_timeout_error_handler(request: Request, exc: ComputeTimeout
 
 @compute_api.exception_handler(ComputeUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ComputeUnauthorizedError):
+    log.error(f"Compute unauthorized error: {exc}")
     return JSONResponse(
         status_code=401,
         content={"message": str(exc)},
@@ -87,6 +95,7 @@ async def controller_unauthorized_error_handler(request: Request, exc: ComputeUn
 
 @compute_api.exception_handler(ComputeForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ComputeForbiddenError):
+    log.error(f"Compute forbidden error: {exc}")
     return JSONResponse(
         status_code=403,
         content={"message": str(exc)},
@@ -95,6 +104,7 @@ async def controller_forbidden_error_handler(request: Request, exc: ComputeForbi
 
 @compute_api.exception_handler(ComputeNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ComputeNotFoundError):
+    log.error(f"Compute not found error: {exc}")
     return JSONResponse(
         status_code=404,
         content={"message": str(exc)},
@@ -103,6 +113,7 @@ async def controller_not_found_error_handler(request: Request, exc: ComputeNotFo
 
 @compute_api.exception_handler(GNS3VMError)
 async def controller_error_handler(request: Request, exc: GNS3VMError):
+    log.error(f"Compute GNS3 VM error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc)},
@@ -111,6 +122,7 @@ async def controller_error_handler(request: Request, exc: GNS3VMError):
 
 @compute_api.exception_handler(ImageMissingError)
 async def image_missing_error_handler(request: Request, exc: ImageMissingError):
+    log.error(f"Compute image missing error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc), "image": exc.image, "exception": exc.__class__.__name__},
@@ -119,6 +131,7 @@ async def image_missing_error_handler(request: Request, exc: ImageMissingError):
 
 @compute_api.exception_handler(NodeError)
 async def node_error_handler(request: Request, exc: NodeError):
+    log.error(f"Compute node error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc), "exception": exc.__class__.__name__},
@@ -127,6 +140,7 @@ async def node_error_handler(request: Request, exc: NodeError):
 
 @compute_api.exception_handler(UbridgeError)
 async def ubridge_error_handler(request: Request, exc: UbridgeError):
+    log.error(f"Compute uBridge error: {exc}")
     return JSONResponse(
         status_code=409,
         content={"message": str(exc), "exception": exc.__class__.__name__},

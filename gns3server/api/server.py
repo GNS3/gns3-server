@@ -34,6 +34,7 @@ from gns3server.controller.controller_error import (
     ControllerTimeoutError,
     ControllerForbiddenError,
     ControllerUnauthorizedError,
+    ComputeConflictError
 )
 
 from gns3server.api.routes import controller, index
@@ -134,6 +135,15 @@ async def controller_bad_request_error_handler(request: Request, exc: Controller
     log.error(f"Controller bad request error: {exc}")
     return JSONResponse(
         status_code=400,
+        content={"message": str(exc)},
+    )
+
+
+@app.exception_handler(ComputeConflictError)
+async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
+    log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
+    return JSONResponse(
+        status_code=409,
         content={"message": str(exc)},
     )
 

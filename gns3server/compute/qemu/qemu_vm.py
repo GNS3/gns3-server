@@ -280,7 +280,7 @@ class QemuVM(BaseNode):
         :param value: New disk value
         """
 
-        value = self.manager.get_abs_image_path(value, self.project.path)
+        value = self.manager.get_abs_image_path(value, self.working_dir)
         if not self.linked_clone:
             for node in self.manager.nodes:
                 if node != self and getattr(node, variable) == value:
@@ -493,7 +493,7 @@ class QemuVM(BaseNode):
         """
 
         if cdrom_image:
-            self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.project.path)
+            self._cdrom_image = self.manager.get_abs_image_path(cdrom_image, self.working_dir)
 
             log.info(
                 'QEMU VM "{name}" [{id}] has set the QEMU cdrom image path to {cdrom_image}'.format(
@@ -551,7 +551,7 @@ class QemuVM(BaseNode):
         :param bios_image: QEMU bios image path
         """
 
-        self._bios_image = self.manager.get_abs_image_path(bios_image, self.project.path)
+        self._bios_image = self.manager.get_abs_image_path(bios_image, self.working_dir)
         log.info(
             'QEMU VM "{name}" [{id}] has set the QEMU bios image path to {bios_image}'.format(
                 name=self._name, id=self._id, bios_image=self._bios_image
@@ -923,7 +923,7 @@ class QemuVM(BaseNode):
         :param initrd: QEMU initrd path
         """
 
-        initrd = self.manager.get_abs_image_path(initrd, self.project.path)
+        initrd = self.manager.get_abs_image_path(initrd, self.working_dir)
 
         log.info(
             'QEMU VM "{name}" [{id}] has set the QEMU initrd path to {initrd}'.format(
@@ -957,7 +957,7 @@ class QemuVM(BaseNode):
         :param kernel_image: QEMU kernel image path
         """
 
-        kernel_image = self.manager.get_abs_image_path(kernel_image, self.project.path)
+        kernel_image = self.manager.get_abs_image_path(kernel_image, self.working_dir)
         log.info(
             'QEMU VM "{name}" [{id}] has set the QEMU kernel image path to {kernel_image}'.format(
                 name=self._name, id=self._id, kernel_image=kernel_image
@@ -1599,6 +1599,69 @@ class QemuVM(BaseNode):
             )
         )
 
+    async def create_disk_image(self, disk_name, options):
+        """
+        Create a Qemu disk
+
+        :param disk_name: disk name
+        :param options: disk creation options
+        """
+
+        try:
+            qemu_img_path = self._get_qemu_img()
+            img_format = options.pop("format")
+            img_size = options.pop("size")
+            disk_path = os.path.join(self.working_dir, disk_name)
+
+            try:
+                if os.path.exists(disk_path):
+                    raise QemuError(f"Could not create disk image '{disk_name}', file already exists")
+            except UnicodeEncodeError:
+                raise QemuError(
+                    f"Could not create disk image '{disk_name}', "
+                    "Disk image name contains characters not supported by the filesystem"
+                )
+
+            command = [qemu_img_path, "create", "-f", img_format]
+            for option in sorted(options.keys()):
+                command.extend(["-o", f"{option}={options[option]}"])
+            command.append(disk_path)
+            command.append(f"{img_size}M")
+            retcode = await self._qemu_img_exec(command)
+            if retcode:
+                stdout = self.read_qemu_img_stdout()
+                raise QemuError(f"Could not create '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
+            else:
+                log.info(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image'{disk_name}' created")
+        except (OSError, subprocess.SubprocessError) as e:
+            stdout = self.read_qemu_img_stdout()
+            raise QemuError(f"Could not create '{disk_name}' disk image: {e}\n{stdout}")
+
+    async def resize_disk_image(self, disk_name, extend):
+        """
+        Resize a Qemu disk
+
+        :param disk_name: disk name
+        :param extend: new size
+        """
+
+        try:
+            qemu_img_path = self._get_qemu_img()
+            disk_path = os.path.join(self.working_dir, disk_name)
+            if not os.path.exists(disk_path):
+                raise QemuError(f"Qemu disk image '{disk_name}' does not exist")
+
+            command = [qemu_img_path, "resize", disk_path, f"+{extend}M"]
+            retcode = await self._qemu_img_exec(command)
+            if retcode:
+                stdout = self.read_qemu_img_stdout()
+                raise QemuError(f"Could not update '{disk_name}' disk image: qemu-img returned with {retcode}\n{stdout}")
+            else:
+                log.info(f"QEMU VM '{self.name}' [{self.id}]: Qemu disk image '{disk_name}' extended by {extend} MB")
+        except (OSError, subprocess.SubprocessError) as e:
+            stdout = self.read_qemu_img_stdout()
+            raise QemuError(f"Could not update '{disk_name}' disk image: {e}\n{stdout}")
+
     @property
     def started(self):
         """
@@ -1791,7 +1854,8 @@ class QemuVM(BaseNode):
                 *command, stdout=fd, stderr=subprocess.STDOUT, cwd=self.working_dir
             )
         retcode = await process.wait()
-        log.info(f"{self._get_qemu_img()} returned with {retcode}")
+        if retcode != 0:
+            log.info(f"{self._get_qemu_img()} returned with {retcode}")
         return retcode
 
     async def _find_disk_file_format(self, disk):
@@ -2406,20 +2470,20 @@ class QemuVM(BaseNode):
                     answer[field] = getattr(self, field)
                 except AttributeError:
                     pass
-        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image, self.project.path)
+        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image, self.working_dir)
         answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
-        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image, self.project.path)
+        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image, self.working_dir)
         answer["hdb_disk_image_md5sum"] = md5sum(self._hdb_disk_image)
-        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image, self.project.path)
+        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image, self.working_dir)
         answer["hdc_disk_image_md5sum"] = md5sum(self._hdc_disk_image)
-        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image, self.project.path)
+        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image, self.working_dir)
         answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
-        answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image, self.project.path)
+        answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image, self.working_dir)
         answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image)
-        answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image, self.project.path)
+        answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image, self.working_dir)
         answer["bios_image_md5sum"] = md5sum(self._bios_image)
-        answer["initrd"] = self.manager.get_relative_image_path(self._initrd, self.project.path)
+        answer["initrd"] = self.manager.get_relative_image_path(self._initrd, self.working_dir)
         answer["initrd_md5sum"] = md5sum(self._initrd)
-        answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image, self.project.path)
+        answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image, self.working_dir)
         answer["kernel_image_md5sum"] = md5sum(self._kernel_image)
         return answer

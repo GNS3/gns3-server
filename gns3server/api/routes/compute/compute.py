@@ -144,55 +144,6 @@ async def get_qemu_capabilities() -> dict:
     return capabilities
 
 
-@router.post(
-    "/qemu/img",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to create Qemu image"}},
-)
-async def create_qemu_image(image_data: schemas.QemuImageCreate) -> Response:
-    """
-    Create a Qemu image.
-    """
-
-    #FIXME: move to controller
-    raise NotImplementedError()
-
-    # Raise error if user try to escape
-    #if not is_safe_path(image_data.path, project.path):
-    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    await Qemu.instance().create_disk(
-        image_data.qemu_img,
-        image_data.path,
-        jsonable_encoder(image_data, exclude_unset=True, exclude={"qemu_img", "path"})
-    )
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.put(
-    "/qemu/img",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={403: {"model": schemas.ErrorMessage, "description": "Forbidden to update Qemu image"}},
-)
-async def update_qemu_image(image_data: schemas.QemuImageUpdate) -> Response:
-    """
-    Update a Qemu image.
-    """
-
-    #FIXME: move to controller
-    raise NotImplementedError()
-
-    # Raise error if user try to escape
-    #if not is_safe_path(image_data.path, project.path):
-    #    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    if image_data.extend:
-        await Qemu.instance().resize_disk(image_data.qemu_img, image_data.path, image_data.extend)
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 @router.get("/virtualbox/vms", response_model=List[dict])
 async def get_virtualbox_vms() -> List[dict]:
 

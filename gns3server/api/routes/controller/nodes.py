@@ -32,7 +32,7 @@ from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
-from gns3server.controller.controller_error import ControllerForbiddenError
+from gns3server.controller.controller_error import ControllerForbiddenError, ControllerBadRequestError
 from gns3server import schemas
 
 import logging
@@ -300,6 +300,8 @@ async def auto_idlepc(node: Node = Depends(dep_node)) -> str:
     Compute an Idle-PC value for a Dynamips node
     """
 
+    if node.node_type != "dynamips":
+        raise ControllerBadRequestError("Auto Idle-PC is only supported on a Dynamips node")
     return await node.dynamips_auto_idlepc()
 
 
@@ -309,16 +311,40 @@ async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
     Compute a list of potential idle-pc values for a Dynamips node
     """
 
+    if node.node_type != "dynamips":
+        raise ControllerBadRequestError("Idle-PC proposals is only supported on a Dynamips node")
     return await node.dynamips_idlepc_proposals()
 
 
-@router.post("/{node_id}/resize_disk", status_code=status.HTTP_204_NO_CONTENT)
-async def resize_disk(resize_data: dict, node: Node = Depends(dep_node)) -> Response:
+@router.post("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def create_disk_image(
+        disk_name: str,
+        disk_data: schemas.QemuDiskImageCreate,
+        node: Node = Depends(dep_node)
+) -> Response:
     """
-    Resize a disk image.
+    Create a Qemu disk image.
     """
 
-    await node.post("/resize_disk", **resize_data)
+    if node.node_type != "qemu":
+        raise ControllerBadRequestError("Creating a disk image is only supported on a Qemu node")
+    await node.post(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def update_disk_image(
+        disk_name: str,
+        disk_data: schemas.QemuDiskImageUpdate,
+        node: Node = Depends(dep_node)
+) -> Response:
+    """
+    Update a Qemu disk image.
+    """
+
+    if node.node_type != "qemu":
+        raise ControllerBadRequestError("Updating a disk image is only supported on a Qemu node")
+    await node.put(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -18,7 +18,6 @@
 import pytest
 import asyncio
 import os
-import sys
 import stat
 from tests.utils import asyncio_patch, AsyncioMagicMock
 

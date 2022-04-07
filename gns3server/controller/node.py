@@ -21,8 +21,11 @@ import copy
 import uuid
 import os
 
-from .compute import ComputeConflict, ComputeError
-from .controller_error import ControllerError, ControllerTimeoutError
+from .controller_error import (
+    ControllerError,
+    ControllerTimeoutError,
+    ComputeError
+)
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
 from ..config import Config
