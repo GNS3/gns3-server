@@ -162,6 +162,22 @@ async def update_qemu_disk_image(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.delete(
+    "/{node_id}/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_qemu_disk_image(
+        disk_name: str,
+        node: QemuVM = Depends(dep_node)
+) -> Response:
+    """
+    Delete a Qemu disk image.
+    """
+
+    node.delete_disk_image(disk_name)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
 async def start_qemu_node(node: QemuVM = Depends(dep_node)) -> Response:
     """

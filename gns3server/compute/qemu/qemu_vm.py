@@ -1662,6 +1662,22 @@ class QemuVM(BaseNode):
             stdout = self.read_qemu_img_stdout()
             raise QemuError(f"Could not update '{disk_name}' disk image: {e}\n{stdout}")
 
+    def delete_disk_image(self, disk_name):
+        """
+        Delete a Qemu disk
+
+        :param disk_name: disk name
+        """
+
+        disk_path = os.path.join(self.working_dir, disk_name)
+        if not os.path.exists(disk_path):
+            raise QemuError(f"Qemu disk image '{disk_name}' does not exist")
+
+        try:
+            os.remove(disk_path)
+        except OSError as e:
+            raise QemuError(f"Could not delete '{disk_name}' disk image: {e}")
+
     @property
     def started(self):
         """
@@ -2042,7 +2058,7 @@ class QemuVM(BaseNode):
         drives = ["a", "b", "c", "d"]
 
         for disk_index, drive in enumerate(drives):
-            # prioritize config disk over harddisk d
+            # prioritize config disk over normal disks
             if drive == "d" and self._create_config_disk:
                 continue
 
@@ -2056,34 +2072,44 @@ class QemuVM(BaseNode):
                 interface = "ide"
                 setattr(self, f"hd{drive}_disk_interface", interface)
 
-            disk_name = "hd" + drive
+            disk_name = f"hd{drive}"
             if not os.path.isfile(disk_image) or not os.path.exists(disk_image):
                 if os.path.islink(disk_image):
                     raise QemuError(
-                        f"{disk_name} disk image '{disk_image}' linked to '{os.path.realpath(disk_image)}' is not accessible"
+                        f"'{disk_name}' disk image linked to "
+                        f"'{os.path.realpath(disk_image)}' is not accessible"
                     )
                 else:
-                    raise QemuError(f"{disk_name} disk image '{disk_image}' is not accessible")
+                    raise QemuError(f"'{disk_image}' is not accessible")
             else:
                 try:
                     # check for corrupt disk image
                     retcode = await self._qemu_img_exec([qemu_img_path, "check", disk_image])
+                    # ignore retcode == 1, one reason is that the image is encrypted and
+                    # there is no encrypt.key-secret available
                     if retcode == 3:
                         # image has leaked clusters, but is not corrupted, let's try to fix it
-                        log.warning(f"Qemu image {disk_image} has leaked clusters")
-                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", "{}".format(disk_image)]) == 3:
-                            self.project.emit("log.warning", {"message": "Qemu image '{}' has leaked clusters and could not be fixed".format(disk_image)})
+                        log.warning(f"Disk image '{disk_image}' has leaked clusters")
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "leaks", f"{disk_image}"]) == 3:
+                            self.project.emit(
+                                "log.warning",
+                                {"message": f"Disk image '{disk_image}' has leaked clusters and could not be fixed"}
+                            )
                     elif retcode == 2:
                         # image is corrupted, let's try to fix it
-                        log.warning(f"Qemu image {disk_image} is corrupted")
-                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", "{}".format(disk_image)]) == 2:
-                            self.project.emit("log.warning", {"message": "Qemu image '{}' is corrupted and could not be fixed".format(disk_image)})
-                    # ignore retcode == 1.  One reason is that the image is encrypted and there is no encrypt.key-secret available
+                        log.warning(f"Disk image '{disk_image}' is corrupted")
+                        if await self._qemu_img_exec([qemu_img_path, "check", "-r", "all", f"{disk_image}"]) == 2:
+                            self.project.emit(
+                                "log.warning",
+                                {"message": f"Disk image '{disk_image}' is corrupted and could not be fixed"}
+                            )
                 except (OSError, subprocess.SubprocessError) as e:
                     stdout = self.read_qemu_img_stdout()
                     raise QemuError(f"Could not check '{disk_name}' disk image: {e}\n{stdout}")
 
-            if self.linked_clone:
+            if self.linked_clone and os.path.dirname(disk_image) != self.working_dir:
+
+                #cloned_disk_image = os.path.splitext(os.path.basename(disk_image))
                 disk = os.path.join(self.working_dir, f"{disk_name}_disk.qcow2")
                 if not os.path.exists(disk):
                     # create the disk
@@ -2091,9 +2117,9 @@ class QemuVM(BaseNode):
                 else:
                     backing_file_format = await self._find_disk_file_format(disk_image)
                     if not backing_file_format:
-                        raise QemuError("Could not detect format for disk image: {}".format(disk_image))
+                        raise QemuError(f"Could not detect format for disk image '{disk_image}'")
                     # Rebase the image. This is in case the base image moved to a different directory,
-                    # which will be the case if we imported a portable project.  This uses
+                    # which will be the case if we imported a portable project. This uses
                     # get_abs_image_path(hdX_disk_image) and ignores the old base path embedded
                     # in the qcow2 file itself.
                     try:
@@ -2470,20 +2496,30 @@ class QemuVM(BaseNode):
                     answer[field] = getattr(self, field)
                 except AttributeError:
                     pass
-        answer["hda_disk_image"] = self.manager.get_relative_image_path(self._hda_disk_image, self.working_dir)
-        answer["hda_disk_image_md5sum"] = md5sum(self._hda_disk_image)
-        answer["hdb_disk_image"] = self.manager.get_relative_image_path(self._hdb_disk_image, self.working_dir)
-        answer["hdb_disk_image_md5sum"] = md5sum(self._hdb_disk_image)
-        answer["hdc_disk_image"] = self.manager.get_relative_image_path(self._hdc_disk_image, self.working_dir)
-        answer["hdc_disk_image_md5sum"] = md5sum(self._hdc_disk_image)
-        answer["hdd_disk_image"] = self.manager.get_relative_image_path(self._hdd_disk_image, self.working_dir)
-        answer["hdd_disk_image_md5sum"] = md5sum(self._hdd_disk_image)
+
+        for drive in ["a", "b", "c", "d"]:
+            disk_image = getattr(self, f"_hd{drive}_disk_image")
+            if not disk_image:
+                continue
+            answer[f"hd{drive}_disk_image"] = self.manager.get_relative_image_path(disk_image, self.working_dir)
+            answer[f"hd{drive}_disk_image_md5sum"] = md5sum(disk_image, self.working_dir)
+
+            local_disk = os.path.join(self.working_dir, f"hd{drive}_disk.qcow2")
+            if os.path.exists(local_disk):
+                try:
+                    qcow2 = Qcow2(local_disk)
+                    if qcow2.backing_file:
+                        answer[f"hd{drive}_disk_image_backed"] = os.path.basename(local_disk)
+                except (Qcow2Error, OSError) as e:
+                    log.error(f"Could not read qcow2 disk image '{local_disk}': {e}")
+                    continue
+
         answer["cdrom_image"] = self.manager.get_relative_image_path(self._cdrom_image, self.working_dir)
-        answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image)
+        answer["cdrom_image_md5sum"] = md5sum(self._cdrom_image, self.working_dir)
         answer["bios_image"] = self.manager.get_relative_image_path(self._bios_image, self.working_dir)
-        answer["bios_image_md5sum"] = md5sum(self._bios_image)
+        answer["bios_image_md5sum"] = md5sum(self._bios_image, self.working_dir)
         answer["initrd"] = self.manager.get_relative_image_path(self._initrd, self.working_dir)
-        answer["initrd_md5sum"] = md5sum(self._initrd)
+        answer["initrd_md5sum"] = md5sum(self._initrd, self.working_dir)
         answer["kernel_image"] = self.manager.get_relative_image_path(self._kernel_image, self.working_dir)
-        answer["kernel_image_md5sum"] = md5sum(self._kernel_image)
+        answer["kernel_image_md5sum"] = md5sum(self._kernel_image, self.working_dir)
         return answer

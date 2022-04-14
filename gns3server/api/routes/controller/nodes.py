@@ -348,6 +348,21 @@ async def update_disk_image(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.delete("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_disk_image(
+        disk_name: str,
+        node: Node = Depends(dep_node)
+) -> Response:
+    """
+    Delete a Qemu disk image.
+    """
+
+    if node.node_type != "qemu":
+        raise ControllerBadRequestError("Deleting a disk image is only supported on a Qemu node")
+    await node.delete(f"/disk_image/{disk_name}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/{node_id}/files/{file_path:path}")
 async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     """

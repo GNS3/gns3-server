@@ -624,7 +624,6 @@ class Compute:
         """
         Return the list of images available for this type on the compute node.
         """
-        images = []
 
         res = await self.http_query("GET", f"/{type}/images", timeout=None)
         images = res.json

@@ -671,6 +671,45 @@ async def test_qemu_update_disk_image(
         )
 
 
+async def test_qemu_delete_disk_image(
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        qemu_vm: dict,
+) -> None:
+
+    node = compute_project.get_node(qemu_vm["node_id"])
+    shutil.copy("tests/resources/empty8G.qcow2", os.path.join(node.working_dir, "disk.qcow2"))
+
+    response = await compute_client.delete(
+        app.url_path_for(
+            "compute:delete_qemu_disk_image",
+            project_id=qemu_vm["project_id"],
+            node_id=qemu_vm["node_id"],
+            disk_name="disk.qcow2"
+        )
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_qemu_delete_disk_image_missing_image(
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        qemu_vm: dict,
+) -> None:
+
+    response = await compute_client.delete(
+        app.url_path_for(
+            "compute:delete_qemu_disk_image",
+            project_id=qemu_vm["project_id"],
+            node_id=qemu_vm["node_id"],
+            disk_name="unknown_image.qcow2"
+        )
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT
+
+
 @pytest.mark.asyncio
 async def test_qemu_start_capture(app: FastAPI, compute_client: AsyncClient, qemu_vm: dict):
 

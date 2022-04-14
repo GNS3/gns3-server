@@ -346,6 +346,38 @@ async def test_qemu_disk_image_update_wrong_node_type(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+async def test_qemu_disk_image_delete(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = MagicMock()
+    compute.delete = AsyncioMagicMock(return_value=response)
+
+    node._node_type = "qemu"  # force Qemu node type
+    response = await client.delete(
+        app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_qemu_disk_image_delete_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.delete(
+        app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 async def test_get_file(app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node) -> None:
 
     response = MagicMock()

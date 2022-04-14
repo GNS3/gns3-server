@@ -94,20 +94,18 @@ async def test_vm(compute_project, manager, fake_qemu_binary):
 
 
 @pytest.mark.asyncio
-async def test_vm_create(tmpdir, compute_project, manager, fake_qemu_binary):
-
-    fake_img = str(tmpdir / 'hello')
-
-    with open(fake_img, 'w+') as f:
-        f.write('hello')
+async def test_vm_create(compute_project, manager, fake_qemu_binary):
 
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
+    fake_img = os.path.join(vm.working_dir, 'hello')
+    with open(fake_img, 'w+') as f:
+        f.write('hello')
     vm._hda_disk_image = fake_img
 
     await vm.create()
 
     # tests if `create` created md5sums
-    assert os.path.exists(str(tmpdir / 'hello.md5sum'))
+    assert os.path.exists(os.path.join(vm.working_dir, 'hello.md5sum'))
 
 
 @pytest.mark.asyncio
