@@ -52,12 +52,13 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.Image])
 async def get_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        image_type: Optional[schemas.ImageType] = None
 ) -> List[schemas.Image]:
     """
     Return all images.
     """
 
-    return await images_repo.get_images()
+    return await images_repo.get_images(image_type)
 
 
 @router.post("/upload/{image_path:path}", response_model=schemas.Image, status_code=status.HTTP_201_CREATED)

@@ -231,7 +231,7 @@ class IOUVM(BaseNode):
             "status": self.status,
             "project_id": self.project.id,
             "path": self.path,
-            "md5sum": gns3server.utils.images.md5sum(self.path),
+            "md5sum": gns3server.utils.images.md5sum(self.path, self.working_path),
             "ethernet_adapters": len(self._ethernet_adapters),
             "serial_adapters": len(self._serial_adapters),
             "ram": self._ram,

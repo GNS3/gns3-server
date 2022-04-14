@@ -158,11 +158,12 @@ def images_directories(type):
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
-def md5sum(path, stopped_event=None):
+def md5sum(path, working_dir=None, stopped_event=None):
     """
     Return the md5sum of an image and cache it on disk
 
     :param path: Path to the image
+    :param workdir_dir: where to store .md5sum files
     :param stopped_event: In case you execute this function on thread and would like to have possibility
                           to cancel operation pass the `threading.Event`
     :returns: Digest of the image
@@ -171,8 +172,13 @@ def md5sum(path, stopped_event=None):
     if path is None or len(path) == 0 or not os.path.exists(path):
         return None
 
+    if working_dir:
+        md5sum_file = os.path.join(working_dir, os.path.basename(path) + ".md5sum")
+    else:
+        md5sum_file = path + ".md5sum"
+
     try:
-        with open(path + ".md5sum") as f:
+        with open(md5sum_file) as f:
             md5 = f.read().strip()
             if len(md5) == 32:
                 return md5
@@ -197,7 +203,7 @@ def md5sum(path, stopped_event=None):
         return None
 
     try:
-        with open(f"{path}.md5sum", "w+") as f:
+        with open(md5sum_file, "w+") as f:
             f.write(digest)
     except OSError as e:
         log.error("Can't write digest of %s: %s", path, str(e))

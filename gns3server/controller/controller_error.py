@@ -51,3 +51,24 @@ class ControllerForbiddenError(ControllerError):
 class ControllerTimeoutError(ControllerError):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class ComputeError(ControllerError):
+    pass
+
+
+class ComputeConflictError(ComputeError):
+    """
+    Raise when the compute sends a 409 that we can handle
+
+    :param request URL: compute URL used for the request
+    :param response: compute JSON response
+    """
+
+    def __init__(self, url, response):
+        super().__init__(response["message"])
+        self._url = url
+        self._response = response
+
+    def url(self):
+        return self._url

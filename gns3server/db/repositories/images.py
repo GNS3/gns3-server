@@ -59,12 +59,15 @@ class ImagesRepository(BaseRepository):
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def get_images(self) -> List[models.Image]:
+    async def get_images(self, image_type=None) -> List[models.Image]:
         """
         Get all images.
         """
 
-        query = select(models.Image)
+        if image_type:
+            query = select(models.Image).where(models.Image.image_type == image_type)
+        else:
+            query = select(models.Image)
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
