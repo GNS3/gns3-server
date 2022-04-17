@@ -506,7 +506,7 @@ class BaseManager:
         """
 
         try:
-            return list_images(self._NODE_TYPE)
+            return await list_images(self._NODE_TYPE)
         except OSError as e:
             raise ComputeError(f"Can not list images {e}")
 
