@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import asyncio
 
 from typing import Callable
@@ -25,7 +24,7 @@ from gns3server.controller import Controller
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db, get_computes
+from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes
 
 import logging
 
@@ -89,5 +88,7 @@ def create_shutdown_handler(app: FastAPI) -> Callable:
 
         if PortManager.instance().udp_ports:
             log.warning(f"UDP ports are still used {PortManager.instance().udp_ports}")
+
+        await disconnect_from_db(app)
 
     return shutdown_handler
