@@ -122,7 +122,7 @@ async def read_image_info(path: str, expected_image_type: str = None) -> dict:
         "image_type": detected_image_type,
         "image_size": os.stat(path).st_size,
         "path": path,
-        "checksum": await wait_run_in_executor(md5sum, path),
+        "checksum": await wait_run_in_executor(md5sum, path, cache_to_md5file=False),
         "checksum_algorithm": "md5",
     }
     return image_info
@@ -149,7 +149,7 @@ async def discover_images(image_type: str, skip_image_paths: list = None) -> Lis
                 try:
                     images.append(await read_image_info(path, image_type))
                 except InvalidImageError as e:
-                    #log.warning(f"{e}")
+                    log.debug(str(e))
                     continue
     return images
 
@@ -211,7 +211,7 @@ def images_directories(image_type):
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
-def md5sum(path, working_dir=None, stopped_event=None):
+def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
     """
     Return the md5sum of an image and cache it on disk
 
@@ -255,11 +255,12 @@ def md5sum(path, working_dir=None, stopped_event=None):
         log.error("Can't create digest of %s: %s", path, str(e))
         return None
 
-    try:
-        with open(md5sum_file, "w+") as f:
-            f.write(digest)
-    except OSError as e:
-        log.error("Can't write digest of %s: %s", path, str(e))
+    if cache_to_md5file:
+        try:
+            with open(md5sum_file, "w+") as f:
+                f.write(digest)
+        except OSError as e:
+            log.error("Can't write digest of %s: %s", path, str(e))
 
     return digest
 
