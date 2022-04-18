@@ -24,7 +24,7 @@ from gns3server.controller import Controller
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db, get_computes, discover_images_on_filesystem
+from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db, discover_images_on_filesystem
 
 
 import logging
