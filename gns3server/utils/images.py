@@ -20,19 +20,20 @@ import stat
 import aiofiles
 import shutil
 
-from typing import AsyncGenerator
+from typing import List, AsyncGenerator
 from ..config import Config
 from . import force_unix_path
 
 import gns3server.db.models as models
 from gns3server.db.repositories.images import ImagesRepository
+from gns3server.utils.asyncio import wait_run_in_executor
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def list_images(image_type):
+async def list_images(image_type):
     """
     Scan directories for available image for a given type.
 
@@ -59,7 +60,6 @@ def list_images(image_type):
         directory = os.path.normpath(directory)
         for root, _, filenames in _os_walk(directory, recurse=recurse):
             for filename in filenames:
-                path = os.path.join(root, filename)
                 if filename not in files:
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
@@ -92,12 +92,65 @@ def list_images(image_type):
                                 {
                                     "filename": filename,
                                     "path": force_unix_path(path),
-                                    "md5sum": md5sum(os.path.join(root, filename)),
+                                    "md5sum": await wait_run_in_executor(md5sum, os.path.join(root, filename)),
                                     "filesize": os.stat(os.path.join(root, filename)).st_size,
                                 }
                             )
                         except OSError as e:
                             log.warning(f"Can't add image {path}: {str(e)}")
+    return images
+
+
+async def read_image_info(path: str, expected_image_type: str = None) -> dict:
+
+    header_magic_len = 7
+    try:
+        async with aiofiles.open(path, "rb") as f:
+            image_header = await f.read(header_magic_len)  # read the first 7 bytes of the file
+            if len(image_header) >= header_magic_len:
+                detected_image_type = check_valid_image_header(image_header)
+                if expected_image_type and detected_image_type != expected_image_type:
+                    raise InvalidImageError(f"Detected image type for '{path}' is {detected_image_type}, "
+                                            f"expected type is {expected_image_type}")
+            else:
+                raise InvalidImageError(f"Image '{path}' is too small to be valid")
+    except OSError as e:
+        raise InvalidImageError(f"Cannot read image '{path}': {e}")
+
+    image_info = {
+        "image_name": os.path.basename(path),
+        "image_type": detected_image_type,
+        "image_size": os.stat(path).st_size,
+        "path": path,
+        "checksum": await wait_run_in_executor(md5sum, path, cache_to_md5file=False),
+        "checksum_algorithm": "md5",
+    }
+    return image_info
+
+
+async def discover_images(image_type: str, skip_image_paths: list = None) -> List[dict]:
+    """
+    Scan directories for available images
+    """
+
+    files = set()
+    images = []
+
+    for directory in images_directories(image_type):
+        for root, _, filenames in os.walk(os.path.normpath(directory)):
+            for filename in filenames:
+                if filename.endswith(".md5sum") or filename.startswith("."):
+                    continue
+                path = os.path.join(root, filename)
+                if not os.path.isfile(path) or skip_image_paths and path in skip_image_paths or path in files:
+                    continue
+                files.add(path)
+
+                try:
+                    images.append(await read_image_info(path, image_type))
+                except InvalidImageError as e:
+                    log.debug(str(e))
+                    continue
     return images
 
 
@@ -133,18 +186,18 @@ def default_images_directory(image_type):
         raise NotImplementedError(f"%s node type is not supported", image_type)
 
 
-def images_directories(type):
+def images_directories(image_type):
     """
     Return all directories where we will look for images
     by priority
 
-    :param type: Type of emulator
+    :param image_type: Type of emulator
     """
 
     server_config = Config.instance().settings.Server
     paths = []
     img_dir = os.path.expanduser(server_config.images_path)
-    type_img_directory = default_images_directory(type)
+    type_img_directory = default_images_directory(image_type)
     try:
         os.makedirs(type_img_directory, exist_ok=True)
         paths.append(type_img_directory)
@@ -158,7 +211,7 @@ def images_directories(type):
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 
 
-def md5sum(path, working_dir=None, stopped_event=None):
+def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
     """
     Return the md5sum of an image and cache it on disk
 
@@ -193,7 +246,7 @@ def md5sum(path, working_dir=None, stopped_event=None):
                 if stopped_event is not None and stopped_event.is_set():
                     log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
                     return
-                buf = f.read(128)
+                buf = f.read(1024)
                 if not buf:
                     break
                 m.update(buf)
@@ -202,11 +255,12 @@ def md5sum(path, working_dir=None, stopped_event=None):
         log.error("Can't create digest of %s: %s", path, str(e))
         return None
 
-    try:
-        with open(md5sum_file, "w+") as f:
-            f.write(digest)
-    except OSError as e:
-        log.error("Can't write digest of %s: %s", path, str(e))
+    if cache_to_md5file:
+        try:
+            with open(md5sum_file, "w+") as f:
+                f.write(digest)
+        except OSError as e:
+            log.error("Can't write digest of %s: %s", path, str(e))
 
     return digest
 
@@ -237,10 +291,11 @@ def check_valid_image_header(data: bytes) -> str:
         # for IOS images: file must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
         return "ios"
     elif data[:7] == b'\x7fELF\x01\x01\x01' or data[:7] == b'\x7fELF\x02\x01\x01':
-        # for IOU images file must start with the ELF magic number, be 32-bit or 64-bit, little endian and
+        # for IOU images: file must start with the ELF magic number, be 32-bit or 64-bit, little endian and
         # have an ELF version of 1 (normal IOS images are big endian!)
         return "iou"
-    elif data[:4] != b'QFI\xfb' or data[:4] != b'KDMV':
+    elif data[:4] == b'QFI\xfb' or data[:4] == b'KDMV':
+        # for Qemy images: file must be QCOW2 or VMDK
         return "qemu"
     else:
         raise InvalidImageError("Could not detect image type, please make sure it is a valid image")

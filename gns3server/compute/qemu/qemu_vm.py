@@ -1057,10 +1057,10 @@ class QemuVM(BaseNode):
         # In case user upload image manually we don't have md5 sums.
         # We need generate hashes at this point, otherwise they will be generated
         # at asdict but not on separate thread.
-        await cancellable_wait_run_in_executor(md5sum, self._hda_disk_image)
-        await cancellable_wait_run_in_executor(md5sum, self._hdb_disk_image)
-        await cancellable_wait_run_in_executor(md5sum, self._hdc_disk_image)
-        await cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image)
+        await cancellable_wait_run_in_executor(md5sum, self._hda_disk_image, self.working_dir)
+        await cancellable_wait_run_in_executor(md5sum, self._hdb_disk_image, self.working_dir)
+        await cancellable_wait_run_in_executor(md5sum, self._hdc_disk_image, self.working_dir)
+        await cancellable_wait_run_in_executor(md5sum, self._hdd_disk_image, self.working_dir)
 
         super().create()
 

@@ -15,4 +15,5 @@ aiosqlite===0.17.0
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
 email-validator==1.1.3
+watchfiles==0.13
 setuptools==60.6.0  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084

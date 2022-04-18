@@ -24,7 +24,8 @@ from gns3server.controller import Controller
 from gns3server.compute import MODULES
 from gns3server.compute.port_manager import PortManager
 from gns3server.utils.http_client import HTTPClient
-from gns3server.db.tasks import connect_to_db, disconnect_from_db, get_computes
+from gns3server.db.tasks import connect_to_db, get_computes, disconnect_from_db, discover_images_on_filesystem
+
 
 import logging
 
@@ -59,7 +60,9 @@ def create_startup_handler(app: FastAPI) -> Callable:
         # computing with server start
         from gns3server.compute.qemu import Qemu
 
-        asyncio.ensure_future(Qemu.instance().list_images())
+        # Start the discovering new images on file system 5 seconds after the server has started
+        # to give it a chance to process API requests
+        loop.call_later(5, asyncio.create_task, discover_images_on_filesystem(app))
 
         for module in MODULES:
             log.debug(f"Loading module {module.__name__}")

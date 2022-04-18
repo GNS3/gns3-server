@@ -630,9 +630,6 @@ class Compute:
 
         try:
             if type in ["qemu", "dynamips", "iou"]:
-                # for local_image in list_images(type):
-                #    if local_image['filename'] not in [i['filename'] for i in images]:
-                #        images.append(local_image)
                 images = sorted(images, key=itemgetter("filename"))
             else:
                 images = sorted(images, key=itemgetter("image"))
