@@ -55,6 +55,14 @@ async def connect_to_db(app: FastAPI) -> None:
         log.fatal(f"Error while connecting to database '{db_url}: {e}")
 
 
+async def disconnect_from_db(app: FastAPI) -> None:
+
+    # dispose of the connection pool used by the database engine
+    if getattr(app.state, "_db_engine"):
+        await app.state._db_engine.dispose()
+        log.info(f"Disconnected from database")
+
+
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
 

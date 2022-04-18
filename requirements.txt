@@ -1,5 +1,5 @@
 uvicorn==0.17.6
-fastapi==0.75.0
+fastapi==0.75.2
 python-multipart==0.0.5
 websockets==10.2
 aiohttp==3.8.1
@@ -10,7 +10,7 @@ sentry-sdk==1.5.7
 psutil==5.9.0
 distro==1.7.0
 py-cpuinfo==8.0.0
-sqlalchemy==1.4.32
+sqlalchemy==1.4.35
 aiosqlite===0.17.0
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
