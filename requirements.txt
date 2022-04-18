@@ -1,5 +1,5 @@
 uvicorn==0.17.6
-fastapi==0.75.0
+fastapi==0.75.2
 python-multipart==0.0.5
 websockets==10.2
 aiohttp==3.8.1
