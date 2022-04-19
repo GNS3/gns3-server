@@ -351,34 +351,6 @@ async def test_qemu_delete_nio(app: FastAPI, compute_client: AsyncClient, qemu_v
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-async def test_qemu_list_binaries(app: FastAPI, compute_client: AsyncClient) -> None:
-
-    ret = [{"path": "/tmp/1", "version": "2.2.0"},
-           {"path": "/tmp/2", "version": "2.1.0"}]
-
-    with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
-        response = await compute_client.get(app.url_path_for("compute:get_qemu_binaries"))
-        assert mock.called_with(None)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json() == ret
-
-
-# async def test_qemu_list_binaries_filter(app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:
-#
-#     ret = [
-#         {"path": "/tmp/x86_64", "version": "2.2.0"},
-#         {"path": "/tmp/alpha", "version": "2.1.0"},
-#         {"path": "/tmp/i386", "version": "2.1.0"}
-#     ]
-#
-#     with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
-#         response = await compute_client.get(app.url_path_for("compute:get_qemu_binaries"),
-#                                     json={"archs": ["i386"]})
-#         assert response.status_code == status.HTTP_200_OK
-#         assert mock.called_with(["i386"])
-#         assert response.json() == ret
-
-
 async def test_images(app: FastAPI, compute_client: AsyncClient, fake_qemu_vm) -> None:
 
     response = await compute_client.get(app.url_path_for("compute:get_qemu_images"))

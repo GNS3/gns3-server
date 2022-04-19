@@ -121,20 +121,6 @@ def compute_statistics() -> dict:
     }
 
 
-@router.get("/qemu/binaries")
-async def get_qemu_binaries(
-        archs: Optional[List[str]] = Body(None, embed=True)
-) -> List[str]:
-
-    return await Qemu.binary_list(archs)
-
-
-@router.get("/qemu/img-binaries")
-async def get_image_binaries() -> List[str]:
-
-    return await Qemu.img_binary_list()
-
-
 @router.get("/qemu/capabilities")
 async def get_qemu_capabilities() -> dict:
     capabilities = {"kvm": []}
