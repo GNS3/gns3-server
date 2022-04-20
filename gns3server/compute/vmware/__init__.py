@@ -365,8 +365,8 @@ class VMware(BaseManager):
             vmnet_interfaces = self._get_vmnet_interfaces_ubridge()
         else:
             vmnet_interfaces = self._get_vmnet_interfaces()
-            vmnet_interfaces = list(vmnet_interfaces.keys())
             self._vmnets_info = vmnet_interfaces.copy()
+            vmnet_interfaces = list(vmnet_interfaces.keys())
 
         # remove vmnets already in use
         for vmware_vm in self._nodes.values():
