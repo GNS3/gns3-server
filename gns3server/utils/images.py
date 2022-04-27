@@ -335,13 +335,23 @@ async def write_image(
         if duplicate_image and os.path.dirname(duplicate_image.path) == os.path.dirname(image_path):
             raise InvalidImageError(f"Image {duplicate_image.filename} with "
                                     f"same checksum already exists in the same directory")
-    except InvalidImageError:
-        os.remove(tmp_path)
-        raise
-    os.chmod(tmp_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
-    if not image_dir:
-        directory = default_images_directory(image_type)
-        os.makedirs(directory, exist_ok=True)
-        image_path = os.path.abspath(os.path.join(directory, image_filename))
-    shutil.move(tmp_path, image_path)
-    return await images_repo.add_image(image_name, image_type, image_size, image_path, checksum, checksum_algorithm="md5")
+        if not image_dir:
+            directory = default_images_directory(image_type)
+            os.makedirs(directory, exist_ok=True)
+            image_path = os.path.abspath(os.path.join(directory, image_filename))
+        shutil.move(tmp_path, image_path)
+        os.chmod(image_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            log.warning(f"Could not remove '{tmp_path}'")
+
+    return await images_repo.add_image(
+        image_name,
+        image_type,
+        image_size,
+        image_path,
+        checksum,
+        checksum_algorithm="md5"
+    )
