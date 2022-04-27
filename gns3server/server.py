@@ -111,7 +111,7 @@ class Server:
         )
         parser.add_argument("-q", "--quiet", default=False, action="store_true", help="do not show logs on stdout")
         parser.add_argument("-d", "--debug", default=False, action="store_true", help="show debug logs")
-        parser.add_argument("--logfile", help="send output to logfile instead of console")
+        parser.add_argument("--logfile", "--log", help="send output to logfile instead of console")
         parser.add_argument("--logmaxsize", default=10000000, help="maximum logfile size in bytes (default is 10MB)")
         parser.add_argument(
             "--logbackupcount", default=10, help="number of historical log files to keep (default is 10)"
