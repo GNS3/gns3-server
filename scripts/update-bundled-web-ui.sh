@@ -76,7 +76,7 @@ if [ "$CUSTOM_REPO" = false ] ; then
       git fetch --tags
       git pull
 
-      if [[ ! -z "$TAG" ]] 
+      if [[ -n "$TAG" ]]
       then
         echo "Switching to tag: ${TAG}"
         git checkout "tags/${TAG}"
