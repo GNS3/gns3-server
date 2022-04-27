@@ -1,0 +1,46 @@
+{
+    "appliance_id": "39c6b8db-8dc3-4b04-8727-7d0b414be7c8",
+    "name": "Clavister NetShield",
+    "category": "firewall",
+    "description": "Clavister NetShield (cOS Stream) Virtual Appliance offers the same functionality as the Clavister NetShield physical NGappliances FWs in a virtual environment.",
+    "vendor_name": "Clavister",
+    "vendor_url": "https://www.clavister.com/",
+    "documentation_url": "https://kb.clavister.com",
+    "product_name": "NetShield",
+    "product_url": "https://www.clavister.com/products/netshield/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free-to-try",
+    "maintainer": "Mattias Nordlund",
+    "maintainer_email": "mattias.nordlund@clavister.com",
+    "usage": "No configuration by default, oen console to set IPs and activate configuration.",
+    "port_name_format": "if{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 1024,      
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow",
+        "options": "-cpu Nehalem"
+    },
+    "images": [
+        {
+            "filename": "clavister-cos-stream-3.80.09.01-virtual-x64-generic.qcow2",
+            "version": "cOS Stream 3.80.09",
+            "md5sum": "b57d8e0f1a3cdd4b2c96ffbc7d7c4f05",
+            "filesize": 134217728,
+            "download_url": "https://my.clavister.com/download/c44639bf-b082-ec11-8308-005056956b6b"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "clavister-cos-stream-3.80.09.01-virtual-x64-generic.qcow2"
+            },
+            "name": "cOS Stream 3.80.09"
+        }
+    ]
+}

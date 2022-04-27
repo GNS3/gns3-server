@@ -26,6 +26,13 @@
         "kvm": "require"
     },
     "images": [
+	    {
+            "filename": "asav9-16-2.qcow2",
+            "version": "9.16.2",
+            "md5sum": "c3aa2b73b029146ec345bf888dd54eab",
+            "filesize": 264896512,
+            "download_url": "https://software.cisco.com/download/home/286119613/type/280775065/release/9.16.2"
+        },
         {
             "filename": "asav9-15-1.qcow2",
             "version": "9.15.1",
@@ -105,6 +112,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.16.2",
+            "images": {
+                "hda_disk_image": "asav9-16-2.qcow2"
+            }
+        },
         {
             "name": "9.15.1",
             "images": {
