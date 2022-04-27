@@ -298,6 +298,8 @@ class DockerVM(BaseNode):
 # This is a sample network config, please uncomment lines to configure the network
 #
 
+# Uncomment this line to load custom interface files
+# source /etc/network/interfaces.d/*
 """)
                 for adapter in range(0, self.adapters):
                     f.write("""
