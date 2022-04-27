@@ -1,0 +1,58 @@
+{
+    "appliance_id": "68ddb1dc-e55b-4bcc-9c18-27a9eb5e7413",
+    "name": "Clavister NetWall",
+    "category": "firewall",
+    "description": "Clavister NetWall (cOS Core) Virtual Appliance offers the same functionality as the Clavister  NetWall physical NGFWs in a virtual environment.",
+    "vendor_name": "Clavister",
+    "vendor_url": "https://www.clavister.com/",
+    "documentation_url": "https://kb.clavister.com",
+    "product_name": "NetWall",
+    "product_url": "https://www.clavister.com/products/ngfw/",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free-to-try",
+    "maintainer": "Mattias Nordlund",
+    "maintainer_email": "mattias.nordlund@clavister.com",
+    "usage": "DHCP enabled on all interfaces by default, WebUI/SSH access enabled on the local network connected to If1.",
+    "port_name_format": "If{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 512,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "clavister-cos-core-14.00.01.13-kvm-en.img",
+            "version": "cOS Core 14.00.01 (x86)",
+            "md5sum": "6c72eb0bb13d191912ca930b72071d07",
+            "filesize": 134217728,
+            "download_url": "https://my.clavister.com/download/ee3ecb2f-7662-ec11-8308-005056956b6b"
+        },
+        {
+            "filename": "clavister-cos-core-14.00.00.12-kvm-en.img",
+            "version": "cOS Core 14.00.00 (x86)",
+            "md5sum": "496ddd494b226e3508563db837643910",
+            "filesize": 134217728,
+            "download_url": "https://my.clavister.com/download/b2b7bce8-4449-ec11-8308-005056956b6b"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "hda_disk_image": "clavister-cos-core-14.00.01.13-kvm-en.img"
+            },
+            "name": "cOS Core 14.00.01 (x86)"
+        },
+        {
+            "images": {
+                "hda_disk_image": "clavister-cos-core-14.00.00.12-kvm-en.img"
+            },
+            "name": "cOS Core 14.00.00 (x86)"
+        }
+    ]
+}

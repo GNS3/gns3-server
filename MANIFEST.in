@@ -3,6 +3,7 @@ include AUTHORS
 include LICENSE
 include MANIFEST.in
 include requirements.txt
+include conf/*.conf
 recursive-include tests *
 recursive-exclude docs *
 recursive-include gns3server *

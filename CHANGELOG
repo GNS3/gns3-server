@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.2.32 27/04/2022
+
+* Docker: load custom interface files from /etc/network/interfaces (commented by default). Ref #2052
+* Release web UI 2.2.32
+* Create `/etc/network/interfaces.d` in Docker container. Fixes #2052
+* Prettify Docker '/etc/network/interfaces' file. Ref #2040
+* Use public DSNs for Sentry
+* Fix VMware Fusion VM does not start on macOS >= 11. Fixes #2027
+* Include conf file in MANIFEST.in Ref #2044
+* Use Python 3.7 to publish API documentation
+* Development on 2.2.32dev1
+
 ## 2.2.31 26/02/2022
 
 * Install setuptools v59.6.0 when using Python 3.6

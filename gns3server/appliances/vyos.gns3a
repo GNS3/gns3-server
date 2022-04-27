@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "vyos-1.3.1-amd64.iso",
+            "version": "1.3.1",
+            "md5sum": "b6f57bd0cf9b60cdafa337b08ba4f2bc",
+            "filesize": 350224384,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-1-generic-iso-image"
+        },
+        {
             "filename": "vyos-1.3.0-amd64.iso",
             "version": "1.3.0",
             "md5sum": "2019bd9c5efa6194e2761de678d0073f",
@@ -73,6 +80,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "1.3.1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.3.1-amd64.iso"
+            }
+        },
         {
             "name": "1.3.0",
             "images": {

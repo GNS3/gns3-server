@@ -24,20 +24,20 @@
     },
     "images": [
         {
-            "filename": "debian-11-genericcloud-amd64-20211220-862.qcow2",
-            "version": "11.2",
-            "md5sum": "3bdc52b0b3622a72095efdd001780a45",
-            "filesize": 253231104,
+            "filename": "debian-11-genericcloud-amd64-20220328-962.qcow2",
+            "version": "11.3",
+            "md5sum": "7cf51e23747898485971a656ac2eb96d",
+            "filesize": 253296640,
             "download_url": "https://cloud.debian.org/images/cloud/bullseye/",
-            "direct_download_url": "https://cloud.debian.org/images/cloud/bullseye/20211220-862/debian-11-genericcloud-amd64-20211220-862.qcow2"
+            "direct_download_url": "https://cloud.debian.org/images/cloud/bullseye/20220328-962/debian-11-genericcloud-amd64-20220328-962.qcow2"
         },
         {
-            "filename": "debian-10-genericcloud-amd64-20211011-792.qcow2",
-            "version": "10.11",
-            "md5sum": "ea4de19b17d114b6db813ee64a6b8284",
+            "filename": "debian-10-genericcloud-amd64-20220328-962.qcow2",
+            "version": "10.12",
+            "md5sum": "e92dfa1fc779fff807856f6ea6876e42",
             "filesize": 232980480,
             "download_url": "https://cloud.debian.org/images/cloud/buster/",
-            "direct_download_url": "https://cloud.debian.org/images/cloud/buster/20211011-792/debian-10-genericcloud-amd64-20211011-792.qcow2"
+            "direct_download_url": "https://cloud.debian.org/images/cloud/buster/20220328-962/debian-10-genericcloud-amd64-20220328-962.qcow2"
         },
         {
             "filename": "debian-cloud-init-data.iso",
@@ -49,16 +49,16 @@
     ],
     "versions": [
         {
-            "name": "11.2",
+            "name": "11.3",
             "images": {
-                "hda_disk_image": "debian-11-genericcloud-amd64-20211220-862.qcow2",
+                "hda_disk_image": "debian-11-genericcloud-amd64-20220328-962.qcow2",
                 "cdrom_image": "debian-cloud-init-data.iso"
             }
         },
         {
-            "name": "10.11",
+            "name": "10.12",
             "images": {
-                "hda_disk_image": "debian-10-genericcloud-amd64-20211011-792.qcow2",
+                "hda_disk_image": "debian-10-genericcloud-amd64-20220328-962.qcow2",
                 "cdrom_image": "debian-cloud-init-data.iso"
             }
         }

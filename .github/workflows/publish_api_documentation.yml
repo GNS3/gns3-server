@@ -18,7 +18,7 @@ jobs:
         ref: "gh-pages"
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Merge changes from 3.0 branch
       run: |
         git config user.name github-actions
