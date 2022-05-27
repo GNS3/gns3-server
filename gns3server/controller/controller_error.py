@@ -72,3 +72,6 @@ class ComputeConflictError(ComputeError):
 
     def url(self):
         return self._url
+
+    def response(self):
+        return self._response
