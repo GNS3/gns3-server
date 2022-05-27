@@ -405,8 +405,9 @@ class Node:
                     f"/projects/{self._project.id}/{self._node_type}/nodes", data=data, timeout=timeout
                 )
             except ComputeConflictError as e:
-                if e.response.get("exception") == "ImageMissingError":
-                    res = await self._upload_missing_image(self._node_type, e.response["image"])
+                response = e.response()
+                if response.get("exception") == "ImageMissingError":
+                    res = await self._upload_missing_image(self._node_type, response["image"])
                     if not res:
                         raise e
                 else:
