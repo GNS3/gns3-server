@@ -21,10 +21,10 @@ API routes for projects.
 import os
 import asyncio
 import tempfile
-import zipfile
 import aiofiles
 import time
 import urllib.parse
+import gns3server.utils.zipfile_zstd as zipfile
 
 import logging
 
@@ -285,7 +285,7 @@ async def export_project(
     include_snapshots: bool = False,
     include_images: bool = False,
     reset_mac_addresses: bool = False,
-    compression: str = "zip",
+    compression: schemas.ProjectCompression = "zstd",
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
@@ -300,6 +300,8 @@ async def export_project(
         compression = zipfile.ZIP_BZIP2
     elif compression_query == "lzma":
         compression = zipfile.ZIP_LZMA
+    elif compression_query == "zstd":
+        compression = zipfile.ZIP_ZSTANDARD
 
     try:
         begin = time.time()

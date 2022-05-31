@@ -102,3 +102,15 @@ class ProjectFile(BaseModel):
 
     path: str = Field(..., description="File path")
     md5sum: str = Field(..., description="File checksum")
+
+
+class ProjectCompression(str, Enum):
+    """
+    Supported project compression.
+    """
+
+    none = "none"
+    zip = "zip"
+    bzip2 = "bzip2"
+    lzma = "lzma"
+    zstd = "zstd"
