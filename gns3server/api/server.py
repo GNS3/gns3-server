@@ -166,12 +166,14 @@ async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
         content={"message": "Database error detected, please check logs to find details"},
     )
 
+# FIXME: do not use this middleware since it creates issue when using StreamingResponse
+# see https://starlette-context.readthedocs.io/en/latest/middleware.html#why-are-there-two-middlewares-that-do-the-same-thing
 
-@app.middleware("http")
-async def add_extra_headers(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    response.headers["X-GNS3-Server-Version"] = f"{__version__}"
-    return response
+# @app.middleware("http")
+# async def add_extra_headers(request: Request, call_next):
+#     start_time = time.time()
+#     response = await call_next(request)
+#     process_time = time.time() - start_time
+#     response.headers["X-Process-Time"] = str(process_time)
+#     response.headers["X-GNS3-Server-Version"] = f"{__version__}"
+#     return response
