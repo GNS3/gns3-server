@@ -41,7 +41,7 @@ from pathlib import Path
 from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
-from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
+from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.utils.asyncio import aiozipstream
@@ -286,6 +286,7 @@ async def export_project(
     include_images: bool = False,
     reset_mac_addresses: bool = False,
     compression: schemas.ProjectCompression = "zstd",
+    compression_level: int = None,
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
@@ -294,14 +295,23 @@ async def export_project(
     compression_query = compression.lower()
     if compression_query == "zip":
         compression = zipfile.ZIP_DEFLATED
+        if compression_level is not None and (compression_level < 0 or compression_level > 9):
+            raise ControllerBadRequestError("Compression level must be between 0 and 9 for ZIP compression")
     elif compression_query == "none":
         compression = zipfile.ZIP_STORED
     elif compression_query == "bzip2":
         compression = zipfile.ZIP_BZIP2
+        if compression_level is not None and (compression_level < 1 or compression_level > 9):
+            raise ControllerBadRequestError("Compression level must be between 1 and 9 for BZIP2 compression")
     elif compression_query == "lzma":
         compression = zipfile.ZIP_LZMA
     elif compression_query == "zstd":
         compression = zipfile.ZIP_ZSTANDARD
+        if compression_level is not None and (compression_level < 1 or compression_level > 22):
+            raise ControllerBadRequestError("Compression level must be between 1 and 22 for Zstandard compression")
+
+    if compression_level is not None and compression_query in ("none", "lzma"):
+        raise ControllerBadRequestError(f"Compression level is not supported for '{compression_query}' compression method")
 
     try:
         begin = time.time()
@@ -309,8 +319,10 @@ async def export_project(
         working_dir = os.path.abspath(os.path.join(project.path, os.pardir))
 
         async def streamer():
+            log.info(f"Exporting project '{project.name}' with '{compression_query}' compression "
+                     f"(level {compression_level})")
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
-                with aiozipstream.ZipFile(compression=compression) as zstream:
+                with aiozipstream.ZipFile(compression=compression, compresslevel=compression_level) as zstream:
                     await export_controller_project(
                         zstream,
                         project,
