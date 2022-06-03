@@ -43,26 +43,38 @@ from zipfile import (
     stringEndArchive64Locator,
 )
 
+
+ZIP_ZSTANDARD = 93  # zstandard is supported by WinZIP v24 and later, PowerArchiver 2021 and 7-Zip-zstd
+ZSTANDARD_VERSION = 20
 stringDataDescriptor = b"PK\x07\x08"  # magic number for data descriptor
 
 
-def _get_compressor(compress_type):
+def _get_compressor(compress_type, compresslevel=None):
     """
     Return the compressor.
     """
 
     if compress_type == zipfile.ZIP_DEFLATED:
         from zipfile import zlib
-
+        if compresslevel is not None:
+            return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
         return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
     elif compress_type == zipfile.ZIP_BZIP2:
         from zipfile import bz2
-
+        if compresslevel is not None:
+            return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
+    # compresslevel is ignored for ZIP_LZMA
     elif compress_type == zipfile.ZIP_LZMA:
         from zipfile import LZMACompressor
-
         return LZMACompressor()
+    elif compress_type == ZIP_ZSTANDARD:
+        import zstandard as zstd
+        if compresslevel is not None:
+            #params = zstd.ZstdCompressionParameters.from_level(compresslevel, threads=-1, enable_ldm=True, window_log=31)
+            #return zstd.ZstdCompressor(compression_params=params).compressobj()
+            return zstd.ZstdCompressor(level=compresslevel).compressobj()
+        return zstd.ZstdCompressor().compressobj()
     else:
         return None
 
@@ -129,7 +141,15 @@ class ZipInfo(zipfile.ZipInfo):
 
 
 class ZipFile(zipfile.ZipFile):
-    def __init__(self, fileobj=None, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True, chunksize=32768):
+    def __init__(
+            self,
+            fileobj=None,
+            mode="w",
+            compression=zipfile.ZIP_STORED,
+            allowZip64=True,
+            compresslevel=None,
+            chunksize=32768
+    ):
         """Open the ZIP file with mode write "w"."""
 
         if mode not in ("w",):
@@ -138,7 +158,13 @@ class ZipFile(zipfile.ZipFile):
             fileobj = PointerIO()
 
         self._comment = b""
-        zipfile.ZipFile.__init__(self, fileobj, mode=mode, compression=compression, allowZip64=allowZip64)
+        zipfile.ZipFile.__init__(
+            self, fileobj,
+            mode=mode,
+            compression=compression,
+            compresslevel=compresslevel,
+            allowZip64=allowZip64
+        )
         self._chunksize = chunksize
         self.paths_to_write = []
 
@@ -195,23 +221,33 @@ class ZipFile(zipfile.ZipFile):
         for chunk in self._close():
             yield chunk
 
-    def write(self, filename, arcname=None, compress_type=None):
+    def write(self, filename, arcname=None, compress_type=None, compresslevel=None):
         """
         Write a file to the archive under the name `arcname`.
         """
 
-        kwargs = {"filename": filename, "arcname": arcname, "compress_type": compress_type}
+        kwargs = {
+            "filename": filename,
+            "arcname": arcname,
+            "compress_type": compress_type,
+            "compresslevel": compresslevel
+        }
         self.paths_to_write.append(kwargs)
 
-    def write_iter(self, arcname, iterable, compress_type=None):
+    def write_iter(self, arcname, iterable, compress_type=None, compresslevel=None):
         """
         Write the bytes iterable `iterable` to the archive under the name `arcname`.
         """
 
-        kwargs = {"arcname": arcname, "iterable": iterable, "compress_type": compress_type}
+        kwargs = {
+            "arcname": arcname,
+            "iterable": iterable,
+            "compress_type": compress_type,
+            "compresslevel": compresslevel
+        }
         self.paths_to_write.append(kwargs)
 
-    def writestr(self, arcname, data, compress_type=None):
+    def writestr(self, arcname, data, compress_type=None, compresslevel=None):
         """
         Writes a str into ZipFile by wrapping data as a generator
         """
@@ -219,9 +255,9 @@ class ZipFile(zipfile.ZipFile):
         def _iterable():
             yield data
 
-        return self.write_iter(arcname, _iterable(), compress_type=compress_type)
+        return self.write_iter(arcname, _iterable(), compress_type=compress_type, compresslevel=compresslevel)
 
-    async def _write(self, filename=None, iterable=None, arcname=None, compress_type=None):
+    async def _write(self, filename=None, iterable=None, arcname=None, compress_type=None, compresslevel=None):
         """
         Put the bytes from filename into the archive under the name `arcname`.
         """
@@ -256,6 +292,11 @@ class ZipFile(zipfile.ZipFile):
         else:
             zinfo.compress_type = compress_type
 
+        if compresslevel is None:
+            zinfo._compresslevel = self.compresslevel
+        else:
+            zinfo._compresslevel = compresslevel
+
         if st:
             zinfo.file_size = st[6]
         else:
@@ -279,7 +320,7 @@ class ZipFile(zipfile.ZipFile):
             yield self.fp.write(zinfo.FileHeader(False))
             return
 
-        cmpr = _get_compressor(zinfo.compress_type)
+        cmpr = _get_compressor(zinfo.compress_type, zinfo._compresslevel)
 
         # Must overwrite CRC and sizes with correct data later
         zinfo.CRC = CRC = 0
@@ -369,6 +410,8 @@ class ZipFile(zipfile.ZipFile):
                         min_version = max(zipfile.BZIP2_VERSION, min_version)
                     elif zinfo.compress_type == zipfile.ZIP_LZMA:
                         min_version = max(zipfile.LZMA_VERSION, min_version)
+                    elif zinfo.compress_type == ZIP_ZSTANDARD:
+                        min_version = max(ZSTANDARD_VERSION, min_version)
 
                     extract_version = max(min_version, zinfo.extract_version)
                     create_version = max(min_version, zinfo.create_version)

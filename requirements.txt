@@ -16,4 +16,5 @@ passlib[bcrypt]==1.7.4
 python-jose==3.3.0
 email-validator==1.2.1
 watchfiles==0.14.1
+zstandard==0.17.0
 setuptools==60.6.0  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084

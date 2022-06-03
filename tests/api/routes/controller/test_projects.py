@@ -17,7 +17,6 @@
 
 import uuid
 import os
-import zipfile
 import json
 import pytest
 
@@ -26,6 +25,7 @@ from httpx import AsyncClient
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
+import gns3server.utils.zipfile_zstd as zipfile_zstd
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
 
@@ -261,7 +261,7 @@ async def test_export_with_images(app: FastAPI, client: AsyncClient, tmpdir, pro
     with open(str(tmpdir / 'project.zip'), 'wb+') as f:
         f.write(response.content)
 
-    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+    with zipfile_zstd.ZipFile(str(tmpdir / 'project.zip')) as myzip:
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
@@ -304,13 +304,74 @@ async def test_export_without_images(app: FastAPI, client: AsyncClient, tmpdir, 
     with open(str(tmpdir / 'project.zip'), 'wb+') as f:
         f.write(response.content)
 
-    with zipfile.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+    with zipfile_zstd.ZipFile(str(tmpdir / 'project.zip')) as myzip:
         with myzip.open("a") as myfile:
             content = myfile.read()
             assert content == b"hello"
         # Image should not exported
         with pytest.raises(KeyError):
             myzip.getinfo("images/IOS/test.image")
+
+
+@pytest.mark.parametrize(
+    "compression, compression_level, status_code",
+    (
+            ("none", None, status.HTTP_200_OK),
+            ("none", 4, status.HTTP_400_BAD_REQUEST),
+            ("zip", None, status.HTTP_200_OK),
+            ("zip", 1, status.HTTP_200_OK),
+            ("zip", 12, status.HTTP_400_BAD_REQUEST),
+            ("bzip2", None, status.HTTP_200_OK),
+            ("bzip2", 1, status.HTTP_200_OK),
+            ("bzip2", 13, status.HTTP_400_BAD_REQUEST),
+            ("lzma", None, status.HTTP_200_OK),
+            ("lzma", 1, status.HTTP_400_BAD_REQUEST),
+            ("zstd", None, status.HTTP_200_OK),
+            ("zstd", 12, status.HTTP_200_OK),
+            ("zstd", 23, status.HTTP_400_BAD_REQUEST),
+    )
+)
+async def test_export_compression(
+        app: FastAPI,
+        client: AsyncClient,
+        tmpdir,
+        project: Project,
+        compression: str,
+        compression_level: int,
+        status_code: int
+) -> None:
+
+    project.dump = MagicMock()
+    os.makedirs(project.path, exist_ok=True)
+
+    topology = {
+        "topology": {
+            "nodes": [
+                {
+                    "node_type": "qemu"
+                }
+            ]
+        }
+    }
+    with open(os.path.join(project.path, "test.gns3"), 'w+') as f:
+        json.dump(topology, f)
+
+    params = {"compression": compression}
+    if compression_level:
+        params["compression_level"] = compression_level
+    response = await client.get(app.url_path_for("export_project", project_id=project.id), params=params)
+    assert response.status_code == status_code
+
+    if response.status_code == status.HTTP_200_OK:
+        assert response.headers['CONTENT-TYPE'] == 'application/gns3project'
+        assert response.headers['CONTENT-DISPOSITION'] == 'attachment; filename="{}.gns3project"'.format(project.name)
+
+        with open(str(tmpdir / 'project.zip'), 'wb+') as f:
+            f.write(response.content)
+
+        with zipfile_zstd.ZipFile(str(tmpdir / 'project.zip')) as myzip:
+            with myzip.open("project.gns3") as myfile:
+                myfile.read()
 
 
 async def test_get_file(app: FastAPI, client: AsyncClient, project: Project) -> None:
