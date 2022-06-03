@@ -71,8 +71,9 @@ def _get_compressor(compress_type, compresslevel=None):
     elif compress_type == ZIP_ZSTANDARD:
         import zstandard as zstd
         if compresslevel is not None:
-            params = zstd.ZstdCompressionParameters.from_level(compresslevel, threads=-1, enable_ldm=True, window_log=31)
-            return zstd.ZstdCompressor(compression_params=params).compressobj()
+            #params = zstd.ZstdCompressionParameters.from_level(compresslevel, threads=-1, enable_ldm=True, window_log=31)
+            #return zstd.ZstdCompressor(compression_params=params).compressobj()
+            return zstd.ZstdCompressor(level=compresslevel).compressobj()
         return zstd.ZstdCompressor().compressobj()
     else:
         return None
