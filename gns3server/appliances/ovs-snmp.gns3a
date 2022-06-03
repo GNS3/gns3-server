@@ -1,0 +1,18 @@
+{
+    "appliance_id": "bfafb392-bb2b-4078-8817-29c55273fff6",
+    "name": "Open vSwitch with SNMP",
+    "category": "multilayer_switch",
+    "description": "Customized Open vSwtich with SNMP support",
+    "vendor_name": "Open vSwitch",
+    "vendor_url": "http://openvswitch.org/",
+    "product_name": "Open vSwitch",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "",
+    "docker": {
+        "adapters": 8,
+        "image": "gns3/ovs-snmp:latest"
+    }
+}

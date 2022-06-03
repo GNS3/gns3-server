@@ -1,9 +1,10 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: 2.2.24
+Current version: 2.2.32
 
 Bug Fixes & enhancements
-- security fixes
+- Fixed generated capture file is not valid
+- Fixed Docker additional directories
 
 Current version: 2020.4.0-beta.1
 

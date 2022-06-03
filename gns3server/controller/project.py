@@ -1038,7 +1038,7 @@ class Project:
         while self._loading:
             await asyncio.sleep(0.5)
 
-    async def duplicate(self, name=None, location=None, reset_mac_addresses=True):
+    async def duplicate(self, name=None, reset_mac_addresses=True):
         """
         Duplicate a project
 
@@ -1047,7 +1047,6 @@ class Project:
         It's a little slower but we have only one implementation to maintain.
 
         :param name: Name of the new project. A new one will be generated in case of conflicts
-        :param location: Parent directory of the new project
         :param reset_mac_addresses: Reset MAC addresses for the new project
         """
         # If the project was not open we open it temporary
@@ -1062,11 +1061,8 @@ class Project:
 
             # use the parent directory of the project we are duplicating as a
             # temporary directory to avoid no space left issues when '/tmp'
-            # is location on another partition.
-            if location:
-                working_dir = os.path.abspath(os.path.join(location, os.pardir))
-            else:
-                working_dir = os.path.abspath(os.path.join(self.path, os.pardir))
+            # is located on another partition.
+            working_dir = os.path.abspath(os.path.join(self.path, os.pardir))
 
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 # Do not compress the exported project when duplicating
@@ -1090,7 +1086,11 @@ class Project:
                     # import the temporary project
                     with open(project_path, "rb") as f:
                         project = await import_project(
-                            self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True
+                            self._controller,
+                            str(uuid.uuid4()),
+                            f,
+                            name=name,
+                            keep_compute_id=True
                         )
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")

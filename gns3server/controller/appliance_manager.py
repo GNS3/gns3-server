@@ -153,8 +153,14 @@ class ApplianceManager:
                             version_images[appliance_key] = image_in_db.filename
                         else:
                             # check if the image is on disk
+                            # FIXME: still necessary? the image should have been discovered and saved in the db already
                             image_path = os.path.join(image_dir, appliance_file)
-                            if os.path.exists(image_path) and await wait_run_in_executor(md5sum, image_path) == image_checksum:
+                            if os.path.exists(image_path) and \
+                                    await wait_run_in_executor(
+                                        md5sum,
+                                        image_path,
+                                        cache_to_md5file=False
+                                    ) == image_checksum:
                                 async with aiofiles.open(image_path, "rb") as f:
                                     await write_image(appliance_file, image_path, f, images_repo)
                             else:

@@ -21,10 +21,10 @@ API routes for projects.
 import os
 import asyncio
 import tempfile
-import zipfile
 import aiofiles
 import time
 import urllib.parse
+import gns3server.utils.zipfile_zstd as zipfile
 
 import logging
 
@@ -41,7 +41,7 @@ from pathlib import Path
 from gns3server import schemas
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
-from gns3server.controller.controller_error import ControllerError, ControllerForbiddenError
+from gns3server.controller.controller_error import ControllerError, ControllerBadRequestError
 from gns3server.controller.import_project import import_project as import_controller_project
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.utils.asyncio import aiozipstream
@@ -285,7 +285,8 @@ async def export_project(
     include_snapshots: bool = False,
     include_images: bool = False,
     reset_mac_addresses: bool = False,
-    compression: str = "zip",
+    compression: schemas.ProjectCompression = "zstd",
+    compression_level: int = None,
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
@@ -294,12 +295,23 @@ async def export_project(
     compression_query = compression.lower()
     if compression_query == "zip":
         compression = zipfile.ZIP_DEFLATED
+        if compression_level is not None and (compression_level < 0 or compression_level > 9):
+            raise ControllerBadRequestError("Compression level must be between 0 and 9 for ZIP compression")
     elif compression_query == "none":
         compression = zipfile.ZIP_STORED
     elif compression_query == "bzip2":
         compression = zipfile.ZIP_BZIP2
+        if compression_level is not None and (compression_level < 1 or compression_level > 9):
+            raise ControllerBadRequestError("Compression level must be between 1 and 9 for BZIP2 compression")
     elif compression_query == "lzma":
         compression = zipfile.ZIP_LZMA
+    elif compression_query == "zstd":
+        compression = zipfile.ZIP_ZSTANDARD
+        if compression_level is not None and (compression_level < 1 or compression_level > 22):
+            raise ControllerBadRequestError("Compression level must be between 1 and 22 for Zstandard compression")
+
+    if compression_level is not None and compression_query in ("none", "lzma"):
+        raise ControllerBadRequestError(f"Compression level is not supported for '{compression_query}' compression method")
 
     try:
         begin = time.time()
@@ -307,8 +319,10 @@ async def export_project(
         working_dir = os.path.abspath(os.path.join(project.path, os.pardir))
 
         async def streamer():
+            log.info(f"Exporting project '{project.name}' with '{compression_query}' compression "
+                     f"(level {compression_level})")
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
-                with aiozipstream.ZipFile(compression=compression) as zstream:
+                with aiozipstream.ZipFile(compression=compression, compresslevel=compression_level) as zstream:
                     await export_controller_project(
                         zstream,
                         project,
@@ -342,10 +356,10 @@ async def import_project(
     Import a project from a portable archive.
     """
 
-    controller = Controller.instance()
-    if Config.instance().settings.Server.local is False:
-        raise ControllerForbiddenError("The server is not local")
+    #TODO: import project remotely
+    raise NotImplementedError()
 
+    controller = Controller.instance()
     # We write the content to a temporary location and after we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.
     try:
@@ -385,16 +399,9 @@ async def duplicate_project(
     Duplicate a project.
     """
 
-    if project_data.path:
-        if Config.instance().settings.Server.local is False:
-            raise ControllerForbiddenError("The server is not a local server")
-        location = project_data.path
-    else:
-        location = None
-
     reset_mac_addresses = project_data.reset_mac_addresses
     new_project = await project.duplicate(
-        name=project_data.name, location=location, reset_mac_addresses=reset_mac_addresses
+        name=project_data.name, reset_mac_addresses=reset_mac_addresses
     )
     await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
@@ -423,7 +430,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
 @router.post("/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> Response:
     """
-    Write a file from a project.
+    Write a file to a project.
     """
 
     file_path = urllib.parse.unquote(file_path)

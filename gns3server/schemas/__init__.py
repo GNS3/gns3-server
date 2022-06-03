@@ -28,7 +28,7 @@ from .controller.appliances import ApplianceVersion, Appliance
 from .controller.drawings import Drawing
 from .controller.gns3vm import GNS3VM
 from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture, Node
-from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile
+from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile, ProjectCompression
 from .controller.users import UserCreate, UserUpdate, LoggedInUserUpdate, User, Credentials, UserGroupCreate, UserGroupUpdate, UserGroup
 from .controller.rbac import RoleCreate, RoleUpdate, Role, PermissionCreate, PermissionUpdate, Permission
 from .controller.tokens import Token
@@ -73,9 +73,12 @@ from .compute.dynamips_nodes import DynamipsCreate, DynamipsUpdate, Dynamips
 from .compute.ethernet_hub_nodes import EthernetHubCreate, EthernetHubUpdate, EthernetHub
 from .compute.ethernet_switch_nodes import EthernetSwitchCreate, EthernetSwitchUpdate, EthernetSwitch
 from .compute.frame_relay_switch_nodes import FrameRelaySwitchCreate, FrameRelaySwitchUpdate, FrameRelaySwitch
-from .compute.qemu_nodes import QemuCreate, QemuUpdate, QemuImageCreate, QemuImageUpdate, QemuDiskResize, Qemu
+from .compute.qemu_nodes import QemuCreate, QemuUpdate, Qemu
 from .compute.iou_nodes import IOUCreate, IOUUpdate, IOUStart, IOU
 from .compute.nat_nodes import NATCreate, NATUpdate, NAT
 from .compute.vpcs_nodes import VPCSCreate, VPCSUpdate, VPCS
 from .compute.vmware_nodes import VMwareCreate, VMwareUpdate, VMware
 from .compute.virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
+
+# Schemas for both controller and compute
+from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageUpdate

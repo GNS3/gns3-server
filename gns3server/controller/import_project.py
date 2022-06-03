@@ -20,10 +20,10 @@ import sys
 import json
 import uuid
 import shutil
-import zipfile
 import aiofiles
 import itertools
 import tempfile
+import gns3server.utils.zipfile_zstd as zipfile_zstd
 
 from .controller_error import ControllerError
 from .topology import load_topology
@@ -60,9 +60,9 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         raise ControllerError("The destination path should not contain .gns3")
 
     try:
-        with zipfile.ZipFile(stream) as zip_file:
+        with zipfile_zstd.ZipFile(stream) as zip_file:
             project_file = zip_file.read("project.gns3").decode()
-    except zipfile.BadZipFile:
+    except zipfile_zstd.BadZipFile:
         raise ControllerError("Cannot import project, not a GNS3 project (invalid zip)")
     except KeyError:
         raise ControllerError("Cannot import project, project.gns3 file could not be found")
@@ -92,9 +92,9 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         raise ControllerError("The project name contain non supported or invalid characters")
 
     try:
-        with zipfile.ZipFile(stream) as zip_file:
+        with zipfile_zstd.ZipFile(stream) as zip_file:
             await wait_run_in_executor(zip_file.extractall, path)
-    except zipfile.BadZipFile:
+    except zipfile_zstd.BadZipFile:
         raise ControllerError("Cannot extract files from GNS3 project (invalid zip)")
 
     topology = load_topology(os.path.join(path, "project.gns3"))
@@ -264,11 +264,11 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
             # extract everything to a temporary directory
             try:
                 with open(snapshot_path, "rb") as f:
-                    with zipfile.ZipFile(f) as zip_file:
+                    with zipfile_zstd.ZipFile(f) as zip_file:
                         await wait_run_in_executor(zip_file.extractall, tmpdir)
             except OSError as e:
                 raise ControllerError(f"Cannot open snapshot '{os.path.basename(snapshot)}': {e}")
-            except zipfile.BadZipFile:
+            except zipfile_zstd.BadZipFile:
                 raise ControllerError(
                     f"Cannot extract files from snapshot '{os.path.basename(snapshot)}': not a GNS3 project (invalid zip)"
                 )
@@ -294,7 +294,7 @@ async def _import_snapshots(snapshots_path, project_name, project_id):
 
             # write everything back to the original snapshot file
             try:
-                with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
+                with aiozipstream.ZipFile(compression=zipfile_zstd.ZIP_STORED) as zstream:
                     for root, dirs, files in os.walk(tmpdir, topdown=True, followlinks=False):
                         for file in files:
                             path = os.path.join(root, file)

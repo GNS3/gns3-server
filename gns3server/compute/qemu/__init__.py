@@ -234,68 +234,6 @@ class Qemu(BaseManager):
 
         return os.path.join("qemu", f"vm-{legacy_vm_id}")
 
-    async def create_disk(self, qemu_img, path, options):
-        """
-        Create a Qemu disk with qemu-img
-
-        :param qemu_img: qemu-img binary path
-        :param path: Image path
-        :param options: Disk image creation options
-        """
-
-        try:
-            img_format = options.pop("format")
-            img_size = options.pop("size")
-
-            if not os.path.isabs(path):
-                directory = self.get_images_directory()
-                os.makedirs(directory, exist_ok=True)
-                path = os.path.join(directory, os.path.basename(path))
-
-            try:
-                if os.path.exists(path):
-                    raise QemuError(f"Could not create disk image '{path}', file already exists")
-            except UnicodeEncodeError:
-                raise QemuError(
-                    "Could not create disk image '{}', "
-                    "path contains characters not supported by filesystem".format(path)
-                )
-
-            command = [qemu_img, "create", "-f", img_format]
-            for option in sorted(options.keys()):
-                command.extend(["-o", f"{option}={options[option]}"])
-            command.append(path)
-            command.append(f"{img_size}M")
-
-            process = await asyncio.create_subprocess_exec(*command)
-            await process.wait()
-        except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError(f"Could not create disk image {path}:{e}")
-
-    async def resize_disk(self, qemu_img, path, extend):
-        """
-        Resize a Qemu disk with qemu-img
-
-        :param qemu_img: qemu-img binary path
-        :param path: Image path
-        :param size: size
-        """
-
-        if not os.path.isabs(path):
-            directory = self.get_images_directory()
-            os.makedirs(directory, exist_ok=True)
-            path = os.path.join(directory, os.path.basename(path))
-
-        try:
-            if not os.path.exists(path):
-                raise QemuError(f"Qemu disk '{path}' does not exist")
-            command = [qemu_img, "resize", path, f"+{extend}M"]
-            process = await asyncio.create_subprocess_exec(*command)
-            await process.wait()
-            log.info(f"Qemu disk '{path}' extended by {extend} MB")
-        except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError(f"Could not update disk image {path}:{e}")
-
     def _init_config_disk(self):
         """
         Initialize the default config disk

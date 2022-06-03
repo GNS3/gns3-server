@@ -34,6 +34,7 @@ from gns3server.controller.controller_error import (
     ControllerTimeoutError,
     ControllerForbiddenError,
     ControllerUnauthorizedError,
+    ComputeConflictError
 )
 
 from gns3server.api.routes import controller, index
@@ -138,6 +139,15 @@ async def controller_bad_request_error_handler(request: Request, exc: Controller
     )
 
 
+@app.exception_handler(ComputeConflictError)
+async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
+    log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
+    return JSONResponse(
+        status_code=409,
+        content={"message": str(exc)},
+    )
+
+
 # make sure the content key is "message", not "detail" per default
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -156,12 +166,14 @@ async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
         content={"message": "Database error detected, please check logs to find details"},
     )
 
+# FIXME: do not use this middleware since it creates issue when using StreamingResponse
+# see https://starlette-context.readthedocs.io/en/latest/middleware.html#why-are-there-two-middlewares-that-do-the-same-thing
 
-@app.middleware("http")
-async def add_extra_headers(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    response.headers["X-GNS3-Server-Version"] = f"{__version__}"
-    return response
+# @app.middleware("http")
+# async def add_extra_headers(request: Request, call_next):
+#     start_time = time.time()
+#     response = await call_next(request)
+#     process_time = time.time() - start_time
+#     response.headers["X-Process-Time"] = str(process_time)
+#     response.headers["X-GNS3-Server-Version"] = f"{__version__}"
+#     return response

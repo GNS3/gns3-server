@@ -163,7 +163,7 @@ class Router(BaseNode):
             "dynamips_id": self._dynamips_id,
             "platform": self._platform,
             "image": self._image,
-            "image_md5sum": md5sum(self._image),
+            "image_md5sum": md5sum(self._image, self._working_directory),
             "ram": self._ram,
             "nvram": self._nvram,
             "mmap": self._mmap,

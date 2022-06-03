@@ -18,6 +18,7 @@
 import os
 import sys
 import threading
+import pytest
 from unittest.mock import patch
 
 
@@ -37,7 +38,6 @@ def test_images_directories(tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
-    config.settings.Server.local = False
 
     # /tmp/null24564 is ignored because doesn't exists
     res = images_directories("qemu")
@@ -111,7 +111,8 @@ def test_remove_checksum(tmpdir):
     remove_checksum(str(tmpdir / 'not_exists'))
 
 
-def test_list_images(tmpdir, config):
+@pytest.mark.asyncio
+async def test_list_images(tmpdir, config):
 
     path1 = tmpdir / "images1" / "IOS" / "test1.image"
     path1.write(b'\x7fELF\x01\x02\x01', ensure=True)
@@ -140,9 +141,8 @@ def test_list_images(tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
-    config.settings.Server.local = False
 
-    assert list_images("dynamips") == [
+    assert await list_images("dynamips") == [
         {
             'filename': 'test1.image',
             'filesize': 7,
@@ -158,7 +158,7 @@ def test_list_images(tmpdir, config):
     ]
 
     if sys.platform.startswith("linux"):
-        assert list_images("iou") == [
+        assert await list_images("iou") == [
             {
                 'filename': 'test3.bin',
                 'filesize': 7,
@@ -167,7 +167,7 @@ def test_list_images(tmpdir, config):
             }
         ]
 
-    assert list_images("qemu") == [
+    assert await list_images("qemu") == [
         {
             'filename': 'test4.qcow2',
             'filesize': 1,

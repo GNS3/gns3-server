@@ -166,15 +166,19 @@ class QemuBase(BaseModel):
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[QemuConsoleType] = Field(None, description="Auxiliary console type")
     hda_disk_image: Optional[str] = Field(None, description="QEMU hda disk image path")
+    hda_disk_image_backed: Optional[str] = Field(None, description="QEMU hda backed disk image path")
     hda_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hda disk image checksum")
     hda_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hda interface")
     hdb_disk_image: Optional[str] = Field(None, description="QEMU hdb disk image path")
+    hdb_disk_image_backed: Optional[str] = Field(None, description="QEMU hdb backed disk image path")
     hdb_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdb disk image checksum")
     hdb_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdb interface")
     hdc_disk_image: Optional[str] = Field(None, description="QEMU hdc disk image path")
+    hdc_disk_image_backed: Optional[str] = Field(None, description="QEMU hdc backed disk image path")
     hdc_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdc disk image checksum")
     hdc_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdc interface")
     hdd_disk_image: Optional[str] = Field(None, description="QEMU hdd disk image path")
+    hdd_disk_image_backed: Optional[str] = Field(None, description="QEMU hdd backed disk image path")
     hdd_disk_image_md5sum: Optional[str] = Field(None, description="QEMU hdd disk image checksum")
     hdd_disk_interface: Optional[QemuDiskInterfaceType] = Field(None, description="QEMU hdd interface")
     cdrom_image: Optional[str] = Field(None, description="QEMU cdrom image path")
@@ -232,113 +236,7 @@ class Qemu(QemuBase):
     status: NodeStatus = Field(..., description="Container status (read only)")
 
 
-class QemuDriveName(str, Enum):
-    """
-    Supported Qemu drive names.
-    """
-
-    hda = "hda"
-    hdb = "hdb"
-    hdc = "hdc"
-    hdd = "hdd"
-
-
-class QemuDiskResize(BaseModel):
-    """
-    Properties to resize a Qemu disk.
-    """
-
-    drive_name: QemuDriveName = Field(..., description="Qemu drive name")
-    extend: int = Field(..., description="Number of Megabytes to extend the image")
-
-
 class QemuBinaryPath(BaseModel):
 
     path: str
     version: str
-
-
-class QemuImageFormat(str, Enum):
-    """
-    Supported Qemu image formats.
-    """
-
-    qcow2 = "qcow2"
-    qcow = "qcow"
-    vpc = "vpc"
-    vdi = "vdi"
-    vdmk = "vdmk"
-    raw = "raw"
-
-
-class QemuImagePreallocation(str, Enum):
-    """
-    Supported Qemu image preallocation options.
-    """
-
-    off = "off"
-    metadata = "metadata"
-    falloc = "falloc"
-    full = "full"
-
-
-class QemuImageOnOff(str, Enum):
-    """
-    Supported Qemu image on/off options.
-    """
-
-    on = "off"
-    off = "off"
-
-
-class QemuImageSubformat(str, Enum):
-    """
-    Supported Qemu image preallocation options.
-    """
-
-    dynamic = "dynamic"
-    fixed = "fixed"
-    stream_optimized = "streamOptimized"
-    two_gb_max_extent_sparse = "twoGbMaxExtentSparse"
-    two_gb_max_extent_flat = "twoGbMaxExtentFlat"
-    monolithic_sparse = "monolithicSparse"
-    monolithic_flat = "monolithicFlat"
-
-
-class QemuImageAdapterType(str, Enum):
-    """
-    Supported Qemu image on/off options.
-    """
-
-    ide = "ide"
-    lsilogic = "lsilogic"
-    buslogic = "buslogic"
-    legacy_esx = "legacyESX"
-
-
-class QemuImageBase(BaseModel):
-
-    qemu_img: str = Field(..., description="Path to the qemu-img binary")
-    path: str = Field(..., description="Absolute or relative path of the image")
-    format: QemuImageFormat = Field(..., description="Image format type")
-    size: int = Field(..., description="Image size in Megabytes")
-    preallocation: Optional[QemuImagePreallocation]
-    cluster_size: Optional[int]
-    refcount_bits: Optional[int]
-    lazy_refcounts: Optional[QemuImageOnOff]
-    subformat: Optional[QemuImageSubformat]
-    static: Optional[QemuImageOnOff]
-    zeroed_grain: Optional[QemuImageOnOff]
-    adapter_type: Optional[QemuImageAdapterType]
-
-
-class QemuImageCreate(QemuImageBase):
-
-    pass
-
-
-class QemuImageUpdate(QemuImageBase):
-
-    format: Optional[QemuImageFormat] = Field(None, description="Image format type")
-    size: Optional[int] = Field(None, description="Image size in Megabytes")
-    extend: Optional[int] = Field(None, description="Number of Megabytes to extend the image")

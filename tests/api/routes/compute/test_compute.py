@@ -45,7 +45,7 @@ async def test_version_output(app: FastAPI, compute_client: AsyncClient) -> None
 
     response = await compute_client.get(app.url_path_for("compute:compute_version"))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {'local': True, 'version': __version__}
+    assert response.json() == {'version': __version__}
 
 
 async def test_compute_authentication(app: FastAPI, compute_client: AsyncClient) -> None:

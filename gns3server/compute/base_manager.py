@@ -442,14 +442,6 @@ class BaseManager:
                 return path
             raise ImageMissingError(orig_path)
 
-        # For local server we allow using absolute path outside image directory
-        if Config.instance().settings.Server.local is True:
-            log.debug(f"Searching for '{orig_path}'")
-            path = force_unix_path(path)
-            if os.path.exists(path):
-                return path
-            raise ImageMissingError(orig_path)
-
         # Check to see if path is an absolute path to a valid directory
         path = force_unix_path(path)
         for directory in valid_directory_prefices:
@@ -514,7 +506,7 @@ class BaseManager:
         """
 
         try:
-            return list_images(self._NODE_TYPE)
+            return await list_images(self._NODE_TYPE)
         except OSError as e:
             raise ComputeError(f"Can not list images {e}")
 

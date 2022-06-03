@@ -30,10 +30,13 @@ from ..utils import parse_version
 from ..utils.asyncio import locking
 from ..controller.controller_error import (
     ControllerError,
+    ControllerBadRequestError,
     ControllerNotFoundError,
     ControllerForbiddenError,
     ControllerTimeoutError,
     ControllerUnauthorizedError,
+    ComputeError,
+    ComputeConflictError
 )
 from ..version import __version__, __version_info__
 
@@ -41,23 +44,6 @@ from ..version import __version__, __version_info__
 import logging
 
 log = logging.getLogger(__name__)
-
-
-class ComputeError(ControllerError):
-    pass
-
-
-# FIXME: broken
-class ComputeConflict(ComputeError):
-    """
-    Raise when the compute send a 409 that we can handle
-
-    :param response: The response of the compute
-    """
-
-    def __init__(self, response):
-        super().__init__(response["message"])
-        self.response = response
 
 
 class Compute:
@@ -574,7 +560,9 @@ class Compute:
             else:
                 msg = ""
 
-            if response.status == 401:
+            if response.status == 400:
+                raise ControllerBadRequestError(msg)
+            elif response.status == 401:
                 raise ControllerUnauthorizedError(f"Invalid authentication for compute '{self.name}' [{self.id}]")
             elif response.status == 403:
                 raise ControllerForbiddenError(msg)
@@ -584,7 +572,7 @@ class Compute:
                 raise ControllerTimeoutError(f"{method} {path} request timeout")
             elif response.status == 409:
                 try:
-                    raise ComputeConflict(json.loads(body))
+                    raise ComputeConflictError(url, json.loads(body))
                 # If the 409 doesn't come from a GNS3 server
                 except ValueError:
                     raise ControllerError(msg)
@@ -593,7 +581,7 @@ class Compute:
             elif response.status == 503:
                 raise aiohttp.web.HTTPServiceUnavailable(text=f"Service unavailable {url} {body}")
             else:
-                raise NotImplementedError(f"{response.status} status code is not supported for {method} '{url}'")
+                raise NotImplementedError(f"{response.status} status code is not supported for {method} '{url}'\n{body}")
         if body and len(body):
             if raw:
                 response.body = body
@@ -636,16 +624,12 @@ class Compute:
         """
         Return the list of images available for this type on the compute node.
         """
-        images = []
 
         res = await self.http_query("GET", f"/{type}/images", timeout=None)
         images = res.json
 
         try:
             if type in ["qemu", "dynamips", "iou"]:
-                # for local_image in list_images(type):
-                #    if local_image['filename'] not in [i['filename'] for i in images]:
-                #        images.append(local_image)
                 images = sorted(images, key=itemgetter("filename"))
             else:
                 images = sorted(images, key=itemgetter("image"))

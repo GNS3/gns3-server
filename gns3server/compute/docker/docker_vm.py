@@ -333,16 +333,17 @@ class DockerVM(BaseNode):
         os.makedirs(os.path.join(path, "if-down.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-pre-up.d"), exist_ok=True)
         os.makedirs(os.path.join(path, "if-post-down.d"), exist_ok=True)
+        os.makedirs(os.path.join(path, "interfaces.d"), exist_ok=True)
 
         if not os.path.exists(os.path.join(path, "interfaces")):
             with open(os.path.join(path, "interfaces"), "w+") as f:
-                f.write(
-                    """#
-# This is a sample network config uncomment lines to configure the network
+                f.write("""#
+# This is a sample network config, please uncomment lines to configure the network
 #
 
-"""
-                )
+# Uncomment this line to load custom interface files
+# source /etc/network/interfaces.d/*
+""")
                 for adapter in range(0, self.adapters):
                     f.write(
                         """
@@ -355,11 +356,9 @@ class DockerVM(BaseNode):
 #\tup echo nameserver 192.168.{adapter}.1 > /etc/resolv.conf
 
 # DHCP config for eth{adapter}
-# auto eth{adapter}
-# iface eth{adapter} inet dhcp""".format(
-                            adapter=adapter
-                        )
-                    )
+#auto eth{adapter}
+#iface eth{adapter} inet dhcp
+""".format(adapter=adapter))
         return path
 
     async def create(self):

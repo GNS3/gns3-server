@@ -106,16 +106,15 @@ def test_get_abs_image_path_non_local(qemu, tmpdir, config):
 
     # If non local we can't use path outside images directory
     config.settings.Server.images_path = str(tmpdir / "images")
-    config.settings.Server.local = False
     assert qemu.get_abs_image_path(path1) == path1
     with pytest.raises(NodeError):
         qemu.get_abs_image_path(path2)
     with pytest.raises(NodeError):
         qemu.get_abs_image_path("C:\\test2.bin")
 
-    config.settings.Server.images_path = str(tmpdir / "images")
-    config.settings.Server.local = True
-    assert qemu.get_abs_image_path(path2) == path2
+    # config.settings.Server.images_path = str(tmpdir / "images")
+    # config.settings.Server.local = True
+    # assert qemu.get_abs_image_path(path2) == path2
 
 
 def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
@@ -130,7 +129,6 @@ def test_get_abs_image_additional_image_paths(qemu, tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = "/tmp/null24564;" + str(tmpdir / "images2")
-    config.settings.Server.local = False
 
     assert qemu.get_abs_image_path("test1.bin") == path1
     assert qemu.get_abs_image_path("test2.bin") == path2
@@ -152,7 +150,6 @@ def test_get_abs_image_recursive(qemu, tmpdir, config):
     path2 = force_unix_path(str(path2))
 
     config.settings.Server.images_path = str(tmpdir / "images1")
-    config.settings.Server.local = False
 
     assert qemu.get_abs_image_path("test1.bin") == path1
     assert qemu.get_abs_image_path("test2.bin") == path2
@@ -171,7 +168,6 @@ def test_get_abs_image_recursive_ova(qemu, tmpdir, config):
     path2 = force_unix_path(str(path2))
 
     config.settings.Server.images_path = str(tmpdir / "images1")
-    config.settings.Server.local = False
 
     assert qemu.get_abs_image_path("demo/test.ova/test1.bin") == path1
     assert qemu.get_abs_image_path("test.ova/test2.bin") == path2
@@ -202,7 +198,6 @@ def test_get_relative_image_path(qemu, tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir / "images1")
     config.settings.Server.additional_images_paths = str(tmpdir / "images2")
-    config.settings.Server.local = True
 
     assert qemu.get_relative_image_path(path1) == "test1.bin"
     assert qemu.get_relative_image_path("test1.bin") == "test1.bin"
@@ -210,7 +205,8 @@ def test_get_relative_image_path(qemu, tmpdir, config):
     assert qemu.get_relative_image_path("test2.bin") == "test2.bin"
     assert qemu.get_relative_image_path("../test1.bin") == "test1.bin"
     assert qemu.get_relative_image_path("test3.bin") == "test3.bin"
-    assert qemu.get_relative_image_path(path4) == path4
+    with pytest.raises(NodeError):
+        assert qemu.get_relative_image_path(path4) == path4
     assert qemu.get_relative_image_path(path5) == path5
 
 

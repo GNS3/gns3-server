@@ -85,10 +85,6 @@ class Project:
             "variables": self._variables
         }
 
-    def is_local(self):
-
-        return Config.instance().settings.Server.local
-
     @property
     def id(self):
 
@@ -101,12 +97,12 @@ class Project:
 
     @path.setter
     def path(self, path):
-        check_path_allowed(path)
 
         if hasattr(self, "_path"):
-            if path != self._path and self.is_local() is False:
+            if path != self._path:
                 raise ComputeForbiddenError("Changing the project directory path is not allowed")
 
+        check_path_allowed(path)
         self._path = path
 
     @property

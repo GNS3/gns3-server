@@ -25,6 +25,20 @@
     },
     "images": [
         {
+            "filename": "VI-18.5.2_MR-2.KVM-380-PRIMARY.qcow2",
+            "version": "18.5.2 MR2",
+            "md5sum": "d3b99cd9519fae06e4ef348af34fef2b",
+            "filesize": 458555392,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
+            "filename": "VI-18.5.2_MR-2.KVM-380-AUXILIARY.qcow2",
+            "version": "18.5.2 MR2",
+            "md5sum": "9cf2ebc15c92f712e28f8e45a29ee613",
+            "filesize": 11272192,
+            "download_url": "https://secure2.sophos.com/en-us/products/next-gen-firewall/free-trial.aspx"
+        },
+        {
             "filename": "VI-17.1.3_MR-3.KVM-250-PRIMARY.qcow2",
             "version": "17.1.3 MR3",
             "md5sum": "f11c4f63656bcdacbd27c44c52416941",
@@ -124,6 +138,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "18.5.2 MR2",
+            "images": {
+                "hda_disk_image": "VI-18.5.2_MR-2.KVM-380-PRIMARY.qcow2",
+                "hdb_disk_image": "VI-18.5.2_MR-2.KVM-380-AUXILIARY.qcow2"
+            }
+        },
         {
             "name": "17.1.3 MR3",
             "images": {

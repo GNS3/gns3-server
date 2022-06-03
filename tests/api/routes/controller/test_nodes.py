@@ -223,15 +223,29 @@ async def test_dynamips_idle_pc(
         client: AsyncClient,
         project: Project,
         compute: Compute,
-        node: Node) -> None:
+        node: Node
+) -> None:
 
     response = MagicMock()
     response.json = {"idlepc": "0x60606f54"}
     compute.get = AsyncioMagicMock(return_value=response)
 
+    node._node_type = "dynamips"  # force Dynamips node type
     response = await client.get(app.url_path_for("auto_idlepc", project_id=project.id, node_id=node.id))
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["idlepc"] == "0x60606f54"
+
+
+async def test_dynamips_idle_pc_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.get(app.url_path_for("auto_idlepc", project_id=project.id, node_id=node.id))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 async def test_dynamips_idlepc_proposals(
@@ -239,15 +253,129 @@ async def test_dynamips_idlepc_proposals(
         client: AsyncClient,
         project: Project,
         compute: Compute,
-        node: Node) -> None:
+        node: Node
+) -> None:
 
     response = MagicMock()
     response.json = ["0x60606f54", "0x33805a22"]
     compute.get = AsyncioMagicMock(return_value=response)
 
+    node._node_type = "dynamips"  # force Dynamips node type
     response = await client.get(app.url_path_for("idlepc_proposals", project_id=project.id, node_id=node.id))
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == ["0x60606f54", "0x33805a22"]
+
+
+async def test_dynamips_idlepc_proposals_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.get(app.url_path_for("idlepc_proposals", project_id=project.id, node_id=node.id))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+async def test_qemu_disk_image_create(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = MagicMock()
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    node._node_type = "qemu"  # force Qemu node type
+    response = await client.post(
+        app.url_path_for("create_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+        json={"format": "qcow2", "size": 30}
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_qemu_disk_image_create_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.post(
+        app.url_path_for("create_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+        json={"format": "qcow2", "size": 30}
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+async def test_qemu_disk_image_update(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = MagicMock()
+    compute.put = AsyncioMagicMock(return_value=response)
+
+    node._node_type = "qemu"  # force Qemu node type
+    response = await client.put(
+        app.url_path_for("update_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+        json={"extend": 10}
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_qemu_disk_image_update_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.put(
+        app.url_path_for("update_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2"),
+        json={"extend": 10}
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+async def test_qemu_disk_image_delete(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = MagicMock()
+    compute.delete = AsyncioMagicMock(return_value=response)
+
+    node._node_type = "qemu"  # force Qemu node type
+    response = await client.delete(
+        app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_qemu_disk_image_delete_wrong_node_type(
+        app: FastAPI,
+        client: AsyncClient,
+        project: Project,
+        compute: Compute,
+        node: Node
+) -> None:
+
+    response = await client.delete(
+        app.url_path_for("delete_disk_image", project_id=project.id, node_id=node.id, disk_name="hda_disk.qcow2")
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 async def test_get_file(app: FastAPI, client: AsyncClient, project: Project, compute: Compute, node: Node) -> None:

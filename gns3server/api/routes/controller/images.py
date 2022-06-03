@@ -52,12 +52,13 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.Image])
 async def get_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+        image_type: Optional[schemas.ImageType] = None
 ) -> List[schemas.Image]:
     """
     Return all images.
     """
 
-    return await images_repo.get_images()
+    return await images_repo.get_images(image_type)
 
 
 @router.post("/upload/{image_path:path}", response_model=schemas.Image, status_code=status.HTTP_201_CREATED)
@@ -85,7 +86,6 @@ async def upload_image(
     if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
         raise ControllerForbiddenError(f"Cannot write image, '{image_path}' is forbidden")
 
-    print(image_path)
     if await images_repo.get_image(image_path):
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
 

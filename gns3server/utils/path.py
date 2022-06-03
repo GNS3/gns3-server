@@ -60,8 +60,7 @@ def check_path_allowed(path: str):
     if len(os.path.commonprefix([project_directory, path])) == len(project_directory):
         return
 
-    if Config.instance().settings.Server.local is False:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The path is not allowed")
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"The path {path} is not allowed")
 
 
 def get_mountpoint(path: str):

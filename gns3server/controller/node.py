@@ -21,8 +21,12 @@ import copy
 import uuid
 import os
 
-from .compute import ComputeConflict, ComputeError
-from .controller_error import ControllerError, ControllerTimeoutError
+from .controller_error import (
+    ControllerError,
+    ControllerTimeoutError,
+    ComputeError,
+    ComputeConflictError
+)
 from .ports.port_factory import PortFactory, StandardPortFactory, DynamipsPortFactory
 from ..utils.images import images_directories
 from ..config import Config
@@ -400,9 +404,10 @@ class Node:
                 response = await self._compute.post(
                     f"/projects/{self._project.id}/{self._node_type}/nodes", data=data, timeout=timeout
                 )
-            except ComputeConflict as e:
-                if e.response.get("exception") == "ImageMissingError":
-                    res = await self._upload_missing_image(self._node_type, e.response["image"])
+            except ComputeConflictError as e:
+                response = e.response()
+                if response.get("exception") == "ImageMissingError":
+                    res = await self._upload_missing_image(self._node_type, response["image"])
                     if not res:
                         raise e
                 else:

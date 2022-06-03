@@ -20,8 +20,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from gns3server.controller.project import Project
-from gns3server.controller.compute import Compute, ComputeConflict
-from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
+from gns3server.controller.compute import Compute
+from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError, ComputeConflictError
 from pydantic import SecretStr
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -212,7 +212,7 @@ async def test_compute_httpQueryConflictError(compute):
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         response.status = 409
         response.read = AsyncioMagicMock(return_value=b'{"message": "Test"}')
-        with pytest.raises(ComputeConflict):
+        with pytest.raises(ComputeConflictError):
             await compute.post("/projects", {"a": "b"})
         assert mock.called
         await compute.close()

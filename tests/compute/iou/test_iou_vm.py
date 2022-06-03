@@ -230,6 +230,7 @@ def test_path_relative(vm, fake_iou_bin):
 
 def test_path_invalid_bin(vm, tmpdir, config):
 
+    config.settings.Server.images_path = str(tmpdir)
     path = str(tmpdir / "test.bin")
 
     with open(path, "w+") as f:
