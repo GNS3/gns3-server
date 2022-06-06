@@ -160,8 +160,8 @@ async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path
     return await compute.forward("PUT", emulator, endpoint_path, data=compute_data)
 
 
-@router.post("/{compute_id}/auto_idlepc")
-async def autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC) -> str:
+@router.post("/{compute_id}/dynamips/auto_idlepc")
+async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC) -> str:
     """
     Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
     """
