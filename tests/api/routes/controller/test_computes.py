@@ -109,7 +109,7 @@ class TestComputeRoutes:
 
 class TestComputeFeatures:
 
-    async def test_compute_list_images(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_compute_list_docker_images(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {
             "protocol": "http",
@@ -123,12 +123,12 @@ class TestComputeFeatures:
         assert response.status_code == status.HTTP_201_CREATED
         compute_id = response.json()["compute_id"]
 
-        with asyncio_patch("gns3server.controller.compute.Compute.images", return_value=[{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]) as mock:
-            response = await client.get(app.url_path_for("delete_compute", compute_id=compute_id) + "/qemu/images")
-            assert response.json() == [{"filename": "linux.qcow2"}, {"filename": "asav.qcow2"}]
-            mock.assert_called_with("qemu")
+        with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[{"image": "docker1"}, {"image": "docker2"}]) as mock:
+            response = await client.get(app.url_path_for("docker_get_images", compute_id=compute_id))
+            mock.assert_called_with("GET", "docker", "images")
+            assert response.json() == [{"image": "docker1"}, {"image": "docker2"}]
 
-    async def test_compute_list_vms(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_compute_list_virtualbox_vms(self, app: FastAPI, client: AsyncClient) -> None:
 
         params = {
             "protocol": "http",
@@ -142,8 +142,26 @@ class TestComputeFeatures:
         compute_id = response.json()["compute_id"]
 
         with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-            response = await client.get(app.url_path_for("get_compute", compute_id=compute_id) + "/virtualbox/vms")
+            response = await client.get(app.url_path_for("virtualbox_vms", compute_id=compute_id))
             mock.assert_called_with("GET", "virtualbox", "vms")
+            assert response.json() == []
+
+    async def test_compute_list_vmware_vms(self, app: FastAPI, client: AsyncClient) -> None:
+
+        params = {
+            "protocol": "http",
+            "host": "localhost",
+            "port": 4243,
+            "user": "julien",
+            "password": "secure"
+        }
+        response = await client.post(app.url_path_for("get_computes"), json=params)
+        assert response.status_code == status.HTTP_201_CREATED
+        compute_id = response.json()["compute_id"]
+
+        with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
+            response = await client.get(app.url_path_for("vmware_vms", compute_id=compute_id))
+            mock.assert_called_with("GET", "vmware", "vms")
             assert response.json() == []
 
     async def test_compute_create_img(self, app: FastAPI, client: AsyncClient) -> None:

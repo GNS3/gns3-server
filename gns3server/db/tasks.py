@@ -91,6 +91,8 @@ async def get_computes(app: FastAPI) -> List[dict]:
 def image_filter(change: Change, path: str) -> bool:
 
     if change == Change.added:
+        if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith("."):
+            return False
         header_magic_len = 7
         with open(path, "rb") as f:
             image_header = f.read(header_magic_len)  # read the first 7 bytes of the file

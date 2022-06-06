@@ -139,7 +139,7 @@ async def discover_images(image_type: str, skip_image_paths: list = None) -> Lis
     for directory in images_directories(image_type):
         for root, _, filenames in os.walk(os.path.normpath(directory)):
             for filename in filenames:
-                if filename.endswith(".md5sum") or filename.startswith("."):
+                if filename.endswith(".tmp") or filename.endswith(".md5sum") or filename.startswith("."):
                     continue
                 path = os.path.join(root, filename)
                 if not os.path.isfile(path) or skip_image_paths and path in skip_image_paths or path in files:
@@ -343,7 +343,8 @@ async def write_image(
         os.chmod(image_path, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
     finally:
         try:
-            os.remove(tmp_path)
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
         except OSError:
             log.warning(f"Could not remove '{tmp_path}'")
 

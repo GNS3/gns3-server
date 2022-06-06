@@ -620,23 +620,6 @@ class Compute:
             raise ControllerError(f"Connection lost to {self._id} during {method} {action}")
         return res.json
 
-    async def images(self, type):
-        """
-        Return the list of images available for this type on the compute node.
-        """
-
-        res = await self.http_query("GET", f"/{type}/images", timeout=None)
-        images = res.json
-
-        try:
-            if type in ["qemu", "dynamips", "iou"]:
-                images = sorted(images, key=itemgetter("filename"))
-            else:
-                images = sorted(images, key=itemgetter("image"))
-        except OSError as e:
-            raise ComputeError(f"Cannot list images: {str(e)}")
-        return images
-
     async def list_files(self, project):
         """
         List files in the project on computes

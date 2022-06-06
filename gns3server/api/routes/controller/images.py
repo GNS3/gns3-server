@@ -129,7 +129,7 @@ async def get_image(
 async def delete_image(
         image_path: str,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> None:
+) -> Response:
     """
     Delete an image.
     """
@@ -158,6 +158,8 @@ async def delete_image(
     success = await images_repo.delete_image(image_path)
     if not success:
         raise ControllerError(f"Image '{image_path}' could not be deleted")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)

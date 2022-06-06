@@ -160,30 +160,6 @@ class Qemu(BaseManager):
         return qemus
 
     @staticmethod
-    async def img_binary_list():
-        """
-        Gets QEMU-img binaries list available on the host.
-
-        :returns: Array of dictionary {"path": Qemu-img binary path, "version": version of Qemu-img}
-        """
-        qemu_imgs = []
-        for path in Qemu.paths_list():
-            try:
-                for f in os.listdir(path):
-                    if (
-                        (f == "qemu-img" or f == "qemu-img.exe")
-                        and os.access(os.path.join(path, f), os.X_OK)
-                        and os.path.isfile(os.path.join(path, f))
-                    ):
-                        qemu_path = os.path.join(path, f)
-                        version = await Qemu._get_qemu_img_version(qemu_path)
-                        qemu_imgs.append({"path": qemu_path, "version": version})
-            except OSError:
-                continue
-
-        return qemu_imgs
-
-    @staticmethod
     async def get_qemu_version(qemu_path):
         """
         Gets the Qemu version.

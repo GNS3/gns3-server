@@ -95,10 +95,8 @@ class ApplianceToTemplate:
         new_config["options"] = options.strip()
         new_config.update(version.get("images"))
 
-        if "path" in appliance_config["qemu"]:
-            new_config["qemu_path"] = appliance_config["qemu"]["path"]
-        else:
-            new_config["qemu_path"] = "qemu-system-{}".format(appliance_config["qemu"]["arch"])
+        if "arch" in appliance_config["qemu"]:
+            new_config["platform"] = appliance_config["qemu"]["arch"]
 
         if "first_port_name" in appliance_config:
             new_config["first_port_name"] = appliance_config["first_port_name"]
