@@ -148,6 +148,31 @@ class Compute(DateTimeModelMixin, ComputeBase):
         orm_mode = True
 
 
+class ComputeVirtualBoxVM(BaseModel):
+    """
+    VirtualBox VM from compute.
+    """
+
+    vmname: str = Field(..., description="VirtualBox VM name")
+    ram: int = Field(..., description="VirtualBox VM memory")
+
+
+class ComputeVMwareVM(BaseModel):
+    """
+    VMware VM from compute.
+    """
+
+    vmname: str = Field(..., description="VMware VM name")
+
+
+class ComputeDockerImage(BaseModel):
+    """
+    Docker image from compute.
+    """
+
+    image: str = Field(..., description="Docker image name")
+
+
 class AutoIdlePC(BaseModel):
     """
     Data for auto Idle-PC request.

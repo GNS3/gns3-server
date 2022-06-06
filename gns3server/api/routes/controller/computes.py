@@ -115,18 +115,50 @@ async def delete_compute(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{compute_id}/{emulator}/images")
-async def get_images(compute_id: Union[str, UUID], emulator: str) -> List[str]:
+@router.get("/{compute_id}/docker/images", response_model=List[schemas.ComputeDockerImage])
+async def docker_get_images(compute_id: Union[str, UUID]) -> List[schemas.ComputeDockerImage]:
     """
-    Return the list of images available on a compute for a given emulator type.
+    Get Docker images from a compute.
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    result = await compute.forward("GET", "docker", "images")
+    return result
+
+
+@router.get("/{compute_id}/virtualbox/vms", response_model=List[schemas.ComputeVirtualBoxVM])
+async def virtualbox_vms(compute_id: Union[str, UUID]) -> List[schemas.ComputeVirtualBoxVM]:
+    """
+    Get VirtualBox VMs from a compute.
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    result = await compute.forward("GET", "virtualbox", "vms")
+    return result
+
+
+@router.get("/{compute_id}/vmware/vms", response_model=List[schemas.ComputeVMwareVM])
+async def vmware_vms(compute_id: Union[str, UUID]) -> List[schemas.ComputeVMwareVM]:
+    """
+    Get VMware VMs from a compute.
+    """
+
+    compute = Controller.instance().get_compute(str(compute_id))
+    result = await compute.forward("GET", "vmware", "vms")
+    return result
+
+
+@router.post("/{compute_id}/dynamips/auto_idlepc")
+async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC) -> str:
+    """
+    Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
     """
 
     controller = Controller.instance()
-    compute = controller.get_compute(str(compute_id))
-    return await compute.images(emulator)
+    return await controller.autoidlepc(str(compute_id), auto_idle_pc.platform, auto_idle_pc.image, auto_idle_pc.ram)
 
 
-@router.get("/{compute_id}/{emulator}/{endpoint_path:path}")
+@router.get("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
 async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str) -> dict:
     """
     Forward a GET request to a compute.
@@ -138,7 +170,7 @@ async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path
     return result
 
 
-@router.post("/{compute_id}/{emulator}/{endpoint_path:path}")
+@router.post("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
 async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
     """
     Forward a POST request to a compute.
@@ -149,7 +181,7 @@ async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_pat
     return await compute.forward("POST", emulator, endpoint_path, data=compute_data)
 
 
-@router.put("/{compute_id}/{emulator}/{endpoint_path:path}")
+@router.put("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
 async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
     """
     Forward a PUT request to a compute.
@@ -158,13 +190,3 @@ async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path
 
     compute = Controller.instance().get_compute(str(compute_id))
     return await compute.forward("PUT", emulator, endpoint_path, data=compute_data)
-
-
-@router.post("/{compute_id}/dynamips/auto_idlepc")
-async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schemas.AutoIdlePC) -> str:
-    """
-    Find a suitable Idle-PC value for a given IOS image. This may take a few minutes.
-    """
-
-    controller = Controller.instance()
-    return await controller.autoidlepc(str(compute_id), auto_idle_pc.platform, auto_idle_pc.image, auto_idle_pc.ram)

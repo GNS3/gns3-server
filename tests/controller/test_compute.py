@@ -398,29 +398,6 @@ async def test_forward_post(compute):
 
 
 @pytest.mark.asyncio
-async def test_images(compute):
-    """
-    Will return image on compute
-    """
-
-    response = MagicMock()
-    response.status = 200
-    response.read = AsyncioMagicMock(return_value=json.dumps([{
-        "filename": "linux.qcow2",
-        "path": "linux.qcow2",
-        "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
-        "filesize": 0}]).encode())
-    with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
-        images = await compute.images("qemu")
-        mock.assert_called_with("GET", "https://example.com:84/v3/compute/qemu/images", auth=None, data=None, headers={'content-type': 'application/json'}, chunked=None, timeout=None)
-        await compute.close()
-
-    assert images == [
-        {"filename": "linux.qcow2", "path": "linux.qcow2", "md5sum": "d41d8cd98f00b204e9800998ecf8427e", "filesize": 0}
-    ]
-
-
-@pytest.mark.asyncio
 async def test_list_files(project, compute):
 
     res = [{"path": "test"}]

@@ -21,7 +21,7 @@ from .version import Version
 
 # Controller schemas
 from .controller.links import LinkCreate, LinkUpdate, Link
-from .controller.computes import ComputeCreate, ComputeUpdate, AutoIdlePC, Compute
+from .controller.computes import ComputeCreate, ComputeUpdate, ComputeVirtualBoxVM, ComputeVMwareVM, ComputeDockerImage, AutoIdlePC, Compute
 from .controller.templates import TemplateCreate, TemplateUpdate, TemplateUsage, Template
 from .controller.images import Image, ImageType
 from .controller.appliances import ApplianceVersion, Appliance
