@@ -1343,7 +1343,7 @@ async def test_start_vnc(vm):
             with asyncio_patch("asyncio.create_subprocess_exec") as mock_exec:
                 await vm._start_vnc()
     assert vm._display is not None
-    assert mock_exec.call_args[0] == ("/bin/Xtigervnc", "-geometry", vm.console_resolution, "-depth", "16", "-interface", "127.0.0.1", "-rfbport", str(vm.console), "-AlwaysShared", "-SecurityTypes", "None", ":{}".format(vm._display))
+    assert mock_exec.call_args[0] == ("/bin/Xtigervnc", "-extension", "MIT-SHM", "-geometry", vm.console_resolution, "-depth", "16", "-interface", "127.0.0.1", "-rfbport", str(vm.console), "-AlwaysShared", "-SecurityTypes", "None", ":{}".format(vm._display))
     mock_wait.assert_called_with("/tmp/.X11-unix/X{}".format(vm._display))
 
 

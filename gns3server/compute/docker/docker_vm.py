@@ -584,6 +584,7 @@ class DockerVM(BaseNode):
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
                 self._vnc_process = await asyncio.create_subprocess_exec(tigervnc_path,
+                                                                         "-extension", "MIT-SHM",
                                                                          "-geometry", self._console_resolution,
                                                                          "-depth", "16",
                                                                          "-interface", self._manager.port_manager.console_host,
@@ -595,8 +596,9 @@ class DockerVM(BaseNode):
         else:
             if restart is False:
                 self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
-                                                                          "-nolisten",
-                                                                          "tcp", ":{}".format(self._display),
+                                                                          "-nolisten", "tcp",
+                                                                          "-extension", "MIT-SHM",
+                                                                          ":{}".format(self._display),
                                                                           "-screen", "0",
                                                                           self._console_resolution + "x16")
 
@@ -606,6 +608,7 @@ class DockerVM(BaseNode):
                                                                          "-forever",
                                                                          "-nopw",
                                                                          "-shared",
+                                                                         "-noshm",
                                                                          "-geometry", self._console_resolution,
                                                                          "-display", "WAIT:{}".format(self._display),
                                                                          "-rfbport", str(self.console),
