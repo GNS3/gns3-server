@@ -314,7 +314,7 @@ class DockerVM(BaseNode):
 # DHCP config for eth{adapter}
 #auto eth{adapter}
 #iface eth{adapter} inet dhcp
-#hostname {hostname}
+#\thostname {hostname}
 """.format(adapter=adapter, hostname=self._name))
         return path
 
