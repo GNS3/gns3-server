@@ -24,6 +24,7 @@ import aiohttp
 from unittest.mock import MagicMock, patch
 from tests.utils import AsyncioMagicMock, asyncio_patch
 
+from gns3server.config import Config
 from gns3server.controller.compute import Compute
 from gns3server.version import __version__
 
@@ -449,6 +450,15 @@ def test_load_templates(controller):
             assert qemu_uuid == template.id
         elif template.name == "Cloud":
             assert cloud_uuid == template.id
+
+
+def test_load_templates_without_builtins(controller):
+
+    config = Config.instance()
+    config.set("Server", "enable_builtin_templates", False)
+    controller.template_manager.load_templates()
+
+    assert not controller.template_manager.templates.values()
 
 
 async def test_autoidlepc(controller):
