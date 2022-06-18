@@ -335,7 +335,6 @@ class DockerVM(BaseNode):
 
         params = {
             "Hostname": self._name,
-            "Name": self._name,
             "Image": self._image,
             "NetworkDisabled": True,
             "Tty": True,
@@ -686,7 +685,6 @@ class DockerVM(BaseNode):
 
         # resize the container TTY.
         await self._manager.query("POST", "containers/{}/resize?h={}&w={}".format(self._cid, rows, columns))
-
 
     async def _start_console(self):
         """
