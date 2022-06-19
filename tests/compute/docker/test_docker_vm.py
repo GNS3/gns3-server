@@ -108,7 +108,6 @@ async def test_create(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -147,7 +146,6 @@ async def test_create_with_tag(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:16.04",
                 "Env": [
@@ -190,7 +188,6 @@ async def test_create_vnc(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -307,7 +304,6 @@ async def test_create_start_cmd(compute_project, manager):
                 "Entrypoint": ["/gns3/init.sh"],
                 "Cmd": ["/bin/ls"],
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -404,7 +400,6 @@ async def test_create_image_not_available(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -448,7 +443,6 @@ async def test_create_with_user(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -532,7 +526,6 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -572,7 +565,6 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -612,7 +604,6 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -652,7 +643,6 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -691,7 +681,6 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -730,7 +719,6 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -777,7 +765,6 @@ async def test_create_with_extra_volumes(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -1001,7 +988,6 @@ async def test_update(vm):
         },
         "Volumes": {},
         "NetworkDisabled": True,
-        "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
@@ -1070,7 +1056,6 @@ async def test_update_running(vm):
         },
         "Volumes": {},
         "NetworkDisabled": True,
-        "Name": "test",
         "Hostname": "test",
         "Image": "ubuntu:latest",
         "Env": [
