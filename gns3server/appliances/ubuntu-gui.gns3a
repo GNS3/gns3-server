@@ -23,94 +23,55 @@
         "console_type": "vnc",
         "boot_priority": "c",
         "kvm": "require",
-        "options": "-vga virtio"
+        "options": "-vga qxl"
     },
     "images": [
         {
-            "filename": "Ubuntu 20.10 (64bit).vmdk",
-            "version": "20.10",
-            "md5sum": "d7fb9d7b5f6e55349204d493d00507d2",
-            "filesize": 7512915968,
-            "download_url": "http://www.osboxes.org/ubuntu/"
+            "filename": "Ubuntu 22.04 (64bit).vmdk",
+            "version": "22.04",
+            "md5sum": "208657d5c13fd1e041794794ada32581",
+            "filesize": 9110487040,
+            "download_url": "https://www.osboxes.org/ubuntu/"
         },
         {
-            "filename": "Ubuntu 20.04.2 (64bit).vmdk",
-            "version": "20.04.2",
-            "md5sum": "e995e5768c1dbee94bc02072d841bb50",
-            "filesize": 7625179136,
-            "download_url": "http://www.osboxes.org/ubuntu/"
+            "filename": "Ubuntu 20.04.4 (64bit).vmdk",
+            "version": "20.04.4",
+            "md5sum": "0482557da31d29f4f175945333e617f0",
+            "filesize": 8531083264,
+            "download_url": "https://www.osboxes.org/ubuntu/"
         },
         {
-            "filename": "Ubuntu 20.04 (64bit).vmdk",
-            "version": "20.04",
-            "md5sum": "cf619dfe9bb8d89e2b18b067f02e57a0",
-            "filesize": 6629883904,
-            "download_url": "http://www.osboxes.org/ubuntu/"
-        },
-        {
-            "filename": "Ubuntu 19.04 (64bit).vmdk",
-            "version": "19.04",
-            "md5sum": "21535675c54507e9325bf8774a7bd73e",
-            "filesize": 5558435840,
-            "download_url": "http://www.osboxes.org/ubuntu/"
-        },
-        {
-            "filename": "Ubuntu 18.10 Cosmic (64Bit).vmdk",
-            "version": "18.10",
-            "md5sum": "7f72be569356baa20863cd354d2efa60",
-            "filesize": 6747389952,
-            "download_url": "http://www.osboxes.org/ubuntu/"
-        },
-        {
-            "filename": "Ubuntu 18.04.2 (64bit).vmdk",
-            "version": "18.04.2",
-            "md5sum": "d57b732d90759e3b3a62594a83f8f196",
-            "filesize": 6003097600,
-            "download_url": "http://www.osboxes.org/ubuntu/"
+            "filename": "Ubuntu 18.04.6 (64bit).vmdk",
+            "version": "18.04.6",
+            "md5sum": "2a41138b36edd3f81b4cb89ea471f3fc",
+            "filesize": 7011631104,
+            "download_url": "https://www.osboxes.org/ubuntu/"
         },
         {
             "filename": "Ubuntu 16.04.6 (64bit).vmdk",
             "version": "16.04.6",
             "md5sum": "33b2964cef607c1c9fe748db8a2fa6ea",
             "filesize": 4780982272,
-            "download_url": "http://www.osboxes.org/ubuntu/"
+            "download_url": "https://www.osboxes.org/ubuntu/"
         }
     ],
     "versions": [
         {
-            "name": "20.10",
+            "name": "22.04",
             "images": {
-                "hda_disk_image": "Ubuntu 20.10 (64bit).vmdk"
+                "hda_disk_image": "Ubuntu 22.04 (64bit).vmdk"
             }
         },
         {
-            "name": "20.04.2",
+            "name": "20.04.4",
             "images": {
-                "hda_disk_image": "Ubuntu 20.04.2 (64bit).vmdk"
+                "hda_disk_image": "Ubuntu 20.04.4 (64bit).vmdk"
             }
         },
         {
-            "name": "20.04",
+            "name": "18.04.6",
             "images": {
-                "hda_disk_image": "Ubuntu 20.04 (64bit).vmdk"
-            }
-        },
-        {
-            "name": "19.04",
-            "images": {
-                "hda_disk_image": "Ubuntu 19.04 (64bit).vmdk"
-            }
-        },
-        {
-            "name": "18.10",
-            "images": {
-                "hda_disk_image": "Ubuntu 18.10 Cosmic (64Bit).vmdk"
-            }
-        },
-        {
-            "name": "18.04.2",
-            "images": {
-                "hda_disk_image": "Ubuntu 18.04.2 (64bit).vmdk"
+                "hda_disk_image": "Ubuntu 18.04.6 (64bit).vmdk"
             }
         },
         {
