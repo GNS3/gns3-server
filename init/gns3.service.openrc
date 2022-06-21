@@ -1,0 +1,52 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+extra_started_commands="reload"
+
+: ${GNS3_SERVER_BINARY:=${RC_PREFIX%/}/usr/bin/gns3server}
+: ${GNS3_SERVER_PIDFILE:=${RC_PREFIX%/}/run/${SVCNAME}.pid}
+: ${GNS3_SERVER_COMMAND_USER:=gns3:gns3}
+: ${GNS3_SERVER_LOG_ENABLED:=no}
+: ${GNS3_SERVER_LOG_PATH:=${RC_PREFIX%/}/var/log/GNS3}
+: ${GNS3_SERVER_LOG:=${GNS3_SERVER_LOG_PATH}/${RC_SVCNAME}.log}
+
+command="${GNS3_SERVER_BINARY}"
+pidfile="${GNS3_SERVER_PIDFILE}"
+command_user="${GNS3_SERVER_COMMAND_USER}"
+command_background="yes"
+command_args="${GNS3_SERVER_OPTS}"
+
+depend() {
+  need net
+}
+
+checkconfig() {
+  if yesno "${GNS3_SERVER_LOG_ENABLED}" ; then
+    command_args+=" --log ${GNS3_SERVER_LOG}";
+    if [ "${command_user}" ] ; then 
+      checkpath --directory --mode 0700 --owner "${command_user}" "${GNS3_SERVER_LOG_PATH}";
+    else
+      unset command_user
+    fi
+  fi
+}
+
+start_pre() {
+  if [ "${RC_CMD}" != "restart" ] ; then
+    checkconfig || return $?
+  fi
+}
+
+stop_pre() {
+  if [ "${RC_CMD}" = "restart" ] ; then
+    checkconfig || return $?
+  fi
+}
+
+reload() {
+  checkconfig || return $?
+  ebegin "Reloading ${RC_SVCNAME}"
+  start-stop-daemon --signal HUP --pidfile "${pidfile}"
+  eend $?
+}

@@ -1,5 +1,20 @@
 # Change Log
 
+## 2.2.33.1 21/06/2022
+
+* Add missing file for web-ui v2.2.33
+
+## 2.2.33 20/06/2022
+
+* Release web-ui v2.2.33
+* Upgrade sentry-sdk and psutil
+* Remove parameter "Name" not useful to create a Docker container
+* Support to reset all console connections. Ref https://github.com/GNS3/gns3-server/issues/1619
+* Config option to disable built-in templates
+* Add hostname entry to sample network config for Docker nodes. Fixes #2039
+* Run Xtigervnc with MIT-SHM extension disabled for Docker VNC console support. Fixes #2071
+* Added OpenRC init script
+
 ## 2.2.32 27/04/2022
 
 * Docker: load custom interface files from /etc/network/interfaces (commented by default). Ref #2052

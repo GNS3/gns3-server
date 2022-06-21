@@ -358,7 +358,8 @@ class DockerVM(BaseNode):
 # DHCP config for eth{adapter}
 #auto eth{adapter}
 #iface eth{adapter} inet dhcp
-""".format(adapter=adapter))
+#\thostname {hostname}
+""".format(adapter=adapter, hostname=self._name))
         return path
 
     async def create(self):
@@ -385,7 +386,6 @@ class DockerVM(BaseNode):
 
         params = {
             "Hostname": self._name,
-            "Name": self._name,
             "Image": self._image,
             "NetworkDisabled": True,
             "Tty": True,
@@ -654,50 +654,39 @@ class DockerVM(BaseNode):
 
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec(
-                    tigervnc_path,
-                    "-geometry",
-                    self._console_resolution,
-                    "-depth",
-                    "16",
-                    "-interface",
-                    self._manager.port_manager.console_host,
-                    "-rfbport",
-                    str(self.console),
-                    "-AlwaysShared",
-                    "-SecurityTypes",
-                    "None",
-                    f":{self._display}",
-                    stdout=fd,
-                    stderr=subprocess.STDOUT,
-                )
+                self._vnc_process = await asyncio.create_subprocess_exec(tigervnc_path,
+                                                                         "-extension", "MIT-SHM",
+                                                                         "-geometry", self._console_resolution,
+                                                                         "-depth", "16",
+                                                                         "-interface", self._manager.port_manager.console_host,
+                                                                         "-rfbport", str(self.console),
+                                                                         "-AlwaysShared",
+                                                                         "-SecurityTypes", "None",
+                                                                         ":{}".format(self._display),
+                                                                         stdout=fd, stderr=subprocess.STDOUT)
         else:
             if restart is False:
-                self._xvfb_process = await asyncio.create_subprocess_exec(
-                    "Xvfb", "-nolisten", "tcp", f":{self._display}", "-screen", "0", self._console_resolution + "x16"
-                )
+                self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
+                                                                          "-nolisten", "tcp",
+                                                                          "-extension", "MIT-SHM",
+                                                                          ":{}".format(self._display),
+                                                                          "-screen", "0",
+                                                                          self._console_resolution + "x16")
 
             # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec(
-                    "x11vnc",
-                    "-forever",
-                    "-nopw",
-                    "-shared",
-                    "-geometry",
-                    self._console_resolution,
-                    "-display",
-                    f"WAIT:{self._display}",
-                    "-rfbport",
-                    str(self.console),
-                    "-rfbportv6",
-                    str(self.console),
-                    "-noncache",
-                    "-listen",
-                    self._manager.port_manager.console_host,
-                    stdout=fd,
-                    stderr=subprocess.STDOUT,
-                )
+                self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
+                                                                         "-forever",
+                                                                         "-nopw",
+                                                                         "-shared",
+                                                                         "-noshm",
+                                                                         "-geometry", self._console_resolution,
+                                                                         "-display", "WAIT:{}".format(self._display),
+                                                                         "-rfbport", str(self.console),
+                                                                         "-rfbportv6", str(self.console),
+                                                                         "-noncache",
+                                                                         "-listen", self._manager.port_manager.console_host,
+                                                                         stdout=fd, stderr=subprocess.STDOUT)
 
     async def _start_vnc(self):
         """
