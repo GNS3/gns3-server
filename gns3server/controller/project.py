@@ -516,7 +516,14 @@ class Project:
             # compute_id is selected by clients for builtin templates
             compute = self.controller.get_compute(compute_id)
         else:
-            compute = self.controller.get_compute(template.pop("compute_id", compute_id))
+            # Fall back to self.controller.get_compute(compute_id) if template is set to Null
+            # Null is required in order for the UI to prompt which server to deploy to when
+            # using remote servers, however we need to pass a valid compute_id to get_compute else
+            # aiohttp will raise error with "Compute ID None doesn't exist"
+            try:
+                compute = self.controller.get_compute(template.pop("compute_id", compute_id))
+            except:
+                compute = self.controller.get_compute(compute_id)
         template_name = template.pop("name")
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         if name is None:
