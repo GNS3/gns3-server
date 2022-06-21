@@ -28,6 +28,7 @@ from tests.utils import asyncio_patch
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller import Controller
+from gns3server.controller import Config
 from gns3server.services.templates import BUILTIN_TEMPLATES
 
 pytestmark = pytest.mark.asyncio
@@ -256,6 +257,18 @@ class TestBuiltinTemplates:
         template_id = str(BUILTIN_TEMPLATES[0]["template_id"])  # take the first built-in template
         response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    async def test_list_builtin_templates_not_enabled(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller
+    ) -> None:
+
+        config = Config.instance()
+        config.settings.Server.enable_builtin_templates = False
+        response = await client.get(app.url_path_for("get_templates"))
+        assert not response.json()
 
 
 class TestDynamipsTemplate:

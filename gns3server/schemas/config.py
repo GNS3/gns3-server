@@ -138,6 +138,7 @@ class ServerSettings(BaseModel):
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
     allow_remote_console: bool = False
+    enable_builtin_templates: bool = True
 
     @validator("additional_images_paths", pre=True)
     def split_additional_images_paths(cls, v):

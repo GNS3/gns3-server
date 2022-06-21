@@ -23,6 +23,7 @@ from fastapi.encoders import jsonable_encoder
 from typing import List
 
 from gns3server import schemas
+from gns3server.config import Config
 import gns3server.db.models as models
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller.controller_error import (
@@ -174,8 +175,9 @@ class TemplatesService:
         db_templates = await self._templates_repo.get_templates()
         for db_template in db_templates:
             templates.append(db_template.asjson())
-        for builtin_template in BUILTIN_TEMPLATES:
-            templates.append(jsonable_encoder(builtin_template))
+        if Config.instance().settings.Server.enable_builtin_templates:
+            for builtin_template in BUILTIN_TEMPLATES:
+                templates.append(jsonable_encoder(builtin_template))
         return templates
 
     async def _find_image(self, image_path: str):
