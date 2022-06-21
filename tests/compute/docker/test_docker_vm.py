@@ -1539,7 +1539,6 @@ async def test_cpus(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
@@ -1581,7 +1580,6 @@ async def test_memory(compute_project, manager):
                     },
                 "Volumes": {},
                 "NetworkDisabled": True,
-                "Name": "test",
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
                 "Env": [
