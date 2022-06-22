@@ -96,7 +96,11 @@ class TemplateHandler:
         # Ignore these because we only use them when creating a template
         request.json.pop("template_id", None)
         request.json.pop("template_type", None)
-        request.json.pop("compute_id", None)
+        # Don't pop this. This way updating the compute_id via /v2/template/{template_id} 
+        # works. NOTE: This breaks the UI's abilty to view images. Haven't figured out what to do about that yet.
+        # see
+        # https://github.com/GNS3/gns3-gui/blob/2131f07e5f99ac7b8ca2af3f2ebd114ee4ef84a9/gns3/modules/qemu/pages/qemu_vm_configuration_page.py#L454
+        #request.json.pop("compute_id", None)
         request.json.pop("builtin", None)
         template.update(**request.json)
         response.set_status(200)
