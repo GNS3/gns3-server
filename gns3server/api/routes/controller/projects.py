@@ -349,33 +349,25 @@ async def export_project(
 async def import_project(
         project_id: UUID,
         request: Request,
-        path: Optional[Path] = None,
         name: Optional[str] = None
 ) -> schemas.Project:
     """
     Import a project from a portable archive.
     """
 
-    #TODO: import project remotely
-    raise NotImplementedError()
-
     controller = Controller.instance()
-    # We write the content to a temporary location and after we extract it all.
+    # We write the content to a temporary location and then we extract it all.
     # It could be more optimal to stream this but it is not implemented in Python.
     try:
         begin = time.time()
-        # use the parent directory or projects dir as a temporary working dir
-        if path:
-            working_dir = os.path.abspath(os.path.join(path, os.pardir))
-        else:
-            working_dir = controller.projects_directory()
+        working_dir = controller.projects_directory()
         with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
             temp_project_path = os.path.join(tmpdir, "project.zip")
             async with aiofiles.open(temp_project_path, "wb") as f:
                 async for chunk in request.stream():
                     await f.write(chunk)
             with open(temp_project_path, "rb") as f:
-                project = await import_controller_project(controller, str(project_id), f, location=path, name=name)
+                project = await import_controller_project(controller, str(project_id), f, name=name)
 
         log.info(f"Project '{project.name}' imported in {time.time() - begin:.4f} seconds")
     except OSError as e:
