@@ -432,21 +432,39 @@ async def test_write_and_get_file_with_leading_slashes_in_filename(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-# async def test_import(app: FastAPI, client: AsyncClient, tmpdir, controller: Controller) -> None:
-#
-#     with zipfile.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
-#         myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
-#         myzip.writestr("demo", b"hello")
-#
-#     project_id = str(uuid.uuid4())
-#     with open(str(tmpdir / "test.zip"), "rb") as f:
-#         response = await client.post(app.url_path_for("import_project", project_id=project_id), content=f.read())
-#     assert response.status_code == status.HTTP_201_CREATED
-#
-#     project = controller.get_project(project_id)
-#     with open(os.path.join(project.path, "demo")) as f:
-#         content = f.read()
-#     assert content == "hello"
+async def test_import(app: FastAPI, client: AsyncClient, tmpdir, controller: Controller) -> None:
+
+    with zipfile_zstd.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
+        myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
+        myzip.writestr("demo", b"hello")
+
+    project_id = str(uuid.uuid4())
+    with open(str(tmpdir / "test.zip"), "rb") as f:
+        response = await client.post(app.url_path_for("import_project", project_id=project_id), content=f.read())
+    assert response.status_code == status.HTTP_201_CREATED
+
+    project = controller.get_project(project_id)
+    with open(os.path.join(project.path, "demo")) as f:
+        content = f.read()
+    assert content == "hello"
+
+
+async def test_import_with_project_name(app: FastAPI, client: AsyncClient, tmpdir, controller: Controller) -> None:
+
+    with zipfile_zstd.ZipFile(str(tmpdir / "test.zip"), 'w') as myzip:
+        myzip.writestr("project.gns3", b'{"project_id": "c6992992-ac72-47dc-833b-54aa334bcd05", "version": "2.0.0", "name": "test"}')
+        myzip.writestr("demo", b"hello")
+
+    project_id = str(uuid.uuid4())
+    with open(str(tmpdir / "test.zip"), "rb") as f:
+        response = await client.post(
+            app.url_path_for("import_project", project_id=project_id),
+            content=f.read(),
+            params={"name": "my-imported-project-name"}
+        )
+    assert response.status_code == status.HTTP_201_CREATED
+    project = controller.get_project(project_id)
+    assert project.name == "my-imported-project-name"
 
 
 async def test_duplicate(app: FastAPI, client: AsyncClient, project: Project) -> None:
