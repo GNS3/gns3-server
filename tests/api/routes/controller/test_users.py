@@ -291,6 +291,26 @@ class TestUserLogin:
         assert response.status_code == status_code
         assert "access_token" not in response.json()
 
+    async def test_user_can_use_token_as_url_param(
+            self,
+            app: FastAPI,
+            unauthorized_client: AsyncClient,
+            test_user: User,
+            config: Config
+    ) -> None:
+
+        credentials = {
+            "username": test_user.username,
+            "password": "user1_password",
+        }
+
+        response = await unauthorized_client.post(app.url_path_for("authenticate"), json=credentials)
+        assert response.status_code == status.HTTP_200_OK
+        token = response.json().get("access_token")
+
+        response = await unauthorized_client.get(app.url_path_for("get_projects"), params={"token": token})
+        assert response.status_code == status.HTTP_200_OK
+
 
 class TestUserMe:
 
