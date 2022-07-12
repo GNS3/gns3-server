@@ -422,7 +422,7 @@ class Appliance(BaseModel):
         ..., title='Description of the appliance. Could be a marketing description'
     )
     vendor_name: str = Field(..., title='Name of the vendor')
-    vendor_url: Union[AnyUrl, constr(max_length=0)] = Field(..., title='Website of the vendor')
+    vendor_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(None, title='Website of the vendor')
     documentation_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(
         None,
         title='An optional documentation for using the appliance on vendor website',
@@ -440,7 +440,7 @@ class Appliance(BaseModel):
         title='About image availability: can be downloaded directly; download requires a free registration; paid but a trial version (time or feature limited) is available; not available publicly',
     )
     maintainer: str = Field(..., title='Maintainer name')
-    maintainer_email: Union[EmailStr, constr(max_length=0)] = Field(..., title='Maintainer email')
+    maintainer_email: Optional[Union[EmailStr, constr(max_length=0)]] = Field(None, title='Maintainer email')
     usage: Optional[str] = Field(None, title='How to use the appliance')
     symbol: Optional[str] = Field(None, title='An optional symbol for the appliance')
     first_port_name: Optional[str] = Field(
