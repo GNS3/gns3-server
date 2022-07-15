@@ -93,13 +93,12 @@ def update_vpcs_node(node_data: schemas.VPCSUpdate, node: VPCSVM = Depends(dep_n
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)) -> Response:
+async def delete_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Delete a VPCS node.
     """
 
     await VPCS.instance().delete_node(node.id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.VPCS, status_code=status.HTTP_201_CREATED)
@@ -115,43 +114,40 @@ async def duplicate_vpcs_node(
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_vpcs_node(node: VPCSVM = Depends(dep_node)) -> Response:
+async def start_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Start a VPCS node.
     """
 
     await node.start()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)) -> Response:
+async def stop_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Stop a VPCS node.
     """
 
     await node.stop()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)) -> Response:
+async def suspend_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Suspend a VPCS node.
     Does nothing, suspend is not supported by VPCS.
     """
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    pass
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)) -> Response:
+async def reload_vpcs_node(node: VPCSVM = Depends(dep_node)) -> None:
     """
     Reload a VPCS node.
     """
 
     await node.reload()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -206,14 +202,13 @@ async def delete_vpcs_node_nio(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: VPCSVM = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the VPCS node is always 0.
     """
 
     await node.port_remove_nio_binding(port_number)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -242,21 +237,19 @@ async def stop_vpcs_node_capture(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: VPCSVM = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Stop a packet capture on the node.
     The adapter number on the VPCS node is always 0.
     """
 
     await node.stop_capture(port_number)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: VPCSVM = Depends(dep_node)) -> Response:
+async def reset_console(node: VPCSVM = Depends(dep_node)) -> None:
 
     await node.reset_console()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
