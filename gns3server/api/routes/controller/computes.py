@@ -57,7 +57,7 @@ async def create_compute(
 
 
 @router.post("/{compute_id}/connect", status_code=status.HTTP_204_NO_CONTENT)
-async def connect_compute(compute_id: Union[str, UUID]) -> Response:
+async def connect_compute(compute_id: Union[str, UUID]) -> None:
     """
     Connect to compute on the controller.
     """
@@ -65,7 +65,6 @@ async def connect_compute(compute_id: Union[str, UUID]) -> Response:
     compute = Controller.instance().get_compute(str(compute_id))
     if not compute.connected:
         await compute.connect(report_failed_connection=True)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{compute_id}", response_model=schemas.Compute, response_model_exclude_unset=True)
@@ -106,13 +105,12 @@ async def update_compute(
 @router.delete("/{compute_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_compute(
     compute_id: Union[str, UUID], computes_repo: ComputesRepository = Depends(get_repository(ComputesRepository))
-) -> Response:
+) -> None:
     """
     Delete a compute from the controller.
     """
 
     await ComputesService(computes_repo).delete_compute(compute_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{compute_id}/docker/images", response_model=List[schemas.ComputeDockerImage])

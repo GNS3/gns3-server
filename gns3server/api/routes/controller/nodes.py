@@ -130,44 +130,40 @@ async def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Nod
 
 
 @router.post("/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_all_nodes(project: Project = Depends(dep_project)) -> Response:
+async def start_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Start all nodes belonging to a given project.
     """
 
     await project.start_all()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_all_nodes(project: Project = Depends(dep_project)) -> Response:
+async def stop_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Stop all nodes belonging to a given project.
     """
 
     await project.stop_all()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_all_nodes(project: Project = Depends(dep_project)) -> Response:
+async def suspend_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Suspend all nodes belonging to a given project.
     """
 
     await project.suspend_all()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_all_nodes(project: Project = Depends(dep_project)) -> Response:
+async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reload all nodes belonging to a given project.
     """
 
     await project.stop_all()
     await project.start_all()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}", response_model=schemas.Node)
@@ -201,13 +197,12 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}},
 )
-async def delete_node(node_id: UUID, project: Project = Depends(dep_project)) -> Response:
+async def delete_node(node_id: UUID, project: Project = Depends(dep_project)) -> None:
     """
     Delete a node from a project.
     """
 
     await project.delete_node(str(node_id))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/duplicate", response_model=schemas.Node, status_code=status.HTTP_201_CREATED)
@@ -221,65 +216,59 @@ async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Dep
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> Response:
+async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> None:
     """
     Start a node.
     """
 
     await node.start(data=start_data)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_node(node: Node = Depends(dep_node)) -> Response:
+async def stop_node(node: Node = Depends(dep_node)) -> None:
     """
     Stop a node.
     """
 
     await node.stop()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_node(node: Node = Depends(dep_node)) -> Response:
+async def suspend_node(node: Node = Depends(dep_node)) -> None:
     """
     Suspend a node.
     """
 
     await node.suspend()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_node(node: Node = Depends(dep_node)) -> Response:
+async def reload_node(node: Node = Depends(dep_node)) -> None:
     """
     Reload a node.
     """
 
     await node.reload()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/isolate", status_code=status.HTTP_204_NO_CONTENT)
-async def isolate_node(node: Node = Depends(dep_node)) -> Response:
+async def isolate_node(node: Node = Depends(dep_node)) -> None:
     """
     Isolate a node (suspend all attached links).
     """
 
     for link in node.links:
         await link.update_suspend(True)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/unisolate", status_code=status.HTTP_204_NO_CONTENT)
-async def unisolate_node(node: Node = Depends(dep_node)) -> Response:
+async def unisolate_node(node: Node = Depends(dep_node)) -> None:
     """
     Un-isolate a node (resume all attached suspended links).
     """
 
     for link in node.links:
         await link.update_suspend(False)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/links", response_model=List[schemas.Link], response_model_exclude_unset=True)
@@ -321,7 +310,7 @@ async def create_disk_image(
         disk_name: str,
         disk_data: schemas.QemuDiskImageCreate,
         node: Node = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Create a Qemu disk image.
     """
@@ -329,7 +318,6 @@ async def create_disk_image(
     if node.node_type != "qemu":
         raise ControllerBadRequestError("Creating a disk image is only supported on a Qemu node")
     await node.post(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
@@ -337,7 +325,7 @@ async def update_disk_image(
         disk_name: str,
         disk_data: schemas.QemuDiskImageUpdate,
         node: Node = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Update a Qemu disk image.
     """
@@ -345,14 +333,13 @@ async def update_disk_image(
     if node.node_type != "qemu":
         raise ControllerBadRequestError("Updating a disk image is only supported on a Qemu node")
     await node.put(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_disk_image(
         disk_name: str,
         node: Node = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Delete a Qemu disk image.
     """
@@ -360,7 +347,6 @@ async def delete_disk_image(
     if node.node_type != "qemu":
         raise ControllerBadRequestError("Deleting a disk image is only supported on a Qemu node")
     await node.delete(f"/disk_image/{disk_name}")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/files/{file_path:path}")
@@ -451,17 +437,15 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> No
 
 
 @router.post("/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> Response:
+async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reset console for all nodes belonging to the project.
     """
 
     await project.reset_console_all()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def console_reset(node: Node = Depends(dep_node)) -> Response:
+async def console_reset(node: Node = Depends(dep_node)) -> None:
 
     await node.post("/console/reset")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

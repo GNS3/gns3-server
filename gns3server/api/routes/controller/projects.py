@@ -141,7 +141,7 @@ async def update_project(
 async def delete_project(
         project: Project = Depends(dep_project),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Delete a project.
     """
@@ -150,7 +150,6 @@ async def delete_project(
     await project.delete()
     controller.remove_project(project)
     await rbac_repo.delete_all_permissions_with_path(f"/projects/{project.id}")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{project_id}/stats")
@@ -167,13 +166,12 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}},
 )
-async def close_project(project: Project = Depends(dep_project)) -> Response:
+async def close_project(project: Project = Depends(dep_project)) -> None:
     """
     Close a project.
     """
 
     await project.close()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -420,7 +418,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
 
 
 @router.post("/{project_id}/files/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT)
-async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> Response:
+async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
     """
     Write a file to a project.
     """
@@ -444,8 +442,6 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     except OSError as e:
         raise ControllerError(str(e))
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(

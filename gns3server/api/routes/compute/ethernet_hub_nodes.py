@@ -108,43 +108,42 @@ async def update_ethernet_hub(
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> Response:
+async def delete_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Delete an Ethernet hub.
     """
 
     await Dynamips.instance().delete_node(node.id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-def start_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> Response:
+def start_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Start an Ethernet hub.
     This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    pass
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-def stop_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> Response:
+def stop_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Stop an Ethernet hub.
     This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    pass
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-def suspend_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> Response:
+def suspend_ethernet_hub(node: EthernetHub = Depends(dep_node)) -> None:
     """
     Suspend an Ethernet hub.
     This endpoint results in no action since Ethernet hub nodes are always on.
     """
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    pass
 
 
 @router.post(
@@ -175,7 +174,7 @@ async def delete_nio(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: EthernetHub = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
     The adapter number on the hub is always 0.
@@ -183,7 +182,6 @@ async def delete_nio(
 
     nio = await node.remove_nio(port_number)
     await nio.delete()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -212,14 +210,13 @@ async def stop_capture(
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
         node: EthernetHub = Depends(dep_node)
-) -> Response:
+) -> None:
     """
     Stop a packet capture on the node.
     The adapter number on the hub is always 0.
     """
 
     await node.stop_capture(port_number)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")

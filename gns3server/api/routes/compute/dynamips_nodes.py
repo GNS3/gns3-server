@@ -105,17 +105,16 @@ async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depend
 
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_router(node: Router = Depends(dep_node)) -> Response:
+async def delete_router(node: Router = Depends(dep_node)) -> None:
     """
     Delete a Dynamips router.
     """
 
     await Dynamips.instance().delete_node(node.id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
-async def start_router(node: Router = Depends(dep_node)) -> Response:
+async def start_router(node: Router = Depends(dep_node)) -> None:
     """
     Start a Dynamips router.
     """
@@ -125,44 +124,39 @@ async def start_router(node: Router = Depends(dep_node)) -> Response:
     except GeneratorExit:
         pass
     await node.start()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
-async def stop_router(node: Router = Depends(dep_node)) -> Response:
+async def stop_router(node: Router = Depends(dep_node)) -> None:
     """
     Stop a Dynamips router.
     """
 
     await node.stop()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
-async def suspend_router(node: Router = Depends(dep_node)) -> Response:
+async def suspend_router(node: Router = Depends(dep_node)) -> None:
 
     await node.suspend()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
-async def resume_router(node: Router = Depends(dep_node)) -> Response:
+async def resume_router(node: Router = Depends(dep_node)) -> None:
     """
     Resume a suspended Dynamips router.
     """
 
     await node.resume()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
-async def reload_router(node: Router = Depends(dep_node)) -> Response:
+async def reload_router(node: Router = Depends(dep_node)) -> None:
     """
     Reload a suspended Dynamips router.
     """
 
     await node.reload()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -208,14 +202,13 @@ async def update_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_nio(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> Response:
+async def delete_nio(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
     """
 
     nio = await node.slot_remove_nio_binding(adapter_number, port_number)
     await nio.delete()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
@@ -237,13 +230,12 @@ async def start_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_capture(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> Response:
+async def stop_capture(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> None:
     """
     Stop a packet capture on the node.
     """
 
     await node.stop_capture(adapter_number, port_number)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
@@ -301,7 +293,6 @@ async def console_ws(websocket: WebSocket, node: Router = Depends(dep_node)) -> 
 
 
 @router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_console(node: Router = Depends(dep_node)) -> Response:
+async def reset_console(node: Router = Depends(dep_node)) -> None:
 
     await node.reset_console()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
