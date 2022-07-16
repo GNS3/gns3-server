@@ -11,7 +11,7 @@
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
-    "maintainer_email": "none",
+    "maintainer_email": "",
     "first_port_name": "eth0",
     "port_name_format": "Ethernet1/0/{0}",
     "qemu": {
