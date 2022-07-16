@@ -83,13 +83,12 @@ def check_version(version: schemas.Version) -> dict:
     dependencies=[Depends(get_current_active_user)],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def reload() -> Response:
+async def reload() -> None:
     """
     Reload the controller
     """
 
     await Controller.instance().reload()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
@@ -98,7 +97,7 @@ async def reload() -> Response:
     status_code=status.HTTP_204_NO_CONTENT,
     responses={403: {"model": schemas.ErrorMessage, "description": "Server shutdown not allowed"}},
 )
-async def shutdown() -> Response:
+async def shutdown() -> None:
     """
     Shutdown the server
     """
@@ -126,7 +125,6 @@ async def shutdown() -> Response:
 
     # then shutdown the server itself
     os.kill(os.getpid(), signal.SIGTERM)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(

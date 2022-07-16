@@ -103,7 +103,7 @@ def get_compute_project(project: Project = Depends(dep_project)) -> schemas.Proj
 
 
 @router.post("/projects/{project_id}/close", status_code=status.HTTP_204_NO_CONTENT)
-async def close_compute_project(project: Project = Depends(dep_project)) -> Response:
+async def close_compute_project(project: Project = Depends(dep_project)) -> None:
     """
     Close a project on the compute.
     """
@@ -118,18 +118,16 @@ async def close_compute_project(project: Project = Depends(dep_project)) -> Resp
             pass
     else:
         log.warning("Skip project closing, another client is listening for project notifications")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_compute_project(project: Project = Depends(dep_project)) -> Response:
+async def delete_compute_project(project: Project = Depends(dep_project)) -> None:
     """
     Delete project from the compute.
     """
 
     await project.delete()
     ProjectManager.instance().remove_project(project.id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # @Route.get(
 #     r"/projects/{project_id}/notifications",
@@ -219,7 +217,7 @@ async def write_compute_project_file(
         file_path: str,
         request: Request,
         project: Project = Depends(dep_project)
-) -> Response:
+) -> None:
 
     file_path = urllib.parse.unquote(file_path)
     path = os.path.normpath(file_path)
@@ -243,5 +241,3 @@ async def write_compute_project_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
