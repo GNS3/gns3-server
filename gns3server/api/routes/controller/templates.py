@@ -102,7 +102,7 @@ async def delete_template(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         images_repo: RbacRepository = Depends(get_repository(ImagesRepository)),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Delete a template.
     """
@@ -111,7 +111,6 @@ async def delete_template(
     await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
     if prune_images:
         await images_repo.prune_images()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("", response_model=List[schemas.Template], response_model_exclude_unset=True)

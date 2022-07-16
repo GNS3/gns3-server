@@ -106,7 +106,7 @@ async def install_appliance(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Install an appliance.
     """
@@ -120,4 +120,3 @@ async def install_appliance(
         rbac_repo,
         current_user
     )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
