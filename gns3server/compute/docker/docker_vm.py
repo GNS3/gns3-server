@@ -33,6 +33,7 @@ from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio import monitor_process
 from gns3server.utils.get_resource import get_resource
+from gns3server.utils.hostname import is_rfc1123_hostname_valid
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from ..base_node import BaseNode
@@ -88,6 +89,9 @@ class DockerVM(BaseNode):
         memory=0,
         cpus=0,
     ):
+
+        if not is_rfc1123_hostname_valid(name):
+            raise DockerError(f"'{name}' is an invalid name to create a Docker node")
 
         super().__init__(
             name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type
@@ -170,6 +174,18 @@ class DockerVM(BaseNode):
             if not os.path.exists(f"/tmp/.X11-unix/X{display}"):
                 return display
             display += 1
+
+    @BaseNode.name.setter
+    def name(self, new_name):
+        """
+        Sets the name of this Qemu VM.
+
+        :param new_name: name
+        """
+
+        if not is_rfc1123_hostname_valid(new_name):
+            raise DockerError(f"'{new_name}' is an invalid name to rename Docker container '{self._name}'")
+        super(DockerVM, DockerVM).name.__set__(self, new_name)
 
     @property
     def ethernet_adapters(self):

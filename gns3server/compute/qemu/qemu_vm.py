@@ -22,7 +22,6 @@ order to run a QEMU VM.
 import sys
 import os
 import re
-import shlex
 import math
 import shutil
 import struct
@@ -47,6 +46,7 @@ from ..base_node import BaseNode
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
+from ...utils.hostname import is_rfc1123_hostname_valid
 
 from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
 
@@ -85,6 +85,9 @@ class QemuVM(BaseNode):
         aux_type="none",
         platform=None,
     ):
+
+        if not is_rfc1123_hostname_valid(name):
+            raise QemuError(f"'{name}' is an invalid name to create a Qemu node")
 
         super().__init__(
             name,
@@ -171,6 +174,18 @@ class QemuVM(BaseNode):
                     self.config_disk_name = ""
 
         log.info(f'QEMU VM "{self._name}" [{self._id}] has been created')
+
+    @BaseNode.name.setter
+    def name(self, new_name):
+        """
+        Sets the name of this Qemu VM.
+
+        :param new_name: name
+        """
+
+        if not is_rfc1123_hostname_valid(new_name):
+            raise QemuError(f"'{new_name}' is an invalid name to rename Qemu node '{self._name}'")
+        super(QemuVM, QemuVM).name.__set__(self, new_name)
 
     @property
     def guest_cid(self):

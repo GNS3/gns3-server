@@ -19,7 +19,6 @@ API routes for Dynamips nodes.
 """
 
 import os
-import sys
 
 from fastapi import APIRouter, WebSocket, Depends, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -29,7 +28,6 @@ from uuid import UUID
 
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.router import Router
-from gns3server.compute.dynamips.dynamips_error import DynamipsError
 from gns3server import schemas
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}}
