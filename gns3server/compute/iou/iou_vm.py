@@ -226,7 +226,7 @@ class IOUVM(BaseNode):
             raise IOUError(f"IOU image '{self._path}' is not executable")
 
         # set loader command
-        if elf_header_start[4] == b"\x01":
+        if elf_header_start[4] == 1:
             # 32-bit loader
             loader = os.path.join(self._lib_base, "lib", "ld-linux.so.2")
             lib_path = (os.path.join(self._lib_base, "lib"),
