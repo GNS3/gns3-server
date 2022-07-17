@@ -37,6 +37,7 @@ from ..dynamips_error import DynamipsError
 
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio import wait_run_in_executor, monitor_process
+from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.images import md5sum
 
 
@@ -74,6 +75,9 @@ class Router(BaseNode):
         hypervisor=None,
         ghost_flag=False,
     ):
+
+        if not is_ios_hostname_valid(name):
+            raise DynamipsError(f"{name} is an invalid name to create a Dynamips node")
 
         super().__init__(
             name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type
@@ -1652,6 +1656,9 @@ class Router(BaseNode):
 
         :param new_name: new name string
         """
+
+        if not is_ios_hostname_valid(new_name):
+            raise DynamipsError(f"{new_name} is an invalid name to rename router '{self._name}'")
 
         await self._hypervisor.send(f'vm rename "{self._name}" "{new_name}"')
 

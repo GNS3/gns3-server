@@ -46,7 +46,7 @@ def fake_iou_bin(images_dir) -> str:
 def base_params(tmpdir, fake_iou_bin) -> dict:
     """Return standard parameters"""
 
-    return {"application_id": 42, "name": "PC TEST 1", "path": "iou.bin"}
+    return {"application_id": 42, "name": "IOU-TEST-1", "path": "iou.bin"}
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ async def test_iou_create(app: FastAPI, compute_client: AsyncClient, compute_pro
 
     response = await compute_client.post(app.url_path_for("compute:create_iou_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "IOU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["serial_adapters"] == 2
     assert response.json()["ethernet_adapters"] == 2
@@ -93,7 +93,7 @@ async def test_iou_create_with_params(app: FastAPI,
 
     response = await compute_client.post(app.url_path_for("compute:create_iou_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "IOU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["serial_adapters"] == 4
     assert response.json()["ethernet_adapters"] == 0
@@ -104,6 +104,34 @@ async def test_iou_create_with_params(app: FastAPI,
 
     with open(startup_config_file(compute_project, response.json())) as f:
         assert f.read() == "hostname test"
+
+
+@pytest.mark.parametrize(
+    "name, status_code",
+    (
+        ("valid-name", status.HTTP_201_CREATED),
+        ("42name", status.HTTP_409_CONFLICT),
+        ("name42", status.HTTP_201_CREATED),
+        ("-name", status.HTTP_409_CONFLICT),
+        ("name%-test", status.HTTP_409_CONFLICT),
+        ("x" * 63, status.HTTP_201_CREATED),
+        ("x" * 64, status.HTTP_409_CONFLICT),
+    ),
+)
+async def test_iou_create_with_invalid_name(
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        base_params: dict,
+        name: str,
+        status_code: int
+) -> None:
+
+    base_params["name"] = name
+    response = await compute_client.post(
+        app.url_path_for("compute:create_iou_node", project_id=compute_project.id), json=base_params
+    )
+    assert response.status_code == status_code
 
 
 async def test_iou_create_startup_config_already_exist(
@@ -133,7 +161,7 @@ async def test_iou_get(app: FastAPI, compute_client: AsyncClient, compute_projec
 
     response = await compute_client.get(app.url_path_for("compute:get_iou_node", project_id=vm["project_id"], node_id=vm["node_id"]))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "IOU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["serial_adapters"] == 2
     assert response.json()["ethernet_adapters"] == 2

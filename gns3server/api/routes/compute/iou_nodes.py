@@ -20,7 +20,7 @@ API routes for IOU nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, Response, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import Union

@@ -66,7 +66,7 @@ def fake_qemu_img_binary(tmpdir):
 def base_params(tmpdir, fake_qemu_bin) -> dict:
     """Return standard parameters"""
 
-    return {"name": "PC TEST 1", "qemu_path": fake_qemu_bin}
+    return {"name": "QEMU-TEST-1", "qemu_path": fake_qemu_bin}
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ async def test_qemu_create(app: FastAPI,
 
     response = await compute_client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "QEMU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["qemu_path"] == fake_qemu_bin
     assert response.json()["platform"] == "x86_64"
@@ -104,7 +104,7 @@ async def test_qemu_create_platform(app: FastAPI,
     base_params["platform"] = "x86_64"
     response = await compute_client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "QEMU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["qemu_path"] == fake_qemu_bin
     assert response.json()["platform"] == "x86_64"
@@ -122,12 +122,43 @@ async def test_qemu_create_with_params(app: FastAPI,
     params["hda_disk_image"] = "linux载.img"
     response = await compute_client.post(app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=params)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "QEMU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["ram"] == 1024
     assert response.json()["hda_disk_image"] == "linux载.img"
     assert response.json()["hda_disk_image_md5sum"] == "c4ca4238a0b923820dcc509a6f75849b"
 
+
+@pytest.mark.parametrize(
+    "name, status_code",
+    (
+        ("valid-name.com", status.HTTP_201_CREATED),
+        ("42name", status.HTTP_201_CREATED),
+        ("424242", status.HTTP_409_CONFLICT),
+        ("name42", status.HTTP_201_CREATED),
+        ("name.424242", status.HTTP_409_CONFLICT),
+        ("-name", status.HTTP_409_CONFLICT),
+        ("name%-test", status.HTTP_409_CONFLICT),
+        ("x" * 63, status.HTTP_201_CREATED),
+        ("x" * 64, status.HTTP_409_CONFLICT),
+        (("x" * 62 + ".") * 4, status.HTTP_201_CREATED),
+        ("xx" + ("x" * 62 + ".") * 4, status.HTTP_409_CONFLICT),
+    ),
+)
+async def test_qemu_create_with_invalid_name(
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        base_params: dict,
+        name: str,
+        status_code: int
+) -> None:
+
+    base_params["name"] = name
+    response = await compute_client.post(
+        app.url_path_for("compute:create_qemu_node", project_id=compute_project.id), json=base_params
+    )
+    assert response.status_code == status_code
 
 # async def test_qemu_create_with_project_file(app: FastAPI,
 #                                              compute_client: AsyncClient,
@@ -157,7 +188,7 @@ async def test_qemu_get(app: FastAPI, compute_client: AsyncClient, compute_proje
         app.url_path_for("compute:get_qemu_node", project_id=qemu_vm["project_id"], node_id=qemu_vm["node_id"])
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "QEMU-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["node_directory"] == os.path.join(
         compute_project.path,

@@ -42,6 +42,7 @@ from .utils.iou_export import nvram_export
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.asyncio import locking
 import gns3server.utils.asyncio
 import gns3server.utils.images
@@ -69,6 +70,9 @@ class IOUVM(BaseNode):
     def __init__(
         self, name, node_id, project, manager, application_id=None, path=None, console=None, console_type="telnet"
     ):
+
+        if not is_ios_hostname_valid(name):
+            raise IOUError(f"'{name}' is an invalid name to create an IOU node")
 
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
 
@@ -334,6 +338,8 @@ class IOUVM(BaseNode):
         :param new_name: name
         """
 
+        if not is_ios_hostname_valid(new_name):
+            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'")
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
