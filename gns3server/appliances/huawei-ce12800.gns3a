@@ -10,7 +10,7 @@
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
-    "maintainer_email": "none",
+    "maintainer_email": "",
     "port_name_format": "GE1/0/{0}",
     "qemu": {
         "adapter_type": "e1000",

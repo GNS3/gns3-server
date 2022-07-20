@@ -32,7 +32,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login", auto_error=Fals
 async def get_user_from_token(
         bearer_token: str = Depends(oauth2_scheme),
         user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        token: Optional[str] = None,
+        token: Optional[str] = Query(None, include_in_schema=False)
 ) -> schemas.User:
 
     if bearer_token:

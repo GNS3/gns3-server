@@ -90,7 +90,7 @@ async def get_computes(app: FastAPI) -> List[dict]:
 
 def image_filter(change: Change, path: str) -> bool:
 
-    if change == Change.added:
+    if change == Change.added and os.path.isfile(path):
         if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith(".") or \
                 "/lib/" in path or "/lib64/" in path:
             return False

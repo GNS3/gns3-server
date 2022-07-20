@@ -136,7 +136,7 @@ async def update_permission(
 async def delete_permission(
     permission_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> Response:
+) -> None:
     """
     Delete a permission.
     """
@@ -149,16 +149,13 @@ async def delete_permission(
     if not success:
         raise ControllerNotFoundError(f"Permission '{permission_id}' could not be deleted")
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 @router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
 async def prune_permissions(
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Prune orphaned permissions.
     """
 
     await rbac_repo.prune_permissions()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

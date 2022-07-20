@@ -427,6 +427,7 @@ class Node:
         # When updating properties used only on controller we don't need to call the compute
         update_compute = False
         old_json = self.asdict()
+        old_name = self._name
 
         compute_properties = None
         # Update node properties with additional elements
@@ -454,7 +455,13 @@ class Node:
         self._list_ports()
         if update_compute:
             data = self._node_data(properties=compute_properties)
-            response = await self.put(None, data=data)
+            try:
+                response = await self.put(None, data=data)
+            except ComputeConflictError:
+                if old_name != self.name:
+                    # special case when the new name is already updated on controller but refused by the compute
+                    self.name = old_name
+                raise
             await self.parse_node_response(response.json)
         elif old_json != self.asdict():
             # We send notif only if object has changed

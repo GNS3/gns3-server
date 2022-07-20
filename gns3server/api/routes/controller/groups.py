@@ -113,7 +113,7 @@ async def update_user_group(
 async def delete_user_group(
     user_group_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> Response:
+) -> None:
     """
     Delete an user group
     """
@@ -128,8 +128,6 @@ async def delete_user_group(
     success = await users_repo.delete_user_group(user_group_id)
     if not success:
         raise ControllerError(f"User group '{user_group_id}' could not be deleted")
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{user_group_id}/members", response_model=List[schemas.User])
@@ -152,7 +150,7 @@ async def add_member_to_group(
         user_group_id: UUID,
         user_id: UUID,
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
-) -> Response:
+) -> None:
     """
     Add member to an user group.
     """
@@ -165,8 +163,6 @@ async def add_member_to_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 @router.delete(
     "/{user_group_id}/members/{user_id}",
@@ -176,7 +172,7 @@ async def remove_member_from_group(
     user_group_id: UUID,
     user_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-) -> Response:
+) -> None:
     """
     Remove member from an user group.
     """
@@ -188,8 +184,6 @@ async def remove_member_from_group(
     user_group = await users_repo.remove_member_from_user_group(user_group_id, user)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{user_group_id}/roles", response_model=List[schemas.Role])
@@ -226,8 +220,6 @@ async def add_role_to_group(
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 @router.delete(
     "/{user_group_id}/roles/{role_id}",
@@ -238,7 +230,7 @@ async def remove_role_from_group(
     role_id: UUID,
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Remove role from an user group.
     """
@@ -250,5 +242,3 @@ async def remove_role_from_group(
     user_group = await users_repo.remove_role_from_user_group(user_group_id, role)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

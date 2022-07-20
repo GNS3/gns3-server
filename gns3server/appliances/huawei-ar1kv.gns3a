@@ -11,7 +11,7 @@
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
-    "maintainer_email": "none",
+    "maintainer_email": "",
     "usage": "Default user is super, default password is super.",
     "port_name_format": "GigabitEthernet0/0/{0}",
     "qemu": {

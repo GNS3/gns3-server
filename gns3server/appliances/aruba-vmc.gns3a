@@ -4,7 +4,7 @@
     "category": "guest",
     "description": "Aruba Virtual Mobility Controller",
     "vendor_name": "HPE Aruba",
-    "vendor_url": "arubanetworks.com",
+    "vendor_url": "https://www.arubanetworks.com",
     "product_name": "Aruba VMC",
     "registry_version": 4,
     "status": "stable",

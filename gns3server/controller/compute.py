@@ -23,7 +23,7 @@ import socket
 import json
 import sys
 import io
-from operator import itemgetter
+from fastapi import HTTPException
 from aiohttp import web
 
 from ..utils import parse_version
@@ -576,12 +576,13 @@ class Compute:
                 # If the 409 doesn't come from a GNS3 server
                 except ValueError:
                     raise ControllerError(msg)
-            elif response.status == 500:
-                raise aiohttp.web.HTTPInternalServerError(text=f"Internal server error {url}")
-            elif response.status == 503:
-                raise aiohttp.web.HTTPServiceUnavailable(text=f"Service unavailable {url} {body}")
             else:
-                raise NotImplementedError(f"{response.status} status code is not supported for {method} '{url}'\n{body}")
+                raise HTTPException(
+                    status_code=response.status,
+                    detail=f"HTTP error {response.status} received from compute "
+                           f"'{self.name}' for request {method} {path}: {msg}"
+                )
+
         if body and len(body):
             if raw:
                 response.body = body
