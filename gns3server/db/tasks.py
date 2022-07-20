@@ -91,7 +91,8 @@ async def get_computes(app: FastAPI) -> List[dict]:
 def image_filter(change: Change, path: str) -> bool:
 
     if change == Change.added:
-        if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith("."):
+        if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith(".") or \
+                "/lib/" in path or "/lib64/" in path:
             return False
         header_magic_len = 7
         with open(path, "rb") as f:
