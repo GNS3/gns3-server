@@ -91,8 +91,10 @@ async def get_computes(app: FastAPI) -> List[dict]:
 def image_filter(change: Change, path: str) -> bool:
 
     if change == Change.added and os.path.isfile(path):
-        if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith(".") or \
-                "/lib/" in path or "/lib64/" in path:
+        if path.endswith(".tmp") or path.endswith(".md5sum") or path.startswith("."):
+            return False
+        if "/lib/" in path or "/lib64/" in path:
+            # ignore custom IOU libraries
             return False
         header_magic_len = 7
         with open(path, "rb") as f:
@@ -101,10 +103,10 @@ def image_filter(change: Change, path: str) -> bool:
                 try:
                     check_valid_image_header(image_header)
                 except InvalidImageError as e:
-                    log.debug(f"New image '{path}' added: {e}")
+                    log.debug(f"New image '{path}': {e}")
                     return False
             else:
-                log.debug(f"New image '{path}' added: size is too small to be valid")
+                log.debug(f"New image '{path}': size is too small to be valid")
                 return False
         return True
     # FIXME: should we support image deletion?

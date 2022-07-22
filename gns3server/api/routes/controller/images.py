@@ -69,7 +69,8 @@ async def upload_image(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        install_appliances: Optional[bool] = False
+        install_appliances: Optional[bool] = False,
+        allow_raw_image: Optional[bool] = False
 ) -> schemas.Image:
     """
     Upload an image.
@@ -90,7 +91,7 @@ async def upload_image(
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
 
     try:
-        image = await write_image(image_path, full_path, request.stream(), images_repo)
+        image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)
     except (OSError, InvalidImageError, ClientDisconnect) as e:
         raise ControllerError(f"Could not save image '{image_path}': {e}")
 
