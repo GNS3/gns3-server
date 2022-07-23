@@ -67,23 +67,23 @@ echo "Re-create: $GNS3SERVER_DIR/gns3server/static/web-ui"
 mkdir -p "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 if [ "$CUSTOM_REPO" = false ] ; then
-    if [ ! -d /tmp/gns3-web-ui ]; then
+    if [ ! -d "$REPO_DIR" ]; then
         git clone https://github.com/GNS3/gns3-web-ui.git "$REPO_DIR"
-    else
-      cd "$REPO_DIR"
-
-      git checkout master
-      git fetch --tags
-      git pull
-
-      if [[ -n "$TAG" ]]
-      then
-        echo "Switching to tag: ${TAG}"
-        git checkout "tags/${TAG}"
-      fi
-
-      cd "$CURRENT_DIR"
     fi
+
+    cd "$REPO_DIR"
+
+    git checkout master-3.0
+    git fetch --tags
+    git pull
+
+    if [[ -n "$TAG" ]]
+    then
+      echo "Switching to tag: ${TAG}"
+      git checkout "tags/${TAG}"
+    fi
+
+    cd "$CURRENT_DIR"
 fi
 
 echo "Current working dir $REPO_DIR"
