@@ -26,7 +26,7 @@ class DockerTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "{name}-{0}"
-    symbol: Optional[str] = ":/symbols/docker_guest.svg"
+    symbol: Optional[str] = "docker_guest"
     image: str = Field(..., description="Docker image name")
     adapters: Optional[int] = Field(1, ge=0, le=100, description="Number of adapters")
     start_command: Optional[str] = Field("", description="Docker CMD entry")

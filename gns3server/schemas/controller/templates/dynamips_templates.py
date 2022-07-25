@@ -34,7 +34,7 @@ class DynamipsTemplate(TemplateBase):
 
     category: Optional[Category] = "router"
     default_name_format: Optional[str] = "R{0}"
-    symbol: Optional[str] = ":/symbols/router.svg"
+    symbol: Optional[str] = "router"
     platform: DynamipsPlatform = Field(..., description="Cisco router platform")
     image: str = Field(..., description="Path to the IOS image")
     exec_area: Optional[int] = Field(64, description="Exec area value")

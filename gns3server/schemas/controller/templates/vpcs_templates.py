@@ -26,7 +26,7 @@ class VPCSTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "PC{0}"
-    symbol: Optional[str] = ":/symbols/vpcs_guest.svg"
+    symbol: Optional[str] = "vpcs_guest"
     base_script_file: Optional[str] = Field("vpcs_base_config.txt", description="Script file")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")
     console_auto_start: Optional[bool] = Field(

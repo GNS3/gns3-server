@@ -43,7 +43,9 @@ class Symbols:
 
         # Keep a cache of symbols size
         self._symbol_size_cache = {}
-        self._current_theme = "Classic"
+
+        self._server_config = Config.instance().settings.Server
+        self._current_theme = self._server_config.default_symbol_theme
         self._themes = BUILTIN_SYMBOL_THEMES
 
     @property
@@ -66,10 +68,11 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            raise ControllerNotFoundError(f"Could not find symbol theme '{symbol_theme}'")
+            log.warning(f"Could not find symbol theme '{symbol_theme}'")
+            return None
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
-            log.warning(f"Default symbol {symbol_path} was not found")
+            log.warning(f"Default symbol {symbol} was not found")
             return None
         return symbol_path
 
@@ -125,7 +128,17 @@ class Symbols:
 
         return self._symbols_path.get(symbol_id)
 
+    def resolve_symbol(self, symbol_name):
+
+        if not symbol_name.startswith(":/"):
+            symbol = self.get_default_symbol(symbol_name, self._current_theme)
+            if symbol:
+                return symbol
+        return symbol_name
+
     def get_path(self, symbol_id):
+
+        symbol_id = self.resolve_symbol(symbol_id)
         try:
             return self._symbols_path[symbol_id]
         except KeyError:
