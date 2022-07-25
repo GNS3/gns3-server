@@ -281,7 +281,7 @@ class ApplianceManager:
             template_data = await self._appliance_to_template(appliance)
             await self._create_template(template_data, templates_repo, rbac_repo, current_user)
 
-    def load_appliances(self, symbol_theme: str = "Classic") -> None:
+    def load_appliances(self, symbol_theme: str = None) -> None:
         """
         Loads appliance files from disk.
         """
@@ -326,6 +326,8 @@ class ApplianceManager:
         from . import Controller
 
         controller = Controller.instance()
+        if not symbol_theme:
+            symbol_theme = controller.symbols.theme
         category = appliance["category"]
         if category == "guest":
             if "docker" in appliance:

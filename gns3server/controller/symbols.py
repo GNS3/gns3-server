@@ -68,7 +68,7 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            log.warning(f"Could not find symbol theme '{self._current_theme}'")
+            log.warning(f"Could not find symbol theme '{symbol_theme}'")
             return None
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
