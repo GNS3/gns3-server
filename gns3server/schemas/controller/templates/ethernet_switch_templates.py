@@ -47,7 +47,7 @@ class EthernetSwitchTemplate(TemplateBase):
 
     category: Optional[Category] = "switch"
     default_name_format: Optional[str] = "Switch{0}"
-    symbol: Optional[str] = ":/symbols/ethernet_switch.svg"
+    symbol: Optional[str] = "ethernet_switch"
     ports_mapping: Optional[List[EthernetSwitchPort]] = Field(DEFAULT_PORTS, description="Ports")
     console_type: Optional[ConsoleType] = Field("none", description="Console type")
 

@@ -26,7 +26,7 @@ class IOUTemplate(TemplateBase):
 
     category: Optional[Category] = "router"
     default_name_format: Optional[str] = "IOU{0}"
-    symbol: Optional[str] = ":/symbols/multilayer_switch.svg"
+    symbol: Optional[str] = "multilayer_switch"
     path: str = Field(..., description="Path of IOU executable")
     ethernet_adapters: Optional[int] = Field(2, description="Number of ethernet adapters")
     serial_adapters: Optional[int] = Field(2, description="Number of serial adapters")

@@ -30,7 +30,7 @@ class VirtualBoxTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "{name}-{0}"
-    symbol: Optional[str] = ":/symbols/vbox_guest.svg"
+    symbol: Optional[str] = "vbox_guest"
     vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
     ram: Optional[int] = Field(256, gt=0, description="Amount of RAM in MB")
     linked_clone: Optional[bool] = Field(False, description="Whether the VM is a linked clone or not")

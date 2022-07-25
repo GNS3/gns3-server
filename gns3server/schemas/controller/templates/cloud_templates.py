@@ -31,7 +31,7 @@ class CloudTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "Cloud{0}"
-    symbol: Optional[str] = ":/symbols/cloud.svg"
+    symbol: Optional[str] = "cloud"
     ports_mapping: List[Union[EthernetPort, TAPPort, UDPPort]] = Field(default_factory=list)
     remote_console_host: Optional[str] = Field("127.0.0.1", description="Remote console host or IP")
     remote_console_port: Optional[int] = Field(23, gt=0, le=65535, description="Remote console TCP port")

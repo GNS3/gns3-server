@@ -17,8 +17,8 @@
 
 import os
 
-
 from gns3server.controller.symbols import Symbols
+from gns3server.controller.symbol_themes import BUILTIN_SYMBOL_THEMES
 from gns3server.utils.get_resource import get_resource
 
 
@@ -47,6 +47,15 @@ def test_get_path():
     symbols = Symbols()
     symbols.theme = "Classic"
     assert symbols.get_path(':/symbols/classic/firewall.svg') == get_resource("symbols/classic/firewall.svg")
+
+
+def test_get_path_with_themed_symbols():
+
+    symbols = Symbols()
+    for symbol_theme, symbols_table in BUILTIN_SYMBOL_THEMES.items():
+        symbols.theme = symbol_theme
+        for symbol_name, symbol_path in symbols_table.items():
+            assert symbols.get_path(symbol_name) == get_resource(symbol_path[2:])
 
 
 def test_get_size():

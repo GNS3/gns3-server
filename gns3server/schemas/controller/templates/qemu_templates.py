@@ -35,7 +35,7 @@ class QemuTemplate(TemplateBase):
 
     category: Optional[Category] = "guest"
     default_name_format: Optional[str] = "{name}-{0}"
-    symbol: Optional[str] = ":/symbols/qemu_guest.svg"
+    symbol: Optional[str] = "qemu_guest"
     qemu_path: Optional[str] = Field("", description="Qemu executable path")
     platform: Optional[QemuPlatform] = Field("x86_64", description="Platform to emulate")
     linked_clone: Optional[bool] = Field(True, description="Whether the VM is a linked clone or not")
