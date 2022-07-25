@@ -43,7 +43,9 @@ class Symbols:
 
         # Keep a cache of symbols size
         self._symbol_size_cache = {}
-        self._current_theme = "Affinity-square-blue"
+
+        self._server_config = Config.instance().settings.Server
+        self._current_theme = self._server_config.default_symbol_theme
         self._themes = BUILTIN_SYMBOL_THEMES
 
     @property
@@ -66,7 +68,8 @@ class Symbols:
 
         theme = self._themes.get(symbol_theme, None)
         if not theme:
-            raise ControllerNotFoundError(f"Could not find symbol theme '{symbol_theme}'")
+            log.warning(f"Could not find symbol theme '{self._current_theme}'")
+            return None
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
             log.warning(f"Default symbol {symbol} was not found")
