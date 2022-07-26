@@ -22,7 +22,7 @@ from uuid import UUID
 from ..common import NodeStatus
 
 
-class HostInterfaceType(Enum):
+class HostInterfaceType(str, Enum):
 
     ethernet = "ethernet"
     tap = "tap"
@@ -38,7 +38,7 @@ class HostInterface(BaseModel):
     special: bool = Field(..., description="Whether the interface is non standard")
 
 
-class EthernetType(Enum):
+class EthernetType(str, Enum):
     ethernet = "ethernet"
 
 
@@ -53,7 +53,7 @@ class EthernetPort(BaseModel):
     interface: str
 
 
-class TAPType(Enum):
+class TAPType(str, Enum):
     tap = "tap"
 
 
@@ -68,7 +68,7 @@ class TAPPort(BaseModel):
     interface: str
 
 
-class UDPType(Enum):
+class UDPType(str, Enum):
     udp = "udp"
 
 
@@ -85,7 +85,7 @@ class UDPPort(BaseModel):
     rport: int = Field(..., gt=0, le=65535, description="Remote port")
 
 
-class CloudConsoleType(Enum):
+class CloudConsoleType(str, Enum):
 
     telnet = "telnet"
     vnc = "vnc"

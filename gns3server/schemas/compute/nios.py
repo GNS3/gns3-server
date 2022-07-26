@@ -20,7 +20,7 @@ from typing import Optional
 from enum import Enum
 
 
-class UDPNIOType(Enum):
+class UDPNIOType(str, Enum):
 
     udp = "nio_udp"
 
@@ -38,7 +38,7 @@ class UDPNIO(BaseModel):
     filters: Optional[dict] = Field(None, description="Packet filters")
 
 
-class EthernetNIOType(Enum):
+class EthernetNIOType(str, Enum):
 
     ethernet = "nio_ethernet"
 
@@ -52,7 +52,7 @@ class EthernetNIO(BaseModel):
     ethernet_device: str = Field(..., description="Ethernet device name e.g. eth0")
 
 
-class TAPNIOType(Enum):
+class TAPNIOType(str, Enum):
 
     tap = "nio_tap"
 
