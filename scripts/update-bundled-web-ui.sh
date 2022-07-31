@@ -91,7 +91,9 @@ echo "Current working dir $REPO_DIR"
 cd "$REPO_DIR"
 
 yarn install
-yarn ng build --source-map=false --configuration=production --base-href /static/web-ui/
+
+# FIXME: remove --build-optimizer=false
+yarn ng build --source-map=false --build-optimizer=false --configuration=production --base-href /static/web-ui/
 
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
