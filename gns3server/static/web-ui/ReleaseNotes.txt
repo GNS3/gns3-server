@@ -1,10 +1,9 @@
 GNS3 WebUI is web implementation of user interface for GNS3 software.
 
-Current version: 2.2.32
+Current version: 2.2.24
 
 Bug Fixes & enhancements
-- Fixed generated capture file is not valid
-- Fixed Docker additional directories
+- security fixes
 
 Current version: 2020.4.0-beta.1
 
@@ -68,7 +67,7 @@ GNS3 Web UI 2020.2.0-beta.4
 Bug Fixes
 - New port setting for GNS3 VM preferences
 - Option to auto-hide menu toolbar on the left side
-- Server type in template preferences
+-Controller  type in template preferences
 - Error when selecting existing Docker image
 - Default values in templates
 - TypeError: Cannot read property 'message' of undefined
