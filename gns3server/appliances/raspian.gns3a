@@ -15,7 +15,7 @@
     "usage": "Default password is raspberry",
     "symbol": "rpi.png",
     "qemu": {
-        "adapter_type": "virtio",
+        "adapter_type": "e1000",
         "adapters": 1,
         "ram": 1024,
         "hda_disk_interface": "sata",
@@ -25,6 +25,20 @@
     },
     "images": [
         {
+            "filename": "2022-07-01-raspios-bullseye-i386.iso",
+            "version": "2022-07-01",
+            "md5sum": "e57f42852306ac5ed0d9e97bdc3513cb",
+            "filesize": 3607101440,
+            "download_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/"
+        },
+        {
+            "filename": "2021-01-11-raspios-buster-i386.iso",
+            "version": "2021-01-11",
+            "md5sum": "14c0b29c393adee45b90d265b3243564",
+            "filesize": 3091660800,
+            "download_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/"
+        },
+		{
             "filename": "2020-02-12-rpd-x86-buster.iso",
             "version": "2020-02-12",
             "md5sum": "98f34fb53086752b4c9c452094f30740",
@@ -41,6 +55,20 @@
     ],
     "versions": [
         {
+            "name": "2022-07-01",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "2022-07-01-raspios-bullseye-i386.iso"
+            }
+        },
+        {
+            "name": "2021-01-11",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "2021-01-11-raspios-buster-i386.iso"
+            }
+        },
+		{
             "name": "2020-02-12",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",

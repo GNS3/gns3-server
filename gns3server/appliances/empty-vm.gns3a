@@ -2,7 +2,7 @@
     "appliance_id": "1cfdf900-7c30-4cb7-8f03-3f61d2581633",
     "name": "Empty VM",
     "category": "guest",
-    "description": "An empty VM with empty hard disks 8G, 30G & 100G.",
+    "description": "A empty VM with empty hard disks 8G, 30G, 100G & 200G.",
     "vendor_name": "GNS3",
     "vendor_url": "https://gns3.com",
     "documentation_url": "",
@@ -20,7 +20,7 @@
         "ram": 1024,
         "arch": "x86_64",
         "console_type": "vnc",
-		"hda_disk_interface": "sata",
+		    "hda_disk_interface": "sata",
         "boot_priority": "d",
         "kvm": "allow"
     },
@@ -48,6 +48,14 @@
             "filesize": 198656,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
+        },
+        {
+            "filename": "empty200G.qcow2",
+            "version": "200G",
+            "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
+            "filesize": 200192,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
         }
     ],
     "versions": [
@@ -63,10 +71,16 @@
                 "hda_disk_image": "empty30G.qcow2"
             }
         },
-		    {
+        {
             "name": "100G",
             "images": {
                 "hda_disk_image": "empty100G.qcow2"
+            }
+        },
+		    {
+            "name": "200G",
+            "images": {
+                "hda_disk_image": "empty200G.qcow2"
             }
         }
 	]
