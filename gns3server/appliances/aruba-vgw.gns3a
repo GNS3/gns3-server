@@ -4,7 +4,7 @@
     "category": "firewall",
     "description": "Aruba Virtual Gateways allow customers to bring their public cloud infrastructure to the SD-WAN fabric and facilitate connectivity between branches and the public cloud.",
     "vendor_name": "HPE Aruba",
-    "vendor_url": "arubanetworks.com",
+    "vendor_url": "https://www.arubanetworks.com",
     "documentation_url": "https://asp.arubanetworks.com/downloads;products=Aruba%20SD-WAN",
     "product_name": "Aruba SD-WAN Virtual Gateway",
     "product_url": "https://www.arubanetworks.com/products/networking/gateways-and-controllers/",

@@ -1,5 +1,157 @@
 # Change Log
 
+## 3.0.0a1 04/08/2022
+
+* Bundle gns3-web-ui v3.0.0a1
+* Use default symbol theme if none is provided when loading appliances
+* Allow default symbol theme to be configured in config file
+* Optionally allow Qemu raw images
+* Ignore image detection for IOU user libraries in image directory
+* Don't show optional token param in API docs
+* Fix check for 32-bit in ELF header
+* Checks for valid hostname on server side for Dynamips, IOU, Qemu and Docker nodes
+* Only check files (not directories) when looking for new images on file system.
+* Support user defined loader/libraries to run IOU
+* Make 'vendor_url' and 'maintainer_email' optional for template validation.
+* Allow auth token to be passed as a URL param
+* HTTP middleware create issues when streaming project archive
+* Add zstandard compression support for project export
+* Make sure that the temporary image file is removed after uploading an image
+* Do not cache to md5sum file in some situations
+* Detect new images added to the default image directory. * Images can be present before the server starts or while it is running * Images are recorded in the database
+* Support delete Qemu disk image from API Return the real disk image name in the 'hdx_disk_image_backed' property for Qemu VMs
+* Handle creating Qemu disk images and resizing
+* Finish to clean up local setting usage. Ref #1460
+* "Local" command line parameter is only for stopping a server that has been started by the desktop GUI
+* Fix AsyncSession handling after breaking changes in FastAPI 0.74.0 See https://github.com/tiangolo/fastapi/releases/tag/0.74.0 for details.
+* Detect image type instead of requesting it from user
+* Drop Python 3.6 support and require Python >= 3.7
+* Drop Windows support
+* Add connect endpoint for computes Param to connect to compute after creation Report compute unauthorized HTTP errors to client
+* Replace CORS origins by origin regex
+* Change default config settings
+* Update Docker image for tests
+* Fix calls to static methods in server.py
+* Do not require the local server param to open a .gns3 file. Fixes https://github.com/GNS3/gns3-gui/issues/2421 Ref #1460
+* Do not automatically install appliance after uploading image
+* Ignore OSError when closing websocket
+* Allow empty compute_id. Ref #1657
+* Secure controller to compute communication using HTTP basic authentication
+* Secure websocket endpoints
+* Fix issue when updating a template
+* Allocate compute when compute_id is unset
+* Return the current controller hostname/IP from any compute
+* Remove Qemu legacy networking support
+* Add a custom version to an appliance
+* Appliance management refactoring: * Install an appliance based on selected version * Each template have unique name and version * Allow to download an appliance file
+* Finalize image management refactoring and auto install appliance if possible
+* Sqlite doesn't allow BigInteger to be used as an primary key with autoincrement
+* Add isolate and unisolate endpoints. Ref https://github.com/GNS3/gns3-gui/issues/3190
+* Small db tables adjustments
+* Add index for "name" field in role table
+* Allow images to be stored in subdirs and used by templates.
+* Option to prune images when deleting template.
+* Associate images when creating or updating a template.
+* Add prune images endpoint. Use many-to-many relationship between images and templates.
+* Check if user has the right to add a permission
+* Only use the necessary HTTP methods for default permissions
+* Add /permissions/prune to delete orphaned permissions
+* Check a permission matches an existing route before it is allowed to be created.
+* Remove busybox and copy system busybox in setup.py
+* Save image size + start to automatic template creation based on image checksum.
+* Upgrade dependencies
+* Fix "-machine accel=tcg" check
+* Allow logged in user to change some of its data. Administrators can lock users using the `is_active` field.
+* Symbols endpoints (except upload) don't require authentication.
+* Update to the udhcpc wrapper script. Ref #1890
+* Fix link style merge
+* Start refactoring for images management
+* Allow controller to be reloaded using the API. Fixes #1743
+* Use a stock BusyBox for the Docker Integration
+* Move "/{project_id}/templates/{template_id}" endpoint.
+* Add last login info for users.
+* Change RBAC field names from builtin to is_builtin
+* Add user permissions + RBAC tests.
+* Add description for user permission.
+* Save/restore appliances Etag.
+* Allow to set the initial super admin username / password in server config file. Ref #1857
+* Require authentication for get_user_memberships endpoint.
+* Change method to prevent forbidden directory traversal. Ref #1894
+* Add user groups support.
+* Add delete cascade on foreign keys for appliance table
+* Enable SQL foreign key support for SQLite
+* Add missing CORS origins.
+* Show topology path when check topology schema fails.
+* Protect controller notification endpoints. Ref #1888 (WebSocket endpoint is not secured, it takes an optional token).
+* Use uuid5 to create new compute_id. Fixes #1641 #1887
+* Protect the API and add alternative authentication endpoint.
+* Secure users API and handle manual password recovery.
+* Add default super admin account in controller db.
+* Complete type annotations for API endpoints.
+* Detect the app is exiting and avoid reconnecting to computes.
+* Move schemas between compute and controller subpackages
+* Remove traceng code.
+* Move error responses to API routers.
+* Wait for local compute to be started. Don't reconnect to local compute when server is being stopped.
+* Rename ssl and auth configuration file settings. Add enable SSL config validator. Strict configuration file validation: any error will prevent the server to start. Core server logic moved to a Server class.
+* Generate new config for each test. Fixes tests.
+* Use Pydantic to validate the server config file.
+* Add symbol dimensions endpoint and SSL support for packet capture with remote HTTPS server.
+* Save computes to database
+* Generate a new list in template schema defaults.
+* Generate JWT secret key if none is configured in the config file. Change location of the database.
+* User authentication with tests.
+* Refactor tests and start work on database integration.
+* Move endpoints to routes & preparations to use a database.
+* Providing the path to create a project is now deprecated.
+* Add back script to create a self-signed SSL certificate.
+* Make sure all HTTP exceptions return JSON with a "message" field instead of "detail"
+* Make Swagger Ui the default for API documentation
+* Move to version 3 of the REST API. Rename packet capture endpoints.
+* Use pydantic for data validation (instead of jsonschema) Fix/improve various pydantic schema models.
+* Automate API documentation publishing.
+* Publish API documentation generated by FastAPI.
+* Overwrite uvicorn loggers.
+* Do not automatically connect to local compute.
+* Add HTTP client to reuse the aiohttp session where needed. Remove unnecessary aiohttp exceptions.
+* Warn not to use the private compute API. Fixes #1593.
+* Migrate PCAP streaming code to work with FastAPI.
+* Refactor WebSocket console code to work with FastAPI. Fix endpoint routes.
+* Use dependencies and group common HTTP responses in endpoints.
+* Migration to FastAPI
+* Prioritize the config disk over HD-D for Qemu VMs. Fixes https://github.com/GNS3/gns3-gui/issues/3036
+* Create config disk property false by default for Qemu templates
+* Set default disk interface type to "none". Fail-safe: use "ide" if an image is set but no interface type is configured. Use the HDA disk interface type if none has been configured for HDD.
+* Add explicit option to automatically create or not the config disk. Off by default.
+* Auxiliary console support for Qemu. Ref #2873 Improvements for auxiliary console support for Docker and Dynamips.
+* Fix AUX console not allocated for Dynamips IOS routers.
+* Disallow to rename a running node. Fixes https://github.com/GNS3/gns3-gui/issues/2499
+* Support to reset all console connections. Ref https://github.com/GNS3/gns3-server/issues/1619
+* Support to reset links. Fixes https://github.com/GNS3/gns3-server/issues/1620
+* Add maxcpus property for Qemu VMs. Ref #1674
+* QEMU config disk support
+* Read folder structure correctly for custom symbols. Fixes https://github.com/GNS3/gns3-gui/issues/2856
+* Add total RAM, CPUs and disk size to servers summary as well as disk usage in percent. Fixes https://github.com/GNS3/gns3-server/issues/1532
+* Resource constraints for Docker VMs.
+* Update IOUtools. Ref #1627
+* Use parent directory as working directory for project duplication and snapshots. Fixes https://github.com/GNS3/gns3-gui/issues/2909
+* Support for "usage" for "Cloud" nodes. Fixes https://github.com/GNS3/gns3-gui/issues/2887 Allow "usage" for all builtin nodes (not exposed in Ui).
+
+## 2.2.33.1 21/06/2022
+
+* Add missing file for web-ui v2.2.33
+
+## 2.2.33 20/06/2022
+
+* Release web-ui v2.2.33
+* Upgrade sentry-sdk and psutil
+* Remove parameter "Name" not useful to create a Docker container
+* Support to reset all console connections. Ref https://github.com/GNS3/gns3-server/issues/1619
+* Config option to disable built-in templates
+* Add hostname entry to sample network config for Docker nodes. Fixes #2039
+* Run Xtigervnc with MIT-SHM extension disabled for Docker VNC console support. Fixes #2071
+* Added OpenRC init script
+
 ## 2.2.32 27/04/2022
 
 * Docker: load custom interface files from /etc/network/interfaces (commented by default). Ref #2052

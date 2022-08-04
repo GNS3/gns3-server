@@ -26,12 +26,25 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
 from .database import get_repository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login", auto_error=False)
 
 
 async def get_user_from_token(
-    token: str = Depends(oauth2_scheme), user_repo: UsersRepository = Depends(get_repository(UsersRepository))
+        bearer_token: str = Depends(oauth2_scheme),
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        token: Optional[str] = Query(None, include_in_schema=False)
 ) -> schemas.User:
+
+    if bearer_token:
+        # bearer token is used first, then any token passed as a URL parameter
+        token = bearer_token
+
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     username = auth_service.get_username_from_token(token)
     user = await user_repo.get_user_by_username(username)

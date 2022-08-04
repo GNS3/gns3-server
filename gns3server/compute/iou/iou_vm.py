@@ -42,6 +42,7 @@ from .utils.iou_export import nvram_export
 from gns3server.compute.ubridge.ubridge_error import UbridgeError
 from gns3server.utils.file_watcher import FileWatcher
 from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
+from gns3server.utils.hostname import is_ios_hostname_valid
 from gns3server.utils.asyncio import locking
 import gns3server.utils.asyncio
 import gns3server.utils.images
@@ -70,6 +71,9 @@ class IOUVM(BaseNode):
         self, name, node_id, project, manager, application_id=None, path=None, console=None, console_type="telnet"
     ):
 
+        if not is_ios_hostname_valid(name):
+            raise IOUError(f"'{name}' is an invalid name to create an IOU node")
+
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type)
 
         log.info(
@@ -84,6 +88,8 @@ class IOUVM(BaseNode):
         self._started = False
         self._nvram_watcher = None
         self._path = self.manager.get_abs_image_path(path, project.path)
+        self._lib_base = self.manager.get_images_directory()
+        self._loader = None
         self._license_check = True
 
         # IOU settings
@@ -143,6 +149,7 @@ class IOUVM(BaseNode):
         """
 
         self._path = self.manager.get_abs_image_path(path, self.project.path)
+        self._loader = None
         log.info(f'IOU "{self._name}" [{self._id}]: IOU image updated to "{self._path}"')
 
     @property
@@ -174,9 +181,10 @@ class IOUVM(BaseNode):
         Finds the default RAM and NVRAM values for the IOU image.
         """
 
+        await self._check_requirements()
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output(
-                self._path, "-h", cwd=self.working_dir, stderr=True
+                *self._loader, self._path, "-h", cwd=self.working_dir, stderr=True
             )
             match = re.search(r"-n <n>\s+Size of nvram in Kb \(default ([0-9]+)KB\)", output)
             if match:
@@ -191,11 +199,13 @@ class IOUVM(BaseNode):
 
         await self.update_default_iou_values()
 
-    def _check_requirements(self):
+    async def _check_requirements(self):
         """
         Checks the IOU image.
         """
 
+        if self._loader is not None:
+            return  # image already checked
         if not self._path:
             raise IOUError("IOU image is not configured")
         if not os.path.isfile(self._path) or not os.path.exists(self._path):
@@ -218,6 +228,28 @@ class IOUVM(BaseNode):
 
         if not os.access(self._path, os.X_OK):
             raise IOUError(f"IOU image '{self._path}' is not executable")
+
+        # set loader command
+        if elf_header_start[4] == 1:
+            # 32-bit loader
+            loader = os.path.join(self._lib_base, "lib", "ld-linux.so.2")
+            lib_path = (os.path.join(self._lib_base, "lib"),
+                        os.path.join(self._lib_base, "lib", "i386-linux-gnu"))
+        else:
+            # 64-bit loader
+            loader = os.path.join(self._lib_base, "lib64", "ld-linux-x86-64.so.2")
+            lib_path = (os.path.join(self._lib_base, "lib64"),
+                        os.path.join(self._lib_base, "lib", "x86_64-linux-gnu"))
+        self._loader = []
+        if os.path.isfile(loader):
+            try:
+                proc = await asyncio.create_subprocess_exec(loader, "--verify", self._path)
+                if await proc.wait() == 0:
+                    self._loader = [loader, "--library-path", ":".join(lib_path)]
+                else:
+                    log.warning(f"Loader {loader} incompatible with '{self._path}'")
+            except (OSError, subprocess.SubprocessError) as e:
+                log.warning(f"Could not use loader {loader}: {e}")
 
     def asdict(self):
 
@@ -334,6 +366,8 @@ class IOUVM(BaseNode):
         :param new_name: name
         """
 
+        if not is_ios_hostname_valid(new_name):
+            raise IOUError(f"'{new_name}' is an invalid name to rename IOU node '{self._name}'")
         if self.startup_config_file:
             content = self.startup_config_content
             content = re.sub(r"hostname .+$", "hostname " + new_name, content, flags=re.MULTILINE)
@@ -385,8 +419,10 @@ class IOUVM(BaseNode):
         Checks for missing shared library dependencies in the IOU image.
         """
 
+        env = os.environ.copy()
+        env["LD_TRACE_LOADED_OBJECTS"] = "1"
         try:
-            output = await gns3server.utils.asyncio.subprocess_check_output("ldd", self._path)
+            output = await gns3server.utils.asyncio.subprocess_check_output(*self._loader, self._path, env=env)
         except (OSError, subprocess.SubprocessError) as e:
             log.warning(f"Could not determine the shared library dependencies for {self._path}: {e}")
             return
@@ -513,7 +549,7 @@ class IOUVM(BaseNode):
         Starts the IOU process.
         """
 
-        self._check_requirements()
+        await self._check_requirements()
         if not self.is_running():
 
             await self._library_check()
@@ -560,10 +596,13 @@ class IOUVM(BaseNode):
 
             command = await self._build_command()
             try:
-                log.info(f"Starting IOU: {command}")
+                if self._loader:
+                    log.info(f"Starting IOU: {command} with loader {self._loader}")
+                else:
+                    log.info(f"Starting IOU: {command}")
                 self.command_line = " ".join(command)
                 self._iou_process = await asyncio.create_subprocess_exec(
-                    *command,
+                    *self._loader, *command,
                     stdout=asyncio.subprocess.PIPE,
                     stdin=asyncio.subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -1125,7 +1164,7 @@ class IOUVM(BaseNode):
             env["IOURC"] = self.iourc_path
         try:
             output = await gns3server.utils.asyncio.subprocess_check_output(
-                self._path, "-h", cwd=self.working_dir, env=env, stderr=True
+                *self._loader, self._path, "-h", cwd=self.working_dir, env=env, stderr=True
             )
             if re.search(r"-l\s+Enable Layer 1 keepalive messages", output):
                 command.extend(["-l"])

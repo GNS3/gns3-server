@@ -69,13 +69,12 @@ def get_snapshots(project: Project = Depends(dep_project)) -> List[schemas.Snaps
 
 
 @router.delete("/{snapshot_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)) -> Response:
+async def delete_snapshot(snapshot_id: UUID, project: Project = Depends(dep_project)) -> None:
     """
     Delete a snapshot.
     """
 
     await project.delete_snapshot(str(snapshot_id))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{snapshot_id}/restore", status_code=status.HTTP_201_CREATED, response_model=schemas.Project)

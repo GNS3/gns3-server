@@ -48,6 +48,7 @@ async def vm(compute_project, manager, config, tmpdir, fake_iou_bin, iourc_file)
     vm = IOUVM("test", str(uuid.uuid4()), compute_project, manager, application_id=1)
     config.settings.IOU.iourc_path = iourc_file
     vm.path = "iou.bin"
+    vm._loader = []
     return vm
 
 
@@ -228,7 +229,8 @@ def test_path_relative(vm, fake_iou_bin):
     assert vm.path == fake_iou_bin
 
 
-def test_path_invalid_bin(vm, tmpdir, config):
+@pytest.mark.asyncio
+async def test_path_invalid_bin(vm, tmpdir, config):
 
     config.settings.Server.images_path = str(tmpdir)
     path = str(tmpdir / "test.bin")
@@ -238,7 +240,7 @@ def test_path_invalid_bin(vm, tmpdir, config):
 
     with pytest.raises(IOUError):
         vm.path = path
-        vm._check_requirements()
+        await vm._check_requirements()
 
 
 def test_create_netmap_config(vm):

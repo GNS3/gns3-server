@@ -22,7 +22,7 @@ from uuid import UUID
 from pydantic import AnyUrl, BaseModel, EmailStr, Field, confloat, conint, constr
 
 
-class Category(Enum):
+class Category(str, Enum):
 
     router = 'router'
     multilayer_switch = 'multilayer_switch'
@@ -31,7 +31,7 @@ class Category(Enum):
     guest = 'guest'
 
 
-class RegistryVersion(Enum):
+class RegistryVersion(int, Enum):
 
     version1 = 1
     version2 = 2
@@ -41,14 +41,14 @@ class RegistryVersion(Enum):
     version6 = 6
 
 
-class Status(Enum):
+class Status(str, Enum):
 
     stable = 'stable'
     experimental = 'experimental'
     broken = 'broken'
 
 
-class Availability(Enum):
+class Availability(str, Enum):
 
     free = 'free'
     with_registration = 'with-registration'
@@ -56,7 +56,7 @@ class Availability(Enum):
     service_contract = 'service-contract'
 
 
-class ConsoleType(Enum):
+class ConsoleType(str, Enum):
 
     telnet = 'telnet'
     vnc = 'vnc'
@@ -101,7 +101,7 @@ class Iou(BaseModel):
     startup_config: str = Field(..., title='Config loaded at startup')
 
 
-class Chassis(Enum):
+class Chassis(str, Enum):
 
     chassis_1720 = '1720'
     chassis_1721 = '1721'
@@ -122,7 +122,7 @@ class Chassis(Enum):
     chassis_3660 = '3660'
 
 
-class Platform(Enum):
+class Platform(str, Enum):
 
     c1700 = 'c1700'
     c2600 = 'c2600'
@@ -133,13 +133,13 @@ class Platform(Enum):
     c7200 = 'c7200'
 
 
-class Midplane(Enum):
+class Midplane(str, Enum):
 
     std = 'std'
     vxr = 'vxr'
 
 
-class Npe(Enum):
+class Npe(str, Enum):
 
     npe_100 = 'npe-100'
     npe_150 = 'npe-150'
@@ -151,7 +151,7 @@ class Npe(Enum):
     npe_g2 = 'npe-g2'
 
 
-class AdapterType(Enum):
+class AdapterType(str, Enum):
 
     e1000 = 'e1000'
     e1000_82544gc = 'e1000-82544gc'
@@ -179,7 +179,7 @@ class AdapterType(Enum):
     vmxnet3 = 'vmxnet3'
 
 
-class DiskInterface(Enum):
+class DiskInterface(str, Enum):
 
     ide = 'ide'
     sata = 'sata'
@@ -193,7 +193,7 @@ class DiskInterface(Enum):
     none = 'none'
 
 
-class Arch(Enum):
+class Arch(str, Enum):
 
     aarch64 = 'aarch64'
     alpha = 'alpha'
@@ -225,7 +225,7 @@ class Arch(Enum):
     xtensaeb = 'xtensaeb'
 
 
-class ConsoleType1(Enum):
+class ConsoleType1(str, Enum):
 
     telnet = 'telnet'
     vnc = 'vnc'
@@ -234,7 +234,7 @@ class ConsoleType1(Enum):
     none = 'none'
 
 
-class BootPriority(Enum):
+class BootPriority(str, Enum):
 
     c = 'c'
     d = 'd'
@@ -247,14 +247,14 @@ class BootPriority(Enum):
     nd = 'nd'
 
 
-class Kvm(Enum):
+class Kvm(str, Enum):
 
     require = 'require'
     allow = 'allow'
     disable = 'disable'
 
 
-class ProcessPriority(Enum):
+class ProcessPriority(str, Enum):
 
     realtime = 'realtime'
     very_high = 'very high'
@@ -306,7 +306,7 @@ class Qemu(BaseModel):
     )
 
 
-class Compression(Enum):
+class Compression(str, Enum):
 
     bzip2 = 'bzip2'
     gzip = 'gzip'
@@ -355,7 +355,7 @@ class ApplianceVersion(BaseModel):
     images: Optional[ApplianceVersionImages] = Field(None, title='Images used for this version')
 
 
-class DynamipsSlot(Enum):
+class DynamipsSlot(str, Enum):
 
     C7200_IO_2FE = 'C7200-IO-2FE'
     C7200_IO_FE = 'C7200-IO-FE'
@@ -385,7 +385,7 @@ class DynamipsSlot(Enum):
     _ = ''
 
 
-class DynamipsWic(Enum):
+class DynamipsWic(str, Enum):
 
     WIC_1ENET = 'WIC-1ENET'
     WIC_1T = 'WIC-1T'
@@ -422,7 +422,7 @@ class Appliance(BaseModel):
         ..., title='Description of the appliance. Could be a marketing description'
     )
     vendor_name: str = Field(..., title='Name of the vendor')
-    vendor_url: Union[AnyUrl, constr(max_length=0)] = Field(..., title='Website of the vendor')
+    vendor_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(None, title='Website of the vendor')
     documentation_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(
         None,
         title='An optional documentation for using the appliance on vendor website',
@@ -440,7 +440,7 @@ class Appliance(BaseModel):
         title='About image availability: can be downloaded directly; download requires a free registration; paid but a trial version (time or feature limited) is available; not available publicly',
     )
     maintainer: str = Field(..., title='Maintainer name')
-    maintainer_email: Union[EmailStr, constr(max_length=0)] = Field(..., title='Maintainer email')
+    maintainer_email: Optional[Union[EmailStr, constr(max_length=0)]] = Field(None, title='Maintainer email')
     usage: Optional[str] = Field(None, title='How to use the appliance')
     symbol: Optional[str] = Field(None, title='An optional symbol for the appliance')
     first_port_name: Optional[str] = Field(

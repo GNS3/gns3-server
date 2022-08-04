@@ -29,6 +29,18 @@
     },
     "images": [
         {
+            "filename": "junos-x86-64-20.4R3.8.img",
+            "version": "20.4R3.8-KVM",
+            "md5sum": "69638ba0ad83d7a99a28b658b1dd8def",
+            "filesize": 2773090304
+        },
+        {
+            "filename": "metadata.img",
+            "version": "20.4R3.8-KVM",
+            "md5sum": "ae4e3562aa389929476d82420c79d511",
+            "filesize": 393216
+        },
+        {
             "filename": "junos-x86-64-20.3R1.8.img",
             "version": "20.3R1.8-KVM",
             "md5sum": "5cd41a792daae2b3fefac1928f2a1894",
@@ -42,6 +54,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "20.4R3.8-KVM",
+            "images": {
+                "hda_disk_image": "junos-x86-64-20.4R3.8.img",
+                "hdb_disk_image": "metadata.img"
+            }
+        },
         {
             "name": "20.3R1.8-KVM",
             "images": {

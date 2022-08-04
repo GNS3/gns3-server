@@ -18,6 +18,7 @@
 import os
 import pytest
 import uuid
+import unittest.mock
 
 from pathlib import Path
 from fastapi import FastAPI, status
@@ -28,6 +29,7 @@ from tests.utils import asyncio_patch
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller import Controller
+from gns3server.controller import Config
 from gns3server.services.templates import BUILTIN_TEMPLATES
 
 pytestmark = pytest.mark.asyncio
@@ -257,6 +259,18 @@ class TestBuiltinTemplates:
         response = await client.delete(app.url_path_for("delete_template", template_id=template_id))
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    async def test_list_builtin_templates_not_enabled(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            controller: Controller
+    ) -> None:
+
+        config = Config.instance()
+        config.settings.Server.enable_builtin_templates = False
+        response = await client.get(app.url_path_for("get_templates"))
+        assert not response.json()
+
 
 class TestDynamipsTemplate:
 
@@ -300,7 +314,7 @@ class TestDynamipsTemplate:
                                  "ram": 512,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -345,7 +359,7 @@ class TestDynamipsTemplate:
                                  "ram": 256,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -390,7 +404,7 @@ class TestDynamipsTemplate:
                                  "ram": 128,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -437,7 +451,7 @@ class TestDynamipsTemplate:
                                  "ram": 192,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -494,7 +508,7 @@ class TestDynamipsTemplate:
                                  "ram": 192,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -541,7 +555,7 @@ class TestDynamipsTemplate:
                                  "ram": 160,
                                  "sparsemem": True,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -600,7 +614,7 @@ class TestDynamipsTemplate:
                                  "ram": 160,
                                  "sparsemem": False,
                                  "startup_config": "ios_base_startup-config.txt",
-                                 "symbol": ":/symbols/router.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "system_id": "FTX0945W0MY"}
 
             for item, value in expected_response.items():
@@ -661,7 +675,7 @@ class TestIOUTemplate:
                                  "ram": 256,
                                  "serial_adapters": 2,
                                  "startup_config": "iou_l3_base_startup-config.txt",
-                                 "symbol": ":/symbols/multilayer_switch.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "use_default_iou_values": True,
                                  "l1_keepalives": False}
 
@@ -698,7 +712,7 @@ class TestDockerTemplate:
                              "image": "gns3/endhost:latest",
                              "name": "Docker template",
                              "start_command": "",
-                             "symbol": ":/symbols/docker_guest.svg",
+                             "symbol": unittest.mock.ANY,
                              "custom_adapters": []}
 
         for item, value in expected_response.items():
@@ -759,7 +773,7 @@ class TestQemuTemplate:
                                  "process_priority": "normal",
                                  "qemu_path": "",
                                  "ram": 512,
-                                 "symbol": ":/symbols/qemu_guest.svg",
+                                 "symbol": unittest.mock.ANY,
                                  "usage": "",
                                  "custom_adapters": []}
 
@@ -797,7 +811,7 @@ class TestVMwareTemplate:
                              "on_close": "power_off",
                              "port_name_format": "Ethernet{0}",
                              "port_segment_size": 0,
-                             "symbol": ":/symbols/vmware_guest.svg",
+                             "symbol": unittest.mock.ANY,
                              "use_any_adapter": False,
                              "vmx_path": vmx_path,
                              "custom_adapters": []}
@@ -836,7 +850,7 @@ class TestVirtualBoxTemplate:
                              "port_name_format": "Ethernet{0}",
                              "port_segment_size": 0,
                              "ram": 256,
-                             "symbol": ":/symbols/vbox_guest.svg",
+                             "symbol": unittest.mock.ANY,
                              "use_any_adapter": False,
                              "vmname": "My VirtualBox VM",
                              "custom_adapters": []}
@@ -866,7 +880,7 @@ class TestVPCSTemplate:
                              "console_type": "telnet",
                              "default_name_format": "PC{0}",
                              "name": "VPCS template",
-                             "symbol": ":/symbols/vpcs_guest.svg"}
+                             "symbol": unittest.mock.ANY}
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
@@ -939,7 +953,7 @@ class TestEthernetSwitchTemplate:
                                                 "type": "access",
                                                 "vlan": 1
                                                 }],
-                             "symbol": ":/symbols/ethernet_switch.svg"}
+                             "symbol": unittest.mock.ANY}
 
         for item, value in expected_response.items():
             assert response.json().get(item) == value
@@ -982,7 +996,7 @@ class TestHubTemplate:
                                                 }],
                              "compute_id": "local",
                              "name": "Ethernet hub template",
-                             "symbol": ":/symbols/hub.svg",
+                             "symbol": unittest.mock.ANY,
                              "default_name_format": "Hub{0}",
                              "template_type": "ethernet_hub",
                              "category": "switch",
@@ -1011,7 +1025,7 @@ class TestCloudTemplate:
                              "default_name_format": "Cloud{0}",
                              "name": "Cloud template",
                              "ports_mapping": [],
-                             "symbol": ":/symbols/cloud.svg",
+                             "symbol": unittest.mock.ANY,
                              "remote_console_host": "127.0.0.1",
                              "remote_console_port": 23,
                              "remote_console_type": "none",

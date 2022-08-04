@@ -24,125 +24,35 @@
     },
     "images": [
         {
-            "filename": "FreeBSD-12.1-RELEASE-amd64.qcow2",
-            "version": "12.1",
-            "md5sum": "0079b4ca99f64bb825cfbaefcca10fd4",
-            "filesize": 3043229696,
+            "filename": "FreeBSD-13.0-RELEASE-amd64.qcow2",
+            "version": "13.0",
+            "md5sum": "e8e598959da456c03260421b5f9890de",
+            "filesize": 3466854400,
             "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.1-RELEASE/amd64/Latest/FreeBSD-12.1-RELEASE-amd64.qcow2.xz",
+            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/13.0-RELEASE/amd64/Latest/FreeBSD-13.0-RELEASE-amd64.qcow2.xz",
             "compression": "xz"
         },
         {
-            "filename": "FreeBSD-12.0-RELEASE-amd64.qcow2",
-            "version": "12.0",
-            "md5sum": "4d2126ba79dad224628be6f25a908bd8",
-            "filesize": 2644836352,
+            "filename": "FreeBSD-12.3-RELEASE-amd64.qcow2",
+            "version": "12.3",
+            "md5sum": "3d7d5396f3d89ed30c2bfa2ee2e6b013",
+            "filesize": 3412000768,
             "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.0-RELEASE/amd64/Latest/FreeBSD-12.0-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-11.3-RELEASE-amd64.qcow2",
-            "version": "11.3",
-            "md5sum": "cdb35f676571b91584ff88502c48d399",
-            "filesize": 1698037760,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.3-RELEASE/amd64/Latest/FreeBSD-11.3-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-11.2-RELEASE-amd64.qcow2",
-            "version": "11.2",
-            "md5sum": "44d37e65be4bb4054f067911c84d074a",
-            "filesize": 1630076928,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.2-RELEASE/amd64/Latest/FreeBSD-11.2-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-11.1-RELEASE-amd64.qcow2",
-            "version": "11.1",
-            "md5sum": "d78b2a7d05ec62f799e14ded4817ea69",
-            "filesize": 1533345792,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.1-RELEASE/amd64/Latest/FreeBSD-11.1-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-11.0-RELEASE-amd64.qcow2",
-            "version": "11.0",
-            "md5sum": "1b04999198f492afd6dc4935b8c7cc22",
-            "filesize": 1384382464,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/11.0-RELEASE/amd64/Latest/FreeBSD-11.0-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-10.4-RELEASE-amd64.qcow2",
-            "version": "10.4",
-            "md5sum": "ad498873733c57d1f6d890d587a11e3c",
-            "filesize": 1013448704,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/10.4-RELEASE/amd64/Latest/FreeBSD-10.4-RELEASE-amd64.qcow2.xz",
-            "compression": "xz"
-        },
-        {
-            "filename": "FreeBSD-10.3-RELEASE-amd64.qcow2",
-            "version": "10.3",
-            "md5sum": "1a00cebef520dfac8d2bda10ea16a951",
-            "filesize": 974651392,
-            "download_url": "https://www.freebsd.org/where.html",
-            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/10.3-RELEASE/amd64/Latest/FreeBSD-10.3-RELEASE-amd64.qcow2.xz",
+            "direct_download_url": "https://download.freebsd.org/ftp/releases/VM-IMAGES/12.3-RELEASE/amd64/Latest/FreeBSD-12.3-RELEASE-amd64.qcow2.xz",
             "compression": "xz"
         }
     ],
     "versions": [
         {
-            "name": "12.1",
+            "name": "13.0",
             "images": {
-                "hda_disk_image": "FreeBSD-12.1-RELEASE-amd64.qcow2"
+                "hda_disk_image": "FreeBSD-13.0-RELEASE-amd64.qcow2"
             }
         },
         {
-            "name": "12.0",
+            "name": "12.3",
             "images": {
-                "hda_disk_image": "FreeBSD-12.0-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "11.3",
-            "images": {
-                "hda_disk_image": "FreeBSD-11.3-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "11.2",
-            "images": {
-                "hda_disk_image": "FreeBSD-11.2-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "11.1",
-            "images": {
-                "hda_disk_image": "FreeBSD-11.1-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "11.0",
-            "images": {
-                "hda_disk_image": "FreeBSD-11.0-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "10.4",
-            "images": {
-                "hda_disk_image": "FreeBSD-10.4-RELEASE-amd64.qcow2"
-            }
-        },
-        {
-            "name": "10.3",
-            "images": {
-                "hda_disk_image": "FreeBSD-10.3-RELEASE-amd64.qcow2"
+                "hda_disk_image": "FreeBSD-12.3-RELEASE-amd64.qcow2"
             }
         }
     ]

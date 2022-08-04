@@ -22,14 +22,14 @@ from enum import Enum
 from ..common import NodeStatus
 
 
-class EthernetSwitchPortType(Enum):
+class EthernetSwitchPortType(str, Enum):
 
     access = "access"
     dot1q = "dot1q"
     qinq = "qinq"
 
 
-class EthernetSwitchEtherType(Enum):
+class EthernetSwitchEtherType(str, Enum):
 
     ethertype_8021q = "0x8100"
     ethertype_qinq = "0x88A8"

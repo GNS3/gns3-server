@@ -109,6 +109,17 @@ class ServerProtocol(str, Enum):
     https = "https"
 
 
+class BuiltinSymbolTheme(str, Enum):
+
+    classic = "Classic"
+    affinity_square_blue = "Affinity-square-blue"
+    affinity_square_red = "Affinity-square-red"
+    affinity_square_gray = "Affinity-square-gray"
+    affinity_circle_blue = "Affinity-circle-blue"
+    affinity_circle_red = "Affinity-circle-red"
+    affinity_circle_gray = "Affinity-circle-gray"
+
+
 class ServerSettings(BaseModel):
 
     local: bool = False
@@ -124,6 +135,7 @@ class ServerSettings(BaseModel):
     appliances_path: str = "~/GNS3/appliances"
     symbols_path: str = "~/GNS3/symbols"
     configs_path: str = "~/GNS3/configs"
+    default_symbol_theme: BuiltinSymbolTheme = BuiltinSymbolTheme.affinity_square_blue
     report_errors: bool = True
     additional_images_paths: List[str] = Field(default_factory=list)
     console_start_port_range: int = Field(5000, gt=0, le=65535)
@@ -138,6 +150,7 @@ class ServerSettings(BaseModel):
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
     allow_remote_console: bool = False
+    enable_builtin_templates: bool = True
 
     @validator("additional_images_paths", pre=True)
     def split_additional_images_paths(cls, v):

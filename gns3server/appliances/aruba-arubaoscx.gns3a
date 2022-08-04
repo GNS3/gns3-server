@@ -4,7 +4,7 @@
     "category": "multilayer_switch",
     "description": "The ArubaOS-CX Simulation Software is a virtual platform to enable simulation of the ArubaOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF, BGP (inc. EVPN). Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network.",
     "vendor_name": "HPE Aruba",
-    "vendor_url": "arubanetworks.com",
+    "vendor_url": "https://www.arubanetworks.com",
     "product_name": "ArubaOS-CX Simulation Software",
     "registry_version": 4,
     "status": "stable",
@@ -30,6 +30,13 @@
         "process_priority": "normal"
     },
     "images": [
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20220616193419.vmdk",
+            "version": "10.10.0002",
+            "md5sum": "ed031aeb6caf92adb408c7603d294fd4",
+            "filesize": 355858944,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
         {
             "filename": "arubaoscx-disk-image-genericx86-p4-20220223012712.vmdk",
             "version": "10.09.1000",
@@ -88,6 +95,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.10.0002",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20220616193419.vmdk"
+            }
+        },
         {
             "name": "10.09.1000",
             "images": {

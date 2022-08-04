@@ -23,6 +23,7 @@ from fastapi.encoders import jsonable_encoder
 from typing import List
 
 from gns3server import schemas
+from gns3server.config import Config
 import gns3server.db.models as models
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.controller.controller_error import (
@@ -85,7 +86,7 @@ BUILTIN_TEMPLATES = [
         "name": "Cloud",
         "default_name_format": "Cloud{0}",
         "category": "guest",
-        "symbol": ":/symbols/cloud.svg",
+        "symbol": "cloud",
         "compute_id": None,
         "builtin": True,
     },
@@ -95,7 +96,7 @@ BUILTIN_TEMPLATES = [
         "name": "NAT",
         "default_name_format": "NAT{0}",
         "category": "guest",
-        "symbol": ":/symbols/cloud.svg",
+        "symbol": "cloud",
         "compute_id": None,
         "builtin": True,
     },
@@ -105,7 +106,7 @@ BUILTIN_TEMPLATES = [
         "name": "VPCS",
         "default_name_format": "PC{0}",
         "category": "guest",
-        "symbol": ":/symbols/vpcs_guest.svg",
+        "symbol": "vpcs_guest",
         "base_script_file": "vpcs_base_config.txt",
         "compute_id": None,
         "builtin": True,
@@ -117,7 +118,7 @@ BUILTIN_TEMPLATES = [
         "console_type": "none",
         "default_name_format": "Switch{0}",
         "category": "switch",
-        "symbol": ":/symbols/ethernet_switch.svg",
+        "symbol": "ethernet_switch",
         "compute_id": None,
         "builtin": True,
     },
@@ -127,7 +128,7 @@ BUILTIN_TEMPLATES = [
         "name": "Ethernet hub",
         "default_name_format": "Hub{0}",
         "category": "switch",
-        "symbol": ":/symbols/hub.svg",
+        "symbol": "hub",
         "compute_id": None,
         "builtin": True,
     },
@@ -137,7 +138,7 @@ BUILTIN_TEMPLATES = [
         "name": "Frame Relay switch",
         "default_name_format": "FRSW{0}",
         "category": "switch",
-        "symbol": ":/symbols/frame_relay_switch.svg",
+        "symbol": "frame_relay_switch",
         "compute_id": None,
         "builtin": True,
     },
@@ -147,7 +148,7 @@ BUILTIN_TEMPLATES = [
         "name": "ATM switch",
         "default_name_format": "ATMSW{0}",
         "category": "switch",
-        "symbol": ":/symbols/atm_switch.svg",
+        "symbol": "atm_switch",
         "compute_id": None,
         "builtin": True,
     },
@@ -162,6 +163,10 @@ class TemplatesService:
         from gns3server.controller import Controller
         self._controller = Controller.instance()
 
+        # resolve built-in template symbols
+        for builtin_template in BUILTIN_TEMPLATES:
+            builtin_template["symbol"] = self._controller.symbols.resolve_symbol(builtin_template["symbol"])
+
     def get_builtin_template(self, template_id: UUID) -> dict:
 
         for builtin_template in BUILTIN_TEMPLATES:
@@ -174,8 +179,9 @@ class TemplatesService:
         db_templates = await self._templates_repo.get_templates()
         for db_template in db_templates:
             templates.append(db_template.asjson())
-        for builtin_template in BUILTIN_TEMPLATES:
-            templates.append(jsonable_encoder(builtin_template))
+        if Config.instance().settings.Server.enable_builtin_templates:
+            for builtin_template in BUILTIN_TEMPLATES:
+                templates.append(jsonable_encoder(builtin_template))
         return templates
 
     async def _find_image(self, image_path: str):
@@ -239,6 +245,8 @@ class TemplatesService:
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
 
+        # resolve the template symbol
+        template_settings["symbol"] = self._controller.symbols.resolve_symbol(template_settings["symbol"])
         images_to_add_to_template = await self._find_images(template_create.template_type, template_settings)
         db_template = await self._templates_repo.create_template(template_create.template_type, template_settings)
         for image in images_to_add_to_template:

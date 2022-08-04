@@ -33,7 +33,7 @@ def base_params() -> dict:
     """Return standard parameters"""
 
     params = {
-        "name": "PC TEST 1",
+        "name": "DOCKER-TEST-1",
         "image": "nginx",
         "start_command": "nginx-daemon",
         "adapters": 2,
@@ -71,10 +71,11 @@ async def test_docker_create(app: FastAPI, compute_client: AsyncClient, compute_
 
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
         with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
-            response = await compute_client.post(app.url_path_for("compute:create_docker_node", project_id=compute_project.id),
-                                         json=base_params)
+            response = await compute_client.post(
+                app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=base_params
+            )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["name"] == "PC TEST 1"
+    assert response.json()["name"] == "DOCKER-TEST-1"
     assert response.json()["project_id"] == compute_project.id
     assert response.json()["container_id"] == "8bd8153ea8f5"
     assert response.json()["image"] == "nginx:latest"
@@ -82,6 +83,40 @@ async def test_docker_create(app: FastAPI, compute_client: AsyncClient, compute_
     assert response.json()["environment"] == "YES=1\nNO=0"
     assert response.json()["console_resolution"] == "1280x1024"
     assert response.json()["extra_hosts"] == "test:127.0.0.1"
+
+
+@pytest.mark.parametrize(
+    "name, status_code",
+    (
+        ("valid-name.com", status.HTTP_201_CREATED),
+        ("42name", status.HTTP_201_CREATED),
+        ("424242", status.HTTP_409_CONFLICT),
+        ("name42", status.HTTP_201_CREATED),
+        ("name.424242", status.HTTP_409_CONFLICT),
+        ("-name", status.HTTP_409_CONFLICT),
+        ("name%-test", status.HTTP_409_CONFLICT),
+        ("x" * 63, status.HTTP_201_CREATED),
+        ("x" * 64, status.HTTP_409_CONFLICT),
+        (("x" * 62 + ".") * 4, status.HTTP_201_CREATED),
+        ("xx" + ("x" * 62 + ".") * 4, status.HTTP_409_CONFLICT),
+    ),
+)
+async def test_docker_create_with_invalid_name(
+        app: FastAPI,
+        compute_client: AsyncClient,
+        compute_project: Project,
+        base_params: dict,
+        name: str,
+        status_code: int
+) -> None:
+
+    base_params["name"] = name
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value={"Id": "8bd8153ea8f5"}):
+            response = await compute_client.post(
+                app.url_path_for("compute:create_docker_node", project_id=compute_project.id), json=base_params
+            )
+    assert response.status_code == status_code
 
 
 async def test_docker_start(app: FastAPI, compute_client: AsyncClient, vm: dict) -> None:

@@ -69,7 +69,8 @@ async def upload_image(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-        install_appliances: Optional[bool] = False
+        install_appliances: Optional[bool] = False,
+        allow_raw_image: Optional[bool] = False
 ) -> schemas.Image:
     """
     Upload an image.
@@ -90,7 +91,7 @@ async def upload_image(
         raise ControllerBadRequestError(f"Image '{image_path}' already exists")
 
     try:
-        image = await write_image(image_path, full_path, request.stream(), images_repo)
+        image = await write_image(image_path, full_path, request.stream(), images_repo, allow_raw_image=allow_raw_image)
     except (OSError, InvalidImageError, ClientDisconnect) as e:
         raise ControllerError(f"Could not save image '{image_path}': {e}")
 
@@ -129,7 +130,7 @@ async def get_image(
 async def delete_image(
         image_path: str,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> Response:
+) -> None:
     """
     Delete an image.
     """
@@ -159,16 +160,13 @@ async def delete_image(
     if not success:
         raise ControllerError(f"Image '{image_path}' could not be deleted")
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
 @router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
 async def prune_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
-) -> Response:
+) -> None:
     """
     Prune images not attached to any template.
     """
 
     await images_repo.prune_images()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -47,7 +47,7 @@ router = APIRouter()
 @router.get("")
 async def get_appliances(
         update: Optional[bool] = False,
-        symbol_theme: Optional[str] = "Classic"
+        symbol_theme: Optional[str] = None
 ) -> List[schemas.Appliance]:
     """
     Return all appliances known by the controller.
@@ -56,7 +56,7 @@ async def get_appliances(
     controller = Controller.instance()
     if update:
         await controller.appliance_manager.download_appliances()
-    controller.appliance_manager.load_appliances(symbol_theme=symbol_theme)
+    controller.appliance_manager.load_appliances(symbol_theme)
     return [c.asdict() for c in controller.appliance_manager.appliances.values()]
 
 
@@ -106,7 +106,7 @@ async def install_appliance(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> Response:
+) -> None:
     """
     Install an appliance.
     """
@@ -120,4 +120,3 @@ async def install_appliance(
         rbac_repo,
         current_user
     )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -144,6 +144,9 @@ async def discover_images(image_type: str, skip_image_paths: list = None) -> Lis
                 path = os.path.join(root, filename)
                 if not os.path.isfile(path) or skip_image_paths and path in skip_image_paths or path in files:
                     continue
+                if "/lib/" in path or "/lib64/" in path:
+                    # ignore custom IOU libraries
+                    continue
                 files.add(path)
 
                 try:
@@ -285,7 +288,7 @@ class InvalidImageError(Exception):
         return self._message
 
 
-def check_valid_image_header(data: bytes) -> str:
+def check_valid_image_header(data: bytes, allow_raw_image: bool = False) -> str:
 
     if data[:7] == b'\x7fELF\x01\x02\x01':
         # for IOS images: file must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
@@ -298,6 +301,8 @@ def check_valid_image_header(data: bytes) -> str:
         # for Qemy images: file must be QCOW2 or VMDK
         return "qemu"
     else:
+        if allow_raw_image is True:
+            return "qemu"
         raise InvalidImageError("Could not detect image type, please make sure it is a valid image")
 
 
@@ -306,7 +311,8 @@ async def write_image(
         image_path: str,
         stream: AsyncGenerator[bytes, None],
         images_repo: ImagesRepository,
-        check_image_header=True
+        check_image_header=True,
+        allow_raw_image=False
 ) -> models.Image:
 
     image_dir, image_name = os.path.split(image_filename)
@@ -322,7 +328,7 @@ async def write_image(
             async for chunk in stream:
                 if check_image_header and len(chunk) >= header_magic_len:
                     check_image_header = False
-                    image_type = check_valid_image_header(chunk)
+                    image_type = check_valid_image_header(chunk, allow_raw_image)
                 await f.write(chunk)
                 checksum.update(chunk)
 

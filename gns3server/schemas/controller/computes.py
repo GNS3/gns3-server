@@ -163,6 +163,7 @@ class ComputeVMwareVM(BaseModel):
     """
 
     vmname: str = Field(..., description="VMware VM name")
+    vmx_path: str = Field(..., description="Path to the vmx file")
 
 
 class ComputeDockerImage(BaseModel):
