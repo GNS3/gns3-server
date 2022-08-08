@@ -23,8 +23,8 @@ depend() {
 
 checkconfig() {
   if yesno "${GNS3_SERVER_LOG_ENABLED}" ; then
-    command_args+=" --log ${GNS3_SERVER_LOG}";
-    if [ "${command_user}" ] ; then 
+    command_args="${command_args} --log ${GNS3_SERVER_LOG}";
+    if [ "${command_user}" ] ; then
       checkpath --directory --mode 0700 --owner "${command_user}" "${GNS3_SERVER_LOG_PATH}";
     else
       unset command_user
