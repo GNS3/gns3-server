@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import os
 import stat
-import sys
 import uuid
 
 from fastapi import FastAPI, status
@@ -49,7 +49,7 @@ def base_params(tmpdir, fake_iou_bin) -> dict:
     return {"application_id": 42, "name": "IOU-TEST-1", "path": "iou.bin"}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def vm(app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict) -> dict:
 
     response = await compute_client.post(app.url_path_for("compute:create_iou_node", project_id=compute_project.id), json=base_params)

@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware import VMware
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = VMware.instance()
@@ -30,8 +30,7 @@ async def manager(port_manager):
     return m
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def vm(compute_project, manager, tmpdir):
 
     fake_vmx = str(tmpdir / "test.vmx")

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -171,7 +172,7 @@ class TestGroupMembersRoutes:
         assert len(members) == 0
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_role(db_session: AsyncSession) -> Role:
 
     new_role = schemas.RoleCreate(

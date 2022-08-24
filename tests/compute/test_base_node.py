@@ -18,7 +18,7 @@
 from collections import OrderedDict
 
 import pytest
-import asyncio
+import pytest_asyncio
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -29,8 +29,7 @@ from gns3server.compute.vpcs import VPCS
 from gns3server.compute.nios.nio_udp import NIOUDP
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def manager(port_manager):
 
     m = VPCS.instance()

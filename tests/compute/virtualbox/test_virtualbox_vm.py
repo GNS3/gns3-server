@@ -17,6 +17,7 @@
 
 import os
 import pytest
+import pytest_asyncio
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
@@ -24,8 +25,7 @@ from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.virtualbox import VirtualBox
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = VirtualBox.instance()
@@ -33,8 +33,7 @@ async def manager(port_manager):
     return m
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def vm(compute_project, manager):
 
     return VirtualBoxVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, "test", False)

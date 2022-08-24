@@ -30,6 +30,7 @@ def compute():
     s.id = "http://test.com:42"
     return s
 
+
 @pytest.fixture
 def node(compute, project):
     node = Node(project, compute, "demo",

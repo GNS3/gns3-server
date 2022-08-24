@@ -17,9 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import uuid
 import pytest
+import pytest_asyncio
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
 from unittest.mock import patch
@@ -32,8 +32,7 @@ from gns3server.controller.controller_error import ControllerError, ControllerNo
 from gns3server.config import Config
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def node(controller, project):
 
     compute = MagicMock()

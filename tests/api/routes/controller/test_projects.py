@@ -19,6 +19,7 @@ import uuid
 import os
 import json
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -32,7 +33,7 @@ from gns3server.controller.project import Project
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
 
     u = str(uuid.uuid4())

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -105,7 +106,7 @@ class TestRolesRoutes:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_permission(db_session: AsyncSession) -> Permission:
 
     new_permission = schemas.PermissionCreate(

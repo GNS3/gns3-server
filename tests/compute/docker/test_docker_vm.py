@@ -18,8 +18,8 @@
 import aiohttp
 import asyncio
 import pytest
+import pytest_asyncio
 import uuid
-import sys
 import os
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
@@ -33,8 +33,7 @@ from gns3server.utils.get_resource import get_resource
 from unittest.mock import patch, MagicMock, call
 
 
-@pytest.fixture()
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = Docker.instance()
@@ -42,8 +41,7 @@ async def manager(port_manager):
     return m
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def vm(compute_project, manager):
 
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="none")
