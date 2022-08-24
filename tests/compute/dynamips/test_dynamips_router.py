@@ -18,7 +18,7 @@
 import os
 import uuid
 import pytest
-import asyncio
+import pytest_asyncio
 
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
@@ -26,8 +26,7 @@ from gns3server.compute.dynamips import Dynamips
 from gns3server.config import Config
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = Dynamips.instance()

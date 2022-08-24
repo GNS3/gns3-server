@@ -19,6 +19,7 @@
 import os
 import json
 import pytest
+import pytest_asyncio
 import zipfile
 
 from pathlib import Path
@@ -32,8 +33,7 @@ from gns3server.utils.asyncio import aiozipstream
 from gns3server.controller.controller_error import ControllerError
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def project(controller):
 
     p = Project(controller=controller, name="test")
@@ -41,8 +41,7 @@ async def project(controller):
     return p
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def node(controller, project):
 
     compute = MagicMock()

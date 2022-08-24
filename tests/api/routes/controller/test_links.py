@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from typing import Tuple
 from fastapi import FastAPI, status
@@ -34,7 +35,7 @@ from gns3server.controller.udp_link import UDPLink
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def nodes(compute: Compute, project: Project) -> Tuple[Node, Node]:
 
     response = MagicMock()

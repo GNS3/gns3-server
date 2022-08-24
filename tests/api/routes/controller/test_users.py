@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
@@ -438,7 +439,8 @@ class TestSuperAdmin:
     #     assert response.status_code == status.HTTP_200_OK
     #     assert len(response.json()) == 1
 
-@pytest.fixture
+
+@pytest_asyncio.fixture
 async def test_permission(db_session: AsyncSession) -> Permission:
 
     new_permission = schemas.PermissionCreate(

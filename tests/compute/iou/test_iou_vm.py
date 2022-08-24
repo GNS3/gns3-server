@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 import stat
 import socket
-import sys
 import uuid
 import shutil
 
@@ -32,8 +32,7 @@ from gns3server.compute.iou.iou_error import IOUError
 from gns3server.compute.iou import IOU
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = IOU.instance()
@@ -41,8 +40,7 @@ async def manager(port_manager):
     return m
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def vm(compute_project, manager, config, tmpdir, fake_iou_bin, iourc_file):
 
     vm = IOUVM("test", str(uuid.uuid4()), compute_project, manager, application_id=1)

@@ -18,6 +18,7 @@
 import uuid
 import os
 import pytest
+import pytest_asyncio
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
@@ -28,8 +29,7 @@ from gns3server.compute.error import NodeError, ImageMissingError
 from gns3server.utils import force_unix_path
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def vpcs(port_manager):
 
     VPCS._instance = None
@@ -38,8 +38,7 @@ async def vpcs(port_manager):
     return vpcs
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def qemu(port_manager):
 
     Qemu._instance = None

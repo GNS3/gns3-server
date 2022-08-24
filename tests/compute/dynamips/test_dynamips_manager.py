@@ -17,8 +17,8 @@
 
 
 import pytest
+import pytest_asyncio
 import tempfile
-import sys
 import uuid
 import os
 
@@ -28,8 +28,7 @@ from unittest.mock import patch
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager(port_manager):
 
     m = Dynamips.instance()

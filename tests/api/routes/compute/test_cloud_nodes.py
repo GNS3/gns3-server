@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -27,7 +28,7 @@ from gns3server.compute.project import Project
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def vm(app: FastAPI, compute_client: AsyncClient, compute_project: Project, on_gns3vm) -> dict:
 
     with asyncio_patch("gns3server.compute.builtin.nodes.cloud.Cloud._start_ubridge"):

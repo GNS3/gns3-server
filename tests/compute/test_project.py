@@ -19,6 +19,7 @@
 import os
 import uuid
 import pytest
+import pytest_asyncio
 from uuid import uuid4
 from unittest.mock import patch
 
@@ -29,8 +30,7 @@ from gns3server.compute.compute_error import ComputeError, ComputeForbiddenError
 from gns3server.compute.vpcs import VPCS, VPCSVM
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def manager(port_manager):
 
     m = VPCS.instance()
@@ -38,8 +38,7 @@ async def manager(port_manager):
     return m
 
 
-@pytest.fixture(scope="function")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(scope="function")
 async def node(compute_project, manager):
 
     node = manager.create_node("test", compute_project.id, "00010203-0405-0607-0809-0a0b0c0d0e0f")

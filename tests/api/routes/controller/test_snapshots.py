@@ -18,6 +18,7 @@
 import os
 import uuid
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -29,7 +30,7 @@ from gns3server.controller.snapshot import Snapshot
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
 
     u = str(uuid.uuid4())
@@ -39,7 +40,7 @@ async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> 
     return project
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def snapshot(project: Project):
 
     snapshot = await project.snapshot("test")
