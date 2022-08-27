@@ -20,7 +20,6 @@ import os
 import sys
 import uuid
 import pytest
-import pytest_asyncio
 import aiohttp
 from unittest.mock import MagicMock
 from tests.utils import AsyncioMagicMock, asyncio_patch
@@ -34,7 +33,7 @@ from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.config import Config
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def node(controller, project):
 
     compute = MagicMock()

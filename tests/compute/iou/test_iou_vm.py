@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import pytest_asyncio
 import asyncio
 import os
 import stat
@@ -37,7 +36,7 @@ if not sys.platform.startswith("win"):
     from gns3server.compute.iou import IOU
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def manager(port_manager):
 
     m = IOU.instance()

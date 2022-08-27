@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest_asyncio
+import pytest
 import uuid
 from tests.utils import asyncio_patch
 from unittest.mock import patch
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def vm(compute_api, compute_project):
 
     params = {"name": "PC TEST 1"}
