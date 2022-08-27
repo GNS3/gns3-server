@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import asyncio
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 from gns3server.utils.asyncio import wait_run_in_executor

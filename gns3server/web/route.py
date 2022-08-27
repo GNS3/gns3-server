@@ -147,7 +147,7 @@ class Route(object):
             else:
                 route = path
 
-            # Compute metadata for the documentation
+            # Compute metadata for the documentation
             if api_version:
                 handler = func.__module__.replace("_handler", "").replace("gns3server.handlers.api.", "")
                 cls._documentation.setdefault(handler, {})
