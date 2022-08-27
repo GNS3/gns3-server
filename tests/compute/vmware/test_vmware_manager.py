@@ -21,7 +21,7 @@ from gns3server.compute.vmware import VMware
 
 
 @pytest.fixture
-async def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = VMware.instance()
     m.port_manager = port_manager

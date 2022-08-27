@@ -30,7 +30,7 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, tmpdir):
+async def vm(compute_project, manager, tmpdir):
 
     fake_vmx = str(tmpdir / "test.vmx")
     open(fake_vmx, "w+").close()
