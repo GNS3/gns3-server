@@ -18,7 +18,6 @@
 import os
 import uuid
 import pytest
-import asyncio
 
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server.compute.dynamips.dynamips_error import DynamipsError
