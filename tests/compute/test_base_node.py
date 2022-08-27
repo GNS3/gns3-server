@@ -29,7 +29,7 @@ from gns3server.compute.nios.nio_udp import NIOUDP
 
 
 @pytest.fixture(scope="function")
-async def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = VPCS.instance()
     m.port_manager = port_manager

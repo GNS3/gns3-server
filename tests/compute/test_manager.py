@@ -29,7 +29,7 @@ from gns3server.utils import force_unix_path
 
 
 @pytest.fixture(scope="function")
-async def vpcs(port_manager):
+async def vpcs(loop, port_manager):
 
     VPCS._instance = None
     vpcs = VPCS.instance()
@@ -38,7 +38,7 @@ async def vpcs(port_manager):
 
 
 @pytest.fixture(scope="function")
-async def qemu(port_manager):
+async def qemu(loop, port_manager):
 
     Qemu._instance = None
     Qemu._init_config_disk = MagicMock()  # do not create the config.img image

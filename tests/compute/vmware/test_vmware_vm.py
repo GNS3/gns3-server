@@ -22,7 +22,7 @@ from gns3server.compute.vmware import VMware
 
 
 @pytest.fixture
-async def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = VMware.instance()
     m.port_manager = port_manager
@@ -30,7 +30,7 @@ async def manager(port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(compute_project, manager, tmpdir):
+async def vm(loop, compute_project, manager, tmpdir):
 
     fake_vmx = str(tmpdir / "test.vmx")
     open(fake_vmx, "w+").close()

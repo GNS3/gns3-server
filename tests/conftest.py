@@ -29,9 +29,9 @@ if sys.platform.startswith("win"):
         """Return an event loop and destroy it at the end of test"""
 
         loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)  # Replace main loop to avoid conflict between tests
+        asyncio.set_loop(loop)  # Replace main loop to avoid conflict between tests
         yield loop
-        asyncio.set_event_loop(None)
+        asyncio.set_loop(None)
 
 
 @pytest.fixture(scope='function')
@@ -72,7 +72,7 @@ def compute(controller):
 
 
 @pytest.fixture
-async def project(tmpdir, controller):
+async def project(loop, tmpdir, controller):
 
     return await controller.add_project(name="Test")
 

@@ -34,7 +34,7 @@ from gns3server.compute.notification_manager import NotificationManager
 
 
 @pytest.fixture
-async def manager(port_manager):
+async def manager(loop, port_manager):
 
     m = Qemu.instance()
     m.port_manager = port_manager
