@@ -17,10 +17,10 @@
 
 import os
 import uuid
-import pytest
+import pytest_asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def project(controller_api, controller):
 
     u = str(uuid.uuid4())
@@ -30,7 +30,7 @@ async def project(controller_api, controller):
     return project
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def snapshot(project):
 
     snapshot = await project.snapshot("test")

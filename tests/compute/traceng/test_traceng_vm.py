@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import asyncio
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
@@ -27,15 +28,15 @@ from gns3server.compute.traceng import TraceNG
 from gns3server.compute.notification_manager import NotificationManager
 
 
-@pytest.fixture
-async def manager(loop, port_manager):
+@pytest_asyncio.fixture
+async def manager(port_manager):
 
     m = TraceNG.instance()
     m.port_manager = port_manager
     return m
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def vm(compute_project, manager, ubridge_path):
 
     vm = TraceNGVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)

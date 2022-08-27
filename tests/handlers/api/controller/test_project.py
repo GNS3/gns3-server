@@ -18,6 +18,7 @@
 import uuid
 import os
 import pytest
+import pytest_asyncio
 import zipfile
 import json
 
@@ -25,7 +26,7 @@ from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def project(controller_api, controller):
 
     u = str(uuid.uuid4())

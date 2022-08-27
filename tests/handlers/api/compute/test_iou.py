@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import os
 import stat
 import sys
@@ -45,7 +46,7 @@ def base_params(tmpdir, fake_iou_bin):
     return {"application_id": 42, "name": "PC TEST 1", "path": "iou.bin"}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def vm(compute_api, compute_project, base_params):
 
     response = await compute_api.post("/projects/{project_id}/iou/nodes".format(project_id=compute_project.id), base_params)

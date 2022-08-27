@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
+import pytest_asyncio
 
 from gns3server.compute.vmware import VMware
 
 
-@pytest.fixture
-async def manager(loop, port_manager):
+@pytest_asyncio.fixture
+async def manager(port_manager):
 
     m = VMware.instance()
     m.port_manager = port_manager

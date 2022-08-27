@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
+import pytest_asyncio
 
 from unittest.mock import patch, MagicMock
 from tests.utils import asyncio_patch, AsyncioMagicMock
@@ -24,7 +24,7 @@ from gns3server.controller.ports.ethernet_port import EthernetPort
 from gns3server.controller.link import Link, FILTERS
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def nodes(compute, project):
 
     response = MagicMock()

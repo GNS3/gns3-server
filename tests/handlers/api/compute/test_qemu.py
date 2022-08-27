@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import uuid
 import os
 import sys
@@ -57,7 +58,7 @@ def base_params(tmpdir, fake_qemu_bin):
     return {"name": "PC TEST 1", "qemu_path": fake_qemu_bin}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def vm(compute_api, compute_project, base_params):
 
     response = await compute_api.post("/projects/{project_id}/qemu/nodes".format(project_id=compute_project.id), base_params)

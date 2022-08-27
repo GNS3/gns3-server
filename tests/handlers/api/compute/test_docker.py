@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import sys
 import uuid
 
@@ -52,7 +53,7 @@ def base_params():
 #     Docker._instance = None
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def vm(compute_api, compute_project, base_params):
 
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):

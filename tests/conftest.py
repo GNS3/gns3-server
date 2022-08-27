@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 import asyncio
 import tempfile
 import shutil
@@ -34,7 +35,7 @@ if sys.platform.startswith("win"):
         asyncio.set_event_loop(None)
 
 
-@pytest.fixture(scope='function')
+@pytest_asyncio.fixture(scope='function')
 async def http_client(aiohttp_client):
 
     app = web.Application()
@@ -71,8 +72,8 @@ def compute(controller):
     return compute
 
 
-@pytest.fixture
-async def project(loop, tmpdir, controller):
+@pytest_asyncio.fixture
+async def project(tmpdir, controller):
 
     return await controller.add_project(name="Test")
 

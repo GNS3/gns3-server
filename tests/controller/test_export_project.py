@@ -19,6 +19,7 @@
 import os
 import json
 import pytest
+import pytest_asyncio
 import aiohttp
 import zipfile
 
@@ -32,15 +33,15 @@ from gns3server.controller.export_project import export_project, _is_exportable
 from gns3server.utils.asyncio import aiozipstream
 
 
-@pytest.fixture
-async def project(loop, controller):
+@pytest_asyncio.fixture
+async def project(controller):
 
     p = Project(controller=controller, name="test")
     p.dump = MagicMock()
     return p
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def node(controller, project):
 
     compute = MagicMock()

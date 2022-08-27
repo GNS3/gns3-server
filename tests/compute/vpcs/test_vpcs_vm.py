@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 import sys
@@ -30,8 +31,8 @@ from gns3server.compute.vpcs import VPCS
 from gns3server.compute.notification_manager import NotificationManager
 
 
-@pytest.fixture
-async def manager(loop, port_manager):
+@pytest_asyncio.fixture
+async def manager(port_manager):
 
     m = VPCS.instance()
     m.port_manager = port_manager
@@ -39,7 +40,7 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, tmpdir, ubridge_path):
+async def vm(compute_project, manager, tmpdir, ubridge_path):
 
     vm = VPCSVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager)
     vm._vpcs_version = parse_version("0.9")

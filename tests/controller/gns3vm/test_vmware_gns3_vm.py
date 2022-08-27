@@ -16,12 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 
 from gns3server.controller.gns3vm.vmware_gns3_vm import VMwareGNS3VM
 
 
-@pytest.fixture
-async def gns3vm(loop, controller):
+@pytest_asyncio.fixture
+async def gns3vm(controller):
 
     vm = VMwareGNS3VM(controller)
     vm.vmname = "GNS3 VM"

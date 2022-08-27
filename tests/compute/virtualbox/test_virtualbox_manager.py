@@ -17,6 +17,7 @@
 
 
 import pytest
+import pytest_asyncio
 import tempfile
 import os
 import stat
@@ -28,8 +29,8 @@ from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from tests.utils import asyncio_patch
 
 
-@pytest.fixture
-async def manager(loop, port_manager):
+@pytest_asyncio.fixture
+async def manager(port_manager):
 
     m = VirtualBox.instance()
     m.port_manager = port_manager

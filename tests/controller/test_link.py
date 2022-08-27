@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import aiohttp
 from unittest.mock import MagicMock
 
@@ -26,7 +27,7 @@ from gns3server.controller.ports.serial_port import SerialPort
 from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def link(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="qemu")

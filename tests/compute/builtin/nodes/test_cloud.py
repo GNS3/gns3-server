@@ -17,6 +17,7 @@
 
 import uuid
 import pytest
+import pytest_asyncio
 from unittest.mock import MagicMock, patch, call
 
 from gns3server.compute.builtin.nodes.cloud import Cloud
@@ -30,8 +31,8 @@ def nio():
     return NIOUDP(4242, "127.0.0.1", 4343)
 
 
-@pytest.fixture
-async def manager(loop):
+@pytest_asyncio.fixture
+async def manager():
 
     m = MagicMock()
     m.module_name = "builtins"
@@ -113,7 +114,7 @@ def test_json_without_ports(on_gns3vm, compute_project, manager):
     }
 
 
-async def test_update_port_mappings(loop, on_gns3vm, compute_project):
+async def test_update_port_mappings(on_gns3vm, compute_project):
     """
     We don't allow an empty interface in the middle of port list
     """
@@ -153,7 +154,7 @@ async def test_update_port_mappings(loop, on_gns3vm, compute_project):
     assert cloud.ports_mapping == ports1
 
 
-async def test_linux_ethernet_raw_add_nio(loop, linux_platform, compute_project, nio):
+async def test_linux_ethernet_raw_add_nio(linux_platform, compute_project, nio):
     ports = [
         {
             "interface": "eth0",
@@ -180,7 +181,7 @@ async def test_linux_ethernet_raw_add_nio(loop, linux_platform, compute_project,
     ])
 
 
-async def test_linux_ethernet_raw_add_nio_bridge(loop, linux_platform, compute_project, nio):
+async def test_linux_ethernet_raw_add_nio_bridge(linux_platform, compute_project, nio):
     """
     Bridge can't be connected directly to a cloud we use a tap in the middle
     """

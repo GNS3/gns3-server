@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 import stat
@@ -36,8 +37,8 @@ if not sys.platform.startswith("win"):
     from gns3server.compute.iou import IOU
 
 
-@pytest.fixture
-async def manager(loop, port_manager):
+@pytest_asyncio.fixture
+async def manager(port_manager):
 
     m = IOU.instance()
     m.port_manager = port_manager
@@ -45,7 +46,7 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, tmpdir, fake_iou_bin, iourc_file):
+async def vm(compute_project, manager, tmpdir, fake_iou_bin, iourc_file):
 
     vm = IOUVM("test", str(uuid.uuid4()), compute_project, manager, application_id=1)
     config = manager.config.get_section_config("IOU")
