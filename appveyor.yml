@@ -11,6 +11,7 @@ environment:
         secure: VEKn4bYH3QO0ixtQW5ni4Enmn8cS1NlZV246ludBDgQ=
 
 install:
+   - cinst nmap
    - "%PYTHON%\\python.exe -m pip install -r dev-requirements.txt"
    - "%PYTHON%\\python.exe -m pip install -r win-requirements.txt"
 
