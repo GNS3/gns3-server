@@ -11,7 +11,7 @@
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
-    "maintainer_email": "none",
+    "maintainer_email": "",
     "usage": "Default password is admin. Default username and password for web is admin/Admin@123.",
     "first_port_name": "GigabitEthernet0/0/0",
     "port_name_format": "GigabitEthernet1/0/{0}",

@@ -29,8 +29,8 @@
             "version": "0.4",
             "md5sum": "e678698c97804901c7a53f6b68c8b861",
             "filesize": 26476544,
-            "download_url": "https://www.b-ehlers.de/projects/netem/index.html",
-            "direct_download_url": "https://www.b-ehlers.de/projects/netem/NETem-v4.qcow2"
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/NETem-v4.qcow2/download"
         }
     ],
     "versions": [

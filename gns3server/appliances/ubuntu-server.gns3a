@@ -11,7 +11,7 @@
     "registry_version": 3,
     "status": "stable",
     "maintainer": "Mohamad Siblini",
-    "maintainer_email": "https://www.ictkin.com/contact",
+    "maintainer_email": "info@ictkin.com",
     "usage": "Username: gns3\nPassword: gns3 | MD5: 435f15a54f7f673e302ad26f05226e0e",
     "port_name_format": "ens{0}",
     "qemu": {
