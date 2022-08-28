@@ -67,6 +67,7 @@ class DynamipsAdapters(str, Enum):
     c1700_mb_wic1 = "C1700-MB-WIC1"
     gt96100_fe = "GT96100-FE"
     leopard_2fe = "Leopard-2FE"
+    _ = ""
 
 
 class DynamipsWics(str, Enum):
