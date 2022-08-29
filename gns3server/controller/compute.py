@@ -367,9 +367,6 @@ class Compute:
                 log.warning("Cannot connect to compute '{}': {}".format(self._id, e))
                 # Try to reconnect after 5 seconds if server unavailable only if not during tests (otherwise we create a ressource usage bomb)
                 if not hasattr(sys, "_called_from_test") or not sys._called_from_test:
-                    if self.id != "local" and self.id != "vm" and not self._controller.compute_has_open_project(self):
-                        log.warning("Not reconnecting to compute '{}' because there is no project opened on it".format(self._id))
-                        return
                     self._connection_failure += 1
                     # After 5 failure we close the project using the compute to avoid sync issues
                     if self._connection_failure == 10:

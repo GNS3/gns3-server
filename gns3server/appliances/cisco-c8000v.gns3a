@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "c8000v-universalk9_8G_serial.17.06.01a.qcow2",
+            "version": "17.06.01a 8G",
+            "md5sum": "d8b8ae633d953ec1b6d8f18a09a4f4e7",
+            "filesize": 1595277312,
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Bengaluru-17.6.1a"
+        },
+        {
             "filename": "c8000v-universalk9_8G_serial.17.04.01a.qcow2",
             "version": "17.04.01a 8G",
             "md5sum": "5c1dd1d3757ea43b5b02e0af7a010525",
@@ -40,6 +47,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.06.01a 8G",
+            "images": {
+                "hda_disk_image": "c8000v-universalk9_8G_serial.17.06.01a.qcow2"
+            }
+        },
         {
             "name": "17.04.01a 8G",
             "images": {

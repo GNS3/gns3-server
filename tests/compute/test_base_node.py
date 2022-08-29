@@ -18,7 +18,6 @@
 from collections import OrderedDict
 
 import pytest
-import asyncio
 
 from tests.utils import asyncio_patch, AsyncioMagicMock
 

@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import asyncio
 
 from gns3server.compute.vmware.vmware_vm import VMwareVM
 from gns3server.compute.vmware import VMware

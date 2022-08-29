@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username is cumulus and password is CumulusLinux! in version 4.1 and earlier, and cumulus in version 4.2 and later.",
+    "usage": "Default username/password is cumulus/CumulusLinux! in version 4.1 and earlier, and cumulus/cumulus in version 4.2 and later.",
     "first_port_name": "eth0",
     "port_name_format": "swp{port1}",
     "qemu": {
@@ -25,6 +25,14 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "cumulus-linux-5.1.0-vx-amd64-qemu.qcow2",
+            "version": "5.1.0",
+            "md5sum": "b46a68bbb57e77fab5c2927367bead13",
+            "filesize": 4174446592,
+            "download_url": "https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/download/",
+            "direct_download_url": "https://d2cd9e7ca6hntp.cloudfront.net/public/CumulusLinux-5.1.0/cumulus-linux-5.1.0-vx-amd64-qemu.qcow2"
+        },
         {
             "filename": "cumulus-linux-4.3.0-vx-amd64-qemu.qcow2",
             "version": "4.3.0",
@@ -231,6 +239,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.1.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-5.1.0-vx-amd64-qemu.qcow2"
+            }
+        },
         {
             "name": "4.3.0",
             "images": {

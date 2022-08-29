@@ -19,6 +19,12 @@
     },
     "images": [
         {
+            "filename": "i86bi_LinuxL3-AdvEnterpriseK9-M2_157_3_May_2018.bin",
+            "version": "15.7(3)M2",
+            "md5sum": "d6874260c3daeeb96d10fc844ae0b93b",
+            "filesize": 184759244
+        },
+        {
             "filename": "i86bi-linux-l3-adventerprisek9-ms.155-2.T.bin",
             "version": "155-2T",
             "md5sum": "45e99761a95cbd3ee3924ecf0f3d89e5",
@@ -32,6 +38,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "15.7(3)M2",
+            "images": {
+                "image": "i86bi_LinuxL3-AdvEnterpriseK9-M2_157_3_May_2018.bin"
+            }
+        },
         {
             "name": "155-2T",
             "images": {
