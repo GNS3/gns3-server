@@ -36,7 +36,6 @@ from fastapi.responses import StreamingResponse, FileResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 from typing import List, Optional
 from uuid import UUID
-from pathlib import Path
 
 from gns3server import schemas
 from gns3server.controller import Controller
@@ -46,7 +45,6 @@ from gns3server.controller.import_project import import_project as import_contro
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
-from gns3server.config import Config
 from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
@@ -395,6 +393,24 @@ async def duplicate_project(
     )
     await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
+
+
+@router.post("/{project_id}/lock", status_code=status.HTTP_204_NO_CONTENT)
+async def lock_project(project: Project = Depends(dep_project)) -> None:
+    """
+    Lock all drawings and nodes in a given project.
+    """
+
+    project.lock()
+
+
+@router.post("/{project_id}/unlock", status_code=status.HTTP_204_NO_CONTENT)
+async def unlock_project(project: Project = Depends(dep_project)) -> None:
+    """
+    Unlock all drawings and nodes in a given project.
+    """
+
+    project.unlock()
 
 
 @router.get("/{project_id}/files/{file_path:path}")
