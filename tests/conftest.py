@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+import pytest_asyncio
 import tempfile
 import shutil
 import sys
@@ -43,14 +44,14 @@ def event_loop(request):
     loop.close()
 
 
-@pytest.fixture(scope="class")
+@pytest_asyncio.fixture(scope="class")
 async def app() -> FastAPI:
 
     from gns3server.api.server import app as gns3app
     yield gns3app
 
 
-@pytest.fixture(scope="class")
+@pytest_asyncio.fixture(scope="class")
 async def db_engine():
 
     db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
@@ -59,7 +60,7 @@ async def db_engine():
     #await engine.sync_engine.dispose()
 
 
-@pytest.fixture(scope="class")
+@pytest_asyncio.fixture(scope="class")
 async def db_session(db_engine):
 
     # recreate database tables for each class
@@ -80,7 +81,7 @@ async def db_session(db_engine):
         await session.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
 
     async def _get_test_db():
@@ -99,7 +100,7 @@ async def base_client(app: FastAPI, db_session: AsyncSession) -> AsyncClient:
         yield async_client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(db_session: AsyncSession) -> User:
 
     new_user = schemas.UserCreate(
@@ -119,7 +120,7 @@ async def test_user(db_session: AsyncSession) -> User:
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_compute(db_session: AsyncSession) -> Compute:
 
     new_compute = schemas.ComputeCreate(
@@ -154,7 +155,7 @@ def authorized_client(base_client: AsyncClient, test_user: User) -> AsyncClient:
     return base_client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(base_client: AsyncClient) -> AsyncClient:
 
     # The super admin is automatically created when the users table is created
@@ -167,7 +168,7 @@ async def client(base_client: AsyncClient) -> AsyncClient:
     return base_client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def compute_client(base_client: AsyncClient) -> AsyncClient:
 
     # default compute username is 'admin'
@@ -206,8 +207,7 @@ def compute(controller):
     return compute
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def project(tmpdir, controller):
 
     return await controller.add_project(name="Test")

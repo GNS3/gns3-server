@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 import uuid
 
 from fastapi import FastAPI, status
@@ -31,7 +32,7 @@ pytestmark = pytest.mark.asyncio
 
 class TestPermissionRoutes:
 
-    @pytest.fixture()
+    @pytest_asyncio.fixture
     async def project(self, app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
 
         project_uuid = str(uuid.uuid4())

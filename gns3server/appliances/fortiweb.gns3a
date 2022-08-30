@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "FWB_KVM-v700-build0097-FORTINET.out.kvm.qcow2",
+            "version": "7.0.1",
+            "md5sum": "a197e9db03ffaf7feb520c8f77f940f7",
+            "filesize": 257622528,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FWB_KVM-v600-build0727-FORTINET.out.kvm.qcow2",
             "version": "6.2.1",
             "md5sum": "05523a6db26030a8fc3d84e53902d162",
@@ -121,6 +128,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.0.1",
+            "images": {
+                "hda_disk_image": "FWB_KVM-v700-build0097-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
         {
             "name": "6.2.1",
             "images": {

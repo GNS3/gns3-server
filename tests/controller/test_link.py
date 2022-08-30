@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import pytest_asyncio
 from unittest.mock import MagicMock
 
 from gns3server.controller.link import Link
@@ -26,8 +27,7 @@ from gns3server.controller.controller_error import ControllerError
 from tests.utils import AsyncioBytesIO, AsyncioMagicMock
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def link(project, compute):
 
     node1 = Node(project, compute, "node1", node_type="qemu")

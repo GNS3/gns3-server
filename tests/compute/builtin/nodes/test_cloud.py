@@ -17,6 +17,7 @@
 
 import uuid
 import pytest
+import pytest_asyncio
 from unittest.mock import MagicMock, patch, call
 
 from gns3server.compute.builtin.nodes.cloud import Cloud
@@ -30,8 +31,7 @@ def nio():
     return NIOUDP(4242, "127.0.0.1", 4343)
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def manager():
 
     m = MagicMock()

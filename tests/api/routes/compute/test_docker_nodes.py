@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import sys
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -55,7 +55,7 @@ def base_params() -> dict:
 #     Docker._instance = None
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def vm(app: FastAPI, compute_client: AsyncClient, compute_project: Project, base_params: dict) -> dict:
 
     with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "nginx"}]):

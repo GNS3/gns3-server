@@ -497,6 +497,7 @@ class Node:
                 "startup_config_content",
                 "private_config_content",
                 "startup_script",
+                "custom_adapters"
             ]:
                 if key in self._properties:
                     del self._properties[key]

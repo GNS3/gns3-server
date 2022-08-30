@@ -19,26 +19,28 @@ import uuid
 import os
 import json
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from unittest.mock import patch, MagicMock
-from tests.utils import asyncio_patch
+from tests.utils import asyncio_patch, AsyncioMagicMock
 
 import gns3server.utils.zipfile_zstd as zipfile_zstd
 from gns3server.controller import Controller
 from gns3server.controller.project import Project
+from gns3server.controller.compute import Compute
 
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def project(app: FastAPI, client: AsyncClient, controller: Controller) -> Project:
 
-    u = str(uuid.uuid4())
-    params = {"name": "test", "project_id": u}
+    project_id = str(uuid.uuid4())
+    params = {"name": "test", "project_id": project_id}
     await client.post(app.url_path_for("create_project"), json=params)
-    return controller.get_project(u)
+    return controller.get_project(project_id)
 
 
 async def test_create_project_with_path(app: FastAPI, client: AsyncClient, controller: Controller, config) -> None:
@@ -472,3 +474,47 @@ async def test_duplicate(app: FastAPI, client: AsyncClient, project: Project) ->
     response = await client.post(app.url_path_for("duplicate_project", project_id=project.id), json={"name": "hello"})
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["name"] == "hello"
+
+
+async def test_lock_unlock(app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
+
+    # add a drawing and node to the project
+    params = {
+        "svg": '<svg height="210" width="500"><line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>',
+        "x": 10,
+        "y": 20,
+        "z": 0
+    }
+
+    response = await client.post(app.url_path_for("create_drawing", project_id=project.id), json=params)
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = MagicMock()
+    response.json = {"console": 2048}
+    compute.post = AsyncioMagicMock(return_value=response)
+
+    response = await client.post(app.url_path_for("create_node", project_id=project.id), json={
+        "name": "test",
+        "node_type": "vpcs",
+        "compute_id": "example.com",
+        "properties": {
+                "startup_script": "echo test"
+        }
+    })
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = await client.post(app.url_path_for("lock_project", project_id=project.id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    for drawing in project.drawings.values():
+        assert drawing.locked is True
+    for node in project.nodes.values():
+        assert node.locked is True
+
+    response = await client.post(app.url_path_for("unlock_project", project_id=project.id))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    for drawing in project.drawings.values():
+        assert drawing.locked is False
+    for node in project.nodes.values():
+        assert node.locked is False
