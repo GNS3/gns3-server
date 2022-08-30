@@ -1112,6 +1112,38 @@ class Project:
                 return True
         return False
 
+    @open_required
+    def lock(self):
+        """
+        Lock all drawings and nodes
+        """
+
+        for drawing in self._drawings.values():
+            if not drawing.locked:
+                drawing.locked = True
+                self.emit_notification("drawing.updated", drawing.asdict())
+        for node in self.nodes.values():
+            if not node.locked:
+                node.locked = True
+                self.emit_notification("node.updated", node.asdict())
+        self.dump()
+
+    @open_required
+    def unlock(self):
+        """
+        Unlock all drawings and nodes
+        """
+
+        for drawing in self._drawings.values():
+            if drawing.locked:
+                drawing.locked = False
+                self.emit_notification("drawing.updated", drawing.asdict())
+        for node in self.nodes.values():
+            if node.locked:
+                node.locked = False
+                self.emit_notification("node.updated", node.asdict())
+        self.dump()
+
     def dump(self):
         """
         Dump topology to disk
