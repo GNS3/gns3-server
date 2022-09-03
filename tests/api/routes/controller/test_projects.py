@@ -513,7 +513,7 @@ async def test_lock_unlock(app: FastAPI, client: AsyncClient, project: Project, 
 
     response = await client.get(app.url_path_for("locked_project", project_id=project.id))
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["result"] is True
+    assert response.json() is True
 
     response = await client.post(app.url_path_for("unlock_project", project_id=project.id))
     assert response.status_code == status.HTTP_204_NO_CONTENT

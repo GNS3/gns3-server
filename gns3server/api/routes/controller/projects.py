@@ -396,12 +396,12 @@ async def duplicate_project(
 
 
 @router.get("/{project_id}/locked")
-async def locked_project(project: Project = Depends(dep_project)) -> dict:
+async def locked_project(project: Project = Depends(dep_project)) -> bool:
     """
     Returns whether a project is locked or not
     """
 
-    return {"result": project.locked}
+    return project.locked
 
 
 @router.post("/{project_id}/lock", status_code=status.HTTP_204_NO_CONTENT)
