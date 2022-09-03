@@ -30,7 +30,7 @@ import logging
 
 log = logging.getLogger()
 
-from fastapi import APIRouter, Depends, Request, Response, Body, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, Body, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, FileResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -393,6 +393,15 @@ async def duplicate_project(
     )
     await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
+
+
+@router.get("/{project_id}/locked")
+async def locked_project(project: Project = Depends(dep_project)) -> dict:
+    """
+    Returns whether a project is locked or not
+    """
+
+    return {"result": project.locked}
 
 
 @router.post("/{project_id}/lock", status_code=status.HTTP_204_NO_CONTENT)
