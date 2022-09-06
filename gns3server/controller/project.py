@@ -1144,6 +1144,21 @@ class Project:
                 self.emit_notification("node.updated", node.asdict())
         self.dump()
 
+    @property
+    @open_required
+    def locked(self):
+        """
+        Check if all items in a project are locked and not
+        """
+
+        for drawing in self._drawings.values():
+            if not drawing.locked:
+                return False
+        for node in self.nodes.values():
+            if not node.locked:
+                return False
+        return True
+
     def dump(self):
         """
         Dump topology to disk

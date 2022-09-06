@@ -1,5 +1,16 @@
 # Change Log
 
+## 3.0.0a2 06/09/2022
+
+* Add web-ui v3.0.0a2
+* Upgrade FastAPI to v0.82.0
+* API endpoint to get the locked status of a project
+* Global project lock and unlock
+* Update appliance files
+* Require name for custom adapters. Fixes #2098
+* Allow empty adapter slots for Dynamips templates. Ref https://github.com/GNS3/gns3-gui/issues/3373
+* Use original $PATH in init.sh for Docker containers. Ref #2069
+
 ## 3.0.0a1 04/08/2022
 
 * Bundle gns3-web-ui v3.0.0a1
