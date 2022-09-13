@@ -18,7 +18,7 @@
 API routes for controller notifications.
 """
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
@@ -35,17 +35,24 @@ router = APIRouter()
 
 
 @router.get("", dependencies=[Depends(get_current_active_user)])
-async def controller_http_notifications() -> StreamingResponse:
+async def controller_http_notifications(request: Request) -> StreamingResponse:
     """
     Receive controller notifications about the controller from HTTP stream.
     """
 
-    async def event_stream():
-        with Controller.instance().notification.controller_queue() as queue:
-            while True:
-                msg = await queue.get_json(5)
-                yield f"{msg}\n".encode("utf-8")
+    from gns3server.api.server import app
+    log.info(f"New client {request.client.host}:{request.client.port} has connected to controller HTTP "
+             f"notification stream")
 
+    async def event_stream():
+        try:
+            with Controller.instance().notification.controller_queue() as queue:
+                while not app.state.exiting:
+                    msg = await queue.get_json(5)
+                    yield f"{msg}\n".encode("utf-8")
+        finally:
+            log.info(f"Client {request.client.host}:{request.client.port} has disconnected from controller HTTP "
+                     f"notification stream")
     return StreamingResponse(event_stream(), media_type="application/json")
 
 

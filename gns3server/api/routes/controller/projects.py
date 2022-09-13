@@ -210,18 +210,19 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     Receive project notifications about the controller from HTTP stream.
     """
 
+    from gns3server.api.server import app
     controller = Controller.instance()
     project = controller.get_project(str(project_id))
 
-    log.info(f"New client has connected to the notification stream for project ID '{project.id}' (HTTP steam method)")
+    log.info(f"New client has connected to the notification stream for project ID '{project.id}' (HTTP stream method)")
 
     async def event_stream():
 
         try:
             with controller.notification.project_queue(project.id) as queue:
-                while True:
+                while not app.state.exiting:
                     msg = await queue.get_json(5)
-                    yield (f"{msg}\n").encode("utf-8")
+                    yield f"{msg}\n".encode("utf-8")
         finally:
             log.info(f"Client has disconnected from notification for project ID '{project.id}' (HTTP stream method)")
             if project.auto_close:
