@@ -55,6 +55,9 @@ async def web_ui(file_path: str):
     if static is None or not os.path.exists(static):
         static = get_resource(os.path.join("static", "web-ui", "index.html"))
 
+    if static is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     # guesstype prefers to have text/html type than application/javascript
     # which results with warnings in Firefox 66 on Windows
     # Ref. gns3-server#1559
