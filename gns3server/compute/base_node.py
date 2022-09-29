@@ -778,18 +778,8 @@ class BaseNode:
             # on Linux we use RAW sockets by default excepting if host traffic must be blocked
             await self._ubridge_send('bridge add_nio_linux_raw {name} "{interface}"'.format(name=bridge_name, interface=ethernet_interface))
         elif sys.platform.startswith("win"):
-            # on Windows we use Winpcap/Npcap
-            windows_interfaces = interfaces()
-            npf_id = None
-            source_mac = None
-            for interface in windows_interfaces:
-                # Winpcap/Npcap uses a NPF ID to identify an interface on Windows
-                if "netcard" in interface and ethernet_interface in interface["netcard"]:
-                    npf_id = interface["id"]
-                    source_mac = interface["mac_address"]
-                elif ethernet_interface in interface["name"]:
-                    npf_id = interface["id"]
-                    source_mac = interface["mac_address"]
+            npf_id, source_mac = self._find_windows_interface(ethernet_interface)
+
             if npf_id:
                 await self._ubridge_send('bridge add_nio_ethernet {name} "{interface}"'.format(name=bridge_name,
                                                                                                     interface=npf_id))
@@ -812,6 +802,25 @@ class BaseNode:
             if source_mac:
                 await self._ubridge_send('bridge set_pcap_filter {name} "not ether src {mac}"'.format(name=bridge_name, mac=source_mac))
                 log.info('PCAP filter applied on "{interface}" for source MAC {mac}'.format(interface=ethernet_interface, mac=source_mac))
+
+    @staticmethod
+    def _find_windows_interface(ethernet_interface):
+        """
+        Get NPF ID and MAC address by input ethernet interface name.
+        Return None, None when not match any interface
+
+        :returns: NPF ID and MAC address
+        """
+        # on Windows we use Winpcap/Npcap
+        windows_interfaces = interfaces()
+        for interface in windows_interfaces:
+            if str.strip(ethernet_interface) == str.strip(interface["name"]):
+                return interface["id"], interface["mac_address"]
+
+        for interface in windows_interfaces:
+            if "netcard" in interface and ethernet_interface in interface["netcard"]:
+                return interface["id"], interface["mac_address"]
+        return None, None
 
     def _create_local_udp_tunnel(self):
         """
