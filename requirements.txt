@@ -1,4 +1,5 @@
-jsonschema>=4.16.0,<4.17
+jsonschema>=4.16.0,<4.17; python_version >= '3.7'
+jsonschema==3.2.0; python_version < '3.7'  # v3.2.0 is the last version to support Python 3.6
 aiohttp>=3.8.3,<3.9
 aiohttp-cors>=0.7.0,<0.8
 aiofiles>=22.1.0,<22.2; python_version >= '3.7'
