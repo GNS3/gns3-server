@@ -185,12 +185,14 @@ async def test_qemu_update(compute_api, vm, free_console_port, fake_qemu_vm):
         "hdb_disk_image": "linux载.img"
     }
 
-    response = await compute_api.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
-    assert response.status == 200
-    assert response.json["name"] == "test"
-    assert response.json["console"] == free_console_port
-    assert response.json["hdb_disk_image"] == "linux载.img"
-    assert response.json["ram"] == 1024
+    with patch("gns3server.compute.qemu.qemu_vm.QemuVM.updated") as mock:
+        response = await compute_api.put("/projects/{project_id}/qemu/nodes/{node_id}".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+        assert response.status == 200
+        assert response.json["name"] == "test"
+        assert response.json["console"] == free_console_port
+        assert response.json["hdb_disk_image"] == "linux载.img"
+        assert response.json["ram"] == 1024
+        assert mock.called
 
 
 async def test_qemu_nio_create_udp(compute_api, vm):
