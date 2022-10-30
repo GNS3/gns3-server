@@ -39,7 +39,7 @@ class Pool():
         while len(self._tasks) > 0 or len(pending) > 0:
             while len(self._tasks) > 0 and len(pending) < self._concurrency:
                 task, args, kwargs = self._tasks.pop(0)
-                pending.add(task(*args, **kwargs))
+                pending.add(asyncio.create_task(task(*args, **kwargs)))
             (done, pending) = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 if task.exception():
