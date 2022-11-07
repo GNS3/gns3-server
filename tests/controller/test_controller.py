@@ -387,10 +387,10 @@ async def test_load_base_files(controller, config, tmpdir):
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
         f.write('test')
 
-    controller.load_base_files()
+    controller._load_base_files()
     assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
 
-    # Check is the file has not been overwrite
+    # Check is the file has not been overwritten
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
         assert f.read() == 'test'
 

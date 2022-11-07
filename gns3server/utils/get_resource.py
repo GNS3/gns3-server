@@ -15,32 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import tempfile
-import pkg_resources
 import atexit
 import logging
 import os
 import sys
+import importlib_resources
+
+from contextlib import ExitStack
+resource_manager = ExitStack()
+atexit.register(resource_manager.close)
 
 log = logging.getLogger(__name__)
-
-try:
-    egg_cache_dir = tempfile.mkdtemp()
-    pkg_resources.set_extraction_path(egg_cache_dir)
-except ValueError:
-    # If the path is already set the module throw an error
-    pass
-
-
-@atexit.register
-def clean_egg_cache():
-    try:
-        import shutil
-        log.debug("Clean egg cache %s", egg_cache_dir)
-        shutil.rmtree(egg_cache_dir)
-    except Exception:
-        # We don't care if we can not cleanup
-        pass
 
 
 def get_resource(resource_name):
@@ -51,7 +36,9 @@ def get_resource(resource_name):
     resource_path = None
     if hasattr(sys, "frozen"):
         resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
-    elif not hasattr(sys, "frozen") and pkg_resources.resource_exists("gns3server", resource_name):
-        resource_path = pkg_resources.resource_filename("gns3server", resource_name)
-        resource_path = os.path.normpath(resource_path)
+    else:
+        ref = importlib_resources.files("gns3server") / resource_name
+        path = resource_manager.enter_context(importlib_resources.as_file(ref))
+        if os.path.exists(path):
+            resource_path = os.path.normpath(path)
     return resource_path
