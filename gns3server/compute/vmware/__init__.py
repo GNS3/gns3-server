@@ -380,6 +380,7 @@ class VMware(BaseManager):
             if vmnet in vmnet_interfaces and self.is_managed_vmnet(vmnet) is False:
                 vmnet_interfaces.remove(vmnet)
 
+        log.debug("VMnet interfaces found: ", vmnet_interfaces)
         self._vmnets = vmnet_interfaces
 
     @property
