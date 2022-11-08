@@ -278,11 +278,17 @@ class Controller:
 
         dst_path = self.configs_path()
         try:
-            for entry in importlib_resources.files('gns3server.configs').iterdir():
-                full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and not os.path.exists(full_path):
-                    log.debug(f"Installing base config file {entry.name} to {full_path}")
-                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            if hasattr(sys, "frozen"):
+                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
+                for filename in os.listdir(resource_path):
+                    if not os.path.exists(os.path.join(dst_path, filename)):
+                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+            else:
+                for entry in importlib_resources.files('gns3server.configs').iterdir():
+                    full_path = os.path.join(dst_path, entry.name)
+                    if entry.is_file() and not os.path.exists(full_path):
+                        log.debug(f"Installing base config file {entry.name} to {full_path}")
+                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
 

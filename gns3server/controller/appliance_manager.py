@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import os
 import json
 import uuid
@@ -26,7 +27,6 @@ import shutil
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
-from ..utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -93,11 +93,17 @@ class ApplianceManager:
 
         dst_path = self._builtin_appliances_path()
         try:
-            for entry in importlib_resources.files('gns3server.appliances').iterdir():
-                full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and not os.path.exists(full_path):
-                    log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
-                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            if hasattr(sys, "frozen"):
+                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
+                for filename in os.listdir(resource_path):
+                    if not os.path.exists(os.path.join(dst_path, filename)):
+                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+            else:
+                for entry in importlib_resources.files('gns3server.appliances').iterdir():
+                    full_path = os.path.join(dst_path, entry.name)
+                    if entry.is_file() and not os.path.exists(full_path):
+                        log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
+                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 
