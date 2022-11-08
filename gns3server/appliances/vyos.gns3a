@@ -2,7 +2,7 @@
     "appliance_id": "f82b74c4-0f30-456f-a582-63daca528502",
     "name": "VyOS",
     "category": "router",
-    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality. VyOS has a subscription LTS version and a community rolling release.  The latest version in this appliance is the monthly snapshot of the rolling release track.",
+    "description": "VyOS is a community fork of Vyatta, a Linux-based network operating system that provides software-based network routing, firewall, and VPN functionality.",
     "vendor_name": "Linux",
     "vendor_url": "https://vyos.net/",
     "documentation_url": "https://docs.vyos.io/",
@@ -27,6 +27,20 @@
     },
     "images": [
         {
+            "filename": "vyos-1.3.2-amd64.iso",
+            "version": "1.3.2",
+            "md5sum": "070743faac800f9e5197058a8b6b3ba1",
+            "filesize": 334495744,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-2-generic-iso-image"
+        },
+        {
+            "filename": "vyos-1.3.1-S1-amd64.iso",
+            "version": "1.3.1-S1",
+            "md5sum": "781f345e8a4ab9eb9e075ce5c87c8817",
+            "filesize": 351272960,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-1-s1-generic-iso-image"
+        },
+        {
             "filename": "vyos-1.3.1-amd64.iso",
             "version": "1.3.1",
             "md5sum": "b6f57bd0cf9b60cdafa337b08ba4f2bc",
@@ -39,14 +53,6 @@
             "md5sum": "2019bd9c5efa6194e2761de678d0073f",
             "filesize": 338690048,
             "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-0-generic-iso-image"
-        },
-        {
-            "filename": "vyos-1.3.0-epa3-amd64.iso",
-            "version": "1.3.0-epa3",
-            "md5sum": "1b5de684d8995844e35fa5cec3171811",
-            "filesize": 331350016,
-            "download_url": "https://vyos.net/get/snapshots/",
-            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/snapshot/vyos-1.3.0-epa3/vyos-1.3.0-epa3-amd64.iso"
         },
         {
             "filename": "vyos-1.2.8-amd64.iso",
@@ -81,6 +87,20 @@
     ],
     "versions": [
         {
+            "name": "1.3.2",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.3.2-amd64.iso"
+            }
+        },
+        {
+            "name": "1.3.1-S1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.3.1-S1-amd64.iso"
+            }
+        },
+        {
             "name": "1.3.1",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
@@ -92,13 +112,6 @@
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
                 "cdrom_image": "vyos-1.3.0-amd64.iso"
-            }
-        },
-        {
-            "name": "1.3.0-epa3",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.3.0-epa3-amd64.iso"
             }
         },
         {
