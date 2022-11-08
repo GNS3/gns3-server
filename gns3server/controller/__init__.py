@@ -278,7 +278,7 @@ class Controller:
 
         dst_path = self.configs_path()
         try:
-            if hasattr(sys, "frozen"):
+            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
                 for filename in os.listdir(resource_path):
                     if not os.path.exists(os.path.join(dst_path, filename)):

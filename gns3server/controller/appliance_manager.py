@@ -93,7 +93,7 @@ class ApplianceManager:
 
         dst_path = self._builtin_appliances_path()
         try:
-            if hasattr(sys, "frozen"):
+            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
                 for filename in os.listdir(resource_path):
                     if not os.path.exists(os.path.join(dst_path, filename)):
