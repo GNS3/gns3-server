@@ -7,7 +7,7 @@ aiofiles==0.8.0; python_version < '3.7'  # v0.8.0 is the last version to support
 Jinja2>=3.1.2,<3.2; python_version >= '3.7'
 Jinja2==3.0.3; python_version < '3.7'  # v3.0.3 is the last version to support Python 3.6
 sentry-sdk==1.10.1,<1.11
-psutil>=5.9.3,<5.10
+psutil>=5.9.4,<5.10
 async-timeout>=4.0.2,<4.1
 distro>=1.7.0
 py-cpuinfo>=9.0.0,<10.0
