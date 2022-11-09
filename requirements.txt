@@ -2,13 +2,13 @@ uvicorn==0.18.3
 fastapi==0.85.0
 python-multipart==0.0.5
 websockets==10.3
-aiohttp==3.8.1
+aiohttp>=3.8.3,<3.9
 async-timeout==4.0.2
 aiofiles==0.8.0
-Jinja2==3.1.2
-sentry-sdk==1.9.5
-psutil==5.9.1
-distro==1.7.0
+Jinja2>=3.1.2,<3.2
+sentry-sdk==1.10.1,<1.11
+psutil==5.9.2
+distro>=1.7.0
 py-cpuinfo==8.0.0
 sqlalchemy==1.4.40
 aiosqlite==0.17.0
@@ -17,4 +17,4 @@ python-jose==3.3.0
 email-validator==1.2.1
 watchfiles==0.16.1
 zstandard==0.18.0
-setuptools==60.6.0  # don't upgrade because of https://github.com/pypa/setuptools/issues/3084
+setuptools>=60.8.1

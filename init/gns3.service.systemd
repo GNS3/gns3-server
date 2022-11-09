@@ -6,7 +6,7 @@ After=network.target network-online.target
 [Service]
 User=gns3
 Group=gns3
-ExecStart=/usr/bin/gns3server
+ExecStart=/usr/local/bin/gns3server
 
 [Install]
 WantedBy=multi-user.target

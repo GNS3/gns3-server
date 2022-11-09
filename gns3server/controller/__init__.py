@@ -22,6 +22,7 @@ import socket
 import shutil
 import asyncio
 import random
+import importlib_resources
 
 from ..config import Config
 from .project import Project
@@ -32,7 +33,6 @@ from .notification import Notification
 from .symbols import Symbols
 from .topology import load_topology
 from .gns3vm import GNS3VM
-from ..utils.get_resource import get_resource
 from .gns3vm.gns3_vm_error import GNS3VMError
 from .controller_error import ControllerError, ControllerNotFoundError
 
@@ -62,7 +62,7 @@ class Controller:
     async def start(self, computes=None):
 
         log.info("Controller is starting")
-        self.load_base_files()
+        self._load_base_files()
         server_config = Config.instance().settings.Server
         Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.host
@@ -281,6 +281,7 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
 
+        self._appliance_manager.install_builtin_appliances()
         self._appliance_manager.load_appliances()
         self._config_loaded = True
 
@@ -305,20 +306,27 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
-    def load_base_files(self):
+    def _load_base_files(self):
         """
         At startup we copy base file to the user location to allow
         them to customize it
         """
 
         dst_path = self.configs_path()
-        src_path = get_resource("configs")
         try:
-            for file in os.listdir(src_path):
-                if not os.path.exists(os.path.join(dst_path, file)):
-                    shutil.copy(os.path.join(src_path, file), os.path.join(dst_path, file))
-        except OSError:
-            pass
+            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
+                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
+                for filename in os.listdir(resource_path):
+                    if not os.path.exists(os.path.join(dst_path, filename)):
+                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+            else:
+                for entry in importlib_resources.files('gns3server.configs').iterdir():
+                    full_path = os.path.join(dst_path, entry.name)
+                    if entry.is_file() and not os.path.exists(full_path):
+                        log.debug(f"Installing base config file {entry.name} to {full_path}")
+                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+        except OSError as e:
+            log.error(f"Could not install base config files to {dst_path}: {e}")
 
     def images_path(self):
         """
