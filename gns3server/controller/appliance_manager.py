@@ -125,7 +125,6 @@ class ApplianceManager:
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 
-
     def _find_appliances_from_image_checksum(self, image_checksum: str) -> List[Tuple[Appliance, str]]:
         """
         Find appliances that matches an image checksum.

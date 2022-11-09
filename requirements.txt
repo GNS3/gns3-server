@@ -17,4 +17,5 @@ python-jose==3.3.0
 email-validator==1.2.1
 watchfiles==0.16.1
 zstandard==0.18.0
+importlib_resources>=1.3
 setuptools>=60.8.1
