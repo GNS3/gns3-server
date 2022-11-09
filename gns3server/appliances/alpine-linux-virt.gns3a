@@ -1,0 +1,45 @@
+{
+    "appliance_id": "3da5c614-772c-4963-af86-f24e058c9216",
+    "name": "Alpine Linux Virt",
+    "category": "guest",
+    "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.\n\nThis is the qemu version of Alpine Linux, stripped down to the maximum, only the default packages are installed without an SSH server.",
+    "vendor_name": "Alpine Linux Development Team",
+    "vendor_url": "http://alpinelinux.org",
+    "documentation_url": "http://wiki.alpinelinux.org",
+    "product_name": "Alpine Linux Virt",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Adnan RIHAN",
+    "maintainer_email": "adnan@rihan.fr",
+    "usage": "Autologin is enabled as \"root\" with no password.\n\nThe network interfaces aren't configured, you can do either of the following:\n- Use alpine's DHCP client: `udhcpc`\n- Configure them manually (ip address add …, ip route add …)\n- Modify interfaces file in /etc/network/interfaces\n- Use alpine's wizard: `setup-interfaces`",
+    "symbol": "alpine-virt-qemu.svg",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 128,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "alpine-virt-3.16.img",
+            "version": "3.16",
+            "md5sum": "ce90ff64b8f8e5860c49ea4a038e54cc",
+            "filesize": 96468992,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/alpine-virt-3.16.img/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "3.16",
+            "images": {
+                "hda_disk_image": "alpine-virt-3.16.img"
+            }
+        }
+    ]
+}

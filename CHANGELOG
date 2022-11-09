@@ -1,5 +1,20 @@
 # Change Log
 
+## 2.2.35 08/11/2022
+
+* Release web-ui v2.2.35
+* Fix issues with VMnet interface on macOS >= 11.0. Ref #3381
+* Use importlib_resources instead of pkg_resources and install built-in appliances in config dir.
+* Fix console vnc don't use configured ports in some case. Fixes #2111
+* Add missing VMware settings in gns3_server.conf
+* Make version PEP 440 compliant
+* Support for Python 3.11
+* Allow for more dependency versions at patch level
+* Replace deprecated distro.linux_distribution() call
+* Update gns3.service.systemd
+* gns3.service.openrc: make openrc script posix compliant
+* fix: use exact match to find interface in windows to avoid get wrong interface
+
 ## 2.2.34 28/08/2022
 
 * Use original $PATH in init.sh for Docker containers. Ref #2069

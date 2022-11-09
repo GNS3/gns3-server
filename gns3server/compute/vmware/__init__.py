@@ -360,6 +360,8 @@ class VMware(BaseManager):
 
     def refresh_vmnet_list(self, ubridge=True):
 
+        log.debug("Refreshing VMnet list with uBridge={}".format(ubridge))
+
         if ubridge:
             # VMnet host adapters must be present when uBridge is used
             vmnet_interfaces = self._get_vmnet_interfaces_ubridge()
@@ -368,6 +370,7 @@ class VMware(BaseManager):
             self._vmnets_info = vmnet_interfaces.copy()
             vmnet_interfaces = list(vmnet_interfaces.keys())
 
+        log.debug("Found {} VMnet interfaces".format(len(vmnet_interfaces)))
         # remove vmnets already in use
         for vmware_vm in self._nodes.values():
             for used_vmnet in vmware_vm.vmnets:
@@ -378,6 +381,7 @@ class VMware(BaseManager):
         # remove vmnets that are not managed
         for vmnet in vmnet_interfaces.copy():
             if vmnet in vmnet_interfaces and self.is_managed_vmnet(vmnet) is False:
+                log.debug("{} is not managed by GNS3".format(vmnet))
                 vmnet_interfaces.remove(vmnet)
 
         self._vmnets = vmnet_interfaces

@@ -465,6 +465,10 @@ class VMwareVM(BaseNode):
 
         try:
             if self._ubridge_hypervisor:
+                if parse_version(platform.mac_ver()[0]) >= parse_version("11.0.0"):
+                    # give VMware some time to create the bridge interfaces, so they can be found
+                    # by psutil and used by uBridge
+                    await asyncio.sleep(1)
                 for adapter_number in range(0, self._adapters):
                     nio = self._ethernet_adapters[adapter_number].get_nio(0)
                     if nio:

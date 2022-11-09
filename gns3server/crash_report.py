@@ -58,7 +58,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "https://3f074423e7664595923ae5895b0819c4@o19455.ingest.sentry.io/38482"
+    DSN = "https://67695b9b3995495d9445159d973d2f0d@o19455.ingest.sentry.io/38482"
     _instance = None
 
     def __init__(self):
@@ -93,7 +93,7 @@ class CrashReport:
                 "os:release": platform.release(),
                 "os:win_32": " ".join(platform.win32_ver()),
                 "os:mac": "{} {}".format(platform.mac_ver()[0], platform.mac_ver()[2]),
-                "os:linux": " ".join(distro.linux_distribution()),
+                "os:linux": distro.name(pretty=True),
 
             }
 

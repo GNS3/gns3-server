@@ -23,6 +23,24 @@
         "kvm": "allow"
     },
     "images": [
+         {
+            "filename": "openwrt-22.03.0-x86-64-generic-ext4-combined.img",
+            "version": "22.03.0",
+            "md5sum": "0f9a266bd8a6cdfcaf0b59f7ba103a0e",
+            "filesize": 126353408,
+            "download_url": "https://downloads.openwrt.org/releases/22.03.0/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/22.03.0/targets/x86/64/openwrt-22.03.0-x86-64-generic-ext4-combined.img.gz",
+            "compression": "gzip"
+        },
+        {
+            "filename": "openwrt-21.02.3-x86-64-generic-ext4-combined.img",
+            "version": "21.02.3",
+            "md5sum": "652c432e758420cb8d749139e8bef14b",
+            "filesize": 126353408,
+            "download_url": "https://downloads.openwrt.org/releases/21.02.3/targets/x86/64/",
+            "direct_download_url": "https://downloads.openwrt.org/releases/21.02.3/targets/x86/64/openwrt-21.02.3-x86-64-generic-ext4-combined.img.gz",
+            "compression": "gzip"
+        },
         {
             "filename": "openwrt-21.02.1-x86-64-generic-ext4-combined.img",
             "version": "21.02.1",
@@ -196,6 +214,18 @@
         }
     ],
     "versions": [
+        {
+            "name": "22.03.0",
+            "images": {
+                "hda_disk_image": "openwrt-22.03.0-x86-64-generic-ext4-combined.img"
+            }
+        },
+        {
+            "name": "21.02.3",
+            "images": {
+                "hda_disk_image": "openwrt-21.02.3-x86-64-generic-ext4-combined.img"
+            }
+        },
         {
             "name": "21.02.1",
             "images": {

@@ -15,17 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import os
-import shutil
 import json
 import uuid
 import asyncio
 import aiohttp
+import importlib_resources
+import shutil
 
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
-from ..utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -65,9 +66,9 @@ class ApplianceManager:
 
         return self._appliances
 
-    def appliances_path(self):
+    def _custom_appliances_path(self):
         """
-        Get the image storage directory
+        Get the custom appliance storage directory
         """
 
         server_config = Config.instance().get_section_config("Server")
@@ -75,13 +76,44 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
+    def _builtin_appliances_path(self):
+        """
+        Get the built-in appliance storage directory
+        """
+
+        config = Config.instance()
+        appliances_dir = os.path.join(config.config_dir, "appliances")
+        os.makedirs(appliances_dir, exist_ok=True)
+        return appliances_dir
+
+    def install_builtin_appliances(self):
+        """
+        At startup we copy the built-in appliances files.
+        """
+
+        dst_path = self._builtin_appliances_path()
+        try:
+            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
+                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
+                for filename in os.listdir(resource_path):
+                    if not os.path.exists(os.path.join(dst_path, filename)):
+                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+            else:
+                for entry in importlib_resources.files('gns3server.appliances').iterdir():
+                    full_path = os.path.join(dst_path, entry.name)
+                    if entry.is_file() and not os.path.exists(full_path):
+                        log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
+                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+        except OSError as e:
+            log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
+
     def load_appliances(self, symbol_theme="Classic"):
         """
         Loads appliance files from disk.
         """
 
         self._appliances = {}
-        for directory, builtin in ((get_resource('appliances'), True,), (self.appliances_path(), False,)):
+        for directory, builtin in ((self._builtin_appliances_path(), True,), (self._custom_appliances_path(), False,)):
             if directory and os.path.isdir(directory):
                 for file in os.listdir(directory):
                     if not file.endswith('.gns3a') and not file.endswith('.gns3appliance'):
@@ -181,7 +213,7 @@ class ApplianceManager:
                         from . import Controller
                         Controller.instance().save()
                     json_data = await response.json()
-                appliances_dir = get_resource('appliances')
+                appliances_dir = self._builtin_appliances_path()
                 downloaded_appliance_files = []
                 for appliance in json_data:
                     if appliance["type"] == "file":

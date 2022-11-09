@@ -578,8 +578,12 @@ class BaseNode:
                 # no need to allocate a port when the console type is none
                 self._console = None
             elif console_type == "vnc":
-                # VNC is a special case and the range must be 5900-6000
-                self._console = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
+                vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
+                self._console = self._manager.port_manager.get_free_tcp_port(
+                    self._project,
+                    vnc_console_start_port_range,
+                    vnc_console_end_port_range
+                )
             else:
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
 

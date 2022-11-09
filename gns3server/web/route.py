@@ -164,8 +164,6 @@ class Route(object):
                     "description": kw.get("description", ""),
                 })
 
-            func = asyncio.coroutine(func)
-
             async def control_schema(request):
                 # This block is executed at each method call
                 server_config = Config.instance().get_section_config("Server")
@@ -181,7 +179,10 @@ class Route(object):
                         response = Response(request=request, route=route, output_schema=output_schema)
 
                         request = await parse_request(request, None, raw)
-                        await func(request, response)
+                        if asyncio.iscoroutinefunction(func):
+                            await func(request, response)
+                        else:
+                            func(request, response)
                         return response
 
                     # API call
@@ -195,7 +196,10 @@ class Route(object):
                         except OSError as e:
                             log.warning("Could not write to the record file {}: {}".format(record_file, e))
                     response = Response(request=request, route=route, output_schema=output_schema)
-                    await func(request, response)
+                    if asyncio.iscoroutinefunction(func):
+                        await func(request, response)
+                    else:
+                        func(request, response)
                 except aiohttp.web.HTTPBadRequest as e:
                     response = Response(request=request, route=route)
                     response.set_status(e.status)
