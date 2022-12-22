@@ -380,6 +380,7 @@ def test_appliances(controller, config, tmpdir):
         json.dump(my_appliance, f)
 
     config.settings.Server.appliances_path = str(tmpdir)
+    controller.appliance_manager.install_builtin_appliances()
     controller.appliance_manager.load_appliances()
     assert len(controller.appliance_manager.appliances) > 0
     for appliance in controller.appliance_manager.appliances.values():
