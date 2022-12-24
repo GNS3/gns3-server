@@ -166,7 +166,7 @@ class EthernetSwitch(Device):
         """
         if ports != self._ports:
             if len(self._nios) > 0 and len(ports) != len(self._ports):
-                raise NodeError("Can't modify a switch already connected.")
+                raise NodeError("Cannot change ports on a switch that is already connected.")
 
             port_number = 0
             for port in ports:
@@ -356,7 +356,7 @@ class EthernetSwitch(Device):
         elif settings["type"] == "dot1q":
             await self.set_dot1q_port(port_number, settings["vlan"])
         elif settings["type"] == "qinq":
-            await self.set_qinq_port(port_number, settings["vlan"], settings.get("ethertype"))
+            await self.set_qinq_port(port_number, settings["vlan"], settings.get("ethertype", "0x8100"))
 
     async def set_access_port(self, port_number, vlan_id):
         """
@@ -427,7 +427,7 @@ class EthernetSwitch(Device):
         await self._hypervisor.send(
             'ethsw set_qinq_port "{name}" {nio} {outer_vlan} {ethertype}'.format(
                 name=self._name, nio=nio, outer_vlan=outer_vlan, ethertype=ethertype if ethertype != "0x8100" else ""
-            )
+            ).strip()
         )
 
         log.info(
