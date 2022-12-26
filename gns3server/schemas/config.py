@@ -136,6 +136,7 @@ class ServerSettings(BaseModel):
     symbols_path: str = "~/GNS3/symbols"
     configs_path: str = "~/GNS3/configs"
     default_symbol_theme: BuiltinSymbolTheme = BuiltinSymbolTheme.affinity_square_blue
+    allow_raw_images: bool = True
     report_errors: bool = True
     additional_images_paths: List[str] = Field(default_factory=list)
     console_start_port_range: int = Field(5000, gt=0, le=65535)
