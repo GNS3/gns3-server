@@ -1,5 +1,27 @@
 # Change Log
 
+## 3.0.0a3 27/12/2022
+
+* Add web-ui v3.0.0a3
+* Add config option to change the server name. Ref #2149
+* Option to disable image discovery and do not scan parent directory
+* Allow raw images by default. Fixes https://github.com/GNS3/gns3-server/issues/2097
+* Fix bug when creating Dynamips router with chassis setting
+* Stricter checks to create/update an Ethernet switch and add tests
+* Fix schema for removing WICs from Cisco routers. Fixes #3392
+* Fix issues with VMnet interface on macOS >= 11.0. Ref #3381
+* Use importlib_resources instead of pkg_resources and install built-in appliances in config dir.
+* Fix console vnc don't use configured ports in some case. Fixes #2111
+* Add missing VMware settings in gns3_server.conf
+* Make version PEP 440 compliant
+* Support for Python 3.11
+* Allow for more dependency versions at patch level
+* Replace deprecated distro.linux_distribution() call
+* Update gns3.service.systemd
+* Fix some issues with HTTP notification streams
+* gns3.service.openrc: make openrc script posix compliant
+* fix: use exact match to find interface in windows to avoid get wrong interface
+
 ## 2.2.35.1 10/11/2022
 
 * Re-release Web-Ui v2.2.35
