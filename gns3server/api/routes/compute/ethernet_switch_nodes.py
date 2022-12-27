@@ -150,12 +150,22 @@ def suspend_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
     pass
 
 
+@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
+def reload_ethernet_switch(node: EthernetSwitch = Depends(dep_node)) -> None:
+    """
+    Reload an Ethernet switch.
+    This endpoint results in no action since Ethernet switch nodes are always on.
+    """
+
+    pass
+
+
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
 )
-async def create_nio(
+async def create_ethernet_switch_nio(
         *,
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
@@ -169,7 +179,7 @@ async def create_nio(
 
 
 @router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_nio(
+async def delete_ethernet_switch_nio(
         *,
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
@@ -185,7 +195,7 @@ async def delete_nio(
 
 
 @router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
-async def start_capture(
+async def start_ethernet_switch_capture(
         *,
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,
@@ -205,7 +215,7 @@ async def start_capture(
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
 )
-async def stop_capture(
+async def stop_ethernet_switch_capture(
         *,
         adapter_number: int = Path(..., ge=0, le=0),
         port_number: int,

@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import socket
+
 from enum import Enum
 from pydantic import BaseModel, Field, SecretStr, FilePath, DirectoryPath, validator
 from typing import List
@@ -123,6 +125,7 @@ class BuiltinSymbolTheme(str, Enum):
 class ServerSettings(BaseModel):
 
     local: bool = False
+    name: str = f"{socket.gethostname()} (controller)"
     protocol: ServerProtocol = ServerProtocol.http
     host: str = "0.0.0.0"
     port: int = Field(3080, gt=0, le=65535)
@@ -136,6 +139,8 @@ class ServerSettings(BaseModel):
     symbols_path: str = "~/GNS3/symbols"
     configs_path: str = "~/GNS3/configs"
     default_symbol_theme: BuiltinSymbolTheme = BuiltinSymbolTheme.affinity_square_blue
+    allow_raw_images: bool = True
+    auto_discover_images: bool = True
     report_errors: bool = True
     additional_images_paths: List[str] = Field(default_factory=list)
     console_start_port_range: int = Field(5000, gt=0, le=65535)

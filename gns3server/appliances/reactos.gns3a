@@ -1,0 +1,67 @@
+{
+    "appliance_id": "c811e588-39ef-41e9-9f60-6e8e08618c3d",
+    "name": "ReactOS",
+    "category": "guest",
+    "description": "Imagine running your favorite Windows applications and drivers in an open-source environment you can trust.\nThat's the mission of ReactOS! ",
+    "vendor_name": "ReactOS Project",
+    "vendor_url": "https://reactos.org/",
+    "documentation_url": "https://reactos.org/what-is-reactos/",
+    "product_name": "ReactOS",
+    "product_url": "https://reactos.org/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Savio D'souza",
+    "maintainer_email": "savio2002@yahoo.co.in",
+    "usage": "Passwords are set during installation.",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "ReactOS-0.4.14-release-15-gb6088a6.iso",
+            "version": "Installer-0.4.14-release-15",
+            "md5sum": "af4be6b27463446905f155f14232d2b4",
+            "filesize": 140509184,
+            "download_url": "https://reactos.org/download",
+            "direct_download_url": "https://sourceforge.net/projects/reactos/files/ReactOS/0.4.14/ReactOS-0.4.14-release-21-g1302c1b-iso.zip/download"
+        },
+        {
+            "filename": "ReactOS-0.4.14-release-15-gb6088a6-Live.iso",
+            "version": "Live-0.4.14-release-15",
+            "md5sum": "73c1a0169a9a3b8a4feb91f4d00f5e97",
+            "filesize": 267386880,
+            "download_url": "https://reactos.org/download",
+            "direct_download_url": "https://sourceforge.net/projects/reactos/files/ReactOS/0.4.14/ReactOS-0.4.14-release-21-g1302c1b-live.zip/download"
+        },
+        {
+            "filename": "empty30G.qcow2",
+            "version": "1.0",
+            "md5sum": "3411a599e822f2ac6be560a26405821a",
+            "filesize": 197120,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%30disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "Installer-0.4.14-release-15",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "ReactOS-0.4.14-release-15-gb6088a6.iso"
+            }
+        },
+        {
+            "name": "Live-0.4.14-release-15",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "ReactOS-0.4.14-release-15-gb6088a6-Live.iso"
+            }
+        }
+    ]
+}

@@ -77,6 +77,13 @@
             "md5sum": "4cf5b7fd68075b6f7ee0dd41a4029ca0",
             "filesize": 2150017536,
             "download_url": "https://software.cisco.com/download/"
+        },
+        {
+            "filename": "Cisco_Firepower_Management_Center_Virtual-6.2.2-81.qcow2",
+            "version": "6.2.2 (81)",
+            "md5sum": "2f75c9c6c18a6fbb5516f6f451aef3a4",
+            "filesize": 2112356352,
+            "download_url": "https://software.cisco.com/download/"
         }
     ],
     "versions": [
@@ -120,6 +127,12 @@
             "name": "6.2.1 (342) vmdk",
             "images": {
                 "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual_VMware-6.2.1-342-disk1.vmdk"
+            }
+        },
+        {
+            "name": "6.2.2 (81)",
+            "images": {
+                "hda_disk_image": "Cisco_Firepower_Management_Center_Virtual-6.2.2-81.qcow2"
             }
         }
     ]

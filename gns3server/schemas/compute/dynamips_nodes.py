@@ -78,6 +78,7 @@ class DynamipsWics(str, Enum):
     wic_1enet = "WIC-1ENET"
     wic_1t = "WIC-1T"
     wic_2t = "WIC-2T"
+    _ = ""
 
 
 class DynamipsConsoleType(str, Enum):
@@ -113,7 +114,7 @@ class DynamipsMidplane(str, Enum):
     vxr = "vxr"
 
 
-# TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowd only for c7200)
+# TODO: improve schema for Dynamips (match platform specific options, e.g. NPE allowed only for c7200)
 class DynamipsBase(BaseModel):
     """
     Common Dynamips node properties.

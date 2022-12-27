@@ -61,9 +61,11 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate) -> 
 
     dynamips_manager = Dynamips.instance()
     platform = node_data.platform
-    chassis = None
+    print(node_data.chassis, platform in DEFAULT_CHASSIS)
     if not node_data.chassis and platform in DEFAULT_CHASSIS:
         chassis = DEFAULT_CHASSIS[platform]
+    else:
+        chassis = node_data.chassis
     node_data = jsonable_encoder(node_data, exclude_unset=True)
     vm = await dynamips_manager.create_node(
         node_data.pop("name"),

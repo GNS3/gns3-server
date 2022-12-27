@@ -30,7 +30,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
-from gns3server.utils.images import discover_images, check_valid_image_header, read_image_info, InvalidImageError
+from gns3server.utils.images import discover_images, check_valid_image_header, read_image_info, default_images_directory, InvalidImageError
 from gns3server import schemas
 
 from .models import Base
@@ -117,12 +117,16 @@ def image_filter(change: Change, path: str) -> bool:
 
 async def monitor_images_on_filesystem(app: FastAPI):
 
-    server_config = Config.instance().settings.Server
-    images_dir = os.path.expanduser(server_config.images_path)
+    directories_to_monitor = []
+    for image_type in ("qemu", "ios", "iou"):
+        image_dir = default_images_directory(image_type)
+        if os.path.isdir(image_dir):
+            log.debug(f"Monitoring for new images in '{image_dir}'")
+            directories_to_monitor.append(image_dir)
 
     try:
         async for changes in awatch(
-                images_dir,
+                *directories_to_monitor,
                 watch_filter=image_filter,
                 raise_interrupt=True
         ):

@@ -136,7 +136,8 @@ async def discover_images(image_type: str, skip_image_paths: list = None) -> Lis
     files = set()
     images = []
 
-    for directory in images_directories(image_type):
+    for directory in images_directories(image_type, include_parent_directory=False):
+        log.info(f"Discovering images in '{directory}'")
         for root, _, filenames in os.walk(os.path.normpath(directory)):
             for filename in filenames:
                 if filename.endswith(".tmp") or filename.endswith(".md5sum") or filename.startswith("."):
@@ -189,7 +190,7 @@ def default_images_directory(image_type):
         raise NotImplementedError(f"%s node type is not supported", image_type)
 
 
-def images_directories(image_type):
+def images_directories(image_type, include_parent_directory=True):
     """
     Return all directories where we will look for images
     by priority
@@ -199,7 +200,7 @@ def images_directories(image_type):
 
     server_config = Config.instance().settings.Server
     paths = []
-    img_dir = os.path.expanduser(server_config.images_path)
+
     type_img_directory = default_images_directory(image_type)
     try:
         os.makedirs(type_img_directory, exist_ok=True)
@@ -208,8 +209,10 @@ def images_directories(image_type):
         pass
     for directory in server_config.additional_images_paths:
         paths.append(directory)
-    # Compatibility with old topologies we look in parent directory
-    paths.append(img_dir)
+    if include_parent_directory:
+        # Compatibility with old topologies we look in parent directory
+        img_dir = os.path.expanduser(server_config.images_path)
+        paths.append(img_dir)
     # Return only the existing paths
     return [force_unix_path(p) for p in paths if os.path.exists(p)]
 

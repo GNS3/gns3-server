@@ -31,6 +31,13 @@
     },
     "images": [
         {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20220815162137.vmdk",
+            "version": "10.10.1000",
+            "md5sum": "40f9ddf1e12640376af443b5d982f2f6",
+            "filesize": 356162560,
+            "download_url": "https://asp.arubanetworks.com/"
+        },    
+        {
             "filename": "arubaoscx-disk-image-genericx86-p4-20220616193419.vmdk",
             "version": "10.10.0002",
             "md5sum": "ed031aeb6caf92adb408c7603d294fd4",
@@ -95,6 +102,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.10.1000",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20220815162137.vmdk"
+            }
+        },
         {
             "name": "10.10.0002",
             "images": {

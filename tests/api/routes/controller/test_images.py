@@ -263,6 +263,7 @@ class TestImageRoutes:
             controller: Controller
     ) -> None:
 
+        controller.appliance_manager.install_builtin_appliances()
         controller.appliance_manager.load_appliances()  # make sure appliances are loaded
         image_path = "tests/resources/empty30G.qcow2"
         image_name = os.path.basename(image_path)
