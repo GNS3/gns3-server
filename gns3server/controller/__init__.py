@@ -65,6 +65,7 @@ class Controller:
         self._load_base_files()
         server_config = Config.instance().settings.Server
         Config.instance().listen_for_config_changes(self._update_config)
+        name = server_config.name
         host = server_config.host
         port = server_config.port
 
@@ -86,7 +87,7 @@ class Controller:
         try:
             self._local_server = await self.add_compute(
                 compute_id="local",
-                name=f"{socket.gethostname()} (controller)",
+                name=name,
                 protocol=protocol,
                 host=host,
                 console_host=console_host,
