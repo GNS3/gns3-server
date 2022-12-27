@@ -23,6 +23,14 @@
     },
     "images": [
         {
+            "filename": "frr-8.2.2.qcow2",
+            "version": "8.2.2",
+            "md5sum": "45cda6b991a1b9e8205a3a0ecc953640",
+            "filesize": 56609280,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/frr-8.2.2.qcow2"
+        },
+        {
             "filename": "frr-8.1.0.qcow2",
             "version": "8.1.0",
             "md5sum": "836d6a207f63f99a4039378f2b0c6123",
@@ -48,6 +56,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "8.2.2",
+            "images": {
+                "hda_disk_image": "frr-8.2.2.qcow2"
+            }
+        },
         {
             "name": "8.1.0",
             "images": {

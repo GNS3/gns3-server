@@ -26,6 +26,14 @@
     },
     "images": [
         {
+            "filename": "cumulus-linux-5.3.1-vx-amd64-qemu.qcow2",
+            "version": "5.3.1",
+            "md5sum": "366b4e5afbfb638244fac4dd6cd092fd",
+            "filesize": 2147479552,
+            "download_url": "https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/download/",
+            "direct_download_url": "https://d2cd9e7ca6hntp.cloudfront.net/public/CumulusLinux-5.3.1/cumulus-linux-5.3.1-vx-amd64-qemu.qcow2"
+        },
+        {
             "filename": "cumulus-linux-5.1.0-vx-amd64-qemu.qcow2",
             "version": "5.1.0",
             "md5sum": "b46a68bbb57e77fab5c2927367bead13",
