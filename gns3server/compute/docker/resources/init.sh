@@ -87,5 +87,13 @@ done
 ifup -a -f
 
 # continue normal docker startup
-eval HOME=$(echo ~${GNS3_USER-root})
+case "$GNS3_USER" in
+  [1-9][0-9]*)
+    # for when the user field defined in the Docker container is an ID
+    export GNS3_USER=$(cat /etc/passwd | grep ${GNS3_USER-root} | awk -F: '{print $1}')
+    ;;
+  *)
+    ;;
+esac
+eval HOME="$(echo ~${GNS3_USER-root})"
 exec su ${GNS3_USER-root} -p -- /gns3/run-cmd.sh "$OLD_PATH" "$@"
