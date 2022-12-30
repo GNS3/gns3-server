@@ -189,6 +189,7 @@ class AsyncioTelnetServer:
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients
@@ -202,6 +203,7 @@ class AsyncioTelnetServer:
         except ConnectionError:
             async with self._lock:
                 network_writer.close()
+                await network_writer.wait_closed()
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -216,6 +218,8 @@ class AsyncioTelnetServer:
             try:
                 writer.write_eof()
                 await writer.drain()
+                writer.close()
+                await writer.wait_closed()
             except (AttributeError, ConnectionError):
                 continue
 

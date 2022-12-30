@@ -344,6 +344,15 @@ class VPCSVM(BaseNode):
             return True
         return False
 
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        await self.stop_wrap_console()
+        if self.is_running():
+            await self.start_wrap_console()
+
     @BaseNode.console_type.setter
     def console_type(self, new_console_type):
         """

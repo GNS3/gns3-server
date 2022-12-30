@@ -1567,6 +1567,15 @@ class QemuVM(BaseNode):
                 self._process = None
         return False
 
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        await self.stop_wrap_console()
+        if self.is_running():
+            await self.start_wrap_console()
+
     def command(self):
         """
         Returns the QEMU command line.
