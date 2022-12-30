@@ -21,8 +21,13 @@ import json
 import uuid
 import asyncio
 import aiohttp
-import importlib_resources
 import shutil
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 
 from .appliance import Appliance
 from ..config import Config

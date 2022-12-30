@@ -22,7 +22,11 @@ import uuid
 import socket
 import shutil
 import aiohttp
-import importlib_resources
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
 
 from ..config import Config
 from .project import Project

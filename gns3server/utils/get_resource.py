@@ -19,7 +19,12 @@ import atexit
 import logging
 import os
 import sys
-import importlib_resources
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 
 from contextlib import ExitStack
 resource_manager = ExitStack()
