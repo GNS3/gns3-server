@@ -105,10 +105,11 @@ class ApplianceManager:
                         shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
             else:
                 for entry in importlib_resources.files('gns3server.appliances').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+                    if entry.is_file():
+                        full_path = os.path.join(dst_path, entry.name)
+                        if not os.path.exists(full_path):
+                            log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
+                            shutil.copy(str(entry), os.path.join(dst_path, entry.name))
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 
