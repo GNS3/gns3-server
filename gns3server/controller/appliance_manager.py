@@ -32,6 +32,7 @@ except ImportError:
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
+from gns3server import appliances as gns3_appliances
 
 import logging
 log = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class ApplianceManager:
                     if not os.path.exists(os.path.join(dst_path, filename)):
                         shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
             else:
-                for entry in importlib_resources.files('gns3server.appliances').iterdir():
+                for entry in importlib_resources.files(gns3_appliances).iterdir():
                     if entry.is_file():
                         full_path = os.path.join(dst_path, entry.name)
                         if not os.path.exists(full_path):

@@ -41,6 +41,7 @@ from ..version import __version__
 from .topology import load_topology
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
+from gns3server import configs as gns3_configs
 
 import logging
 log = logging.getLogger(__name__)
@@ -288,7 +289,7 @@ class Controller:
                     if not os.path.exists(os.path.join(dst_path, filename)):
                         shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
             else:
-                for entry in importlib_resources.files('gns3server.configs').iterdir():
+                for entry in importlib_resources.files(gns3_configs).iterdir():
                     if entry.is_file():
                         full_path = os.path.join(dst_path, entry.name)
                         if not os.path.exists(full_path):
