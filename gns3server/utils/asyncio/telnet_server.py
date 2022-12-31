@@ -189,7 +189,6 @@ class AsyncioTelnetServer:
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients

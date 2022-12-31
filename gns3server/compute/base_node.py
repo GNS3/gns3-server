@@ -77,6 +77,8 @@ class BaseNode:
         self._allocate_aux = allocate_aux
         self._wrap_console = wrap_console
         self._wrapper_telnet_server = None
+        self._wrap_console_reader = None
+        self._wrap_console_writer = None
         self._internal_console_port = None
         self._custom_adapters = []
         self._ubridge_require_privileged_access = False
@@ -338,7 +340,6 @@ class BaseNode:
         if self._wrap_console:
             self._manager.port_manager.release_tcp_port(self._internal_console_port, self._project)
             self._internal_console_port = None
-
         if self._aux:
             self._manager.port_manager.release_tcp_port(self._aux, self._project)
             self._aux = None
@@ -376,15 +377,23 @@ class BaseNode:
         remaining_trial = 60
         while True:
             try:
-                (reader, writer) = await asyncio.open_connection(host="127.0.0.1", port=self._internal_console_port)
+                (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
+                    host="127.0.0.1",
+                    port=self._internal_console_port
+                )
                 break
             except (OSError, ConnectionRefusedError) as e:
                 if remaining_trial <= 0:
                     raise e
             await asyncio.sleep(0.1)
             remaining_trial -= 1
-        await AsyncioTelnetServer.write_client_intro(writer, echo=True)
-        server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
+        await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
+        server = AsyncioTelnetServer(
+            reader=self._wrap_console_reader,
+            writer=self._wrap_console_writer,
+            binary=True,
+            echo=True
+        )
         # warning: this will raise OSError exception if there is a problem...
         self._wrapper_telnet_server = await asyncio.start_server(
             server.run,
@@ -398,8 +407,19 @@ class BaseNode:
         """
 
         if self._wrapper_telnet_server:
+            self._wrap_console_writer.close()
+            await self._wrap_console_writer.wait_closed()
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
+            self._wrapper_telnet_server = None
+
+    async def reset_wrap_console(self):
+        """
+        Reset the wrap console (restarts the Telnet proxy)
+        """
+
+        await self.stop_wrap_console()
+        await self.start_wrap_console()
 
     async def start_websocket_console(self, request):
         """

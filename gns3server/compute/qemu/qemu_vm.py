@@ -1572,9 +1572,8 @@ class QemuVM(BaseNode):
         Reset console
         """
 
-        await self.stop_wrap_console()
         if self.is_running():
-            await self.start_wrap_console()
+            await self.reset_wrap_console()
 
     def command(self):
         """
