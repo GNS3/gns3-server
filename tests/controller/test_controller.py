@@ -381,13 +381,13 @@ async def test_get_free_project_name(controller):
     assert controller.get_free_project_name("Hello") == "Hello"
 
 
-async def test_load_base_files(controller, config, tmpdir):
+async def test_install_base_configs(controller, config, tmpdir):
 
     config.set_section_config("Server", {"configs_path": str(tmpdir)})
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
         f.write('test')
 
-    controller._load_base_files()
+    controller._install_base_configs()
     assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
 
     # Check is the file has not been overwritten
@@ -410,6 +410,7 @@ def test_appliances(controller, tmpdir):
     with open(str(tmpdir / "my_appliance2.gns3a"), 'w+') as f:
         json.dump(my_appliance, f)
 
+    controller.appliance_manager.install_builtin_appliances()
     with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
         controller.appliance_manager.load_appliances()
     assert len(controller.appliance_manager.appliances) > 0
