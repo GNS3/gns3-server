@@ -318,7 +318,6 @@ class Controller:
 
         server_config = Config.instance().get_section_config("Server")
         configs_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/configs"))
-        # shutil.rmtree(configs_path, ignore_errors=True)
         os.makedirs(configs_path, exist_ok=True)
         return configs_path
 

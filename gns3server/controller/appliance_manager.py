@@ -81,14 +81,15 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def _builtin_appliances_path(self):
+    def _builtin_appliances_path(self, delete_first=False):
         """
         Get the built-in appliance storage directory
         """
 
         config = Config.instance()
         appliances_dir = os.path.join(config.config_dir, "appliances")
-        # shutil.rmtree(appliances_dir, ignore_errors=True)
+        if delete_first:
+            shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
@@ -97,7 +98,7 @@ class ApplianceManager:
         At startup we copy the built-in appliances files.
         """
 
-        dst_path = self._builtin_appliances_path()
+        dst_path = self._builtin_appliances_path(delete_first=True)
         log.info(f"Installing built-in appliances in '{dst_path}'")
         try:
             if hasattr(sys, "frozen") and sys.platform.startswith("win"):
