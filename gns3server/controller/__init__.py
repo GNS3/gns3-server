@@ -29,6 +29,8 @@ except ImportError:
     from importlib import resources as importlib_resources
 
 from ..config import Config
+from ..utils import parse_version
+
 from .project import Project
 from .template import Template
 from .appliance import Appliance
@@ -69,7 +71,7 @@ class Controller:
     async def start(self):
 
         log.info("Controller is starting")
-        self._load_base_files()
+        self._install_base_configs()
         server_config = Config.instance().get_section_config("Server")
         Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.get("host", "localhost")
@@ -246,7 +248,9 @@ class Controller:
         if "iou_license" in controller_settings:
             self._iou_license_settings = controller_settings["iou_license"]
 
-        self._appliance_manager.install_builtin_appliances()
+        if parse_version(__version__) > parse_version(controller_settings.get("version", "")):
+            self._appliance_manager.install_builtin_appliances()
+
         self._appliance_manager.appliances_etag = controller_settings.get("appliances_etag")
         self._appliance_manager.load_appliances()
         self._template_manager.load_templates(controller_settings.get("templates"))
@@ -274,13 +278,14 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
-    def _load_base_files(self):
+    def _install_base_configs(self):
         """
         At startup we copy base file to the user location to allow
         them to customize it
         """
 
         dst_path = self.configs_path()
+        log.info(f"Installing base configs in '{dst_path}'")
         try:
             if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
@@ -313,6 +318,7 @@ class Controller:
 
         server_config = Config.instance().get_section_config("Server")
         configs_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/configs"))
+        # shutil.rmtree(configs_path, ignore_errors=True)
         os.makedirs(configs_path, exist_ok=True)
         return configs_path
 

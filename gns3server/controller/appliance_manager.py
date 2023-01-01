@@ -88,6 +88,7 @@ class ApplianceManager:
 
         config = Config.instance()
         appliances_dir = os.path.join(config.config_dir, "appliances")
+        # shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
@@ -97,16 +98,16 @@ class ApplianceManager:
         """
 
         dst_path = self._builtin_appliances_path()
+        log.info(f"Installing built-in appliances in '{dst_path}'")
         try:
             if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
                 for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
             else:
                 for entry in importlib_resources.files('gns3server.appliances').iterdir():
                     full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
+                    if entry.is_file():
                         log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
                         shutil.copy(str(entry), os.path.join(dst_path, entry.name))
         except OSError as e:
