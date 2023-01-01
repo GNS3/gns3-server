@@ -29,6 +29,11 @@ In addition of Python dependencies listed in a section below, other software may
 * mtools is recommended to support data transfer to/from QEMU VMs using virtual disks.
 * i386-libraries of libc and libcrypto are optional (Linux only), they are only needed to run IOU based nodes.
 
+Docker support
+**************
+
+Docker support needs the script program (`bsdutils` or `util-linux` package), when running a docker VM and a static busybox during installation (python3 setup.py install / pip3 install / package creation).
+
 Branches
 --------
 

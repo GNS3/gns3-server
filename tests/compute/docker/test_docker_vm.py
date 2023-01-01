@@ -1343,7 +1343,15 @@ async def test_start_aux(vm):
 
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         await vm._start_aux()
-    mock_exec.assert_called_with('docker', 'exec', '-i', 'e90e34656842', '/gns3/bin/busybox', 'script', '-qfc', 'while true; do TERM=vt100 /gns3/bin/busybox sh; done', '/dev/null', stderr=asyncio.subprocess.STDOUT, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+        mock_exec.assert_called_with(
+            "script",
+            "-qfc",
+            "docker exec -i -t e90e34656842 /gns3/bin/busybox sh -c 'while true; do TERM=vt100 /gns3/bin/busybox sh; done'",
+            "/dev/null",
+            stderr=asyncio.subprocess.STDOUT,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE
+        )
 
 
 async def test_create_network_interfaces(vm):
