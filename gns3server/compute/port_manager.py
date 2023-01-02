@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
+import ipaddress
 from aiohttp.web import HTTPConflict
 from gns3server.config import Config
 
@@ -91,6 +92,12 @@ class PortManager:
         if remote_console_connections:
             log.warning("Remote console connections are allowed")
             self._console_host = "0.0.0.0"
+            try:
+                ip = ipaddress.ip_address(new_host)
+                if isinstance(ip, ipaddress.IPv6Address):
+                    self._console_host = "::"
+            except ValueError:
+                log.warning("Could not determine IP address type for console host")
         else:
             self._console_host = new_host
 
