@@ -183,6 +183,11 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "boolean",
         "default": True
     },
+    "tpm": {
+        "description": "Enable the Trusted Platform Module (TPM) in Qemu",
+        "type": "boolean",
+        "default": False
+    },
     "create_config_disk": {
         "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
         "type": "boolean",

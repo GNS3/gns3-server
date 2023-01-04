@@ -82,6 +82,7 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
     # and the code of VPCS, dynamips... Will detect it's not the correct binary
     return output.decode("utf-8", errors="ignore")
 
+
 async def wait_for_process_termination(process, timeout=10):
     """
     Wait for a process terminate, and raise asyncio.TimeoutError in case of
