@@ -94,7 +94,9 @@ class DynamipsHypervisor:
         try:
             version = await self.send("hypervisor version")
             self._version = version[0].split("-", 1)[0]
+            log.info("Dynamips version {} detected".format(self._version))
         except IndexError:
+            log.warning("Dynamips version could not be detected")
             self._version = "Unknown"
 
         # this forces to send the working dir to Dynamips

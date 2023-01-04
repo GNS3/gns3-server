@@ -205,7 +205,7 @@ class Hypervisor(DynamipsHypervisor):
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
         command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
-        if parse_version(self.version) >= parse_version('0.2.23'):
+        if not sys.platform.startswith("win") and parse_version(self.version) >= parse_version('0.2.23'):
             command.extend(["-H", "{}:{}".format(self._host, self._port), "--console-binding-addr", self._console_host])
         else:
             command.extend(["-H", str(self._port)])
