@@ -2027,6 +2027,8 @@ class QemuVM(BaseNode):
         Start swtpm (TPM emulator)
         """
 
+        if sys.platform.startswith("win"):
+            raise QemuError("swtpm (TPM emulator) is not supported on Windows")
         tpm_dir = os.path.join(self.working_dir, "tpm")
         os.makedirs(tpm_dir, exist_ok=True)
         tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
