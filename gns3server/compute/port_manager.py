@@ -84,7 +84,7 @@ class PortManager:
     @console_host.setter
     def console_host(self, new_host):
         """
-        Bind console host to 0.0.0.0 if remote connections are allowed.
+        Bind console host to 0.0.0.0 or :: if remote connections are allowed.
         """
 
         server_config = Config.instance().get_section_config("Server")
