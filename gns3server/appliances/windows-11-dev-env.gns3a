@@ -1,0 +1,59 @@
+{
+    "appliance_id": "f3b6a3ac-7be5-4bb0-b204-da3712fb646c",
+    "name": "Windows-11-Dev-Env",
+    "category": "guest",
+    "description": "Windows 11 Developer Environment Virtual Machine.",
+    "vendor_name": "Microsoft",
+    "vendor_url": "https://www.microsoft.com",
+    "documentation_url": "https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/",
+    "product_name": "Windows 11 Development Environment",
+    "product_url": "https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/",
+    "registry_version": 4,
+    "status": "experimental",
+    "availability": "free",
+    "maintainer": "Ean Towne",
+    "maintainer_email": "eantowne@gmail.com",
+    "usage": "Uses SPICE not VNC\nHighly recommended to install the SPICE-agent from: https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe to be able to change resolution and increase performance.\nThis is an evaluation virtual machine (90 days) and includes:\n* Window 11 Enterprise (Evaluation)\n* Visual Studio 2022 Community Edition with UWP .NET Desktop, Azure, and Windows App SDK for C# workloads enabled\n* Windows Subsystem for Linux 2 enabled with Ubuntu installed\n* Windows Terminal installed\n* Developer mode enabled",
+    "symbol": "microsoft.svg",
+    "first_port_name": "Network Adapter 1",
+    "port_name_format": "Network Adapter {0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 1,
+        "ram": 4096,
+        "cpus": 4,
+        "hda_disk_interface": "sata",
+        "arch": "x86_64",
+        "console_type": "spice",
+        "boot_priority": "c",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "WinDev2212Eval-disk1.vmdk",
+            "version": "2212",
+            "md5sum": "c79f393a067b92e01a513a118d455ac8",
+            "filesize": 24620493824,
+            "download_url": "https://aka.ms/windev_VM_vmware",
+            "compression": "zip"
+        },
+        {
+            "filename": "OVMF-20160813.fd",
+            "version": "16.08.13",
+            "md5sum": "8ff0ef1ec56345db5b6bda1a8630e3c6",
+            "filesize": 2097152,
+            "download_url": "",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-20160813.fd.zip/download",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "WinDev2212Eval-disk1.vmdk"
+            },
+            "name": "2212"
+        }
+    ]
+}

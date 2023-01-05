@@ -204,11 +204,9 @@ class Hypervisor(DynamipsHypervisor):
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
         command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
-        # Dynamips cannot listen for hypervisor commands and for console connections on
-        # 2 different IP addresses.
-        # See https://github.com/GNS3/dynamips/issues/62
-        if self._console_host != "0.0.0.0" and self._console_host != "::":
-            command.extend(["-H", "{}:{}".format(self._host, self._port)])
+        if not sys.platform.startswith("win"):
+            command.extend(["-H", "{}:{}".format(self._host, self._port), "--console-binding-addr", self._console_host])
         else:
             command.extend(["-H", str(self._port)])
+
         return command

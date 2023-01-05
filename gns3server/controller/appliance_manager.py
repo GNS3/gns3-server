@@ -21,8 +21,13 @@ import json
 import uuid
 import asyncio
 import aiohttp
-import importlib_resources
 import shutil
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 
 from .appliance import Appliance
 from ..config import Config
@@ -76,13 +81,15 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def _builtin_appliances_path(self):
+    def _builtin_appliances_path(self, delete_first=False):
         """
         Get the built-in appliance storage directory
         """
 
         config = Config.instance()
         appliances_dir = os.path.join(config.config_dir, "appliances")
+        if delete_first:
+            shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
@@ -91,17 +98,17 @@ class ApplianceManager:
         At startup we copy the built-in appliances files.
         """
 
-        dst_path = self._builtin_appliances_path()
+        dst_path = self._builtin_appliances_path(delete_first=True)
+        log.info(f"Installing built-in appliances in '{dst_path}'")
         try:
             if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
                 for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
             else:
                 for entry in importlib_resources.files('gns3server.appliances').iterdir():
                     full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
+                    if entry.is_file():
                         log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
                         shutil.copy(str(entry), os.path.join(dst_path, entry.name))
         except OSError as e:

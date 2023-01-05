@@ -24,12 +24,12 @@
     },
     "images": [
         {
-            "filename": "debian-11-genericcloud-amd64-20220911-1135.qcow2",
-            "version": "11.5",
-            "md5sum": "06e481ddd23682af4326226661c13d8f",
-            "filesize": 254672896,
+            "filename": "debian-11-genericcloud-amd64-20221219-1234.qcow2",
+            "version": "11.6",
+            "md5sum": "bd6ddbccc89e40deb7716b812958238d",
+            "filesize": 258801664,
             "download_url": "https://cloud.debian.org/images/cloud/bullseye/",
-            "direct_download_url": "https://cloud.debian.org/images/cloud/bullseye/20220911-1135/debian-11-genericcloud-amd64-20220911-1135.qcow2"
+            "direct_download_url": "https://cloud.debian.org/images/cloud/bullseye/20221219-1234/debian-11-genericcloud-amd64-20221219-1234.qcow2"
         },
         {
             "filename": "debian-10-genericcloud-amd64-20220911-1135.qcow2",
@@ -49,9 +49,9 @@
     ],
     "versions": [
         {
-            "name": "11.5",
+            "name": "11.6",
             "images": {
-                "hda_disk_image": "debian-11-genericcloud-amd64-20220911-1135.qcow2",
+                "hda_disk_image": "debian-11-genericcloud-amd64-20221219-1234.qcow2",
                 "cdrom_image": "debian-cloud-init-data.iso"
             }
         },

@@ -977,7 +977,6 @@ class Router(BaseNode):
                 raise DynamipsError('"{name}" must be stopped to change the console type to {console_type}'.format(name=self._name,
                                                                                                                    console_type=console_type))
 
-
         self.console_type = console_type
 
         if self._console and console_type == "telnet":
@@ -992,6 +991,13 @@ class Router(BaseNode):
 
         self.aux = aux
         await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
+
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        pass  # reset console is not supported with Dynamips
 
     async def get_cpu_usage(self, cpu_id=0):
         """

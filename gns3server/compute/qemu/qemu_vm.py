@@ -78,6 +78,7 @@ class QemuVM(BaseNode):
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
         self._process = None
         self._cpulimit_process = None
+        self._swtpm_process = None
         self._monitor = None
         self._stdout_file = ""
         self._qemu_img_stdout_file = ""
@@ -120,6 +121,7 @@ class QemuVM(BaseNode):
         self._initrd = ""
         self._kernel_image = ""
         self._kernel_command_line = ""
+        self._tpm = False
         self._legacy_networking = False
         self._replicate_network_connection_state = True
         self._create_config_disk = False
@@ -686,7 +688,7 @@ class QemuVM(BaseNode):
         """
         Sets whether a config disk is automatically created on HDD disk interface (secondary slave)
 
-        :param replicate_network_connection_state: boolean
+        :param create_config_disk: boolean
         """
 
         if create_config_disk:
@@ -806,6 +808,30 @@ class QemuVM(BaseNode):
 
         log.info('QEMU VM "{name}" [{id}] has set the number of vCPUs to {cpus}'.format(name=self._name, id=self._id, cpus=cpus))
         self._cpus = cpus
+
+    @property
+    def tpm(self):
+        """
+        Returns whether TPM is activated for this QEMU VM.
+
+        :returns: boolean
+        """
+
+        return self._tpm
+
+    @tpm.setter
+    def tpm(self, tpm):
+        """
+        Sets whether TPM is activated for this QEMU VM.
+
+        :param tpm: boolean
+        """
+
+        if tpm:
+            log.info('QEMU VM "{name}" [{id}] has enabled the Trusted Platform Module (TPM)'.format(name=self._name, id=self._id))
+        else:
+            log.info('QEMU VM "{name}" [{id}] has disabled the Trusted Platform Module (TPM)'.format(name=self._name, id=self._id))
+        self._tpm = tpm
 
     @property
     def options(self):
@@ -984,11 +1010,8 @@ class QemuVM(BaseNode):
         """
 
         if self._cpulimit_process and self._cpulimit_process.returncode is None:
-            self._cpulimit_process.kill()
-            try:
-                self._process.wait(3)
-            except subprocess.TimeoutExpired:
-                log.error("Could not kill cpulimit process {}".format(self._cpulimit_process.pid))
+            self._cpulimit_process.terminate()
+            self._cpulimit_process = None
 
     def _set_cpu_throttling(self):
         """
@@ -1003,7 +1026,9 @@ class QemuVM(BaseNode):
                 cpulimit_exec = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe")
             else:
                 cpulimit_exec = "cpulimit"
-            subprocess.Popen([cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)], cwd=self.working_dir)
+
+            command = [cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)]
+            self._cpulimit_process = subprocess.Popen(command, cwd=self.working_dir)
             log.info("CPU throttled to {}%".format(self._cpu_throttling))
         except FileNotFoundError:
             raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
@@ -1079,7 +1104,8 @@ class QemuVM(BaseNode):
             await self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
-
+            if self._tpm:
+                self._start_swtpm()
             if "-enable-kvm" in command_string or "-enable-hax" in command_string:
                 self._hw_virtualization = True
 
@@ -1162,6 +1188,7 @@ class QemuVM(BaseNode):
                             log.warning('QEMU VM "{}" PID={} is still running'.format(self._name, self._process.pid))
             self._process = None
             self._stop_cpulimit()
+            self._stop_swtpm()
             if self.on_close != "save_vm_state":
                 await self._clear_save_vm_stated()
             await self._export_config()
@@ -1566,6 +1593,14 @@ class QemuVM(BaseNode):
             else:
                 self._process = None
         return False
+
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        if self.is_running():
+            await self.reset_wrap_console()
 
     def command(self):
         """
@@ -1987,6 +2022,60 @@ class QemuVM(BaseNode):
 
         return options
 
+    def _start_swtpm(self):
+        """
+        Start swtpm (TPM emulator)
+        """
+
+        if sys.platform.startswith("win"):
+            raise QemuError("swtpm (TPM emulator) is not supported on Windows")
+        tpm_dir = os.path.join(self.working_dir, "tpm")
+        os.makedirs(tpm_dir, exist_ok=True)
+        tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
+        swtpm = shutil.which("swtpm")
+        if not swtpm:
+            raise QemuError("Could not find swtpm (TPM emulator)")
+        try:
+            command = [
+                swtpm,
+                "socket",
+                "--tpm2",
+                '--tpmstate', "dir={}".format(tpm_dir),
+                "--ctrl",
+                "type=unixio,path={},terminate".format(tpm_sock)
+            ]
+            command_string = " ".join(shlex_quote(s) for s in command)
+            log.info("Starting swtpm (TPM emulator) with: {}".format(command_string))
+            self._swtpm_process = subprocess.Popen(command, cwd=self.working_dir)
+            log.info("swtpm (TPM emulator) has started")
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Could not start swtpm (TPM emulator): {}".format(e))
+
+    def _stop_swtpm(self):
+        """
+        Stop swtpm (TPM emulator)
+        """
+
+        if self._swtpm_process and self._swtpm_process.returncode is None:
+            self._swtpm_process.terminate()
+            self._swtpm_process = None
+
+    def _tpm_options(self):
+        """
+        Return the TPM options for Qemu.
+        """
+
+        tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
+        options = [
+            "-chardev",
+            "socket,id=chrtpm,path={}".format(tpm_sock),
+            "-tpmdev",
+            "emulator,id=tpm0,chardev=chrtpm",
+            "-device",
+            "tpm-tis,tpmdev=tpm0"
+        ]
+        return options
+
     async def _network_options(self):
 
         network_options = []
@@ -2282,6 +2371,8 @@ class QemuVM(BaseNode):
             command.extend((await self._saved_state_option()))
         if self._console_type == "telnet":
             command.extend((await self._disable_graphics()))
+        if self._tpm:
+            command.extend(self._tpm_options())
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))
