@@ -18,13 +18,19 @@
 import os
 import sys
 import uuid
-import socket
 import shutil
 import asyncio
 import random
-import importlib_resources
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 
 from ..config import Config
+from ..utils import parse_version
+
 from .project import Project
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
@@ -62,7 +68,7 @@ class Controller:
     async def start(self, computes=None):
 
         log.info("Controller is starting")
-        self._load_base_files()
+        self._install_base_configs()
         server_config = Config.instance().settings.Server
         Config.instance().listen_for_config_changes(self._update_config)
         name = server_config.name
@@ -282,6 +288,10 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
 
+        # FIXME
+        #if parse_version(__version__) > parse_version(controller_settings.get("version", "")):
+        #    self._appliance_manager.install_builtin_appliances()
+
         self._appliance_manager.install_builtin_appliances()
         self._appliance_manager.load_appliances()
         self._config_loaded = True
@@ -307,13 +317,14 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
-    def _load_base_files(self):
+    def _install_base_configs(self):
         """
         At startup we copy base file to the user location to allow
         them to customize it
         """
 
         dst_path = self.configs_path()
+        log.info(f"Installing base configs in '{dst_path}'")
         try:
             if hasattr(sys, "frozen") and sys.platform.startswith("win"):
                 resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))

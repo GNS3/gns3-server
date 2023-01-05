@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 
 class Node:
-    # This properties are used only on controller and are not forwarded to the compute
+    # These properties are used only on controller and are not forwarded to the compute
     CONTROLLER_ONLY_PROPERTIES = [
         "x",
         "y",

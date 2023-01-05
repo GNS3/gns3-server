@@ -1012,11 +1012,8 @@ class Router(BaseNode):
         if self.console_type != console_type:
             status = await self.get_status()
             if status == "running":
-                raise DynamipsError(
-                    '"{name}" must be stopped to change the console type to {console_type}'.format(
-                        name=self._name, console_type=console_type
-                    )
-                )
+                raise DynamipsError('"{name}" must be stopped to change the console type to {console_type}'.format(name=self._name,
+                                                                                                                   console_type=console_type))
 
         self.console_type = console_type
 
@@ -1032,6 +1029,13 @@ class Router(BaseNode):
 
         self.aux = aux
         await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {aux}')
+
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        pass  # reset console is not supported with Dynamips
 
     async def get_cpu_usage(self, cpu_id=0):
         """

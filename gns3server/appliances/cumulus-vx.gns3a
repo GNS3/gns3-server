@@ -248,6 +248,12 @@
     ],
     "versions": [
         {
+            "name": "5.3.1",
+            "images": {
+                "hda_disk_image": "cumulus-linux-5.3.1-vx-amd64-qemu.qcow2"
+            }
+        },
+        {
             "name": "5.1.0",
             "images": {
                 "hda_disk_image": "cumulus-linux-5.1.0-vx-amd64-qemu.qcow2"

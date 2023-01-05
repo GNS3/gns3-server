@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.2.36 04/01/2023
+
+* Install web-ui v2.2.36
+* Add Trusted Platform Module (TPM) support for Qemu VMs
+* Require Dynamips 0.2.23 and bind Dynamips hypervisor on 127.0.0.1
+* Delete the built-in appliance directory before installing updated files
+* Use a stock BusyBox for the Docker integration
+* Overwrite built-in appliance files when starting a more recent version of the server
+* Fix reset console. Fixes #1619
+* Only use importlib_resources for Python <= 3.9. Fixes #2147
+* Support when the user field defined in Docker container is an ID. Fixes #2134
+
 ## 3.0.0a3 27/12/2022
 
 * Add web-ui v3.0.0a3

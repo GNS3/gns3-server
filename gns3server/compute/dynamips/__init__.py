@@ -278,9 +278,13 @@ class Dynamips(BaseManager):
         if not working_dir:
             working_dir = tempfile.gettempdir()
 
-        # FIXME: hypervisor should always listen to 127.0.0.1
-        # See https://github.com/GNS3/dynamips/issues/62
-        server_host = self.config.settings.Server.host
+        if not sys.platform.startswith("win"):
+            # Hypervisor should always listen to 127.0.0.1
+            # See https://github.com/GNS3/dynamips/issues/62
+            # This was fixed in Dynamips v0.2.23 which hasn't been built for Windows
+            server_host = "127.0.0.1"
+        else:
+            server_host = self.config.settings.Server.host
 
         try:
             info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
@@ -305,6 +309,8 @@ class Dynamips(BaseManager):
         await hypervisor.connect()
         if parse_version(hypervisor.version) < parse_version("0.2.11"):
             raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {hypervisor.version}")
+        if not sys.platform.startswith("win") and parse_version(hypervisor.version) < parse_version('0.2.23'):
+            raise DynamipsError(f"Dynamips version must be >= 0.2.23 on Linux/macOS, detected version is {hypervisor.version}")
 
         return hypervisor
 

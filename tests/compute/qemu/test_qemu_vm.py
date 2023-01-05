@@ -176,7 +176,7 @@ async def test_termination_callback(vm):
         await vm._termination_callback(0)
         assert vm.status == "stopped"
 
-        await queue.get(1)  #  Ping
+        await queue.get(1)  # Ping
 
         (action, event, kwargs) = await queue.get(1)
         assert action == "node.updated"
@@ -404,6 +404,17 @@ async def test_spice_option(vm, fake_qemu_img_binary):
     assert '-spice addr=127.0.0.1,port=5905,disable-ticketing' in ' '.join(options)
     assert '-vga qxl' in ' '.join(options)
 
+
+@pytest.mark.asyncio
+async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
+
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
+    vm._tpm = True
+    tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
+    options = await vm._build_command()
+    assert '-chardev socket,id=chrtpm,path={}'.format(tpm_sock) in ' '.join(options)
+    assert '-tpmdev emulator,id=tpm0,chardev=chrtpm' in ' '.join(options)
+    assert '-device tpm-tis,tpmdev=tpm0' in ' '.join(options)
 
 @pytest.mark.asyncio
 async def test_disk_options_multiple_disk(vm, tmpdir, fake_qemu_img_binary):
