@@ -379,10 +379,9 @@ def test_appliances(controller, config, tmpdir):
     with open(str(tmpdir / "my_appliance2.gns3a"), 'w+') as f:
         json.dump(my_appliance, f)
 
-    #config.settings.Server.appliances_path = str(tmpdir)
+    config.settings.Server.appliances_path = str(tmpdir)
     controller.appliance_manager.install_builtin_appliances()
-    with patch("gns3server.config.Config.get_section_config", return_value={"appliances_path": str(tmpdir)}):
-        controller.appliance_manager.load_appliances()
+    controller.appliance_manager.load_appliances()
     assert len(controller.appliance_manager.appliances) > 0
     for appliance in controller.appliance_manager.appliances.values():
         assert appliance.asdict()["status"] != "broken"

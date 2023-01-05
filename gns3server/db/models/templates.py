@@ -203,6 +203,7 @@ class QemuTemplate(Template):
     kernel_command_line = Column(String)
     replicate_network_connection_state = Column(Boolean)
     create_config_disk = Column(Boolean)
+    tpm = Column(Boolean)
     on_close = Column(String)
     cpu_throttling = Column(Integer)
     process_priority = Column(String)

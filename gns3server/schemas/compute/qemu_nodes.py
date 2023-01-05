@@ -205,6 +205,7 @@ class QemuBase(BaseModel):
     create_config_disk: Optional[bool] = Field(
         None, description="Automatically create a config disk on HDD disk interface (secondary slave)"
     )
+    tpm: Optional[bool] = Field(None, description="Enable Trusted Platform Module (TPM)")
     on_close: Optional[QemuOnCloseAction] = Field(None, description="Action to execute on the VM is closed")
     cpu_throttling: Optional[int] = Field(None, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
     process_priority: Optional[QemuProcessPriority] = Field(None, description="Process priority for QEMU")

@@ -288,9 +288,9 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
 
-        # FIXME
+        # FIXME install builtin appliances only once, need to store "version" somewhere...
         #if parse_version(__version__) > parse_version(controller_settings.get("version", "")):
-        #    self._appliance_manager.install_builtin_appliances()
+        #   self._appliance_manager.install_builtin_appliances()
 
         self._appliance_manager.install_builtin_appliances()
         self._appliance_manager.load_appliances()
