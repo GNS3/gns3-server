@@ -45,7 +45,10 @@ async def manager(loop, port_manager):
 def fake_qemu_img_binary(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
+    if sys.platform.startswith("win"):
+        bin_path = os.path.join(os.environ["PATH"], "qemu-img.exe")
+    else:
+        bin_path = os.path.join(os.environ["PATH"], "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
