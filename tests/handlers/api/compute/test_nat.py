@@ -74,9 +74,11 @@ async def test_nat_nio_update_udp(compute_api, vm):
         "rhost": "127.0.0.1"
     }
 
-    await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/1/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+    with asyncio_patch("gns3server.compute.builtin.nodes.nat.Nat._start_ubridge"):
+        response = await compute_api.post("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+        assert response.status == 201
     params["filters"] = {}
-    response = await compute_api.put("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/1/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
+    response = await compute_api.put("/projects/{project_id}/nat/nodes/{node_id}/adapters/0/ports/0/nio".format(project_id=vm["project_id"], node_id=vm["node_id"]), params)
     assert response.status == 201, response.body.decode()
     assert response.route == r"/projects/{project_id}/nat/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/nio"
     assert response.json["type"] == "nio_udp"
