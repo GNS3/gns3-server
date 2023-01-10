@@ -32,7 +32,7 @@ from unittest.mock import patch, MagicMock
 def fake_qemu_img_binary(tmpdir):
 
     if sys.platform.startswith("win"):
-        bin_path = str(tmpdir / "qemu-img.exe")
+        bin_path = str(tmpdir / "qemu-img.EXE")
     else:
         bin_path = str(tmpdir / "qemu-img")
     with open(bin_path, "w+") as f:
