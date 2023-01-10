@@ -19,6 +19,7 @@ import os
 import stat
 import pytest
 import platform
+import sys
 
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
