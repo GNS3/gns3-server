@@ -45,7 +45,10 @@ async def manager(port_manager):
 def fake_qemu_img_binary(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
-    bin_path = os.path.join(os.environ["PATH"], "qemu-img")
+    if sys.platform.startswith("win"):
+        bin_path = os.path.join(os.environ["PATH"], "qemu-img.EXE")
+    else:
+        bin_path = os.path.join(os.environ["PATH"], "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
@@ -865,7 +868,10 @@ def test_get_qemu_img(vm, tmpdir):
     open(str(tmpdir / "qemu-system-x86_64"), "w+").close()
     open(str(tmpdir / "qemu-img"), "w+").close()
     vm._qemu_path = str(tmpdir / "qemu-system-x86_64")
-    assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
+    if sys.platform.startswith("win"):
+        assert vm._get_qemu_img() == str(tmpdir / "qemu-img.EXE")
+    else:
+        assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
 
 
 # def test_get_qemu_img_not_exist(vm, tmpdir):
