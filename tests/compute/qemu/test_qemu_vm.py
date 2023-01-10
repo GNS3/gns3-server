@@ -60,7 +60,7 @@ def fake_qemu_binary(monkeypatch, tmpdir):
 
     monkeypatch.setenv("PATH", str(tmpdir))
     if sys.platform.startswith("win"):
-        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.EXE")
+        bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64w.exe")
     else:
         bin_path = os.path.join(os.environ["PATH"], "qemu-system-x86_64")
     with open(bin_path, "w+") as f:
@@ -859,7 +859,10 @@ def test_get_qemu_img(vm, tmpdir):
     open(str(tmpdir / "qemu-system-x86_64"), "w+").close()
     open(str(tmpdir / "qemu-img"), "w+").close()
     vm._qemu_path = str(tmpdir / "qemu-system-x86_64")
-    assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
+    if sys.platform.startswith("win"):
+        assert vm._get_qemu_img() == str(tmpdir / "qemu-img.EXE")
+    else:
+        assert vm._get_qemu_img() == str(tmpdir / "qemu-img")
 
 
 # def test_get_qemu_img_not_exist(vm, tmpdir):
