@@ -75,7 +75,7 @@ setup(
     tests_require=["pytest", "pytest-capturelog", "pytest-aiohttp"],
     cmdclass={"test": PyTest},
     description="GNS3 server",
-    long_description=open("README.rst", "r").read(),
+    long_description=open("README.md", "r").read(),
     install_requires=dependencies,
     entry_points={
         "console_scripts": [
