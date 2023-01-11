@@ -12,6 +12,7 @@ distro>=1.7.0
 py-cpuinfo==9.0.0
 sqlalchemy==1.4.45
 aiosqlite==0.18.0
+alembic==1.9.1
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
 email-validator==1.3.0
