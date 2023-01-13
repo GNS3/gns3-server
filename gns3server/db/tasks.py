@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from alembic import command, config
 from alembic.script import ScriptDirectory
 from alembic.runtime.migration import MigrationContext
+from alembic.util.exc import CommandError
 
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
@@ -48,13 +49,19 @@ log = logging.getLogger(__name__)
 def run_upgrade(connection, cfg):
 
     cfg.attributes["connection"] = connection
-    command.upgrade(cfg, "head")
+    try:
+        command.upgrade(cfg, "head")
+    except CommandError as e:
+        log.error(f"Could not upgrade database: {e}")
 
 
 def run_stamp(connection, cfg):
 
     cfg.attributes["connection"] = connection
-    command.stamp(cfg, 'head')
+    try:
+        command.stamp(cfg, "head")
+    except CommandError as e:
+        log.error(f"Could not stamp database: {e}")
 
 
 def check_revision(connection, cfg):
