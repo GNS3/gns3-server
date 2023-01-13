@@ -236,7 +236,7 @@ async def test_getProject(controller):
 
 
 @pytest.mark.asyncio
-async def test_start(controller):
+async def test_start(controller, db_session):
 
     controller.gns3vm.settings = {
         "enable": False,

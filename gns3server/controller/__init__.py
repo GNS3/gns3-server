@@ -41,7 +41,11 @@ from .topology import load_topology
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
 from .controller_error import ControllerError, ControllerNotFoundError
+from ..version import __version__
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+import gns3server.db.models as models
 
 import logging
 
@@ -81,7 +85,7 @@ class Controller:
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        self._load_controller_settings()
+        await self._load_controller_settings()
 
         if server_config.enable_ssl:
             self._ssl_context = self._create_ssl_context(server_config)
@@ -176,14 +180,14 @@ class Controller:
             except (ComputeError, ControllerError, OSError):
                 pass
         await self.gns3vm.exit_vm()
-        self.save()
+        await self.save()
         self._computes = {}
         self._projects = {}
 
     async def reload(self):
 
         log.info("Controller is reloading")
-        self._load_controller_settings()
+        await self._load_controller_settings()
 
         # remove all projects deleted from disk.
         for project in self._projects.copy().values():
@@ -194,7 +198,7 @@ class Controller:
 
         await self.load_projects()
 
-    def save(self):
+    async def save(self):
         """
         Save the controller configuration on disk
         """
@@ -220,19 +224,22 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot write IOU license file '{iourc_path}': {e}")
 
-        if self._appliance_manager.appliances_etag:
-            etag_directory = os.path.dirname(Config.instance().server_config)
-            os.makedirs(etag_directory, exist_ok=True)
-            etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
+        from gns3server.api.server import app
+        async with AsyncSession(app.state._db_engine) as db_session:
+            query = select(models.Controller)
+            result = await db_session.execute(query)
+            controller_info = result.scalars().first()
+            if controller_info is None:
+                new_controller_info = models.Controller(
+                    version=__version__
+                )
+                db_session.add(new_controller_info)
+            else:
+                controller_info.version = __version__
+                controller_info.etag_appliances = self._appliance_manager.appliances_etag
+            await db_session.commit()
 
-            try:
-                with open(etag_appliances_path, "w+") as f:
-                    f.write(self._appliance_manager.appliances_etag)
-                log.info(f"etag appliances file '{etag_appliances_path}' saved")
-            except OSError as e:
-                log.error(f"Cannot write Etag appliance file '{etag_appliances_path}': {e}")
-
-    def _load_controller_settings(self):
+    async def _load_controller_settings(self):
         """
         Reload the controller configuration from disk
         """
@@ -277,20 +284,15 @@ class Controller:
 
         self._iou_license_settings["license_check"] = iou_config.license_check
 
-        etag_directory = os.path.dirname(Config.instance().server_config)
-        etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
-        self._appliance_manager.appliances_etag = None
-        if os.path.exists(etag_appliances_path):
-            try:
-                with open(etag_appliances_path) as f:
-                    self._appliance_manager.appliances_etag = f.read()
-                log.info(f"etag appliances file '{etag_appliances_path}' loaded")
-            except OSError as e:
-                log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
-
-        # FIXME install builtin appliances only once, need to store "version" somewhere...
-        #if parse_version(__version__) > parse_version(controller_settings.get("version", "")):
-        #   self._appliance_manager.install_builtin_appliances()
+        from gns3server.api.server import app
+        async with AsyncSession(app.state._db_engine) as db_session:
+            query = select(models.Controller)
+            result = await db_session.execute(query)
+            controller_info = result.scalars().first()
+            if controller_info:
+                if controller_info.version and parse_version(__version__) > parse_version(controller_info.version):
+                    self._appliance_manager.install_builtin_appliances()
+                self._appliance_manager.appliances_etag = controller_info.etag_appliances
 
         self._appliance_manager.install_builtin_appliances()
         self._appliance_manager.load_appliances()

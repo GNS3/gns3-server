@@ -56,6 +56,8 @@ async def db_engine():
 
     db_url = os.getenv("GNS3_TEST_DATABASE_URI", "sqlite+aiosqlite:///:memory:")  # "sqlite:///./sql_test_app.db"
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
+    from gns3server.api.server import app as gns3app
+    gns3app.state._db_engine = engine
     yield engine
     #await engine.sync_engine.dispose()
 

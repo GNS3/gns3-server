@@ -15,23 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from sqlalchemy import Column, String
+
 from .base import Base
-from .users import User, UserGroup
-from .roles import Role
-from .permissions import Permission
-from .computes import Compute
-from .images import Image
-from .controller import Controller
-from .templates import (
-    Template,
-    CloudTemplate,
-    DockerTemplate,
-    DynamipsTemplate,
-    EthernetHubTemplate,
-    EthernetSwitchTemplate,
-    IOUTemplate,
-    QemuTemplate,
-    VirtualBoxTemplate,
-    VMwareTemplate,
-    VPCSTemplate,
-)
+
+
+class Controller(Base):
+
+    __tablename__ = "controller"
+
+    version = Column(String, primary_key=True)
+    etag_appliances = Column(String)
