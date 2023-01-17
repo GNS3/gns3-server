@@ -85,7 +85,7 @@ Dependencies:
 The following commands will install some of these dependencies:
 
 ``` {.bash}
-sudo apt-get install python3-setuptools
+sudo apt-get install python3-setuptools python3-pip
 ```
 
 Finally, these commands will install the server as well as the rest of
@@ -93,14 +93,15 @@ the dependencies:
 
 ``` {.bash}
 cd gns3-server-master
-sudo python3 setup.py install
+python3 -m pip install -r requirements.txt
+python3 -m pip install .
 gns3server
 ```
 
 To run tests use:
 
 ``` {.bash}
-py.test -v
+python3 -m pytest tests
 ```
 
 ### Docker container
