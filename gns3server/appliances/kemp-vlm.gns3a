@@ -8,7 +8,7 @@
     "documentation_url": "https://support.kemptechnologies.com/hc/en-us/articles/204427785",
     "product_name": "KEMP Free VLM",
     "product_url": "http://freeloadbalancer.com/#about",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

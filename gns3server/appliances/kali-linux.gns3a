@@ -7,7 +7,7 @@
     "vendor_url": "https://www.kali.org/",
     "documentation_url": "https://www.kali.org/kali-linux-documentation/",
     "product_name": "Kali Linux",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

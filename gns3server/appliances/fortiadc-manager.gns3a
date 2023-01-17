@@ -8,7 +8,7 @@
     "documentation_url": "https://docs.fortinet.com/fortiadc-manager/",
     "product_name": "FortiADC Manager",
     "product_url": "https://www.fortinet.com/products/application-delivery-controller/fortiadc.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

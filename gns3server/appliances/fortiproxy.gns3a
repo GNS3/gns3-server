@@ -8,7 +8,7 @@
     "documentation_url": "https://docs.fortinet.com/fortiproxy/",
     "product_name": "FortiProxy",
     "product_url": "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/FortiProxy.pdf",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

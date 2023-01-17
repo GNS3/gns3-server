@@ -7,7 +7,7 @@
     "vendor_url": "http://www.dell.com/",
     "product_name": "Dell OS9",
     "product_url": "http://www.dell.com/us/business/p/open-platform-software/pd",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

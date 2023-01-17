@@ -8,7 +8,7 @@
     "documentation_url": "https://wiki.onosproject.org",
     "product_name": "Onos",
     "product_url": "http://onosproject.org/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

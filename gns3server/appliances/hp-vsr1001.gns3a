@@ -8,7 +8,7 @@
     "documentation_url": "https://support.hpe.com/hpesc/public/home/documentHome?document_type=135&sp4ts.oid=5195141",
     "product_name": "VSR1001",
     "product_url": "https://www.hpe.com/us/en/product-catalog/networking/networking-routers/pip.hpe-flexnetwork-vsr1000-virtual-services-router-series.5443163.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

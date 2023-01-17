@@ -12,7 +12,7 @@
     "availability": "free",
     "maintainer": "Adnan RIHAN",
     "maintainer_email": "adnan@rihan.fr",
-    "usage": "Autologin is enabled as \"root\" with no password.\n\nThe network interfaces aren't configured, you can do either of the following:\n- Use alpine's DHCP client: `udhcpc`\n- Configure them manually (ip address add …, ip route add …)\n- Modify interfaces file in /etc/network/interfaces\n- Use alpine's wizard: `setup-interfaces`",
+    "usage": "Autologin is enabled as \"root\" with no password.\n\nThe network interfaces aren't configured, you can do either of the following:\n- Use alpine's DHCP client: `udhcpc`\n- Configure them manually (ip address add \u2026, ip route add \u2026)\n- Modify interfaces file in /etc/network/interfaces\n- Use alpine's wizard: `setup-interfaces`",
     "symbol": "alpine-virt-qemu.svg",
     "port_name_format": "eth{0}",
     "qemu": {

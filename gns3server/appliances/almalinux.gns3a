@@ -25,12 +25,12 @@
     },
     "images": [
         {
-            "filename": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
-            "version": "8.5",
-            "md5sum": "a64ece809ae06180ac59cfa622d98af0",
-            "filesize": 561774592,
+            "filename": "AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2",
+            "version": "8.7",
+            "md5sum": "b2b8c7fd3b6869362f3f8ed47549c804",
+            "filesize": 566231040,
             "download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/",
-            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2"
+            "direct_download_url": "https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2"
         },
         {
             "filename": "almalinux-cloud-init-data.iso",
@@ -42,9 +42,9 @@
     ],
     "versions": [
         {
-            "name": "8.5",
+            "name": "8.7",
             "images": {
-                "hda_disk_image": "AlmaLinux-8-GenericCloud-8.5-20211119.x86_64.qcow2",
+                "hda_disk_image": "AlmaLinux-8-GenericCloud-8.7-20221111.x86_64.qcow2",
                 "cdrom_image": "almalinux-cloud-init-data.iso"
             }
         }

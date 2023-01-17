@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/security/web-security-appliance/tsd-products-support-series-home.html",
     "product_name": "Web Security Virtual Appliance",
     "product_url": "http://www.cisco.com/c/en/us/products/security/web-security-appliance/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

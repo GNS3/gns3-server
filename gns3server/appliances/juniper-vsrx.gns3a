@@ -8,7 +8,7 @@
     "documentation_url": "http://www.juniper.net/techpubs/",
     "product_name": "Juniper vSRX",
     "product_url": "https://www.juniper.net/us/en/products-services/security/srx-series/vsrx/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

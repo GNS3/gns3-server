@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/cloud-systems-management/data-center-network-manager-10/model.html",
     "product_name": "DCNM",
     "product_url": "http://www.cisco.com/c/en/us/products/cloud-systems-management/prime-data-center-network-manager/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

@@ -38,7 +38,7 @@
             "filesize": 3091660800,
             "download_url": "https://www.raspberrypi.org/downloads/raspberry-pi-desktop/"
         },
-		{
+        {
             "filename": "2020-02-12-rpd-x86-buster.iso",
             "version": "2020-02-12",
             "md5sum": "98f34fb53086752b4c9c452094f30740",
@@ -68,7 +68,7 @@
                 "cdrom_image": "2021-01-11-raspios-buster-i386.iso"
             }
         },
-		{
+        {
             "name": "2020-02-12",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",

@@ -7,7 +7,7 @@
     "vendor_url": "https://rockylinux.org",
     "documentation_url": "https://docs.rockylinux.org",
     "product_name": "Rocky Linux",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Da-Geek",
     "maintainer_email": "dageek@dageeks-geeks.gg",

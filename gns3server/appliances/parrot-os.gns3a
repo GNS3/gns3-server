@@ -8,7 +8,7 @@
     "documentation_url": "https://docs.parrotsec.org/doku.php",
     "product_name": "ParrotOS",
     "product_url": "https://parrotsec.org/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Brent Stewart",
     "maintainer_email": "brent@stewart.tc",

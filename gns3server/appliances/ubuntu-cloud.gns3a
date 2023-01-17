@@ -8,7 +8,7 @@
     "documentation_url": "https://help.ubuntu.com/community/UEC/Images",
     "product_name": "Ubuntu Cloud Guest",
     "product_url": "https://www.ubuntu.com/cloud",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

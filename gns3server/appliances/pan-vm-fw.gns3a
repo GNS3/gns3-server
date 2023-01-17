@@ -8,7 +8,7 @@
     "documentation_url": "https://www.paloaltonetworks.com/documentation/80/virtualization/virtualization",
     "product_name": "PAN VM-Series Firewall",
     "product_url": "https://www.paloaltonetworks.com/products/secure-the-network/virtualized-next-generation-firewall/vm-series",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "Community",
     "maintainer_email": "",

@@ -7,7 +7,7 @@
     "vendor_url": "http://www.cisco.com",
     "documentation_url": "http://www.cisco.com/c/en/us/support/index.html",
     "product_name": "3660",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

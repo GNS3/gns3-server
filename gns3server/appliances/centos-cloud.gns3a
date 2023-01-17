@@ -8,7 +8,7 @@
     "documentation_url": "https://wiki.centos.org/Documentation",
     "product_name": "Centos Cloud",
     "product_url": "https://wiki.centos.org/Cloud",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

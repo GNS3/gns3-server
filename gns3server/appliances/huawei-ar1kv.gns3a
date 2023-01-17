@@ -26,7 +26,7 @@
         "options": "-machine type=pc,accel=kvm -vga std -usbdevice tablet -cpu host"
     },
     "images": [
-	    {
+        {
             "filename": "huaweiar1k-5.170-V300R021C00SPC100T-Auto-update-esn.qcow2",
             "version": "V300R021C00SPC100T",
             "md5sum": "9d98b31d400a94af37b5af6e9cfe8d80",
@@ -40,10 +40,9 @@
             "filesize": 534904832,
             "download_url": "https://support.huawei.com/enterprise/en/routers/ar1000v-pid-21768212/software"
         }
-		
     ],
     "versions": [
-	    {
+        {
             "name": "V300R021C00SPC100T",
             "images": {
                 "hda_disk_image": "huaweiar1k-5.170-V300R021C00SPC100T-Auto-update-esn.qcow2"
@@ -55,6 +54,5 @@
                 "hda_disk_image": "ar1k-V300R019C00SPC300.qcow2"
             }
         }
-		
     ]
 }

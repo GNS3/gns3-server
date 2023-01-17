@@ -8,7 +8,7 @@
     "documentation_url": "https://www.cisco.com/c/en/us/td/docs/routers/C8000V/Configuration/c8000v-installation-configuration-guide.html",
     "product_name": "c8000v",
     "product_url": "https://www.cisco.com/c/en/us/support/routers/catalyst-8000v-edge-software/series.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

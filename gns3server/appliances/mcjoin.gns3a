@@ -6,7 +6,7 @@
     "vendor_name": "Joachim Nilsson",
     "vendor_url": "https://github.com/troglobit",
     "product_name": "mcjoin",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

@@ -8,7 +8,7 @@
     "documentation_url": "http://www.juniper.net/techpubs/",
     "product_name": "Juniper vMX vFP",
     "product_url": "http://www.juniper.net/us/en/products-services/routing/mx-series/vmx/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",

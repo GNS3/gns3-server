@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/",
     "product_name": "VIPtela Manage",
     "product_url": "http://www.cisco.com/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "Laurent LEVIER",
     "maintainer_email": "laurent.levier@orange.com",

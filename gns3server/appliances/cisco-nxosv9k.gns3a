@@ -184,7 +184,7 @@
                 "hda_disk_image": "nexus9500v64.10.1.1.qcow2"
             }
         },
-		{
+        {
             "name": "9300v 9.3.8",
             "images": {
                 "bios_image": "OVMF-20160813.fd",

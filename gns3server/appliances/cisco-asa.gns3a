@@ -7,7 +7,7 @@
     "vendor_url": "http://www.cisco.com/",
     "product_name": "ASA",
     "product_url": "http://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "broken",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

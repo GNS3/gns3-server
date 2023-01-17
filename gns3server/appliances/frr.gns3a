@@ -6,7 +6,7 @@
     "vendor_name": "FRRouting Project",
     "vendor_url": "https://frrouting.org",
     "product_name": "FRR",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

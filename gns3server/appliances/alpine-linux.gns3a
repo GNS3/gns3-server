@@ -7,7 +7,7 @@
     "vendor_url": "http://alpinelinux.org",
     "documentation_url": "http://wiki.alpinelinux.org",
     "product_name": "Alpine Linux",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

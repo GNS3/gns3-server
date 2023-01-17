@@ -7,7 +7,7 @@
     "vendor_url": "https://www.pfsense.org",
     "documentation_url": "https://doc.pfsense.org/index.php/Main_Page",
     "product_name": "pfSense",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Jose Phillips",
     "maintainer_email": "jose@latinol.com",

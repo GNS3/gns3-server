@@ -8,7 +8,7 @@
     "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
     "product_name": "FortiManager",
     "product_url": "http://www.fortinet.com/products/fortimanager/virtual-security-management.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

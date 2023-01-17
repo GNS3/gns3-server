@@ -7,7 +7,7 @@
     "vendor_url": "http://www.cisco.com/",
     "product_name": "NX-OSv",
     "product_url": "http://virl.cisco.com/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
