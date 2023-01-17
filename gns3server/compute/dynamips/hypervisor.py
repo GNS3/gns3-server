@@ -46,7 +46,7 @@ class Hypervisor(DynamipsHypervisor):
 
     _instance_count = 1
 
-    def __init__(self, path, working_dir, host, port, console_host):
+    def __init__(self, path, working_dir, host, port, console_host, bind_console_host=False):
 
         super().__init__(working_dir, host, port)
 
@@ -55,6 +55,7 @@ class Hypervisor(DynamipsHypervisor):
         Hypervisor._instance_count += 1
 
         self._console_host = console_host
+        self._bind_console_host = bind_console_host
         self._path = path
         self._command = []
         self._process = None
@@ -204,8 +205,12 @@ class Hypervisor(DynamipsHypervisor):
         command = [self._path]
         command.extend(["-N1"])  # use instance IDs for filenames
         command.extend(["-l", "dynamips_i{}_log.txt".format(self._id)])  # log file
-        if not sys.platform.startswith("win"):
+
+        if self._bind_console_host:
+            # support was added in Dynamips version 0.2.23
             command.extend(["-H", "{}:{}".format(self._host, self._port), "--console-binding-addr", self._console_host])
+        elif self._console_host != "0.0.0.0" and self._console_host != "::":
+            command.extend(["-H", "{}:{}".format(self._host, self._port)])
         else:
             command.extend(["-H", str(self._port)])
 
