@@ -26,7 +26,5 @@ rm -Rf /tmp/gns3-registry
 git clone https://github.com/GNS3/gns3-registry.git /tmp/gns3-registry
 mv /tmp/gns3-registry/appliances gns3server/appliances
 
-git add .
+git add gns3server/appliances/*
 git commit -m "Sync appliances"
-
-
