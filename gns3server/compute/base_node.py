@@ -408,7 +408,8 @@ class BaseNode:
 
         if self._wrapper_telnet_server:
             self._wrap_console_writer.close()
-            await self._wrap_console_writer.wait_closed()
+            if sys.version_info >= (3, 7, 0):
+                await self._wrap_console_writer.wait_closed()
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
             self._wrapper_telnet_server = None

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import socket
 import asyncio
 import asyncio.subprocess
@@ -202,7 +203,8 @@ class AsyncioTelnetServer:
         except ConnectionError:
             async with self._lock:
                 network_writer.close()
-                await network_writer.wait_closed()
+                if sys.version_info >= (3, 7, 0):
+                    await network_writer.wait_closed()
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -218,7 +220,8 @@ class AsyncioTelnetServer:
                 writer.write_eof()
                 await writer.drain()
                 writer.close()
-                await writer.wait_closed()
+                if sys.version_info >= (3, 7, 0):
+                    await writer.wait_closed()
             except (AttributeError, ConnectionError):
                 continue
 
