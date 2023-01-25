@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.37 25/01/2023
+
+* Fix link communication issues on Windows with uBridge
+* Fix StreamWriter doesn't have the wait_closed() method in Python3.6. Fixes #2170
+* Install built-in appliances when no previous version has been detected. Fixes #2168
+* Update documentation to install gns3-server. Fixes #2124
+* Give udhcpc executable right. Fixes #2159
+
 ## 2.2.36 04/01/2023
 
 * Install web-ui v2.2.36
