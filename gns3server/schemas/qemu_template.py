@@ -35,7 +35,7 @@ QEMU_TEMPLATE_PROPERTIES = {
     "platform": {
         "description": "Platform to emulate",
         "enum": QEMU_PLATFORMS,
-        "default": "i386"
+        "default": ""
     },
     "linked_clone": {
         "description": "Whether the VM is a linked clone or not",
