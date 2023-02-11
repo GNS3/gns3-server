@@ -23,6 +23,7 @@ import sys
 import time
 import subprocess
 import configparser
+from json import loads as convert
 import urllib.request
 from dialog import Dialog, PythonDialogBug
 
@@ -34,14 +35,27 @@ except locale.Error:
 
 def get_ip():
     """
-    Return the IP of the eth0
+    Return the active IP
     """
-    my_ip = subprocess.Popen(['ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1'], stdout=subprocess.PIPE, shell=True)
-    (IP,errors) = my_ip.communicate()
-    my_ip.stdout.close()
-    if len(IP) == 0:
-        return None
-    return IP.decode().strip()
+    #request 'ip addr' data in JSON format from shell
+    ip_addr_response = subprocess.run(['ip', '--json', 'addr'],capture_output=True)
+
+    #process response, decode and use json.loads to convert the string to a dict
+    ip_addr_data = convert(ip_addr_response.stdout.decode("utf-8"))
+
+    #search ip_addr_data for the first ip adress that is not under a virtual bridge or loopback interface
+    for i in ip_addr_data:
+        if ('virbr' in i['ifname']) or ('lo' in i['ifname']):
+            continue
+        try:
+            if 'UP' in i['flags']:
+                ip_addr = i['addr_info'][0]['local']
+                break
+        except:
+            continue
+        ip_addr = None
+    
+    return ip_addr
 
 
 def get_config():
