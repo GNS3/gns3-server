@@ -57,6 +57,10 @@ def get_ip():
     
     return ip_addr
 
+def repair_remote_install():
+    ip_addr = get_ip()
+    subprocess.run(["sed", "-i", f"'s/host = 0.0.0.0/host = {ip_addr}/'", "/etc/gns3/gns3_server.conf"],capture_output=False)
+
 
 def get_config():
     """
@@ -449,5 +453,7 @@ try:
                 edit_proxy()
             elif tag == "Shrink":
                 shrink_disk()
+            elif tag == "Repair":
+                repair_remote_install()
 except KeyboardInterrupt:
     sys.exit(0)

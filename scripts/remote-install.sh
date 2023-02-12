@@ -26,6 +26,7 @@ function help {
   echo "--with-openvpn: Install OpenVPN" >&2
   echo "--with-iou: Install IOU" >&2
   echo "--with-i386-repository: Add the i386 repositories required by IOU if they are not already available on the system. Warning: this will replace your source.list in order to use the official Ubuntu mirror" >&2
+  echo "--with-welcome: Install GNS3-VM welcome.py script" >&2
   echo "--without-kvm: Disable KVM, required if system do not support it (limitation in some hypervisors and cloud providers). Warning: only disable KVM if strictly necessary as this will degrade performance" >&2
   echo "--unstable: Use the GNS3 unstable repository"
   echo "--help: This help" >&2
@@ -49,7 +50,7 @@ I386_REPO=0
 DISABLE_KVM=0
 UNSTABLE=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -70,6 +71,10 @@ while true ; do
           ;;
         --with-i386-repository)
           I386_REPO=1
+          shift
+          ;;
+        --with-welcome)
+          WELCOME_SETUP=1
           shift
           ;;
         --without-kvm)
@@ -295,6 +300,29 @@ EOFI
 fi
 
 log "GNS3 installed with success"
+
+if [ $WELCOME_SETUP == 1 ]
+then
+apt-get install -y net-tools
+NEEDRESTART_MODE=a apt-get install -y python3-pip
+NEEDRESTART_MODE=a pip install --no-input --upgrade pip
+NEEDRESTART_MODE=a pip install --no-input pythondialog
+
+curl https://raw.githubusercontent.com/Xatrekak/gns3-server/master/scripts/welcome.py > /usr/local/bin/welcome.sh
+
+mkdir /etc/systemd/system/getty@tty1.service.d
+cat <<EOFI > /etc/systemd/system/getty@tty1.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -a gns3 --noclear %I \$TERM
+EOFI
+
+chmod 755 /etc/systemd/system/getty@tty1.service.d/override.conf
+chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
+
+echo "python3 welcome.py" >> /opt/gns3/.bashrc
+
+fi
 
 if [ $USE_VPN == 1 ]
 then
