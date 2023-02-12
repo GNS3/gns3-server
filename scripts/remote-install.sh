@@ -309,7 +309,8 @@ NEEDRESTART_MODE=a apt-get install -y dialog
 pip install --no-input --upgrade pip
 pip install --no-input pythondialog
 
-curl https://raw.githubusercontent.com/Xatrekak/gns3-server/remote_install_changes/scripts/welcome.py > /usr/local/bin/welcome.py
+#using a direct link to the latest commit instead of the branch alias to bypass github raw caching issues.
+curl https://raw.githubusercontent.com/Xatrekak/gns3-server/19a8d1caed31f7d666b9df8d743d112eaf7eef37/scripts/welcome.py > /usr/local/bin/welcome.py
 
 chmod 755 /usr/local/bin/welcome.py
 chown gns3:gns3 /usr/local/bin/welcome.py
