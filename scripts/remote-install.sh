@@ -164,7 +164,7 @@ apt-get install -y gns3-server
 log "Create user GNS3 with /opt/gns3 as home directory"
 if [ ! -d "/opt/gns3/" ]
 then
-  useradd -d /opt/gns3/ -m gns3
+  useradd -m -d /opt/gns3/ gns3
 fi
 
 
@@ -303,10 +303,11 @@ log "GNS3 installed with success"
 
 if [ $WELCOME_SETUP == 1 ]
 then
-apt-get install -y net-tools
+NEEDRESTART_MODE=a apt-get install -y net-tools
 NEEDRESTART_MODE=a apt-get install -y python3-pip
-NEEDRESTART_MODE=a pip install --no-input --upgrade pip
-NEEDRESTART_MODE=a pip install --no-input pythondialog
+NEEDRESTART_MODE=a apt-get install -y dialog
+pip install --no-input --upgrade pip
+pip install --no-input pythondialog
 
 curl https://raw.githubusercontent.com/Xatrekak/gns3-server/remote_install_changes/scripts/welcome.py > /usr/local/bin/welcome.py
 
@@ -324,6 +325,7 @@ chmod 755 /etc/systemd/system/getty@tty1.service.d/override.conf
 chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
 
 echo "python3 /usr/local/bin/welcome.py" >> /opt/gns3/.bashrc
+usermod --shell /bin/bash gns3
 
 fi
 

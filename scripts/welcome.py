@@ -107,8 +107,11 @@ def gns3vm_version():
     """
     Return the GNS3 VM version
     """
-    with open('/home/gns3/.config/GNS3/gns3vm_version') as f:
-        return f.read().strip()
+    try:
+        with open('/home/gns3/.config/GNS3/gns3vm_version') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return "Remote Install"
 
 
 d = Dialog(dialog="dialog", autowidgetsize=True)
