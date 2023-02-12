@@ -143,7 +143,7 @@ class Welcome_dialog:
             self.update(force=True)
 
 
-    def get_release():
+    def get_release(self):
         try:
             with open(os.path.expanduser("~/.config/GNS3/gns3_release")) as f:
                 content = f.read()
@@ -258,7 +258,17 @@ class Welcome_dialog:
         ip = self.get_ip()
 
         if ip:
-            content += "IP: {ip}\n\nTo log in using SSH:\nssh gns3@{ip}\nPassword: gns3\n\nImages and projects are located in /opt/gns3""".format(ip=ip)
+            content += f"""
+IP:     {ip}
+Web UI: http://{ip}:3080
+
+To log in using SSH:
+ssh gns3@{ip}
+Password: gns3
+
+Images and projects are located in /opt/gns3
+""".strip()
+
         else:
             content += "eth0 is not configured. Please manually configure it via the Networking menu."
 
