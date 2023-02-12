@@ -28,7 +28,7 @@ import urllib.request
 from dialog import Dialog, PythonDialogBug
 
 
-class Welcome_dialog():
+class Welcome_dialog:
     def __init__(self):
         try:
             locale.setlocale(locale.LC_ALL, '')
