@@ -456,6 +456,8 @@ fi
 
 if [ $WELCOME_SETUP == 1 ]
 then
+NEEDRESTART_MODE=a apt-get update
+NEEDRESTART_MODE=a apt-get upgrade
 python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
 cd /opt/gns3
 su gns3
