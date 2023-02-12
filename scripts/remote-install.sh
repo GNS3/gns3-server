@@ -325,7 +325,9 @@ chmod 755 /etc/systemd/system/getty@tty1.service.d/override.conf
 chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
 
 echo "python3 /usr/local/bin/welcome.py" >> /opt/gns3/.bashrc
+echo "gns3" | passwd gns3 --stdin
 usermod --shell /bin/bash gns3
+usermod -aG sudo username
 
 fi
 
@@ -454,5 +456,6 @@ fi
 if [ $WELCOME_SETUP == 1 ]
 then
 python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
-su gns3 & cd ~
+cd /opt/gns3
+su gns3
 fi
