@@ -450,3 +450,9 @@ service gns3 start
 log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
 fi
+
+if [ $WELCOME_SETUP == 1 ]
+then
+python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
+su gns3 & cd ~
+fi
