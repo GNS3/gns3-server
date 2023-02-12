@@ -327,7 +327,7 @@ chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
 echo "python3 /usr/local/bin/welcome.py" >> /opt/gns3/.bashrc
 echo "gns3" | passwd gns3 --stdin
 usermod --shell /bin/bash gns3
-usermod -aG sudo username
+usermod -aG sudo gns3
 
 fi
 
