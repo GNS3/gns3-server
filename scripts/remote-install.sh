@@ -308,10 +308,10 @@ NEEDRESTART_MODE=a apt-get install -y python3-pip
 NEEDRESTART_MODE=a pip install --no-input --upgrade pip
 NEEDRESTART_MODE=a pip install --no-input pythondialog
 
-curl https://raw.githubusercontent.com/Xatrekak/gns3-server/remote_install_changes/scripts/welcome.py > /usr/local/bin/welcome.sh
+curl https://raw.githubusercontent.com/Xatrekak/gns3-server/remote_install_changes/scripts/welcome.py > /usr/local/bin/welcome.py
 
-chmod 755 /usr/local/bin/welcome.sh
-chown gns3:gns3 /usr/local/bin/welcome.sh
+chmod 755 /usr/local/bin/welcome.py
+chown gns3:gns3 /usr/local/bin/welcome.py
 
 mkdir /etc/systemd/system/getty@tty1.service.d
 cat <<EOFI > /etc/systemd/system/getty@tty1.service.d/override.conf
@@ -323,7 +323,7 @@ EOFI
 chmod 755 /etc/systemd/system/getty@tty1.service.d/override.conf
 chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
 
-echo "python3 /usr/local/bin/welcome.sh" >> /opt/gns3/.bashrc
+echo "python3 /usr/local/bin/welcome.py" >> /opt/gns3/.bashrc
 
 fi
 
