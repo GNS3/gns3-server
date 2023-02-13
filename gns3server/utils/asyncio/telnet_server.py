@@ -203,8 +203,7 @@ class AsyncioTelnetServer:
         except ConnectionError:
             async with self._lock:
                 network_writer.close()
-                if sys.version_info >= (3, 7, 0):
-                    await network_writer.wait_closed()
+                # await network_writer.wait_closed()  # this doesn't work in Python 3.6
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -220,8 +219,7 @@ class AsyncioTelnetServer:
                 writer.write_eof()
                 await writer.drain()
                 writer.close()
-                if sys.version_info >= (3, 7, 0):
-                    await writer.wait_closed()
+                # await writer.wait_closed()  # this doesn't work in Python 3.6
             except (AttributeError, ConnectionError):
                 continue
 
