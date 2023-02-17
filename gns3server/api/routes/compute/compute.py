@@ -56,7 +56,7 @@ def allocate_udp_port(project_id: UUID) -> dict:
 
 
 @router.get("/network/interfaces")
-def network_interfaces() -> dict:
+def network_interfaces() -> List[dict]:
     """
     List all the network interfaces available on the compute"
     """

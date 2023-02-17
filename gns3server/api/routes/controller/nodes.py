@@ -284,7 +284,7 @@ async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
 
 
 @router.get("/{node_id}/dynamips/auto_idlepc")
-async def auto_idlepc(node: Node = Depends(dep_node)) -> str:
+async def auto_idlepc(node: Node = Depends(dep_node)) -> dict:
     """
     Compute an Idle-PC value for a Dynamips node
     """

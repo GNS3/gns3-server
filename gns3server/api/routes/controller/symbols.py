@@ -40,7 +40,7 @@ router = APIRouter()
 
 
 @router.get("")
-def get_symbols() -> List[str]:
+def get_symbols() -> List[dict]:
 
     controller = Controller.instance()
     return controller.symbols.list()

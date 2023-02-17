@@ -74,7 +74,7 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
 
 
 @router.post("/{appliance_id}/version", status_code=status.HTTP_201_CREATED)
-def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> schemas.Appliance:
+def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> dict:
     """
     Add a version to an appliance
     """
