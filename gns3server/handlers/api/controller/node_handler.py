@@ -29,6 +29,9 @@ from gns3server.schemas.node import (
     NODE_DUPLICATE_SCHEMA
 )
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class NodeHandler:
     """
@@ -500,6 +503,8 @@ class NodeHandler:
                             await ws.send_bytes(msg.data)
                         elif msg.type == aiohttp.WSMsgType.ERROR:
                             break
+        except ConnectionResetError:
+            log.info("Websocket console connection with compute disconnected")
         finally:
             if not ws.closed:
                 await ws.close()
