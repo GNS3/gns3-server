@@ -409,7 +409,8 @@ async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
     vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._tpm = True
     tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
-    options = await vm._build_command()
+    with patch("os.path.exists", return_value=True) as os_path:
+        options = await vm._build_command()
     assert '-chardev socket,id=chrtpm,path={}'.format(tpm_sock) in ' '.join(options)
     assert '-tpmdev emulator,id=tpm0,chardev=chrtpm' in ' '.join(options)
     assert '-device tpm-tis,tpmdev=tpm0' in ' '.join(options)
