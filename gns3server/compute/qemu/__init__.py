@@ -223,7 +223,7 @@ class Qemu(BaseManager):
                     version = match.group(1)
                     return version
                 else:
-                    raise QemuError("Could not determine the Qemu version for {}".format(qemu_path))
+                    raise QemuError("Could not determine the Qemu version for '{}'".format(qemu_path))
             except (OSError, subprocess.SubprocessError) as e:
                 raise QemuError("Error while looking for the Qemu version: {}".format(e))
 
@@ -242,9 +242,28 @@ class Qemu(BaseManager):
                 version = match.group(1)
                 return version
             else:
-                raise QemuError("Could not determine the Qemu-img version for {}".format(qemu_img_path))
+                raise QemuError("Could not determine the Qemu-img version for '{}'".format(qemu_img_path))
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError("Error while looking for the Qemu-img version: {}".format(e))
+
+    @staticmethod
+    async def get_swtpm_version(swtpm_path):
+        """
+        Gets the swtpm version.
+
+        :param swtpm_path: path to swtpm executable.
+        """
+
+        try:
+            output = await subprocess_check_output(swtpm_path, "--version")
+            match = re.search(r"version\s+([\d.]+)", output)
+            if match:
+                version = match.group(1)
+                return version
+            else:
+                raise QemuError("Could not determine the swtpm version for '{}'".format(swtpm_path))
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Error while looking for the swtpm version: {}".format(e))
 
     @staticmethod
     def get_haxm_windows_version():
