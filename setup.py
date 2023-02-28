@@ -76,6 +76,7 @@ setup(
     cmdclass={"test": PyTest},
     description="GNS3 server",
     long_description=open("README.md", "r").read(),
+    long_description_content_type="text/markdown",
     install_requires=dependencies,
     entry_points={
         "console_scripts": [
