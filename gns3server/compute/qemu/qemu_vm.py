@@ -216,7 +216,7 @@ class QemuVM(BaseNode):
             if qemu_bin == "qemu":
                 self._platform = "i386"
             else:
-                self._platform = re.sub(r'^qemu-system-(.*)$', r'\1', qemu_bin, re.IGNORECASE)
+                self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, re.IGNORECASE)
         if self._platform.split(".")[0] not in QEMU_PLATFORMS:
             raise QemuError("Platform {} is unknown".format(self._platform))
         log.info('QEMU VM "{name}" [{id}] has set the QEMU path to {qemu_path}'.format(name=self._name,
@@ -1079,6 +1079,10 @@ class QemuVM(BaseNode):
             # check if there is enough RAM to run
             self.check_available_ram(self.ram)
 
+            # start swtpm (TPM emulator) first if TPM is enabled
+            if self._tpm:
+                await self._start_swtpm()
+
             command = await self._build_command()
             command_string = " ".join(shlex_quote(s) for s in command)
             try:
@@ -1104,8 +1108,6 @@ class QemuVM(BaseNode):
             await self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
-            if self._tpm:
-                self._start_swtpm()
             if "-enable-kvm" in command_string or "-enable-hax" in command_string:
                 self._hw_virtualization = True
 
@@ -2019,10 +2021,9 @@ class QemuVM(BaseNode):
             options.extend(["-kernel", self._kernel_image.replace(",", ",,")])
         if self._kernel_command_line:
             options.extend(["-append", self._kernel_command_line])
-
         return options
 
-    def _start_swtpm(self):
+    async def _start_swtpm(self):
         """
         Start swtpm (TPM emulator)
         """
@@ -2035,6 +2036,10 @@ class QemuVM(BaseNode):
         swtpm = shutil.which("swtpm")
         if not swtpm:
             raise QemuError("Could not find swtpm (TPM emulator)")
+        swtpm_version = await self.manager.get_swtpm_version(swtpm)
+        if swtpm_version and parse_version(swtpm_version) < parse_version("0.8.0"):
+            # swtpm >= version 0.8.0 is required
+            raise QemuError("swtpm version 0.8.0 or above must be installed (detected version is {})".format(swtpm_version))
         try:
             command = [
                 swtpm,
@@ -2066,6 +2071,8 @@ class QemuVM(BaseNode):
         """
 
         tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
+        if not os.path.exists(tpm_sock):
+            raise QemuError("swtpm socket file '{}' does not exist".format(tpm_sock))
         options = [
             "-chardev",
             "socket,id=chrtpm,path={}".format(tpm_sock),

@@ -34,6 +34,27 @@
             "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.1(1)"
         },
         {
+            "filename": "nexus9300v.10.1.1.qcow2",
+            "version": "9300v 10.1.1",
+            "md5sum": "4051bdb96aff6e54b72b7e3b06c9d6eb",
+            "filesize": 1990983680,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.1(1)"
+        },
+        {
+            "filename": "nexus9500v.9.3.9.qcow2",
+            "version": "9500v 9.3.9",
+            "md5sum": "30c25039927f89aebe73ea20d15abd6d",
+            "filesize": 1980760064,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(9)"
+        },
+        {
+            "filename": "nexus9300v.9.3.9.qcow2",
+            "version": "9300v 9.3.9",
+            "md5sum": "e807005cb7d2d2957b4af0e59f368b36",
+            "filesize": 1980563456,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(9)"
+        },
+        {
             "filename": "nexus9300v.9.3.8.qcow2",
             "version": "9300v 9.3.8",
             "md5sum": "f8bd834f8395c134dc98d895c98441af",
@@ -182,6 +203,27 @@
             "images": {
                 "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "nexus9500v64.10.1.1.qcow2"
+            }
+        },
+        {
+            "name": "9300v 10.1.1",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nexus9300v.10.1.1.qcow2"
+            }
+        },
+        {
+            "name": "9500v 9.3.9",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nexus9500v.9.3.9.qcow2"
+            }
+        },
+        {
+            "name": "9300v 9.3.9",
+            "images": {
+                "bios_image": "OVMF-20160813.fd",
+                "hda_disk_image": "nexus9300v.9.3.9.qcow2"
             }
         },
         {

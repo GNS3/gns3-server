@@ -17,7 +17,7 @@
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 1,
-        "ram": 96,
+        "ram": 128,
         "hda_disk_interface": "virtio",
         "arch": "i386",
         "console_type": "vnc",
@@ -28,7 +28,7 @@
         {
             "filename": "linux-tinycore-11.1.qcow2",
             "version": "11.1",
-            "md5sum": "993d1ce9b86cb131c90e8263891d51b8",
+            "md5sum": "00a65300a1dcc956e4e677c638bf4445",
             "filesize": 33816576,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
             "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/linux-tinycore-11.1.qcow2"

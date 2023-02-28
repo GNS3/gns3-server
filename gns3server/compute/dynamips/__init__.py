@@ -273,7 +273,7 @@ class Dynamips(BaseManager):
         """
 
         try:
-            output = await subprocess_check_output(dynamips_path)
+            output = await subprocess_check_output(dynamips_path, "-P", "none")
             match = re.search(r"Cisco Router Simulation Platform \(version\s+([\d.]+)", output)
             if match:
                 version = match.group(1)

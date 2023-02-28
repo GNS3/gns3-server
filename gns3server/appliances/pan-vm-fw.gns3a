@@ -27,6 +27,13 @@
         "options": "-smp 2"
     },
     "images": [
+		{
+            "filename": "PA-VM-KVM-10.1.0.qcow2",
+            "version": "10.1.0",
+            "md5sum": "8266fd412a22694749f2cd4afcd5fa33",
+            "filesize": 3597467648,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
         {
             "filename": "PA-VM-KVM-10.0.0.qcow2",
             "version": "10.0.0",
@@ -120,6 +127,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.1.0",
+            "images": {
+                "hda_disk_image": "PA-VM-KVM-10.1.0.qcow2"
+            }
+        },
         {
             "name": "10.0.0",
             "images": {
