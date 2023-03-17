@@ -1,0 +1,185 @@
+{
+    "appliance_id": "35436b76-dae0-4f9a-848d-8f89a0dce1ce",
+    "name": "ONTAP Simulator",
+    "category": "guest",
+    "description": "NetApp ONTAP Simulator. ONTAP is the industry's leading data management software.\n\nExtract the OVA file with a zip decompressor to get the files required for this installation.",
+    "vendor_name": "NetApp",
+    "vendor_url": "https://www.netapp.com",
+    "documentation_url": "https://docs.netapp.com/us-en/ontap-family",
+    "product_name": "NetApp ONTAP Simulator",
+    "product_url": "https://www.netapp.com/data-management/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Jose Phillips",
+    "maintainer_email": "jose@hddlive.net",
+    "usage": "NetApp ONTAP Simulator Initial Configuration\n\n1.Press Ctrl-C when you see the option.\n2.Hit Option 4 Clean configuration and initialize all disks.\n3.Press Y to Continue\n4.Follow the NetApp ONTAP Configurations on screen.\n",
+    "symbol": ":/symbols/affinity/square/blue/nas.svg",
+    "port_name_format": "e0{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 4,
+        "ram": 8192,
+        "cpus": 2,
+        "hda_disk_interface": "ide",
+        "hdb_disk_interface": "ide",
+        "hdc_disk_interface": "ide",
+        "hdd_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "vnc",
+        "boot_priority": "c",
+        "kvm": "require",
+        "on_close": "shutdown_signal"
+    },
+    "images": [
+        {
+            "filename": "9.8-vsim-NetAppDOT-simulate-disk1.vmdk",
+            "version": "9.8",
+            "md5sum": "823a69e1278405f430b73208ea7c231c",
+            "filesize": 505134080,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.8-vsim-NetAppDOT-simulate-disk2.vmdk",
+            "version": "9.8",
+            "md5sum": "575ba875b3916bf408729551d1e83ea6",
+            "filesize": 71168,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.8-vsim-NetAppDOT-simulate-disk3.vmdk",
+            "version": "9.8",
+            "md5sum": "9f17106079e69b4f66999adf12bb793d",
+            "filesize": 71680,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.8-vsim-NetAppDOT-simulate-disk4.vmdk",
+            "version": "9.8",
+            "md5sum": "ddcb8695bba25d884b4978e20f03c00f",
+            "filesize": 100352,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.7-vsim-NetAppDOT-simulate-disk1.vmdk",
+            "version": "9.7",
+            "md5sum": "595d92221e036fb2b4d4768f5e4a3967",
+            "filesize": 460700672,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.7-vsim-NetAppDOT-simulate-disk2.vmdk",
+            "version": "9.7",
+            "md5sum": "da95d010ed13a3eb14fa5abbc3de18f7",
+            "filesize": 71168,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.7-vsim-NetAppDOT-simulate-disk3.vmdk",
+            "version": "9.7",
+            "md5sum": "937f9bc2eb8f44e7a609c1ec937edc16",
+            "filesize": 71680,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "9.7-vsim-NetAppDOT-simulate-disk4.vmdk",
+            "version": "9.7",
+            "md5sum": "399ad53530615968f95b0f3de9e3c7fe",
+            "filesize": 100352,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.6-cm-disk1.vmdk",
+            "version": "9.6",
+            "md5sum": "381f7e1b0a3c670b25a32436e51fe465",
+            "filesize": 433936896,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.6-cm-disk2.vmdk",
+            "version": "9.6",
+            "md5sum": "ef534b1d1c454c9a78a82dc77c214adb",
+            "filesize": 71168,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.6-cm-disk3.vmdk",
+            "version": "9.6",
+            "md5sum": "96cbd798a18c50c86dbb49ead406cb02",
+            "filesize": 71680,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.6-cm-disk4.vmdk",
+            "version": "9.6",
+            "md5sum": "b67a738e7f3212a45a3eace0813d8a60",
+            "filesize": 100352,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.5-cm-disk1.vmdk",
+            "version": "9.5",
+            "md5sum": "94a3b46fdd5add410a1ec6ac8fd6994f",
+            "filesize": 1220402176,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.5-cm-disk2.vmdk",
+            "version": "9.5",
+            "md5sum": "53e6a05a90819fff6f80c86bbdb9b193",
+            "filesize": 71168,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.5-cm-disk3.vmdk",
+            "version": "9.5",
+            "md5sum": "028cedade23c58d755b1fff0db59d70b",
+            "filesize": 71680,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        },
+        {
+            "filename": "vsim-netapp-DOT9.5-cm-disk4.vmdk",
+            "version": "9.5",
+            "md5sum": "fb44126d338189ee38ae20b96b702715",
+            "filesize": 100352,
+            "download_url": "https://mysupport.netapp.com/site/tools/tool-eula/simulate-ontap/download"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.8",
+            "images": {
+                "hda_disk_image": "9.8-vsim-NetAppDOT-simulate-disk1.vmdk",
+                "hdb_disk_image": "9.8-vsim-NetAppDOT-simulate-disk2.vmdk",
+                "hdc_disk_image": "9.8-vsim-NetAppDOT-simulate-disk3.vmdk",
+                "hdd_disk_image": "9.8-vsim-NetAppDOT-simulate-disk4.vmdk"
+            }
+        },
+        {
+            "name": "9.7",
+            "images": {
+                "hda_disk_image": "9.7-vsim-NetAppDOT-simulate-disk1.vmdk",
+                "hdb_disk_image": "9.7-vsim-NetAppDOT-simulate-disk2.vmdk",
+                "hdc_disk_image": "9.7-vsim-NetAppDOT-simulate-disk3.vmdk",
+                "hdd_disk_image": "9.7-vsim-NetAppDOT-simulate-disk4.vmdk"
+            }
+        },
+        {
+            "name": "9.6",
+            "images": {
+                "hda_disk_image": "vsim-netapp-DOT9.6-cm-disk1.vmdk",
+                "hdb_disk_image": "vsim-netapp-DOT9.6-cm-disk2.vmdk",
+                "hdc_disk_image": "vsim-netapp-DOT9.6-cm-disk3.vmdk",
+                "hdd_disk_image": "vsim-netapp-DOT9.6-cm-disk4.vmdk"
+            }
+        },
+        {
+            "name": "9.5",
+            "images": {
+                "hda_disk_image": "vsim-netapp-DOT9.5-cm-disk1.vmdk",
+                "hdb_disk_image": "vsim-netapp-DOT9.5-cm-disk2.vmdk",
+                "hdc_disk_image": "vsim-netapp-DOT9.5-cm-disk3.vmdk",
+                "hdd_disk_image": "vsim-netapp-DOT9.5-cm-disk4.vmdk"
+            }
+        }
+    ]
+}

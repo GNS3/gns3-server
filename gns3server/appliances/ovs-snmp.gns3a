@@ -6,7 +6,7 @@
     "vendor_name": "Open vSwitch",
     "vendor_url": "http://openvswitch.org/",
     "product_name": "Open vSwitch",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

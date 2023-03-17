@@ -6,7 +6,7 @@
     "vendor_name": "Arista",
     "vendor_url": "http://www.arista.com/",
     "product_name": "cEOS",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

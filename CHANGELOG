@@ -1,5 +1,22 @@
 # Change Log
 
+## 2.2.38 28/02/2023
+
+* Bundle web-ui v2.2.38
+* Fix c7200_i0_log.txt is created in the current directory. Fixes #2191
+* Check swtpm version and start swtpm before qemu
+* Fix broken websocket console with Python 3.11
+* Fix "cannot reopen console". Ref #2182
+* Fix Qemu binary not set when adding appliance from template
+
+## 2.2.37 25/01/2023
+
+* Fix link communication issues on Windows with uBridge
+* Fix StreamWriter doesn't have the wait_closed() method in Python3.6. Fixes #2170
+* Install built-in appliances when no previous version has been detected. Fixes #2168
+* Update documentation to install gns3-server. Fixes #2124
+* Give udhcpc executable right. Fixes #2159
+
 ## 2.2.36 04/01/2023
 
 * Install web-ui v2.2.36

@@ -8,7 +8,7 @@
     "documentation_url": "http://www.opennac.org/opennac/en/support.html",
     "product_name": "OpenNAC",
     "product_url": "https://opennac.org/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Brent Stewart",
     "maintainer_email": "brent@stewart.tc",

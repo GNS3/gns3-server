@@ -193,9 +193,56 @@ class Qemu(BaseManager):
                 version = match.group(1)
                 return version
             else:
-                raise QemuError(f"Could not determine the Qemu-img version for {qemu_img_path}")
+                raise QemuError("Could not determine the Qemu-img version for '{}'".format(qemu_img_path))
         except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError(f"Error while looking for the Qemu-img version: {e}")
+            raise QemuError("Error while looking for the Qemu-img version: {}".format(e))
+
+    @staticmethod
+    async def get_swtpm_version(swtpm_path):
+        """
+        Gets the swtpm version.
+
+        :param swtpm_path: path to swtpm executable.
+        """
+
+        try:
+            output = await subprocess_check_output(swtpm_path, "--version")
+            match = re.search(r"version\s+([\d.]+)", output)
+            if match:
+                version = match.group(1)
+                return version
+            else:
+                raise QemuError("Could not determine the swtpm version for '{}'".format(swtpm_path))
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Error while looking for the swtpm version: {}".format(e))
+
+    @staticmethod
+    def get_haxm_windows_version():
+        """
+        Gets the HAXM version number (Windows).
+
+        :returns: HAXM version number. Returns None if HAXM is not installed.
+        """
+
+        assert(sys.platform.startswith("win"))
+        import winreg
+
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products")
+        version = None
+        for index in range(winreg.QueryInfoKey(hkey)[0]):
+            product_id = winreg.EnumKey(hkey, index)
+            try:
+                product_key = winreg.OpenKey(hkey, r"{}\InstallProperties".format(product_id))
+                try:
+                    if winreg.QueryValueEx(product_key, "DisplayName")[0].endswith("Hardware Accelerated Execution Manager"):
+                        version = winreg.QueryValueEx(product_key, "DisplayVersion")[0]
+                        break
+                finally:
+                    winreg.CloseKey(product_key)
+            except OSError:
+                continue
+        winreg.CloseKey(hkey)
+        return version
 
     @staticmethod
     def get_legacy_vm_workdir(legacy_vm_id, name):

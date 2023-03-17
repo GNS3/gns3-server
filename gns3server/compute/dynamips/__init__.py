@@ -26,13 +26,14 @@ import time
 import asyncio
 import tempfile
 import logging
+import subprocess
 import glob
 import re
 
 log = logging.getLogger(__name__)
 
 from gns3server.utils.interfaces import interfaces, is_interface_up
-from gns3server.utils.asyncio import wait_run_in_executor
+from gns3server.utils.asyncio import wait_run_in_executor, subprocess_check_output
 from gns3server.utils import parse_version
 from uuid import uuid4
 from ..base_manager import BaseManager
@@ -263,6 +264,25 @@ class Dynamips(BaseManager):
         self._dynamips_path = dynamips_path
         return dynamips_path
 
+    @staticmethod
+    async def dynamips_version(dynamips_path):
+        """
+        Gets the Dynamips version
+
+        :param dynamips_path: path to Dynamips executable.
+        """
+
+        try:
+            output = await subprocess_check_output(dynamips_path, "-P", "none")
+            match = re.search(r"Cisco Router Simulation Platform \(version\s+([\d.]+)", output)
+            if match:
+                version = match.group(1)
+                return version
+            else:
+                raise DynamipsError("Could not determine the Dynamips version for {}".format(dynamips_path))
+        except (OSError, subprocess.SubprocessError) as e:
+            raise DynamipsError("Error while looking for the Dynamips version: {}".format(e))
+
     async def start_new_hypervisor(self, working_dir=None):
         """
         Creates a new Dynamips process and start it.
@@ -278,13 +298,20 @@ class Dynamips(BaseManager):
         if not working_dir:
             working_dir = tempfile.gettempdir()
 
+        server_host = self.config.settings.Server.host
+        bind_console_host = False
+
+        dynamips_version = await self.dynamips_version(self.dynamips_path)
+        if parse_version(dynamips_version) < parse_version('0.2.11'):
+            raise DynamipsError("Dynamips version must be >= 0.2.11, detected version is {}".format(dynamips_version))
+
         if not sys.platform.startswith("win"):
             # Hypervisor should always listen to 127.0.0.1
             # See https://github.com/GNS3/dynamips/issues/62
             # This was fixed in Dynamips v0.2.23 which hasn't been built for Windows
-            server_host = "127.0.0.1"
-        else:
-            server_host = self.config.settings.Server.host
+            if parse_version(dynamips_version) >= parse_version('0.2.23'):
+                server_host = "127.0.0.1"
+                bind_console_host = True
 
         try:
             info = socket.getaddrinfo(server_host, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
@@ -301,17 +328,12 @@ class Dynamips(BaseManager):
             raise DynamipsError(f"Could not find free port for the Dynamips hypervisor: {e}")
 
         port_manager = PortManager.instance()
-        hypervisor = Hypervisor(self._dynamips_path, working_dir, server_host, port, port_manager.console_host)
+        hypervisor = Hypervisor(self._dynamips_path, working_dir, server_host, port, port_manager.console_host, bind_console_host)
 
         log.info(f"Creating new hypervisor {hypervisor.host}:{hypervisor.port} with working directory {working_dir}")
         await hypervisor.start()
         log.info(f"Hypervisor {hypervisor.host}:{hypervisor.port} has successfully started")
         await hypervisor.connect()
-        if parse_version(hypervisor.version) < parse_version("0.2.11"):
-            raise DynamipsError(f"Dynamips version must be >= 0.2.11, detected version is {hypervisor.version}")
-        if not sys.platform.startswith("win") and parse_version(hypervisor.version) < parse_version('0.2.23'):
-            raise DynamipsError(f"Dynamips version must be >= 0.2.23 on Linux/macOS, detected version is {hypervisor.version}")
-
         return hypervisor
 
     async def ghost_ios_support(self, vm):

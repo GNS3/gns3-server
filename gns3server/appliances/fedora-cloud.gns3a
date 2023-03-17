@@ -8,7 +8,7 @@
     "documentation_url": "https://docs.fedoraproject.org/en-US/docs/",
     "product_name": "Fedora Cloud Base",
     "product_url": "https://alt.fedoraproject.org/cloud/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Da-Geek",
     "maintainer_email": "dageek@dageeks-geeks.gg",
@@ -42,7 +42,7 @@
         }
     ],
     "versions": [
-       {
+        {
             "name": "35-1.2",
             "images": {
                 "hda_disk_image": "Fedora-Cloud-Base-35-1.2.x86_64.qcow2",

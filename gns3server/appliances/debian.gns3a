@@ -6,7 +6,7 @@
     "vendor_name": "Debian",
     "vendor_url": "https://www.debian.org",
     "product_name": "Debian",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

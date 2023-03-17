@@ -8,7 +8,7 @@
     "documentation_url": "https://loadbalancer.org/support/support-resources",
     "product_name": "Loadbalancer.org Enterprise VA",
     "product_url": "https://loadbalancer.org/products/virtual",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

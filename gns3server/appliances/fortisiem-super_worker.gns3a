@@ -8,7 +8,7 @@
     "documentation_url": "http://docs.fortinet.com/fortisiem/admin-guides",
     "product_name": "FortiSIEM",
     "product_url": "https://www.fortinet.com/products/siem/fortisiem.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

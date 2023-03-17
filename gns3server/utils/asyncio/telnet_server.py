@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import socket
 import asyncio
 import asyncio.subprocess
@@ -200,7 +201,7 @@ class AsyncioTelnetServer:
         except ConnectionError:
             async with self._lock:
                 network_writer.close()
-                await network_writer.wait_closed()
+                # await network_writer.wait_closed()  # this doesn't work in Python 3.6
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -216,7 +217,7 @@ class AsyncioTelnetServer:
                 writer.write_eof()
                 await writer.drain()
                 writer.close()
-                await writer.wait_closed()
+                # await writer.wait_closed()  # this doesn't work in Python 3.6
             except (AttributeError, ConnectionError):
                 continue
 

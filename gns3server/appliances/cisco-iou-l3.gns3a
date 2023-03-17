@@ -6,7 +6,7 @@
     "vendor_name": "Cisco",
     "vendor_url": "http://www.cisco.com",
     "product_name": "Cisco IOU L3",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

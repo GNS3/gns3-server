@@ -527,14 +527,17 @@ class BaseNode:
                 if data:
                     await websocket.send_bytes(data)
 
-        # keep forwarding WebSocket data in both direction
-        done, pending = await asyncio.wait(
-            [ws_forward(telnet_writer), telnet_forward(telnet_reader)], return_when=asyncio.FIRST_COMPLETED
-        )
+        # keep forwarding websocket data in both direction
+        if sys.version_info >= (3, 11, 0):
+            # Starting with Python 3.11, passing coroutine objects to wait() directly is forbidden.
+            aws = [asyncio.create_task(ws_forward(telnet_writer)), asyncio.create_task(telnet_forward(telnet_reader))]
+        else:
+            aws = [ws_forward(telnet_writer), telnet_forward(telnet_reader)]
+
+        done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
         for task in done:
             if task.exception():
                 log.warning(f"Exception while forwarding WebSocket data to Telnet server {task.exception()}")
-
         for task in pending:
             task.cancel()
 

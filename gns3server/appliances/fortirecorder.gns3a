@@ -8,7 +8,7 @@
     "documentation_url": "https://docs.fortinet.com/fortirecorder/",
     "product_name": "FortiRecorder",
     "product_url": "https://www.fortinet.com/products/network-based-video-security/forticam-fortirecorder.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

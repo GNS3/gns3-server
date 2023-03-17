@@ -8,7 +8,7 @@
     "documentation_url": "http://kb.kerio.com/product/kerio-control/",
     "product_name": "Kerio Control",
     "product_url": "http://www.kerio.com/products/kerio-control",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

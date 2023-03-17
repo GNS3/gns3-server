@@ -1,0 +1,19 @@
+{
+    "appliance_id": "d9ce131e-ecdc-49d2-be7d-d883d3919a06",
+    "name": "Cisco PyATS",
+    "category": "guest",
+    "description": "pyATS is an end-to-end DevOps automation ecosystem. Agnostic by design, pyATS enable network engineers to automate their day-to-day DevOps activities, perform stateful validation of their device operational status, build a safety-net of scalable, data-driven and reusable tests around their network, and visualize everything in a modern, easy to use dashboard.",
+    "vendor_name": "Cisco",
+    "vendor_url": "https://cisco.com",
+    "product_name": "PyATS",
+    "product_url": "https://developer.cisco.com/pyats/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Xander Petty",
+    "maintainer_email": "Xander.Petty@protonmail.com",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/pyats:latest",
+        "console_type": "telnet"
+    }
+}

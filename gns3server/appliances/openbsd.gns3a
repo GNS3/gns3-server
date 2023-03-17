@@ -7,7 +7,7 @@
     "vendor_url": "http://www.openbsd.org",
     "documentation_url": "http://www.openbsd.org/faq/index.html",
     "product_name": "OpenBSD",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

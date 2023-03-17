@@ -72,7 +72,7 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
         proc = await asyncio.create_subprocess_exec(*args, stderr=asyncio.subprocess.PIPE, cwd=cwd, env=env)
         output = await proc.stderr.read()
     else:
-        proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=cwd, env=env)
+        proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, cwd=cwd, env=env)
         output = await proc.stdout.read()
     if output is None:
         return ""

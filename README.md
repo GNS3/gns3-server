@@ -86,7 +86,7 @@ git checkout 3.0
 python3 -m venv venv-gns3server
 source venv-gns3server/bin/activate
 python3 setup.py install
-python3 -m gns3server --local
+python3 -m gns3server
 ```
 
 You will have to manually install other software dependencies (see above), for Dynamips, VPCS and uBridge the easiest is to install from our PPA.

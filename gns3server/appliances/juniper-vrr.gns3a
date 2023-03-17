@@ -8,7 +8,7 @@
     "documentation_url": "https://www.juniper.net/documentation/product/en_US/virtual-route-reflector",
     "product_name": "Juniper vRR",
     "product_url": "https://www.juniper.net/us/en/products-services/nos/junos/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",
@@ -35,12 +35,6 @@
             "filesize": 2773090304
         },
         {
-            "filename": "metadata.img",
-            "version": "20.4R3.8-KVM",
-            "md5sum": "ae4e3562aa389929476d82420c79d511",
-            "filesize": 393216
-        },
-        {
             "filename": "junos-x86-64-20.3R1.8.img",
             "version": "20.3R1.8-KVM",
             "md5sum": "5cd41a792daae2b3fefac1928f2a1894",
@@ -48,7 +42,7 @@
         },
         {
             "filename": "metadata.img",
-            "version": "20.3R1.8-KVM",
+            "version": "1",
             "md5sum": "ae4e3562aa389929476d82420c79d511",
             "filesize": 393216
         }

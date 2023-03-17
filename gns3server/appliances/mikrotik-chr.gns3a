@@ -8,7 +8,7 @@
     "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
     "product_name": "MikroTik Cloud Hosted Router",
     "product_url": "http://www.mikrotik.com/download",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -17,8 +17,8 @@
     "port_name_format": "ether{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
-        "adapters": 2,
-        "ram": 128,
+        "adapters": 8,
+        "ram": 384,
         "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
@@ -28,12 +28,21 @@
     },
     "images": [
         {
-            "filename": "chr-7.4rc2.img",
-            "version": "7.4rc2",
-            "md5sum": "ddb107c95cc7d231f8d8bbdb4eebdab6",
+            "filename": "chr-7.7.img",
+            "version": "7.7",
+            "md5sum": "efc4fdeb1cc06dc240a14f1215fd59b3",
             "filesize": 134217728,
             "download_url": "http://www.mikrotik.com/download",
-            "direct_download_url": "https://download.mikrotik.com/routeros/7.4rc2/chr-7.4rc2.img.zip",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.7/chr-7.7.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.6.img",
+            "version": "7.6",
+            "md5sum": "864482f9efaea9d40910c050318f65b9",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.6/chr-7.6.img.zip",
             "compression": "zip"
         },
         {
@@ -75,9 +84,15 @@
     ],
     "versions": [
         {
-            "name": "7.4rc2",
+            "name": "7.7",
             "images": {
-                "hda_disk_image": "chr-7.4rc2.img"
+                "hda_disk_image": "chr-7.7.img"
+            }
+        },
+        {
+            "name": "7.6",
+            "images": {
+                "hda_disk_image": "chr-7.6.img"
             }
         },
         {

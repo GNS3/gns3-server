@@ -43,16 +43,16 @@
     ],
     "versions": [
         {
+            "name": "cOS Core 14.00.01 (x86)",
             "images": {
                 "hda_disk_image": "clavister-cos-core-14.00.01.13-kvm-en.img"
-            },
-            "name": "cOS Core 14.00.01 (x86)"
+            }
         },
         {
+            "name": "cOS Core 14.00.00 (x86)",
             "images": {
                 "hda_disk_image": "clavister-cos-core-14.00.00.12-kvm-en.img"
-            },
-            "name": "cOS Core 14.00.00 (x86)"
+            }
         }
     ]
 }

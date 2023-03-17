@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/td/docs/ios_xr_sw/ios_xrv/release/notes/xrv-rn.html",
     "product_name": "IOS XRv 9000",
     "product_url": "http://virl.cisco.com/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

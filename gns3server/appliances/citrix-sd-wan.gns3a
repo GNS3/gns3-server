@@ -2,7 +2,7 @@
     "appliance_id": "2d5634dc-ad39-46cf-a2fd-17b291abab91",
     "name": "Citrix SD-WAN",
     "category": "router",
-    "description": "A software-defined wide area network (SD-WAN) is a virtual WAN architecture, in which any blend of network transport types — not only multiprotocol label switching (MPLS) but also broadband internet, cellular, and satellite — can be virtualized and bonded then centrally managed in software, to securely connect users to applications and desktops in accordance with policy. Essentially, SD-WAN is software-defined networking (SDN) for the WAN.",
+    "description": "A software-defined wide area network (SD-WAN) is a virtual WAN architecture, in which any blend of network transport types \u2014 not only multiprotocol label switching (MPLS) but also broadband internet, cellular, and satellite \u2014 can be virtualized and bonded then centrally managed in software, to securely connect users to applications and desktops in accordance with policy. Essentially, SD-WAN is software-defined networking (SDN) for the WAN.",
     "vendor_name": "Citrix",
     "vendor_url": "http://www.citrix.com/",
     "documentation_url": "https://docs.citrix.com/en-us/citrix-sd-wan",

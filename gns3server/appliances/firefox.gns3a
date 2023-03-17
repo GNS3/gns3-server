@@ -8,7 +8,7 @@
     "documentation_url": "https://support.mozilla.org",
     "product_name": "Firefox",
     "product_url": "https://www.mozilla.org/firefox",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 team",
     "maintainer_email": "developers@gns3.net",

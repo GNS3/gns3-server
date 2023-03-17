@@ -8,7 +8,7 @@
     "documentation_url": "https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/",
     "product_name": "Windows 11 Development Environment",
     "product_url": "https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/",
-    "registry_version": 4,
+    "registry_version": 5,
     "status": "experimental",
     "availability": "free",
     "maintainer": "Ean Towne",
@@ -49,11 +49,11 @@
     ],
     "versions": [
         {
+            "name": "2212",
             "images": {
                 "bios_image": "OVMF-20160813.fd",
                 "hda_disk_image": "WinDev2212Eval-disk1.vmdk"
-            },
-            "name": "2212"
+            }
         }
     ]
 }

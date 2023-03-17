@@ -8,7 +8,7 @@
     "documentation_url": "https://wiki.opnsense.org/",
     "product_name": "OPNsense",
     "product_url": "https://opnsense.org/about/about-opnsense/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

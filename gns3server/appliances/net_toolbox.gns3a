@@ -6,7 +6,7 @@
     "vendor_name": "Ubuntu",
     "vendor_url": "https://www.ubuntu.com/",
     "product_name": "Networkers' toolbox",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",

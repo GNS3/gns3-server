@@ -8,7 +8,7 @@
     "documentation_url": "http://www.juniper.net/techpubs/",
     "product_name": "Juniper vMX vCP",
     "product_url": "https://www.juniper.net/us/en/products/routers/mx-series/vmx-virtual-router-software.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "none",
     "maintainer_email": "developers@gns3.net",

@@ -8,7 +8,7 @@
     "documentation_url": "https://support.f5.com/kb/en-us/products/big-ip_ltm/manuals/product/bigip-ve-kvm-setup-11-3-0.html",
     "product_name": "F5 BIG-IP LTM VE",
     "product_url": "https://f5.com/products/modules/local-traffic-manager",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
