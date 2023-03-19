@@ -323,6 +323,9 @@ class DockerVM(BaseNode):
         Creates the Docker container.
         """
 
+        if ":" in self.working_dir:
+            raise DockerError("Cannot create a Docker container with a project name containing a colon character (':')")
+
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
