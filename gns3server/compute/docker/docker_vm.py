@@ -303,7 +303,12 @@ class DockerVM(BaseNode):
         resources = get_resource("compute/docker/resources")
         if not os.path.exists(resources):
             raise DockerError(f"{resources} is missing, can't start Docker container")
-        binds = [f"{resources}:/gns3:ro"]
+        binds = [{
+            "Type": "bind",
+            "Source": resources,
+            "Target": "/gns3",
+            "ReadOnly": True
+        }]
 
         # We mount our own etc/network
         try:
@@ -334,7 +339,11 @@ class DockerVM(BaseNode):
         for volume in self._volumes:
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
-            binds.append(f"{source}:/gns3volumes{volume}")
+            binds.append({
+                "Type": "bind",
+                "Source": source,
+                "Target": "/gns3volumes{}".format(volume)
+            })
 
         return binds
 
@@ -410,7 +419,7 @@ class DockerVM(BaseNode):
             "HostConfig": {
                 "CapAdd": ["ALL"],
                 "Privileged": True,
-                "Binds": self._mount_binds(image_infos),
+                "Mounts": self._mount_binds(image_infos),
                 "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
                 "NanoCpus": int(self._cpus * 1e9),  # convert cpus to nano cpus
             },
@@ -475,7 +484,11 @@ class DockerVM(BaseNode):
                 "QT_GRAPHICSSYSTEM=native"
             )  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append(f"DISPLAY=:{self._display}")
-            params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
+            params["HostConfig"]["Mounts"].append({
+                "Type": "bind",
+                "Source": "/tmp/.X11-unix/",
+                "Target": "/tmp/.X11-unix/"
+            })
 
         if self._extra_hosts:
             extra_hosts = self._format_extra_hosts(self._extra_hosts)
