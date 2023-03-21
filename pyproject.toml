@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gns3-server"
+description = "GNS3 graphical interface for the GNS3 server."
+license = {file = "LICENSE"}
+authors = [
+  { name="Jeremy Grossmann" }
+]
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Framework :: FastAPI",
+        "Intended Audience :: Information Technology",
+        "Topic :: System :: Networking",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: Implementation :: CPython"
+]
+
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools]
+packages = ["gns3server"]
+
+[tool.setuptools.dynamic]
+version = {attr = "gns3server.version.__version__"}
+dependencies = {file = "requirements.txt"}
+
+[project.optional-dependencies]
+test = [
+        "pytest==7.2.2",
+        "flake8==5.0.4",  # v5.0.4 is the last to support Python 3.7
+        "pytest-timeout==2.1.0",
+        "pytest-asyncio==0.20.3",
+        "requests==2.28.2",
+        "httpx==0.23.3"
+]
+
+[project.urls]
+"Homepage" = "http://gns3.com"
+"Repository" = "http://github.com/GNS3/gns3-server"
+"Bug tracker" = "http://github.com/GNS3/gns3-server/issues"
+
+[project.scripts]
+gns3server = "gns3server.main:main"
+gns3vmnet = "gns3server.utils.vmnet:main"
