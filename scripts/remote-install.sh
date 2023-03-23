@@ -49,6 +49,7 @@ USE_IOU=0
 I386_REPO=0
 DISABLE_KVM=0
 UNSTABLE=0
+WELCOME_SETUP=0
 
 TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
