@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username/password is vyos/vyos.\n\nAt first boot the router will start from the cdrom. Login and then type \"install image\" and follow the instructions.",
+    "usage": "Default username/password is vyos/vyos.\n\nThe -KVM versions are ready to use, no installation is required.\nThe other images will start the router from the CDROM on initial boot. Login and then type \"install image\" and follow the instructions.",
     "symbol": "vyos.svg",
     "port_name_format": "eth{0}",
     "qemu": {
@@ -55,11 +55,36 @@
             "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-3-0-generic-iso-image"
         },
         {
+            "filename": "vyos-1.2.9-S1-amd64.iso",
+            "version": "1.2.9-S1",
+            "md5sum": "3fece6363f9766f862e26d292d0ed5a3",
+            "filesize": 430964736,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-s1-generic-iso-image",
+            "direct_download_url": "https://s3-us.vyos.io/1.2.9-S1/vyos-1.2.9-S1-amd64.iso"
+        },
+        {
+            "filename": "vyos-1.2.9-S1-10G-qemu.qcow2",
+            "version": "1.2.9-S1-KVM",
+            "md5sum": "0a70d78b80a3716d42487c02ef44f41f",
+            "filesize": 426967040,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-s1-for-kvm",
+            "direct_download_url": "https://s3-us.vyos.io/1.2.9-S1/vyos-1.2.9-S1-10G-qemu.qcow2"
+        },
+        {
             "filename": "vyos-1.2.9-amd64.iso",
             "version": "1.2.9",
             "md5sum": "586be23b6256173e174c82d8f1f699a1",
             "filesize": 430964736,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-generic-iso-image"
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-generic-iso-image",
+            "direct_download_url": "https://s3-us.vyos.io/1.2.9/vyos-1.2.9-amd64.iso"
+        },
+        {
+            "filename": "vyos-1.2.9-10G-qemu.qcow2",
+            "version": "1.2.9-KVM",
+            "md5sum": "76871c7b248c32f75177c419128257ac",
+            "filesize": 427360256,
+            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-9-10g-qemu-qcow2",
+            "direct_download_url": "https://s3-us.vyos.io/1.2.9/vyos-1.2.9-10G-qemu.qcow2"
         },
         {
             "filename": "vyos-1.2.8-amd64.iso",
@@ -69,19 +94,11 @@
             "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-8-generic-iso-image"
         },
         {
-            "filename": "vyos-1.2.7-amd64.iso",
-            "version": "1.2.7",
-            "md5sum": "1a06255edfac63fa3ea89353317130bf",
-            "filesize": 428867584,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-2-7-generic-iso-image"
-        },
-        {
             "filename": "vyos-1.1.8-amd64.iso",
             "version": "1.1.8",
             "md5sum": "95a141d4b592b81c803cdf7e9b11d8ea",
             "filesize": 241172480,
-            "download_url": "https://support.vyos.io/en/downloads/files/vyos-1-1-8-iso",
-            "direct_download_url": "https://s3.amazonaws.com/s3-us.vyos.io/vyos-1.1.8-amd64.iso"
+            "direct_download_url": "https://s3-us.vyos.io/vyos-1.1.8-amd64.iso"
         },
         {
             "filename": "empty8G.qcow2",
@@ -122,6 +139,19 @@
             }
         },
         {
+            "name": "1.2.9-S1",
+            "images": {
+                "hda_disk_image": "empty8G.qcow2",
+                "cdrom_image": "vyos-1.2.9-S1-amd64.iso"
+            }
+        },
+        {
+            "name": "1.2.9-S1-KVM",
+            "images": {
+                "hda_disk_image": "vyos-1.2.9-S1-10G-qemu.qcow2"
+            }
+        },
+        {
             "name": "1.2.9",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
@@ -129,17 +159,16 @@
             }
         },
         {
+            "name": "1.2.9-KVM",
+            "images": {
+                "hda_disk_image": "vyos-1.2.9-10G-qemu.qcow2"
+            }
+        },
+        {
             "name": "1.2.8",
             "images": {
                 "hda_disk_image": "empty8G.qcow2",
                 "cdrom_image": "vyos-1.2.8-amd64.iso"
-            }
-        },
-        {
-            "name": "1.2.7",
-            "images": {
-                "hda_disk_image": "empty8G.qcow2",
-                "cdrom_image": "vyos-1.2.7-amd64.iso"
             }
         },
         {

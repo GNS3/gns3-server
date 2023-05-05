@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "junos-vsrx3-x86-64-21.2R3-S4.8.qcow2",
+            "version": "21.2R3-S4",
+            "md5sum": "18fdcbfe0acbc935b4f677b4be7e228d",
+            "filesize": 762773504,
+            "download_url": "https://www.juniper.net/us/en/dm/free-vsrx-trial/"
+        },
+        {
             "filename": "junos-media-vsrx-x86-64-vmdisk-20.4R1.12.qcow2",
             "version": "20.4R1",
             "md5sum": "a445304c6f710d6d5401b486ef68cd20",
@@ -182,6 +189,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "21.2R3-S4",
+            "images": {
+                "hda_disk_image": "junos-vsrx3-x86-64-21.2R3-S4.8.qcow2"
+            }
+        },
         {
             "name": "20.4R1",
             "images": {

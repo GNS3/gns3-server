@@ -18,13 +18,21 @@
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 7,
-        "ram": 768,
-        "hda_disk_interface": "ide",
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "cumulus-linux-5.4.0-vx-amd64-qemu.qcow2",
+            "version": "5.4.0",
+            "md5sum": "b36d781a168e381e0db5b1d85a2f970d",
+            "filesize": 6254493696,
+            "download_url": "https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/download/",
+            "direct_download_url": "https://d2cd9e7ca6hntp.cloudfront.net/public/CumulusLinux-5.4.0/cumulus-linux-5.4.0-vx-amd64-qemu.qcow2"
+        },
         {
             "filename": "cumulus-linux-5.3.1-vx-amd64-qemu.qcow2",
             "version": "5.3.1",
@@ -247,6 +255,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "5.4.0",
+            "images": {
+                "hda_disk_image": "cumulus-linux-5.4.0-vx-amd64-qemu.qcow2"
+            }
+        },
         {
             "name": "5.3.1",
             "images": {

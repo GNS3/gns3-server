@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username is admin, no password is set.",
+    "usage": "Default username is admin, no password is set.\n\n- FortiGate version 7.0.0 and above require 2GB RAM.\n\n- FortiGate versions higher than 7.2.0 trial license is VERY restrictive, not recommended for use.",
     "symbol": "fortinet.svg",
     "port_name_format": "Port{port1}",
     "qemu": {
@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "FGT_VM64_KVM-v7.2.4.F-build1396-FORTINET.out.kvm.qcow2",
+            "version": "7.2.4",
+            "md5sum": "e3bd5958ff3d4f9363152c340e9b9578",
+            "filesize": 95158272,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FGT_VM64_KVM-v7.2.3.F-build1262-FORTINET.out.kvm.qcow2",
             "version": "7.2.3",
             "md5sum": "e8f3c5879f0d6fe238dc2665a3508694",
@@ -42,10 +49,24 @@
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
+            "filename": "FGT_VM64_KVM-v7.0.10.M-build0450-FORTINET.out.kvm.qcow2",
+            "version": "7.0.10",
+            "md5sum": "c7eb9fad8484405aa5bd8a4dd9e67722",
+            "filesize": 77135872,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FGT_VM64_KVM-v7.0.9.M-build0444-FORTINET.out.kvm.qcow2",
             "version": "7.0.9",
             "md5sum": "0aee912ab11bf9a4b0e3fc1a62dd0e40",
             "filesize": 77135872,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FGT_VM64_KVM-v6.4.12.M-build2060-FORTINET.out.kvm.qcow2",
+            "version": "6.4.12",
+            "md5sum": "df2569f9fa3e40b65fa0db741cf6e01e",
+            "filesize": 69861376,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -283,6 +304,13 @@
     ],
     "versions": [
         {
+            "name": "7.2.4",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v7.2.4.F-build1396-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "7.2.3",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v7.2.3.F-build1262-FORTINET.out.kvm.qcow2",
@@ -297,9 +325,23 @@
             }
         },
         {
+            "name": "7.0.10",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v7.0.10.M-build0450-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "7.0.9",
             "images": {
                 "hda_disk_image": "FGT_VM64_KVM-v7.0.9.M-build0444-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.4.12",
+            "images": {
+                "hda_disk_image": "FGT_VM64_KVM-v6.4.12.M-build2060-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },
