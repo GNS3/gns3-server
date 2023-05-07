@@ -281,6 +281,24 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+    @staticmethod
+    def install_resource_files(dst_path, resource_name):
+        """
+        Install files from resources to user's file system
+        """
+
+        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
+            resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
+            for filename in os.listdir(resource_path):
+                if not os.path.exists(os.path.join(dst_path, filename)):
+                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+        else:
+            for entry in importlib_resources.files(f'gns3server.{resource_name}').iterdir():
+                full_path = os.path.join(dst_path, entry.name)
+                if entry.is_file() and not os.path.exists(full_path):
+                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+
     def _install_base_configs(self):
         """
         At startup we copy base configs to the user location to allow
@@ -290,17 +308,7 @@ class Controller:
         dst_path = self.configs_path()
         log.info(f"Installing base configs in '{dst_path}'")
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
-                for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.configs').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing base config file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.install_resource_files(dst_path, "configs")
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
 
@@ -313,17 +321,7 @@ class Controller:
         dst_path = self.disks_path()
         log.info(f"Installing built-in disks in '{dst_path}'")
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "disks"))
-                for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.disks').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing disk file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.install_resource_files(dst_path, "disks")
         except OSError as e:
             log.error(f"Could not install disk files to {dst_path}: {e}")
 
