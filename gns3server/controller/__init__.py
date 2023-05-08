@@ -30,6 +30,7 @@ except ImportError:
 
 from ..config import Config
 from ..utils import parse_version
+from ..utils.images import default_images_directory
 
 from .project import Project
 from .template import Template
@@ -72,6 +73,7 @@ class Controller:
 
         log.info("Controller is starting")
         self._install_base_configs()
+        self._install_builtin_disks()
         server_config = Config.instance().get_section_config("Server")
         Config.instance().listen_for_config_changes(self._update_config)
         host = server_config.get("host", "localhost")
@@ -279,28 +281,49 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
+    @staticmethod
+    def install_resource_files(dst_path, resource_name):
+        """
+        Install files from resources to user's file system
+        """
+
+        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
+            resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
+            for filename in os.listdir(resource_path):
+                if not os.path.exists(os.path.join(dst_path, filename)):
+                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+        else:
+            for entry in importlib_resources.files(f'gns3server.{resource_name}').iterdir():
+                full_path = os.path.join(dst_path, entry.name)
+                if entry.is_file() and not os.path.exists(full_path):
+                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+
     def _install_base_configs(self):
         """
-        At startup we copy base file to the user location to allow
+        At startup we copy base configs to the user location to allow
         them to customize it
         """
 
         dst_path = self.configs_path()
         log.info(f"Installing base configs in '{dst_path}'")
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
-                for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.configs').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing base config file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.install_resource_files(dst_path, "configs")
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
+
+    def _install_builtin_disks(self):
+        """
+        At startup we copy built-in Qemu disks to the user location to allow
+        them to use with appliances
+        """
+
+        dst_path = self.disks_path()
+        log.info(f"Installing built-in disks in '{dst_path}'")
+        try:
+            Controller.install_resource_files(dst_path, "disks")
+        except OSError as e:
+            log.error(f"Could not install disk files to {dst_path}: {e}")
 
     def images_path(self):
         """
@@ -321,6 +344,15 @@ class Controller:
         configs_path = os.path.expanduser(server_config.get("configs_path", "~/GNS3/configs"))
         os.makedirs(configs_path, exist_ok=True)
         return configs_path
+
+    def disks_path(self, emulator_type="qemu"):
+        """
+        Get the disks storage directory
+        """
+
+        disks_path = default_images_directory(emulator_type)
+        os.makedirs(disks_path, exist_ok=True)
+        return disks_path
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, **kwargs):
         """

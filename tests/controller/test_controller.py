@@ -395,6 +395,31 @@ async def test_install_base_configs(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
+@pytest.mark.parametrize(
+    "builtin_disk",
+    [
+        "empty8G.qcow2",
+        "empty10G.qcow2",
+        "empty20G.qcow2",
+        "empty30G.qcow2",
+        "empty40G.qcow2",
+        "empty50G.qcow2",
+        "empty100G.qcow2",
+        "empty150G.qcow2",
+        "empty200G.qcow2",
+        "empty250G.qcow2",
+        "empty500G.qcow2",
+        "empty1T.qcow2"
+    ]
+)
+async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
+
+    config.set_section_config("Server", {"images_path": str(tmpdir)})
+    controller._install_builtin_disks()
+    # we only install Qemu empty disks at this time
+    assert os.path.exists(str(tmpdir / "QEMU" / builtin_disk))
+
+
 def test_appliances(controller, tmpdir):
 
     my_appliance = {
