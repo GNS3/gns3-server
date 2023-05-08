@@ -100,17 +100,9 @@ class ApplianceManager:
 
         dst_path = self._builtin_appliances_path(delete_first=True)
         log.info(f"Installing built-in appliances in '{dst_path}'")
+        from . import Controller
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
-                for filename in os.listdir(resource_path):
-                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.appliances').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file():
-                        log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.instance().install_resource_files(dst_path, "appliances")
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 

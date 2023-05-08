@@ -1,0 +1,165 @@
+{
+    "appliance_id": "cec3cf6f-36c1-4a15-9fe0-4e88b5f3bffa",
+    "name": "MikroTik CCR1036-8G-2S+",
+    "category": "router",
+    "description": "This is a variation of Cloud Hosted Router (CHR) which is meant to mimic the basic hardware configuration of the CCR1036-8G-2S+ model.",
+    "vendor_name": "MikroTik",
+    "vendor_url": "http://mikrotik.com/",
+    "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
+    "product_name": "MikroTik CCR1036-8G-2S+",
+    "product_url": "http://www.mikrotik.com/download",
+    "registry_version": 6,
+    "status": "stable",
+    "maintainer": "Azorian Solutions",
+    "maintainer_email": "help@azorian.solutions",
+    "usage": "If you'd like a different sized main disk, resize the image before booting the VM for the first time.\n\nOn first boot, RouterOS is actually being installed, formatting the whole main virtual disk, before finally rebooting. That whole process may take a minute or so.\n\nThe console will become available after the installation is complete. Most Telnet/SSH clients (certainly SuperPutty) will keep retrying to connect, thus letting you know when installation is done.\n\nFrom that point on, everything about RouterOS is also true about Cloud Hosted Router, including the default credentials: Username \"admin\" and an empty password.\n\nThe primary differences between RouterOS and CHR are in support for virtual devices (this appliance comes with them being selected), and in the different license model, for which you can read more about at http://wiki.mikrotik.com/wiki/Manual:CHR.",
+    "symbol": ":/symbols/classic/router.svg",
+    "port_name_format": "ether{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 10,
+        "ram": 8192,
+        "cpus": 36,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "allow",
+        "options": "-nographic",
+        "on_close": "shutdown_signal",
+        "custom_adapters": [
+            {
+                "adapter_number": 8,
+                "port_name": "sfp-sfpplus1"
+            },
+            {
+                "adapter_number": 9,
+                "port_name": "sfp-sfpplus2"
+            }
+        ]
+    },
+    "images": [
+        {
+            "filename": "chr-7.8.img",
+            "version": "7.8",
+            "md5sum": "08fc9baf18d920bc65c974cafa3719be",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.8/chr-7.8.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.7.img",
+            "version": "7.7",
+            "md5sum": "efc4fdeb1cc06dc240a14f1215fd59b3",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.7/chr-7.7.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.6.img",
+            "version": "7.6",
+            "md5sum": "864482f9efaea9d40910c050318f65b9",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.6/chr-7.6.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.3.1.img",
+            "version": "7.3.1",
+            "md5sum": "99f8ea75f8b745a8bf5ca3cc1bd325e3",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.3.1/chr-7.3.1.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-7.1.5.img",
+            "version": "7.1.5",
+            "md5sum": "9c0be05f891df2b1400bdae5e719898e",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.1.5/chr-7.1.5.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.49.7.img",
+            "version": "6.49.7",
+            "md5sum": "0686d07f69d15d41467ada4a58a92cd2",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.49.7/chr-6.49.7.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.49.6.img",
+            "version": "6.49.6",
+            "md5sum": "ae27d38acc9c4dcd875e0f97bcae8d97",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.49.6/chr-6.49.6.img.zip",
+            "compression": "zip"
+        },
+        {
+            "filename": "chr-6.48.6.img",
+            "version": "6.48.6",
+            "md5sum": "875574a561570227ff8f395aabe478c6",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.48.6/chr-6.48.6.img.zip",
+            "compression": "zip"
+        }
+    ],
+    "versions": [
+        {
+            "name": "7.8",
+            "images": {
+                "hda_disk_image": "chr-7.8.img"
+            }
+        },
+        {
+            "name": "7.7",
+            "images": {
+                "hda_disk_image": "chr-7.7.img"
+            }
+        },
+        {
+            "name": "7.6",
+            "images": {
+                "hda_disk_image": "chr-7.6.img"
+            }
+        },
+        {
+            "name": "7.3.1",
+            "images": {
+                "hda_disk_image": "chr-7.3.1.img"
+            }
+        },
+        {
+            "name": "7.1.5",
+            "images": {
+                "hda_disk_image": "chr-7.1.5.img"
+            }
+        },
+        {
+            "name": "6.49.7",
+            "images": {
+                "hda_disk_image": "chr-6.49.7.img"
+            }
+        },
+        {
+            "name": "6.49.6",
+            "images": {
+                "hda_disk_image": "chr-6.49.6.img"
+            }
+        },
+        {
+            "name": "6.48.6",
+            "images": {
+                "hda_disk_image": "chr-6.48.6.img"
+            }
+        }
+    ]
+}

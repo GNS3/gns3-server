@@ -22,6 +22,18 @@
     },
     "images": [
         {
+            "filename": "c7200-adventerprisek9-mz.153-3.XB12.image",
+            "version": "153-3.XB12",
+            "md5sum": "3d234a3793331c972776354531f87221",
+            "filesize": 131471340
+        },
+        {
+            "filename": "c7200-advipservicesk9-mz.152-4.S5.image",
+            "version": "152-4.S5",
+            "md5sum": "cbbbea66a253f1dac0fcf81274dc778d",
+            "filesize": 87756936
+        },
+        {
             "filename": "c7200-adventerprisek9-mz.124-24.T5.image",
             "version": "124-24.T5",
             "md5sum": "6b89d0d804e1f2bb5b8bda66b5692047",
@@ -29,6 +41,20 @@
         }
     ],
     "versions": [
+        {
+            "name": "153-3.XB12",
+            "idlepc": "0x60630d08",
+            "images": {
+                "image": "c7200-adventerprisek9-mz.153-3.XB12.image"
+            }
+        },
+        {
+            "name": "152-4.S5",
+            "idlepc": "0x62cc930c",
+            "images": {
+                "image": "c7200-advipservicesk9-mz.152-4.S5.image"
+            }
+        },
         {
             "name": "124-24.T5",
             "idlepc": "0x606df838",

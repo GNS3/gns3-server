@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Default username is admin, no password is set.",
+    "usage": "Default username is admin, no password is set.\n\n- Versions 7.0 and higher require:\n--RAM: 8192 MB\n--CPU:4",
     "symbol": "fortinet.svg",
     "port_name_format": "Port{port1}",
     "qemu": {
@@ -28,10 +28,24 @@
     },
     "images": [
         {
+            "filename": "FAZ_VM64_KVM-v7.2.2-build1334-FORTINET.out.kvm.qcow2",
+            "version": "7.2.2",
+            "md5sum": "fe445cc79eed00b3abcdba9c36e7445d",
+            "filesize": 345501696,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FAZ_VM64_KVM-v7.2.1-build1215-FORTINET.out.kvm.qcow2",
             "version": "7.2.1",
             "md5sum": "c13b6c7678a2fc12ab969fc681ad3af5",
             "filesize": 340631552,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FAZ_VM64_KVM-v7.0.6-build0372-FORTINET.out.kvm.qcow2",
+            "version": "7.0.6",
+            "md5sum": "2e382abcf661c41c1a69178e9cdc5a3f",
+            "filesize": 335556608,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -192,9 +206,23 @@
     ],
     "versions": [
         {
+            "name": "7.2.2",
+            "images": {
+                "hda_disk_image": "FAZ_VM64_KVM-v7.2.2-build1334-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "7.2.1",
             "images": {
                 "hda_disk_image": "FAZ_VM64_KVM-v7.2.1-build1215-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "7.0.6",
+            "images": {
+                "hda_disk_image": "FAZ_VM64_KVM-v7.0.6-build0372-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

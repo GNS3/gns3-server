@@ -2,10 +2,12 @@
     "appliance_id": "8f074218-9d61-4e99-ab89-35ca19ad44ee",
     "name": "ArubaOS-CX Simulation Software",
     "category": "multilayer_switch",
-    "description": "The ArubaOS-CX Simulation Software is a virtual platform to enable simulation of the ArubaOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF, BGP (inc. EVPN). Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network.",
+    "description": "The Aruba AOS-CX Switch Simulator is a virtual platform to enable simulation of the Aruba AOS-CX Network Operating System. Simulated networks can be created using many of the protocols in the ArubaOS-CX Operating system like OSPF, BGP (inc. EVPN). Key features like the Aruba Network Analytics Engine and the REST API can be simulated, providing a lightweight development platform to building the modern network.",
     "vendor_name": "HPE Aruba",
     "vendor_url": "https://www.arubanetworks.com",
-    "product_name": "ArubaOS-CX Simulation Software",
+    "documentation_url": "https://asp.arubanetworks.com/downloads;search=Aruba%20AOS%20CX%20Switch%20Simulator;products=Aruba%20Switches",
+    "product_name": "Aruba AOS-CX Switch Simulator",
+    "product_url": "https://www.arubanetworks.com/products/switches/",
     "registry_version": 4,
     "status": "stable",
     "availability": "service-contract",
@@ -30,6 +32,13 @@
         "process_priority": "normal"
     },
     "images": [
+        {
+            "filename": "arubaoscx-disk-image-genericx86-p4-20221130174651.vmdk",
+            "version": "10.11.0001",
+            "md5sum": "ed5434173c898f47f19bfda51000611a",
+            "filesize": 364597760,
+            "download_url": "https://asp.arubanetworks.com/"
+        },
         {
             "filename": "arubaoscx-disk-image-genericx86-p4-20220815162137.vmdk",
             "version": "10.10.1000",
@@ -102,6 +111,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "10.11.0001",
+            "images": {
+                "hda_disk_image": "arubaoscx-disk-image-genericx86-p4-20221130174651.vmdk"
+            }
+        },
         {
             "name": "10.10.1000",
             "images": {
