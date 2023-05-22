@@ -1,0 +1,45 @@
+{
+    "appliance_id": "57a85f0e-b8ae-4820-bd2b-816b2cceb842",
+    "name": "Cisco CAT IOS-XE 9000v",
+    "category": "multilayer_switch",
+    "description": "Cisco IOS-XE 9000v. This appliance requires 16GB of memory to run! Recommend 2 or more vCPUs for faster boot performance",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "documentation_url": "https://developer.cisco.com/docs/modeling-labs/2-5/#!cml-release-notes",
+    "product_name": "Cisco CAT IOS-XE 9000v",
+    "product_url": "http://virl.cisco.com/",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "There is no default configuration present. Virtual Switch and Interfaces may take several minutes to be usable after appliance boot.",
+    "first_port_name": "GigabitEthernet0/0",
+    "port_name_format": "GigabitEthernet1/0/{port1}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 9,
+        "ram": 16384,
+	"cpus": 2,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+		},
+    "images": [
+        {
+            "filename": "cat9kv-prd-17.10.01prd7.qcow2",
+            "version": "17.10(1)",
+            "md5sum": "ffdbace33d31deae33e2a920a96b79ef",
+            "filesize": 2155806720,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        }
+    ],
+    "versions": [
+        {
+            "name": "17.10(1)",
+            "images": {
+                "hda_disk_image": "cat9kv-prd-17.10.01prd7.qcow2"
+            }
+        }
+    ]
+}

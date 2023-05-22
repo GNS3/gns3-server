@@ -28,10 +28,31 @@
     },
     "images": [
         {
+            "filename": "FML_VMKV-64-v722.M-build0380-FORTINET.out.kvm.qcow2",
+            "version": "7.2.2",
+            "md5sum": "ec7c32c90f4cfba32a744ea74adc596b",
+            "filesize": 124387328,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
             "filename": "FML_VMKV-64-v721.M-build0364-FORTINET.out.kvm.qcow2",
             "version": "7.2.1",
             "md5sum": "b7bf13c2fb013693936b45d89dfab1ac",
             "filesize": 123535360,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FML_VMKV-64-v705-build0208-FORTINET.out.kvm.qcow2",
+            "version": "7.0.5",
+            "md5sum": "62e561465ff8134efdea6f66ba9ccf20",
+            "filesize": 118226944,
+            "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
+        },
+        {
+            "filename": "FML_VMKV-64-v647-build0467-FORTINET.out.kvm.qcow2",
+            "version": "6.4.7",
+            "md5sum": "11fab90b39d88446a711bbd01802aca1",
+            "filesize": 112066560,
             "download_url": "https://support.fortinet.com/Download/FirmwareImages.aspx"
         },
         {
@@ -192,9 +213,30 @@
     ],
     "versions": [
         {
+            "name": "7.2.2",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v722.M-build0380-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
             "name": "7.2.1",
             "images": {
                 "hda_disk_image": "FML_VMKV-64-v721.M-build0364-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "7.0.5",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v705-build0208-FORTINET.out.kvm.qcow2",
+                "hdb_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "6.4.7",
+            "images": {
+                "hda_disk_image": "FML_VMKV-64-v647-build0467-FORTINET.out.kvm.qcow2",
                 "hdb_disk_image": "empty30G.qcow2"
             }
         },

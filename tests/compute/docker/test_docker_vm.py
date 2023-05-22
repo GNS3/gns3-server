@@ -264,6 +264,21 @@ async def test_create_with_extra_hosts(compute_project, manager):
             assert "GNS3_EXTRA_HOSTS=199.199.199.1\ttest\n199.199.199.1\ttest2" in called_kwargs["data"]["Env"]
         assert vm._extra_hosts == extra_hosts
 
+@pytest.mark.asyncio
+async def test_create_with_colon_in_project_name(compute_project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+            with patch("gns3server.compute.project.Project.node_working_directory", return_value="/tmp/test_:_/"):
+                vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu")
+                with pytest.raises(DockerError):
+                    await vm.create()
+
 
 @pytest.mark.asyncio
 async def test_create_with_extra_hosts_wrong_format(compute_project, manager):

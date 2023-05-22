@@ -23,7 +23,7 @@
         "console_type": "telnet",
         "boot_priority": "c",
         "kvm": "require",
-        "options": "-nographic"
+        "options": "-nographic -cpu host"
     },
     "images": [
         {

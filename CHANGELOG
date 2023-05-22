@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.39 08/05/2023
+
+* Install web-ui v2.2.39
+* Add generic function to install resource files
+* Install empty Qemu disks on first start
+* Check for colon in project name. Fixes #2203
+* Upgrade distro and aiohttp dependencies
+
 ## 2.2.38 28/02/2023
 
 * Bundle web-ui v2.2.38
