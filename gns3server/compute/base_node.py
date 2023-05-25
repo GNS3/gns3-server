@@ -409,7 +409,10 @@ class BaseNode:
         if self._wrapper_telnet_server:
             self._wrap_console_writer.close()
             if sys.version_info >= (3, 7, 0):
-                await self._wrap_console_writer.wait_closed()
+                try:
+                    await self._wrap_console_writer.wait_closed()
+                except ConnectionResetError:
+                    pass
             self._wrapper_telnet_server.close()
             await self._wrapper_telnet_server.wait_closed()
             self._wrapper_telnet_server = None
