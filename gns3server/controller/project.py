@@ -798,7 +798,7 @@ class Project:
             try:
                 await compute.post("/projects/{}/close".format(self._id), dont_connect=True)
             # We don't care if a compute is down at this step
-            except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientResponseError, TimeoutError):
+            except (ComputeError, aiohttp.web.HTTPError, aiohttp.ClientError, TimeoutError):
                 pass
         self._clean_pictures()
         self._status = "closed"

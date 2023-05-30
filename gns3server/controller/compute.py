@@ -450,7 +450,7 @@ class Compute:
                         elif response.type == aiohttp.WSMsgType.CLOSED:
                             pass
                         break
-        except aiohttp.client_exceptions.ClientResponseError as e:
+        except aiohttp.ClientError as e:
             log.error("Client response error received on compute '{}' WebSocket '{}': {}".format(self._id, ws_url,e))
         finally:
             self._connected = False
