@@ -85,7 +85,6 @@ class DockerVM(BaseNode):
         self._ethernet_adapters = []
         self._temporary_directory = None
         self._telnet_servers = []
-        self._xvfb_process = None
         self._vnc_process = None
         self._vncconfig_process = None
         self._console_resolution = console_resolution
@@ -850,12 +849,6 @@ class DockerVM(BaseNode):
                     try:
                         self._vnc_process.terminate()
                         await self._vnc_process.wait()
-                    except ProcessLookupError:
-                        pass
-                if self._xvfb_process:
-                    try:
-                        self._xvfb_process.terminate()
-                        await self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
 
