@@ -231,16 +231,17 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             raise GNS3VMError('VM "{}" must have a NAT interface configured in order to start'.format(self.vmname))
 
         if sys.platform.startswith("darwin") and parse_version(self._system_properties["API version"]) >= parse_version("7_0"):
+            # VirtualBox 7.0+ on macOS requires a host-only network interface
             backend_type = "hostonly-network"
             backend_description = "host-only network"
-            vboxnet_type = "hostonlyifs"
+            vboxnet_type = "hostonlynets"
             interface_number = await self._look_for_interface("hostonlynetwork")
             if interface_number < 0:
                 raise GNS3VMError('VM "{}" must have a network adapter attached to a host-only network in order to start'.format(self.vmname))
         else:
             backend_type = "hostonlyadapter"
             backend_description = "host-only adapter"
-            vboxnet_type = "hostonlynets"
+            vboxnet_type = "hostonlyifs"
             interface_number = await self._look_for_interface("hostonly")
 
         if interface_number < 0:
@@ -264,7 +265,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                                                                                                                                                                          interface_number,
                                                                                                                                                                          self._vmname))
 
-        if not (await self._check_dhcp_server(vboxnet)):
+        if backend_type == "hostonlyadapter" and not (await self._check_dhcp_server(vboxnet)):
             raise GNS3VMError('DHCP must be enabled on VirtualBox host-only network "{}"'.format(vboxnet))
 
         vm_state = await self._get_state()
