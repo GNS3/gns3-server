@@ -159,7 +159,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                     return True
         return False
 
-    async def _check_vboxnet_exists(self, vboxnet):
+    async def _check_vboxnet_exists(self, vboxnet, vboxnet_type):
         """
         Check if the vboxnet interface exists
 
@@ -167,7 +167,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         :returns: boolean
         """
 
-        properties = await self._execute("list", ["hostonlyifs"])
+        properties = await self._execute("list", ["{}".format(vboxnet_type)])
         for prop in properties.splitlines():
             try:
                 name, value = prop.split(':', 1)
@@ -233,12 +233,14 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         if sys.platform.startswith("darwin") and parse_version(self._system_properties["API version"]) >= parse_version("7_0"):
             backend_type = "hostonly-network"
             backend_description = "host-only network"
+            vboxnet_type = "hostonlyifs"
             interface_number = await self._look_for_interface("hostonlynetwork")
             if interface_number < 0:
                 raise GNS3VMError('VM "{}" must have a network adapter attached to a host-only network in order to start'.format(self.vmname))
         else:
             backend_type = "hostonlyadapter"
             backend_description = "host-only adapter"
+            vboxnet_type = "hostonlynets"
             interface_number = await self._look_for_interface("hostonly")
 
         if interface_number < 0:
@@ -248,7 +250,7 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
         if vboxnet is None:
             raise GNS3VMError('A VirtualBox host-only network could not be found on network adapter {} for "{}"'.format(interface_number, self._vmname))
 
-        if not (await self._check_vboxnet_exists(vboxnet)):
+        if not (await self._check_vboxnet_exists(vboxnet, vboxnet_type)):
             if sys.platform.startswith("win") and vboxnet == "vboxnet0":
                 # The GNS3 VM is configured with vboxnet0 by default which is not available
                 # on Windows. Try to patch this with the first available vboxnet we find.
