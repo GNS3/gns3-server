@@ -1115,8 +1115,7 @@ async def test_close(vm, port_manager):
 async def test_close_vnc(vm):
 
     vm._console_type = "vnc"
-    vm._x11vnc_process = MagicMock()
-    vm._xvfb_process = MagicMock()
+    vm._vnc_process = MagicMock()
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
@@ -1124,7 +1123,7 @@ async def test_close_vnc(vm):
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
-    assert vm._xvfb_process.terminate.called
+    assert vm._vnc_process.terminate.called
 
 
 async def test_get_namespace(vm):
