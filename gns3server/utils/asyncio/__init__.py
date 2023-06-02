@@ -71,10 +71,10 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
 
     if stderr:
         proc = await asyncio.create_subprocess_exec(*args, stderr=asyncio.subprocess.PIPE, cwd=cwd, env=env)
-        output = await proc.stderr.read()
+        _, output = await proc.communicate()
     else:
         proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, cwd=cwd, env=env)
-        output = await proc.stdout.read()
+        output, _ = await proc.communicate()
     if output is None:
         return ""
     # If we received garbage we ignore invalid characters

@@ -102,6 +102,7 @@ async def test_start(vm):
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
         mock_process.returncode = None
+        mock_process.communicate = AsyncioMagicMock(return_value=(None, None))
         await vm.start()
         assert vm.is_running()
         assert vm.command_line == ' '.join(mock_exec.call_args[0])
@@ -130,6 +131,7 @@ async def test_start_with_iourc(vm, tmpdir):
     with patch("gns3server.config.Config.get_section_config", return_value={"iourc_path": fake_file}):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as exec_mock:
             mock_process.returncode = None
+            mock_process.communicate = AsyncioMagicMock(return_value=(None, None))
             await vm.start()
             assert vm.is_running()
             arsgs, kwargs = exec_mock.call_args
@@ -165,11 +167,12 @@ async def test_stop(vm):
     future = asyncio.Future()
     future.set_result(True)
     process.wait.return_value = future
+    process.returncode = None
+    process.communicate = AsyncioMagicMock(return_value=(None, None))
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
         with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
             await vm.start()
-            process.returncode = None
             assert vm.is_running()
             await vm.stop()
             assert vm.is_running() is False
@@ -190,6 +193,7 @@ async def test_reload(vm, fake_iou_bin):
     future.set_result(True)
     process.wait.return_value = future
     process.returncode = None
+    process.communicate = AsyncioMagicMock(return_value=(None, None))
 
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
         with asyncio_patch("gns3server.utils.asyncio.wait_for_process_termination"):
@@ -202,10 +206,13 @@ async def test_reload(vm, fake_iou_bin):
 
 async def test_close(vm, port_manager):
 
+    process = MagicMock()
+    process.returncode = None
+    process.communicate = AsyncioMagicMock(return_value=(None, None))
     vm._start_ubridge = AsyncioMagicMock(return_value=True)
     vm._ubridge_send = AsyncioMagicMock()
     with asyncio_patch("gns3server.compute.iou.iou_vm.IOUVM._check_requirements", return_value=True):
-        with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
             await vm.start()
             port = vm.console
             await vm.close()
