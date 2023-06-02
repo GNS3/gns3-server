@@ -85,7 +85,6 @@ class DockerVM(BaseNode):
         self._ethernet_adapters = []
         self._temporary_directory = None
         self._telnet_servers = []
-        self._xvfb_process = None
         self._vnc_process = None
         self._vncconfig_process = None
         self._console_resolution = console_resolution
@@ -585,8 +584,8 @@ class DockerVM(BaseNode):
         self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
 
-        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install TigerVNC (recommended) or Xvfb + x11vnc before using VNC support")
+        if not tigervnc_path:
+            raise DockerError("Please install TigerVNC server before using VNC support")
 
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
@@ -600,29 +599,6 @@ class DockerVM(BaseNode):
                                                                          "-SecurityTypes", "None",
                                                                          ":{}".format(self._display),
                                                                          stdout=fd, stderr=subprocess.STDOUT)
-        else:
-            if restart is False:
-                self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
-                                                                          "-nolisten", "tcp",
-                                                                          "-extension", "MIT-SHM",
-                                                                          ":{}".format(self._display),
-                                                                          "-screen", "0",
-                                                                          self._console_resolution + "x16")
-
-            # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
-            with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
-                                                                         "-forever",
-                                                                         "-nopw",
-                                                                         "-shared",
-                                                                         "-noshm",
-                                                                         "-geometry", self._console_resolution,
-                                                                         "-display", "WAIT:{}".format(self._display),
-                                                                         "-rfbport", str(self.console),
-                                                                         "-rfbportv6", str(self.console),
-                                                                         "-noncache",
-                                                                         "-listen", self._manager.port_manager.console_host,
-                                                                         stdout=fd, stderr=subprocess.STDOUT)
 
     async def _start_vnc(self):
         """
@@ -631,8 +607,8 @@ class DockerVM(BaseNode):
 
         self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
-        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install TigerVNC server (recommended) or Xvfb + x11vnc before using VNC support")
+        if not tigervnc_path:
+            raise DockerError("Please install TigerVNC server before using VNC support")
         await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", "X{}".format(self._display))
         try:
@@ -873,12 +849,6 @@ class DockerVM(BaseNode):
                     try:
                         self._vnc_process.terminate()
                         await self._vnc_process.wait()
-                    except ProcessLookupError:
-                        pass
-                if self._xvfb_process:
-                    try:
-                        self._xvfb_process.terminate()
-                        await self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
 
