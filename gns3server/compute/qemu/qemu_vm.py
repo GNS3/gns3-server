@@ -2150,6 +2150,8 @@ class QemuVM(BaseNode):
             else:
                 # newer QEMU networking syntax
                 device_string = "{},mac={}".format(adapter_type, mac)
+                if adapter_type == "virtio-net-pci":
+                    device_string = "{},speed=10000,duplex=full".format(device_string)
                 bridge_id = math.floor(pci_device_id / 32)
                 if bridge_id > 0:
                     if pci_bridges_created < bridge_id:
