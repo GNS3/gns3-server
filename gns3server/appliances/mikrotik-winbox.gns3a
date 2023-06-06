@@ -1,0 +1,19 @@
+{
+    "appliance_id": "b770027f-1822-4ab6-b2f9-73336ca0983d",
+    "name": "Mikrotik WinBox",
+    "category": "guest",
+    "description": "Mikrotik's WinBox router management software for GNS3",
+    "vendor_name": "Mikrotik",
+    "vendor_url": "https://mikrotik.com",
+    "product_name": "Mikrotik WinBox",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Alexander Horner",
+    "maintainer_email": "contact@alexhorner.cc",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/mikrotik-winbox",
+        "console_type": "vnc"
+    }
+}

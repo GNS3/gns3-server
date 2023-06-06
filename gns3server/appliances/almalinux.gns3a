@@ -37,7 +37,8 @@
             "version": "1.0",
             "md5sum": "72fb52af76e9561d125dd99224e2c1d1",
             "filesize": 374784,
-            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/AlmaLinux/almalinux-cloud-init-data.iso"
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/AlmaLinux",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/AlmaLinux/almalinux-cloud-init-data.iso"
         }
     ],
     "versions": [

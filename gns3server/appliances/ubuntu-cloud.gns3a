@@ -29,51 +29,34 @@
         {
             "filename": "ubuntu-22.04-server-cloudimg-amd64.img",
             "version": "22.04 (LTS)",
-            "md5sum": "ac2351289daa173fa1ed6b2b81d81d7c",
-            "filesize": 624295936,
-            "download_url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img"
+            "md5sum": "3ce0b84f9592482fb645e8253b979827",
+            "filesize": 686096384,
+            "download_url": "https://cloud-images.ubuntu.com/releases/jammy/release",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-20.04-server-cloudimg-amd64.img",
             "version": "20.04 (LTS)",
             "md5sum": "044bc979b2238192ee3edb44e2bb6405",
             "filesize": 552337408,
-            "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/ubuntu-20.04-server-cloudimg-amd64.img"
+            "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/ubuntu-20.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-18.04-server-cloudimg-amd64.img",
             "version": "18.04 (LTS)",
             "md5sum": "f4134e7fa16d7fa766c7467cbe25c949",
             "filesize": 336134144,
-            "download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/ubuntu-18.04-server-cloudimg-amd64.img"
-        },
-        {
-            "filename": "ubuntu-17.10-server-cloudimg-amd64.img",
-            "version": "17.10",
-            "md5sum": "331b44f2b05858c251b3ea92c8b65152",
-            "filesize": 320405504,
-            "download_url": "https://cloud-images.ubuntu.com/releases/17.10/release-20180404/ubuntu-17.10-server-cloudimg-amd64.img"
-        },
-        {
-            "filename": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
-            "version": "16.04 (LTS)",
-            "md5sum": "22c124ba65ea096cdef8b0a197dd613a",
-            "filesize": 290193408,
-            "download_url": "https://cloud-images.ubuntu.com/releases/16.04/release-20180405/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
-        },
-        {
-            "filename": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
-            "version": "14.04 (LTS)",
-            "md5sum": "d11b89321d41d0eeddcacf73bf0d2262",
-            "filesize": 262668800,
-            "download_url": "https://cloud-images.ubuntu.com/releases/14.04/release-20180404/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+            "download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/ubuntu-18.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-cloud-init-data.iso",
-            "version": "1.0",
-            "md5sum": "328469100156ae8dbf262daa319c27ff",
-            "filesize": 131072,
-            "download_url": "https://github.com/asenci/gns3-ubuntu-cloud-init-data/raw/master/ubuntu-cloud-init-data.iso"
+            "version": "1.1",
+            "md5sum": "9a90ee8f88736204c756015b3cd86500",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/ubuntu-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/ubuntu-cloud/ubuntu-cloud-init-data.iso"
         }
     ],
     "versions": [
@@ -95,27 +78,6 @@
             "name": "18.04 (LTS)",
             "images": {
                 "hda_disk_image": "ubuntu-18.04-server-cloudimg-amd64.img",
-                "cdrom_image": "ubuntu-cloud-init-data.iso"
-            }
-        },
-        {
-            "name": "17.10",
-            "images": {
-                "hda_disk_image": "ubuntu-17.10-server-cloudimg-amd64.img",
-                "cdrom_image": "ubuntu-cloud-init-data.iso"
-            }
-        },
-        {
-            "name": "16.04 (LTS)",
-            "images": {
-                "hda_disk_image": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
-                "cdrom_image": "ubuntu-cloud-init-data.iso"
-            }
-        },
-        {
-            "name": "14.04 (LTS)",
-            "images": {
-                "hda_disk_image": "ubuntu-14.04-server-cloudimg-amd64-disk1.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         }
