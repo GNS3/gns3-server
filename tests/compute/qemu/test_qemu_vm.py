@@ -737,6 +737,20 @@ async def test_build_command_large_number_of_adapters(vm):
         await vm._build_command()
 
 
+async def test_build_command_with_virtio_net_pci_adapter(vm):
+    """
+    Test virtio-net-pci adapter which has parameters speed=1000 & duplex=full hard-coded
+    """
+
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.0")
+    vm.adapters = 1
+    vm.mac_address = "00:00:ab:0e:0f:09"
+    vm._adapter_type = "virtio-net-pci"
+    with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
+        cmd = await vm._build_command()
+    assert "virtio-net-pci,mac=00:00:ab:0e:0f:09,speed=10000,duplex=full,netdev=gns3-0" in cmd
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
 async def test_build_command_with_invalid_options(vm):
 

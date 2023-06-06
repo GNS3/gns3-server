@@ -44,7 +44,8 @@
             "version": "1.0",
             "md5sum": "43f6bf70c178a9d3c270b5c24971e578",
             "filesize": 374784,
-            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/Debian/debian-cloud-init-data.iso"
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/Debian",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/Debian/debian-cloud-init-data.iso"
         }
     ],
     "versions": [

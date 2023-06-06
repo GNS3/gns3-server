@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import ipaddress
 import aiohttp
 import asyncio
 import html
@@ -716,6 +717,17 @@ class Node:
                 "first_port_name": self._first_port_name,
                 "custom_adapters": self._custom_adapters
             }
+
+        # add brackets around console host for http/https console type
+        console_host = str(self._compute.console_host)
+        if self._console_type == "http" or self._console_type == "https":
+            try:
+                ip = ipaddress.ip_address(console_host)
+                if isinstance(ip, ipaddress.IPv6Address):
+                        console_host = '[' + console_host + ']'
+            except ValueError:
+                pass
+
         return {
             "compute_id": str(self._compute.id),
             "project_id": self._project.id,
@@ -725,7 +737,7 @@ class Node:
             "node_directory": self._node_directory,
             "name": self._name,
             "console": self._console,
-            "console_host": str(self._compute.console_host),
+            "console_host": console_host,
             "console_type": self._console_type,
             "console_auto_start": self._console_auto_start,
             "command_line": self._command_line,

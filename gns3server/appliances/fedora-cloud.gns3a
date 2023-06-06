@@ -31,14 +31,16 @@
             "version": "35-1.2",
             "md5sum": "cfa9cdcfb946e5f4cf9dd4d7906008d0",
             "filesize": 376897536,
-            "download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/35/Cloud/x86_64/images/Fedora-Cloud-Base-35-1.2.x86_64.qcow2"
+            "download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/35/Cloud/x86_64/images",
+            "direct_download_url": "https://download.fedoraproject.org/pub/fedora/linux/releases/35/Cloud/x86_64/images/Fedora-Cloud-Base-35-1.2.x86_64.qcow2"
         },
         {
             "filename": "fedora-cloud-init-data.iso",
             "version": "1.0",
             "md5sum": "3d0d6391d3f5ece1180c70b9667c4dca",
             "filesize": 374784,
-            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/fedora-cloud/fedora-cloud-init-data.iso"
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/fedora-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/fedora-cloud/fedora-cloud-init-data.iso"
         }
     ],
     "versions": [

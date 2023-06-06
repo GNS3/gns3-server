@@ -1,0 +1,70 @@
+{
+    "appliance_id": "88e67f45-e0de-4e5e-9f36-2dc83e4a6c60",
+    "name": "Oracle Linux Cloud Guest",
+    "category": "guest",
+    "description": "A highly performant and secure operating environment, Oracle Linux delivers virtualization, management, automation, and cloud native computing tools, along with the operating system, in a single, easy-to-manage support offering. Oracle Linux provides a 100% application binary compatible alternative to Red Hat Enterprise Linux and CentOS Linux and is supported across both hybrid and multicloud environments.",
+    "vendor_name": "Oracle Corporation",
+    "vendor_url": "https://www.oracle.com",
+    "documentation_url": "https://docs.oracle.com/en-us/iaas/images/",
+    "product_name": "Oracle Linux Cloud Guest",
+    "product_url": "https://www.oracle.com/au/linux/",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Username: oracle\nPassword: oracle",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 1,
+        "ram": 1024,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-cpu host -nographic"
+    },
+    "images": [
+        {
+            "filename": "OL9U1_x86_64-kvm-b158.qcow",
+            "version": "9.1",
+            "md5sum": "9f32851b96fc38191892197fa11f7435",
+            "filesize": 539033600,
+            "download_url": "https://yum.oracle.com/oracle-linux-templates.html",
+            "direct_download_url": "https://yum.oracle.com/templates/OracleLinux/OL9/u1/x86_64/OL9U1_x86_64-kvm-b158.qcow"
+        },
+        {
+            "filename": "OL8U7_x86_64-kvm-b148.qcow",
+            "version": "8.7",
+            "md5sum": "962cdde7e810888b9914e937222f687f",
+            "filesize": 913965056,
+            "download_url": "https://yum.oracle.com/oracle-linux-templates.html",
+            "direct_download_url": "https://yum.oracle.com/templates/OracleLinux/OL8/u7/x86_64/OL8U7_x86_64-kvm-b148.qcow"
+        },
+        {
+            "filename": "oracle-cloud-init-data.iso",
+            "version": "1.1",
+            "md5sum": "cb51bc42ae9dfb7345bfa7362a313baf",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/oracle-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/oracle-cloud/oracle-cloud-init-data.iso"
+        }
+    ],
+    "versions": [
+        {
+            "name": "9.1",
+            "images": {
+                "hda_disk_image": "OL9U1_x86_64-kvm-b158.qcow",
+                "cdrom_image": "oracle-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "8.7",
+            "images": {
+                "hda_disk_image": "OL8U7_x86_64-kvm-b148.qcow",
+                "cdrom_image": "oracle-cloud-init-data.iso"
+            }
+        }
+    ]
+}

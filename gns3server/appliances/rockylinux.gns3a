@@ -39,7 +39,8 @@
             "version": "1.0",
             "md5sum": "33ffda3a81436e305f37fb913edd6d43",
             "filesize": 374784,
-            "download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/rocky-cloud/rocky-cloud-init-data.iso"
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/rocky-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/rocky-cloud/rocky-cloud-init-data.iso"
         }
     ],
     "versions": [
