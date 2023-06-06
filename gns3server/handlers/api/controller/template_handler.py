@@ -169,6 +169,7 @@ class TemplateHandler:
         node = await project.add_node_from_template(request.match_info["template_id"],
                                                     x=request.json["x"],
                                                     y=request.json["y"],
+                                                    name=request.json.get("name"),
                                                     compute_id=request.json.get("compute_id"))
         response.set_status(201)
         response.json(node)
