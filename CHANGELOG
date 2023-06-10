@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.2.40.1 10/06/2023
+
+* Re-bundle Web-Ui v2.2.40. Fixes #2239
+
 ## 2.2.40 06/06/2023
 
 * qemu : with network adapter_type equal to "virtio-net-pci", fix the speed to 10000 and duplex to full. 	The values are actually fake. 	(https://github.com/GNS3/gns3-gui/issues/3476)
