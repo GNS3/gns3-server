@@ -49,6 +49,8 @@ class Config:
         self._profile = profile
 
         if files and len(files):
+            if not os.access(files[0], os.R_OK) or not os.path.isfile(files[0]):
+                raise SystemExit(f"Unable to read configuration file: {files[0]}")
             directory_name = os.path.dirname(files[0])
             if not directory_name or directory_name == "":
                 files[0] = os.path.dirname(os.path.abspath(files[0])) + os.path.sep + files[0]
