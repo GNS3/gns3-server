@@ -14,7 +14,7 @@
     "usage": "In the web interface login as admin/admin\n\nPersistent configuration:\n- Add \"/var/lib/redis\" as an additional persistent directory.\n- Use \"redis-cli save\" in an auxiliary console to save the configuration.",
     "docker": {
         "adapters": 1,
-        "image": "ntop/ntopng:latest",
+        "image": "ntop/ntopng:stable",
         "start_command": "--dns-mode 2 --interface eth0",
         "console_type": "http",
         "console_http_port": 3000,

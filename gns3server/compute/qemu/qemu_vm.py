@@ -2374,6 +2374,8 @@ class QemuVM(BaseNode):
                 mac = int_to_macaddress(macaddress_to_int(custom_mac_address))
 
             device_string = f"{adapter_type},mac={mac}"
+            if adapter_type == "virtio-net-pci":
+                device_string = "{},speed=10000,duplex=full".format(device_string)
             bridge_id = math.floor(pci_device_id / 32)
             if bridge_id > 0:
                 if pci_bridges_created < bridge_id:

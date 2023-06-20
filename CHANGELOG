@@ -1,5 +1,20 @@
 # Change Log
 
+## 2.2.40.1 10/06/2023
+
+* Re-bundle Web-Ui v2.2.40. Fixes #2239
+
+## 2.2.40 06/06/2023
+
+* qemu : with network adapter_type equal to "virtio-net-pci", fix the speed to 10000 and duplex to full. 	The values are actually fake. 	(https://github.com/GNS3/gns3-gui/issues/3476)
+* Parse name for request to node creation from template
+* Remove Xvfb + x11vnc support
+* Require a Host-Only Network to start the VirtualBox GNS3 VM on macOS with VirtualBox 7
+* Properly catch aiohttp client exception. Ref #2228
+* Catch ConnectionResetError when waiting for the wrap console
+* Fix open IPv6 address for HTTP consoles on controller. Fixes https://github.com/GNS3/gns3-gui/issues/3448
+* Use proc.communicate() when checking for subprocess output As recommended in https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stderr
+
 ## 2.2.39 08/05/2023
 
 * Install web-ui v2.2.39

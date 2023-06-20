@@ -27,32 +27,36 @@
     },
     "images": [
         {
+            "filename": "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2",
+            "version": "8.4 (2105)",
+            "md5sum": "032eed270415526546eac07628905a62",
+            "filesize": 1309652992,
+            "download_url": "https://cloud.centos.org/centos/8/x86_64/images",
+            "direct_download_url": "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2"
+        },
+        {
             "filename": "CentOS-7-x86_64-GenericCloud-2111.qcow2",
             "version": "7 (2111)",
             "md5sum": "730b8662695831670721c8245be61dac",
             "filesize": 897384448,
-            "download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-2111.qcow2"
+            "download_url": "https://cloud.centos.org/centos/7/images",
+            "direct_download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-2111.qcow2"
         },
         {
             "filename": "CentOS-7-x86_64-GenericCloud-1809.qcow2",
             "version": "7 (1809)",
             "md5sum": "da79108d1324b27bd1759362b82fbe40",
             "filesize": 914948096,
-            "download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1809.qcow2"
-        },
-        {
-            "filename": "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2",
-            "version": "8.4 (2105)",
-            "md5sum": "032eed270415526546eac07628905a62",
-            "filesize": 1309652992,
-            "download_url": "https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64.qcow2"
+            "download_url": "https://cloud.centos.org/centos/7/images",
+            "direct_download_url": "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1809.qcow2"
         },
         {
             "filename": "centos-cloud-init-data.iso",
-            "version": "1.0",
-            "md5sum": "15ca60c12db6d13b8eeae1a19613fd6e",
-            "filesize": 378880,
-            "download_url": "https://github.com/asenci/gns3-centos-cloud-init-data/raw/master/centos-cloud-init-data.iso"
+            "version": "1.1",
+            "md5sum": "59ea8223fd659d8bce9081ff175912e9",
+            "filesize": 374784,
+            "download_url": "https://github.com/GNS3/gns3-registry/tree/master/cloud-init/centos-cloud",
+            "direct_download_url": "https://github.com/GNS3/gns3-registry/raw/master/cloud-init/centos-cloud/centos-cloud-init-data.iso"
         }
     ],
     "versions": [
