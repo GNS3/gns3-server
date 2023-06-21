@@ -398,7 +398,7 @@ class Compute:
                 raise ControllerNotFoundError(msg)
             self._capabilities = response.json
 
-            if response.json["version"].split("-")[0] != __version__.split("-")[0]:
+            if response.json["version"].split("+")[0] != __version__.split("+")[0]:
                 if self._name.startswith("GNS3 VM"):
                     msg = (
                         "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(

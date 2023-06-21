@@ -495,7 +495,8 @@ class Controller:
         """
 
         if compute_id is None:
-            computes = list(self._computes.values())
+            # get all connected computes
+            computes = [compute for compute in self._computes.values() if compute.connected is True]
             if len(computes) == 1:
                 # return the only available compute
                 return computes[0]
