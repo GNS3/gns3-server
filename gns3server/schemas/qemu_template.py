@@ -188,6 +188,11 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "boolean",
         "default": False
     },
+    "uefi": {
+        "description": "Enable the UEFI boot mode in Qemu",
+        "type": "boolean",
+        "default": False
+    },
     "create_config_disk": {
         "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
         "type": "boolean",
