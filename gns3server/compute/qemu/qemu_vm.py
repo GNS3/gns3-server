@@ -153,6 +153,7 @@ class QemuVM(BaseNode):
         self._kernel_command_line = ""
         self._replicate_network_connection_state = True
         self._tpm = False
+        self._uefi = False
         self._create_config_disk = False
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
@@ -899,6 +900,30 @@ class QemuVM(BaseNode):
         else:
             log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the Trusted Platform Module (TPM)')
         self._tpm = tpm
+
+    @property
+    def uefi(self):
+        """
+        Returns whether UEFI boot mode is activated for this QEMU VM.
+
+        :returns: boolean
+        """
+
+        return self._uefi
+
+    @uefi.setter
+    def uefi(self, uefi):
+        """
+        Sets whether UEFI boot mode is activated for this QEMU VM.
+
+        :param uefi: boolean
+        """
+
+        if uefi:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the UEFI boot mode')
+        else:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the UEFI boot mode')
+        self._uefi = uefi
 
     @property
     def options(self):
@@ -2245,6 +2270,8 @@ class QemuVM(BaseNode):
 
         options = []
         if self._bios_image:
+            if self._uefi:
+                raise QemuError("Cannot use a bios image and the UEFI boot mode at the same time")
             if not os.path.isfile(self._bios_image) or not os.path.exists(self._bios_image):
                 if os.path.islink(self._bios_image):
                     raise QemuError(
@@ -2253,6 +2280,8 @@ class QemuVM(BaseNode):
                 else:
                     raise QemuError(f"bios image '{self._bios_image}' is not accessible")
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
+        elif self._uefi:
+            options.extend(["-bios", "OVMF.fd"])  # the OVMF bios image should be in the image directory
         return options
 
     def _linux_boot_options(self):
