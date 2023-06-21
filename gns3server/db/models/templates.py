@@ -204,6 +204,7 @@ class QemuTemplate(Template):
     replicate_network_connection_state = Column(Boolean)
     create_config_disk = Column(Boolean)
     tpm = Column(Boolean)
+    uefi = Column(Boolean)
     on_close = Column(String)
     cpu_throttling = Column(Integer)
     process_priority = Column(String)
