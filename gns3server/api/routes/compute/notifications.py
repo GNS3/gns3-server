@@ -35,7 +35,7 @@ router = APIRouter()
 
 
 @router.websocket("/notifications/ws")
-async def notification_ws(websocket: WebSocket) -> None:
+async def project_ws_notifications(websocket: WebSocket) -> None:
     """
     Receive project notifications about the project from WebSocket.
     """
