@@ -194,6 +194,10 @@ QEMU_CREATE_SCHEMA = {
             "description": "Enable the Trusted Platform Module (TPM) in Qemu",
             "type": ["boolean", "null"],
         },
+        "uefi": {
+            "description": "Enable the UEFI boot mode in Qemu",
+            "type": ["boolean", "null"],
+        },
         "create_config_disk": {
             "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
             "type": ["boolean", "null"],
@@ -390,6 +394,10 @@ QEMU_UPDATE_SCHEMA = {
         },
         "tpm": {
             "description": "Enable the Trusted Platform Module (TPM) in Qemu",
+            "type": ["boolean", "null"],
+        },
+        "uefi": {
+            "description": "Enable the UEFI boot mode in Qemu",
             "type": ["boolean", "null"],
         },
         "create_config_disk": {
@@ -603,6 +611,10 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Enable the Trusted Platform Module (TPM) in Qemu",
             "type": "boolean",
         },
+        "uefi": {
+            "description": "Enable the UEFI boot mode in Qemu",
+            "type": "boolean",
+        },
         "create_config_disk": {
             "description": "Automatically create a config disk on HDD disk interface (secondary slave)",
             "type": ["boolean", "null"],
@@ -678,6 +690,7 @@ QEMU_OBJECT_SCHEMA = {
                  "legacy_networking",
                  "replicate_network_connection_state",
                  "tpm",
+                 "uefi",
                  "create_config_disk",
                  "on_close",
                  "cpu_throttling",

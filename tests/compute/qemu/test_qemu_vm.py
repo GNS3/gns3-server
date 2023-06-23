@@ -387,6 +387,23 @@ async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
     assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
 
 
+async def test_uefi_boot_mode_option(vm, tmpdir, fake_qemu_img_binary):
+
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
+    vm._uefi = True
+    options = await vm._build_command()
+    assert ' '.join(['-bios', 'OVMF.fd']) in ' '.join(options)
+
+
+async def test_uefi_with_bios_image_already_configured(vm, tmpdir, fake_qemu_img_binary):
+
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
+    vm._bios_image = str(tmpdir / "test.img")
+    vm._uefi = True
+    with pytest.raises(QemuError):
+        await vm._build_command()
+
+
 async def test_vnc_option(vm, fake_qemu_img_binary):
 
     vm._console_type = 'vnc'
