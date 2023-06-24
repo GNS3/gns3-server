@@ -78,7 +78,6 @@ router.include_router(
 
 router.include_router(
     projects.router,
-    dependencies=[Depends(get_current_active_user)],
     prefix="/projects",
     tags=["Projects"])
 
@@ -122,7 +121,6 @@ router.include_router(
 
 router.include_router(
     notifications.router,
-    dependencies=[Depends(get_current_active_user)],
     prefix="/notifications",
     tags=["Notifications"])
 
