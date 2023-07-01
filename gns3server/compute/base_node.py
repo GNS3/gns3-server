@@ -252,6 +252,13 @@ class BaseNode:
         return self._manager
 
     @property
+    def snapshot_dir(self):
+        """
+        Return the node snapshot directory
+        """
+
+        return self._project.node_snapshot_directory(self)
+    @property
     def working_dir(self):
         """
         Return the node working directory

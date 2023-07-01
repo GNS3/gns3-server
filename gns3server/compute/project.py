@@ -221,6 +221,27 @@ class Project:
             except OSError as e:
                 raise aiohttp.web.HTTPInternalServerError(text="Could not create the node working directory: {}".format(e))
         return workdir
+    
+    def node_snapshot_directory(self, node):
+        """
+        Returns a snapshot directory for a specific node.
+        If the directory doesn't exist, the directory is created.
+
+        :param node: Node instance
+
+        :returns: Node working directory
+        """
+
+        snapshot_dir = self.node_snapshot_path(node)
+        if not self._deleted:
+            try:
+                os.makedirs(snapshot_dir, exist_ok=True)
+            except OSError as e:
+                raise aiohttp.web.HTTPInternalServerError(text="Could not create the snapshot directory: {}".format(e))
+        return snapshot_dir
+
+    def node_snapshot_path(self,node): # Only for Qemu now. TODO, write description
+      return os.path.join(node.path_snapshot, node.manager.module_name.lower(), node.id)
 
     def node_working_path(self, node):
         """

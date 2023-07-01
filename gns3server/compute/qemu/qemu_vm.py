@@ -49,7 +49,6 @@ from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
 from ...utils import macaddress_to_int, int_to_macaddress
 
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -71,7 +70,6 @@ class QemuVM(BaseNode):
     """
 
     def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
-
         super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, wrap_console=True)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
@@ -86,6 +84,7 @@ class QemuVM(BaseNode):
         self._local_udp_tunnels = {}
         self._guest_cid = None
         self._command_line_changed = False
+        self.path_snapshot = os.path.join(project._path, "project-files") # Default path for snapshot
 
         # QEMU VM settings
         if qemu_path:
@@ -1914,7 +1913,7 @@ class QemuVM(BaseNode):
                     raise QemuError("Could not check '{}' disk image: {}\n{}".format(disk_name, e, stdout))
 
             if self.linked_clone:
-                disk = os.path.join(self.working_dir, "{}_disk.qcow2".format(disk_name))
+                disk = os.path.join(self.snapshot_dir, "{}_disk.qcow2".format(disk_name)) # here
                 if not os.path.exists(disk):
                     # create the disk
                     await self._create_linked_clone(disk_name, disk_image, disk)
@@ -1964,7 +1963,7 @@ class QemuVM(BaseNode):
             raise QemuError("Cannot resize {} while the VM is running".format(drive_name))
 
         if self.linked_clone:
-            disk_image_path = os.path.join(self.working_dir, "{}_disk.qcow2".format(drive_name))
+            disk_image_path = os.path.join(self.snapshot_dir, "{}_disk.qcow2".format(drive_name))
             if not os.path.exists(disk_image_path):
                 disk_image = getattr(self, "_{}_disk_image".format(drive_name))
                 await self._create_linked_clone(drive_name, disk_image, disk_image_path)
@@ -2267,7 +2266,7 @@ class QemuVM(BaseNode):
                 continue
             try:
                 if self.linked_clone:
-                    disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
+                    disk = os.path.join(self.snapshot_dir, "hd{}_disk.qcow2".format(drive))
                 else:
                     disk = disk_image
                 if not os.path.exists(disk):
@@ -2302,7 +2301,7 @@ class QemuVM(BaseNode):
                 continue
             try:
                 if self.linked_clone:
-                    disk = os.path.join(self.working_dir, "hd{}_disk.qcow2".format(drive))
+                    disk = os.path.join(self.snapshot_dir, "hd{}_disk.qcow2".format(drive))
                 else:
                     disk = disk_image
                 if not os.path.exists(disk):
