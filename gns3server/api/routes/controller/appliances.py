@@ -44,7 +44,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=List[schemas.Appliance], response_model_exclude_unset=True)
 async def get_appliances(
         update: Optional[bool] = False,
         symbol_theme: Optional[str] = None
@@ -60,7 +60,7 @@ async def get_appliances(
     return [c.asdict() for c in controller.appliance_manager.appliances.values()]
 
 
-@router.get("/{appliance_id}")
+@router.get("/{appliance_id}", response_model=schemas.Appliance, response_model_exclude_unset=True)
 def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     """
     Get an appliance file.
