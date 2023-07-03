@@ -417,6 +417,7 @@ class Appliance(BaseModel):
 
     appliance_id: UUID = Field(..., title='Appliance ID')
     name: str = Field(..., title='Appliance name')
+    builtin: Optional[bool] = Field(None, title='Whether the appliance is builtin or not')
     category: Category = Field(..., title='Category of the appliance')
     description: str = Field(
         ..., title='Description of the appliance. Could be a marketing description'
