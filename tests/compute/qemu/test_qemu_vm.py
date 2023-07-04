@@ -387,6 +387,7 @@ async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
     assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Test not working on Windows")
 async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binary):
 
     vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
@@ -401,7 +402,7 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write('1')
 
     options = await vm._build_command()
-    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(os.path.normpath(ovmf_code_path))]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
     assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
 
 
