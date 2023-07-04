@@ -2028,7 +2028,19 @@ class QemuVM(BaseNode):
                     raise QemuError("bios image '{}' is not accessible".format(self._bios_image))
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
         elif self._uefi:
-            options.extend(["-bios", "OVMF.fd"])  # the OVMF bios image should be in the image directory
+            # get the OVMF firmware from the images directory
+            ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
+            options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
+
+            # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
+            ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if not os.path.exists(ovmf_vars_node_path):
+                try:
+                    shutil.copyfile(self.manager.get_abs_image_path("OVMF_VARS.fd"), ovmf_vars_node_path)
+                except OSError as e:
+                    raise QemuError("Cannot copy OVMF_VARS.fd file to the node working directory: {}".format(e))
+            options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
         return options
 
     def _linux_boot_options(self):
