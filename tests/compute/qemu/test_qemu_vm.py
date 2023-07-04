@@ -387,12 +387,22 @@ async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
     assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
 
 
-async def test_uefi_boot_mode_option(vm, tmpdir, fake_qemu_img_binary):
+async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binary):
 
     vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._uefi = True
+
+    # create fake OVMF files
+    ovmf_code_path = os.path.join(images_dir, "OVMF_CODE.fd")
+    with open(ovmf_code_path, "w+") as f:
+        f.write('1')
+    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS.fd")
+    with open(ovmf_vars_path, "w+") as f:
+        f.write('1')
+
     options = await vm._build_command()
-    assert ' '.join(['-bios', 'OVMF.fd']) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
 
 
 async def test_uefi_with_bios_image_already_configured(vm, tmpdir, fake_qemu_img_binary):
