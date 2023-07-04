@@ -401,7 +401,7 @@ async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binar
         f.write('1')
 
     options = await vm._build_command()
-    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(os.path.normpath(ovmf_code_path))]) in ' '.join(options)
     assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
 
 
