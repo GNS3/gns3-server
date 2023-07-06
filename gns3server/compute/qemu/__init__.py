@@ -214,7 +214,7 @@ class Qemu(BaseManager):
                             return version
                 except (UnicodeDecodeError, OSError) as e:
                     log.warning("could not read {}: {}".format(version_file, e))
-            return ""
+            return None
         else:
             try:
                 output = await subprocess_check_output(qemu_path, "-version", "-nographic")
