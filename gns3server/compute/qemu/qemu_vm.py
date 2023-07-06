@@ -86,6 +86,7 @@ class QemuVM(BaseNode):
         self._local_udp_tunnels = {}
         self._guest_cid = None
         self._command_line_changed = False
+        self._qemu_version = None
 
         # QEMU VM settings
         if qemu_path:
@@ -1871,8 +1872,7 @@ class QemuVM(BaseNode):
             # special case, sata controller doesn't exist in Qemu
             options.extend(["-device", 'ahci,id=ahci{}'.format(disk_index)])
             options.extend(["-drive", 'file={},if=none,id=drive{},index={},media=disk{}'.format(disk, disk_index, disk_index, extra_drive_options)])
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
+            if self._qemu_version and parse_version(self._qemu_version) >= parse_version("4.2.0"):
                 # The ‘ide-drive’ device is deprecated since version 4.2.0
                 # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
                 options.extend(["-device", 'ide-hd,drive=drive{},bus=ahci{}.0,id=drive{}'.format(disk_index, disk_index, disk_index)])
@@ -2131,11 +2131,10 @@ class QemuVM(BaseNode):
 
         patched_qemu = False
         if self._legacy_networking:
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version:
-                if parse_version(qemu_version) >= parse_version("2.9.0"):
+            if self._qemu_version:
+                if parse_version(self._qemu_version) >= parse_version("2.9.0"):
                     raise QemuError("Qemu version 2.9.0 and later doesn't support legacy networking mode")
-                if parse_version(qemu_version) < parse_version("1.1.0"):
+                if parse_version(self._qemu_version) < parse_version("1.1.0"):
                     # this is a patched Qemu if version is below 1.1.0
                     patched_qemu = True
 
@@ -2144,8 +2143,7 @@ class QemuVM(BaseNode):
         pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
         if pci_bridges >= 1:
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
+            if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
                 raise QemuError("Qemu version 2.4 or later is required to run this VM with a large number of network adapters")
 
         pci_device_id = 4 + pci_bridges  # Bridge consume PCI ports
@@ -2191,7 +2189,9 @@ class QemuVM(BaseNode):
             else:
                 # newer QEMU networking syntax
                 device_string = "{},mac={}".format(adapter_type, mac)
-                if adapter_type == "virtio-net-pci":
+                if adapter_type == "virtio-net-pci" and \
+                        self._qemu_version and parse_version(self._qemu_version) >= parse_version("2.12"):
+                    # speed and duplex support was added in Qemu 2.12
                     device_string = "{},speed=10000,duplex=full".format(device_string)
                 bridge_id = math.floor(pci_device_id / 32)
                 if bridge_id > 0:
@@ -2224,8 +2224,7 @@ class QemuVM(BaseNode):
 
         if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl" "-spice", "-vnc"]):
             return []
-        version = await self.manager.get_qemu_version(self.qemu_path)
-        if version and parse_version(version) >= parse_version("3.0"):
+        if self._qemu_version and parse_version(self._qemu_version) >= parse_version("3.0"):
             return ["-display", "none"]
         else:
             return ["-nographic"]
@@ -2270,9 +2269,8 @@ class QemuVM(BaseNode):
             elif sys.platform.startswith("win"):
                 if require_hardware_accel:
                     # HAXM is only available starting with Qemu version 2.9.0
-                    version = await self.manager.get_qemu_version(self.qemu_path)
-                    if version and parse_version(version) < parse_version("2.9.0"):
-                        raise QemuError("HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {})".format(version))
+                    if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.9.0"):
+                        raise QemuError("HAXM acceleration can only be enable for Qemu version 2.9.0 and above (current version: {})".format(self._qemu_version))
 
                     # check if HAXM is installed
                     version = self.manager.get_haxm_windows_version()
@@ -2372,6 +2370,7 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        self._qemu_version = await self.manager.get_qemu_version(self.qemu_path)
         vm_name = self._name.replace(",", ",,")
         project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
@@ -2389,10 +2388,9 @@ class QemuVM(BaseNode):
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
-                version = await self.manager.get_qemu_version(self.qemu_path)
                 # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
                 # https://github.com/GNS3/gns3-server/issues/685
-                if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
+                if self._qemu_version and parse_version(self._qemu_version) >= parse_version("2.4.0") and self.platform == "x86_64":
                     command.extend(["-machine", "smm=off"])
             elif sys.platform.startswith("win") or sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
