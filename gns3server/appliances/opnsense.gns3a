@@ -26,6 +26,13 @@
     },
     "images": [
         {
+            "filename": "OPNsense-23.1-OpenSSL-nano-amd64.img",
+            "version": "23.1",
+            "md5sum": "db7d3b9fd3b94894623368db1041ff11",
+            "filesize": 3221225472,
+            "download_url": "https://opnsense.c0urier.net/releases/23.1/"
+        },
+        {
             "filename": "OPNsense-22.1.2-OpenSSL-nano-amd64.img",
             "version": "22.1.2",
             "md5sum": "3109030a214301b89a47eb9466e8b656",
@@ -55,6 +62,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "23.1",
+            "images": {
+                "hda_disk_image": "OPNsense-23.1-OpenSSL-nano-amd64.img"
+            }
+        },
         {
             "name": "22.1.2",
             "images": {

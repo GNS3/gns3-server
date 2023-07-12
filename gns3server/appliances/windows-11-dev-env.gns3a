@@ -38,12 +38,12 @@
             "compression": "zip"
         },
         {
-            "filename": "OVMF-20160813.fd",
-            "version": "16.08.13",
-            "md5sum": "8ff0ef1ec56345db5b6bda1a8630e3c6",
-            "filesize": 2097152,
-            "download_url": "",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-20160813.fd.zip/download",
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
             "compression": "zip"
         }
     ],
@@ -51,7 +51,7 @@
         {
             "name": "2212",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "WinDev2212Eval-disk1.vmdk"
             }
         }
