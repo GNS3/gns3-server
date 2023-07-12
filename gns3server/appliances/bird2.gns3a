@@ -1,0 +1,43 @@
+{
+    "appliance_id": "8fecbf89-5cd1-4aea-b735-5f36cf0efbb7",
+    "name": "BIRD2",
+    "category": "router",
+    "description": "The BIRD project aims to develop a fully functional dynamic IP routing daemon primarily targeted on (but not limited to) Linux, FreeBSD and other UNIX-like systems and distributed under the GNU General Public License.",
+    "vendor_name": "CZ.NIC Labs",
+    "vendor_url": "https://bird.network.cz",
+    "documentation_url": "https://bird.network.cz/?get_doc&f=bird.html&v=20",
+    "product_name": "BIRD internet routing daemon",
+    "registry_version": 4,
+    "status": "stable",
+    "maintainer": "Bernhard Ehlers",
+    "maintainer_email": "dev-ehlers@mailbox.org",
+    "usage": "Username:\tgns3\nPassword:\tgns3\nTo become root, use \"sudo -s\".\n\nNetwork configuration:\nsudo nano /etc/network/interfaces\nsudo systemctl restart networking\n\nBIRD:\nRestart: sudo systemctl restart bird\nReconfigure: birdc configure",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "virtio-net-pci",
+        "adapters": 4,
+        "ram": 512,
+        "hda_disk_interface": "scsi",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "allow"
+    },
+    "images": [
+        {
+            "filename": "bird2-debian-2.0.12.qcow2",
+            "version": "2.0.12",
+            "md5sum": "435218a2e90cba921cc7fde1d64a9419",
+            "filesize": 287965184,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/bird2-debian-2.0.12.qcow2"
+        }
+    ],
+    "versions": [
+        {
+            "name": "2.0.12",
+            "images": {
+                "hda_disk_image": "bird2-debian-2.0.12.qcow2"
+            }
+        }
+    ]
+}

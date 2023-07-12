@@ -188,12 +188,12 @@
             "download_url": "https://software.cisco.com/download/"
         },
         {
-            "filename": "OVMF-20160813.fd",
-            "version": "16.08.13",
-            "md5sum": "8ff0ef1ec56345db5b6bda1a8630e3c6",
-            "filesize": 2097152,
-            "download_url": "",
-            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-20160813.fd.zip/download",
+            "filename": "OVMF-edk2-stable202305.fd",
+            "version": "stable202305",
+            "md5sum": "6c4cf1519fec4a4b95525d9ae562963a",
+            "filesize": 4194304,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/OVMF-edk2-stable202305.fd.zip/download",
             "compression": "zip"
         }
     ],
@@ -201,161 +201,161 @@
         {
             "name": "9500v 10.1.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9500v64.10.1.1.qcow2"
             }
         },
         {
             "name": "9300v 10.1.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9300v.10.1.1.qcow2"
             }
         },
         {
             "name": "9500v 9.3.9",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9500v.9.3.9.qcow2"
             }
         },
         {
             "name": "9300v 9.3.9",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9300v.9.3.9.qcow2"
             }
         },
         {
             "name": "9300v 9.3.8",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9300v.9.3.8.qcow2"
             }
         },
         {
             "name": "9500v 9.3.7",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9500v.9.3.7.qcow2"
             }
         },
         {
             "name": "9500v 9.3.3",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9500v.9.3.3.qcow2"
             }
         },
         {
             "name": "9300v 9.3.3",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9300v.9.3.3.qcow2"
             }
         },
         {
             "name": "9.3.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv.9.3.1.qcow2"
             }
         },
         {
             "name": "9.2.3",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.9.2.3.qcow2"
             }
         },
         {
             "name": "9.2.2",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.9.2.2.qcow2"
             }
         },
         {
             "name": "9.2.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.9.2.1.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.9",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.9.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.7",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.7.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.6",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.6.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.5",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.5.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.4",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.4.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.3",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.3.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.2",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.2.qcow2"
             }
         },
         {
             "name": "7.0.3.I7.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I7.1.qcow2"
             }
         },
         {
             "name": "7.0.3.I6.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I6.1.qcow2"
             }
         },
         {
             "name": "7.0.3.I5.2",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I5.2.qcow2"
             }
         },
         {
             "name": "7.0.3.I5.1",
             "images": {
-                "bios_image": "OVMF-20160813.fd",
+                "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nxosv-final.7.0.3.I5.1.qcow2"
             }
         }

@@ -8,8 +8,8 @@
     "product_name": "webterm",
     "registry_version": 4,
     "status": "stable",
-    "maintainer": "GNS3 Team",
-    "maintainer_email": "developers@gns3.net",
+    "maintainer": "Bernhard Ehlers",
+    "maintainer_email": "dev-ehlers@mailbox.org",
     "usage": "The /root directory is persistent.",
     "symbol": "firefox.svg",
     "docker": {

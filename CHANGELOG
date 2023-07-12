@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.41 12/07/2023
+
+* Bundle web-ui v2.2.41
+* Catch urllib3 exceptions when sending crash report. Ref https://github.com/GNS3/gns3-gui/issues/3483
+* Only fetch Qemu version once when starting Qemu + only add speed/duplex for virtio-net-pci with Qemu version >= 2.12
+* Use recent OVMF firmware (stable-202305) and use flash drives to configure Qemu command line
+* Remove the useless executable permissions to the file gns3server/disks/empty8G.qcow2
+* Backport UEFI boot mode support for Qemu VMs
+
 ## 2.2.40.1 10/06/2023
 
 * Re-bundle Web-Ui v2.2.40. Fixes #2239
