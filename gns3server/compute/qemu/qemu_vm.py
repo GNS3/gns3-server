@@ -115,6 +115,7 @@ class QemuVM(BaseNode):
         self._local_udp_tunnels = {}
         self._guest_cid = None
         self._command_line_changed = False
+        self._qemu_version = None
 
         # QEMU VM settings
         if qemu_path:
@@ -2089,8 +2090,7 @@ class QemuVM(BaseNode):
                     f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
                 ]
             )
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
+            if self._qemu_version and parse_version(self._qemu_version) >= parse_version("4.2.0"):
                 # The ‘ide-drive’ device is deprecated since version 4.2.0
                 # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
                 options.extend(
@@ -2281,7 +2281,19 @@ class QemuVM(BaseNode):
                     raise QemuError(f"bios image '{self._bios_image}' is not accessible")
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
         elif self._uefi:
-            options.extend(["-bios", "OVMF.fd"])  # the OVMF bios image should be in the image directory
+            # get the OVMF firmware from the images directory
+            ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
+            options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
+
+            # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
+            ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if not os.path.exists(ovmf_vars_node_path):
+                try:
+                    shutil.copyfile(self.manager.get_abs_image_path("OVMF_VARS.fd"), ovmf_vars_node_path)
+                except OSError as e:
+                    raise QemuError("Cannot copy OVMF_VARS.fd file to the node working directory: {}".format(e))
+            options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
         return options
 
     def _linux_boot_options(self):
@@ -2381,8 +2393,7 @@ class QemuVM(BaseNode):
         pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
         if pci_bridges >= 1:
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
+            if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
                 raise QemuError(
                     "Qemu version 2.4 or later is required to run this VM with a large number of network adapters"
                 )
@@ -2448,8 +2459,7 @@ class QemuVM(BaseNode):
 
         if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl" "-spice", "-vnc"]):
             return []
-        version = await self.manager.get_qemu_version(self.qemu_path)
-        if version and parse_version(version) >= parse_version("3.0"):
+        if self._qemu_version and parse_version(self._qemu_version) >= parse_version("3.0"):
             return ["-display", "none"]
         else:
             return ["-nographic"]
@@ -2578,6 +2588,7 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        self._qemu_version = await self.manager.get_qemu_version(self.qemu_path)
         vm_name = self._name.replace(",", ",,")
         project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
@@ -2599,10 +2610,9 @@ class QemuVM(BaseNode):
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
-                version = await self.manager.get_qemu_version(self.qemu_path)
                 # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
                 # https://github.com/GNS3/gns3-server/issues/685
-                if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
+                if self._qemu_version and parse_version(self._qemu_version) >= parse_version("2.4.0") and self.platform == "x86_64":
                     command.extend(["-machine", "smm=off"])
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])

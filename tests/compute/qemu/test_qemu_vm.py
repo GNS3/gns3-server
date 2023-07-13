@@ -77,6 +77,7 @@ async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
     vm._ubridge_hypervisor = MagicMock()
     vm._ubridge_hypervisor.is_running.return_value = True
     vm.manager.config.settings.Qemu.enable_hardware_acceleration = False
+    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="6.2.0")
     return vm
 
 
@@ -143,7 +144,6 @@ async def test_is_running(vm, running_subprocess_mock):
 @pytest.mark.asyncio
 async def test_start(vm, running_subprocess_mock):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=running_subprocess_mock) as mock:
             await vm.start()
@@ -159,7 +159,6 @@ async def test_stop(vm, running_subprocess_mock):
     future = asyncio.Future()
     future.set_result(True)
     process.wait.return_value = future
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
 
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=process):
@@ -250,7 +249,6 @@ async def test_port_remove_nio_binding(vm):
 @pytest.mark.asyncio
 async def test_close(vm, port_manager):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     with asyncio_patch("gns3server.compute.qemu.QemuVM.start_wrap_console"):
         with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
             await vm.start()
@@ -371,7 +369,6 @@ async def test_disk_options(vm, tmpdir, fake_qemu_img_binary):
 @pytest.mark.asyncio
 async def test_cdrom_option(vm, tmpdir, fake_qemu_img_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._cdrom_image = str(tmpdir / "test.iso")
     open(vm._cdrom_image, "w+").close()
 
@@ -383,26 +380,34 @@ async def test_cdrom_option(vm, tmpdir, fake_qemu_img_binary):
 @pytest.mark.asyncio
 async def test_bios_option(vm, tmpdir, fake_qemu_img_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._bios_image = str(tmpdir / "test.img")
     open(vm._bios_image, "w+").close()
     options = await vm._build_command()
     assert ' '.join(['-bios', str(tmpdir / "test.img")]) in ' '.join(options)
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Test not working on Windows")
 @pytest.mark.asyncio
-async def test_uefi_boot_mode_option(vm, tmpdir, fake_qemu_img_binary):
+async def test_uefi_boot_mode_option(vm, tmpdir, images_dir, fake_qemu_img_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._uefi = True
+
+    # create fake OVMF files
+    ovmf_code_path = os.path.join(images_dir, "OVMF_CODE.fd")
+    with open(ovmf_code_path, "w+") as f:
+        f.write('1')
+    ovmf_vars_path = os.path.join(images_dir, "OVMF_VARS.fd")
+    with open(ovmf_vars_path, "w+") as f:
+        f.write('1')
+
     options = await vm._build_command()
-    assert ' '.join(['-bios', 'OVMF.fd']) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_code_path)]) in ' '.join(options)
+    assert ' '.join(["-drive", "if=pflash,format=raw,file={}".format(os.path.join(vm.working_dir, "OVMF_VARS.fd"))]) in ' '.join(options)
 
 
 @pytest.mark.asyncio
 async def test_uefi_with_bios_image_already_configured(vm, tmpdir, fake_qemu_img_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._bios_image = str(tmpdir / "test.img")
     vm._uefi = True
     with pytest.raises(QemuError):
@@ -431,7 +436,6 @@ async def test_spice_option(vm, fake_qemu_img_binary):
 @pytest.mark.asyncio
 async def test_tpm_option(vm, tmpdir, fake_qemu_img_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm._tpm = True
     tpm_sock = os.path.join(vm.temporary_directory, "swtpm.sock")
     with patch("os.path.exists", return_value=True) as os_path:
@@ -528,7 +532,6 @@ async def test_control_vm_expect_text(vm, running_subprocess_mock):
 @pytest.mark.asyncio
 async def test_build_command(vm, fake_qemu_binary):
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
         cmd = await vm._build_command()
@@ -564,7 +567,6 @@ async def test_build_command_manual_uuid(vm):
     If user has set a uuid we keep it
     """
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="3.1.0")
     vm.options = "-uuid e1c307a4-896f-11e6-81a5-3c07547807cc"
     os.environ["DISPLAY"] = "0:0"
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()):
@@ -703,7 +705,6 @@ async def test_build_command_two_adapters_mac_address(vm):
     Should support multiple base vmac address
     """
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.5.0")
     vm.adapters = 2
     vm.mac_address = "00:00:ab:0e:0f:09"
     mac_0 = vm._mac_address
@@ -729,11 +730,8 @@ async def test_build_command_two_adapters_mac_address(vm):
 async def test_build_command_large_number_of_adapters(vm):
     """
     When we have more than 28 interface we need to add a pci bridge for
-    additional interfaces
+    additional interfaces (supported only with Qemu 2.4 and later)
     """
-
-    # It's supported only with Qemu 2.4 and later
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.0")
 
     vm.adapters = 100
     vm.mac_address = "00:00:ab:0e:0f:09"
@@ -776,7 +774,6 @@ async def test_build_command_with_virtio_net_pci_adapter(vm):
     Test virtio-net-pci adapter which has parameters speed=1000 & duplex=full hard-coded
     """
 
-    vm.manager.get_qemu_version = AsyncioMagicMock(return_value="2.4.0")
     vm.adapters = 1
     vm.mac_address = "00:00:ab:0e:0f:09"
     vm._adapter_type = "virtio-net-pci"

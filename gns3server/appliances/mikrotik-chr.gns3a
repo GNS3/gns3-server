@@ -28,6 +28,15 @@
     },
     "images": [
         {
+            "filename": "chr-7.10.1.img",
+            "version": "7.10.1",
+            "md5sum": "917729e79b9992562f4160d461b21cac",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.10.1/chr-7.10.1.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-7.7.img",
             "version": "7.7",
             "md5sum": "efc4fdeb1cc06dc240a14f1215fd59b3",
@@ -83,6 +92,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.10.1",
+            "images": {
+                "hda_disk_image": "chr-7.10.1.img"
+            }
+        },
         {
             "name": "7.7",
             "images": {
