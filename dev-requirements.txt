@@ -3,6 +3,6 @@
 pytest==7.4.0
 flake8==5.0.4  # v5.0.4 is the last to support Python 3.7
 pytest-timeout==2.1.0
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
 requests==2.31.0
 httpx==0.24.1
