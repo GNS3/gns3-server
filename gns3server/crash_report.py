@@ -29,7 +29,6 @@ import struct
 import platform
 import locale
 import distro
-import urllib3
 
 from .version import __version__, __version_info__
 from .config import Config
@@ -89,7 +88,7 @@ class CrashReport:
                                 ca_certs=cacert,
                                 default_integrations=False,
                                 integrations=[sentry_logging])
-            except urllib3.exceptions.HTTPError as e:
+            except Exception as e:
                 log.error("Crash report could not be sent: {}".format(e))
                 return
 
