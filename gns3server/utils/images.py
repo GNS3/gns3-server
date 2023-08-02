@@ -167,6 +167,7 @@ def md5sum(path, stopped_event=None):
 
     try:
         m = hashlib.md5()
+        log.debug("Calculating MD5 sum of `{}`".format(path))
         with open(path, 'rb') as f:
             while True:
                 if stopped_event is not None and stopped_event.is_set():
