@@ -20,6 +20,7 @@ API routes for nodes.
 
 import aiohttp
 import asyncio
+import ipaddress
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Request, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -399,8 +400,18 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> No
     log.info(
         f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket"
     )
+
+    compute_host = compute.host
+    try:
+        # handle IPv6 address
+        ip = ipaddress.ip_address(compute_host)
+        if isinstance(ip, ipaddress.IPv6Address):
+            compute_host = '[' + compute_host + ']'
+    except ValueError:
+        pass
+
     ws_console_compute_url = (
-        f"ws://{compute.host}:{compute.port}/v3/compute/projects/"
+        f"ws://{compute_host}:{compute.port}/v3/compute/projects/"
         f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
     )
 
