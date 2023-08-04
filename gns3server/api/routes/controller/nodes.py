@@ -318,7 +318,7 @@ async def create_disk_image(
 
     if node.node_type != "qemu":
         raise ControllerBadRequestError("Creating a disk image is only supported on a Qemu node")
-    await node.post(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
+    await node.post(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
 @router.put("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
@@ -333,7 +333,7 @@ async def update_disk_image(
 
     if node.node_type != "qemu":
         raise ControllerBadRequestError("Updating a disk image is only supported on a Qemu node")
-    await node.put(f"/disk_image/{disk_name}", data=disk_data.dict(exclude_unset=True))
+    await node.put(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
 @router.delete("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)

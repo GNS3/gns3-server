@@ -21,7 +21,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import Column, DateTime, func, inspect
 from sqlalchemy.types import TypeDecorator, CHAR, VARCHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import as_declarative
+from sqlalchemy.orm import as_declarative
 
 
 @as_declarative()

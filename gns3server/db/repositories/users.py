@@ -97,7 +97,7 @@ class UsersRepository(BaseRepository):
         Update an user.
         """
 
-        update_values = user_update.dict(exclude_unset=True)
+        update_values = user_update.model_dump(exclude_unset=True)
         password = update_values.pop("password", None)
         if password:
             update_values["hashed_password"] = self._auth_service.hash_password(password=password.get_secret_value())
@@ -207,10 +207,10 @@ class UsersRepository(BaseRepository):
             user_group_update: schemas.UserGroupUpdate
     ) -> Optional[models.UserGroup]:
         """
-        Update an user group.
+        Update a user group.
         """
 
-        update_values = user_group_update.dict(exclude_unset=True)
+        update_values = user_group_update.model_dump(exclude_unset=True)
         query = update(models.UserGroup).\
             where(models.UserGroup.user_group_id == user_group_id).\
             values(update_values)
@@ -224,7 +224,7 @@ class UsersRepository(BaseRepository):
 
     async def delete_user_group(self, user_group_id: UUID) -> bool:
         """
-        Delete an user group.
+        Delete a user group.
         """
 
         query = delete(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)

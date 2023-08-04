@@ -29,7 +29,7 @@ class IOUBase(BaseModel):
     name: str
     path: str = Field(..., description="IOU executable path")
     application_id: int = Field(..., description="Application ID for running IOU executable")
-    node_id: Optional[UUID]
+    node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[ConsoleType] = Field(None, description="Console type")
@@ -57,7 +57,7 @@ class IOUUpdate(IOUBase):
     Properties to update an IOU node.
     """
 
-    name: Optional[str]
+    name: Optional[str] = None
     path: Optional[str] = Field(None, description="IOU executable path")
     application_id: Optional[int] = Field(None, description="Application ID for running IOU executable")
 

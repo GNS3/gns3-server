@@ -2645,7 +2645,7 @@ class QemuVM(BaseNode):
     def asdict(self):
         answer = {"project_id": self.project.id, "node_id": self.id, "node_directory": self.working_path}
         # Qemu has a long list of options. The JSON schema is the single source of information
-        for field in Qemu.schema()["properties"]:
+        for field in Qemu.model_json_schema()["properties"]:
             if field not in answer:
                 try:
                     answer[field] = getattr(self, field)

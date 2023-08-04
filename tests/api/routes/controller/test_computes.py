@@ -54,7 +54,7 @@ class TestComputeRoutes:
         params = {
             "compute_id": compute_id,
             "protocol": "http",
-            "host": "localhost",
+            "host": "127.0.0.1",
             "port": 84,
             "user": "julien",
             "password": "secure"}

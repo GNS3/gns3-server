@@ -94,7 +94,7 @@ def add_appliance_version(appliance_id: UUID, appliance_version: schemas.Applian
         if version.get("name") == appliance_version.name:
             raise ControllerError(message=f"Appliance '{appliance_id}' already has version '{appliance_version.name}'")
 
-    appliance.versions.append(appliance_version.dict(exclude_unset=True))
+    appliance.versions.append(appliance_version.model_dump(exclude_unset=True))
     return appliance.asdict()
 
 

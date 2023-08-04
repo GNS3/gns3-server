@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Optional, List
-from pydantic import BaseModel, validator
+from pydantic import field_validator, ConfigDict, BaseModel
 from uuid import UUID
 from enum import Enum
 
@@ -53,11 +53,10 @@ class PermissionBase(BaseModel):
     path: str
     action: PermissionAction
     description: Optional[str] = None
+    model_config = ConfigDict(use_enum_values=True)
 
-    class Config:
-        use_enum_values = True
-
-    @validator("action", pre=True)
+    @field_validator("action", mode="before")
+    @classmethod
     def action_uppercase(cls, v):
         return v.upper()
 
@@ -81,9 +80,7 @@ class PermissionUpdate(PermissionBase):
 class Permission(DateTimeModelMixin, PermissionBase):
 
     permission_id: UUID
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoleBase(BaseModel):
@@ -116,6 +113,4 @@ class Role(DateTimeModelMixin, RoleBase):
     role_id: UUID
     is_builtin: bool
     permissions: List[Permission]
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

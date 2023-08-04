@@ -64,7 +64,7 @@ class VMwareBase(BaseModel):
     name: str
     vmx_path: str = Field(..., description="Path to the vmx file")
     linked_clone: bool = Field(..., description="Whether the VM is a linked clone or not")
-    node_id: Optional[UUID]
+    node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[VMwareConsoleType] = Field(None, description="Console type")
@@ -90,9 +90,9 @@ class VMwareUpdate(VMwareBase):
     Properties to update a VMware node.
     """
 
-    name: Optional[str]
-    vmx_path: Optional[str]
-    linked_clone: Optional[bool]
+    name: Optional[str] = None
+    vmx_path: Optional[str] = None
+    linked_clone: Optional[bool] = None
 
 
 class VMware(VMwareBase):

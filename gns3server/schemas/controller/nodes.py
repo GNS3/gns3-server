@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Union
+from pydantic import BaseModel, Field, model_validator
+from typing import List, Optional, Union, Any
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -96,7 +96,7 @@ class NodePort(BaseModel):
     port_number: int = Field(..., description="Port slot")
     link_type: LinkType = Field(..., description="Type of link")
     data_link_types: dict = Field(..., description="Available PCAP types for capture")
-    mac_address: Union[str, None] = Field(None, regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+    mac_address: Union[str, None] = Field(None, pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
 
 
 class NodeBase(BaseModel):
@@ -117,7 +117,7 @@ class NodeBase(BaseModel):
         False, description="Automatically start the console when the node has started"
     )
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
-    aux_type: Optional[ConsoleType]
+    aux_type: Optional[ConsoleType] = None
     properties: Optional[dict] = Field(default_factory=dict, description="Properties specific to an emulator")
 
     label: Optional[Label] = None
@@ -134,21 +134,18 @@ class NodeBase(BaseModel):
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None
 
-    @validator("port_name_format", pre=True, always=True)
-    def default_port_name_format(cls, v, values):
-        if v is None:
-            if "node_type" in values and values["node_type"] == NodeType.iou:
-                return "Ethernet{segment0}/{port0}"
-            return "Ethernet{0}"
-        return v
+    @model_validator(mode='before')
+    @classmethod
+    def set_default_port_name_format_and_port_segment_size(cls, data: Any) -> Any:
 
-    @validator("port_segment_size", pre=True, always=True)
-    def default_port_segment_size(cls, v, values):
-        if v is None:
-            if "node_type" in values and values["node_type"] == NodeType.iou:
-                return 4
-            return 0
-        return v
+        if "port_name_format" not in data:
+            if data.get('node_type') == NodeType.iou:
+                data['port_name_format'] = "Ethernet{segment0}/{port0}"
+                data['port_segment_size'] = 4
+            else:
+                data['port_name_format'] = "Ethernet{0}"
+                data['port_segment_size'] = 0
+        return data
 
 
 class NodeCreate(NodeBase):

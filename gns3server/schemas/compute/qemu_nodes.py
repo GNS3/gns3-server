@@ -156,7 +156,7 @@ class QemuBase(BaseModel):
     """
 
     name: str
-    node_id: Optional[UUID]
+    node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
     qemu_path: Optional[str] = Field(None, description="Qemu executable path")
@@ -197,7 +197,7 @@ class QemuBase(BaseModel):
     adapters: Optional[int] = Field(None, ge=0, le=275, description="Number of adapters")
     adapter_type: Optional[QemuAdapterType] = Field(None, description="QEMU adapter type")
     mac_address: Optional[str] = Field(
-        None, description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
+        None, description="QEMU MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"
     )
     replicate_network_connection_state: Optional[bool] = Field(
         None, description="Replicate the network connection state for links in Qemu"
@@ -227,7 +227,7 @@ class QemuUpdate(QemuBase):
     Properties to update a Qemu node.
     """
 
-    name: Optional[str]
+    name: Optional[str] = None
 
 
 class Qemu(QemuBase):

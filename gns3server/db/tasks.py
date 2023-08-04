@@ -122,7 +122,7 @@ async def get_computes(app: FastAPI) -> List[dict]:
         db_computes = await ComputesRepository(db_session).get_computes()
         for db_compute in db_computes:
             try:
-                compute = schemas.Compute.from_orm(db_compute)
+                compute = schemas.Compute.model_validate(db_compute)
             except ValidationError as e:
                 log.error(f"Could not load compute '{db_compute.compute_id}' from database: {e}")
                 continue
@@ -212,7 +212,7 @@ async def discover_images_on_filesystem(app: FastAPI):
         existing_image_paths = []
         for db_image in db_images:
             try:
-                image = schemas.Image.from_orm(db_image)
+                image = schemas.Image.model_validate(db_image)
                 existing_image_paths.append(image.path)
             except ValidationError as e:
                 log.error(f"Could not load image '{db_image.filename}' from database: {e}")

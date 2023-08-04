@@ -70,8 +70,8 @@ class TestUserRoutes:
         assert user_in_db.username == params["username"]
 
         # check that the user returned in the response is equal to the user in the database
-        created_user = User(**response.json()).json()
-        assert created_user == User.from_orm(user_in_db).json()
+        created_user = User(**response.json()).model_dump_json()
+        assert created_user == User.model_validate(user_in_db).model_dump_json()
 
     @pytest.mark.parametrize(
         "attr, value, status_code",

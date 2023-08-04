@@ -93,7 +93,7 @@ class RbacRepository(BaseRepository):
         Update a role.
         """
 
-        update_values = role_update.dict(exclude_unset=True)
+        update_values = role_update.model_dump(exclude_unset=True)
         query = update(models.Role).\
             where(models.Role.role_id == role_id).\
             values(update_values)
@@ -236,7 +236,7 @@ class RbacRepository(BaseRepository):
         Update a permission.
         """
 
-        update_values = permission_update.dict(exclude_unset=True)
+        update_values = permission_update.model_dump(exclude_unset=True)
         query = update(models.Permission).\
             where(models.Permission.permission_id == permission_id).\
             values(update_values)
