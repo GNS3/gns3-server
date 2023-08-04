@@ -31,7 +31,7 @@ class DockerBase(BaseModel):
     node_id: Optional[UUID] = None
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[ConsoleType] = Field(None, description="Console type")
-    console_resolution: Optional[str] = Field(None, regex="^[0-9]+x[0-9]+$", description="Console resolution for VNC")
+    console_resolution: Optional[str] = Field(None, pattern="^[0-9]+x[0-9]+$", description="Console resolution for VNC")
     console_http_port: Optional[int] = Field(None, description="Internal port in the container for the HTTP server")
     console_http_path: Optional[str] = Field(None, description="Path of the web interface")
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary TCP port")
@@ -67,7 +67,7 @@ class DockerUpdate(DockerBase):
 class Docker(DockerBase):
 
     container_id: str = Field(
-        ..., min_length=12, max_length=64, regex="^[a-f0-9]+$", description="Docker container ID (read only)"
+        ..., min_length=12, max_length=64, pattern="^[a-f0-9]+$", description="Docker container ID (read only)"
     )
     project_id: UUID = Field(..., description="Project ID")
     node_directory: str = Field(..., description="Path to the node working directory (read only)")

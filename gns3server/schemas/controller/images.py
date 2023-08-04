@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from enum import Enum
 
 from .base import DateTimeModelMixin
@@ -41,6 +41,4 @@ class ImageBase(BaseModel):
 
 
 class Image(DateTimeModelMixin, ImageBase):
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

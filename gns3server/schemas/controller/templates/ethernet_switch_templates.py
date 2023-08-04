@@ -23,14 +23,14 @@ from typing import Optional, List
 from enum import Enum
 
 DEFAULT_PORTS = [
-    dict(port_number=0, name="Ethernet0", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=1, name="Ethernet1", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=2, name="Ethernet2", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=3, name="Ethernet3", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=4, name="Ethernet4", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=5, name="Ethernet5", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=6, name="Ethernet6", vlan=1, type="access", ethertype="0x8100"),
-    dict(port_number=7, name="Ethernet7", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=0, name="Ethernet0", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=1, name="Ethernet1", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=2, name="Ethernet2", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=3, name="Ethernet3", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=4, name="Ethernet4", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=5, name="Ethernet5", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=6, name="Ethernet6", vlan=1, type="access", ethertype="0x8100"),
+    EthernetSwitchPort(port_number=7, name="Ethernet7", vlan=1, type="access", ethertype="0x8100"),
 ]
 
 

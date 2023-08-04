@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional, Union
 from enum import Enum
 from uuid import UUID
@@ -58,15 +58,11 @@ class TemplateCreate(TemplateBase):
 
     name: str
     template_type: NodeType
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class TemplateUpdate(TemplateBase):
-
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class Template(DateTimeModelMixin, TemplateBase):
@@ -77,10 +73,7 @@ class Template(DateTimeModelMixin, TemplateBase):
     symbol: str
     builtin: bool
     template_type: NodeType
-
-    class Config:
-        extra = "allow"
-        orm_mode = True
+    model_config = ConfigDict(extra="allow", from_attributes=True)
 
 
 class TemplateUsage(BaseModel):

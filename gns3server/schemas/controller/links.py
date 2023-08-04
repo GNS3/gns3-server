@@ -54,7 +54,7 @@ class LinkBase(BaseModel):
     Link data.
     """
 
-    nodes: Optional[List[LinkNode]] = Field(None, min_items=0, max_items=2)
+    nodes: Optional[List[LinkNode]] = Field(None, min_length=0, max_length=2)
     suspend: Optional[bool] = None
     link_style: Optional[LinkStyle] = None
     filters: Optional[dict] = None
@@ -63,7 +63,7 @@ class LinkBase(BaseModel):
 class LinkCreate(LinkBase):
 
     link_id: UUID = Field(default_factory=uuid4)
-    nodes: List[LinkNode] = Field(..., min_items=2, max_items=2)
+    nodes: List[LinkNode] = Field(..., min_length=2, max_length=2)
 
 
 class LinkUpdate(LinkBase):

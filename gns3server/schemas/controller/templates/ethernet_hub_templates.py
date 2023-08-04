@@ -22,14 +22,14 @@ from typing import Optional, List
 
 
 DEFAULT_PORTS = [
-    dict(port_number=0, name="Ethernet0"),
-    dict(port_number=1, name="Ethernet1"),
-    dict(port_number=2, name="Ethernet2"),
-    dict(port_number=3, name="Ethernet3"),
-    dict(port_number=4, name="Ethernet4"),
-    dict(port_number=5, name="Ethernet5"),
-    dict(port_number=6, name="Ethernet6"),
-    dict(port_number=7, name="Ethernet7"),
+    EthernetHubPort(port_number=0, name="Ethernet0"),
+    EthernetHubPort(port_number=1, name="Ethernet1"),
+    EthernetHubPort(port_number=2, name="Ethernet2"),
+    EthernetHubPort(port_number=3, name="Ethernet3"),
+    EthernetHubPort(port_number=4, name="Ethernet4"),
+    EthernetHubPort(port_number=5, name="Ethernet5"),
+    EthernetHubPort(port_number=6, name="Ethernet6"),
+    EthernetHubPort(port_number=7, name="Ethernet7"),
 ]
 
 

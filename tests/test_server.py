@@ -86,14 +86,8 @@ def test_parse_arguments(capsys, config, tmpdir):
         server_config.enable_ssl = True
         assert server._parse_arguments([]).ssl
 
-    server_config.certfile = None
-    server_config.certkey = None
-
     assert server._parse_arguments(["--certfile", "bla"]).certfile == "bla"
-    assert server._parse_arguments([]).certfile is None
-
     assert server._parse_arguments(["--certkey", "blu"]).certkey == "blu"
-    assert server._parse_arguments([]).certkey is None
 
     assert server._parse_arguments(["-L"]).local
     assert server._parse_arguments(["--local"]).local

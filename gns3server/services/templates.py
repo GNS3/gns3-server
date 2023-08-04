@@ -237,11 +237,11 @@ class TemplatesService:
             # get the default template settings
             create_settings = jsonable_encoder(template_create, exclude_unset=True)
             template_schema = TEMPLATE_TYPE_TO_SCHEMA[template_create.template_type]
-            template_settings = template_schema.parse_obj(create_settings).dict()
+            template_settings = template_schema.model_validate(create_settings).model_dump()
             if template_create.template_type == "dynamips":
                 # special case for Dynamips to cover all platform types that contain specific settings
                 dynamips_template_schema = DYNAMIPS_PLATFORM_TO_SCHEMA[template_settings["platform"]]
-                template_settings = dynamips_template_schema.parse_obj(create_settings).dict()
+                template_settings = dynamips_template_schema.model_validate(create_settings).model_dump()
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while creating new template: {e}")
 
@@ -287,7 +287,7 @@ class TemplatesService:
                 template_schema = DYNAMIPS_PLATFORM_TO_UPDATE_SCHEMA[db_template.platform]
             else:
                 template_schema = TEMPLATE_TYPE_TO_UPDATE_SCHEMA[db_template.template_type]
-            template_settings = template_schema.parse_obj(update_settings).dict(exclude_unset=True)
+            template_settings = template_schema.model_validate(update_settings).model_dump(exclude_unset=True)
         except pydantic.ValidationError as e:
             raise ControllerBadRequestError(f"JSON schema error received while updating template: {e}")
 
@@ -297,7 +297,7 @@ class TemplatesService:
         elif db_template.template_type == "iou" and "path" in template_settings:
             await self._remove_image(db_template.template_id, db_template.path)
         elif db_template.template_type == "qemu":
-            for key in template_update.dict().keys():
+            for key in template_update.model_dump().keys():
                 if key.endswith("_image") and key in template_settings:
                     await self._remove_image(db_template.template_id, db_template.__dict__[key])
 

@@ -90,7 +90,7 @@ async def test_create_project_with_supplier(app: FastAPI, client: AsyncClient, c
 
     supplier = {
         'logo': 'logo.png',
-        'url': 'http://example.com'
+        'url': 'http://example.com/'
     }
     params = {"name": "test", "project_id": "30010203-0405-0607-0809-0a0b0c0d0e0f", "supplier": supplier}
     response = await client.post(app.url_path_for("create_project"), json=params)

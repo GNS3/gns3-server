@@ -45,7 +45,7 @@ class QemuTemplate(TemplateBase):
     adapters: Optional[int] = Field(1, ge=0, le=275, description="Number of adapters")
     adapter_type: Optional[QemuAdapterType] = Field("e1000", description="QEMU adapter type")
     mac_address: Optional[str] = Field(
-        "", description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
+        "", description="QEMU MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
     )
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field(

@@ -364,6 +364,7 @@ async def test_install_base_configs(controller, config, tmpdir):
         assert f.read() == 'test'
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "builtin_disk",
     [
@@ -383,7 +384,7 @@ async def test_install_base_configs(controller, config, tmpdir):
 )
 async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
 
-    config.set_section_config("Server", {"images_path": str(tmpdir)})
+    config.settings.Server.images_path = str(tmpdir)
     controller._install_builtin_disks()
     # we only install Qemu empty disks at this time
     assert os.path.exists(str(tmpdir / "QEMU" / builtin_disk))

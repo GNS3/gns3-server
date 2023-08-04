@@ -40,12 +40,12 @@ class DynamipsTemplate(TemplateBase):
     exec_area: Optional[int] = Field(64, description="Exec area value")
     mmap: Optional[bool] = Field(True, description="MMAP feature")
     mac_addr: Optional[str] = Field(
-        "", description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$"
+        "", description="Base MAC address", pattern="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$|^$"
     )
     system_id: Optional[str] = Field("FTX0945W0MY", description="System ID")
     startup_config: Optional[str] = Field("ios_base_startup-config.txt", description="IOS startup configuration file")
     private_config: Optional[str] = Field("", description="IOS private configuration file")
-    idlepc: Optional[str] = Field("", description="Idle-PC value", regex="^(0x[0-9a-fA-F]+)?$|^$")
+    idlepc: Optional[str] = Field("", description="Idle-PC value", pattern="^(0x[0-9a-fA-F]+)?$|^$")
     idlemax: Optional[int] = Field(500, description="Idlemax value")
     idlesleep: Optional[int] = Field(30, description="Idlesleep value")
     disk0: Optional[int] = Field(0, description="Disk0 size in MB")

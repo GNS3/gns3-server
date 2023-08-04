@@ -49,7 +49,7 @@ class ComputesService:
         compute = await self._controller.add_compute(
             compute_id=str(db_compute.compute_id),
             connect=connect,
-            **compute_create.dict(exclude_unset=True, exclude={"compute_id"}),
+            **compute_create.model_dump(exclude_unset=True, exclude={"compute_id"}),
         )
         self._controller.notification.controller_emit("compute.created", compute.asdict())
         return db_compute
@@ -66,7 +66,7 @@ class ComputesService:
     ) -> models.Compute:
 
         compute = self._controller.get_compute(str(compute_id))
-        await compute.update(**compute_update.dict(exclude_unset=True))
+        await compute.update(**compute_update.model_dump(exclude_unset=True))
         db_compute = await self._computes_repo.update_compute(compute_id, compute_update)
         if not db_compute:
             raise ControllerNotFoundError(f"Compute '{compute_id}' not found")

@@ -45,7 +45,7 @@ router = APIRouter()
 @router.post("/projects/{project_id}/ports/udp", status_code=status.HTTP_201_CREATED)
 def allocate_udp_port(project_id: UUID) -> dict:
     """
-    Allocate an UDP port on the compute.
+    Allocate a UDP port on the compute.
     """
 
     pm = ProjectManager.instance()

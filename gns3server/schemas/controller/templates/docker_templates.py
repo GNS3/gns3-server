@@ -44,7 +44,7 @@ class DockerTemplate(TemplateBase):
         description="Path of the web interface",
     )
     console_resolution: Optional[str] = Field(
-        "1024x768", regex="^[0-9]+x[0-9]+$", description="Console resolution for VNC"
+        "1024x768", pattern="^[0-9]+x[0-9]+$", description="Console resolution for VNC"
     )
     extra_hosts: Optional[str] = Field("", description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List] = Field([], description="Additional directories to make persistent")
