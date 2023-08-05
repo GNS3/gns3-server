@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
 import json
 import uuid
 import asyncio
 import aiohttp
 import shutil
+import ssl
 
 try:
     import importlib_resources
@@ -32,6 +32,7 @@ except ImportError:
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
+from ..utils.cacert import get_cacert
 
 import logging
 log = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class ApplianceManager:
 
         self._appliances = {}
         self._appliances_etag = None
+        self._sslcontext = ssl.create_default_context(cafile=get_cacert())
 
     @property
     def appliances_etag(self):
@@ -174,7 +176,7 @@ class ApplianceManager:
 
         symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
         async with aiohttp.ClientSession() as session:
-            async with session.get(symbol_url) as response:
+            async with session.get(symbol_url, ssl=self._sslcontext) as response:
                 if response.status != 200:
                     log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
                 else:
@@ -200,7 +202,11 @@ class ApplianceManager:
                 log.info("Checking if appliances are up-to-date (ETag {})".format(self._appliances_etag))
                 headers["If-None-Match"] = self._appliances_etag
             async with aiohttp.ClientSession() as session:
-                async with session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
+                async with session.get(
+                        'https://api.github.com/repos/GNS3/gns3-registry/contents/appliances',
+                        ssl=self._sslcontext,
+                        headers=headers
+                ) as response:
                     if response.status == 304:
                         log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return
