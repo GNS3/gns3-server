@@ -16,12 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import json
 import uuid
 import asyncio
 import aiohttp
 import shutil
 import ssl
+import certifi
 
 try:
     import importlib_resources
@@ -47,7 +49,11 @@ class ApplianceManager:
 
         self._appliances = {}
         self._appliances_etag = None
-        self._sslcontext = ssl.create_default_context(cafile=get_cacert())
+        self._sslcontext = None
+        if hasattr(sys, "frozen"):
+            cacert = certifi.where()
+            self._sslcontext = ssl.create_default_context(cafile=cacert)
+            log.info("Use CA certificate '{}' for SSL connections".format(cacert))
 
     @property
     def appliances_etag(self):
