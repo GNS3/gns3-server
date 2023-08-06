@@ -34,7 +34,6 @@ except ImportError:
 from .appliance import Appliance
 from ..config import Config
 from ..utils.asyncio import locking
-from ..utils.cacert import get_cacert
 
 import logging
 log = logging.getLogger(__name__)
@@ -49,11 +48,11 @@ class ApplianceManager:
 
         self._appliances = {}
         self._appliances_etag = None
-        self._sslcontext = None
+        self._ssl_context = None
         if hasattr(sys, "frozen"):
             cacert = certifi.where()
-            self._sslcontext = ssl.create_default_context(cafile=cacert)
-            log.info("Use CA certificate '{}' for SSL connections".format(cacert))
+            self._ssl_context = ssl.create_default_context(cafile=cacert)
+            log.info("Using certificate authority (CA) bundle: {}".format(cacert))
 
     @property
     def appliances_etag(self):
@@ -182,7 +181,7 @@ class ApplianceManager:
 
         symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
         async with aiohttp.ClientSession() as session:
-            async with session.get(symbol_url, ssl=self._sslcontext) as response:
+            async with session.get(symbol_url, ssl=self._ssl_context) as response:
                 if response.status != 200:
                     log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
                 else:
@@ -210,7 +209,7 @@ class ApplianceManager:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                         'https://api.github.com/repos/GNS3/gns3-registry/contents/appliances',
-                        ssl=self._sslcontext,
+                        ssl=self._ssl_context,
                         headers=headers
                 ) as response:
                     if response.status == 304:
