@@ -16,14 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import json
 import uuid
 import asyncio
 import aiohttp
 import shutil
-import ssl
-import certifi
+
 
 try:
     import importlib_resources
@@ -48,11 +46,6 @@ class ApplianceManager:
 
         self._appliances = {}
         self._appliances_etag = None
-        self._ssl_context = None
-        if hasattr(sys, "frozen"):
-            cacert = certifi.where()
-            self._ssl_context = ssl.create_default_context(cafile=cacert)
-            log.info("Using certificate authority (CA) bundle: {}".format(cacert))
 
     @property
     def appliances_etag(self):
@@ -181,7 +174,7 @@ class ApplianceManager:
 
         symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
         async with aiohttp.ClientSession() as session:
-            async with session.get(symbol_url, ssl=self._ssl_context) as response:
+            async with session.get(symbol_url) as response:
                 if response.status != 200:
                     log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
                 else:
@@ -209,7 +202,6 @@ class ApplianceManager:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                         'https://api.github.com/repos/GNS3/gns3-registry/contents/appliances',
-                        ssl=self._ssl_context,
                         headers=headers
                 ) as response:
                     if response.status == 304:

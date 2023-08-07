@@ -28,16 +28,22 @@ import locale
 import argparse
 import psutil
 
+import logging
+log = logging.getLogger(__name__)
+
+
+try:
+    import truststore
+    truststore.inject_into_ssl()
+    log.info("Using system certificate store for SSL connections")
+except ImportError:
+    pass
 
 from gns3server.web.web_server import WebServer
 from gns3server.web.logger import init_logger
 from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
-
-
-import logging
-log = logging.getLogger(__name__)
 
 
 def locale_check():
