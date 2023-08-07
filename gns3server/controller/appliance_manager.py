@@ -21,7 +21,7 @@ import uuid
 import asyncio
 import aiohttp
 import shutil
-
+import ssl
 
 try:
     import importlib_resources
@@ -37,14 +37,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-try:
-    import truststore
-    truststore.inject_into_ssl()
-    log.info("Using system certificate store for SSL connections")
-except ImportError:
-    pass
-
-
 class ApplianceManager:
     """
     Manages appliances
@@ -54,6 +46,13 @@ class ApplianceManager:
 
         self._appliances = {}
         self._appliances_etag = None
+        self._ssl_context = None
+        try:
+            import truststore
+            self._ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            log.info("Using system certificate store for SSL connections")
+        except ImportError:
+            pass
 
     @property
     def appliances_etag(self):
@@ -182,7 +181,7 @@ class ApplianceManager:
 
         symbol_url = "https://raw.githubusercontent.com/GNS3/gns3-registry/master/symbols/{}".format(symbol)
         async with aiohttp.ClientSession() as session:
-            async with session.get(symbol_url) as response:
+            async with session.get(symbol_url, ssl=self._ssl_context) as response:
                 if response.status != 200:
                     log.warning("Could not retrieve appliance symbol {} from GitHub due to HTTP error code {}".format(symbol, response.status))
                 else:
@@ -210,6 +209,7 @@ class ApplianceManager:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                         'https://api.github.com/repos/GNS3/gns3-registry/contents/appliances',
+                        ssl=self._ssl_context,
                         headers=headers
                 ) as response:
                     if response.status == 304:
