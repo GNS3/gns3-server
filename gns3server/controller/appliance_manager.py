@@ -37,6 +37,14 @@ import logging
 log = logging.getLogger(__name__)
 
 
+try:
+    import truststore
+    truststore.inject_into_ssl()
+    log.info("Using system certificate store for SSL connections")
+except ImportError:
+    pass
+
+
 class ApplianceManager:
     """
     Manages appliances
