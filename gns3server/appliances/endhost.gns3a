@@ -1,0 +1,17 @@
+{
+    "appliance_id": "f59a5cf6-baaa-45a6-9685-989a2c3f3f4a",
+    "name": "endhost",
+    "category": "guest",
+    "description": "General purpose alpine-based endhost",
+    "vendor_name": "endhost",
+    "vendor_url": "https://www.alpinelinux.org",
+    "product_name": "endhost",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/endhost:latest"
+    }
+}

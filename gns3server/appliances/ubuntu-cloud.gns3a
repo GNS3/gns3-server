@@ -27,8 +27,16 @@
     },
     "images": [
         {
+            "filename": "ubuntu-23.04-server-cloudimg-arm64.img",
+            "version": "Ubuntu 23.04 (Lunar Lobster)",
+            "md5sum": "35fa3b31b65717af6f0520a769aac8c0",
+            "filesize": 786432000,
+            "download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/",
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/ubuntu-23.04-server-cloudimg-arm64.img"
+        },
+        {
             "filename": "ubuntu-22.04-server-cloudimg-amd64.img",
-            "version": "22.04 (LTS)",
+            "version": "Ubuntu 22.04 LTS (Jammy Jellyfish)",
             "md5sum": "3ce0b84f9592482fb645e8253b979827",
             "filesize": 686096384,
             "download_url": "https://cloud-images.ubuntu.com/releases/jammy/release",
@@ -36,7 +44,7 @@
         },
         {
             "filename": "ubuntu-20.04-server-cloudimg-amd64.img",
-            "version": "20.04 (LTS)",
+            "version": "Ubuntu 20.04 LTS (Focal Fossa)",
             "md5sum": "044bc979b2238192ee3edb44e2bb6405",
             "filesize": 552337408,
             "download_url": "https://cloud-images.ubuntu.com/releases/focal/release-20210119.1/",
@@ -44,7 +52,7 @@
         },
         {
             "filename": "ubuntu-18.04-server-cloudimg-amd64.img",
-            "version": "18.04 (LTS)",
+            "version": "Ubuntu 18.04 LTS (Bionic Beaver)",
             "md5sum": "f4134e7fa16d7fa766c7467cbe25c949",
             "filesize": 336134144,
             "download_url": "https://cloud-images.ubuntu.com/releases/18.04/release-20180426.2/",
@@ -61,21 +69,28 @@
     ],
     "versions": [
         {
-            "name": "22.04 (LTS)",
+            "name": "Ubuntu 23.04 (Lunar Lobster)",
+            "images": {
+                "hda_disk_image": "ubuntu-23.04-server-cloudimg-arm64.img",
+                "cdrom_image": "ubuntu-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "Ubuntu 22.04 LTS (Jammy Jellyfish)",
             "images": {
                 "hda_disk_image": "ubuntu-22.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },
         {
-            "name": "20.04 (LTS)",
+            "name": "Ubuntu 20.04 LTS (Focal Fossa)",
             "images": {
                 "hda_disk_image": "ubuntu-20.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },
         {
-            "name": "18.04 (LTS)",
+            "name": "Ubuntu 18.04 LTS (Bionic Beaver)",
             "images": {
                 "hda_disk_image": "ubuntu-18.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
