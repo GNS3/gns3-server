@@ -1,0 +1,18 @@
+{
+    "appliance_id": "79df483d-8cc9-48de-85ea-e6cb45b93e2a",
+    "name": "haproxy",
+    "category": "guest",
+    "description": "haproxy alpine container",
+    "vendor_name": "haproxy",
+    "vendor_url": "https://www.haproxy.org",
+    "product_name": "haproxy",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "GNS3 Team",
+    "maintainer_email": "developers@gns3.net",
+    "usage": "Modify /etc/haproxy/haproxy.cfg to suit your needs.",
+    "docker": {
+        "adapters": 1,
+        "image": "gns3/haproxy:latest"
+    }
+}

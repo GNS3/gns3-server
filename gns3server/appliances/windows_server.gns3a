@@ -28,6 +28,13 @@
     },
     "images": [
         {
+            "filename": "SERVER_EVAL_x64FRE_en-us.iso",
+            "version": "2022",
+            "md5sum": "e7908933449613edc97e1b11180429d1",
+            "filesize": 5044094976,
+            "download_url": "https://www.microsoft.com/en-gb/evalcenter/evaluate-windows-server-2022"
+        },
+        {
             "filename": "Win2k16_14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO",
             "version": "2016",
             "md5sum": "70721288bbcdfe3239d8f8c0fae55f1f",
@@ -51,6 +58,13 @@
         }
     ],
     "versions": [
+         {
+            "name": "2022",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "SERVER_EVAL_x64FRE_en-us.iso"
+            }
+        },
         {
             "name": "2016",
             "images": {

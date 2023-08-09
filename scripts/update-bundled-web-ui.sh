@@ -72,7 +72,7 @@ if [ "$CUSTOM_REPO" = false ] ; then
     else
       cd "$REPO_DIR"
 
-      git checkout master
+      git checkout 2.2
       git fetch --tags
       git pull
 
@@ -96,3 +96,8 @@ yarn ng build --source-map=false --configuration=production --base-href /static/
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 cd "$GNS3SERVER_DIR"
+git add gns3server/static/web-ui/*
+if [[ -n "$TAG" ]]
+then
+  git commit -m "Bundle web-ui ${TAG}"
+fi

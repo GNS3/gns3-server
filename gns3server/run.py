@@ -35,7 +35,6 @@ from gns3server.version import __version__
 from gns3server.config import Config
 from gns3server.crash_report import CrashReport
 
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -242,6 +241,13 @@ def run():
 
     user_log.info("Running with Python {major}.{minor}.{micro} and has PID {pid}".format(major=sys.version_info[0], minor=sys.version_info[1],
                                                                                          micro=sys.version_info[2], pid=os.getpid()))
+
+    try:
+        import truststore
+        truststore.inject_into_ssl()
+        log.info("Using system certificate store for SSL connections")
+    except ImportError:
+        pass
 
     # check for the correct locale (UNIX/Linux only)
     locale_check()

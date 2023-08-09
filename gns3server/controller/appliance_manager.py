@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
 import json
 import uuid
 import asyncio
 import aiohttp
 import shutil
+
 
 try:
     import importlib_resources
@@ -200,7 +200,10 @@ class ApplianceManager:
                 log.info("Checking if appliances are up-to-date (ETag {})".format(self._appliances_etag))
                 headers["If-None-Match"] = self._appliances_etag
             async with aiohttp.ClientSession() as session:
-                async with session.get('https://api.github.com/repos/GNS3/gns3-registry/contents/appliances', headers=headers) as response:
+                async with session.get(
+                        'https://api.github.com/repos/GNS3/gns3-registry/contents/appliances',
+                        headers=headers
+                ) as response:
                     if response.status == 304:
                         log.info("Appliances are already up-to-date (ETag {})".format(self._appliances_etag))
                         return

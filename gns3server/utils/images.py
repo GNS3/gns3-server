@@ -20,7 +20,7 @@ import hashlib
 
 from ..config import Config
 from . import force_unix_path
-
+from io import DEFAULT_BUFFER_SIZE
 
 import logging
 log = logging.getLogger(__name__)
@@ -167,12 +167,13 @@ def md5sum(path, stopped_event=None):
 
     try:
         m = hashlib.md5()
+        log.debug("Calculating MD5 sum of `{}`".format(path))
         with open(path, 'rb') as f:
             while True:
                 if stopped_event is not None and stopped_event.is_set():
                     log.error("MD5 sum calculation of `{}` has stopped due to cancellation".format(path))
                     return
-                buf = f.read(128)
+                buf = f.read(DEFAULT_BUFFER_SIZE)
                 if not buf:
                     break
                 m.update(buf)

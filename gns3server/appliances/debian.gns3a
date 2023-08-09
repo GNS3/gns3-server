@@ -24,12 +24,12 @@
     },
     "images": [
         {
-            "filename": "debian-12-genericcloud-amd64-20230612-1409.qcow2",
-            "version": "12.0",
-            "md5sum": "524cf33a1284d6e3363bd4d843756386",
+            "filename": "debian-12-genericcloud-amd64-20230723-1450.qcow2",
+            "version": "12.1",
+            "md5sum": "6d1efcaa206de01eeeb590d773421c5c",
             "filesize": 280166400,
             "download_url": "https://cloud.debian.org/images/cloud/bookworm/",
-            "direct_download_url": "https://cloud.debian.org/images/cloud/bookworm/20230612-1409/debian-12-genericcloud-amd64-20230612-1409.qcow2"
+            "direct_download_url": "https://cloud.debian.org/images/cloud/bookworm/20230723-1450/debian-12-genericcloud-amd64-20230723-1450.qcow2"
         },
         {
             "filename": "debian-11-genericcloud-amd64-20230601-1398.qcow2",
@@ -58,9 +58,9 @@
     ],
     "versions": [
         {
-            "name": "12.0",
+            "name": "12.1",
             "images": {
-                "hda_disk_image": "debian-12-genericcloud-amd64-20230612-1409.qcow2",
+                "hda_disk_image": "debian-12-genericcloud-amd64-20230723-1450.qcow2",
                 "cdrom_image": "debian-cloud-init-data.iso"
             }
         },

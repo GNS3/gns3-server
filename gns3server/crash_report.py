@@ -29,11 +29,9 @@ import struct
 import platform
 import locale
 import distro
-import urllib3
 
 from .version import __version__, __version_info__
 from .config import Config
-from .utils.get_resource import get_resource
 
 import logging
 log = logging.getLogger(__name__)
@@ -59,7 +57,7 @@ class CrashReport:
     Report crash to a third party service
     """
 
-    DSN = "https://e27fbedc2e824ceb9f8d8508c5d37507@o19455.ingest.sentry.io/38482"
+    DSN = "https://226eee142b22cc399d1566b3dd4cbc86@o19455.ingest.sentry.io/38482"
     _instance = None
 
     def __init__(self):
@@ -72,24 +70,14 @@ class CrashReport:
         sentry_uncaught.disabled = True
 
         if SENTRY_SDK_AVAILABLE:
-            cacert = None
-            if hasattr(sys, "frozen"):
-                cacert_resource = get_resource("cacert.pem")
-                if cacert_resource is not None and os.path.isfile(cacert_resource):
-                    cacert = cacert_resource
-                else:
-                    log.error("The SSL certificate bundle file '{}' could not be found".format(cacert_resource))
-
             # Don't send log records as events.
             sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
-
             try:
                 sentry_sdk.init(dsn=CrashReport.DSN,
                                 release=__version__,
-                                ca_certs=cacert,
                                 default_integrations=False,
                                 integrations=[sentry_logging])
-            except urllib3.exceptions.HTTPError as e:
+            except Exception as e:
                 log.error("Crash report could not be sent: {}".format(e))
                 return
 

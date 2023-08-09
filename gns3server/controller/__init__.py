@@ -251,7 +251,9 @@ class Controller:
             self._iou_license_settings = controller_settings["iou_license"]
 
         previous_version = controller_settings.get("version")
-        if not previous_version or parse_version(__version__) > parse_version(previous_version):
+        log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+        if not previous_version or \
+                parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
             self._appliance_manager.install_builtin_appliances()
 
         self._appliance_manager.appliances_etag = controller_settings.get("appliances_etag")
