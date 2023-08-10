@@ -23,10 +23,12 @@ import shutil
 from typing import List, AsyncGenerator
 from ..config import Config
 from . import force_unix_path
+from io import DEFAULT_BUFFER_SIZE
 
 import gns3server.db.models as models
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.asyncio import wait_run_in_executor
+
 
 import logging
 
@@ -253,7 +255,7 @@ def md5sum(path, working_dir=None, stopped_event=None, cache_to_md5file=True):
                 if stopped_event is not None and stopped_event.is_set():
                     log.error(f"MD5 sum calculation of `{path}` has stopped due to cancellation")
                     return
-                buf = f.read(1024)
+                buf = f.read(DEFAULT_BUFFER_SIZE)
                 if not buf:
                     break
                 m.update(buf)

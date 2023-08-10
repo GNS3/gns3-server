@@ -77,6 +77,9 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             except ValueError:
                 continue
             self._system_properties[name.strip()] = value.strip()
+        if "API Version" in self._system_properties:
+            # API version is not consistent between VirtualBox versions, the key is named "API Version" in VirtualBox 7
+            self._system_properties["API version"] = self._system_properties.pop("API Version")
 
     async def _check_requirements(self):
         """

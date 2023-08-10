@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.42 09/08/2023
+
+* Bundle web-ui v2.2.42
+* Handle API version key in VirtualBox 7. Fixes #2266
+* Enable system certificate store for SSL connections
+* Use DEFAULT_BUFFER_SIZE for md5sum
+* Fix version check when installing appliances. Ref https://github.com/GNS3/gns3-gui/issues/3486
+* Allow connection to ws console over IPv6. Fixes https://github.com/GNS3/gns3-web-ui/issues/1400
+* Support for Python 3.12
+* Remove import urllib3 and let sentry_sdk import and patch it. Fixes https://github.com/GNS3/gns3-gui/issues/3498
+
 ## 2.2.41 12/07/2023
 
 * Bundle web-ui v2.2.41
