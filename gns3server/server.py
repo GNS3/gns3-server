@@ -284,6 +284,13 @@ class Server:
             log.critical("The current working directory doesn't exist")
             return
 
+        try:
+            import truststore
+            truststore.inject_into_ssl()
+            log.info("Using system certificate store for SSL connections")
+        except ImportError:
+            pass
+
         CrashReport.instance()
         host = config.Server.host
         port = config.Server.port
