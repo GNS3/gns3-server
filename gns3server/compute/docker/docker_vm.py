@@ -523,7 +523,7 @@ class DockerVM(BaseNode):
 
     async def update(self):
         """
-        Destroy an recreate the container with the new settings
+        Destroy and recreate the container with the new settings
         """
 
         # We need to save the console and state and restore it
@@ -543,6 +543,9 @@ class DockerVM(BaseNode):
         """
         Starts this Docker container.
         """
+
+        # make sure busybox is installed
+        self.manager.install_busybox()
 
         try:
             state = await self._get_container_state()

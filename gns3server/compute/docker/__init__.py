@@ -18,11 +18,15 @@
 Docker server module.
 """
 
+import os
 import sys
 import json
 import asyncio
 import logging
 import aiohttp
+import shutil
+import subprocess
+
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
@@ -53,6 +57,25 @@ class Docker(BaseManager):
         self._connector = None
         self._session = None
         self._api_version = DOCKER_MINIMUM_API_VERSION
+
+    @staticmethod
+    def install_busybox():
+
+        if not sys.platform.startswith("linux"):
+            return
+        dst_busybox = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bin", "busybox")
+        if os.path.isfile(dst_busybox):
+            return
+        for busybox_exec in ("busybox-static", "busybox.static", "busybox"):
+            busybox_path = shutil.which(busybox_exec)
+            if busybox_path:
+                log.info(f"Installing busybox from '{busybox_path}'")
+                try:
+                    shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
+                    return
+                except OSError as e:
+                    raise DockerError(f"Could not install busybox: {e}")
+        raise DockerError("No busybox executable could be found")
 
     async def _check_connection(self):
 

@@ -85,7 +85,7 @@ cd gns3-server
 git checkout 3.0
 python3 -m venv venv-gns3server
 source venv-gns3server/bin/activate
-python3 setup.py install
+python3 -m pip install .
 python3 -m gns3server
 ```
 

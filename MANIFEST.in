@@ -1,11 +1,7 @@
 include README.md
-include AUTHORS
 include LICENSE
-include MANIFEST.in
-include requirements.txt
-include conf/*.conf
-recursive-include tests *
-recursive-exclude docs *
+include CHANGELOG
 recursive-include gns3server *
+recursive-exclude docs *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

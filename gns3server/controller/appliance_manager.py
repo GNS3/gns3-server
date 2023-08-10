@@ -22,11 +22,6 @@ import asyncio
 import aiofiles
 import shutil
 
-try:
-    import importlib_resources
-except ImportError:
-    from importlib import resources as importlib_resources
-
 
 from typing import Tuple, List
 from aiohttp.client_exceptions import ClientError
