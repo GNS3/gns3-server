@@ -167,8 +167,10 @@ class Server:
         config.Server.allow_remote_console = args.allow
         config.Server.host = args.host
         config.Server.port = args.port
-        config.Server.certfile = args.certfile
-        config.Server.certkey = args.certkey
+        if args.certfile:
+            config.Server.certfile = args.certfile
+        if args.certkey:
+            config.Server.certkey = args.certkey
         config.Server.enable_ssl = args.ssl
 
     def _signal_handling(self):

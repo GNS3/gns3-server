@@ -146,14 +146,12 @@ class ServerSettings(BaseModel):
     enable_builtin_templates: bool = True
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True, use_enum_values=True)
 
-
     @field_validator("additional_images_paths", mode="before")
     @classmethod
     def split_additional_images_paths(cls, v):
         if v:
             return v.split(";")
         return list()
-
 
     @field_validator("allowed_interfaces", mode="before")
     @classmethod
@@ -162,13 +160,11 @@ class ServerSettings(BaseModel):
             return v.split(",")
         return list()
 
-
     @model_validator(mode="after")
     def check_console_port_range(self) -> "ServerSettings":
         if self.console_end_port_range <= self.console_start_port_range:
             raise ValueError("console_end_port_range must be > console_start_port_range")
         return self
-
 
     @model_validator(mode="after")
     def check_vnc_port_range(self) -> "ServerSettings":
@@ -176,13 +172,12 @@ class ServerSettings(BaseModel):
             raise ValueError("vnc_console_end_port_range must be > vnc_console_start_port_range")
         return self
 
-
     @model_validator(mode="after")
     def check_enable_ssl(self) -> "ServerSettings":
         if self.enable_ssl is True:
-            if self.certfile is None:
+            if not self.certfile:
                 raise ValueError("SSL is enabled but certfile is not configured")
-            if self.certkey is None:
+            if not self.certkey:
                 raise ValueError("SSL is enabled but certkey is not configured")
         return self
 
