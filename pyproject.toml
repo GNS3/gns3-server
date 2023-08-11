@@ -7,7 +7,7 @@ name = "gns3-server"
 description = "GNS3 graphical interface for the GNS3 server."
 license = {file = "LICENSE"}
 authors = [
-  { name="Jeremy Grossmann" }
+  { name = "Jeremy Grossmann", email = "developers@gns3.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.7"
@@ -29,7 +29,7 @@ classifiers = [
         "Programming Language :: Python :: Implementation :: CPython"
 ]
 
-dynamic = ["version", "dependencies"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [tool.setuptools]
 packages = ["gns3server"]
@@ -38,15 +38,8 @@ packages = ["gns3server"]
 version = {attr = "gns3server.version.__version__"}
 dependencies = {file = "requirements.txt"}
 
-[project.optional-dependencies]
-test = [
-        "pytest==7.2.2",
-        "flake8==5.0.4",  # v5.0.4 is the last to support Python 3.7
-        "pytest-timeout==2.1.0",
-        "pytest-asyncio==0.20.3",
-        "requests==2.28.2",
-        "httpx==0.23.3"
-]
+[tool.setuptools.dynamic.optional-dependencies]
+dev = {file = ['dev-requirements.txt']}
 
 [project.urls]
 "Homepage" = "http://gns3.com"

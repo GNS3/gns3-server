@@ -77,7 +77,7 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
     if output is None:
         return ""
     # If we received garbage we ignore invalid characters
-    # it should happens only when user try to use another binary
+    # it should happen only when user try to use another binary
     # and the code of VPCS, dynamips... Will detect it's not the correct binary
     return output.decode("utf-8", errors="ignore")
 
