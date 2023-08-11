@@ -59,7 +59,7 @@ class Docker(BaseManager):
         self._api_version = DOCKER_MINIMUM_API_VERSION
 
     @staticmethod
-    def install_busybox():
+    async def install_busybox():
 
         if not sys.platform.startswith("linux"):
             return
@@ -69,10 +69,24 @@ class Docker(BaseManager):
         for busybox_exec in ("busybox-static", "busybox.static", "busybox"):
             busybox_path = shutil.which(busybox_exec)
             if busybox_path:
-                log.info(f"Installing busybox from '{busybox_path}'")
                 try:
-                    shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
-                    return
+                    # check that busybox is statically linked
+                    # (dynamically linked busybox will fail to run in a container)
+                    proc = await asyncio.create_subprocess_exec(
+                        "ldd",
+                        busybox_path,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL
+                    )
+                    stdout, _ = await proc.communicate()
+                    if proc.returncode == 1:
+                        # ldd returns 1 if the file is not a dynamic executable
+                        log.info(f"Installing busybox from '{busybox_path}' to '{dst_busybox}'")
+                        shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
+                        return
+                    else:
+                        log.warning(f"Busybox '{busybox_path}' is dynamically linked\n"
+                                    f"{stdout.decode('utf-8', errors='ignore').strip()}")
                 except OSError as e:
                     raise DockerError(f"Could not install busybox: {e}")
         raise DockerError("No busybox executable could be found")

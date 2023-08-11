@@ -545,7 +545,7 @@ class DockerVM(BaseNode):
         """
 
         # make sure busybox is installed
-        self.manager.install_busybox()
+        await self.manager.install_busybox()
 
         try:
             state = await self._get_container_state()
