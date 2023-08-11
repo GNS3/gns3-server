@@ -215,9 +215,9 @@ async def test_docker_check_connection_docker_preferred_version_against_older(vm
 @pytest.mark.asyncio
 async def test_install_busybox():
 
-    mock_process = MagicMock(spec=asyncio.subprocess.Process)
-    mock_process.communicate.return_value = (b"", b"not a dynamic executable")
-    mock_process.returncode = 1  # means that busybox is not dynamically linked
+    mock_process = MagicMock()
+    mock_process.returncode = 1 # means that busybox is not dynamically linked
+    mock_process.communicate = AsyncioMagicMock(return_value=(b"", b"not a dynamic executable"))
 
     with patch("os.path.isfile", return_value=False):
         with patch("shutil.which", return_value="/usr/bin/busybox"):
@@ -236,9 +236,9 @@ async def test_install_busybox():
 @pytest.mark.asyncio
 async def test_install_busybox_dynamic_linked():
 
-    mock_process = MagicMock(spec=asyncio.subprocess.Process)
-    mock_process.communicate.return_value = (b"Dynamically linked library", b"")
+    mock_process = MagicMock()
     mock_process.returncode = 0  # means that busybox is dynamically linked
+    mock_process.communicate = AsyncioMagicMock(return_value=(b"Dynamically linked library", b""))
 
     with patch("os.path.isfile", return_value=False):
         with patch("shutil.which", return_value="/usr/bin/busybox"):
