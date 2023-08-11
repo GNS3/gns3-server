@@ -41,7 +41,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user(self, user_id: UUID) -> Optional[models.User]:
         """
-        Get an user by its ID.
+        Get a user by its ID.
         """
 
         query = select(models.User).where(models.User.user_id == user_id)
@@ -50,7 +50,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_by_username(self, username: str) -> Optional[models.User]:
         """
-        Get an user by its name.
+        Get a user by its name.
         """
 
         query = select(models.User).where(models.User.username == username)
@@ -59,7 +59,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_by_email(self, email: str) -> Optional[models.User]:
         """
-        Get an user by its email.
+        Get a user by its email.
         """
 
         query = select(models.User).where(models.User.email == email)
@@ -94,7 +94,7 @@ class UsersRepository(BaseRepository):
 
     async def update_user(self, user_id: UUID, user_update: schemas.UserUpdate) -> Optional[models.User]:
         """
-        Update an user.
+        Update a user.
         """
 
         update_values = user_update.model_dump(exclude_unset=True)
@@ -115,7 +115,7 @@ class UsersRepository(BaseRepository):
 
     async def delete_user(self, user_id: UUID) -> bool:
         """
-        Delete an user.
+        Delete a user.
         """
 
         query = delete(models.User).where(models.User.user_id == user_id)
@@ -165,7 +165,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_group(self, user_group_id: UUID) -> Optional[models.UserGroup]:
         """
-        Get an user group by its ID.
+        Get a user group by its ID.
         """
 
         query = select(models.UserGroup).where(models.UserGroup.user_group_id == user_group_id)
@@ -174,7 +174,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_group_by_name(self, name: str) -> Optional[models.UserGroup]:
         """
-        Get an user group by its name.
+        Get a user group by its name.
         """
 
         query = select(models.UserGroup).where(models.UserGroup.name == name)
@@ -238,7 +238,7 @@ class UsersRepository(BaseRepository):
             user: models.User
     ) -> Union[None, models.UserGroup]:
         """
-        Add a member to an user group.
+        Add a member to a user group.
         """
 
         query = select(models.UserGroup).\
@@ -260,7 +260,7 @@ class UsersRepository(BaseRepository):
             user: models.User
     ) -> Union[None, models.UserGroup]:
         """
-        Remove a member from an user group.
+        Remove a member from a user group.
         """
 
         query = select(models.UserGroup).\
@@ -278,7 +278,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_group_members(self, user_group_id: UUID) -> List[models.User]:
         """
-        Get all members from an user group.
+        Get all members from a user group.
         """
 
         query = select(models.User).\
@@ -294,7 +294,7 @@ class UsersRepository(BaseRepository):
             role: models.Role
     ) -> Union[None, models.UserGroup]:
         """
-        Add a role to an user group.
+        Add a role to a user group.
         """
 
         query = select(models.UserGroup).\
@@ -316,7 +316,7 @@ class UsersRepository(BaseRepository):
             role: models.Role
     ) -> Union[None, models.UserGroup]:
         """
-        Remove a role from an user group.
+        Remove a role from a user group.
         """
 
         query = select(models.UserGroup).\
@@ -334,7 +334,7 @@ class UsersRepository(BaseRepository):
 
     async def get_user_group_roles(self, user_group_id: UUID) -> List[models.Role]:
         """
-        Get all roles from an user group.
+        Get all roles from a user group.
         """
 
         query = select(models.Role). \
