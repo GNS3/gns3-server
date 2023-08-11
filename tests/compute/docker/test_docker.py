@@ -221,7 +221,7 @@ async def test_install_busybox():
 
     with patch("os.path.isfile", return_value=False):
         with patch("shutil.which", return_value="/usr/bin/busybox"):
-            with patch("asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
                 with patch("shutil.copy2") as copy2_mock:
                     await Docker.install_busybox()
                     create_subprocess_mock.assert_called_with(
@@ -242,7 +242,7 @@ async def test_install_busybox_dynamic_linked():
 
     with patch("os.path.isfile", return_value=False):
         with patch("shutil.which", return_value="/usr/bin/busybox"):
-            with patch("asyncio.create_subprocess_exec", return_value=mock_process):
+            with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process):
                 with pytest.raises(DockerError) as e:
                     await Docker.install_busybox()
                 assert str(e.value) == "No busybox executable could be found"
