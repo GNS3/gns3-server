@@ -255,6 +255,8 @@ class Controller:
         if not previous_version or \
                 parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
             self._appliance_manager.install_builtin_appliances()
+        elif not os.listdir(self._appliance_manager.builtin_appliances_path()):
+            self._appliance_manager.install_builtin_appliances()
 
         self._appliance_manager.appliances_etag = controller_settings.get("appliances_etag")
         self._appliance_manager.load_appliances()
