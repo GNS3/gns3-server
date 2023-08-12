@@ -21,6 +21,7 @@ import uuid
 import asyncio
 import aiohttp
 import shutil
+import platformdirs
 
 
 try:
@@ -86,14 +87,8 @@ class ApplianceManager:
         Get the built-in appliance storage directory
         """
 
-        try:
-            import platformdirs
-            appname = vendor = "GNS3"
-            appliances_dir = os.path.join(platformdirs.user_data_dir(appname, vendor, roaming=True), "appliances")
-        except ImportError:
-            # platformdirs is not available on Python 3.6, use the old method
-            config = Config.instance()
-            appliances_dir = os.path.join(config.config_dir, "appliances")
+        appname = vendor = "GNS3"
+        appliances_dir = os.path.join(platformdirs.user_data_dir(appname, vendor, roaming=True), "appliances")
         if delete_first:
             shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
