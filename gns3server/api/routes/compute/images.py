@@ -34,7 +34,7 @@ router = APIRouter()
 
 
 @router.get("/docker/images")
-async def get_docker_images() -> List[str]:
+async def get_docker_images() -> List[dict]:
     """
     Get all Docker images.
     """

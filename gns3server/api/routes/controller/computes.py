@@ -18,8 +18,8 @@
 API routes for computes.
 """
 
-from fastapi import APIRouter, Depends, Response, status
-from typing import List, Union, Optional
+from fastapi import APIRouter, Depends, status
+from typing import Any, List, Union, Optional
 from uuid import UUID
 
 from gns3server.controller import Controller
@@ -157,7 +157,7 @@ async def dynamips_autoidlepc(compute_id: Union[str, UUID], auto_idle_pc: schema
 
 
 @router.get("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
-async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str) -> dict:
+async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path: str) -> Any:
     """
     Forward a GET request to a compute.
     Read the full compute API documentation for available routes.
@@ -169,7 +169,7 @@ async def forward_get(compute_id: Union[str, UUID], emulator: str, endpoint_path
 
 
 @router.post("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
-async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
+async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> Any:
     """
     Forward a POST request to a compute.
     Read the full compute API documentation for available routes.
@@ -180,7 +180,7 @@ async def forward_post(compute_id: Union[str, UUID], emulator: str, endpoint_pat
 
 
 @router.put("/{compute_id}/{emulator}/{endpoint_path:path}", deprecated=True)
-async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> dict:
+async def forward_put(compute_id: Union[str, UUID], emulator: str, endpoint_path: str, compute_data: dict) -> Any:
     """
     Forward a PUT request to a compute.
     Read the full compute API documentation for available routes.

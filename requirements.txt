@@ -1,5 +1,5 @@
 uvicorn==0.22.0  # v0.22.0 is the last to support Python 3.7
-fastapi==0.101.0
+fastapi==0.101.1
 python-multipart==0.0.6
 websockets==11.0.3
 aiohttp>=3.8.5,<3.9
