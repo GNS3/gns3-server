@@ -219,10 +219,10 @@ async def test_install_busybox():
     mock_process.returncode = 1 # means that busybox is not dynamically linked
     mock_process.communicate = AsyncioMagicMock(return_value=(b"", b"not a dynamic executable"))
 
-    with patch("os.path.isfile", return_value=False):
-        with patch("shutil.which", return_value="/usr/bin/busybox"):
-            with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
-                with patch("shutil.copy2") as copy2_mock:
+    with patch("gns3server.compute.docker.os.path.isfile", return_value=False):
+        with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
+            with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
+                with patch("gns3server.compute.docker.shutil.copy2") as copy2_mock:
                     await Docker.install_busybox()
                     create_subprocess_mock.assert_called_with(
                         "ldd",
@@ -241,8 +241,8 @@ async def test_install_busybox_dynamic_linked():
     mock_process.communicate = AsyncioMagicMock(return_value=(b"Dynamically linked library", b""))
 
     with patch("os.path.isfile", return_value=False):
-        with patch("shutil.which", return_value="/usr/bin/busybox"):
-            with asyncio_patch("asyncio.create_subprocess_exec", return_value=mock_process):
+        with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
+            with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process):
                 with pytest.raises(DockerError) as e:
                     await Docker.install_busybox()
                 assert str(e.value) == "No busybox executable could be found"
@@ -251,8 +251,8 @@ async def test_install_busybox_dynamic_linked():
 @pytest.mark.asyncio
 async def test_install_busybox_no_executables():
 
-    with patch("os.path.isfile", return_value=False):
-        with patch("shutil.which", return_value=None):
+    with patch("gns3server.compute.docker.os.path.isfile", return_value=False):
+        with patch("gns3server.compute.docker.shutil.which", return_value=None):
             with pytest.raises(DockerError) as e:
                 await Docker.install_busybox()
             assert str(e.value) == "No busybox executable could be found"

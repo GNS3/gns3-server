@@ -21,6 +21,8 @@ import pytest
 import pytest_asyncio
 import uuid
 import os
+
+from unittest.mock import patch
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
@@ -1072,8 +1074,9 @@ async def test_start(vm, manager, free_console_port):
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     await vm.adapter_add_nio_binding(0, nio)
 
-    with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-        await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+            await vm.start()
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     vm._add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -1092,15 +1095,16 @@ async def test_start_namespace_failed(vm, manager, free_console_port):
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     await vm.adapter_add_nio_binding(0, nio)
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
-        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
-                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42) as mock_namespace:
-                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection", side_effect=UbridgeNamespaceError()) as mock_add_ubridge_connection:
-                        with asyncio_patch("gns3server.compute.docker.DockerVM._get_log", return_value='Hello not available') as mock_log:
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+            with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+                with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42) as mock_namespace:
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection", side_effect=UbridgeNamespaceError()) as mock_add_ubridge_connection:
+                            with asyncio_patch("gns3server.compute.docker.DockerVM._get_log", return_value='Hello not available') as mock_log:
 
-                            with pytest.raises(DockerError):
-                                await vm.start()
+                                with pytest.raises(DockerError):
+                                    await vm.start()
 
     mock_query.assert_any_call("POST", "containers/e90e34656842/start")
     mock_add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -1117,13 +1121,14 @@ async def test_start_without_nio(vm):
     assert vm.status != "started"
     vm.adapters = 1
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
-        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
-                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
-                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
-                        with asyncio_patch("gns3server.compute.docker.DockerVM._start_console") as mock_start_console:
-                            await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+            with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+                with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
+                            with asyncio_patch("gns3server.compute.docker.DockerVM._start_console") as mock_start_console:
+                                await vm.start()
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     assert mock_add_ubridge_connection.called
@@ -1135,9 +1140,10 @@ async def test_start_without_nio(vm):
 @pytest.mark.asyncio
 async def test_start_unpause(vm):
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
-        with asyncio_patch("gns3server.compute.docker.DockerVM.unpause", return_value="paused") as mock:
-            await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
+            with asyncio_patch("gns3server.compute.docker.DockerVM.unpause", return_value="paused") as mock:
+                await vm.start()
     assert mock.called
     assert vm.status == "started"
 
