@@ -73,6 +73,7 @@ async def vm(compute_project, manager, fake_qemu_binary, fake_qemu_img_binary):
     manager.port_manager.console_host = "127.0.0.1"
     vm = QemuVM("test", "00010203-0405-0607-0809-0a0b0c0d0e0f", compute_project, manager, qemu_path=fake_qemu_binary)
     vm._process_priority = "normal"  # Avoid complexity for Windows tests
+    vm._replicate_network_connection_state = False  # to avoid delay when starting/stopping the VM
     vm._start_ubridge = AsyncioMagicMock()
     vm._ubridge_hypervisor = MagicMock()
     vm._ubridge_hypervisor.is_running.return_value = True
