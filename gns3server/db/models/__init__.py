@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .base import Base
+from .acl import ACL
+from .resources import Resource
 from .users import User, UserGroup
 from .roles import Role
 from .permissions import Permission

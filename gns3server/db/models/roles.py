@@ -19,14 +19,14 @@ from sqlalchemy import Table, Column, String, Boolean, ForeignKey, event
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
-from .permissions import permission_role_link
+from .permissions import permission_role_map
 
 import logging
 
 log = logging.getLogger(__name__)
 
-role_group_link = Table(
-    "roles_groups_link",
+role_group_map = Table(
+    "role_group_map",
     Base.metadata,
     Column("role_id", GUID, ForeignKey("roles.role_id", ondelete="CASCADE")),
     Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"))
@@ -41,8 +41,9 @@ class Role(BaseTable):
     name = Column(String, unique=True, index=True)
     description = Column(String)
     is_builtin = Column(Boolean, default=False)
-    permissions = relationship("Permission", secondary=permission_role_link, back_populates="roles")
-    groups = relationship("UserGroup", secondary=role_group_link, back_populates="roles")
+    permissions = relationship("Permission", secondary=permission_role_map, back_populates="roles")
+    groups = relationship("UserGroup", secondary=role_group_map, back_populates="roles")
+    acl_entries = relationship("ACL")
 
 
 @event.listens_for(Role.__table__, 'after_create')
@@ -59,7 +60,7 @@ def create_default_roles(target, connection, **kw):
     log.debug("The default roles have been created in the database")
 
 
-@event.listens_for(role_group_link, 'after_create')
+@event.listens_for(role_group_map, 'after_create')
 def add_admin_to_group(target, connection, **kw):
 
     from .users import UserGroup

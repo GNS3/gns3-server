@@ -19,7 +19,7 @@ from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, eve
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
-from .roles import role_group_link
+from .roles import role_group_map
 
 from gns3server.config import Config
 from gns3server.services import auth_service
@@ -28,8 +28,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
-user_group_link = Table(
-    "users_groups_link",
+user_group_map = Table(
+    "user_group_map",
     Base.metadata,
     Column("user_id", GUID, ForeignKey("users.user_id", ondelete="CASCADE")),
     Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"))
@@ -48,8 +48,10 @@ class User(BaseTable):
     last_login = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
-    groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")
+    groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
+    resources = relationship("Resource")
     permissions = relationship("Permission")
+    acl_entries = relationship("ACL")
 
 
 @event.listens_for(User.__table__, 'after_create')
@@ -77,8 +79,9 @@ class UserGroup(BaseTable):
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
-    users = relationship("User", secondary=user_group_link, back_populates="groups")
-    roles = relationship("Role", secondary=role_group_link, back_populates="groups")
+    users = relationship("User", secondary=user_group_map, back_populates="groups")
+    roles = relationship("Role", secondary=role_group_map, back_populates="groups")
+    acl_entries = relationship("ACL")
 
 
 @event.listens_for(UserGroup.__table__, 'after_create')

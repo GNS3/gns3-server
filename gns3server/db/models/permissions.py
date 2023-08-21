@@ -25,8 +25,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-permission_role_link = Table(
-    "permissions_roles_link",
+permission_role_map = Table(
+    "permission_role_map",
     Base.metadata,
     Column("permission_id", GUID, ForeignKey("permissions.permission_id", ondelete="CASCADE")),
     Column("role_id", GUID, ForeignKey("roles.role_id", ondelete="CASCADE"))
@@ -44,7 +44,8 @@ class Permission(BaseTable):
     path = Column(String)
     action = Column(String)
     user_id = Column(GUID, ForeignKey('users.user_id', ondelete="CASCADE"))
-    roles = relationship("Role", secondary=permission_role_link, back_populates="permissions")
+    user = relationship("User", back_populates="permissions")
+    roles = relationship("Role", secondary=permission_role_map, back_populates="permissions")
 
 
 @event.listens_for(Permission.__table__, 'after_create')
@@ -95,7 +96,7 @@ def create_default_roles(target, connection, **kw):
     log.debug("The default permissions have been created in the database")
 
 
-@event.listens_for(permission_role_link, 'after_create')
+@event.listens_for(permission_role_map, 'after_create')
 def add_permissions_to_role(target, connection, **kw):
 
     from .roles import Role
