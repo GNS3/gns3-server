@@ -362,32 +362,32 @@ class RbacRepository(BaseRepository):
 
         return True
 
-        query = select(models.Permission).\
-            join(models.Permission.roles).\
-            join(models.Role.groups).\
-            join(models.UserGroup.users).\
-            filter(models.User.user_id == user_id).\
-            order_by(models.Permission.path.desc())
-
-        result = await self._db_session.execute(query)
-        permissions = result.scalars().all()
-        log.debug(f"RBAC: checking authorization for user '{user_id}' on {method} '{path}'")
-        matched_permission = self._match_permission(permissions, method, path)
-        if matched_permission:
-            log.debug(f"RBAC: matched role permission {matched_permission.methods} "
-                      f"{matched_permission.path} {matched_permission.action}")
-            if matched_permission.action == "DENY":
-                return False
-            return True
-
-        log.debug(f"RBAC: could not find a role permission, checking user permissions...")
-        permissions = await self.get_user_permissions(user_id)
-        matched_permission = self._match_permission(permissions, method, path)
-        if matched_permission:
-            log.debug(f"RBAC: matched user permission {matched_permission.methods} "
-                      f"{matched_permission.path} {matched_permission.action}")
-            if matched_permission.action == "DENY":
-                return False
-            return True
-
-        return False
+        # query = select(models.Permission).\
+        #     join(models.Permission.roles).\
+        #     join(models.Role.groups).\
+        #     join(models.UserGroup.users).\
+        #     filter(models.User.user_id == user_id).\
+        #     order_by(models.Permission.path.desc())
+        #
+        # result = await self._db_session.execute(query)
+        # permissions = result.scalars().all()
+        # log.debug(f"RBAC: checking authorization for user '{user_id}' on {method} '{path}'")
+        # matched_permission = self._match_permission(permissions, method, path)
+        # if matched_permission:
+        #     log.debug(f"RBAC: matched role permission {matched_permission.methods} "
+        #               f"{matched_permission.path} {matched_permission.action}")
+        #     if matched_permission.action == "DENY":
+        #         return False
+        #     return True
+        #
+        # log.debug(f"RBAC: could not find a role permission, checking user permissions...")
+        # permissions = await self.get_user_permissions(user_id)
+        # matched_permission = self._match_permission(permissions, method, path)
+        # if matched_permission:
+        #     log.debug(f"RBAC: matched user permission {matched_permission.methods} "
+        #               f"{matched_permission.path} {matched_permission.action}")
+        #     if matched_permission.action == "DENY":
+        #         return False
+        #     return True
+        #
+        # return False
