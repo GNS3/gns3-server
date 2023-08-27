@@ -123,57 +123,57 @@ async def delete_role(
         raise ControllerError(f"Role '{role_id}' could not be deleted")
 
 
-@router.get("/{role_id}/permissions", response_model=List[schemas.Permission])
-async def get_role_permissions(
+@router.get("/{role_id}/privileges", response_model=List[schemas.Privilege])
+async def get_role_privileges(
         role_id: UUID,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> List[schemas.Permission]:
+) -> List[schemas.Privilege]:
     """
-    Get all role permissions.
+    Get all role privileges.
     """
 
-    return await rbac_repo.get_role_permissions(role_id)
+    return await rbac_repo.get_role_privileges(role_id)
 
 
 @router.put(
-    "/{role_id}/permissions/{permission_id}",
+    "/{role_id}/privileges/{privilege_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def add_permission_to_role(
+async def add_privilege_to_role(
         role_id: UUID,
-        permission_id: UUID,
+        privilege_id: UUID,
         rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> None:
     """
-    Add a permission to a role.
+    Add a privilege to a role.
     """
 
-    permission = await rbac_repo.get_permission(permission_id)
-    if not permission:
-        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
+    privilege = await rbac_repo.get_privilege(privilege_id)
+    if not privilege:
+        raise ControllerNotFoundError(f"Privilege '{privilege_id}' not found")
 
-    role = await rbac_repo.add_permission_to_role(role_id, permission)
+    role = await rbac_repo.add_privilege_to_role(role_id, privilege)
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")
 
 
 @router.delete(
-    "/{role_id}/permissions/{permission_id}",
+    "/{role_id}/privileges/{privilege_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def remove_permission_from_role(
+async def remove_privilege_from_role(
     role_id: UUID,
-    permission_id: UUID,
+    privilege_id: UUID,
     rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
-    Remove member from an user group.
+    Remove privilege from a role.
     """
 
-    permission = await rbac_repo.get_permission(permission_id)
-    if not permission:
-        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
+    privilege = await rbac_repo.get_privilege(privilege_id)
+    if not privilege:
+        raise ControllerNotFoundError(f"Privilege '{privilege_id}' not found")
 
-    role = await rbac_repo.remove_permission_from_role(role_id, permission)
+    role = await rbac_repo.remove_privilege_from_role(role_id, privilege)
     if not role:
         raise ControllerNotFoundError(f"Role '{role_id}' not found")

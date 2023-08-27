@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sqlalchemy import Column, Boolean, ForeignKey
+from sqlalchemy import Column, String, Boolean, ForeignKey, CheckConstraint
 from sqlalchemy.orm import relationship
 
 from .base import BaseTable, generate_uuid, GUID
@@ -25,17 +25,22 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class ACL(BaseTable):
+class ACE(BaseTable):
 
     __tablename__ = "acl"
 
-    acl_id = Column(GUID, primary_key=True, default=generate_uuid)
+    ace_id = Column(GUID, primary_key=True, default=generate_uuid)
+    path = Column(String)
+    propagate = Column(Boolean, default=True)
     allowed = Column(Boolean, default=True)
+    type: str = Column(String)
     user_id = Column(GUID, ForeignKey('users.user_id', ondelete="CASCADE"))
     user = relationship("User", back_populates="acl_entries")
     group_id = Column(GUID, ForeignKey('user_groups.user_group_id', ondelete="CASCADE"))
     group = relationship("UserGroup", back_populates="acl_entries")
-    resource_id = Column(GUID, ForeignKey('resources.resource_id', ondelete="CASCADE"))
-    resource = relationship("Resource", back_populates="acl_entries")
     role_id = Column(GUID, ForeignKey('roles.role_id', ondelete="CASCADE"))
     role = relationship("Role", back_populates="acl_entries")
+
+    __table_args__ = (
+        CheckConstraint("(user_id IS NOT NULL AND type = 'user') OR (group_id IS NOT NULL AND type = 'group')"),
+    )

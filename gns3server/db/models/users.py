@@ -19,7 +19,6 @@ from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, eve
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
-from .roles import role_group_map
 
 from gns3server.config import Config
 from gns3server.services import auth_service
@@ -49,9 +48,7 @@ class User(BaseTable):
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
     groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
-    resources = relationship("Resource")
-    permissions = relationship("Permission")
-    acl_entries = relationship("ACL")
+    acl_entries = relationship("ACE")
 
 
 @event.listens_for(User.__table__, 'after_create')
@@ -80,8 +77,7 @@ class UserGroup(BaseTable):
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
     users = relationship("User", secondary=user_group_map, back_populates="groups")
-    roles = relationship("Role", secondary=role_group_map, back_populates="groups")
-    acl_entries = relationship("ACL")
+    acl_entries = relationship("ACE")
 
 
 @event.listens_for(UserGroup.__table__, 'after_create')
@@ -96,21 +92,3 @@ def create_default_user_groups(target, connection, **kw):
     connection.execute(stmt)
     connection.commit()
     log.debug("The default user groups have been created in the database")
-
-
-# @event.listens_for(user_group_link, 'after_create')
-# def add_admin_to_group(target, connection, **kw):
-#
-#     user_groups_table = UserGroup.__table__
-#     stmt = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
-#     result = connection.execute(stmt)
-#     user_group_id = result.first().user_group_id
-#
-#     users_table = User.__table__
-#     stmt = users_table.select().where(users_table.c.is_superadmin.is_(True))
-#     result = connection.execute(stmt)
-#     user_id = result.first().user_id
-#
-#     stmt = target.insert().values(user_id=user_id, user_group_id=user_group_id)
-#     connection.execute(stmt)
-#     connection.commit()

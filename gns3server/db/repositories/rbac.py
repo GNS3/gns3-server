@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2020 GNS3 Technologies Inc.
+# Copyright (C) 2023 GNS3 Technologies Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ from sqlalchemy.orm import selectinload
 from .base import BaseRepository
 
 import gns3server.db.models as models
-from gns3server.schemas.controller.rbac import HTTPMethods, PermissionAction
 from gns3server import schemas
 
 import logging
@@ -44,7 +43,7 @@ class RbacRepository(BaseRepository):
         """
 
         query = select(models.Role).\
-            options(selectinload(models.Role.permissions)).\
+            options(selectinload(models.Role.privileges)).\
             where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         return result.scalars().first()
@@ -55,9 +54,8 @@ class RbacRepository(BaseRepository):
         """
 
         query = select(models.Role).\
-            options(selectinload(models.Role.permissions)).\
+            options(selectinload(models.Role.privileges)).\
             where(models.Role.name == name)
-        #query = select(models.Role).where(models.Role.name == name)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
@@ -66,7 +64,7 @@ class RbacRepository(BaseRepository):
         Get all roles.
         """
 
-        query = select(models.Role).options(selectinload(models.Role.permissions))
+        query = select(models.Role).options(selectinload(models.Role.privileges))
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
@@ -81,7 +79,6 @@ class RbacRepository(BaseRepository):
         )
         self._db_session.add(db_role)
         await self._db_session.commit()
-        #await self._db_session.refresh(db_role)
         return await self.get_role(db_role.role_id)
 
     async def update_role(
@@ -115,285 +112,255 @@ class RbacRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
-    async def add_permission_to_role(
+    async def add_privilege_to_role(
             self,
             role_id: UUID,
-            permission: models.Permission
+            privilege: models.Privilege
     ) -> Union[None, models.Role]:
         """
-        Add a permission to a role.
+        Add a privilege to a role.
         """
 
         query = select(models.Role).\
-            options(selectinload(models.Role.permissions)).\
+            options(selectinload(models.Role.privileges)).\
             where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         role_db = result.scalars().first()
         if not role_db:
             return None
 
-        role_db.permissions.append(permission)
+        role_db.privileges.append(privilege)
         await self._db_session.commit()
         await self._db_session.refresh(role_db)
         return role_db
 
-    async def remove_permission_from_role(
+    async def remove_privilege_from_role(
             self,
             role_id: UUID,
-            permission: models.Permission
+            privilege: models.Privilege
     ) -> Union[None, models.Role]:
         """
-        Remove a permission from a role.
+        Remove a privilege from a role.
         """
 
         query = select(models.Role).\
-            options(selectinload(models.Role.permissions)).\
+            options(selectinload(models.Role.privileges)).\
             where(models.Role.role_id == role_id)
         result = await self._db_session.execute(query)
         role_db = result.scalars().first()
         if not role_db:
             return None
 
-        role_db.permissions.remove(permission)
+        role_db.privileges.remove(privilege)
         await self._db_session.commit()
         await self._db_session.refresh(role_db)
         return role_db
 
-    async def get_role_permissions(self, role_id: UUID) -> List[models.Permission]:
+    async def get_role_privileges(self, role_id: UUID) -> List[models.Privilege]:
         """
-        Get all the role permissions.
+        Get all the role privileges.
         """
 
-        query = select(models.Permission).\
-            join(models.Permission.roles).\
+        query = select(models.Privilege).\
+            join(models.Privilege.roles).\
             filter(models.Role.role_id == role_id)
 
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
-    async def get_permission(self, permission_id: UUID) -> Optional[models.Permission]:
+    async def get_privilege(self, privilege_id: UUID) -> Optional[models.Privilege]:
         """
-        Get a permission by its ID.
+        Get a privilege by its ID.
         """
 
-        query = select(models.Permission).where(models.Permission.permission_id == permission_id)
+        query = select(models.Privilege).where(models.Privilege.privilege_id == privilege_id)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def get_permission_by_path(self, path: str) -> Optional[models.Permission]:
+    async def get_privilege_by_name(self, name: str) -> Optional[models.Privilege]:
         """
-        Get a permission by its path.
+        Get a privilege by its name.
         """
 
-        query = select(models.Permission).where(models.Permission.path == path)
+        query = select(models.Privilege).where(models.Privilege.name == name)
         result = await self._db_session.execute(query)
         return result.scalars().first()
 
-    async def get_permissions(self) -> List[models.Permission]:
+    async def get_privileges(self) -> List[models.Privilege]:
         """
-        Get all permissions.
+        Get all privileges.
         """
 
-        query = select(models.Permission).\
-            order_by(models.Permission.path.desc())
+        query = select(models.Privilege)
         result = await self._db_session.execute(query)
         return result.scalars().all()
 
-    async def check_permission_exists(self, permission_create: schemas.PermissionCreate) -> bool:
+    async def get_ace(self, ace_id: UUID) -> Optional[models.ACE]:
         """
-        Check if a permission exists.
+        Get an ACE by its ID.
         """
 
-        query = select(models.Permission).\
-            where(models.Permission.methods == permission_create.methods,
-                  models.Permission.path == permission_create.path,
-                  models.Permission.action == permission_create.action)
+        query = select(models.ACE).where(models.ACE.ace_id == ace_id)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def get_ace_by_path(self, path: str) -> Optional[models.ACE]:
+        """
+        Get an ACE by its path.
+        """
+
+        query = select(models.ACE).where(models.ACE.path == path)
+        result = await self._db_session.execute(query)
+        return result.scalars().first()
+
+    async def get_aces(self) -> List[models.ACE]:
+        """
+        Get all ACEs.
+        """
+
+        query = select(models.ACE)
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
+
+    async def check_ace_exists(self, path: str) -> bool:
+        """
+        Check if an ACE exists.
+        """
+
+        query = select(models.ACE).\
+            where(models.ACE.path == path)
         result = await self._db_session.execute(query)
         return result.scalars().first() is not None
 
-    async def create_permission(self, permission_create: schemas.PermissionCreate) -> models.Permission:
+    async def create_ace(self, ace_create: schemas.ACECreate) -> models.ACE:
         """
-        Create a new permission.
+        Create a new ACE
         """
 
-        db_permission = models.Permission(
-            description=permission_create.description,
-            methods=permission_create.methods,
-            path=permission_create.path,
-            action=permission_create.action,
-        )
-        self._db_session.add(db_permission)
+        create_values = ace_create.model_dump(exclude_unset=True)
+        db_ace = models.ACE(**create_values)
+        self._db_session.add(db_ace)
         await self._db_session.commit()
-        await self._db_session.refresh(db_permission)
-        return db_permission
+        await self._db_session.refresh(db_ace)
+        return db_ace
 
-    async def update_permission(
+    async def update_ace(
             self,
-            permission_id: UUID,
-            permission_update: schemas.PermissionUpdate
-    ) -> Optional[models.Permission]:
+            ace_id: UUID,
+            ace_update: schemas.ACEUpdate
+    ) -> Optional[models.ACE]:
         """
-        Update a permission.
+        Update an ACE
         """
 
-        update_values = permission_update.model_dump(exclude_unset=True)
-        query = update(models.Permission).\
-            where(models.Permission.permission_id == permission_id).\
+        update_values = ace_update.model_dump(exclude_unset=True)
+        query = update(models.ACE).\
+            where(models.ACE.ace_id == ace_id).\
             values(update_values)
 
         await self._db_session.execute(query)
         await self._db_session.commit()
-        permission_db = await self.get_permission(permission_id)
-        if permission_db:
-            await self._db_session.refresh(permission_db)  # force refresh of updated_at value
-        return permission_db
+        ace_db = await self.get_ace(ace_id)
+        if ace_db:
+            await self._db_session.refresh(ace_db)  # force refresh of updated_at value
+        return ace_db
 
-    async def delete_permission(self, permission_id: UUID) -> bool:
+    async def delete_ace(self, ace_id: UUID) -> bool:
         """
-        Delete a permission.
+        Delete an ACE
         """
 
-        query = delete(models.Permission).where(models.Permission.permission_id == permission_id)
+        query = delete(models.ACE).where(models.ACE.ace_id == ace_id)
         result = await self._db_session.execute(query)
         await self._db_session.commit()
         return result.rowcount > 0
 
-    async def prune_permissions(self) -> int:
-        """
-        Prune orphaned permissions.
-        """
+    # async def prune_permissions(self) -> int:
+    #     """
+    #     Prune orphaned permissions.
+    #     """
+    #
+    #     query = select(models.Permission).\
+    #         filter((~models.Permission.roles.any()) & (models.Permission.user_id == null()))
+    #     result = await self._db_session.execute(query)
+    #     permissions = result.scalars().all()
+    #     permissions_deleted = 0
+    #     for permission in permissions:
+    #         if await self.delete_permission(permission.permission_id):
+    #             permissions_deleted += 1
+    #     log.info(f"{permissions_deleted} orphaned permissions have been deleted")
+    #     return permissions_deleted
+    #
+    # def _match_permission(
+    #         self,
+    #         permissions: List[models.Permission],
+    #         method: str,
+    #         path: str
+    # ) -> Union[None, models.Permission]:
+    #     """
+    #     Match the methods and path with a permission.
+    #     """
+    #
+    #     for permission in permissions:
+    #         log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
+    #         if method not in permission.methods:
+    #             continue
+    #         if permission.path.endswith("/*") and path.startswith(permission.path[:-2]):
+    #             return permission
+    #         elif permission.path == path:
+    #             return permission
 
-        query = select(models.Permission).\
-            filter((~models.Permission.roles.any()) & (models.Permission.user_id == null()))
-        result = await self._db_session.execute(query)
-        permissions = result.scalars().all()
-        permissions_deleted = 0
-        for permission in permissions:
-            if await self.delete_permission(permission.permission_id):
-                permissions_deleted += 1
-        log.info(f"{permissions_deleted} orphaned permissions have been deleted")
-        return permissions_deleted
-
-    def _match_permission(
-            self,
-            permissions: List[models.Permission],
-            method: str,
-            path: str
-    ) -> Union[None, models.Permission]:
+    async def delete_all_ace_starting_with_path(self, path: str) -> None:
         """
-        Match the methods and path with a permission.
-        """
-
-        for permission in permissions:
-            log.debug(f"RBAC: checking permission {permission.methods} {permission.path} {permission.action}")
-            if method not in permission.methods:
-                continue
-            if permission.path.endswith("/*") and path.startswith(permission.path[:-2]):
-                return permission
-            elif permission.path == path:
-                return permission
-
-    async def get_user_permissions(self, user_id: UUID):
-        """
-        Get all permissions from an user.
-        """
-
-        query = select(models.Permission).\
-            join(models.User.permissions).\
-            filter(models.User.user_id == user_id).\
-            order_by(models.Permission.path.desc())
-
-        result = await self._db_session.execute(query)
-        return result.scalars().all()
-
-    async def add_permission_to_user(
-            self,
-            user_id: UUID,
-            permission: models.Permission
-    ) -> Union[None, models.User]:
-        """
-        Add a permission to an user.
+        Delete all ACEs starting with path.
         """
 
-        query = select(models.User).\
-            options(selectinload(models.User.permissions)).\
-            where(models.User.user_id == user_id)
-        result = await self._db_session.execute(query)
-        user_db = result.scalars().first()
-        if not user_db:
-            return None
-
-        user_db.permissions.append(permission)
-        await self._db_session.commit()
-        await self._db_session.refresh(user_db)
-        return user_db
-
-    async def remove_permission_from_user(
-            self,
-            user_id: UUID,
-            permission: models.Permission
-    ) -> Union[None, models.User]:
-        """
-        Remove a permission from a role.
-        """
-
-        query = select(models.User).\
-            options(selectinload(models.User.permissions)).\
-            where(models.User.user_id == user_id)
-        result = await self._db_session.execute(query)
-        user_db = result.scalars().first()
-        if not user_db:
-            return None
-
-        user_db.permissions.remove(permission)
-        await self._db_session.commit()
-        await self._db_session.refresh(user_db)
-        return user_db
-
-    async def add_permission_to_user_with_path(self, user_id: UUID, path: str) -> Union[None, models.User]:
-        """
-        Add a permission to an user.
-        """
-
-        # Create a new permission with full rights on path
-        new_permission = schemas.PermissionCreate(
-            description=f"Allow access to {path}",
-            methods=[HTTPMethods.get, HTTPMethods.head, HTTPMethods.post, HTTPMethods.put, HTTPMethods.delete],
-            path=path,
-            action=PermissionAction.allow
-        )
-        permission_db = await self.create_permission(new_permission)
-
-        # Add the permission to the user
-        query = select(models.User).\
-            options(selectinload(models.User.permissions)).\
-            where(models.User.user_id == user_id)
-
-        result = await self._db_session.execute(query)
-        user_db = result.scalars().first()
-        if not user_db:
-            return None
-
-        user_db.permissions.append(permission_db)
-        await self._db_session.commit()
-        await self._db_session.refresh(user_db)
-        return user_db
-
-    async def delete_all_permissions_with_path(self, path: str) -> None:
-        """
-        Delete all permissions with path.
-        """
-
-        query = delete(models.Permission).\
-            where(models.Permission.path.startswith(path)).\
+        query = delete(models.ACE).\
+            where(models.ACE.path.startswith(path)).\
             execution_options(synchronize_session=False)
         result = await self._db_session.execute(query)
-        log.debug(f"{result.rowcount} permission(s) have been deleted")
+        log.debug(f"{result.rowcount} ACE(s) have been deleted")
 
-    async def check_user_is_authorized(self, user_id: UUID, method: str, path: str) -> bool:
+    async def check_user_has_privilege(self, user_id: UUID, path: str, privilege_name: str) -> bool:
+
+        # query = select(models.Privilege.name).\
+        #     join(models.Privilege.roles).\
+        #     join(models.Role.acl_entries).\
+        #     join(models.ACE.user).\
+        #     filter(models.Privilege.name == privilege). \
+        #     filter(models.User.user_id == user_id).\
+        #     filter(models.ACE.path == path).\
+        #     distinct()
+
+        #query = select(models.ACE.path)
+        #result = await self._db_session.execute(query)
+        #res = result.scalars().all()
+        #print("ACL TABLE ==>", res)
+        #for ace in res:
+        #    print(ace)
+
+        query = select(models.Privilege.name, models.ACE.path, models.ACE.propagate).\
+            join(models.Privilege.roles).\
+            join(models.Role.acl_entries).\
+            join(models.ACE.user).\
+            filter(models.User.user_id == user_id).\
+            filter(models.Privilege.name == privilege_name).\
+            filter(models.ACE.path == path).\
+            order_by(models.ACE.path.desc())
+        result = await self._db_session.execute(query)
+        privileges = result.all()
+        #print(privileges)
+        for privilege, privilege_path, propagate in privileges:
+            if privilege_path == path:
+                return True
+        return False
+
+    async def check_user_is_authorized(self, user_id: UUID, path: str) -> bool:
         """
-        Check if an user is authorized to access a resource.
+        Check if a user is authorized to access a resource.
         """
+
+        return True
 
         query = select(models.Permission).\
             join(models.Permission.roles).\

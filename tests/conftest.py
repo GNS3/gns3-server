@@ -115,7 +115,7 @@ async def test_user(db_session: AsyncSession) -> User:
         return existing_user
     user = await user_repo.create_user(new_user)
 
-    # add new user to "Users group
+    # add new user to the "Users" group
     group = await user_repo.get_user_group_by_name("Users")
     await user_repo.add_member_to_user_group(group.user_group_id, user)
     return user

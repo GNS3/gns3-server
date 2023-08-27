@@ -213,8 +213,8 @@ class ApplianceManager:
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate template data: {e}")
         template = await TemplatesService(templates_repo).create_template(template_create)
-        template_id = template.get("template_id")
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+        #template_id = template.get("template_id")
+        #await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
         log.info(f"Template '{template.get('name')}' has been created")
 
     async def _appliance_to_template(self, appliance: Appliance, version: str = None) -> dict:

@@ -74,21 +74,6 @@ async def get_current_active_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # remove the prefix (e.g. "/v3") from URL path
-    path = re.sub(r"^/v[0-9]", "", request.url.path)
-
-    # special case: always authorize access to the "/users/me" endpoint
-    if path == "/users/me":
-        return current_user
-
-    authorized = await rbac_repo.check_user_is_authorized(current_user.user_id, request.method, path)
-    if not authorized:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"User is not authorized '{current_user.user_id}' on {request.method} '{path}'",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
     return current_user
 
 
@@ -96,7 +81,6 @@ async def get_current_active_user_from_websocket(
         websocket: WebSocket,
         token: str = Query(...),
         user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> Optional[schemas.User]:
 
     await websocket.accept()
@@ -119,18 +103,6 @@ async def get_current_active_user_from_websocket(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"'{username}' is not an active user"
-            )
-
-        # remove the prefix (e.g. "/v3") from URL path
-        path = re.sub(r"^/v[0-9]", "", websocket.url.path)
-
-        # there are no HTTP methods for web sockets, assuming "GET"...
-        authorized = await rbac_repo.check_user_is_authorized(user.user_id, "GET", path)
-        if not authorized:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"User is not authorized '{user.user_id}' on '{path}'",
-                headers={"WWW-Authenticate": "Bearer"},
             )
 
         return user

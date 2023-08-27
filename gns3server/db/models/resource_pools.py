@@ -25,21 +25,18 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Resource(BaseTable):
+class ResourcePool(BaseTable):
 
-    __tablename__ = "resources"
+    __tablename__ = "resource_pools"
 
-    resource_id = Column(GUID, primary_key=True, default=generate_uuid)
-    name = Column(String, unique=True, index=True)
-    description = Column(String)
-    propagate = Column(Boolean, default=True)
-    user_id = Column(GUID, ForeignKey('users.user_id', ondelete="CASCADE"))
-    user = relationship("User", back_populates="resources")
-    acl_entries = relationship("ACL")
-    parent_id = Column(GUID, ForeignKey("resources.resource_id", ondelete="CASCADE"))
-    children = relationship(
-        "Resource",
-        remote_side=[resource_id],
-        cascade="all, delete-orphan",
-        single_parent=True
-    )
+    resource_id = Column(GUID, primary_key=True)
+    resource_type = Column(String)
+
+    # # Create a self-referential relationship to represent a hierarchy of resources
+    # parent_id = Column(GUID, ForeignKey("resources.resource_id", ondelete="CASCADE"))
+    # children = relationship(
+    #     "Resource",
+    #     remote_side=[resource_id],
+    #     cascade="all, delete-orphan",
+    #     single_parent=True
+    # )

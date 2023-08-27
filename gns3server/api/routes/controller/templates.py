@@ -46,17 +46,13 @@ router = APIRouter(responses=responses)
 @router.post("", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def create_template(
     template_create: schemas.TemplateCreate,
-    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-    current_user: schemas.User = Depends(get_current_active_user),
-    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+    templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Template:
     """
     Create a new template.
     """
 
     template = await TemplatesService(templates_repo).create_template(template_create)
-    template_id = template.get("template_id")
-    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
     return template
 
 
@@ -108,7 +104,7 @@ async def delete_template(
     """
 
     await TemplatesService(templates_repo).delete_template(template_id)
-    await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
+    #await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
     if prune_images:
         await images_repo.prune_images()
 
@@ -129,27 +125,24 @@ async def get_templates(
     else:
         user_templates = []
         for template in templates:
-            if template.get("builtin") is True:
-                user_templates.append(template)
-                continue
-            template_id = template.get("template_id")
-            authorized = await rbac_repo.check_user_is_authorized(
-                current_user.user_id, "GET", f"/templates/{template_id}")
-            if authorized:
-                user_templates.append(template)
+            # if template.get("builtin") is True:
+            #     user_templates.append(template)
+            #     continue
+            # template_id = template.get("template_id")
+            # authorized = await rbac_repo.check_user_is_authorized(
+            #     current_user.user_id, "GET", f"/templates/{template_id}")
+            # if authorized:
+            user_templates.append(template)
     return user_templates
 
 
 @router.post("/{template_id}/duplicate", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
 async def duplicate_template(
-        template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Template:
     """
     Duplicate a template.
     """
 
     template = await TemplatesService(templates_repo).duplicate_template(template_id)
-    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
     return template

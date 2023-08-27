@@ -49,7 +49,8 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.services.templates import TemplatesService
 
-from .dependencies.authentication import get_current_active_user, get_current_active_user_from_websocket
+from .dependencies.authentication import get_current_active_user
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
@@ -84,9 +85,11 @@ async def get_projects(
     else:
         user_projects = []
         for project in controller.projects.values():
-            authorized = await rbac_repo.check_user_is_authorized(
-                current_user.user_id, "GET", f"/projects/{project.id}")
-            if authorized:
+            if await rbac_repo.check_user_has_privilege(
+                    current_user.user_id,
+                    f"/projects/{project.id}",
+                    "Project.Audit"
+            ):
                 user_projects.append(project.asdict())
     return user_projects
 
@@ -97,11 +100,10 @@ async def get_projects(
     response_model=schemas.Project,
     response_model_exclude_unset=True,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create project"}},
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def create_project(
         project_data: schemas.ProjectCreate,
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
 ) -> schemas.Project:
     """
     Create a new project.
@@ -109,12 +111,11 @@ async def create_project(
 
     controller = Controller.instance()
     project = await controller.add_project(**jsonable_encoder(project_data, exclude_unset=True))
-    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{project.id}/*")
     return project.asdict()
 
 
-@router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(get_current_active_user)])
-def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
+@router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(has_privilege("Project.Audit"))])
+async def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
     """
@@ -126,7 +127,7 @@ def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
     "/{project_id}",
     response_model=schemas.Project,
     response_model_exclude_unset=True,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Modify"))]
 )
 async def update_project(
         project_data: schemas.ProjectUpdate,
@@ -143,11 +144,10 @@ async def update_project(
 @router.delete(
     "/{project_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def delete_project(
-        project: Project = Depends(dep_project),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        project: Project = Depends(dep_project)
 ) -> None:
     """
     Delete a project.
@@ -156,10 +156,9 @@ async def delete_project(
     controller = Controller.instance()
     await project.delete()
     controller.remove_project(project)
-    await rbac_repo.delete_all_permissions_with_path(f"/projects/{project.id}")
 
 
-@router.get("/{project_id}/stats", dependencies=[Depends(get_current_active_user)])
+@router.get("/{project_id}/stats", dependencies=[Depends(has_privilege("Project.Audit"))])
 def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
     Return a project statistics.
@@ -172,7 +171,7 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     "/{project_id}/close",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not close project"}},
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def close_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -187,7 +186,7 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not open project"}},
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def open_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
@@ -203,7 +202,7 @@ async def open_project(project: Project = Depends(dep_project)) -> schemas.Proje
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not load project"}},
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     """
@@ -216,7 +215,7 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     return project.asdict()
 
 
-@router.get("/{project_id}/notifications", dependencies=[Depends(get_current_active_user)])
+@router.get("/{project_id}/notifications", dependencies=[Depends(has_privilege("Project.Audit"))])
 async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
     Receive project notifications about the controller from HTTP stream.
@@ -252,7 +251,7 @@ async def project_http_notifications(project_id: UUID) -> StreamingResponse:
 async def project_ws_notifications(
         project_id: UUID,
         websocket: WebSocket,
-        current_user: schemas.User = Depends(get_current_active_user_from_websocket)
+        current_user: schemas.User = Depends(has_privilege_on_websocket("Project.Audit"))
 ) -> None:
     """
     Receive project notifications about the controller from WebSocket.
@@ -288,7 +287,7 @@ async def project_ws_notifications(
                 await project.close()
 
 
-@router.get("/{project_id}/export", dependencies=[Depends(get_current_active_user)])
+@router.get("/{project_id}/export", dependencies=[Depends(has_privilege("Project.Audit"))])
 async def export_project(
     project: Project = Depends(dep_project),
     include_snapshots: bool = False,
@@ -345,7 +344,7 @@ async def export_project(
 
             log.info(f"Project '{project.name}' exported in {time.time() - begin:.4f} seconds")
 
-    # Will be raise if you have no space left or permission issue on your temporary directory
+    # Will be raised if you have no space left or permission issue on your temporary directory
     # RuntimeError: something was wrong during the zip process
     except (ValueError, OSError, RuntimeError) as e:
         raise ConnectionError(f"Cannot export project: {e}")
@@ -358,7 +357,7 @@ async def export_project(
     "/{project_id}/import",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def import_project(
         project_id: UUID,
@@ -394,13 +393,11 @@ async def import_project(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.Project,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Could not duplicate project"}},
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def duplicate_project(
         project_data: schemas.ProjectDuplicate,
-        project: Project = Depends(dep_project),
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+        project: Project = Depends(dep_project)
 ) -> schemas.Project:
     """
     Duplicate a project.
@@ -410,11 +407,10 @@ async def duplicate_project(
     new_project = await project.duplicate(
         name=project_data.name, reset_mac_addresses=reset_mac_addresses
     )
-    await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/projects/{new_project.id}/*")
     return new_project.asdict()
 
 
-@router.get("/{project_id}/locked", dependencies=[Depends(get_current_active_user)])
+@router.get("/{project_id}/locked", dependencies=[Depends(has_privilege("Project.Audit"))])
 async def locked_project(project: Project = Depends(dep_project)) -> bool:
     """
     Returns whether a project is locked or not
@@ -426,7 +422,7 @@ async def locked_project(project: Project = Depends(dep_project)) -> bool:
 @router.post(
     "/{project_id}/lock",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Modify"))]
 )
 async def lock_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -439,7 +435,7 @@ async def lock_project(project: Project = Depends(dep_project)) -> None:
 @router.post(
     "/{project_id}/unlock",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Modify"))]
 )
 async def unlock_project(project: Project = Depends(dep_project)) -> None:
     """
@@ -449,7 +445,7 @@ async def unlock_project(project: Project = Depends(dep_project)) -> None:
     project.unlock()
 
 
-@router.get("/{project_id}/files/{file_path:path}", dependencies=[Depends(get_current_active_user)])
+@router.get("/{project_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Project.Audit"))])
 async def get_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return a file from a project.
@@ -472,7 +468,7 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
 @router.post(
     "/{project_id}/files/{file_path:path}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Project.Modify"))]
 )
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
     """
@@ -505,7 +501,7 @@ async def write_file(file_path: str, request: Request, project: Project = Depend
     response_model=schemas.Node,
     status_code=status.HTTP_201_CREATED,
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find project or template"}},
-    dependencies=[Depends(get_current_active_user)]
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
 )
 async def create_node_from_template(
     project_id: UUID,

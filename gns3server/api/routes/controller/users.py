@@ -155,7 +155,7 @@ async def get_user(
         users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> schemas.User:
     """
-    Get an user.
+    Get a user.
     """
 
     user = await users_repo.get_user(user_id)
@@ -171,7 +171,7 @@ async def update_user(
         users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> schemas.User:
     """
-    Update an user.
+    Update a user.
     """
 
     if user_update.username and await users_repo.get_user_by_username(user_update.username):
@@ -196,7 +196,7 @@ async def delete_user(
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> None:
     """
-    Delete an user.
+    Delete a user.
     """
 
     user = await users_repo.get_user(user_id)
@@ -225,65 +225,3 @@ async def get_user_memberships(
     """
 
     return await users_repo.get_user_memberships(user_id)
-
-
-@router.get(
-    "/{user_id}/permissions",
-    dependencies=[Depends(get_current_active_user)],
-    response_model=List[schemas.Permission]
-)
-async def get_user_permissions(
-        user_id: UUID,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> List[schemas.Permission]:
-    """
-    Get user permissions.
-    """
-
-    return await rbac_repo.get_user_permissions(user_id)
-
-
-@router.put(
-    "/{user_id}/permissions/{permission_id}",
-    dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_204_NO_CONTENT
-)
-async def add_permission_to_user(
-        user_id: UUID,
-        permission_id: UUID,
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> None:
-    """
-    Add a permission to an user.
-    """
-
-    permission = await rbac_repo.get_permission(permission_id)
-    if not permission:
-        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
-
-    user = await rbac_repo.add_permission_to_user(user_id, permission)
-    if not user:
-        raise ControllerNotFoundError(f"User '{user_id}' not found")
-
-
-@router.delete(
-    "/{user_id}/permissions/{permission_id}",
-    dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_204_NO_CONTENT
-)
-async def remove_permission_from_user(
-    user_id: UUID,
-    permission_id: UUID,
-    rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
-) -> None:
-    """
-    Remove permission from an user.
-    """
-
-    permission = await rbac_repo.get_permission(permission_id)
-    if not permission:
-        raise ControllerNotFoundError(f"Permission '{permission_id}' not found")
-
-    user = await rbac_repo.remove_permission_from_user(user_id, permission)
-    if not user:
-        raise ControllerNotFoundError(f"User '{user_id}' not found")

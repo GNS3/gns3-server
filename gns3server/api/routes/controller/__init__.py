@@ -32,7 +32,7 @@ from . import images
 from . import users
 from . import groups
 from . import roles
-from . import permissions
+from . import acl
 
 from .dependencies.authentication import get_current_active_user
 
@@ -56,10 +56,10 @@ router.include_router(
 )
 
 router.include_router(
-    permissions.router,
+    acl.router,
     dependencies=[Depends(get_current_active_user)],
-    prefix="/permissions",
-    tags=["Permissions"]
+    prefix="/acl",
+    tags=["ACL"]
 )
 
 router.include_router(
