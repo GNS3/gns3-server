@@ -406,7 +406,7 @@ class DockerVM(BaseNode):
             await self._start_vnc()
             params["Env"].append("QT_GRAPHICSSYSTEM=native")  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append("DISPLAY=:{}".format(self._display))
-            params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
+            params["HostConfig"]["Binds"].append("/tmp/.X11-unix/X{0}:/tmp/.X11-unix/X{0}:ro".format(self._display))
 
         if self._extra_hosts:
             extra_hosts = self._format_extra_hosts(self._extra_hosts)
