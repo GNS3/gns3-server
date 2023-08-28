@@ -32,11 +32,11 @@ class ResourcePool(BaseTable):
     resource_id = Column(GUID, primary_key=True)
     resource_type = Column(String)
 
-    # # Create a self-referential relationship to represent a hierarchy of resources
-    # parent_id = Column(GUID, ForeignKey("resources.resource_id", ondelete="CASCADE"))
-    # children = relationship(
-    #     "Resource",
-    #     remote_side=[resource_id],
-    #     cascade="all, delete-orphan",
-    #     single_parent=True
-    # )
+    # Create a self-referential relationship to represent a hierarchy of resources
+    parent_id = Column(GUID, ForeignKey("resources.resource_id", ondelete="CASCADE"))
+    children = relationship(
+        "Resource",
+        remote_side=[resource_id],
+        cascade="all, delete-orphan",
+        single_parent=True
+    )
