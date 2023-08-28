@@ -171,6 +171,14 @@ def create_default_roles(target, connection, **kw):
             "description": "View a compute",
             "name": "Compute.Audit"
         },
+        {
+            "description": "Install an appliance",
+            "name": "Appliance.Allocate"
+        },
+        {
+            "description": "View an appliance",
+            "name": "Appliance.Audit"
+        }
     ]
 
     stmt = target.insert().values(default_privileges)
@@ -235,7 +243,9 @@ def add_privileges_to_default_roles(target, connection, **kw):
         "Template.Audit",
         "Symbol.Audit",
         "Image.Audit",
-        "Compute.Audit"
+        "Compute.Audit",
+        "Appliance.Allocate",
+        "Appliance.Audit"
     )
 
     add_privileges_to_role(target, connection, "User", user_privileges)
@@ -249,7 +259,8 @@ def add_privileges_to_default_roles(target, connection, **kw):
         "Template.Audit",
         "Symbol.Audit",
         "Image.Audit",
-        "Compute.Audit"
+        "Compute.Audit",
+        "Appliance.Audit"
     )
 
     add_privileges_to_role(target, connection, "Auditor", auditor_privileges)
