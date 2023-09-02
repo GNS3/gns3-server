@@ -44,25 +44,25 @@ router.include_router(
 
 router.include_router(
     users.router,
-    prefix="/users",
+    prefix="/access/users",
     tags=["Users"]
 )
 
 router.include_router(
     groups.router,
-    prefix="/groups",
+    prefix="/access/groups",
     tags=["Users groups"]
 )
 
 router.include_router(
     roles.router,
-    prefix="/roles",
+    prefix="/access/roles",
     tags=["Roles"]
 )
 
 router.include_router(
     acl.router,
-    prefix="/acl",
+    prefix="/access/acl",
     tags=["ACL"]
 )
 

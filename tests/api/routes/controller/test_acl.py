@@ -62,7 +62,7 @@ class TestACLRoutes:
         rbac_repo = RbacRepository(db_session)
         admin_role_id = (await rbac_repo.get_role_by_name("Administrator")).role_id
         ace = ACECreate(
-            path="/acl",
+            path="/access/acl",
             ace_type="user",
             user_id=test_user.user_id,
             role_id=admin_role_id
