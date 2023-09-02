@@ -21,8 +21,8 @@ from sqlalchemy.orm import relationship
 from .base import Base, BaseTable, GUID
 
 
-image_template_link = Table(
-    "images_templates_link",
+image_template_map = Table(
+    "image_template_map",
     Base.metadata,
     Column("image_id", Integer, ForeignKey("images.image_id", ondelete="CASCADE")),
     Column("template_id", GUID, ForeignKey("templates.template_id", ondelete="CASCADE"))
@@ -40,4 +40,4 @@ class Image(BaseTable):
     image_size = Column(BigInteger)
     checksum = Column(String, index=True)
     checksum_algorithm = Column(String)
-    templates = relationship("Template", secondary=image_template_link, back_populates="images")
+    templates = relationship("Template", secondary=image_template_map, back_populates="images")

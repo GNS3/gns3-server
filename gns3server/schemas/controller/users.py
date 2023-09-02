@@ -52,7 +52,7 @@ class UserUpdate(UserBase):
 
 class LoggedInUserUpdate(BaseModel):
     """
-    Properties to update a logged in user.
+    Properties to update a logged-in user.
     """
 
     password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)

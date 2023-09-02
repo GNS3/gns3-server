@@ -29,7 +29,7 @@ from gns3server.controller import Controller
 from gns3server import schemas
 from gns3server.controller.controller_error import ControllerError, ControllerNotFoundError
 
-from .dependencies.authentication import get_current_active_user
+from .dependencies.rbac import has_privilege
 
 import logging
 
@@ -39,19 +39,28 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(has_privilege("Symbol.Audit"))])
 def get_symbols() -> List[dict]:
+    """
+    Return all symbols.
+
+    Required privilege: Symbol.Audit
+    """
 
     controller = Controller.instance()
     return controller.symbols.list()
 
 
 @router.get(
-    "/{symbol_id:path}/raw", responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}}
+    "/{symbol_id:path}/raw",
+    responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
+    dependencies=[Depends(has_privilege("Symbol.Audit"))]
 )
 async def get_symbol(symbol_id: str) -> FileResponse:
     """
     Download a symbol file.
+
+    Required privilege: Symbol.Audit
     """
 
     controller = Controller.instance()
@@ -65,10 +74,13 @@ async def get_symbol(symbol_id: str) -> FileResponse:
 @router.get(
     "/{symbol_id:path}/dimensions",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
+    dependencies=[Depends(has_privilege("Symbol.Audit"))]
 )
 async def get_symbol_dimensions(symbol_id: str) -> dict:
     """
     Get a symbol dimensions.
+
+    Required privilege: Symbol.Audit
     """
 
     controller = Controller.instance()
@@ -80,10 +92,12 @@ async def get_symbol_dimensions(symbol_id: str) -> dict:
         raise ControllerNotFoundError(f"Could not get symbol file: {e}")
 
 
-@router.get("/default_symbols")
+@router.get("/default_symbols", dependencies=[Depends(has_privilege("Symbol.Audit"))])
 def get_default_symbols() -> dict:
     """
     Return all default symbols.
+
+    Required privilege: Symbol.Audit
     """
 
     controller = Controller.instance()
@@ -92,12 +106,14 @@ def get_default_symbols() -> dict:
 
 @router.post(
     "/{symbol_id:path}/raw",
-    dependencies=[Depends(get_current_active_user)],
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Symbol.Allocate"))]
 )
 async def upload_symbol(symbol_id: str, request: Request) -> None:
     """
     Upload a symbol file.
+
+    Required privilege: Symbol.Allocate
     """
 
     controller = Controller.instance()
@@ -111,4 +127,3 @@ async def upload_symbol(symbol_id: str, request: Request) -> None:
 
     # Reset the symbol list
     controller.symbols.list()
-

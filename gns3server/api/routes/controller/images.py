@@ -22,7 +22,7 @@ import os
 import logging
 import urllib.parse
 
-from fastapi import APIRouter, Request, Response, Depends, status
+from fastapi import APIRouter, Request, Depends, status
 from starlette.requests import ClientDisconnect
 from sqlalchemy.orm.exc import MultipleResultsFound
 from typing import List, Optional
@@ -43,25 +43,37 @@ from gns3server.controller.controller_error import (
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[schemas.Image])
+@router.get(
+    "",
+    response_model=List[schemas.Image],
+    dependencies=[Depends(has_privilege("Image.Audit"))]
+)
 async def get_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
         image_type: Optional[schemas.ImageType] = None
 ) -> List[schemas.Image]:
     """
     Return all images.
+
+    Required privilege: Image.Audit
     """
 
     return await images_repo.get_images(image_type)
 
 
-@router.post("/upload/{image_path:path}", response_model=schemas.Image, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload/{image_path:path}",
+    response_model=schemas.Image,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
 async def upload_image(
         image_path: str,
         request: Request,
@@ -76,6 +88,8 @@ async def upload_image(
 
     Example: curl -X POST http://host:port/v3/images/upload/my_image_name.qcow2 \
     -H 'Authorization: Bearer <token>' --data-binary @"/path/to/image.qcow2"
+
+    Required privilege: Image.Allocate
     """
 
     image_path = urllib.parse.unquote(image_path)
@@ -110,13 +124,19 @@ async def upload_image(
     return image
 
 
-@router.get("/{image_path:path}", response_model=schemas.Image)
+@router.get(
+    "/{image_path:path}",
+    response_model=schemas.Image,
+    dependencies=[Depends(has_privilege("Image.Audit"))]
+)
 async def get_image(
         image_path: str,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> schemas.Image:
     """
     Return an image.
+
+    Required privilege: Image.Audit
     """
 
     image_path = urllib.parse.unquote(image_path)
@@ -126,13 +146,19 @@ async def get_image(
     return image
 
 
-@router.delete("/{image_path:path}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{image_path:path}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
 async def delete_image(
         image_path: str,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> None:
     """
     Delete an image.
+
+    Required privilege: Image.Allocate
     """
 
     image_path = urllib.parse.unquote(image_path)
@@ -161,12 +187,18 @@ async def delete_image(
         raise ControllerError(f"Image '{image_path}' could not be deleted")
 
 
-@router.post("/prune", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/prune",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
 async def prune_images(
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 ) -> None:
     """
     Prune images not attached to any template.
+
+    Required privilege: Image.Allocate
     """
 
     await images_repo.prune_images()

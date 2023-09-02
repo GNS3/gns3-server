@@ -16,15 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-import pytest_asyncio
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.schemas.controller.rbac import Permission, HTTPMethods, PermissionAction
-from gns3server import schemas
 
 pytestmark = pytest.mark.asyncio
 
@@ -49,7 +46,7 @@ class TestRolesRoutes:
 
         response = await client.get(app.url_path_for("get_roles"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 3  # 2 default roles + role1
+        assert len(response.json()) == 8  # 7 default roles + role1
 
     async def test_update_role(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
 
@@ -106,46 +103,31 @@ class TestRolesRoutes:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-@pytest_asyncio.fixture
-async def test_permission(db_session: AsyncSession) -> Permission:
+class TestRolesPrivilegesRoutes:
 
-    new_permission = schemas.PermissionCreate(
-        methods=[HTTPMethods.get],
-        path="/statistics",
-        action=PermissionAction.allow
-    )
-    rbac_repo = RbacRepository(db_session)
-    existing_permission = await rbac_repo.get_permission_by_path("/statistics")
-    if existing_permission:
-        return existing_permission
-    return await rbac_repo.create_permission(new_permission)
-
-
-class TestRolesPermissionsRoutes:
-
-    async def test_add_permission_to_role(
+    async def test_add_privilege_to_role(
             self,
             app: FastAPI,
             client: AsyncClient,
-            test_permission: Permission,
             db_session: AsyncSession
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
+        privilege = await rbac_repo.get_privilege_by_name("Template.Allocate")
 
         response = await client.put(
             app.url_path_for(
-                "add_permission_to_role",
+                "add_privilege_to_role",
                 role_id=role_in_db.role_id,
-                permission_id=str(test_permission.permission_id)
+                privilege_id=str(privilege.privilege_id)
             )
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 6  # 5 default permissions + 1 custom permission
+        privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
+        assert len(privileges) == 25  # 24 default privileges + 1 custom privilege
 
-    async def test_get_role_permissions(
+    async def test_get_role_privileges(
             self,
             app: FastAPI,
             client: AsyncClient,
@@ -157,30 +139,30 @@ class TestRolesPermissionsRoutes:
 
         response = await client.get(
             app.url_path_for(
-                "get_role_permissions",
+                "get_role_privileges",
                 role_id=role_in_db.role_id)
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 6  # 5 default permissions + 1 custom permission
+        assert len(response.json()) == 25  # 24 default privileges + 1 custom privilege
 
-    async def test_remove_role_from_group(
+    async def test_remove_privilege_from_role(
             self,
             app: FastAPI,
             client: AsyncClient,
-            test_permission: Permission,
             db_session: AsyncSession
     ) -> None:
 
         rbac_repo = RbacRepository(db_session)
         role_in_db = await rbac_repo.get_role_by_name("User")
+        privilege = await rbac_repo.get_privilege_by_name("Template.Allocate")
 
         response = await client.delete(
             app.url_path_for(
-                "remove_permission_from_role",
+                "remove_privilege_from_role",
                 role_id=role_in_db.role_id,
-                permission_id=str(test_permission.permission_id)
+                privilege_id=str(privilege.privilege_id)
             ),
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        permissions = await rbac_repo.get_role_permissions(role_in_db.role_id)
-        assert len(permissions) == 5  # 5 default permissions
+        privileges = await rbac_repo.get_role_privileges(role_in_db.role_id)
+        assert len(privileges) == 24  # 24 default privileges
