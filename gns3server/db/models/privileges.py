@@ -304,5 +304,44 @@ def add_privileges_to_default_roles(target, connection, **kw):
 
     add_privileges_to_role(target, connection, "Auditor", auditor_privileges)
 
+    # add required privileges to the "Template manager" role
+    template_manager_privileges = (
+        "Template.Allocate",
+        "Template.Audit",
+        "Template.Modify",
+        "Symbol.Allocate",
+        "Symbol.Audit",
+        "Image.Allocate",
+        "Image.Audit",
+        "Appliance.Allocate",
+        "Appliance.Audit"
+    )
+
+    add_privileges_to_role(target, connection, "Template manager", template_manager_privileges)
+
+    # add required privileges to the "User manager" role
+    user_manager_privileges = (
+        "User.Allocate",
+        "User.Audit",
+        "User.Modify",
+        "Group.Allocate",
+        "Group.Audit",
+        "Group.Modify"
+    )
+
+    add_privileges_to_role(target, connection, "User manager", user_manager_privileges)
+
+    # add required privileges to the "ACL manager" role
+    acl_manager_privileges = (
+        "Role.Allocate",
+        "Role.Audit",
+        "Role.Modify",
+        "ACE.Allocate",
+        "ACE.Audit",
+        "ACE.Modify"
+    )
+
+    add_privileges_to_role(target, connection, "ACL manager", acl_manager_privileges)
+
     connection.commit()
     log.debug("Privileges have been added to the default roles in the database")

@@ -45,6 +45,9 @@ def create_default_roles(target, connection, **kw):
         {"name": "Administrator", "description": "Administrator role", "is_builtin": True},
         {"name": "User", "description": "User role", "is_builtin": True},
         {"name": "Auditor", "description": "Role with read only access", "is_builtin": True},
+        {"name": "Template manager", "description": "Role to manage templates", "is_builtin": True},
+        {"name": "User manager", "description": "Role to manage users and groups", "is_builtin": True},
+        {"name": "ACL manager", "description": "Role to manage other roles and the ACL", "is_builtin": True},
         {"name": "No Access", "description": "Role with no privileges (used to forbid access)", "is_builtin": True}
     ]
 
