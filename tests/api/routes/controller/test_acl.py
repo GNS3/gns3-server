@@ -17,7 +17,6 @@
 
 import pytest
 import pytest_asyncio
-import uuid
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -25,57 +24,14 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
 from gns3server.db.repositories.rbac import RbacRepository
-from gns3server.controller import Controller
-from gns3server.controller.project import Project
 from gns3server.schemas.controller.users import User
 from gns3server.schemas.controller.rbac import ACECreate
+from gns3server.controller import Controller
 
 pytestmark = pytest.mark.asyncio
 
 
 class TestACLRoutes:
-
-    # @pytest_asyncio.fixture
-    # async def project(
-    #         self,
-    #         app: FastAPI,
-    #         authorized_client: AsyncClient,
-    #         test_user: User,
-    #         db_session: AsyncSession,
-    #         controller: Controller
-    # ) -> Project:
-    #
-    #     # add an ACE to allow user to create a project
-    #     user_id = test_user.user_id
-    #     rbac_repo = RbacRepository(db_session)
-    #     role_in_db = await rbac_repo.get_role_by_name("User")
-    #     role_id = role_in_db.role_id
-    #     ace = ACECreate(
-    #         path="/projects",
-    #         type="user",
-    #         user_id=user_id,
-    #         role_id=role_id
-    #     )
-    #     await rbac_repo.create_ace(ace)
-    #     project_uuid = str(uuid.uuid4())
-    #     params = {"name": "test", "project_id": project_uuid}
-    #     response = await authorized_client.post(app.url_path_for("create_project"), json=params)
-    #     assert response.status_code == status.HTTP_201_CREATED
-    #     return controller.get_project(project_uuid)
-
-    #@pytest_asyncio.fixture
-    # async def project(
-    #         self,
-    #         app: FastAPI,
-    #         client: AsyncClient,
-    #         controller: Controller
-    # ) -> Project:
-    #
-    #     project_uuid = str(uuid.uuid4())
-    #     params = {"name": "test", "project_id": project_uuid}
-    #     response = await client.post(app.url_path_for("create_project"), json=params)
-    #     assert response.status_code == status.HTTP_201_CREATED
-    #     return controller.get_project(project_uuid)
 
     @pytest_asyncio.fixture
     async def group_id(self, db_session: AsyncSession) -> str:
@@ -102,11 +58,22 @@ class TestACLRoutes:
             role_id: str
     ) -> None:
 
+        # allow the user to create an ACE
+        rbac_repo = RbacRepository(db_session)
+        admin_role_id = (await rbac_repo.get_role_by_name("Administrator")).role_id
+        ace = ACECreate(
+            path="/acl",
+            ace_type="user",
+            user_id=test_user.user_id,
+            role_id=admin_role_id
+        )
+        await rbac_repo.create_ace(ace)
+
         # add an ACE on /projects to allow user to create a project
         path = f"/projects"
         new_ace = {
             "path": path,
-            "type": "user",
+            "ace_type": "user",
             "user_id": str(test_user.user_id),
             "role_id": role_id
         }
@@ -130,14 +97,14 @@ class TestACLRoutes:
 
         new_ace = {
             "path": "/projects/invalid",
-            "type": "group",
+            "ace_type": "group",
             "group_id": group_id,
             "role_id": role_id
         }
         response = await client.post(app.url_path_for("create_ace"), json=new_ace)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    # async def test_create_ace_not_existing_resource(
+    # async def test_create_ace_non_existing_resource(
     #         self,
     #         app: FastAPI,
     #         client: AsyncClient,
@@ -147,6 +114,7 @@ class TestACLRoutes:
     #
     #     new_ace = {
     #         "path": f"/projects/{str(uuid.uuid4())}",
+    #         "ace_type": "group",
     #         "group_id": group_id,
     #         "role_id": role_id
     #     }
@@ -165,7 +133,7 @@ class TestACLRoutes:
 
         response = await client.get(app.url_path_for("get_aces"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 1
+        assert len(response.json()) == 2
 
     async def test_update_ace(
             self, app: FastAPI,
@@ -180,7 +148,7 @@ class TestACLRoutes:
 
         update_ace = {
             "path": f"/appliances",
-            "type": "user",
+            "ace_type": "user",
             "user_id": str(test_user.user_id),
             "role_id": role_id
         }
@@ -204,11 +172,41 @@ class TestACLRoutes:
         response = await client.delete(app.url_path_for("delete_ace", ace_id=ace_in_db.ace_id))
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    # async def test_prune_permissions(self, app: FastAPI, client: AsyncClient, db_session: AsyncSession) -> None:
-    #
-    #     response = await client.post(app.url_path_for("prune_permissions"))
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #
-    #     rbac_repo = RbacRepository(db_session)
-    #     permissions_in_db = await rbac_repo.get_permissions()
-    #     assert len(permissions_in_db) == 10  # 6 default permissions + 4 custom permissions
+    async def test_ace_cleanup(
+            self,
+            app: FastAPI,
+            authorized_client: AsyncClient,
+            db_session: AsyncSession,
+            test_user: User,
+            role_id: str,
+    ) -> None:
+
+        # allow the user to create projects
+        rbac_repo = RbacRepository(db_session)
+        ace = ACECreate(
+            path="/projects",
+            ace_type="user",
+            user_id=test_user.user_id,
+            role_id=role_id
+        )
+        await rbac_repo.create_ace(ace)
+
+        response = await authorized_client.post(app.url_path_for("create_project"), json={"name": "test2"})
+        assert response.status_code == status.HTTP_201_CREATED
+        project_id = response.json()["project_id"]
+
+        path = f"/projects/{project_id}"
+        ace = ACECreate(
+            path=path,
+            ace_type="user",
+            user_id=test_user.user_id,
+            role_id=role_id
+        )
+        await rbac_repo.create_ace(ace)
+        assert await rbac_repo.get_ace_by_path(path)
+
+        response = await authorized_client.delete(app.url_path_for("delete_project", project_id=project_id))
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        # the ACE should have been deleted after deleting the project
+        assert not await rbac_repo.get_ace_by_path(path)

@@ -30,10 +30,10 @@ class ACE(BaseTable):
     __tablename__ = "acl"
 
     ace_id = Column(GUID, primary_key=True, default=generate_uuid)
+    ace_type: str = Column(String)
     path = Column(String)
     propagate = Column(Boolean, default=True)
     allowed = Column(Boolean, default=True)
-    type: str = Column(String)
     user_id = Column(GUID, ForeignKey('users.user_id', ondelete="CASCADE"))
     user = relationship("User", back_populates="acl_entries")
     group_id = Column(GUID, ForeignKey('user_groups.user_group_id', ondelete="CASCADE"))
@@ -42,5 +42,5 @@ class ACE(BaseTable):
     role = relationship("Role", back_populates="acl_entries")
 
     __table_args__ = (
-        CheckConstraint("(user_id IS NOT NULL AND type = 'user') OR (group_id IS NOT NULL AND type = 'group')"),
+        CheckConstraint("(user_id IS NOT NULL AND ace_type = 'user') OR (group_id IS NOT NULL AND ace_type = 'group')"),
     )

@@ -37,10 +37,10 @@ def has_privilege(
     ):
         if not current_user.is_superadmin:
             path = re.sub(r"^/v[0-9]", "", request.url.path)  # remove the prefix (e.g. "/v3") from URL path
-            print(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
+            log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
             if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, privilege_name):
                 raise HTTPException(status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)")
-            return current_user
+        return current_user
     return get_user_and_check_privilege
 
 
@@ -57,7 +57,7 @@ def has_privilege_on_websocket(
             log.debug(f"Checking user {current_user.username} has privilege {privilege_name} on '{path}'")
             if not await rbac_repo.check_user_has_privilege(current_user.user_id, path, privilege_name):
                 raise HTTPException(status_code=403, detail=f"Permission denied (privilege {privilege_name} is required)")
-            return current_user
+        return current_user
     return get_user_and_check_privilege
 
 # class PrivilegeChecker:

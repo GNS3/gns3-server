@@ -36,6 +36,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.images import ImagesRepository
 
 from .dependencies.authentication import get_current_active_user
+from .dependencies.rbac import has_privilege
 from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find template"}}
@@ -43,20 +44,32 @@ responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find
 router = APIRouter(responses=responses)
 
 
-@router.post("", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=schemas.Template,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Template.Allocate"))]
+)
 async def create_template(
     template_create: schemas.TemplateCreate,
     templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Template:
     """
     Create a new template.
+
+    Required privilege: Template.Allocate
     """
 
     template = await TemplatesService(templates_repo).create_template(template_create)
     return template
 
 
-@router.get("/{template_id}", response_model=schemas.Template, response_model_exclude_unset=True)
+@router.get(
+    "/{template_id}",
+    response_model=schemas.Template,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Template.Audit"))]
+)
 async def get_template(
     template_id: UUID,
     request: Request,
@@ -65,6 +78,8 @@ async def get_template(
 ) -> schemas.Template:
     """
     Return a template.
+
+    Required privilege: Template.Audit
     """
 
     request_etag = request.headers.get("If-None-Match", "")
@@ -78,7 +93,12 @@ async def get_template(
         return template
 
 
-@router.put("/{template_id}", response_model=schemas.Template, response_model_exclude_unset=True)
+@router.put(
+    "/{template_id}",
+    response_model=schemas.Template,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Template.Modify"))]
+)
 async def update_template(
     template_id: UUID,
     template_update: schemas.TemplateUpdate,
@@ -86,12 +106,18 @@ async def update_template(
 ) -> schemas.Template:
     """
     Update a template.
+
+    Required privilege: Template.Modify
     """
 
     return await TemplatesService(templates_repo).update_template(template_id, template_update)
 
 
-@router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{template_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Template.Allocate"))]
+)
 async def delete_template(
         template_id: UUID,
         prune_images: Optional[bool] = False,
@@ -101,15 +127,22 @@ async def delete_template(
 ) -> None:
     """
     Delete a template.
+
+    Required privilege: Template.Allocate
     """
 
     await TemplatesService(templates_repo).delete_template(template_id)
-    #await rbac_repo.delete_all_permissions_with_path(f"/templates/{template_id}")
+    await rbac_repo.delete_all_ace_starting_with_path(f"/templates/{template_id}")
     if prune_images:
         await images_repo.prune_images()
 
 
-@router.get("", response_model=List[schemas.Template], response_model_exclude_unset=True)
+@router.get(
+    "",
+    response_model=List[schemas.Template],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Template.Audit"))]
+)
 async def get_templates(
         templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository)),
         current_user: schemas.User = Depends(get_current_active_user),
@@ -117,6 +150,8 @@ async def get_templates(
 ) -> List[schemas.Template]:
     """
     Return all templates.
+
+    Required privilege: Template.Audit
     """
 
     templates = await TemplatesService(templates_repo).get_templates()
@@ -136,12 +171,19 @@ async def get_templates(
     return user_templates
 
 
-@router.post("/{template_id}/duplicate", response_model=schemas.Template, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{template_id}/duplicate",
+    response_model=schemas.Template,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Template.Allocate"))]
+)
 async def duplicate_template(
         template_id: UUID, templates_repo: TemplatesRepository = Depends(get_repository(TemplatesRepository))
 ) -> schemas.Template:
     """
     Duplicate a template.
+
+    Required privilege: Template.Allocate
     """
 
     template = await TemplatesService(templates_repo).duplicate_template(template_id)

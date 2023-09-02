@@ -305,7 +305,7 @@ class TestUserLogin:
         assert response.status_code == status.HTTP_200_OK
         token = response.json().get("access_token")
 
-        response = await unauthorized_client.get(app.url_path_for("get_projects"), params={"token": token})
+        response = await unauthorized_client.get(app.url_path_for("statistics"), params={"token": token})
         assert response.status_code == status.HTTP_200_OK
 
 

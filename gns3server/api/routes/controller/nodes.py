@@ -34,7 +34,11 @@ from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
 from gns3server.utils.http_client import HTTPClient
 from gns3server.controller.controller_error import ControllerForbiddenError, ControllerBadRequestError
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server import schemas
+
+from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 
 import logging
 
@@ -108,10 +112,13 @@ async def dep_node(node_id: UUID, project: Project = Depends(dep_project)) -> No
         404: {"model": schemas.ErrorMessage, "description": "Could not find project"},
         409: {"model": schemas.ErrorMessage, "description": "Could not create node"},
     },
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
 )
 async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(dep_project)) -> schemas.Node:
     """
     Create a new node.
+
+    Required privilege: Node.Allocate
     """
 
     controller = Controller.instance()
@@ -121,65 +128,89 @@ async def create_node(node_data: schemas.NodeCreate, project: Project = Depends(
     return node.asdict()
 
 
-@router.get("", response_model=List[schemas.Node], response_model_exclude_unset=True)
-async def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
+@router.get(
+    "",
+    response_model=List[schemas.Node],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Node.Audit"))]
+)
+def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
     """
     Return all nodes belonging to a given project.
+
+    Required privilege: Node.Audit
     """
 
     return [v.asdict() for v in project.nodes.values()]
 
 
-@router.post("/start", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node."))])
 async def start_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Start all nodes belonging to a given project.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await project.start_all()
 
 
-@router.post("/stop", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/stop", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
 async def stop_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Stop all nodes belonging to a given project.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await project.stop_all()
 
 
-@router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/suspend", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
 async def suspend_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Suspend all nodes belonging to a given project.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await project.suspend_all()
 
 
-@router.post("/reload", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/reload", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
 async def reload_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reload all nodes belonging to a given project.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await project.stop_all()
     await project.start_all()
 
 
-@router.get("/{node_id}", response_model=schemas.Node)
+@router.get("/{node_id}", response_model=schemas.Node, dependencies=[Depends(has_privilege("Node.Audit"))])
 def get_node(node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Return a node from a given project.
+
+    Required privilege: Node.Audit
     """
 
     return node.asdict()
 
 
-@router.put("/{node_id}", response_model=schemas.Node, response_model_exclude_unset=True)
+@router.put(
+    "/{node_id}",
+    response_model=schemas.Node,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Node.Modify"))]
+)
 async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Update a node.
+
+    Required privilege: Node.Modify
     """
 
     node_data = jsonable_encoder(node_data, exclude_unset=True)
@@ -197,85 +228,142 @@ async def update_node(node_data: schemas.NodeUpdate, node: Node = Depends(dep_no
     "/{node_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**responses, 409: {"model": schemas.ErrorMessage, "description": "Cannot delete node"}},
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
 )
-async def delete_node(node_id: UUID, project: Project = Depends(dep_project)) -> None:
+async def delete_node(
+        node_id: UUID, project: Project = Depends(dep_project),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> None:
     """
     Delete a node from a project.
+
+    Required privilege: Node.Allocate
     """
 
     await project.delete_node(str(node_id))
+    await rbac_repo.delete_all_ace_starting_with_path(f"/projects/{project.id}/nodes/{node_id}")
 
 
-@router.post("/{node_id}/duplicate", response_model=schemas.Node, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{node_id}/duplicate",
+    response_model=schemas.Node,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
+)
 async def duplicate_node(duplicate_data: schemas.NodeDuplicate, node: Node = Depends(dep_node)) -> schemas.Node:
     """
     Duplicate a node.
+
+    Required privilege: Node.Allocate
     """
 
     new_node = await node.project.duplicate_node(node, duplicate_data.x, duplicate_data.y, duplicate_data.z)
     return new_node.asdict()
 
 
-@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/start",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+)
 async def start_node(start_data: dict, node: Node = Depends(dep_node)) -> None:
     """
     Start a node.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await node.start(data=start_data)
 
 
-@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+)
 async def stop_node(node: Node = Depends(dep_node)) -> None:
     """
     Stop a node.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await node.stop()
 
 
-@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/suspend",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+)
 async def suspend_node(node: Node = Depends(dep_node)) -> None:
     """
     Suspend a node.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await node.suspend()
 
 
-@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/reload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.PowerMgmt"))]
+)
 async def reload_node(node: Node = Depends(dep_node)) -> None:
     """
     Reload a node.
+
+    Required privilege: Node.PowerMgmt
     """
 
     await node.reload()
 
 
-@router.post("/{node_id}/isolate", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/isolate",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Link.Modify"))]
+)
 async def isolate_node(node: Node = Depends(dep_node)) -> None:
     """
     Isolate a node (suspend all attached links).
+
+    Required privilege: Link.Modify
     """
 
     for link in node.links:
         await link.update_suspend(True)
 
 
-@router.post("/{node_id}/unisolate", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/unisolate",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Link.Modify"))]
+)
 async def unisolate_node(node: Node = Depends(dep_node)) -> None:
     """
     Un-isolate a node (resume all attached suspended links).
+
+    Required privilege: Link.Modify
     """
 
     for link in node.links:
         await link.update_suspend(False)
 
 
-@router.get("/{node_id}/links", response_model=List[schemas.Link], response_model_exclude_unset=True)
+@router.get(
+    "/{node_id}/links",
+    response_model=List[schemas.Link],
+    response_model_exclude_unset=True,
+    dependencies = [Depends(has_privilege("Link.Audit"))]
+)
 async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     """
     Return all the links connected to a node.
+
+    Required privilege: Link.Audit
     """
 
     links = []
@@ -284,10 +372,12 @@ async def get_node_links(node: Node = Depends(dep_node)) -> List[schemas.Link]:
     return links
 
 
-@router.get("/{node_id}/dynamips/auto_idlepc")
+@router.get("/{node_id}/dynamips/auto_idlepc", dependencies=[Depends(has_privilege("Node.Audit"))])
 async def auto_idlepc(node: Node = Depends(dep_node)) -> dict:
     """
     Compute an Idle-PC value for a Dynamips node
+
+    Required privilege: Node.Audit
     """
 
     if node.node_type != "dynamips":
@@ -295,10 +385,12 @@ async def auto_idlepc(node: Node = Depends(dep_node)) -> dict:
     return await node.dynamips_auto_idlepc()
 
 
-@router.get("/{node_id}/dynamips/idlepc_proposals")
+@router.get("/{node_id}/dynamips/idlepc_proposals", dependencies=[Depends(has_privilege("Node.Audit"))])
 async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
     """
     Compute a list of potential idle-pc values for a Dynamips node
+
+    Required privilege: Node.Audit
     """
 
     if node.node_type != "dynamips":
@@ -306,7 +398,11 @@ async def idlepc_proposals(node: Node = Depends(dep_node)) -> List[str]:
     return await node.dynamips_idlepc_proposals()
 
 
-@router.post("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/qemu/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
+)
 async def create_disk_image(
         disk_name: str,
         disk_data: schemas.QemuDiskImageCreate,
@@ -314,6 +410,8 @@ async def create_disk_image(
 ) -> None:
     """
     Create a Qemu disk image.
+
+    Required privilege: Node.Allocate
     """
 
     if node.node_type != "qemu":
@@ -321,7 +419,11 @@ async def create_disk_image(
     await node.post(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
-@router.put("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put(
+    "/{node_id}/qemu/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
+)
 async def update_disk_image(
         disk_name: str,
         disk_data: schemas.QemuDiskImageUpdate,
@@ -329,6 +431,8 @@ async def update_disk_image(
 ) -> None:
     """
     Update a Qemu disk image.
+
+    Required privilege: Node.Allocate
     """
 
     if node.node_type != "qemu":
@@ -336,13 +440,19 @@ async def update_disk_image(
     await node.put(f"/disk_image/{disk_name}", data=disk_data.model_dump(exclude_unset=True))
 
 
-@router.delete("/{node_id}/qemu/disk_image/{disk_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}/qemu/disk_image/{disk_name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.Allocate"))]
+)
 async def delete_disk_image(
         disk_name: str,
         node: Node = Depends(dep_node)
 ) -> None:
     """
     Delete a Qemu disk image.
+
+    Required privilege: Node.Allocate
     """
 
     if node.node_type != "qemu":
@@ -350,10 +460,12 @@ async def delete_disk_image(
     await node.delete(f"/disk_image/{disk_name}")
 
 
-@router.get("/{node_id}/files/{file_path:path}")
+@router.get("/{node_id}/files/{file_path:path}", dependencies=[Depends(has_privilege("Node.Audit"))])
 async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     """
-    Return a file in the node directory
+    Return a file from the node directory.
+
+    Required privilege: Node.Audit
     """
 
     path = force_unix_path(file_path)
@@ -369,10 +481,16 @@ async def get_file(file_path: str, node: Node = Depends(dep_node)) -> Response:
     return Response(res.body, media_type="application/octet-stream", status_code=res.status)
 
 
-@router.post("/{node_id}/files/{file_path:path}", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{node_id}/files/{file_path:path}",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Node.Modify"))]
+)
 async def post_file(file_path: str, request: Request, node: Node = Depends(dep_node)):
     """
     Write a file in the node directory.
+
+    Required privilege: Node.Modify
     """
 
     path = force_unix_path(file_path)
@@ -389,10 +507,12 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
     # FIXME: response with correct status code (from compute)
 
 
-@router.websocket("/{node_id}/console/ws")
+@router.websocket("/{node_id}/console/ws", dependencies=[Depends(has_privilege_on_websocket("Node.Console"))])
 async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> None:
     """
     WebSocket console.
+
+    Required privilege: Node.Console
     """
 
     compute = node.compute
@@ -447,16 +567,31 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> No
         log.error(f"Client error received when forwarding to compute console WebSocket: {e}")
 
 
-@router.post("/console/reset", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/console/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.Console"))]
+)
 async def reset_console_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Reset console for all nodes belonging to the project.
+
+    Required privilege: Node.Console
     """
 
     await project.reset_console_all()
 
 
-@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/console/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Node.Console"))]
+)
 async def console_reset(node: Node = Depends(dep_node)) -> None:
+    """
+    Reset a console for a given node.
+
+    Required privilege: Node.Console
+    """
 
     await node.post("/console/reset")

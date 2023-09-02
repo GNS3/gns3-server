@@ -276,22 +276,6 @@ class RbacRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
-    # async def prune_permissions(self) -> int:
-    #     """
-    #     Prune orphaned permissions.
-    #     """
-    #
-    #     query = select(models.Permission).\
-    #         filter((~models.Permission.roles.any()) & (models.Permission.user_id == null()))
-    #     result = await self._db_session.execute(query)
-    #     permissions = result.scalars().all()
-    #     permissions_deleted = 0
-    #     for permission in permissions:
-    #         if await self.delete_permission(permission.permission_id):
-    #             permissions_deleted += 1
-    #     log.info(f"{permissions_deleted} orphaned permissions have been deleted")
-    #     return permissions_deleted
-
     async def delete_all_ace_starting_with_path(self, path: str) -> None:
         """
         Delete all ACEs starting with path.
@@ -304,7 +288,10 @@ class RbacRepository(BaseRepository):
         log.debug(f"{result.rowcount} ACE(s) have been deleted")
 
     @staticmethod
-    def _match_path_to_aces(path: str, aces) -> bool:
+    def _check_path_with_aces(path: str, aces) -> bool:
+        """
+        Compare path with existing ACEs to check if the user has the required privilege on that path.
+        """
 
         parsed_url = urlparse(path)
         original_path = path
@@ -347,7 +334,7 @@ class RbacRepository(BaseRepository):
         aces = result.all()
 
         try:
-            if self._match_path_to_aces(path, aces):
+            if self._check_path_with_aces(path, aces):
                 # the user has an ACE matching the path and privilege,there is no need to check group ACEs
                 return True
         except PermissionError:
@@ -366,6 +353,6 @@ class RbacRepository(BaseRepository):
         aces = result.all()
 
         try:
-            return self._match_path_to_aces(path, aces)
+            return self._check_path_with_aces(path, aces)
         except PermissionError:
             return False

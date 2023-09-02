@@ -45,11 +45,10 @@ from gns3server.controller.import_project import import_project as import_contro
 from gns3server.controller.export_project import export_project as export_controller_project
 from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
-from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services.templates import TemplatesService
 
-from .dependencies.authentication import get_current_active_user
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
 from .dependencies.database import get_repository
 
@@ -67,31 +66,21 @@ def dep_project(project_id: UUID) -> Project:
     return project
 
 
-CHUNK_SIZE = 1024 * 8  # 8KB
-
-
-@router.get("", response_model=List[schemas.Project], response_model_exclude_unset=True)
-async def get_projects(
-        current_user: schemas.User = Depends(get_current_active_user),
-        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
-) -> List[schemas.Project]:
+@router.get(
+    "",
+    response_model=List[schemas.Project],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Project.Audit"))]
+)
+async def get_projects() -> List[schemas.Project]:
     """
     Return all projects.
+
+    Required privilege: Project.Audit
     """
 
     controller = Controller.instance()
-    if current_user.is_superadmin:
-        return [p.asdict() for p in controller.projects.values()]
-    else:
-        user_projects = []
-        for project in controller.projects.values():
-            if await rbac_repo.check_user_has_privilege(
-                    current_user.user_id,
-                    f"/projects/{project.id}",
-                    "Project.Audit"
-            ):
-                user_projects.append(project.asdict())
-    return user_projects
+    return [p.asdict() for p in controller.projects.values()]
 
 
 @router.post(
@@ -107,6 +96,8 @@ async def create_project(
 ) -> schemas.Project:
     """
     Create a new project.
+
+    Required privilege: Project.Allocate
     """
 
     controller = Controller.instance()
@@ -115,9 +106,11 @@ async def create_project(
 
 
 @router.get("/{project_id}", response_model=schemas.Project, dependencies=[Depends(has_privilege("Project.Audit"))])
-async def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
+def get_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Return a project.
+
+    Required privilege: Project.Audit
     """
 
     return project.asdict()
@@ -135,6 +128,8 @@ async def update_project(
 ) -> schemas.Project:
     """
     Update a project.
+
+    Required privilege: Project.Modify
     """
 
     await project.update(**jsonable_encoder(project_data, exclude_unset=True))
@@ -147,21 +142,27 @@ async def update_project(
     dependencies=[Depends(has_privilege("Project.Allocate"))]
 )
 async def delete_project(
-        project: Project = Depends(dep_project)
+        project: Project = Depends(dep_project),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
 ) -> None:
     """
     Delete a project.
+
+    Required privilege: Project.Allocate
     """
 
     controller = Controller.instance()
     await project.delete()
     controller.remove_project(project)
+    await rbac_repo.delete_all_ace_starting_with_path(f"/projects/{project.id}")
 
 
 @router.get("/{project_id}/stats", dependencies=[Depends(has_privilege("Project.Audit"))])
 def get_project_stats(project: Project = Depends(dep_project)) -> dict:
     """
     Return a project statistics.
+
+    Required privilege: Project.Audit
     """
 
     return project.stats()
@@ -176,6 +177,8 @@ def get_project_stats(project: Project = Depends(dep_project)) -> dict:
 async def close_project(project: Project = Depends(dep_project)) -> None:
     """
     Close a project.
+
+    Required privilege: Project.Allocate
     """
 
     await project.close()
@@ -191,6 +194,8 @@ async def close_project(project: Project = Depends(dep_project)) -> None:
 async def open_project(project: Project = Depends(dep_project)) -> schemas.Project:
     """
     Open a project.
+
+    Required privilege: Project.Allocate
     """
 
     await project.open()
@@ -207,6 +212,8 @@ async def open_project(project: Project = Depends(dep_project)) -> schemas.Proje
 async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
     """
     Load a project (local server only).
+
+    Required privilege: Project.Allocate
     """
 
     controller = Controller.instance()
@@ -219,6 +226,8 @@ async def load_project(path: str = Body(..., embed=True)) -> schemas.Project:
 async def project_http_notifications(project_id: UUID) -> StreamingResponse:
     """
     Receive project notifications about the controller from HTTP stream.
+
+    Required privilege: Project.Audit
     """
 
     from gns3server.api.server import app
@@ -255,6 +264,8 @@ async def project_ws_notifications(
 ) -> None:
     """
     Receive project notifications about the controller from WebSocket.
+
+    Required privilege: Project.Audit
     """
 
     if current_user is None:
@@ -298,6 +309,8 @@ async def export_project(
 ) -> StreamingResponse:
     """
     Export a project as a portable archive.
+
+    Required privilege: Project.Audit
     """
 
     compression_query = compression.lower()
@@ -366,6 +379,8 @@ async def import_project(
 ) -> schemas.Project:
     """
     Import a project from a portable archive.
+
+    Required privilege: Project.Allocate
     """
 
     controller = Controller.instance()
@@ -401,6 +416,8 @@ async def duplicate_project(
 ) -> schemas.Project:
     """
     Duplicate a project.
+
+    Required privilege: Project.Allocate
     """
 
     reset_mac_addresses = project_data.reset_mac_addresses
@@ -413,7 +430,9 @@ async def duplicate_project(
 @router.get("/{project_id}/locked", dependencies=[Depends(has_privilege("Project.Audit"))])
 async def locked_project(project: Project = Depends(dep_project)) -> bool:
     """
-    Returns whether a project is locked or not
+    Returns whether a project is locked or not.
+
+    Required privilege: Project.Audit
     """
 
     return project.locked
@@ -427,6 +446,8 @@ async def locked_project(project: Project = Depends(dep_project)) -> bool:
 async def lock_project(project: Project = Depends(dep_project)) -> None:
     """
     Lock all drawings and nodes in a given project.
+
+    Required privilege: Project.Audit
     """
 
     project.lock()
@@ -440,6 +461,8 @@ async def lock_project(project: Project = Depends(dep_project)) -> None:
 async def unlock_project(project: Project = Depends(dep_project)) -> None:
     """
     Unlock all drawings and nodes in a given project.
+
+    Required privilege: Project.Modify
     """
 
     project.unlock()
@@ -449,6 +472,8 @@ async def unlock_project(project: Project = Depends(dep_project)) -> None:
 async def get_file(file_path: str, project: Project = Depends(dep_project)) -> FileResponse:
     """
     Return a file from a project.
+
+    Required privilege: Project.Audit
     """
 
     file_path = urllib.parse.unquote(file_path)
@@ -473,6 +498,8 @@ async def get_file(file_path: str, project: Project = Depends(dep_project)) -> F
 async def write_file(file_path: str, request: Request, project: Project = Depends(dep_project)) -> None:
     """
     Write a file to a project.
+
+    Required privilege: Project.Modify
     """
 
     file_path = urllib.parse.unquote(file_path)
@@ -511,6 +538,8 @@ async def create_node_from_template(
 ) -> schemas.Node:
     """
     Create a new node from a template.
+
+    Required privilege: Node.Allocate
     """
 
     template = await TemplatesService(templates_repo).get_template(template_id)

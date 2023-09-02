@@ -72,6 +72,30 @@ def create_default_roles(target, connection, **kw):
             "name": "Group.Modify"
         },
         {
+            "description": "Create or delete a role",
+            "name": "Role.Allocate"
+        },
+        {
+            "description": "View a role",
+            "name": "Role.Audit"
+        },
+        {
+            "description": "Update a role",
+            "name": "Role.Modify"
+        },
+        {
+            "description": "Create or delete an ACE",
+            "name": "ACE.Allocate"
+        },
+        {
+            "description": "View an ACE",
+            "name": "ACE.Audit"
+        },
+        {
+            "description": "Update an ACE",
+            "name": "ACE.Modify"
+        },
+        {
             "description": "Create or delete a template",
             "name": "Template.Allocate"
         },
@@ -97,7 +121,15 @@ def create_default_roles(target, connection, **kw):
         },
         {
             "description": "Create or delete project snapshots",
-            "name": "Project.Snapshot"
+            "name": "Snapshot.Allocate"
+        },
+        {
+            "description": "Restore a snapshot",
+            "name": "Snapshot.Restore"
+        },
+        {
+            "description": "View a snapshot",
+            "name": "Snapshot.Audit"
         },
         {
             "description": "Create or delete a node",
@@ -168,6 +200,10 @@ def create_default_roles(target, connection, **kw):
             "name": "Compute.Allocate"
         },
         {
+            "description": "Update a compute",
+            "name": "Compute.Modify"
+        },
+        {
             "description": "View a compute",
             "name": "Compute.Audit"
         },
@@ -227,7 +263,9 @@ def add_privileges_to_default_roles(target, connection, **kw):
         "Project.Allocate",
         "Project.Audit",
         "Project.Modify",
-        "Project.Snapshot",
+        "Snapshot.Allocate",
+        "Snapshot.Audit",
+        "Snapshot.Restore",
         "Node.Allocate",
         "Node.Audit",
         "Node.Modify",
@@ -253,6 +291,7 @@ def add_privileges_to_default_roles(target, connection, **kw):
     # add required privileges to the "Auditor" role
     auditor_privileges = (
         "Project.Audit",
+        "Snapshot.Audit",
         "Node.Audit",
         "Link.Audit",
         "Drawing.Audit",

@@ -48,10 +48,10 @@ class ACEBase(BaseModel):
     Common ACE properties.
     """
 
+    ace_type: ACEType = Field(..., description="Type of the ACE")
     path: str
     propagate: Optional[bool] = True
     allowed: Optional[bool] = True
-    type: ACEType = Field(..., description="Type of the ACE")
     user_id: Optional[UUID] = None
     group_id: Optional[UUID] = None
     role_id: UUID
