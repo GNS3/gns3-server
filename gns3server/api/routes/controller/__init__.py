@@ -23,7 +23,6 @@ from . import drawings
 from . import gns3vm
 from . import links
 from . import nodes
-from . import notifications
 from . import projects
 from . import snapshots
 from . import symbols
@@ -38,8 +37,16 @@ from .dependencies.authentication import get_current_active_user
 
 router = APIRouter()
 
-router.include_router(controller.router, tags=["Controller"])
-router.include_router(users.router, prefix="/users", tags=["Users"])
+router.include_router(
+    controller.router,
+    tags=["Controller"]
+)
+
+router.include_router(
+    users.router,
+    prefix="/users",
+    tags=["Users"]
+)
 
 router.include_router(
     groups.router,
@@ -109,11 +116,6 @@ router.include_router(
     prefix="/computes",
     tags=["Computes"]
 )
-
-router.include_router(
-    notifications.router,
-    prefix="/notifications",
-    tags=["Notifications"])
 
 router.include_router(
     appliances.router,
