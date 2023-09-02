@@ -144,7 +144,7 @@ def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
     return [v.asdict() for v in project.nodes.values()]
 
 
-@router.post("/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node."))])
+@router.post("/start", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(has_privilege("Node.PowerMgmt"))])
 async def start_all_nodes(project: Project = Depends(dep_project)) -> None:
     """
     Start all nodes belonging to a given project.
