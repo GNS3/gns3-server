@@ -27,7 +27,7 @@ jobs:
     - name: Install GNS3 server and dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install .[dev]
+        python -m pip install .
     - name: Generate the API documentation
       run: |
         cd scripts
