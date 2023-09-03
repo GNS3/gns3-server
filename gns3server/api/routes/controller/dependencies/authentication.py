@@ -26,7 +26,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
 from .database import get_repository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/users/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/access/users/login", auto_error=False)
 
 
 async def get_user_from_token(
