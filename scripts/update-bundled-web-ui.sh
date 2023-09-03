@@ -98,3 +98,8 @@ yarn ng build --source-map=false --build-optimizer=false --configuration=product
 cp -R $REPO_DIR/dist/* "$GNS3SERVER_DIR/gns3server/static/web-ui/"
 
 cd "$GNS3SERVER_DIR"
+git add gns3server/static/web-ui/*
+if [[ -n "$TAG" ]]
+then
+  git commit -m "Bundle web-ui ${TAG}"
+fi

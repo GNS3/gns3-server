@@ -58,7 +58,7 @@ class VirtualBoxBase(BaseModel):
 
     name: str
     vmname: str = Field(..., description="VirtualBox VM name (in VirtualBox itself)")
-    node_id: Optional[UUID]
+    node_id: Optional[UUID] = None
     linked_clone: Optional[bool] = Field(None, description="Whether the VM is a linked clone or not")
     usage: Optional[str] = Field(None, description="How to use the node")
     # 36 adapters is the maximum given by the ICH9 chipset in VirtualBox
@@ -86,8 +86,8 @@ class VirtualBoxUpdate(VirtualBoxBase):
     Properties to update a VirtualBox node.
     """
 
-    name: Optional[str]
-    vmname: Optional[str]
+    name: Optional[str] = None
+    vmname: Optional[str] = None
 
 
 class VirtualBox(VirtualBoxBase):

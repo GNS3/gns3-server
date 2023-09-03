@@ -398,7 +398,7 @@ class Compute:
                 raise ControllerNotFoundError(msg)
             self._capabilities = response.json
 
-            if response.json["version"].split("-")[0] != __version__.split("-")[0]:
+            if response.json["version"].split("+")[0] != __version__.split("+")[0]:
                 if self._name.startswith("GNS3 VM"):
                     msg = (
                         "GNS3 version {} is not the same as the GNS3 VM version {}. Please upgrade the GNS3 VM.".format(
@@ -503,7 +503,7 @@ class Compute:
         return self._getUrl(path)
 
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
-        with async_timeout.timeout(timeout):
+        async with async_timeout.timeout(delay=timeout):
             url = self._getUrl(path)
             headers = {"content-type": "application/json"}
             chunked = None

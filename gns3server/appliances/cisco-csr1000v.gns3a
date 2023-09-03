@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/products-installation-and-configuration-guides-list.html",
     "product_name": "CSR1000v",
     "product_url": "http://www.cisco.com/c/en/us/support/routers/cloud-services-router-1000v-series/tsd-products-support-series-home.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

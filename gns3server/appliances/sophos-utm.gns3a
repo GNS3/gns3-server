@@ -8,7 +8,7 @@
     "documentation_url": "https://community.sophos.com/products/unified-threat-management/",
     "product_name": "Sophos UTM Home Edition",
     "product_url": "https://www.sophos.com/en-us/products/free-tools/sophos-utm-home-edition.aspx",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

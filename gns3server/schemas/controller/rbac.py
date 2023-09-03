@@ -15,75 +15,69 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Optional, List
-from pydantic import BaseModel, validator
+from pydantic import ConfigDict, BaseModel, Field
 from uuid import UUID
 from enum import Enum
 
 from .base import DateTimeModelMixin
 
 
-class HTTPMethods(str, Enum):
+class PrivilegeBase(BaseModel):
     """
-    HTTP method type.
-    """
-
-    get = "GET"
-    head = "HEAD"
-    post = "POST"
-    patch = "PATCH"
-    put = "PUT"
-    delete = "DELETE"
-
-
-class PermissionAction(str, Enum):
-    """
-    Action to perform when permission is matched.
+    Common privilege properties.
     """
 
-    allow = "ALLOW"
-    deny = "DENY"
-
-
-class PermissionBase(BaseModel):
-    """
-    Common permission properties.
-    """
-
-    methods: List[HTTPMethods]
-    path: str
-    action: PermissionAction
+    name: str
     description: Optional[str] = None
 
-    class Config:
-        use_enum_values = True
 
-    @validator("action", pre=True)
-    def action_uppercase(cls, v):
-        return v.upper()
+class Privilege(DateTimeModelMixin, PrivilegeBase):
+
+    privilege_id: UUID
+    model_config = ConfigDict(from_attributes=True)
 
 
-class PermissionCreate(PermissionBase):
+class ACEType(str, Enum):
+
+    user = "user"
+    group = "group"
+
+
+class ACEBase(BaseModel):
     """
-    Properties to create a permission.
+    Common ACE properties.
+    """
+
+    ace_type: ACEType = Field(..., description="Type of the ACE")
+    path: str
+    propagate: Optional[bool] = True
+    allowed: Optional[bool] = True
+    user_id: Optional[UUID] = None
+    group_id: Optional[UUID] = None
+    role_id: UUID
+    model_config = ConfigDict(use_enum_values=True)
+
+
+class ACECreate(ACEBase):
+    """
+    Properties to create an ACE.
     """
 
     pass
 
 
-class PermissionUpdate(PermissionBase):
+class ACEUpdate(ACEBase):
     """
-    Properties to update a role.
+    Properties to update an ACE.
     """
 
     pass
 
 
-class Permission(DateTimeModelMixin, PermissionBase):
+class ACE(DateTimeModelMixin, ACEBase):
 
-    permission_id: UUID
-
-    class Config:
-        orm_mode = True
+    ace_id: UUID
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoleBase(BaseModel):
@@ -115,7 +109,5 @@ class Role(DateTimeModelMixin, RoleBase):
 
     role_id: UUID
     is_builtin: bool
-    permissions: List[Permission]
-
-    class Config:
-        orm_mode = True
+    privileges: List[Privilege]
+    model_config = ConfigDict(from_attributes=True)

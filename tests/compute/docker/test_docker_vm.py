@@ -21,6 +21,8 @@ import pytest
 import pytest_asyncio
 import uuid
 import os
+
+from unittest.mock import patch
 from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
@@ -103,9 +105,18 @@ async def test_create(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -144,9 +155,18 @@ async def test_create_with_tag(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -188,10 +208,23 @@ async def test_create_vnc(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            '/tmp/.X11-unix/:/tmp/.X11-unix/'
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": "/tmp/.X11-unix/",
+                                "Target": "/tmp/.X11-unix/"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -232,6 +265,21 @@ async def test_create_with_extra_hosts(compute_project, manager):
             called_kwargs = mock.call_args[1]
             assert "GNS3_EXTRA_HOSTS=199.199.199.1\ttest\n199.199.199.1\ttest2" in called_kwargs["data"]["Env"]
         assert vm._extra_hosts == extra_hosts
+
+@pytest.mark.asyncio
+async def test_create_with_colon_in_project_name(compute_project, manager):
+
+    response = {
+        "Id": "e90e34656806",
+        "Warnings": []
+    }
+
+    with asyncio_patch("gns3server.compute.docker.Docker.list_images", return_value=[{"image": "ubuntu"}]):
+        with asyncio_patch("gns3server.compute.docker.Docker.query", return_value=response):
+            with patch("gns3server.compute.project.Project.node_working_directory", return_value="/tmp/test_:_/"):
+                vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu")
+                with pytest.raises(DockerError):
+                    await vm.create()
 
 
 @pytest.mark.asyncio
@@ -310,9 +358,18 @@ async def test_create_start_cmd(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -413,9 +470,18 @@ async def test_create_image_not_available(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -459,9 +525,18 @@ async def test_create_with_user(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -548,10 +623,23 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol", "1"),
+                                "Target": "/gns3volumes/vol/1"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -590,10 +678,23 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol", "1"),
+                                "Target": "/gns3volumes/vol/1"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -632,10 +733,23 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol"),
+                                "Target": "/gns3volumes/vol"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -674,10 +788,23 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol"),
+                                "Target": "/gns3volumes/vol"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -716,9 +843,18 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc"),
+                                "Target": "/gns3volumes/etc"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -757,9 +893,18 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc"),
+                                "Target": "/gns3volumes/etc"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -804,11 +949,28 @@ async def test_create_with_extra_volumes(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
-                            "{}:/gns3volumes/vol/2".format(os.path.join(vm.working_dir, "vol", "2")),
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol", "1"),
+                                "Target": "/gns3volumes/vol/1"
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "vol", "2"),
+                                "Target": "/gns3volumes/vol/2"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -912,8 +1074,9 @@ async def test_start(vm, manager, free_console_port):
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     await vm.adapter_add_nio_binding(0, nio)
 
-    with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-        await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+            await vm.start()
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     vm._add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -932,15 +1095,16 @@ async def test_start_namespace_failed(vm, manager, free_console_port):
     nio = manager.create_nio({"type": "nio_udp", "lport": free_console_port, "rport": free_console_port, "rhost": "127.0.0.1"})
     await vm.adapter_add_nio_binding(0, nio)
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
-        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
-                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42) as mock_namespace:
-                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection", side_effect=UbridgeNamespaceError()) as mock_add_ubridge_connection:
-                        with asyncio_patch("gns3server.compute.docker.DockerVM._get_log", return_value='Hello not available') as mock_log:
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+            with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+                with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42) as mock_namespace:
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection", side_effect=UbridgeNamespaceError()) as mock_add_ubridge_connection:
+                            with asyncio_patch("gns3server.compute.docker.DockerVM._get_log", return_value='Hello not available') as mock_log:
 
-                            with pytest.raises(DockerError):
-                                await vm.start()
+                                with pytest.raises(DockerError):
+                                    await vm.start()
 
     mock_query.assert_any_call("POST", "containers/e90e34656842/start")
     mock_add_ubridge_connection.assert_called_once_with(nio, 0)
@@ -957,13 +1121,14 @@ async def test_start_without_nio(vm):
     assert vm.status != "started"
     vm.adapters = 1
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
-        with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
-            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
-                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
-                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
-                        with asyncio_patch("gns3server.compute.docker.DockerVM._start_console") as mock_start_console:
-                            await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+            with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
+                with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge") as mock_start_ubridge:
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection") as mock_add_ubridge_connection:
+                            with asyncio_patch("gns3server.compute.docker.DockerVM._start_console") as mock_start_console:
+                                await vm.start()
 
     mock_query.assert_called_with("POST", "containers/e90e34656842/start")
     assert mock_add_ubridge_connection.called
@@ -975,9 +1140,10 @@ async def test_start_without_nio(vm):
 @pytest.mark.asyncio
 async def test_start_unpause(vm):
 
-    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
-        with asyncio_patch("gns3server.compute.docker.DockerVM.unpause", return_value="paused") as mock:
-            await vm.start()
+    with patch("gns3server.compute.docker.Docker.install_busybox"):
+        with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="paused"):
+            with asyncio_patch("gns3server.compute.docker.DockerVM.unpause", return_value="paused") as mock:
+                await vm.start()
     assert mock.called
     assert vm.status == "started"
 
@@ -1043,9 +1209,18 @@ async def test_update(vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": [
-                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+            "Mounts": [
+                {
+                    "Type": "bind",
+                    "Source": get_resource("compute/docker/resources"),
+                    "Target": "/gns3",
+                    "ReadOnly": True
+                },
+                {
+                    "Type": "bind",
+                    "Source": os.path.join(vm.working_dir, "etc", "network"),
+                    "Target": "/gns3volumes/etc/network"
+                }
             ],
             "Privileged": True,
             "Memory": 0,
@@ -1115,9 +1290,18 @@ async def test_update_running(vm):
         "HostConfig":
         {
             "CapAdd": ["ALL"],
-            "Binds": [
-                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+            "Mounts": [
+                {
+                    "Type": "bind",
+                    "Source": get_resource("compute/docker/resources"),
+                    "Target": "/gns3",
+                    "ReadOnly": True
+                },
+                {
+                    "Type": "bind",
+                    "Source": os.path.join(vm.working_dir, "etc", "network"),
+                    "Target": "/gns3volumes/etc/network"
+                }
             ],
             "Privileged": True,
             "Memory": 0,
@@ -1172,8 +1356,7 @@ async def test_close(vm, port_manager):
 async def test_close_vnc(vm):
 
     vm._console_type = "vnc"
-    vm._x11vnc_process = MagicMock()
-    vm._xvfb_process = MagicMock()
+    vm._vnc_process = MagicMock()
 
     with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
         with asyncio_patch("gns3server.compute.docker.Docker.query") as mock_query:
@@ -1181,7 +1364,7 @@ async def test_close_vnc(vm):
         mock_query.assert_called_with("DELETE", "containers/e90e34656842", params={"force": 1, "v": 1})
 
     assert vm._closed is True
-    assert vm._xvfb_process.terminate.called
+    assert vm._vnc_process.terminate.called
 
 
 @pytest.mark.asyncio
@@ -1397,9 +1580,22 @@ async def test_mount_binds(vm):
 
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
-        "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-        "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-        "{}:/gns3volumes{}".format(dst, "/test/experimental")
+        {
+            "Type": "bind",
+            "Source": get_resource("compute/docker/resources"),
+            "Target": "/gns3",
+            "ReadOnly": True
+        },
+        {
+            "Type": "bind",
+            "Source": os.path.join(vm.working_dir, "etc", "network"),
+            "Target": "/gns3volumes/etc/network"
+        },
+        {
+            "Type": "bind",
+            "Source": dst,
+            "Target": "/gns3volumes/test/experimental"
+        }
     ]
 
     assert vm._volumes == ["/etc/network", "/test/experimental"]
@@ -1527,9 +1723,18 @@ async def test_cpus(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 0,
@@ -1568,9 +1773,18 @@ async def test_memory(compute_project, manager):
                 "HostConfig":
                     {
                         "CapAdd": ["ALL"],
-                        "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
-                            "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
+                        "Mounts": [
+                            {
+                                "Type": "bind",
+                                "Source": get_resource("compute/docker/resources"),
+                                "Target": "/gns3",
+                                "ReadOnly": True
+                            },
+                            {
+                                "Type": "bind",
+                                "Source": os.path.join(vm.working_dir, "etc", "network"),
+                                "Target": "/gns3volumes/etc/network"
+                            }
                         ],
                         "Privileged": True,
                         "Memory": 33554432,  # 32MB in bytes

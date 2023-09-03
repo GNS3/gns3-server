@@ -20,7 +20,7 @@ from sqlalchemy import Boolean, Column, String, Integer, ForeignKey, PickleType
 from sqlalchemy.orm import relationship
 
 from .base import BaseTable, generate_uuid, GUID
-from .images import image_template_link
+from .images import image_template_map
 
 
 class Template(BaseTable):
@@ -37,7 +37,7 @@ class Template(BaseTable):
     usage = Column(String)
     template_type = Column(String)
     compute_id = Column(String)
-    images = relationship("Image", secondary=image_template_link, back_populates="templates")
+    images = relationship("Image", secondary=image_template_map, back_populates="templates")
 
     __mapper_args__ = {
         "polymorphic_identity": "templates",
@@ -203,6 +203,8 @@ class QemuTemplate(Template):
     kernel_command_line = Column(String)
     replicate_network_connection_state = Column(Boolean)
     create_config_disk = Column(Boolean)
+    tpm = Column(Boolean)
+    uefi = Column(Boolean)
     on_close = Column(String)
     cpu_throttling = Column(Integer)
     process_priority = Column(String)

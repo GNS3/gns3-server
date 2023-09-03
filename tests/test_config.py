@@ -74,7 +74,7 @@ def test_server_settings_to_list(tmpdir, setting: str, value: str, result: str):
         }
     })
 
-    assert config.settings.dict(exclude_unset=True)["Server"][setting] == result
+    assert config.settings.model_dump(exclude_unset=True)["Server"][setting] == result
 
 
 def test_reload(tmpdir):
@@ -109,7 +109,7 @@ def test_server_password_hidden():
     "settings, exception_expected",
     (
             ({"protocol": "https1"}, True),
-            ({"console_start_port_range": 15000}, False),
+            ({"console_start_port_range": 15000, "console_end_port_range": 20000}, False),
             ({"console_start_port_range": 0}, True),
             ({"console_start_port_range": 68000}, True),
             ({"console_end_port_range": 15000}, False),

@@ -1,0 +1,20 @@
+{
+    "appliance_id": "8377ddaa-ecd1-4cde-a510-3ef2ddc48f11",
+    "name": "Ostinato Wireshark",
+    "category": "guest",
+    "description": "Alpine Linux with Ostinato Network Traffic Generator and Wireshark Network Traffic Analyser pre-installed.",
+    "vendor_name": "Ostinato/Wireshark",
+    "vendor_url": "https://ostinato.org/",
+    "documentation_url": "https://ostinato.org/docs/",
+    "product_name": "Ostinato Wireshark",
+    "registry_version": 4,
+    "status": "stable",
+    "availability": "free",
+    "maintainer": "Mark Young",
+    "maintainer_email": "miyoung999@hotmail.com",
+    "docker": {
+        "adapters": 2,
+        "image": "gns3/ostinato-wireshark:latest",
+        "console_type": "vnc"
+    }
+}

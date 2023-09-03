@@ -45,7 +45,7 @@ class QemuTemplate(TemplateBase):
     adapters: Optional[int] = Field(1, ge=0, le=275, description="Number of adapters")
     adapter_type: Optional[QemuAdapterType] = Field("e1000", description="QEMU adapter type")
     mac_address: Optional[str] = Field(
-        "", description="QEMU MAC address", regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
+        "", description="QEMU MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$"
     )
     first_port_name: Optional[str] = Field("", description="Optional name of the first networking port example: eth0")
     port_name_format: Optional[str] = Field(
@@ -80,6 +80,8 @@ class QemuTemplate(TemplateBase):
     create_config_disk: Optional[bool] = Field(
         False, description="Automatically create a config disk on HDD disk interface (secondary slave)"
     )
+    tpm: Optional[bool] = Field(False, description="Enable Trusted Platform Module (TPM)")
+    uefi: Optional[bool] = Field(False, description="Enable UEFI boot mode")
     on_close: Optional[QemuOnCloseAction] = Field("power_off", description="Action to execute on the VM is closed")
     cpu_throttling: Optional[int] = Field(0, ge=0, le=800, description="Percentage of CPU allowed for QEMU")
     process_priority: Optional[QemuProcessPriority] = Field("normal", description="Process priority for QEMU")

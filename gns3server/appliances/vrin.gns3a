@@ -6,7 +6,7 @@
     "vendor_name": "Andras Dosztal",
     "vendor_url": "https://sourceforge.net/projects/vrin/",
     "product_name": "vRIN",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Andras Dosztal",
     "maintainer_email": "developers@gns3.net",

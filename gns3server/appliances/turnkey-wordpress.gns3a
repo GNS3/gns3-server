@@ -7,7 +7,7 @@
     "vendor_url": "https://www.turnkeylinux.org/",
     "product_name": "TurnKey Linux WordPress",
     "product_url": "https://www.turnkeylinux.org/wordpress",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

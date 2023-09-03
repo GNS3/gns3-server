@@ -54,7 +54,7 @@ class TestComputeRoutes:
         params = {
             "compute_id": compute_id,
             "protocol": "http",
-            "host": "localhost",
+            "host": "127.0.0.1",
             "port": 84,
             "user": "julien",
             "password": "secure"}
@@ -164,25 +164,25 @@ class TestComputeFeatures:
             mock.assert_called_with("GET", "vmware", "vms")
             assert response.json() == []
 
-    async def test_compute_create_img(self, app: FastAPI, client: AsyncClient) -> None:
-
-        params = {
-            "protocol": "http",
-            "host": "localhost",
-            "port": 4284,
-            "user": "julien",
-            "password": "secure"
-        }
-
-        response = await client.post(app.url_path_for("get_computes"), json=params)
-        assert response.status_code == status.HTTP_201_CREATED
-        compute_id = response.json()["compute_id"]
-
-        params = {"path": "/test"}
-        with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
-            response = await client.post(app.url_path_for("get_compute", compute_id=compute_id) + "/qemu/img", json=params)
-            assert response.json() == []
-            mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)
+    # async def test_compute_create_img(self, app: FastAPI, client: AsyncClient) -> None:
+    #
+    #     params = {
+    #         "protocol": "http",
+    #         "host": "localhost",
+    #         "port": 4284,
+    #         "user": "julien",
+    #         "password": "secure"
+    #     }
+    #
+    #     response = await client.post(app.url_path_for("get_computes"), json=params)
+    #     assert response.status_code == status.HTTP_201_CREATED
+    #     compute_id = response.json()["compute_id"]
+    #
+    #     params = {"path": "/test"}
+    #     with asyncio_patch("gns3server.controller.compute.Compute.forward", return_value=[]) as mock:
+    #         response = await client.post(app.url_path_for("get_compute", compute_id=compute_id) + "/qemu/img", json=params)
+    #         assert response.json() == []
+    #         mock.assert_called_with("POST", "qemu", "img", data=unittest.mock.ANY)
 
     # async def test_compute_autoidlepc(self, app: FastAPI, client: AsyncClient) -> None:
     #

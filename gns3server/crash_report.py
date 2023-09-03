@@ -32,7 +32,6 @@ import distro
 
 from .version import __version__, __version_info__
 from .config import Config
-from .utils.get_resource import get_resource
 
 import logging
 
@@ -72,24 +71,16 @@ class CrashReport:
         sentry_uncaught.disabled = True
 
         if SENTRY_SDK_AVAILABLE:
-            cacert = None
-            if hasattr(sys, "frozen"):
-                cacert_resource = get_resource("cacert.pem")
-                if cacert_resource is not None and os.path.isfile(cacert_resource):
-                    cacert = cacert_resource
-                else:
-                    log.error(f"The SSL certificate bundle file '{cacert_resource}' could not be found")
-
             # Don't send log records as events.
             sentry_logging = LoggingIntegration(level=logging.INFO, event_level=None)
-
-            sentry_sdk.init(
-                dsn=CrashReport.DSN,
-                release=__version__,
-                ca_certs=cacert,
-                default_integrations=False,
-                integrations=[sentry_logging],
-            )
+            try:
+                sentry_sdk.init(dsn=CrashReport.DSN,
+                                release=__version__,
+                                default_integrations=False,
+                                integrations=[sentry_logging])
+            except Exception as e:
+                log.error("Crash report could not be sent: {}".format(e))
+                return
 
             tags = {
                 "os:name": platform.system(),

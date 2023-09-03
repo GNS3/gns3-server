@@ -107,7 +107,6 @@ class DockerVM(BaseNode):
         self._ethernet_adapters = []
         self._temporary_directory = None
         self._telnet_servers = []
-        self._xvfb_process = None
         self._vnc_process = None
         self._vncconfig_process = None
         self._console_resolution = console_resolution
@@ -303,7 +302,12 @@ class DockerVM(BaseNode):
         resources = get_resource("compute/docker/resources")
         if not os.path.exists(resources):
             raise DockerError(f"{resources} is missing, can't start Docker container")
-        binds = [f"{resources}:/gns3:ro"]
+        binds = [{
+            "Type": "bind",
+            "Source": resources,
+            "Target": "/gns3",
+            "ReadOnly": True
+        }]
 
         # We mount our own etc/network
         try:
@@ -334,7 +338,11 @@ class DockerVM(BaseNode):
         for volume in self._volumes:
             source = os.path.join(self.working_dir, os.path.relpath(volume, "/"))
             os.makedirs(source, exist_ok=True)
-            binds.append(f"{source}:/gns3volumes{volume}")
+            binds.append({
+                "Type": "bind",
+                "Source": source,
+                "Target": "/gns3volumes{}".format(volume)
+            })
 
         return binds
 
@@ -383,6 +391,9 @@ class DockerVM(BaseNode):
         Creates the Docker container.
         """
 
+        if ":" in os.path.splitdrive(self.working_dir)[1]:
+            raise DockerError("Cannot create a Docker container with a project directory containing a colon character (':')")
+
         try:
             image_infos = await self._get_image_information()
         except DockerHttp404Error:
@@ -410,7 +421,7 @@ class DockerVM(BaseNode):
             "HostConfig": {
                 "CapAdd": ["ALL"],
                 "Privileged": True,
-                "Binds": self._mount_binds(image_infos),
+                "Mounts": self._mount_binds(image_infos),
                 "Memory": self._memory * (1024 * 1024),  # convert memory to bytes
                 "NanoCpus": int(self._cpus * 1e9),  # convert cpus to nano cpus
             },
@@ -475,7 +486,11 @@ class DockerVM(BaseNode):
                 "QT_GRAPHICSSYSTEM=native"
             )  # To fix a Qt issue: https://github.com/GNS3/gns3-server/issues/556
             params["Env"].append(f"DISPLAY=:{self._display}")
-            params["HostConfig"]["Binds"].append("/tmp/.X11-unix/:/tmp/.X11-unix/")
+            params["HostConfig"]["Mounts"].append({
+                "Type": "bind",
+                "Source": "/tmp/.X11-unix/",
+                "Target": "/tmp/.X11-unix/"
+            })
 
         if self._extra_hosts:
             extra_hosts = self._format_extra_hosts(self._extra_hosts)
@@ -508,7 +523,7 @@ class DockerVM(BaseNode):
 
     async def update(self):
         """
-        Destroy an recreate the container with the new settings
+        Destroy and recreate the container with the new settings
         """
 
         # We need to save the console and state and restore it
@@ -528,6 +543,9 @@ class DockerVM(BaseNode):
         """
         Starts this Docker container.
         """
+
+        # make sure busybox is installed
+        await self.manager.install_busybox()
 
         try:
             state = await self._get_container_state()
@@ -665,8 +683,8 @@ class DockerVM(BaseNode):
         self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
 
-        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install TigerVNC (recommended) or Xvfb + x11vnc before using VNC support")
+        if not tigervnc_path:
+            raise DockerError("Please install TigerVNC server before using VNC support")
 
         if tigervnc_path:
             with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
@@ -680,29 +698,6 @@ class DockerVM(BaseNode):
                                                                          "-SecurityTypes", "None",
                                                                          ":{}".format(self._display),
                                                                          stdout=fd, stderr=subprocess.STDOUT)
-        else:
-            if restart is False:
-                self._xvfb_process = await asyncio.create_subprocess_exec("Xvfb",
-                                                                          "-nolisten", "tcp",
-                                                                          "-extension", "MIT-SHM",
-                                                                          ":{}".format(self._display),
-                                                                          "-screen", "0",
-                                                                          self._console_resolution + "x16")
-
-            # We pass a port for TCPV6 due to a crash in X11VNC if not here: https://github.com/GNS3/gns3-server/issues/569
-            with open(os.path.join(self.working_dir, "vnc.log"), "w") as fd:
-                self._vnc_process = await asyncio.create_subprocess_exec("x11vnc",
-                                                                         "-forever",
-                                                                         "-nopw",
-                                                                         "-shared",
-                                                                         "-noshm",
-                                                                         "-geometry", self._console_resolution,
-                                                                         "-display", "WAIT:{}".format(self._display),
-                                                                         "-rfbport", str(self.console),
-                                                                         "-rfbportv6", str(self.console),
-                                                                         "-noncache",
-                                                                         "-listen", self._manager.port_manager.console_host,
-                                                                         stdout=fd, stderr=subprocess.STDOUT)
 
     async def _start_vnc(self):
         """
@@ -711,8 +706,8 @@ class DockerVM(BaseNode):
 
         self._display = self._get_free_display_port()
         tigervnc_path = shutil.which("Xtigervnc") or shutil.which("Xvnc")
-        if not (tigervnc_path or shutil.which("Xvfb") and shutil.which("x11vnc")):
-            raise DockerError("Please install TigerVNC server (recommended) or Xvfb + x11vnc before using VNC support")
+        if not tigervnc_path:
+            raise DockerError("Please install TigerVNC server before using VNC support")
         await self._start_vnc_process()
         x11_socket = os.path.join("/tmp/.X11-unix/", f"X{self._display}")
         try:
@@ -984,12 +979,6 @@ class DockerVM(BaseNode):
                     try:
                         self._vnc_process.terminate()
                         await self._vnc_process.wait()
-                    except ProcessLookupError:
-                        pass
-                if self._xvfb_process:
-                    try:
-                        self._xvfb_process.terminate()
-                        await self._xvfb_process.wait()
                     except ProcessLookupError:
                         pass
 

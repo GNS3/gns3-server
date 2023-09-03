@@ -52,12 +52,12 @@ class DynamipsNodeValidation(DynamipsCreate):
 
 def _check_topology_schema(topo, path):
     try:
-        Topology.parse_obj(topo)
+        Topology.model_validate(topo)
 
         # Check the nodes property against compute schemas
         for node in topo["topology"].get("nodes", []):
             if node["node_type"] == "dynamips":
-                DynamipsNodeValidation.parse_obj(node.get("properties", {}))
+                DynamipsNodeValidation.model_validate(node.get("properties", {}))
 
     except pydantic.ValidationError as e:
         error = f"Invalid data in topology file {path}: {e}"

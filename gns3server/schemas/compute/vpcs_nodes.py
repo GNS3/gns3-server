@@ -37,7 +37,7 @@ class VPCSBase(BaseModel):
     """
 
     name: str
-    node_id: Optional[UUID]
+    node_id: Optional[UUID] = None
     usage: Optional[str] = Field(None, description="How to use the node")
     console: Optional[int] = Field(None, gt=0, le=65535, description="Console TCP port")
     console_type: Optional[ConsoleType] = Field(None, description="Console type")
@@ -57,7 +57,7 @@ class VPCSUpdate(VPCSBase):
     Properties to update a VPCS node.
     """
 
-    name: Optional[str]
+    name: Optional[str] = None
 
 
 class VPCS(VPCSBase):

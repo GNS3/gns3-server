@@ -18,33 +18,51 @@
 API routes for drawings.
 """
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, status
 from fastapi.encoders import jsonable_encoder
 from typing import List
 from uuid import UUID
 
 from gns3server.controller import Controller
+from gns3server.db.repositories.rbac import RbacRepository
 from gns3server import schemas
+
+from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Project or drawing not found"}}
 
 router = APIRouter(responses=responses)
 
 
-@router.get("", response_model=List[schemas.Drawing], response_model_exclude_unset=True)
+@router.get(
+    "",
+    response_model=List[schemas.Drawing],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Drawing.Audit"))]
+)
 async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     """
     Return the list of all drawings for a given project.
+
+    Required privilege: Drawing.Audit
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     return [v.asdict() for v in project.drawings.values()]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=schemas.Drawing)
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.Drawing,
+    dependencies=[Depends(has_privilege("Drawing.Allocate"))]
+)
 async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Create a new drawing.
+
+    Required privilege: Drawing.Allocate
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -52,10 +70,17 @@ async def create_drawing(project_id: UUID, drawing_data: schemas.Drawing) -> sch
     return drawing.asdict()
 
 
-@router.get("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
+@router.get(
+    "/{drawing_id}",
+    response_model=schemas.Drawing,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Drawing.Audit"))]
+)
 async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     """
     Return a drawing.
+
+    Required privilege: Drawing.Audit
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -63,10 +88,17 @@ async def get_drawing(project_id: UUID, drawing_id: UUID) -> schemas.Drawing:
     return drawing.asdict()
 
 
-@router.put("/{drawing_id}", response_model=schemas.Drawing, response_model_exclude_unset=True)
+@router.put(
+    "/{drawing_id}",
+    response_model=schemas.Drawing,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Drawing.Modify"))]
+)
 async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schemas.Drawing) -> schemas.Drawing:
     """
     Update a drawing.
+
+    Required privilege: Drawing.Modify
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
@@ -75,11 +107,22 @@ async def update_drawing(project_id: UUID, drawing_id: UUID, drawing_data: schem
     return drawing.asdict()
 
 
-@router.delete("/{drawing_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_drawing(project_id: UUID, drawing_id: UUID) -> None:
+@router.delete(
+    "/{drawing_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Drawing.Allocate"))]
+)
+async def delete_drawing(
+        project_id: UUID,
+        drawing_id: UUID,
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository))
+) -> None:
     """
     Delete a drawing.
+
+    Required privilege: Drawing.Allocate
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
     await project.delete_drawing(str(drawing_id))
+    await rbac_repo.delete_all_ace_starting_with_path(f"/drawings/{drawing_id}")

@@ -81,14 +81,14 @@ class QemuDiskImageBase(BaseModel):
 
     format: QemuDiskImageFormat = Field(..., description="Image format type")
     size: int = Field(..., description="Image size in Megabytes")
-    preallocation: Optional[QemuDiskImagePreallocation]
-    cluster_size: Optional[int]
-    refcount_bits: Optional[int]
-    lazy_refcounts: Optional[QemuDiskImageOnOff]
-    subformat: Optional[QemuDiskImageSubformat]
-    static: Optional[QemuDiskImageOnOff]
-    zeroed_grain: Optional[QemuDiskImageOnOff]
-    adapter_type: Optional[QemuDiskImageAdapterType]
+    preallocation: Optional[QemuDiskImagePreallocation] = None
+    cluster_size: Optional[int] = None
+    refcount_bits: Optional[int] = None
+    lazy_refcounts: Optional[QemuDiskImageOnOff] = None
+    subformat: Optional[QemuDiskImageSubformat] = None
+    static: Optional[QemuDiskImageOnOff] = None
+    zeroed_grain: Optional[QemuDiskImageOnOff] = None
+    adapter_type: Optional[QemuDiskImageAdapterType] = None
 
 
 class QemuDiskImageCreate(QemuDiskImageBase):

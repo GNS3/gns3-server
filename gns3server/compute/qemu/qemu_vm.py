@@ -107,6 +107,7 @@ class QemuVM(BaseNode):
         self._monitor_host = manager.config.settings.Qemu.monitor_host
         self._process = None
         self._cpulimit_process = None
+        self._swtpm_process = None
         self._monitor = None
         self._stdout_file = ""
         self._qemu_img_stdout_file = ""
@@ -114,6 +115,7 @@ class QemuVM(BaseNode):
         self._local_udp_tunnels = {}
         self._guest_cid = None
         self._command_line_changed = False
+        self._qemu_version = None
 
         # QEMU VM settings
         if qemu_path:
@@ -151,6 +153,8 @@ class QemuVM(BaseNode):
         self._kernel_image = ""
         self._kernel_command_line = ""
         self._replicate_network_connection_state = True
+        self._tpm = False
+        self._uefi = False
         self._create_config_disk = False
         self._on_close = "power_off"
         self._cpu_throttling = 0  # means no CPU throttling
@@ -253,7 +257,7 @@ class QemuVM(BaseNode):
             if qemu_bin == "qemu":
                 self._platform = "i386"
             else:
-                self._platform = re.sub(r"^qemu-system-(.*)$", r"\1", qemu_bin, re.IGNORECASE)
+                self._platform = re.sub(r'^qemu-system-(\w+).*$', r'\1', qemu_bin, re.IGNORECASE)
 
         try:
             QemuPlatform(self._platform.split(".")[0])
@@ -728,7 +732,7 @@ class QemuVM(BaseNode):
         """
         Sets whether a config disk is automatically created on HDD disk interface (secondary slave)
 
-        :param replicate_network_connection_state: boolean
+        :param create_config_disk: boolean
         """
 
         if create_config_disk:
@@ -873,6 +877,54 @@ class QemuVM(BaseNode):
 
         log.info(f'QEMU VM "{self._name}" [{self._id}] has set maximum number of hotpluggable vCPUs to {maxcpus}')
         self._maxcpus = maxcpus
+
+    @property
+    def tpm(self):
+        """
+        Returns whether TPM is activated for this QEMU VM.
+
+        :returns: boolean
+        """
+
+        return self._tpm
+
+    @tpm.setter
+    def tpm(self, tpm):
+        """
+        Sets whether TPM is activated for this QEMU VM.
+
+        :param tpm: boolean
+        """
+
+        if tpm:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the Trusted Platform Module (TPM)')
+        else:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the Trusted Platform Module (TPM)')
+        self._tpm = tpm
+
+    @property
+    def uefi(self):
+        """
+        Returns whether UEFI boot mode is activated for this QEMU VM.
+
+        :returns: boolean
+        """
+
+        return self._uefi
+
+    @uefi.setter
+    def uefi(self, uefi):
+        """
+        Sets whether UEFI boot mode is activated for this QEMU VM.
+
+        :param uefi: boolean
+        """
+
+        if uefi:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has enabled the UEFI boot mode')
+        else:
+            log.info(f'QEMU VM "{self._name}" [{self._id}] has disabled the UEFI boot mode')
+        self._uefi = uefi
 
     @property
     def options(self):
@@ -1039,11 +1091,8 @@ class QemuVM(BaseNode):
         """
 
         if self._cpulimit_process and self._cpulimit_process.returncode is None:
-            self._cpulimit_process.kill()
-            try:
-                self._process.wait(3)
-            except subprocess.TimeoutExpired:
-                log.error(f"Could not kill cpulimit process {self._cpulimit_process.pid}")
+            self._cpulimit_process.terminate()
+            self._cpulimit_process = None
 
     def _set_cpu_throttling(self):
         """
@@ -1054,10 +1103,13 @@ class QemuVM(BaseNode):
             return
 
         try:
-            subprocess.Popen(
-                ["cpulimit", "--lazy", f"--pid={self._process.pid}", f"--limit={self._cpu_throttling}"],
-                cwd=self.working_dir,
-            )
+            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
+                cpulimit_exec = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "cpulimit", "cpulimit.exe")
+            else:
+                cpulimit_exec = "cpulimit"
+
+            command = [cpulimit_exec, "--lazy", "--pid={}".format(self._process.pid), "--limit={}".format(self._cpu_throttling)]
+            self._cpulimit_process = subprocess.Popen(command, cwd=self.working_dir)
             log.info(f"CPU throttled to {self._cpu_throttling}%")
         except FileNotFoundError:
             raise QemuError("cpulimit could not be found, please install it or deactivate CPU throttling")
@@ -1110,6 +1162,10 @@ class QemuVM(BaseNode):
             # check if there is enough RAM to run
             self.check_available_ram(self.ram)
 
+            # start swtpm (TPM emulator) first if TPM is enabled
+            if self._tpm:
+                await self._start_swtpm()
+
             command = await self._build_command()
             command_string = " ".join(shlex.quote(s) for s in command)
             try:
@@ -1134,7 +1190,6 @@ class QemuVM(BaseNode):
             await self._set_process_priority()
             if self._cpu_throttling:
                 self._set_cpu_throttling()
-
             if "-enable-kvm" in command_string or "-enable-hax" in command_string:
                 self._hw_virtualization = True
 
@@ -1219,6 +1274,7 @@ class QemuVM(BaseNode):
                             log.warning(f'QEMU VM "{self._name}" PID={self._process.pid} is still running')
             self._process = None
             self._stop_cpulimit()
+            self._stop_swtpm()
             if self.on_close != "save_vm_state":
                 await self._clear_save_vm_stated()
             await self._export_config()
@@ -1746,6 +1802,14 @@ class QemuVM(BaseNode):
                 self._process = None
         return False
 
+    async def reset_console(self):
+        """
+        Reset console
+        """
+
+        if self.is_running():
+            await self.reset_wrap_console()
+
     def command(self):
         """
         Returns the QEMU command line.
@@ -2026,8 +2090,7 @@ class QemuVM(BaseNode):
                     f"file={disk},if=none,id=drive{disk_index},index={disk_index},media=disk{extra_drive_options}",
                 ]
             )
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) >= parse_version("4.2.0"):
+            if self._qemu_version and parse_version(self._qemu_version) >= parse_version("4.2.0"):
                 # The ‘ide-drive’ device is deprecated since version 4.2.0
                 # https://qemu.readthedocs.io/en/latest/system/deprecated.html#ide-drive-since-4-2
                 options.extend(
@@ -2207,6 +2270,8 @@ class QemuVM(BaseNode):
 
         options = []
         if self._bios_image:
+            if self._uefi:
+                raise QemuError("Cannot use a bios image and the UEFI boot mode at the same time")
             if not os.path.isfile(self._bios_image) or not os.path.exists(self._bios_image):
                 if os.path.islink(self._bios_image):
                     raise QemuError(
@@ -2215,6 +2280,20 @@ class QemuVM(BaseNode):
                 else:
                     raise QemuError(f"bios image '{self._bios_image}' is not accessible")
             options.extend(["-bios", self._bios_image.replace(",", ",,")])
+        elif self._uefi:
+            # get the OVMF firmware from the images directory
+            ovmf_firmware_path = self.manager.get_abs_image_path("OVMF_CODE.fd")
+            log.info("Configuring UEFI boot mode using OVMF file: '{}'".format(ovmf_firmware_path))
+            options.extend(["-drive", "if=pflash,format=raw,readonly,file={}".format(ovmf_firmware_path)])
+
+            # the node should have its own copy of OVMF_VARS.fd (the UEFI variables store)
+            ovmf_vars_node_path = os.path.join(self.working_dir, "OVMF_VARS.fd")
+            if not os.path.exists(ovmf_vars_node_path):
+                try:
+                    shutil.copyfile(self.manager.get_abs_image_path("OVMF_VARS.fd"), ovmf_vars_node_path)
+                except OSError as e:
+                    raise QemuError("Cannot copy OVMF_VARS.fd file to the node working directory: {}".format(e))
+            options.extend(["-drive", "if=pflash,format=raw,file={}".format(ovmf_vars_node_path)])
         return options
 
     def _linux_boot_options(self):
@@ -2240,7 +2319,66 @@ class QemuVM(BaseNode):
             options.extend(["-kernel", self._kernel_image.replace(",", ",,")])
         if self._kernel_command_line:
             options.extend(["-append", self._kernel_command_line])
+        return options
 
+    async def _start_swtpm(self):
+        """
+        Start swtpm (TPM emulator)
+        """
+
+        if sys.platform.startswith("win"):
+            raise QemuError("swtpm (TPM emulator) is not supported on Windows")
+        tpm_dir = os.path.join(self.working_dir, "tpm")
+        os.makedirs(tpm_dir, exist_ok=True)
+        tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
+        swtpm = shutil.which("swtpm")
+        if not swtpm:
+            raise QemuError("Could not find swtpm (TPM emulator)")
+        swtpm_version = await self.manager.get_swtpm_version(swtpm)
+        if swtpm_version and parse_version(swtpm_version) < parse_version("0.8.0"):
+            # swtpm >= version 0.8.0 is required
+            raise QemuError("swtpm version 0.8.0 or above must be installed (detected version is {})".format(swtpm_version))
+        try:
+            command = [
+                swtpm,
+                "socket",
+                "--tpm2",
+                '--tpmstate', "dir={}".format(tpm_dir),
+                "--ctrl",
+                "type=unixio,path={},terminate".format(tpm_sock)
+            ]
+            command_string = " ".join(shlex.quote(s) for s in command)
+            log.info("Starting swtpm (TPM emulator) with: {}".format(command_string))
+            self._swtpm_process = subprocess.Popen(command, cwd=self.working_dir)
+            log.info("swtpm (TPM emulator) has started")
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError("Could not start swtpm (TPM emulator): {}".format(e))
+
+    def _stop_swtpm(self):
+        """
+        Stop swtpm (TPM emulator)
+        """
+
+        if self._swtpm_process and self._swtpm_process.returncode is None:
+            self._swtpm_process.terminate()
+            self._swtpm_process = None
+
+    def _tpm_options(self):
+        """
+        Return the TPM options for Qemu.
+        """
+
+        tpm_sock = os.path.join(self.temporary_directory, "swtpm.sock")
+        if not os.path.exists(tpm_sock):
+            raise QemuError("swtpm socket file '{}' does not exist".format(tpm_sock))
+        options = [
+            "-chardev",
+            "socket,id=chrtpm,path={}".format(tpm_sock),
+            "-tpmdev",
+            "emulator,id=tpm0,chardev=chrtpm",
+            "-device",
+            "tpm-tis,tpmdev=tpm0"
+        ]
         return options
 
     async def _network_options(self):
@@ -2255,8 +2393,7 @@ class QemuVM(BaseNode):
         pci_bridges = math.floor(pci_devices / 32)
         pci_bridges_created = 0
         if pci_bridges >= 1:
-            qemu_version = await self.manager.get_qemu_version(self.qemu_path)
-            if qemu_version and parse_version(qemu_version) < parse_version("2.4.0"):
+            if self._qemu_version and parse_version(self._qemu_version) < parse_version("2.4.0"):
                 raise QemuError(
                     "Qemu version 2.4 or later is required to run this VM with a large number of network adapters"
                 )
@@ -2277,6 +2414,8 @@ class QemuVM(BaseNode):
                 mac = int_to_macaddress(macaddress_to_int(custom_mac_address))
 
             device_string = f"{adapter_type},mac={mac}"
+            if adapter_type == "virtio-net-pci":
+                device_string = "{},speed=10000,duplex=full".format(device_string)
             bridge_id = math.floor(pci_device_id / 32)
             if bridge_id > 0:
                 if pci_bridges_created < bridge_id:
@@ -2320,8 +2459,7 @@ class QemuVM(BaseNode):
 
         if any(opt in self._options for opt in ["-display", "-nographic", "-curses", "-sdl" "-spice", "-vnc"]):
             return []
-        version = await self.manager.get_qemu_version(self.qemu_path)
-        if version and parse_version(version) >= parse_version("3.0"):
+        if self._qemu_version and parse_version(self._qemu_version) >= parse_version("3.0"):
             return ["-display", "none"]
         else:
             return ["-nographic"]
@@ -2450,6 +2588,7 @@ class QemuVM(BaseNode):
         (to be passed to subprocess.Popen())
         """
 
+        self._qemu_version = await self.manager.get_qemu_version(self.qemu_path)
         vm_name = self._name.replace(",", ",,")
         project_path = self.project.path.replace(",", ",,")
         additional_options = self._options.strip()
@@ -2471,10 +2610,9 @@ class QemuVM(BaseNode):
         if await self._run_with_hardware_acceleration(self.qemu_path, self._options):
             if sys.platform.startswith("linux"):
                 command.extend(["-enable-kvm"])
-                version = await self.manager.get_qemu_version(self.qemu_path)
                 # Issue on some combo Intel CPU + KVM + Qemu 2.4.0
                 # https://github.com/GNS3/gns3-server/issues/685
-                if version and parse_version(version) >= parse_version("2.4.0") and self.platform == "x86_64":
+                if self._qemu_version and parse_version(self._qemu_version) >= parse_version("2.4.0") and self.platform == "x86_64":
                     command.extend(["-machine", "smm=off"])
             elif sys.platform.startswith("darwin"):
                 command.extend(["-enable-hax"])
@@ -2495,6 +2633,8 @@ class QemuVM(BaseNode):
             command.extend(await self._saved_state_option())
         if self._console_type == "telnet":
             command.extend(await self._disable_graphics())
+        if self._tpm:
+            command.extend(self._tpm_options())
         if additional_options:
             try:
                 command.extend(shlex.split(additional_options))
@@ -2505,7 +2645,7 @@ class QemuVM(BaseNode):
     def asdict(self):
         answer = {"project_id": self.project.id, "node_id": self.id, "node_directory": self.working_path}
         # Qemu has a long list of options. The JSON schema is the single source of information
-        for field in Qemu.schema()["properties"]:
+        for field in Qemu.model_json_schema()["properties"]:
             if field not in answer:
                 try:
                     answer[field] = getattr(self, field)

@@ -8,7 +8,7 @@
     "documentation_url": "https://www.alcatel-lucent.com/support",
     "product_name": "Alcatel 7750",
     "product_url": "https://www.alcatel-lucent.com/products/7750-service-router",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

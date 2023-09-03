@@ -70,14 +70,14 @@ async def subprocess_check_output(*args, cwd=None, env=None, stderr=False):
 
     if stderr:
         proc = await asyncio.create_subprocess_exec(*args, stderr=asyncio.subprocess.PIPE, cwd=cwd, env=env)
-        output = await proc.stderr.read()
+        _, output = await proc.communicate()
     else:
-        proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, cwd=cwd, env=env)
-        output = await proc.stdout.read()
+        proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, cwd=cwd, env=env)
+        output, _ = await proc.communicate()
     if output is None:
         return ""
     # If we received garbage we ignore invalid characters
-    # it should happens only when user try to use another binary
+    # it should happen only when user try to use another binary
     # and the code of VPCS, dynamips... Will detect it's not the correct binary
     return output.decode("utf-8", errors="ignore")
 

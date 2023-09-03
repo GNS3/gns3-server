@@ -524,12 +524,14 @@ class Project:
         template["x"] = x
         template["y"] = y
         node_type = template.pop("template_type")
-        if template.pop("builtin", False) is True:
-            # compute_id is selected by clients for builtin templates
+
+        if compute_id:
+            # use a custom compute_id
             compute = self.controller.get_compute(compute_id)
         else:
-            compute = self.controller.get_compute(template.pop("compute_id", compute_id))
+            compute = self.controller.get_compute(template.pop("compute_id"))
         template_name = template.pop("name")
+        log.info(f'Creating node from template "{template_name}" on compute "{compute.name}" [{compute.id}]')
         default_name_format = template.pop("default_name_format", "{name}-{0}")
         if name is None:
             name = default_name_format.replace("{name}", template_name)

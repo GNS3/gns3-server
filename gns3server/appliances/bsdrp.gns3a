@@ -6,7 +6,7 @@
     "vendor_name": "Olivier Cochard-Labbe",
     "vendor_url": "https://bsdrp.net/",
     "product_name": "BSDRP",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

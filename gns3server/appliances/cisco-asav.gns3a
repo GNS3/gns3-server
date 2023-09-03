@@ -8,7 +8,7 @@
     "documentation_url": "http://www.cisco.com/c/en/us/support/security/virtual-adaptive-security-appliance-firewall/products-installation-guides-list.html",
     "product_name": "ASAv",
     "product_url": "http://www.cisco.com/c/en/us/products/security/virtual-adaptive-security-appliance-firewall/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -26,7 +26,7 @@
         "kvm": "require"
     },
     "images": [
-	    {
+        {
             "filename": "asav9-16-2.qcow2",
             "version": "9.16.2 CML",
             "md5sum": "1f8db97063a7f738fddc81ac880a906c",

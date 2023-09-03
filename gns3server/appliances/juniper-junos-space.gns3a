@@ -8,7 +8,7 @@
     "documentation_url": "http://www.juniper.net/techpubs/",
     "product_name": "Junos Space",
     "product_url": "https://www.juniper.net/us/en/dm/free-vqfx-trial/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

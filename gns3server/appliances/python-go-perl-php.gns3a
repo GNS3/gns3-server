@@ -6,7 +6,7 @@
     "vendor_name": "GNS3 Team",
     "vendor_url": "https://www.gns3.com",
     "product_name": "Python, Go, Perl, PHP",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

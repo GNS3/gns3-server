@@ -423,7 +423,7 @@ class BaseManager:
         # Windows path should not be send to a unix server
         if re.match(r"^[A-Z]:", path) is not None:
             raise NodeError(
-                f"'{path}' is not allowed on this remote server. Please only use a file from '{img_directory}'"
+                f"'{path}' is not allowed on this remote server (Windows path). Please only use a file from '{img_directory}'"
             )
 
         if not os.path.isabs(orig_path):

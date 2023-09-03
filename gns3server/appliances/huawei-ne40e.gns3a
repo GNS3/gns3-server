@@ -23,7 +23,7 @@
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-machine type=pc-1.0,accel=kvm -serial mon:stdio -nographic -nodefaults -rtc base=utc -cpu host"
+        "options": "-machine type=pc,accel=kvm -serial mon:stdio -nographic -nodefaults -rtc base=utc -cpu host"
     },
     "images": [
         {

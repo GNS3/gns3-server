@@ -20,7 +20,7 @@ API routes for appliances.
 
 import logging
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from typing import Optional, List
 from uuid import UUID
 
@@ -38,19 +38,28 @@ from gns3server.db.repositories.rbac import RbacRepository
 
 from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
+from .dependencies.rbac import has_privilege
+
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get(
+    "",
+    response_model=List[schemas.Appliance],
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Appliance.Audit"))]
+)
 async def get_appliances(
         update: Optional[bool] = False,
         symbol_theme: Optional[str] = None
 ) -> List[schemas.Appliance]:
     """
     Return all appliances known by the controller.
+
+    Required privilege: Appliance.Audit
     """
 
     controller = Controller.instance()
@@ -60,10 +69,17 @@ async def get_appliances(
     return [c.asdict() for c in controller.appliance_manager.appliances.values()]
 
 
-@router.get("/{appliance_id}")
+@router.get(
+    "/{appliance_id}",
+    response_model=schemas.Appliance,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(has_privilege("Appliance.Audit"))]
+)
 def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     """
     Get an appliance file.
+
+    Required privilege: Appliance.Audit
     """
 
     controller = Controller.instance()
@@ -73,10 +89,16 @@ def get_appliance(appliance_id: UUID) -> schemas.Appliance:
     return appliance.asdict()
 
 
-@router.post("/{appliance_id}/version", status_code=status.HTTP_201_CREATED)
-def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> schemas.Appliance:
+@router.post(
+    "/{appliance_id}/version",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Appliance.Allocate"))]
+)
+def add_appliance_version(appliance_id: UUID, appliance_version: schemas.ApplianceVersion) -> dict:
     """
-    Add a version to an appliance
+    Add a version to an appliance.
+
+    Required privilege: Appliance.Allocate
     """
 
     controller = Controller.instance()
@@ -94,11 +116,15 @@ def add_appliance_version(appliance_id: UUID, appliance_version: schemas.Applian
         if version.get("name") == appliance_version.name:
             raise ControllerError(message=f"Appliance '{appliance_id}' already has version '{appliance_version.name}'")
 
-    appliance.versions.append(appliance_version.dict(exclude_unset=True))
+    appliance.versions.append(appliance_version.model_dump(exclude_unset=True))
     return appliance.asdict()
 
 
-@router.post("/{appliance_id}/install", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{appliance_id}/install",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(has_privilege("Appliance.Allocate"))]
+)
 async def install_appliance(
         appliance_id: UUID,
         version: Optional[str] = None,
@@ -109,6 +135,8 @@ async def install_appliance(
 ) -> None:
     """
     Install an appliance.
+
+    Required privilege: Appliance.Allocate
     """
 
     controller = Controller.instance()

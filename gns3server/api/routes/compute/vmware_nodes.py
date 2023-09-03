@@ -32,7 +32,7 @@ from gns3server.compute.vmware.vmware_vm import VMwareVM
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VMware node"}}
 
-router = APIRouter(responses=responses)
+router = APIRouter(responses=responses, deprecated=True)
 
 
 def dep_node(project_id: UUID, node_id: UUID) -> VMwareVM:

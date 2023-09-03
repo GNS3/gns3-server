@@ -28,6 +28,11 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from alembic import command, config
+from alembic.script import ScriptDirectory
+from alembic.runtime.migration import MigrationContext
+from alembic.util.exc import CommandError
+
 from gns3server.db.repositories.computes import ComputesRepository
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.utils.images import discover_images, check_valid_image_header, read_image_info, default_images_directory, InvalidImageError
@@ -41,15 +46,52 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def run_upgrade(connection, cfg):
+
+    cfg.attributes["connection"] = connection
+    try:
+        command.upgrade(cfg, "head")
+    except CommandError as e:
+        log.error(f"Could not upgrade database: {e}")
+
+
+def run_stamp(connection, cfg):
+
+    cfg.attributes["connection"] = connection
+    try:
+        command.stamp(cfg, "head")
+    except CommandError as e:
+        log.error(f"Could not stamp database: {e}")
+
+
+def check_revision(connection, cfg):
+
+    script = ScriptDirectory.from_config(cfg)
+    head_rev = script.get_revision("head").revision
+    context = MigrationContext.configure(connection)
+    current_rev = context.get_current_revision()
+    return current_rev, head_rev
+
+
 async def connect_to_db(app: FastAPI) -> None:
 
     db_path = os.path.join(Config.instance().config_dir, "gns3_controller.db")
     db_url = os.environ.get("GNS3_DATABASE_URI", f"sqlite+aiosqlite:///{db_path}")
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False}, future=True)
+    alembic_cfg = config.Config()
+    alembic_cfg.set_main_option("script_location", "gns3server:db_migrations")
+    #alembic_cfg.set_main_option('sqlalchemy.url', db_url)
     try:
         async with engine.connect() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            log.info(f"Successfully connected to database '{db_url}'")
+            current_rev, head_rev = await conn.run_sync(check_revision, alembic_cfg)
+            log.info(f"Current database revision is {current_rev}")
+            if current_rev is None:
+                await conn.run_sync(Base.metadata.create_all)
+                await conn.run_sync(run_stamp, alembic_cfg)
+            elif current_rev != head_rev:
+                # upgrade the database if needed
+                await conn.run_sync(run_upgrade, alembic_cfg)
+                await conn.commit()
         app.state._db_engine = engine
     except SQLAlchemyError as e:
         log.fatal(f"Error while connecting to database '{db_url}: {e}")
@@ -80,7 +122,7 @@ async def get_computes(app: FastAPI) -> List[dict]:
         db_computes = await ComputesRepository(db_session).get_computes()
         for db_compute in db_computes:
             try:
-                compute = schemas.Compute.from_orm(db_compute)
+                compute = schemas.Compute.model_validate(db_compute)
             except ValidationError as e:
                 log.error(f"Could not load compute '{db_compute.compute_id}' from database: {e}")
                 continue
@@ -170,7 +212,7 @@ async def discover_images_on_filesystem(app: FastAPI):
         existing_image_paths = []
         for db_image in db_images:
             try:
-                image = schemas.Image.from_orm(db_image)
+                image = schemas.Image.model_validate(db_image)
                 existing_image_paths.append(image.path)
             except ValidationError as e:
                 log.error(f"Could not load image '{db_image.filename}' from database: {e}")

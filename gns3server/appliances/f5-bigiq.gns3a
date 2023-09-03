@@ -8,7 +8,7 @@
     "documentation_url": "https://support.f5.com/csp/#/knowledge-center/software/BIG-IQ?module=BIG-IQ%20Centralized%20Management",
     "product_name": "F5 BIG-IQ CM",
     "product_url": "https://f5.com/products/big-iq-centralized-management",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

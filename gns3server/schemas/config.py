@@ -17,7 +17,16 @@
 import socket
 
 from enum import Enum
-from pydantic import BaseModel, Field, SecretStr, FilePath, DirectoryPath, validator
+from pydantic import (
+    ConfigDict,
+    BaseModel,
+    Field,
+    SecretStr,
+    FilePath,
+    DirectoryPath,
+    field_validator,
+    model_validator
+)
 from typing import List
 
 
@@ -28,19 +37,13 @@ class ControllerSettings(BaseModel):
     jwt_access_token_expire_minutes: int = 1440  # 24 hours
     default_admin_username: str = "admin"
     default_admin_password: SecretStr = SecretStr("admin")
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class VPCSSettings(BaseModel):
 
     vpcs_path: str = "vpcs"
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class DynamipsSettings(BaseModel):
@@ -50,20 +53,14 @@ class DynamipsSettings(BaseModel):
     dynamips_path: str = "dynamips"
     sparse_memory_support: bool = True
     ghost_ios_support: bool = True
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class IOUSettings(BaseModel):
 
     iourc_path: str = None
     license_check: bool = True
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class QemuSettings(BaseModel):
@@ -72,19 +69,13 @@ class QemuSettings(BaseModel):
     monitor_host: str = "127.0.0.1"
     enable_hardware_acceleration: bool = True
     require_hardware_acceleration: bool = False
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class VirtualBoxSettings(BaseModel):
 
     vboxmanage_path: str = None
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
 class VMwareSettings(BaseModel):
@@ -93,16 +84,13 @@ class VMwareSettings(BaseModel):
     vmnet_start_range: int = Field(2, ge=1, le=255)
     vmnet_end_range: int = Field(255, ge=1, le=255)  # should be limited to 19 on Windows
     block_host_traffic: bool = False
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
-    @validator("vmnet_end_range")
-    def vmnet_port_range(cls, v, values):
-        if "vmnet_start_range" in values and v <= values["vmnet_start_range"]:
+    @model_validator(mode="after")
+    def check_vmnet_port_range(self) -> "VMwareSettings":
+        if self.vmnet_end_range <= self.vmnet_start_range:
             raise ValueError("vmnet_end_range must be > vmnet_start_range")
-        return v
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
+        return self
 
 
 class ServerProtocol(str, Enum):
@@ -156,45 +144,42 @@ class ServerSettings(BaseModel):
     default_nat_interface: str = None
     allow_remote_console: bool = False
     enable_builtin_templates: bool = True
+    model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True, use_enum_values=True)
 
-    @validator("additional_images_paths", pre=True)
+    @field_validator("additional_images_paths", mode="before")
+    @classmethod
     def split_additional_images_paths(cls, v):
         if v:
             return v.split(";")
         return list()
 
-    @validator("allowed_interfaces", pre=True)
+    @field_validator("allowed_interfaces", mode="before")
+    @classmethod
     def split_allowed_interfaces(cls, v):
         if v:
             return v.split(",")
         return list()
 
-    @validator("console_end_port_range")
-    def console_port_range(cls, v, values):
-        if "console_start_port_range" in values and v <= values["console_start_port_range"]:
+    @model_validator(mode="after")
+    def check_console_port_range(self) -> "ServerSettings":
+        if self.console_end_port_range <= self.console_start_port_range:
             raise ValueError("console_end_port_range must be > console_start_port_range")
-        return v
+        return self
 
-    @validator("vnc_console_end_port_range")
-    def vnc_console_port_range(cls, v, values):
-        if "vnc_console_start_port_range" in values and v <= values["vnc_console_start_port_range"]:
+    @model_validator(mode="after")
+    def check_vnc_port_range(self) -> "ServerSettings":
+        if self.vnc_console_end_port_range <= self.vnc_console_start_port_range:
             raise ValueError("vnc_console_end_port_range must be > vnc_console_start_port_range")
-        return v
+        return self
 
-    @validator("enable_ssl")
-    def validate_enable_ssl(cls, v, values):
-
-        if v is True:
-            if "certfile" not in values or not values["certfile"]:
+    @model_validator(mode="after")
+    def check_enable_ssl(self) -> "ServerSettings":
+        if self.enable_ssl is True:
+            if not self.certfile:
                 raise ValueError("SSL is enabled but certfile is not configured")
-            if "certkey" not in values or not values["certkey"]:
+            if not self.certkey:
                 raise ValueError("SSL is enabled but certkey is not configured")
-        return v
-
-    class Config:
-        validate_assignment = True
-        anystr_strip_whitespace = True
-        use_enum_values = True
+        return self
 
 
 class ServerConfig(BaseModel):

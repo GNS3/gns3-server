@@ -75,7 +75,7 @@ def main():
 
     with open(sys.argv[1]) as f:
         data = json.load(f)
-        Topology.parse_obj(data)
+        Topology.model_validate(data)
 
 
 if __name__ == "__main__":

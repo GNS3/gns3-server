@@ -20,8 +20,8 @@ import os
 import json
 import asyncio
 import aiofiles
-import importlib_resources
 import shutil
+
 
 from typing import Tuple, List
 from aiohttp.client_exceptions import ClientError
@@ -94,13 +94,15 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def _builtin_appliances_path(self):
+    def _builtin_appliances_path(self, delete_first=False):
         """
         Get the built-in appliance storage directory
         """
 
         config = Config.instance()
         appliances_dir = os.path.join(config.config_dir, "appliances")
+        if delete_first:
+            shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
         return appliances_dir
 
@@ -109,19 +111,11 @@ class ApplianceManager:
         At startup we copy the built-in appliances files.
         """
 
-        dst_path = self._builtin_appliances_path()
+        dst_path = self._builtin_appliances_path(delete_first=True)
+        log.info(f"Installing built-in appliances in '{dst_path}'")
+        from . import Controller
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "appliances"))
-                for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.appliances').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing built-in appliance file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.instance().install_resource_files(dst_path, "appliances")
         except OSError as e:
             log.error(f"Could not install built-in appliance files to {dst_path}: {e}")
 
@@ -219,8 +213,8 @@ class ApplianceManager:
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate template data: {e}")
         template = await TemplatesService(templates_repo).create_template(template_create)
-        template_id = template.get("template_id")
-        await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
+        #template_id = template.get("template_id")
+        #await rbac_repo.add_permission_to_user_with_path(current_user.user_id, f"/templates/{template_id}/*")
         log.info(f"Template '{template.get('name')}' has been created")
 
     async def _appliance_to_template(self, appliance: Appliance, version: str = None) -> dict:
@@ -254,7 +248,7 @@ class ApplianceManager:
         appliances_info = self._find_appliances_from_image_checksum(image_checksum)
         for appliance, image_version in appliances_info:
             try:
-                schemas.Appliance.parse_obj(appliance.asdict())
+                schemas.Appliance.model_validate(appliance.asdict())
             except ValidationError as e:
                 log.warning(f"Could not validate appliance '{appliance.id}': {e}")
             if appliance.versions:
@@ -285,7 +279,7 @@ class ApplianceManager:
             raise ControllerNotFoundError(message=f"Could not find appliance '{appliance_id}'")
 
         try:
-            schemas.Appliance.parse_obj(appliance.asdict())
+            schemas.Appliance.model_validate(appliance.asdict())
         except ValidationError as e:
             raise ControllerError(message=f"Could not validate appliance '{appliance_id}': {e}")
 
@@ -340,7 +334,7 @@ class ApplianceManager:
                             appliance = Appliance(path, json.load(f), builtin=builtin)
                             json_data = appliance.asdict()  # Check if loaded without error
                             if appliance.status != "broken":
-                                schemas.Appliance.parse_obj(json_data)
+                                schemas.Appliance.model_validate(json_data)
                                 self._appliances[appliance.id] = appliance
                             if not appliance.symbol or appliance.symbol.startswith(":/symbols/"):
                                 # apply a default symbol if the appliance has none or a default symbol

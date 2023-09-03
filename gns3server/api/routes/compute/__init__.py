@@ -58,7 +58,6 @@ log = logging.getLogger(__name__)
 
 compute_api = FastAPI(
     title="GNS3 compute API",
-    dependencies=[Depends(compute_authentication)],
     description="This page describes the private compute API for GNS3. PLEASE DO NOT USE DIRECTLY!",
     version="v3",
 )
@@ -158,11 +157,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 compute_api.include_router(
     capabilities.router,
+    dependencies=[Depends(compute_authentication)],
     tags=["Capabilities"]
 )
 
 compute_api.include_router(
     compute.router,
+    dependencies=[Depends(compute_authentication)],
     tags=["Compute"]
 )
 
@@ -173,86 +174,101 @@ compute_api.include_router(
 
 compute_api.include_router(
     projects.router,
+    dependencies=[Depends(compute_authentication)],
     tags=["Projects"]
 )
 
 compute_api.include_router(
     images.router,
+    dependencies=[Depends(compute_authentication)],
     tags=["Images"]
 )
 
 compute_api.include_router(
     atm_switch_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/atm_switch/nodes",
     tags=["ATM switch"]
 )
 compute_api.include_router(
     cloud_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/cloud/nodes",
     tags=["Cloud nodes"]
 )
 
 compute_api.include_router(
     docker_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/docker/nodes",
     tags=["Docker nodes"]
 )
 
 compute_api.include_router(
     dynamips_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/dynamips/nodes",
     tags=["Dynamips nodes"]
 )
 
 compute_api.include_router(
     ethernet_hub_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/ethernet_hub/nodes",
     tags=["Ethernet hub nodes"]
 )
 
 compute_api.include_router(
     ethernet_switch_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/ethernet_switch/nodes",
     tags=["Ethernet switch nodes"]
 )
 
 compute_api.include_router(
     frame_relay_switch_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/frame_relay_switch/nodes",
     tags=["Frame Relay switch nodes"]
 )
 
 compute_api.include_router(
     iou_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/iou/nodes",
     tags=["IOU nodes"])
 
 compute_api.include_router(
     nat_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/nat/nodes",
     tags=["NAT nodes"]
 )
 
 compute_api.include_router(
     qemu_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/qemu/nodes",
     tags=["Qemu nodes"]
 )
 
 compute_api.include_router(
     virtualbox_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/virtualbox/nodes",
     tags=["VirtualBox nodes"]
 )
 
 compute_api.include_router(
     vmware_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/vmware/nodes",
     tags=["VMware nodes"]
 )
 
 compute_api.include_router(
     vpcs_nodes.router,
+    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/vpcs/nodes",
     tags=["VPCS nodes"]
 )

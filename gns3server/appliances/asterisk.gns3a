@@ -8,7 +8,7 @@
     "documentation_url": "https://wiki.asterisk.org/wiki/display/AST/Installing+AsteriskNOW",
     "product_name": "AsteriskNOW / FreePBX",
     "product_url": "http://www.asterisk.org/downloads/asterisknow",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

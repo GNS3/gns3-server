@@ -18,13 +18,20 @@
 import os
 import sys
 import uuid
-import socket
 import shutil
 import asyncio
 import random
-import importlib_resources
+
+try:
+    import importlib_resources
+except ImportError:
+    from importlib import resources as importlib_resources
+
 
 from ..config import Config
+from ..utils import parse_version
+from ..utils.images import default_images_directory
+
 from .project import Project
 from .appliance import Appliance
 from .appliance_manager import ApplianceManager
@@ -62,7 +69,8 @@ class Controller:
     async def start(self, computes=None):
 
         log.info("Controller is starting")
-        self._load_base_files()
+        self._install_base_configs()
+        self._install_builtin_disks()
         server_config = Config.instance().settings.Server
         Config.instance().listen_for_config_changes(self._update_config)
         name = server_config.name
@@ -282,6 +290,10 @@ class Controller:
             except OSError as e:
                 log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
 
+        # FIXME install builtin appliances only once, need to store "version" somewhere...
+        #if parse_version(__version__.split("+")[0]) > parse_version(controller_settings.get("version", "")):
+        #   self._appliance_manager.install_builtin_appliances()
+
         self._appliance_manager.install_builtin_appliances()
         self._appliance_manager.load_appliances()
         self._config_loaded = True
@@ -307,27 +319,49 @@ class Controller:
         except OSError as e:
             log.error(str(e))
 
-    def _load_base_files(self):
+    @staticmethod
+    def install_resource_files(dst_path, resource_name):
         """
-        At startup we copy base file to the user location to allow
+        Install files from resources to user's file system
+        """
+
+        if hasattr(sys, "frozen") and sys.platform.startswith("win"):
+            resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), resource_name))
+            for filename in os.listdir(resource_path):
+                if not os.path.exists(os.path.join(dst_path, filename)):
+                    shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
+        else:
+            for entry in importlib_resources.files(f'gns3server.{resource_name}').iterdir():
+                full_path = os.path.join(dst_path, entry.name)
+                if entry.is_file() and not os.path.exists(full_path):
+                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+
+    def _install_base_configs(self):
+        """
+        At startup we copy base configs to the user location to allow
         them to customize it
         """
 
         dst_path = self.configs_path()
+        log.info(f"Installing base configs in '{dst_path}'")
         try:
-            if hasattr(sys, "frozen") and sys.platform.startswith("win"):
-                resource_path = os.path.normpath(os.path.join(os.path.dirname(sys.executable), "configs"))
-                for filename in os.listdir(resource_path):
-                    if not os.path.exists(os.path.join(dst_path, filename)):
-                        shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
-            else:
-                for entry in importlib_resources.files('gns3server.configs').iterdir():
-                    full_path = os.path.join(dst_path, entry.name)
-                    if entry.is_file() and not os.path.exists(full_path):
-                        log.debug(f"Installing base config file {entry.name} to {full_path}")
-                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+            Controller.install_resource_files(dst_path, "configs")
         except OSError as e:
             log.error(f"Could not install base config files to {dst_path}: {e}")
+
+    def _install_builtin_disks(self):
+        """
+        At startup we copy built-in Qemu disks to the user location to allow
+        them to use with appliances
+        """
+
+        dst_path = self.disks_path()
+        log.info(f"Installing built-in disks in '{dst_path}'")
+        try:
+            Controller.install_resource_files(dst_path, "disks")
+        except OSError as e:
+            log.error(f"Could not install disk files to {dst_path}: {e}")
 
     def images_path(self):
         """
@@ -348,6 +382,15 @@ class Controller:
         configs_path = os.path.expanduser(server_config.configs_path)
         os.makedirs(configs_path, exist_ok=True)
         return configs_path
+
+    def disks_path(self, emulator_type="qemu"):
+        """
+        Get the disks storage directory
+        """
+
+        disks_path = default_images_directory(emulator_type)
+        os.makedirs(disks_path, exist_ok=True)
+        return disks_path
 
     async def add_compute(self, compute_id=None, name=None, force=False, connect=True, wait_connection=True, **kwargs):
         """
@@ -452,7 +495,8 @@ class Controller:
         """
 
         if compute_id is None:
-            computes = list(self._computes.values())
+            # get all connected computes
+            computes = [compute for compute in self._computes.values() if compute.connected is True]
             if len(computes) == 1:
                 # return the only available compute
                 return computes[0]

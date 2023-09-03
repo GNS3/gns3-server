@@ -26,6 +26,7 @@ function help {
   echo "--with-openvpn: Install OpenVPN" >&2
   echo "--with-iou: Install IOU" >&2
   echo "--with-i386-repository: Add the i386 repositories required by IOU if they are not already available on the system. Warning: this will replace your source.list in order to use the official Ubuntu mirror" >&2
+  echo "--with-welcome: Install GNS3-VM welcome.py script" >&2
   echo "--without-kvm: Disable KVM, required if system do not support it (limitation in some hypervisors and cloud providers). Warning: only disable KVM if strictly necessary as this will degrade performance" >&2
   echo "--unstable: Use the GNS3 unstable repository"
   echo "--help: This help" >&2
@@ -48,8 +49,9 @@ USE_IOU=0
 I386_REPO=0
 DISABLE_KVM=0
 UNSTABLE=0
+WELCOME_SETUP=0
 
-TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
+TEMP=`getopt -o h --long with-openvpn,with-iou,with-i386-repository,with-welcome,without-kvm,unstable,help -n 'gns3-remote-install.sh' -- "$@"`
 if [ $? != 0 ]
 then
   help
@@ -70,6 +72,10 @@ while true ; do
           ;;
         --with-i386-repository)
           I386_REPO=1
+          shift
+          ;;
+        --with-welcome)
+          WELCOME_SETUP=1
           shift
           ;;
         --without-kvm)
@@ -159,7 +165,7 @@ apt-get install -y gns3-server
 log "Create user GNS3 with /opt/gns3 as home directory"
 if [ ! -d "/opt/gns3/" ]
 then
-  useradd -d /opt/gns3/ -m gns3
+  useradd -m -d /opt/gns3/ gns3
 fi
 
 
@@ -296,6 +302,37 @@ fi
 
 log "GNS3 installed with success"
 
+if [ $WELCOME_SETUP == 1 ]
+then
+NEEDRESTART_MODE=a apt-get install -y net-tools
+NEEDRESTART_MODE=a apt-get install -y python3-pip
+NEEDRESTART_MODE=a apt-get install -y dialog
+pip install --no-input --upgrade pip
+pip install --no-input pythondialog
+
+#Pull down welcome script from repo
+curl https://raw.githubusercontent.com/GNS3/gns3-server/master/scripts/welcome.py > /usr/local/bin/welcome.py
+
+chmod 755 /usr/local/bin/welcome.py
+chown gns3:gns3 /usr/local/bin/welcome.py
+
+mkdir /etc/systemd/system/getty@tty1.service.d
+cat <<EOFI > /etc/systemd/system/getty@tty1.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -a gns3 --noclear %I \$TERM
+EOFI
+
+chmod 755 /etc/systemd/system/getty@tty1.service.d/override.conf
+chown root:root /etc/systemd/system/getty@tty1.service.d/override.conf
+
+echo "python3 /usr/local/bin/welcome.py" >> /opt/gns3/.bashrc
+echo "gns3:gns3" | chpasswd
+usermod --shell /bin/bash gns3
+usermod -aG sudo gns3
+
+fi
+
 if [ $USE_VPN == 1 ]
 then
 log "Setup VPN"
@@ -416,4 +453,13 @@ service gns3 start
 
 log "Download http://$MY_IP_ADDR:8003/$UUID/$HOSTNAME.ovpn to setup your OpenVPN client after rebooting the server"
 
+fi
+
+if [ $WELCOME_SETUP == 1 ]
+then
+NEEDRESTART_MODE=a apt-get update
+NEEDRESTART_MODE=a apt-get upgrade
+python3 -c 'import sys; sys.path.append("/usr/local/bin/"); import welcome; ws = welcome.Welcome_dialog(); ws.repair_remote_install()'
+cd /opt/gns3
+su gns3
 fi

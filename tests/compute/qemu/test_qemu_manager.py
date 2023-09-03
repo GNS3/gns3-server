@@ -19,6 +19,7 @@ import os
 import stat
 import pytest
 import platform
+import sys
 
 from gns3server.compute.qemu import Qemu
 from gns3server.compute.qemu.qemu_error import QemuError
@@ -30,7 +31,10 @@ from unittest.mock import patch, MagicMock
 @pytest.fixture
 def fake_qemu_img_binary(tmpdir):
 
-    bin_path = str(tmpdir / "qemu-img")
+    if sys.platform.startswith("win"):
+        bin_path = str(tmpdir / "qemu-img.EXE")
+    else:
+        bin_path = str(tmpdir / "qemu-img")
     with open(bin_path, "w+") as f:
         f.write("1")
     os.chmod(bin_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)

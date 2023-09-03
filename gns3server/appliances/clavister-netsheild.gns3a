@@ -18,7 +18,7 @@
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 4,
-        "ram": 1024,      
+        "ram": 1024,
         "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
@@ -37,10 +37,10 @@
     ],
     "versions": [
         {
+            "name": "cOS Stream 3.80.09",
             "images": {
                 "hda_disk_image": "clavister-cos-stream-3.80.09.01-virtual-x64-generic.qcow2"
-            },
-            "name": "cOS Stream 3.80.09"
+            }
         }
     ]
 }

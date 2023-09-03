@@ -6,7 +6,7 @@
     "vendor_name": "Brocade",
     "vendor_url": "https://www.brocade.com",
     "product_name": "Virtual ADX",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

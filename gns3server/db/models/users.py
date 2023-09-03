@@ -19,7 +19,6 @@ from sqlalchemy import Table, Boolean, Column, String, DateTime, ForeignKey, eve
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseTable, generate_uuid, GUID
-from .roles import role_group_link
 
 from gns3server.config import Config
 from gns3server.services import auth_service
@@ -28,8 +27,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
-user_group_link = Table(
-    "users_groups_link",
+user_group_map = Table(
+    "user_group_map",
     Base.metadata,
     Column("user_id", GUID, ForeignKey("users.user_id", ondelete="CASCADE")),
     Column("user_group_id", GUID, ForeignKey("user_groups.user_group_id", ondelete="CASCADE"))
@@ -48,8 +47,8 @@ class User(BaseTable):
     last_login = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_superadmin = Column(Boolean, default=False)
-    groups = relationship("UserGroup", secondary=user_group_link, back_populates="users")
-    permissions = relationship("Permission")
+    groups = relationship("UserGroup", secondary=user_group_map, back_populates="users")
+    acl_entries = relationship("ACE")
 
 
 @event.listens_for(User.__table__, 'after_create')
@@ -77,8 +76,8 @@ class UserGroup(BaseTable):
     user_group_id = Column(GUID, primary_key=True, default=generate_uuid)
     name = Column(String, unique=True, index=True)
     is_builtin = Column(Boolean, default=False)
-    users = relationship("User", secondary=user_group_link, back_populates="groups")
-    roles = relationship("Role", secondary=role_group_link, back_populates="groups")
+    users = relationship("User", secondary=user_group_map, back_populates="groups")
+    acl_entries = relationship("ACE")
 
 
 @event.listens_for(UserGroup.__table__, 'after_create')
@@ -93,21 +92,3 @@ def create_default_user_groups(target, connection, **kw):
     connection.execute(stmt)
     connection.commit()
     log.debug("The default user groups have been created in the database")
-
-
-# @event.listens_for(user_group_link, 'after_create')
-# def add_admin_to_group(target, connection, **kw):
-#
-#     user_groups_table = UserGroup.__table__
-#     stmt = user_groups_table.select().where(user_groups_table.c.name == "Administrators")
-#     result = connection.execute(stmt)
-#     user_group_id = result.first().user_group_id
-#
-#     users_table = User.__table__
-#     stmt = users_table.select().where(users_table.c.is_superadmin.is_(True))
-#     result = connection.execute(stmt)
-#     user_id = result.first().user_id
-#
-#     stmt = target.insert().values(user_id=user_id, user_group_id=user_group_id)
-#     connection.execute(stmt)
-#     connection.commit()

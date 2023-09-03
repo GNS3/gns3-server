@@ -43,9 +43,9 @@ class CustomAdapter(BaseModel):
     """
 
     adapter_number: int
-    port_name: str
+    port_name: Optional[str] = None
     adapter_type: Optional[str] = None
-    mac_address: Optional[str] = Field(None, regex="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
+    mac_address: Optional[str] = Field(None, pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
 
 
 class ConsoleType(str, Enum):

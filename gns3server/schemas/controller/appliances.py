@@ -321,7 +321,7 @@ class ApplianceImage(BaseModel):
 
     filename: str = Field(..., title='Filename')
     version: str = Field(..., title='Version of the file')
-    md5sum: str = Field(..., title='md5sum of the file', regex='^[a-f0-9]{32}$')
+    md5sum: str = Field(..., title='md5sum of the file', pattern='^[a-f0-9]{32}$')
     filesize: int = Field(..., title='File size in bytes')
     download_url: Optional[Union[AnyUrl, constr(max_length=0)]] = Field(
         None, title='Download url where you can download the appliance from a browser'
@@ -351,7 +351,7 @@ class ApplianceVersionImages(BaseModel):
 class ApplianceVersion(BaseModel):
 
     name: str = Field(..., title='Name of the version')
-    idlepc: Optional[str] = Field(None, regex='^0x[0-9a-f]{8}')
+    idlepc: Optional[str] = Field(None, pattern='^0x[0-9a-f]{8}')
     images: Optional[ApplianceVersionImages] = Field(None, title='Images used for this version')
 
 
@@ -417,6 +417,7 @@ class Appliance(BaseModel):
 
     appliance_id: UUID = Field(..., title='Appliance ID')
     name: str = Field(..., title='Appliance name')
+    builtin: Optional[bool] = Field(None, title='Whether the appliance is builtin or not')
     category: Category = Field(..., title='Category of the appliance')
     description: str = Field(
         ..., title='Description of the appliance. Could be a marketing description'

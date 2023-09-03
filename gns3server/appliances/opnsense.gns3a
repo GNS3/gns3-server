@@ -8,7 +8,7 @@
     "documentation_url": "https://wiki.opnsense.org/",
     "product_name": "OPNsense",
     "product_url": "https://opnsense.org/about/about-opnsense/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
@@ -25,6 +25,13 @@
         "kvm": "require"
     },
     "images": [
+        {
+            "filename": "OPNsense-23.1-OpenSSL-nano-amd64.img",
+            "version": "23.1",
+            "md5sum": "db7d3b9fd3b94894623368db1041ff11",
+            "filesize": 3221225472,
+            "download_url": "https://opnsense.c0urier.net/releases/23.1/"
+        },
         {
             "filename": "OPNsense-22.1.2-OpenSSL-nano-amd64.img",
             "version": "22.1.2",
@@ -55,6 +62,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "23.1",
+            "images": {
+                "hda_disk_image": "OPNsense-23.1-OpenSSL-nano-amd64.img"
+            }
+        },
         {
             "name": "22.1.2",
             "images": {

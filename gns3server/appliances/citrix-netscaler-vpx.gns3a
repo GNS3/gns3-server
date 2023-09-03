@@ -8,7 +8,7 @@
     "documentation_url": "https://www.citrix.com/products/netscaler-adc/support.html",
     "product_name": "NetScaler VPX",
     "product_url": "https://www.citrix.com/products/netscaler-adc/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

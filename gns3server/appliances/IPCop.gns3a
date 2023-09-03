@@ -7,7 +7,7 @@
     "vendor_url": "https://www.kali.org/",
     "documentation_url": "http://www.ipcop.org/docs.html",
     "product_name": "IP Cop",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Brent Stewart",
     "maintainer_email": "brent@stewart.tc",

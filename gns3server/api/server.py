@@ -21,9 +21,10 @@ FastAPI app
 
 import time
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from uvicorn.main import Server as UvicornServer
 
@@ -87,54 +88,54 @@ UvicornServer.handle_exit = handle_exit
 
 @app.exception_handler(ControllerError)
 async def controller_error_handler(request: Request, exc: ControllerError):
-    log.error(f"Controller error: {exc}")
+    log.error(f"Controller error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=409,
+        status_code=status.HTTP_409_CONFLICT,
         content={"message": str(exc)},
     )
 
 
 @app.exception_handler(ControllerTimeoutError)
 async def controller_timeout_error_handler(request: Request, exc: ControllerTimeoutError):
-    log.error(f"Controller timeout error: {exc}")
+    log.error(f"Controller timeout error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=408,
+        status_code=status.HTTP_408_REQUEST_TIMEOUT,
         content={"message": str(exc)},
     )
 
 
 @app.exception_handler(ControllerUnauthorizedError)
 async def controller_unauthorized_error_handler(request: Request, exc: ControllerUnauthorizedError):
-    log.error(f"Controller unauthorized error: {exc}")
+    log.error(f"Controller unauthorized error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=401,
+        status_code=status.HTTP_401_UNAUTHORIZED,
         content={"message": str(exc)},
     )
 
 
 @app.exception_handler(ControllerForbiddenError)
 async def controller_forbidden_error_handler(request: Request, exc: ControllerForbiddenError):
-    log.error(f"Controller forbidden error: {exc}")
+    log.error(f"Controller forbidden error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=403,
+        status_code=status.HTTP_403_FORBIDDEN,
         content={"message": str(exc)},
     )
 
 
 @app.exception_handler(ControllerNotFoundError)
 async def controller_not_found_error_handler(request: Request, exc: ControllerNotFoundError):
-    log.error(f"Controller not found error: {exc}")
+    log.error(f"Controller not found error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=404,
+        status_code=status.HTTP_404_NOT_FOUND,
         content={"message": str(exc)},
     )
 
 
 @app.exception_handler(ControllerBadRequestError)
 async def controller_bad_request_error_handler(request: Request, exc: ControllerBadRequestError):
-    log.error(f"Controller bad request error: {exc}")
+    log.error(f"Controller bad request error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=400,
+        status_code=status.HTTP_400_BAD_REQUEST,
         content={"message": str(exc)},
     )
 
@@ -143,7 +144,7 @@ async def controller_bad_request_error_handler(request: Request, exc: Controller
 async def compute_conflict_error_handler(request: Request, exc: ComputeConflictError):
     log.error(f"Controller received error from compute for request '{exc.url()}': {exc}")
     return JSONResponse(
-        status_code=409,
+        status_code=status.HTTP_409_CONFLICT,
         content={"message": str(exc)},
     )
 
@@ -160,10 +161,19 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemry_error_handler(request: Request, exc: SQLAlchemyError):
-    log.error(f"Controller database error: {exc}")
+    log.error(f"Controller database error in {request.url.path} ({request.method}): {exc}")
     return JSONResponse(
-        status_code=500,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"message": "Database error detected, please check logs to find details"},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    log.error(f"Request validation error in {request.url.path} ({request.method}): {exc}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"message": str(exc)}
     )
 
 # FIXME: do not use this middleware since it creates issue when using StreamingResponse

@@ -34,7 +34,7 @@ router = APIRouter()
 
 
 @router.get("/docker/images")
-async def get_docker_images() -> List[str]:
+async def get_docker_images() -> List[dict]:
     """
     Get all Docker images.
     """
@@ -44,7 +44,7 @@ async def get_docker_images() -> List[str]:
 
 
 @router.get("/dynamips/images")
-async def get_dynamips_images() -> List[str]:
+async def get_dynamips_images() -> List[dict]:
     """
     Get all Dynamips images.
     """
@@ -85,7 +85,7 @@ async def download_dynamips_image(filename: str) -> FileResponse:
 
 
 @router.get("/iou/images")
-async def get_iou_images() -> List[str]:
+async def get_iou_images() -> List[dict]:
     """
     Get all IOU images.
     """
@@ -125,7 +125,7 @@ async def download_iou_image(filename: str) -> FileResponse:
 
 
 @router.get("/qemu/images")
-async def get_qemu_images() -> List[str]:
+async def get_qemu_images() -> List[dict]:
 
     qemu_manager = Qemu.instance()
     return await qemu_manager.list_images()

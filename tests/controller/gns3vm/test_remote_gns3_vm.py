@@ -61,6 +61,7 @@ async def test_start(gns3vm, controller):
 async def test_start_invalid_vm(gns3vm, controller):
 
     await controller.add_compute("r1",
+                                 connect=False,
                                  name="R1",
                                  protocol="https",
                                  host="r1.local",

@@ -16,7 +16,7 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import EmailStr, BaseModel, Field, SecretStr
+from pydantic import ConfigDict, EmailStr, BaseModel, Field, SecretStr
 from uuid import UUID
 
 from .base import DateTimeModelMixin
@@ -27,24 +27,24 @@ class UserBase(BaseModel):
     Common user properties.
     """
 
-    username: Optional[str] = Field(None, min_length=3, regex="[a-zA-Z0-9_-]+$")
+    username: Optional[str] = Field(None, min_length=3, pattern="[a-zA-Z0-9_-]+$")
     is_active: bool = True
-    email: Optional[EmailStr]
-    full_name: Optional[str]
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
 
 
 class UserCreate(UserBase):
     """
-    Properties to create an user.
+    Properties to create a user.
     """
 
-    username: str = Field(..., min_length=3, regex="[a-zA-Z0-9_-]+$")
+    username: str = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
     password: SecretStr = Field(..., min_length=6, max_length=100)
 
 
 class UserUpdate(UserBase):
     """
-    Properties to update an user.
+    Properties to update a user.
     """
 
     password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
@@ -52,12 +52,12 @@ class UserUpdate(UserBase):
 
 class LoggedInUserUpdate(BaseModel):
     """
-    Properties to update a logged in user.
+    Properties to update a logged-in user.
     """
 
     password: Optional[SecretStr] = Field(None, min_length=6, max_length=100)
-    email: Optional[EmailStr]
-    full_name: Optional[str]
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
 
 
 class User(DateTimeModelMixin, UserBase):
@@ -65,9 +65,7 @@ class User(DateTimeModelMixin, UserBase):
     user_id: UUID
     last_login: Optional[datetime] = None
     is_superadmin: bool = False
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserGroupBase(BaseModel):
@@ -75,20 +73,20 @@ class UserGroupBase(BaseModel):
     Common user group properties.
     """
 
-    name: Optional[str] = Field(None, min_length=3, regex="[a-zA-Z0-9_-]+$")
+    name: Optional[str] = Field(None, min_length=3, pattern="[a-zA-Z0-9_-]+$")
 
 
 class UserGroupCreate(UserGroupBase):
     """
-    Properties to create an user group.
+    Properties to create a user group.
     """
 
-    name: Optional[str] = Field(..., min_length=3, regex="[a-zA-Z0-9_-]+$")
+    name: Optional[str] = Field(..., min_length=3, pattern="[a-zA-Z0-9_-]+$")
 
 
 class UserGroupUpdate(UserGroupBase):
     """
-    Properties to update an user group.
+    Properties to update a user group.
     """
 
     pass
@@ -98,9 +96,7 @@ class UserGroup(DateTimeModelMixin, UserGroupBase):
 
     user_group_id: UUID
     is_builtin: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Credentials(BaseModel):

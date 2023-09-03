@@ -350,18 +350,44 @@ async def test_get_free_project_name(controller):
 
 
 @pytest.mark.asyncio
-async def test_load_base_files(controller, config, tmpdir):
+async def test_install_base_configs(controller, config, tmpdir):
 
     config.settings.Server.configs_path = str(tmpdir)
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt'), 'w+') as f:
         f.write('test')
 
-    controller._load_base_files()
+    controller._install_base_configs()
     assert os.path.exists(str(tmpdir / 'iou_l3_base_startup-config.txt'))
 
     # Check is the file has not been overwritten
     with open(str(tmpdir / 'iou_l2_base_startup-config.txt')) as f:
         assert f.read() == 'test'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "builtin_disk",
+    [
+        "empty8G.qcow2",
+        "empty10G.qcow2",
+        "empty20G.qcow2",
+        "empty30G.qcow2",
+        "empty40G.qcow2",
+        "empty50G.qcow2",
+        "empty100G.qcow2",
+        "empty150G.qcow2",
+        "empty200G.qcow2",
+        "empty250G.qcow2",
+        "empty500G.qcow2",
+        "empty1T.qcow2"
+    ]
+)
+async def test_install_builtin_disks(controller, config, tmpdir, builtin_disk):
+
+    config.settings.Server.images_path = str(tmpdir)
+    controller._install_builtin_disks()
+    # we only install Qemu empty disks at this time
+    assert os.path.exists(str(tmpdir / "QEMU" / builtin_disk))
 
 
 def test_appliances(controller, config, tmpdir):

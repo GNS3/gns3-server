@@ -7,7 +7,7 @@
     "vendor_url": "http://www.linuxfoundation.org/",
     "documentation_url": "http://www.cs.unm.edu/~crandall/netsfall13/TCtutorial.pdf",
     "product_name": "netem",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "experimental",
     "maintainer": "Bernhard Ehlers",
     "maintainer_email": "none@b-ehlers.de",

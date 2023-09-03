@@ -1,5 +1,77 @@
 # Change Log
 
+## 2.2.42 09/08/2023
+
+* Bundle web-ui v2.2.42
+* Handle API version key in VirtualBox 7. Fixes #2266
+* Enable system certificate store for SSL connections
+* Use DEFAULT_BUFFER_SIZE for md5sum
+* Fix version check when installing appliances. Ref https://github.com/GNS3/gns3-gui/issues/3486
+* Allow connection to ws console over IPv6. Fixes https://github.com/GNS3/gns3-web-ui/issues/1400
+* Support for Python 3.12
+* Remove import urllib3 and let sentry_sdk import and patch it. Fixes https://github.com/GNS3/gns3-gui/issues/3498
+
+## 2.2.41 12/07/2023
+
+* Bundle web-ui v2.2.41
+* Catch urllib3 exceptions when sending crash report. Ref https://github.com/GNS3/gns3-gui/issues/3483
+* Only fetch Qemu version once when starting Qemu + only add speed/duplex for virtio-net-pci with Qemu version >= 2.12
+* Use recent OVMF firmware (stable-202305) and use flash drives to configure Qemu command line
+* Remove the useless executable permissions to the file gns3server/disks/empty8G.qcow2
+* Backport UEFI boot mode support for Qemu VMs
+
+## 2.2.40.1 10/06/2023
+
+* Re-bundle Web-Ui v2.2.40. Fixes #2239
+
+## 2.2.40 06/06/2023
+
+* qemu : with network adapter_type equal to "virtio-net-pci", fix the speed to 10000 and duplex to full. 	The values are actually fake. 	(https://github.com/GNS3/gns3-gui/issues/3476)
+* Parse name for request to node creation from template
+* Remove Xvfb + x11vnc support
+* Require a Host-Only Network to start the VirtualBox GNS3 VM on macOS with VirtualBox 7
+* Properly catch aiohttp client exception. Ref #2228
+* Catch ConnectionResetError when waiting for the wrap console
+* Fix open IPv6 address for HTTP consoles on controller. Fixes https://github.com/GNS3/gns3-gui/issues/3448
+* Use proc.communicate() when checking for subprocess output As recommended in https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stderr
+
+## 2.2.39 08/05/2023
+
+* Install web-ui v2.2.39
+* Add generic function to install resource files
+* Install empty Qemu disks on first start
+* Check for colon in project name. Fixes #2203
+* Upgrade distro and aiohttp dependencies
+
+## 2.2.38 28/02/2023
+
+* Bundle web-ui v2.2.38
+* Fix c7200_i0_log.txt is created in the current directory. Fixes #2191
+* Check swtpm version and start swtpm before qemu
+* Fix broken websocket console with Python 3.11
+* Fix "cannot reopen console". Ref #2182
+* Fix Qemu binary not set when adding appliance from template
+
+## 2.2.37 25/01/2023
+
+* Fix link communication issues on Windows with uBridge
+* Fix StreamWriter doesn't have the wait_closed() method in Python3.6. Fixes #2170
+* Install built-in appliances when no previous version has been detected. Fixes #2168
+* Update documentation to install gns3-server. Fixes #2124
+* Give udhcpc executable right. Fixes #2159
+
+## 2.2.36 04/01/2023
+
+* Install web-ui v2.2.36
+* Add Trusted Platform Module (TPM) support for Qemu VMs
+* Require Dynamips 0.2.23 and bind Dynamips hypervisor on 127.0.0.1
+* Delete the built-in appliance directory before installing updated files
+* Use a stock BusyBox for the Docker integration
+* Overwrite built-in appliance files when starting a more recent version of the server
+* Fix reset console. Fixes #1619
+* Only use importlib_resources for Python <= 3.9. Fixes #2147
+* Support when the user field defined in Docker container is an ID. Fixes #2134
+
 ## 3.0.0a3 27/12/2022
 
 * Add web-ui v3.0.0a3

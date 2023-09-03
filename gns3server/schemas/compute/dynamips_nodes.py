@@ -129,13 +129,13 @@ class DynamipsBase(BaseModel):
     image: Optional[str] = Field(None, description="Path to the IOS image")
     image_md5sum: Optional[str] = Field(None, description="Checksum of the IOS image")
     usage: Optional[str] = Field(None, description="How to use the Dynamips VM")
-    chassis: Optional[str] = Field(None, description="Cisco router chassis model", regex="^[0-9]{4}(XM)?$")
+    chassis: Optional[str] = Field(None, description="Cisco router chassis model", pattern="^[0-9]{4}(XM)?$")
     startup_config_content: Optional[str] = Field(None, description="Content of IOS startup configuration file")
     private_config_content: Optional[str] = Field(None, description="Content of IOS private configuration file")
     mmap: Optional[bool] = Field(None, description="MMAP feature")
     sparsemem: Optional[bool] = Field(None, description="Sparse memory feature")
     clock_divisor: Optional[int] = Field(None, description="Clock divisor")
-    idlepc: Optional[str] = Field(None, description="Idle-PC value", regex="^(0x[0-9a-fA-F]+)?$")
+    idlepc: Optional[str] = Field(None, description="Idle-PC value", pattern="^(0x[0-9a-fA-F]+)?$")
     idlemax: Optional[int] = Field(None, description="Idlemax value")
     idlesleep: Optional[int] = Field(None, description="Idlesleep value")
     exec_area: Optional[int] = Field(None, description="Exec area value")
@@ -147,7 +147,7 @@ class DynamipsBase(BaseModel):
     aux: Optional[int] = Field(None, gt=0, le=65535, description="Auxiliary console TCP port")
     aux_type: Optional[DynamipsConsoleType] = Field(None, description="Auxiliary console type")
     mac_addr: Optional[str] = Field(
-        None, description="Base MAC address", regex="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
+        None, description="Base MAC address", pattern="^([0-9a-fA-F]{4}\\.){2}[0-9a-fA-F]{4}$"
     )
     system_id: Optional[str] = Field(None, description="System ID")
     slot0: Optional[DynamipsAdapters] = Field(None, description="Network module slot 0")
@@ -174,7 +174,7 @@ class DynamipsCreate(DynamipsBase):
     """
 
     name: str
-    platform: str = Field(..., description="Cisco router platform", regex="^c[0-9]{4}$")
+    platform: str = Field(..., description="Cisco router platform", pattern="^c[0-9]{4}$")
     image: str = Field(..., description="Path to the IOS image")
     ram: int = Field(..., description="Amount of RAM in MB")
 

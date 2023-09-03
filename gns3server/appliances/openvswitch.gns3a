@@ -8,7 +8,7 @@
     "documentation_url": "http://openvswitch.org/support/",
     "product_name": "Open vSwitch",
     "product_url": "http://openvswitch.org/",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

@@ -8,6 +8,7 @@ import os
 import uuid
 import configparser
 import base64
+import stat
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -114,7 +115,7 @@ async def test_user(db_session: AsyncSession) -> User:
         return existing_user
     user = await user_repo.create_user(new_user)
 
-    # add new user to "Users group
+    # add new user to the "Users" group
     group = await user_repo.get_user_group_by_name("Users")
     await user_repo.add_member_to_user_group(group.user_group_id, user)
     return user
@@ -405,13 +406,24 @@ def run_around_tests(monkeypatch, config, port_manager):
 
     monkeypatch.setattr("gns3server.utils.path.get_default_project_directory", lambda *args: os.path.join(tmppath, 'projects'))
 
-    # Force sys.platform to the original value. Because it seem not be restore correctly at each tests
+    # Force sys.platform to the original value. Because it seems not be restored correctly after each test
     sys.platform = sys.original_platform
 
     yield
 
-    # An helper should not raise Exception
+    # A helper should not raise Exception
     try:
         shutil.rmtree(tmppath)
     except BaseException:
         pass
+
+
+@pytest.fixture
+def fake_executable(monkeypatch, tmpdir) -> str:
+
+    monkeypatch.setenv("PATH", str(tmpdir))
+    executable_path = os.path.join(os.environ["PATH"], "fake_executable")
+    with open(executable_path, "w+") as f:
+        f.write("1")
+    os.chmod(executable_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    return executable_path

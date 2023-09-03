@@ -6,7 +6,7 @@
     "vendor_name": "Canonical",
     "vendor_url": "http://www.ubuntu.com",
     "product_name": "Ubuntu",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",

@@ -21,5 +21,5 @@ from pydantic import BaseModel
 
 class DateTimeModelMixin(BaseModel):
 
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

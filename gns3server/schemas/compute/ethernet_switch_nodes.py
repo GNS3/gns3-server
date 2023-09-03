@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 from uuid import UUID
 from enum import Enum
@@ -43,15 +43,14 @@ class EthernetSwitchPort(BaseModel):
     port_number: int
     type: EthernetSwitchPortType = Field(..., description="Port type")
     vlan: int = Field(..., ge=1, le=4094, description="VLAN number")
-    ethertype: Optional[EthernetSwitchEtherType] = Field(None, description="QinQ Ethertype")
+    ethertype: Optional[EthernetSwitchEtherType] = Field("0x8100", description="QinQ Ethertype")
 
-    @validator("ethertype")
-    def validate_ethertype(cls, v, values):
+    @model_validator(mode="after")
+    def check_ethertype(self) -> "EthernetSwitchPort":
 
-        if v is not None:
-            if "type" not in values or values["type"] != EthernetSwitchPortType.qinq:
-                raise ValueError("Ethertype is only for QinQ port type")
-        return v
+        if self.ethertype != EthernetSwitchEtherType.ethertype_8021q and self.type != EthernetSwitchPortType.qinq:
+            raise ValueError("Ethertype is only for QinQ port type")
+        return self
 
 
 class TelnetConsoleType(str, Enum):

@@ -8,7 +8,7 @@
     "documentation_url": "https://success.trendmicro.com/product-support/interscan-web-security-virtual-appliance",
     "product_name": "IWS VA",
     "product_url": "http://www.trendmicro.com/enterprise/network-security/interscan-web-security/virtual-appliance/index.html",
-    "registry_version": 3,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
