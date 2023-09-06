@@ -28,6 +28,16 @@ RUN apt-get install -y vpcs ubridge
 ADD . /server
 WORKDIR /server
 
+RUN pip3 install \
+    multidict \
+    typing_extensions \
+    attrs \
+    yarl \
+    async_timeout \
+    idna_ssl \
+    charset_normalizer \
+    aiosignal
+
 RUN pip3 install --no-cache-dir -r /server/requirements.txt
 
 EXPOSE 3080
