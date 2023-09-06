@@ -270,9 +270,12 @@ class Controller:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
         self._iou_license_settings["license_check"] = iou_config.license_check
 
-        current_version = __version__.split("+")[0]
-        previous_version = controller_vars.get("version", "").split("+")[0]
-        if not previous_version or parse_version(current_version) > parse_version(previous_version):
+        previous_version = controller_settings.get("version")
+        log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+        if not previous_version or \
+                parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
+            self._appliance_manager.install_builtin_appliances()
+        elif not os.listdir(self._appliance_manager.builtin_appliances_path()):
             self._appliance_manager.install_builtin_appliances()
 
         self._appliance_manager.appliances_etag = controller_vars.get("appliances_etag")

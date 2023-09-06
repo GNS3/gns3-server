@@ -222,8 +222,9 @@ async def test_create_vnc(compute_project, manager):
                             },
                             {
                                 "Type": "bind",
-                                "Source": "/tmp/.X11-unix/",
-                                "Target": "/tmp/.X11-unix/"
+                                "Source": f"/tmp/.X11-unix/X{vm._display}",
+                                "Target": f"/tmp/.X11-unix/X{vm._display}",
+                                "ReadOnly": True
                             }
                         ],
                         "Privileged": True,
