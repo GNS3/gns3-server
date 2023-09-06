@@ -148,6 +148,15 @@ class Config:
         return os.path.dirname(self._main_config_file)
 
     @property
+    def controller_vars(self):
+        """
+        Return the controller variables file path.
+        """
+
+        controller_vars_filename = "gns3_controller.vars"
+        return os.path.join(self.config_dir, controller_vars_filename)
+
+    @property
     def server_config(self):
         """
         Return the server configuration file path.
