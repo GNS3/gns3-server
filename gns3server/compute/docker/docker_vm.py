@@ -489,7 +489,8 @@ class DockerVM(BaseNode):
             params["HostConfig"]["Mounts"].append({
                 "Type": "bind",
                 "Source": f"/tmp/.X11-unix/X{self._display}",
-                "Target": f"/tmp/.X11-unix/X{self._display}"
+                "Target": f"/tmp/.X11-unix/X{self._display}",
+                "ReadOnly": True
             })
 
         if self._extra_hosts:

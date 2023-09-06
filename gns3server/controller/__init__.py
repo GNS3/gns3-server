@@ -270,7 +270,7 @@ class Controller:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
         self._iou_license_settings["license_check"] = iou_config.license_check
 
-        previous_version = controller_settings.get("version")
+        previous_version = controller_vars.get("version")
         log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
         if not previous_version or \
                 parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
