@@ -31,6 +31,7 @@ from .controller.nodes import NodeCreate, NodeUpdate, NodeDuplicate, NodeCapture
 from .controller.projects import ProjectCreate, ProjectUpdate, ProjectDuplicate, Project, ProjectFile, ProjectCompression
 from .controller.users import UserCreate, UserUpdate, LoggedInUserUpdate, User, Credentials, UserGroupCreate, UserGroupUpdate, UserGroup
 from .controller.rbac import RoleCreate, RoleUpdate, Role, Privilege, ACECreate, ACEUpdate, ACE
+from .controller.pools import Resource, ResourceCreate, ResourcePoolCreate, ResourcePoolUpdate, ResourcePool
 from .controller.tokens import Token
 from .controller.snapshots import SnapshotCreate, Snapshot
 from .controller.iou_license import IOULicense

@@ -18,7 +18,7 @@
 from uuid import UUID
 from urllib.parse import urlparse
 from typing import Optional, List, Union
-from sqlalchemy import select, update, delete, null
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
