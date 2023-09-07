@@ -18,6 +18,6 @@
 # A docker server use for localy test a remote GNS3 server  
 
 docker build -t gns3-server .
-docker run -i -h gns3vm -p 8001:8001/tcp -t gns3-server python3 -m gns3server --port 8001
+docker run --privileged -i -h gns3vm -p 8001:8001/tcp -t gns3-server python3 -m gns3server --port 8001
 
 
