@@ -82,6 +82,23 @@ async def create_role(
 
 
 @router.get(
+    "/privileges",
+    response_model=List[schemas.Privilege],
+    dependencies=[Depends(has_privilege("Role.Audit"))]
+)
+async def get_privileges(
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+) -> List[schemas.Privilege]:
+    """
+    Get all available privileges.
+
+    Required privilege: Role.Audit
+    """
+
+    return await rbac_repo.get_privileges()
+
+
+@router.get(
     "/{role_id}",
     response_model=schemas.Role,
     dependencies=[Depends(has_privilege("Role.Audit"))]

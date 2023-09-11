@@ -309,6 +309,75 @@ class RbacRepository(BaseRepository):
                         return True  # only allow if the path is the original path or the ACE is set to propagate
         return False
 
+    async def _get_resources_in_pools(self, aces, path: str = None) -> List[models.Resource]:
+        """
+        Get all resources in pools.
+        """
+
+        pool_resources = []
+        for ace_path, ace_propagate, ace_allowed, ace_privilege in aces:
+            if ace_path.startswith("/pool"):
+                resource_pool_id = ace_path.split("/")[2]
+                query = select(models.Resource). \
+                    join(models.Resource.resource_pools). \
+                    filter(models.ResourcePool.resource_pool_id == resource_pool_id)
+
+                result = await self._db_session.execute(query)
+                resources = result.scalars().all()
+
+                for resource in resources:
+                    # we only support projects in resource pools for now
+                    if resource.resource_type == "project":
+                        if path:
+                            if path.startswith(f"/projects/{resource.resource_id}"):
+                                pool_resources.append(resource)
+                        else:
+                            pool_resources.append(resource)
+        return pool_resources
+
+    async def _get_user_aces(self, user_id: UUID, privilege_name: str):
+        """
+        Retrieve all user ACEs matching the user_id and privilege name.
+        """
+
+        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name).\
+            join(models.Privilege.roles).\
+            join(models.Role.acl_entries).\
+            join(models.ACE.user). \
+            filter(models.User.user_id == user_id).\
+            filter(models.Privilege.name == privilege_name).\
+            order_by(models.ACE.path.desc())
+
+        result = await self._db_session.execute(query)
+        return result.all()
+
+    async def _get_group_aces(self, user_id: UUID, privilege_name: str):
+        """
+        Retrieve all group ACEs matching the user_id and privilege name.
+        """
+
+        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name). \
+            join(models.Privilege.roles). \
+            join(models.Role.acl_entries). \
+            join(models.ACE.group). \
+            join(models.UserGroup.users).\
+            filter(models.User.user_id == user_id). \
+            filter(models.Privilege.name == privilege_name)
+
+        result = await self._db_session.execute(query)
+        return result.all()
+
+    async def get_user_pool_resources(self, user_id: UUID, privilege_name: str) -> List[models.Resource]:
+        """
+        Get all resources in pools belonging to a user and groups
+        """
+
+        user_aces = await self._get_user_aces(user_id, privilege_name)
+        pool_resources = await self._get_resources_in_pools(user_aces)
+        group_aces = await self._get_group_aces(user_id, privilege_name)
+        pool_resources.extend(await self._get_resources_in_pools(group_aces))
+        return list(set(pool_resources))
+
     async def check_user_has_privilege(self, user_id: UUID, path: str, privilege_name: str) -> bool:
         """
         Resource paths form a file system like tree and privileges can be inherited by paths down that tree
@@ -321,38 +390,34 @@ class RbacRepository(BaseRepository):
         * Privileges on deeper levels replace those inherited from an upper level.
         """
 
-        # retrieve all user ACEs matching the user_id and privilege name
-        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name).\
-            join(models.Privilege.roles).\
-            join(models.Role.acl_entries).\
-            join(models.ACE.user). \
-            filter(models.User.user_id == user_id).\
-            filter(models.Privilege.name == privilege_name).\
-            order_by(models.ACE.path.desc())
-
+        query = select(models.Resource)
         result = await self._db_session.execute(query)
-        aces = result.all()
+        resources = result.scalars().all()
+        projects_in_pools = [f"/projects/{r.resource_id}" for r in resources if r.resource_type == "project"]
+        path_is_in_pool = False
+        for project_in_pool in projects_in_pools:
+            if path.startswith(project_in_pool):
+                path_is_in_pool = True
+                break
 
+        aces = await self._get_user_aces(user_id, privilege_name)
         try:
-            if self._check_path_with_aces(path, aces):
-                # the user has an ACE matching the path and privilege,there is no need to check group ACEs
+            if path_is_in_pool:
+                if await self._get_resources_in_pools(aces, path):
+                    return True
+            elif self._check_path_with_aces(path, aces):
+                # the user has an ACE matching the path and privilege, there is no need to check group ACEs
                 return True
         except PermissionError:
             return False
 
-        # retrieve all group ACEs matching the user_id and privilege name
-        query = select(models.ACE.path, models.ACE.propagate, models.ACE.allowed, models.Privilege.name). \
-            join(models.Privilege.roles). \
-            join(models.Role.acl_entries). \
-            join(models.ACE.group). \
-            join(models.UserGroup.users).\
-            filter(models.User.user_id == user_id). \
-            filter(models.Privilege.name == privilege_name)
-
-        result = await self._db_session.execute(query)
-        aces = result.all()
-
+        aces = await self._get_group_aces(user_id, privilege_name)
         try:
-            return self._check_path_with_aces(path, aces)
+            if path_is_in_pool:
+                if await self._get_resources_in_pools(aces, path):
+                    return True
+            elif self._check_path_with_aces(path, aces):
+                return True
         except PermissionError:
             return False
+        return False
