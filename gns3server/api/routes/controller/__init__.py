@@ -32,6 +32,7 @@ from . import users
 from . import groups
 from . import roles
 from . import acl
+from . import privileges
 
 from .dependencies.authentication import get_current_active_user
 
@@ -58,6 +59,12 @@ router.include_router(
     roles.router,
     prefix="/access/roles",
     tags=["Roles"]
+)
+
+router.include_router(
+    privileges.router,
+    prefix="/access/privileges",
+    tags=["Privileges"]
 )
 
 router.include_router(
