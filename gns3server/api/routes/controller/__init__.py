@@ -63,6 +63,7 @@ router.include_router(
 
 router.include_router(
     privileges.router,
+    dependencies=[Depends(get_current_active_user)],
     prefix="/access/privileges",
     tags=["Privileges"]
 )

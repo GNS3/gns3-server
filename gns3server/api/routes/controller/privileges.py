@@ -11,10 +11,10 @@
 # Author: Sylvain MATHIEU
 #
 
-
 """
 API route for privileges
 """
+
 from typing import List
 from gns3server.db.repositories.rbac import RbacRepository
 from .dependencies.database import get_repository
