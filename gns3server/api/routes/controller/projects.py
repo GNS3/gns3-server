@@ -47,9 +47,11 @@ from gns3server.utils.asyncio import aiozipstream
 from gns3server.utils.path import is_safe_path
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
+from gns3server.db.repositories.pools import ResourcePoolsRepository
 from gns3server.services.templates import TemplatesService
 
 from .dependencies.rbac import has_privilege, has_privilege_on_websocket
+from .dependencies.authentication import get_current_active_user
 from .dependencies.database import get_repository
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project"}}
@@ -69,10 +71,13 @@ def dep_project(project_id: UUID) -> Project:
 @router.get(
     "",
     response_model=List[schemas.Project],
-    response_model_exclude_unset=True,
-    dependencies=[Depends(has_privilege("Project.Audit"))]
+    response_model_exclude_unset=True
 )
-async def get_projects() -> List[schemas.Project]:
+async def get_projects(
+        current_user: schemas.User = Depends(get_current_active_user),
+        rbac_repo: RbacRepository = Depends(get_repository(RbacRepository)),
+        pools_repo: ResourcePoolsRepository = Depends(get_repository(ResourcePoolsRepository))
+) -> List[schemas.Project]:
     """
     Return all projects.
 
@@ -80,7 +85,22 @@ async def get_projects() -> List[schemas.Project]:
     """
 
     controller = Controller.instance()
-    return [p.asdict() for p in controller.projects.values()]
+    projects = []
+
+    if current_user.is_superadmin:
+        # super admin sees all projects
+        return [p.asdict() for p in controller.projects.values()]
+    elif await rbac_repo.check_user_has_privilege(current_user.user_id, "/projects", "Project.Audit"):
+        # user with Project.Audit privilege on '/projects' sees all projects except those in resource pools
+        project_ids_in_pools = [str(r.resource_id) for r in await pools_repo.get_resources() if r.resource_type == "project"]
+        projects.extend([p.asdict() for p in controller.projects.values() if p.id not in project_ids_in_pools])
+
+    # user with Project.Audit privilege on resource pools sees the projects in these pools
+    user_pool_resources = await rbac_repo.get_user_pool_resources(current_user.user_id, "Project.Audit")
+    project_ids_in_pools = [str(r.resource_id) for r in user_pool_resources if r.resource_type == "project"]
+    projects.extend([p.asdict() for p in controller.projects.values() if p.id in project_ids_in_pools])
+
+    return projects
 
 
 @router.post(
