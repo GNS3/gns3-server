@@ -21,6 +21,7 @@ import json
 import asyncio
 import aiofiles
 import shutil
+import platformdirs
 
 
 from typing import Tuple, List
@@ -94,13 +95,13 @@ class ApplianceManager:
         os.makedirs(appliances_path, exist_ok=True)
         return appliances_path
 
-    def _builtin_appliances_path(self, delete_first=False):
+    def builtin_appliances_path(self, delete_first=False):
         """
         Get the built-in appliance storage directory
         """
 
-        config = Config.instance()
-        appliances_dir = os.path.join(config.config_dir, "appliances")
+        appname = vendor = "GNS3"
+        appliances_dir = os.path.join(platformdirs.user_data_dir(appname, vendor, roaming=True), "appliances")
         if delete_first:
             shutil.rmtree(appliances_dir, ignore_errors=True)
         os.makedirs(appliances_dir, exist_ok=True)
@@ -111,7 +112,7 @@ class ApplianceManager:
         At startup we copy the built-in appliances files.
         """
 
-        dst_path = self._builtin_appliances_path(delete_first=True)
+        dst_path = self.builtin_appliances_path(delete_first=True)
         log.info(f"Installing built-in appliances in '{dst_path}'")
         from . import Controller
         try:
@@ -316,7 +317,7 @@ class ApplianceManager:
         self._appliances = {}
         for directory, builtin in (
             (
-                self._builtin_appliances_path(),
+                self.builtin_appliances_path(),
                 True,
             ),
             (
@@ -434,7 +435,7 @@ class ApplianceManager:
 
                     Controller.instance().save()
                 json_data = await response.json()
-            appliances_dir = self._builtin_appliances_path()
+            appliances_dir = self.builtin_appliances_path()
             downloaded_appliance_files = []
             for appliance in json_data:
                 if appliance["type"] == "file":

@@ -196,6 +196,11 @@ async def add_member_to_group(
     if not user:
         raise ControllerNotFoundError(f"User '{user_id}' not found")
 
+    user_groups = await users_repo.get_user_memberships(user_id)
+    for group in user_groups:
+        if group.user_group_id == user_group_id:
+            raise ControllerBadRequestError(f"Username '{user.username}' is already member of group '{group.name}'")
+
     user_group = await users_repo.add_member_to_user_group(user_group_id, user)
     if not user_group:
         raise ControllerNotFoundError(f"User group '{user_group_id}' not found")

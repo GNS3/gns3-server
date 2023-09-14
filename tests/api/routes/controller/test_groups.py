@@ -22,7 +22,7 @@ from httpx import AsyncClient
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from gns3server.db.repositories.users import UsersRepository
-from gns3server.schemas.controller.users import User
+from gns3server.schemas.controller.users import User, UserGroupCreate
 
 pytestmark = pytest.mark.asyncio
 
@@ -106,7 +106,7 @@ class TestGroupRoutes:
 
 class TestGroupMembersRoutes:
 
-    async def test_add_member_to_group(
+    async def test_add_to_group_already_member(
             self,
             app: FastAPI,
             client: AsyncClient,
@@ -116,6 +116,28 @@ class TestGroupMembersRoutes:
 
         user_repo = UsersRepository(db_session)
         group_in_db = await user_repo.get_user_group_by_name("Users")
+        response = await client.put(
+            app.url_path_for(
+                "add_member_to_group",
+                user_group_id=group_in_db.user_group_id,
+                user_id=str(test_user.user_id)
+            )
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    async def test_add_member_to_group(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            test_user: User,
+            db_session: AsyncSession
+    ) -> None:
+
+        user_repo = UsersRepository(db_session)
+        new_user_group = UserGroupCreate(
+            name="test_group",
+        )
+        group_in_db = await user_repo.create_user_group(new_user_group)
         response = await client.put(
             app.url_path_for(
                 "add_member_to_group",
@@ -136,7 +158,7 @@ class TestGroupMembersRoutes:
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        group_in_db = await user_repo.get_user_group_by_name("Users")
+        group_in_db = await user_repo.get_user_group_by_name("test_group")
         response = await client.get(
             app.url_path_for(
                 "get_user_group_members",
@@ -154,7 +176,7 @@ class TestGroupMembersRoutes:
     ) -> None:
 
         user_repo = UsersRepository(db_session)
-        group_in_db = await user_repo.get_user_group_by_name("Users")
+        group_in_db = await user_repo.get_user_group_by_name("test_group")
 
         response = await client.delete(
             app.url_path_for(

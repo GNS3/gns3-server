@@ -21,6 +21,7 @@ import uuid
 import shutil
 import asyncio
 import random
+import json
 
 try:
     import importlib_resources
@@ -42,7 +43,7 @@ from .topology import load_topology
 from .gns3vm import GNS3VM
 from .gns3vm.gns3_vm_error import GNS3VMError
 from .controller_error import ControllerError, ControllerNotFoundError
-
+from ..version import __version__
 
 import logging
 
@@ -64,7 +65,9 @@ class Controller:
         self.symbols = Symbols()
         self._appliance_manager = ApplianceManager()
         self._iou_license_settings = {"iourc_content": "", "license_check": True}
-        self._config_loaded = False
+        self._vars_loaded = False
+        self._vars_file = Config.instance().controller_vars
+        log.info(f'Loading controller vars file "{self._vars_file}"')
 
     async def start(self, computes=None):
 
@@ -83,7 +86,7 @@ class Controller:
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        self._load_controller_settings()
+        self._load_controller_vars()
 
         if server_config.enable_ssl:
             self._ssl_context = self._create_ssl_context(server_config)
@@ -185,7 +188,7 @@ class Controller:
     async def reload(self):
 
         log.info("Controller is reloading")
-        self._load_controller_settings()
+        self._load_controller_vars()
 
         # remove all projects deleted from disk.
         for project in self._projects.copy().values():
@@ -198,65 +201,54 @@ class Controller:
 
     def save(self):
         """
-        Save the controller configuration on disk
+        Save the controller vars on disk
         """
 
-        if self._config_loaded is False:
-            return
+        controller_vars = dict()
+        if self._vars_loaded:
+            controller_vars = {
+                "appliances_etag": self._appliance_manager.appliances_etag,
+                "version": __version__
+            }
 
-        if self._iou_license_settings["iourc_content"]:
+            if self._iou_license_settings["iourc_content"]:
 
-            iou_config = Config.instance().settings.IOU
-            server_config = Config.instance().settings.Server
+                iou_config = Config.instance().settings.IOU
+                server_config = Config.instance().settings.Server
 
-            if iou_config.iourc_path:
-                iourc_path = iou_config.iourc_path
-            else:
-                os.makedirs(server_config.secrets_dir, exist_ok=True)
-                iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
+                if iou_config.iourc_path:
+                    iourc_path = iou_config.iourc_path
+                else:
+                    os.makedirs(server_config.secrets_dir, exist_ok=True)
+                    iourc_path = os.path.join(server_config.secrets_dir, "gns3_iourc_license")
 
-            try:
-                with open(iourc_path, "w+") as f:
-                    f.write(self._iou_license_settings["iourc_content"])
-                log.info(f"iourc file '{iourc_path}' saved")
-            except OSError as e:
-                log.error(f"Cannot write IOU license file '{iourc_path}': {e}")
+                try:
+                    with open(iourc_path, "w+") as f:
+                        f.write(self._iou_license_settings["iourc_content"])
+                    log.info(f"iourc file '{iourc_path}' saved")
+                except OSError as e:
+                    log.error(f"Cannot write IOU license file '{iourc_path}': {e}")
 
-        if self._appliance_manager.appliances_etag:
-            etag_directory = os.path.dirname(Config.instance().server_config)
-            os.makedirs(etag_directory, exist_ok=True)
-            etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
+        try:
+            os.makedirs(os.path.dirname(self._vars_file), exist_ok=True)
+            with open(self._vars_file, 'w+') as f:
+                json.dump(controller_vars, f, indent=4)
+        except OSError as e:
+            log.error(f"Cannot write controller vars file '{self._vars_file}': {e}")
 
-            try:
-                with open(etag_appliances_path, "w+") as f:
-                    f.write(self._appliance_manager.appliances_etag)
-                log.info(f"etag appliances file '{etag_appliances_path}' saved")
-            except OSError as e:
-                log.error(f"Cannot write Etag appliance file '{etag_appliances_path}': {e}")
-
-    def _load_controller_settings(self):
+    def _load_controller_vars(self):
         """
-        Reload the controller configuration from disk
+        Reload the controller vars from disk
         """
 
-        # try:
-        #     if not os.path.exists(self._config_file):
-        #         self._config_loaded = True
-        #         self.save()
-        #     with open(self._config_file) as f:
-        #         controller_settings = json.load(f)
-        # except (OSError, ValueError) as e:
-        #     log.critical("Cannot load configuration file '{}': {}".format(self._config_file, e))
-        #     return []
-
-        # load GNS3 VM settings
-        # if "gns3vm" in controller_settings:
-        #     gns3_vm_settings = controller_settings["gns3vm"]
-        #     if "port" not in gns3_vm_settings:
-        #         # port setting was added in version 2.2.8
-        #         # the default port was 3080 before this
-        #         gns3_vm_settings["port"] = 3080
-        #     self.gns3vm.settings = gns3_vm_settings
+        try:
+            if not os.path.exists(self._vars_file):
+                self.save()  # this will create the vars file
+            with open(self._vars_file) as f:
+                controller_vars = json.load(f)
+        except (OSError, ValueError) as e:
+            log.critical(f"Cannot load controller vars file '{self._vars_file}': {e}")
+            return []
 
         # load the IOU license settings
         iou_config = Config.instance().settings.IOU
@@ -276,27 +268,19 @@ class Controller:
                 log.info(f"iourc file '{iourc_path}' loaded")
             except OSError as e:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
-
         self._iou_license_settings["license_check"] = iou_config.license_check
 
-        etag_directory = os.path.dirname(Config.instance().server_config)
-        etag_appliances_path = os.path.join(etag_directory, "gns3_appliances_etag")
-        self._appliance_manager.appliances_etag = None
-        if os.path.exists(etag_appliances_path):
-            try:
-                with open(etag_appliances_path) as f:
-                    self._appliance_manager.appliances_etag = f.read()
-                log.info(f"etag appliances file '{etag_appliances_path}' loaded")
-            except OSError as e:
-                log.error(f"Cannot read Etag appliance file '{etag_appliances_path}': {e}")
+        previous_version = controller_vars.get("version")
+        log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+        if not previous_version or \
+                parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
+            self._appliance_manager.install_builtin_appliances()
+        elif not os.listdir(self._appliance_manager.builtin_appliances_path()):
+            self._appliance_manager.install_builtin_appliances()
 
-        # FIXME install builtin appliances only once, need to store "version" somewhere...
-        #if parse_version(__version__.split("+")[0]) > parse_version(controller_settings.get("version", "")):
-        #   self._appliance_manager.install_builtin_appliances()
-
-        self._appliance_manager.install_builtin_appliances()
+        self._appliance_manager.appliances_etag = controller_vars.get("appliances_etag")
         self._appliance_manager.load_appliances()
-        self._config_loaded = True
+        self._vars_loaded = True
 
     async def load_projects(self):
         """
@@ -420,7 +404,6 @@ class Controller:
 
             compute = Compute(compute_id=compute_id, controller=self, name=name, **kwargs)
             self._computes[compute.id] = compute
-            # self.save()
             if connect:
                 if wait_connection:
                     await compute.connect()
@@ -470,7 +453,6 @@ class Controller:
         await self.close_compute_projects(compute)
         await compute.close()
         del self._computes[compute_id]
-        # self.save()
         self.notification.controller_emit("compute.deleted", compute.asdict())
 
     @property

@@ -96,6 +96,18 @@ def create_default_roles(target, connection, **kw):
             "name": "ACE.Modify"
         },
         {
+            "description": "Create or delete a resource pool",
+            "name": "Pool.Allocate"
+        },
+        {
+            "description": "View a resource pool",
+            "name": "Pool.Audit"
+        },
+        {
+            "description": "Update a resource pool",
+            "name": "Pool.Modify"
+        },
+        {
             "description": "Create or delete a template",
             "name": "Template.Allocate"
         },
