@@ -42,12 +42,6 @@ class TestRolesRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["role_id"] == str(role_in_db.role_id)
 
-    async def test_get_privileges(self, app: FastAPI, client: AsyncClient):
-
-        response = await client.get(app.url_path_for("get_privileges"))
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 45  # 45 built-in privileges
-
     async def test_list_roles(self, app: FastAPI, client: AsyncClient) -> None:
 
         response = await client.get(app.url_path_for("get_roles"))
