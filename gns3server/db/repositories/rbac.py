@@ -130,6 +130,13 @@ class RbacRepository(BaseRepository):
         if not role_db:
             return None
 
+        """
+         Skip add new privilege if already added for this role.
+        """
+        for p in role_db.privileges:
+            if p.privilege_id == privilege.privilege_id:
+                return role_db
+
         role_db.privileges.append(privilege)
         await self._db_session.commit()
         await self._db_session.refresh(role_db)
