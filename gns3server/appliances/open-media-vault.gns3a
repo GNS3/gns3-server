@@ -27,6 +27,14 @@
     },
     "images": [
         {
+            "filename": "openmediavault_6.5.0-amd64.iso",
+            "version": "6.5.0",
+            "md5sum": "aa40e5ca50748b139cba2f4ac704a72d",
+            "filesize": 941621248,
+            "download_url": "https://www.openmediavault.org/download.html",
+            "direct_download_url": "https://sourceforge.net/projects/openmediavault/files/6.5.0/openmediavault_6.5.0-amd64.iso"
+        },
+        {
             "filename": "openmediavault_6.0.24-amd64.iso",
             "version": "6.0.24",
             "md5sum": "6f71b9470eb06954bda621972c546a13",
@@ -60,6 +68,14 @@
         }
     ],
     "versions": [
+        {
+            "name": "6.5.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "hdb_disk_image": "empty30G.qcow2",
+                "cdrom_image": "openmediavault_6.5.0-amd64.iso"
+            }
+        },
         {
             "name": "6.0.24",
             "images": {

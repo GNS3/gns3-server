@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.2.43 19/09/2023
+
+* Force English output for VBoxManage. Fixes #2266
+* Automatically add vboxnet and DHCP server if not present for VirtualBox GNS3 VM. Ref #2266
+* Fix issue with controller config saved before checking current version with previous one
+* Prevent X11 socket file to be modified by Docker container
+* Use the user data dir to store built-in appliances
+* Catch ConnectionResetError exception when client disconnects
+* Upgrade to PyQt 5.15.9 and pywin32
+
 ## 2.2.42 09/08/2023
 
 * Bundle web-ui v2.2.42

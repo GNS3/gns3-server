@@ -191,29 +191,28 @@ class Controller:
         Save the controller configuration on disk
         """
 
-        if self._config_loaded is False:
-            return
+        controller_settings = dict()
+        if self._config_loaded:
+            controller_settings = {"computes": [],
+                                   "templates": [],
+                                   "gns3vm": self.gns3vm.__json__(),
+                                   "iou_license": self._iou_license_settings,
+                                   "appliances_etag": self._appliance_manager.appliances_etag,
+                                   "version": __version__}
 
-        controller_settings = {"computes": [],
-                               "templates": [],
-                               "gns3vm": self.gns3vm.__json__(),
-                               "iou_license": self._iou_license_settings,
-                               "appliances_etag": self._appliance_manager.appliances_etag,
-                               "version": __version__}
+            for template in self._template_manager.templates.values():
+                if not template.builtin:
+                    controller_settings["templates"].append(template.__json__())
 
-        for template in self._template_manager.templates.values():
-            if not template.builtin:
-                controller_settings["templates"].append(template.__json__())
-
-        for compute in self._computes.values():
-            if compute.id != "local" and compute.id != "vm":
-                controller_settings["computes"].append({"host": compute.host,
-                                                        "name": compute.name,
-                                                        "port": compute.port,
-                                                        "protocol": compute.protocol,
-                                                        "user": compute.user,
-                                                        "password": compute.password,
-                                                        "compute_id": compute.id})
+            for compute in self._computes.values():
+                if compute.id != "local" and compute.id != "vm":
+                    controller_settings["computes"].append({"host": compute.host,
+                                                            "name": compute.name,
+                                                            "port": compute.port,
+                                                            "protocol": compute.protocol,
+                                                            "user": compute.user,
+                                                            "password": compute.password,
+                                                            "compute_id": compute.id})
 
         try:
             os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
@@ -229,8 +228,7 @@ class Controller:
 
         try:
             if not os.path.exists(self._config_file):
-                self._config_loaded = True
-                self.save()
+                self.save()  # this will create the config file
             with open(self._config_file) as f:
                 controller_settings = json.load(f)
         except (OSError, ValueError) as e:
@@ -254,6 +252,8 @@ class Controller:
         log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
         if not previous_version or \
                 parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
+            self._appliance_manager.install_builtin_appliances()
+        elif not os.listdir(self._appliance_manager.builtin_appliances_path()):
             self._appliance_manager.install_builtin_appliances()
 
         self._appliance_manager.appliances_etag = controller_settings.get("appliances_etag")
