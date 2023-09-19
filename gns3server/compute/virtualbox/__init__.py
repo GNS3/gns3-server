@@ -109,9 +109,16 @@ class VirtualBox(BaseManager):
             command = [vboxmanage_path, "--nologo", subcommand]
             command.extend(args)
             command_string = " ".join(command)
+            env = os.environ.copy()
+            env["LANG"] = "en"  # force english output because we rely on it to parse the output
             log.info("Executing VBoxManage with command: {}".format(command_string))
             try:
-                process = await asyncio.create_subprocess_exec(*command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                process = await asyncio.create_subprocess_exec(
+                    *command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    env=env
+                )
             except (OSError, subprocess.SubprocessError) as e:
                 raise VirtualBoxError("Could not execute VBoxManage: {}".format(e))
 
