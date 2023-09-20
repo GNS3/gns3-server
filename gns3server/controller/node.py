@@ -485,7 +485,7 @@ class Node:
 
         # None properties are not be send. Because it can mean the emulator doesn't support it
         for key in list(data.keys()):
-            if data[key] is None or data[key] is {} or key in self.CONTROLLER_ONLY_PROPERTIES:
+            if data[key] is None or data[key] == {} or key in self.CONTROLLER_ONLY_PROPERTIES:
                 del data[key]
 
         return data
