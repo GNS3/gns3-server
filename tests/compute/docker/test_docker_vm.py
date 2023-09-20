@@ -182,7 +182,7 @@ async def test_create_vnc(compute_project, manager):
                         "Binds": [
                             "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
-                            '/tmp/.X11-unix/:/tmp/.X11-unix/'
+                            "/tmp/.X11-unix/X{0}:/tmp/.X11-unix/X{0}:ro".format(vm._display)
                         ],
                         "Privileged": True
                     },
