@@ -170,7 +170,7 @@
         {
             "filename": "openwrt-18.06.5-x86-64-combined-ext4.img",
             "version": "18.06.5",
-            "md5sum": "6fce24c15f0bc75af16c133b839aea30",
+            "md5sum": "a0f72f4e75e15bef06396fa31eb1bc82",
             "filesize": 285736960,
             "download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/",
             "direct_download_url": "https://downloads.openwrt.org/releases/18.06.5/targets/x86/64/openwrt-18.06.5-x86-64-combined-ext4.img.gz",
@@ -179,7 +179,7 @@
         {
             "filename": "openwrt-18.06.2-x86-64-combined-ext4.img",
             "version": "18.06.2",
-            "md5sum": "d112cd432bf51e2ddadbf9513f272fd9",
+            "md5sum": "9996a3c070b3e2ea582d28293bd78055",
             "filesize": 285736960,
             "download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/",
             "direct_download_url": "https://downloads.openwrt.org/releases/18.06.2/targets/x86/64/openwrt-18.06.2-x86-64-combined-ext4.img.gz",

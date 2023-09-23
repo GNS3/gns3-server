@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 import sys
 import aiohttp
 import logging
 import asyncio
 import socket
+import ipaddress
 
 from .base_gns3_vm import BaseGNS3VM
 from .gns3_vm_error import GNS3VMError
@@ -77,9 +79,6 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
             except ValueError:
                 continue
             self._system_properties[name.strip()] = value.strip()
-        if "API Version" in self._system_properties:
-            # API version is not consistent between VirtualBox versions, the key is named "API Version" in VirtualBox 7
-            self._system_properties["API version"] = self._system_properties.pop("API Version")
 
     async def _check_requirements(self):
         """
@@ -163,6 +162,44 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 if value.strip() == "Yes":
                     return True
         return False
+
+    async def _add_dhcp_server(self, vboxnet):
+        """
+        Add a DHCP server for vboxnet.
+
+        :param vboxnet: vboxnet name
+        """
+
+        hostonlyifs = await self._execute("list", ["hostonlyifs"])
+        pattern = r"IPAddress:\s+(\d+\.\d+\.\d+\.\d+)\nNetworkMask:\s+(\d+\.\d+\.\d+\.\d+)"
+        match = re.search(pattern, hostonlyifs)
+
+        if match:
+            ip_address = match.group(1)
+            netmask = match.group(2)
+        else:
+            raise GNS3VMError("Could not find IP address and netmask for vboxnet {}".format(vboxnet))
+
+        try:
+            interface = ipaddress.IPv4Interface(f"{ip_address}/{netmask}")
+            subnet = ipaddress.IPv4Network(str(interface.network))
+            dhcp_server_ip = str(interface.ip + 1)
+            netmask = str(subnet.netmask)
+            lower_ip = str(interface.ip + 2)
+            upper_ip = str(subnet.network_address + subnet.num_addresses - 2)
+        except ValueError:
+            raise GNS3VMError("Invalid IP address and netmask for vboxnet {}: {}/{}".format(vboxnet, ip_address, netmask))
+
+        dhcp_server_args = [
+            "add",
+            "--network=HostInterfaceNetworking-{}".format(vboxnet),
+            "--server-ip={}".format(dhcp_server_ip),
+            "--netmask={}".format(netmask),
+            "--lower-ip={}".format(lower_ip),
+            "--upper-ip={}".format(upper_ip),
+            "--enable"
+        ]
+        await self._execute("dhcpserver", dhcp_server_args)
 
     async def _check_vboxnet_exists(self, vboxnet, vboxnet_type):
         """
@@ -266,12 +303,20 @@ class VirtualBoxGNS3VM(BaseGNS3VM):
                 await self.set_hostonly_network(interface_number, first_available_vboxnet)
                 vboxnet = first_available_vboxnet
             else:
-                raise GNS3VMError('VirtualBox host-only network "{}" does not exist, please make the sure the network adapter {} configuration is valid for "{}"'.format(vboxnet,
-                                                                                                                                                                         interface_number,
-                                                                                                                                                                         self._vmname))
+                try:
+                    await self._execute("hostonlyif", ["create"])
+                except GNS3VMError:
+                    raise GNS3VMError('VirtualBox host-only network "{}" does not exist and could not be automatically created, please make the sure the network adapter {} configuration is valid for "{}"'.format(
+                        vboxnet,
+                        interface_number,
+                        self._vmname
+                    ))
 
         if backend_type == "hostonlyadapter" and not (await self._check_dhcp_server(vboxnet)):
-            raise GNS3VMError('DHCP must be enabled on VirtualBox host-only network "{}"'.format(vboxnet))
+            try:
+                await self._add_dhcp_server(vboxnet)
+            except GNS3VMError as e:
+                raise GNS3VMError("Could not add DHCP server for vboxnet {}: {}, please configure manually".format(vboxnet, e))
 
         vm_state = await self._get_state()
         log.info(f'"{self._vmname}" state is {vm_state}')
