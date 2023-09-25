@@ -191,6 +191,9 @@ class ResourcePoolsRepository(BaseRepository):
         resource_pool_db.resources.remove(resource)
         await self._db_session.commit()
         await self._db_session.refresh(resource_pool_db)
+
+        await self.delete_resource(resource.resource_id)
+
         return resource_pool_db
 
     async def get_pool_resources(self, resource_pool_id: UUID) -> List[models.Resource]:
