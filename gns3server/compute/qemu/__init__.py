@@ -21,6 +21,8 @@ Qemu server module.
 import asyncio
 import os
 import platform
+import shutil
+import shlex
 import sys
 import re
 import subprocess
@@ -160,6 +162,44 @@ class Qemu(BaseManager):
         return qemus
 
     @staticmethod
+    async def create_disk_image(disk_image_path, options):
+        """
+        Create a Qemu disk (used by the controller to create empty disk images)
+
+        :param disk_image_path: disk image path
+        :param options: disk creation options
+        """
+
+        qemu_img_path = shutil.which("qemu-img")
+        if not qemu_img_path:
+            raise QemuError(f"Could not find qemu-img binary")
+
+        try:
+            if os.path.exists(disk_image_path):
+                raise QemuError(f"Could not create disk image '{disk_image_path}', file already exists")
+        except UnicodeEncodeError:
+            raise QemuError(
+                f"Could not create disk image '{disk_image_path}', "
+                "Disk image name contains characters not supported by the filesystem"
+            )
+
+        img_format = options.pop("format")
+        img_size = options.pop("size")
+        command = [qemu_img_path, "create", "-f", img_format]
+        for option in sorted(options.keys()):
+            command.extend(["-o", f"{option}={options[option]}"])
+        command.append(disk_image_path)
+        command.append(f"{img_size}M")
+        command_string = " ".join(shlex.quote(s) for s in command)
+        output = ""
+        try:
+            log.info(f"Executing qemu-img with: {command_string}")
+            output = await subprocess_check_output(*command, stderr=True)
+            log.info(f"Qemu disk image'{disk_image_path}' created")
+        except (OSError, subprocess.SubprocessError) as e:
+            raise QemuError(f"Could not create '{disk_image_path}' disk image: {e}\n{output}")
+
+    @staticmethod
     async def get_qemu_version(qemu_path):
         """
         Gets the Qemu version.
@@ -177,25 +217,6 @@ class Qemu(BaseManager):
                 raise QemuError(f"Could not determine the Qemu version for {qemu_path}")
         except (OSError, subprocess.SubprocessError) as e:
             raise QemuError(f"Error while looking for the Qemu version: {e}")
-
-    @staticmethod
-    async def _get_qemu_img_version(qemu_img_path):
-        """
-        Gets the Qemu-img version.
-
-        :param qemu_img_path: path to Qemu-img executable.
-        """
-
-        try:
-            output = await subprocess_check_output(qemu_img_path, "--version")
-            match = re.search(r"version\s+([0-9a-z\-\.]+)", output)
-            if match:
-                version = match.group(1)
-                return version
-            else:
-                raise QemuError("Could not determine the Qemu-img version for '{}'".format(qemu_img_path))
-        except (OSError, subprocess.SubprocessError) as e:
-            raise QemuError("Error while looking for the Qemu-img version: {}".format(e))
 
     @staticmethod
     async def get_swtpm_version(swtpm_path):
