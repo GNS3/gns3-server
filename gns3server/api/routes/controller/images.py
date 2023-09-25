@@ -53,19 +53,19 @@ router = APIRouter()
 
 
 @router.post(
-    "/{image_path:path}",
+    "/qemu/{image_path:path}",
     response_model=schemas.Image,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(has_privilege("Image.Allocate"))]
 )
-async def create_image(
+async def create_qemu_image(
         image_path: str,
         image_data: schemas.QemuDiskImageCreate,
         images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
 
 ) -> schemas.Image:
     """
-    Create a new blank image.
+    Create a new blank Qemu image.
 
     Required privilege: Image.Allocate
     """
@@ -83,7 +83,7 @@ async def create_image(
         raise ControllerForbiddenError(f"Cannot write disk image, '{disk_image_path}' is forbidden")
 
     if not image_dir:
-        # put the image in the default images directory
+        # put the image in the default images directory for Qemu
         directory = default_images_directory(image_type="qemu")
         os.makedirs(directory, exist_ok=True)
         disk_image_path = os.path.abspath(os.path.join(directory, disk_image_path))
