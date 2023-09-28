@@ -80,6 +80,18 @@ class ResourcePoolsRepository(BaseRepository):
         await self._db_session.commit()
         return result.rowcount > 0
 
+    async def get_resource_memberships(self, resource_id: UUID) -> List[models.UserGroup]:
+        """
+        Get all resource memberships in resource pools.
+        """
+
+        query = select(models.ResourcePool).\
+            join(models.ResourcePool.resources).\
+            filter(models.Resource.resource_id == resource_id)
+
+        result = await self._db_session.execute(query)
+        return result.scalars().all()
+
     async def get_resource_pool(self, resource_pool_id: UUID) -> Optional[models.ResourcePool]:
         """
         Get a resource pool by its ID.

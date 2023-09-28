@@ -183,7 +183,7 @@ async def create_ace(
             route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
 
             if re.fullmatch(route_path, ace_create.path):
-                log.info("Creating ACE for route path", ace_create.path, route_path)
+                log.info(f"Creating ACE for route path {route_path}")
                 return await rbac_repo.create_ace(ace_create)
 
     raise ControllerBadRequestError(f"Path '{ace_create.path}' doesn't match any existing endpoint")
