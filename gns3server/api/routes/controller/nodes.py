@@ -141,6 +141,9 @@ def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
     Required privilege: Node.Audit
     """
 
+    if project.status == "closed":
+        # allow to retrieve nodes from a closed project
+        return project.nodes.values()
     return [v.asdict() for v in project.nodes.values()]
 
 

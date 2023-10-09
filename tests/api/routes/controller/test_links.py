@@ -305,6 +305,13 @@ async def test_list_link(app: FastAPI, client: AsyncClient, project: Project, no
     assert len(response.json()) == 1
     assert response.json()[0]["filters"] == filters
 
+    # test listing links from a closed project
+    await project.close(ignore_notification=True)
+    response = await client.get(app.url_path_for("get_links", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 1
+    assert response.json()[0]["filters"] == filters
+
 
 async def test_reset_link(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
