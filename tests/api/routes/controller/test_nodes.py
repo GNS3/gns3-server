@@ -78,6 +78,12 @@ async def test_list_node(app: FastAPI, client: AsyncClient, project: Project, co
     assert response.status_code == status.HTTP_200_OK
     assert response.json()[0]["name"] == "test"
 
+    # test listing nodes from a closed project
+    await project.close(ignore_notification=True)
+    response = await client.get(app.url_path_for("get_nodes", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()[0]["name"] == "test"
+
 
 async def test_get_node(app: FastAPI, client: AsyncClient, project: Project, compute: Compute) -> None:
 
