@@ -65,8 +65,8 @@ QEMU_TEMPLATE_PROPERTIES = {
         "description": "QEMU adapter type",
         "type": "string",
         "enum": ["e1000", "e1000-82544gc", "e1000-82545em", "e1000e", "i82550", "i82551", "i82557a", "i82557b", "i82557c", "i82558a",
-                 "i82558b", "i82559a", "i82559b", "i82559c", "i82559er", "i82562", "i82801", "ne2k_pci", "pcnet", "rocker", "rtl8139",
-                 "virtio", "virtio-net-pci", "vmxnet3"],
+                 "i82558b", "i82559a", "i82559b", "i82559c", "i82559er", "i82562", "i82801", "igb", "ne2k_pci", "pcnet", "rocker",
+                 "rtl8139", "virtio", "virtio-net-pci", "vmxnet3"],
         "default": "e1000"
     },
     "mac_address": {
