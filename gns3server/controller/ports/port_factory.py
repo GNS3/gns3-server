@@ -42,7 +42,7 @@ PORTS = {
 
 class PortFactory:
     """
-    Factory to create an Port object based on the type
+    Factory to create a Port object based on the type
     """
 
     def __new__(cls, name, interface_number, adapter_number, port_number, port_type, **kwargs):
