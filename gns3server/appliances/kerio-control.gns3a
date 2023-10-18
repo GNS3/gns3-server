@@ -5,6 +5,7 @@
     "description": "Protect your network from viruses, malware and malicious activity with Kerio Control, the easy-to-administer yet powerful all-in-one security solution.\nKerio Control brings together next-generation firewall capabilities - including a network firewall and router, intrusion detection and prevention (IPS), gateway anti-virus, VPN, and web content and application filtering. These comprehensive capabilities and unmatched deployment flexibility make Kerio Control the ideal choice for small and mid-sized businesses.",
     "vendor_name": "Kerio Technologies Inc.",
     "vendor_url": "http://www.kerio.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Kerio Control.jpg",
     "documentation_url": "http://kb.kerio.com/product/kerio-control/",
     "product_name": "Kerio Control",
     "product_url": "http://www.kerio.com/products/kerio-control",

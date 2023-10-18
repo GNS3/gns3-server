@@ -5,6 +5,7 @@
     "description": "Breaches to network security continue to occur across all industry verticals, even to the most respected brands. The time it takes to discover, isolate, and remediate the incident continues to be measured in hundreds of days-having material impacts on security and compliance standards. It is no wonder that many organizations are struggling. As recent surveys have shown, enterprises have an average of 32 different vendors' devices in their network, with no automated ability to cross-correlate the data that each is collecting. It is also easy to see why organizations are strapped for the cyber security personnel they need to manage all the data in these complex environments.\n\nFrom its inception, FortiSIEM was built to reduce complexity in managing network and security operations. FortiSIEM provides organizations of all sizes with a comprehensive, holistic, and scalable solution for managing security, performance, and compliance from IoT to the cloud.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiSIEM.jpg",
     "documentation_url": "http://docs.fortinet.com/fortisiem/admin-guides",
     "product_name": "FortiSIEM",
     "product_url": "https://www.fortinet.com/products/siem/fortisiem.html",

@@ -5,6 +5,7 @@
     "description": "FortiCache VM high performance Web Caching virtual appliances address bandwidth saturation, high latency, and poor performance caused by caching popular internet content locally for carriers, service providers, enterprises and educational networks. FortiCache VM appliances reduce the cost and impact of cached content on the network, while increasing performance and end- user satisfaction by improving the speed of delivery of popular repeated content.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiCache.jpg",
     "documentation_url": "http://docs.fortinet.com/forticache/admin-guides",
     "product_name": "FortiCache",
     "product_url": "https://www.fortinet.com/products-services/products/wan-appliances/forticache.html",

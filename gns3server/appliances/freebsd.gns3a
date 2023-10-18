@@ -5,6 +5,7 @@
     "description": "FreeBSD is an advanced computer operating system used to power modern servers, desktops, and embedded platforms. A large community has continually developed it for more than thirty years. Its advanced networking, security, and storage features have made FreeBSD the platform of choice for many of the busiest web sites and most pervasive embedded networking and storage devices.",
     "vendor_name": "FreeBSD",
     "vendor_url": "http://www.freebsd.org",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FreeBSD.jpg",
     "documentation_url": "https://www.freebsd.org/docs.html",
     "product_name": "FreeBSD",
     "registry_version": 4,

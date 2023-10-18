@@ -5,6 +5,7 @@
     "description": "Packet crafter and traffic generator for network engineers",
     "vendor_name": "Ostinato",
     "vendor_url": "https://ostinato.org/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Ostinato.png",
     "documentation_url": "https://ostinato.org/docs",
     "product_name": "Ostinato",
     "product_url": "https://ostinato.org/",
