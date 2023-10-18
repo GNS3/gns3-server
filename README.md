@@ -69,7 +69,7 @@ GNS3 is perhaps packaged for your distribution:
 -   Alpine:
     <https://pkgs.alpinelinux.org/package/v3.10/community/x86_64/gns3-server>
 -   NixOS:
-    <https://search.nixos.org/packages?channel=21.11&from=0&size=50&sort=relevance&type=packages&query=gns3-server>
+    <https://search.nixos.org/packages?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=gns3-server>
 
 Linux (Debian based)
 --------------------
