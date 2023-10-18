@@ -1,5 +1,66 @@
 # Change Log
 
+## 3.0.0a4 18/10/2023
+
+* Bundle web-ui v3.0.0a4
+* Do not enforce Compute.Audit and Template.Audit privileges due to current web-ui limitations
+* Support to create empty disk images on the controller
+* Fix issue with importlib.resources.files() and Python 3.9
+* New RBAC system with resource pools support.
+* Use controller vars file to store version and appliance etag
+* Pydantic v2 migration
+* Allow connection to ws console over IPv6
+* Allow computes to be dynamically or manually allocated
+* Add UEFI boot mode option for Qemu VMs
+* Mark VMware and VirtualBox support as deprecated
+* Make port name for custom adapters optional. Fixes https://github.com/GNS3/gns3-web-ui/issues/1430
+* Support for database schema migrations using alembic
+* Add config option to change the server name. Ref #2149
+* Option to disable image discovery and do not scan parent directory
+* Allow raw images by default. Fixes https://github.com/GNS3/gns3-server/issues/2097
+* Fix bug when creating Dynamips router with chassis setting
+* Stricter checks to create/update an Ethernet switch and add tests
+* Fix schema for removing WICs from Cisco routers. Fixes #3392
+* Fix some issues with HTTP notification streams
+* API endpoint to get the locked status of a project
+* Global project lock and unlock
+* Require name for custom adapters. Fixes #2098
+* Allow empty adapter slots for Dynamips templates. Ref https://github.com/GNS3/gns3-gui/issues/3373
+* Custom adapters should not be in node (compute) properties returned to clients. Fixes https://github.com/GNS3/gns3-gui/issues/3366
+* Optionally allow Qemu raw images
+* Ignore image detection for IOU user libraries in image directory
+* Checks for valid hostname on server side for Dynamips, IOU, Qemu and Docker nodes
+* Only check files (not directories) when looking for new images on file system.
+* Support user defined loader/libraries to run IOU
+* Remove explicit Response for VPCS endpoints returning HTTP 204 status code
+* Remove explicit Response for endpoints returning HTTP 204 status code
+* Make 'vendor_url' and 'maintainer_email' optional for template validation.
+* Allow auth token to be passed as a URL param
+* Add controller endpoints to get VirtualBox VMs, VMware VMs and Docker images
+* Detect new images added to the default image directory. * Images can be present before the server starts or while it is running * Images are recorded in the database
+* Support delete Qemu disk image from API Return the real disk image name in the 'hdx_disk_image_backed' property for Qemu VMs
+* Fix ComputeConflictError import
+* Handle creating Qemu disk images and resizing
+* Finish to clean up local setting usage. Ref #1460
+* "Local" command line parameter is only for stopping a server that has been started by the desktop GUI
+* Fix AsyncSession handling after breaking changes in FastAPI 0.74.0 See https://github.com/tiangolo/fastapi/releases/tag/0.74.0 for details.
+* Detect image type instead of requesting it from user
+* Add connect endpoint for computes Param to connect to compute after creation Report compute unauthorized HTTP errors to client
+* Replace CORS origins by origin regex
+* Allow empty compute_id. Ref #1657
+* Secure controller to compute communication using HTTP basic authentication
+* Secure websocket endpoints
+* Allocate compute when compute_id is unset
+* Return the current controller hostname/IP from any compute
+* Remove Qemu legacy networking support
+* Appliance management refactoring: * Install an appliance based on selected version * Each template have unique name and version * Allow to download an appliance file
+* Add isolate and unisolate endpoints. Ref https://github.com/GNS3/gns3-gui/issues/3190
+* Allow images to be stored in subdirs and used by templates.
+* Use uuid5 to create new compute_id. Fixes #1641 #1887
+* Migrate PCAP streaming code to work with FastAPI.
+* Refactor WebSocket console code to work with FastAPI. Fix endpoint routes.
+
+
 ## 2.2.43 19/09/2023
 
 * Force English output for VBoxManage. Fixes #2266
