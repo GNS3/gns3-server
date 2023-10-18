@@ -2,7 +2,7 @@ uvicorn==0.22.0  # v0.22.0 is the last to support Python 3.7
 fastapi==0.103.1
 python-multipart==0.0.6
 websockets==11.0.3
-aiohttp>=3.8.5,<3.9
+aiohttp==3.9.0b0
 async-timeout==4.0.3
 aiofiles==23.2.1
 Jinja2>=3.1.2,<3.2
@@ -10,7 +10,7 @@ sentry-sdk==1.32.0,<1.33
 psutil==5.9.6
 distro>=1.8.0
 py-cpuinfo==9.0.0
-sqlalchemy==2.0.21
+sqlalchemy==2.0.22
 aiosqlite==0.19.0
 alembic==1.12.0
 passlib[bcrypt]==1.7.4
