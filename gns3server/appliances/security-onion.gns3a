@@ -5,6 +5,7 @@
     "description": "Security Onion is a Linux distro for intrusion detection, network security monitoring, and log management. It's based on Ubuntu and contains Snort, Suricata, Bro, OSSEC, Sguil, Squert, ELSA, Xplico, NetworkMiner, and many other security tools. The easy-to-use Setup wizard allows you to build an army of distributed sensors for your enterprise in minutes!",
     "vendor_name": "Security Onion Solutions, LLC",
     "vendor_url": "https://securityonion.net/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Security Onion.png",
     "documentation_url": "https://github.com/Security-Onion-Solutions/security-onion/wiki",
     "product_name": "Security Onion",
     "product_url": "https://securityonion.net/",

@@ -27,12 +27,20 @@
     },
     "images": [
         {
-            "filename": "Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2",
-            "version": "8.5",
-            "md5sum": "44982ddace75a1dba17942401086d72c",
-            "filesize": 1502701568,
-            "download_url": "https://download.rockylinux.org/pub/rocky/8/images/",
-            "direct_download_url": "https://download.rockylinux.org/pub/rocky/8/images/Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2"
+            "filename": "Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2",
+            "version": "9.2",
+            "md5sum": "2022bdb49a691119f1fd3cc76de0a846",
+            "filesize": 989265920,
+            "download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2"
+        },
+        {
+            "filename": "Rocky-8-GenericCloud-Base-8.8-20230518.0.x86_64.qcow2",
+            "version": "8.8",
+            "md5sum": "3ad7d355909cc37100c037562e4b3b6d",
+            "filesize": 1800536064,
+            "download_url": "https://download.rockylinux.org/pub/rocky/8/images/x86_64/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud-Base-8.8-20230518.0.x86_64.qcow2"
         },
         {
             "filename": "rocky-cloud-init-data.iso",
@@ -45,9 +53,16 @@
     ],
     "versions": [
         {
-            "name": "8.5",
+            "name": "9.2",
             "images": {
-                "hda_disk_image": "Rocky-8-GenericCloud-8.5-20211114.2.x86_64.qcow2",
+                "hda_disk_image": "Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2",
+                "cdrom_image": "rocky-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "8.8",
+            "images": {
+                "hda_disk_image": "Rocky-8-GenericCloud-Base-8.8-20230518.0.x86_64.qcow2",
                 "cdrom_image": "rocky-cloud-init-data.iso"
             }
         }

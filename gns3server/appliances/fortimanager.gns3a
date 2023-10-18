@@ -5,6 +5,7 @@
     "description": "FortiManager Security Management appliances allow you to centrally manage any number of Fortinet Network Security devices, from several to thousands, including FortiGate, FortiWiFi, and FortiCarrier.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiManager.jpg",
     "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
     "product_name": "FortiManager",
     "product_url": "http://www.fortinet.com/products/fortimanager/virtual-security-management.html",

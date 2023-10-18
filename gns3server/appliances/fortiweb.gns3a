@@ -5,6 +5,7 @@
     "description": "FortiWeb Web Application Firewalls provide specialized, layered web application threat protection for medium/large enterprises, application service providers, and SaaS providers.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiWeb.jpg",
     "documentation_url": "http://docs.fortinet.com/fortiweb",
     "product_name": "FortiWeb",
     "product_url": "http://www.fortinet.com/products/fortiweb/index.html",

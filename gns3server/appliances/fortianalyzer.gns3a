@@ -5,6 +5,7 @@
     "description": "FortiAnalyzer Network Security Logging, Analysis, and Reporting Appliances securely aggregate log data from Fortinet Security Appliances. A comprehensive suite of easily customable reports allows you to quickly analyze and visualize network threats, inefficiencies and usage.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiAnalyzer.jpg",
     "documentation_url": "http://docs.fortinet.com/fortianalyzer/",
     "product_name": "FortiAnalyzer",
     "product_url": "https://www.fortinet.com/products-services/products/management-reporting/fortianalyzer.html",

@@ -5,6 +5,7 @@
     "description": "The VOSS VM is a software emulation of a VSP8K switch.",
     "vendor_name": "Extreme Networks",
     "vendor_url": "http://www.extremenetworks.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/VOSS VM.jpeg",
     "documentation_url": "http://www.extremenetworks.com/support/documentation",
     "product_name": "VOSS_VM",
     "registry_version": 4,

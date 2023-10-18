@@ -12,7 +12,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Username: centos\nPassword: centos",
+    "usage": "Username: centos or cloud-user\nPassword: centos",
     "port_name_format": "Ethernet{0}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
@@ -23,16 +23,16 @@
         "console_type": "telnet",
         "boot_priority": "c",
         "kvm": "require",
-        "options": "-nographic"
+        "options": "-cpu host -nographic"
     },
     "images": [
         {
-            "filename": "CentOS-Stream-GenericCloud-9-20230727.1.x86_64.qcow2",
-            "version": "Stream-9 (20230727.1)",
-            "md5sum": "b66b7e4951cb5491ae44d5616d56b7cf",
-            "filesize": 1128764416,
+            "filename": "CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2",
+            "version": "Stream-9 (20230704.1)",
+            "md5sum": "e04511e019325a97837edd9eafe02b48",
+            "filesize": 1087868416,
             "download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images",
-            "direct_download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230727.1.x86_64.qcow2"
+            "direct_download_url": "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2"
         },
         {
             "filename": "CentOS-Stream-GenericCloud-8-20230710.0.x86_64.qcow2",
@@ -77,9 +77,9 @@
     ],
     "versions": [
         {
-            "name": "Stream-9 (20230727.1)",
+            "name": "Stream-9 (20230704.1)",
             "images": {
-                "hda_disk_image": "CentOS-Stream-GenericCloud-9-20230727.1.x86_64.qcow2",
+                "hda_disk_image": "CentOS-Stream-GenericCloud-9-20230704.1.x86_64.qcow2",
                 "cdrom_image": "centos-cloud-init-data.iso"
             }
         },

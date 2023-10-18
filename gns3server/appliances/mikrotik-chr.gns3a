@@ -28,6 +28,15 @@
     },
     "images": [
         {
+            "filename": "chr-7.11.2.img",
+            "version": "7.11.2",
+            "md5sum": "fbffd097d2c5df41fc3335c3977f782c",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.11.2/chr-7.11.2.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-7.10.1.img",
             "version": "7.10.1",
             "md5sum": "917729e79b9992562f4160d461b21cac",
@@ -73,6 +82,15 @@
             "compression": "zip"
         },
         {
+            "filename": "chr-6.49.10.img",
+            "version": "6.49.10",
+            "md5sum": "49ae1ecfe310aea1df37b824aa13cf84",
+            "filesize": 67108864,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/6.49.10/chr-6.49.10.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-6.49.6.img",
             "version": "6.49.6",
             "md5sum": "ae27d38acc9c4dcd875e0f97bcae8d97",
@@ -92,6 +110,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "7.11.2",
+            "images": {
+                "hda_disk_image": "chr-7.11.2.img"
+            }
+        },
         {
             "name": "7.10.1",
             "images": {
@@ -120,6 +144,12 @@
             "name": "7.1.5",
             "images": {
                 "hda_disk_image": "chr-7.1.5.img"
+            }
+        },
+        {
+            "name": "6.49.10",
+            "images": {
+                "hda_disk_image": "chr-6.49.10.img"
             }
         },
         {
