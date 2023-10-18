@@ -2,7 +2,7 @@ uvicorn==0.22.0  # v0.22.0 is the last to support Python 3.7
 fastapi==0.103.1
 python-multipart==0.0.6
 websockets==11.0.3
-aiohttp==3.9.0b0
+aiohttp==3.8.6,<3.9
 async-timeout==4.0.3
 aiofiles==23.2.1
 Jinja2>=3.1.2,<3.2
