@@ -1,5 +1,5 @@
 uvicorn==0.22.0  # v0.22.0 is the last to support Python 3.7
-fastapi==0.103.1
+fastapi==0.103.2
 python-multipart==0.0.6
 websockets==11.0.3
 aiohttp==3.8.6,<3.9; python_version <= '3.11'
@@ -17,8 +17,8 @@ alembic==1.12.0
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
 email-validator==2.0.0.post2
-watchfiles==0.20.0
+watchfiles==0.21.0
 zstandard==0.21.0
-platformdirs==3.10.0
+platformdirs==3.11.0
 importlib-resources>=1.3; python_version <= '3.9'
 truststore>=0.8.0; python_version >= '3.10'
