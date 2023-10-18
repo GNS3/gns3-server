@@ -134,19 +134,6 @@ class NodeBase(BaseModel):
     first_port_name: Optional[str] = Field(None, description="Name of the first port")
     custom_adapters: Optional[List[CustomAdapter]] = None
 
-    @model_validator(mode='before')
-    @classmethod
-    def set_default_port_name_format_and_port_segment_size(cls, data: Any) -> Any:
-
-        if "port_name_format" not in data:
-            if data.get('node_type') == NodeType.iou:
-                data['port_name_format'] = "Ethernet{segment0}/{port0}"
-                data['port_segment_size'] = 4
-            else:
-                data['port_name_format'] = "Ethernet{0}"
-                data['port_segment_size'] = 0
-        return data
-
 
 class NodeCreate(NodeBase):
 

@@ -34,12 +34,44 @@
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty8G.qcow2/download"
         },
         {
+            "filename": "empty10G.qcow2",
+            "version": "10G",
+            "md5sum": "1d4589798b8a63a6afa7150492ca3193",
+            "filesize": 196768,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty10G.qcow2/download"
+        },
+        {
+            "filename": "empty20G.qcow2",
+            "version": "20G",
+            "md5sum": "df9e4a1169c597117fd8999f0bc3de91",
+            "filesize": 196928,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty20G.qcow2/download"
+        },
+        {
             "filename": "empty30G.qcow2",
             "version": "30G",
             "md5sum": "3411a599e822f2ac6be560a26405821a",
             "filesize": 197120,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty30G.qcow2/download"
+        },
+        {
+            "filename": "empty40G.qcow2",
+            "version": "40G",
+            "md5sum": "4a9e538aa1946a27d91a8d53a8dbc546",
+            "filesize":  197248,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty50G.qcow2/download"
+        },
+        {
+            "filename": "empty50G.qcow2",
+            "version": "50G",
+            "md5sum": "9a17e67e685907fbc0c351689ab289b2",
+            "filesize":  197408,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty40G.qcow2/download"
         },
         {
             "filename": "empty100G.qcow2",
@@ -50,12 +82,44 @@
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty100G.qcow2/download"
         },
         {
+            "filename": "empty150G.qcow2",
+            "version": "150G",
+            "md5sum": "7db590ad39f84fdfc91516d162af26f6",
+            "filesize": 199008,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty150G.qcow2/download"
+        },
+        {
             "filename": "empty200G.qcow2",
             "version": "200G",
             "md5sum": "d1686d2f25695dee32eab9a6f4652c7c",
             "filesize": 200192,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
             "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty200G.qcow2/download"
+        },
+        {
+            "filename": "empty250G.qcow2",
+            "version": "250G",
+            "md5sum": "7d7272f02edd189aafd81f9c29a35255",
+            "filesize": 200608,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty250G.qcow2/download"
+        },
+        {
+            "filename": "empty500G.qcow2",
+            "version": "500G",
+            "md5sum": "658c825441b9b3080ba00f9eec002eaa",
+            "filesize": 204608,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty500G.qcow2/download"
+        },
+        {
+            "filename": "empty1T.qcow2",
+            "version": "1T",
+            "md5sum": "34997a22f618827aaa62bcfd5b8ce2bb",
+            "filesize": 212992,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/",
+            "direct_download_url": "https://sourceforge.net/projects/gns-3/files/Empty%20Qemu%20disk/empty1T.qcow2/download"
         }
     ],
     "versions": [
@@ -66,9 +130,33 @@
             }
         },
         {
+            "name": "10G",
+            "images": {
+                "hda_disk_image": "empty10G.qcow2"
+            }
+        },
+        {
+            "name": "20G",
+            "images": {
+                "hda_disk_image": "empty20G.qcow2"
+            }
+        },
+        {
             "name": "30G",
             "images": {
                 "hda_disk_image": "empty30G.qcow2"
+            }
+        },
+        {
+            "name": "40G",
+            "images": {
+                "hda_disk_image": "empty40G.qcow2"
+            }
+        },
+        {
+            "name": "50G",
+            "images": {
+                "hda_disk_image": "empty50G.qcow2"
             }
         },
         {
@@ -78,9 +166,33 @@
             }
         },
         {
+            "name": "150G",
+            "images": {
+                "hda_disk_image": "empty150G.qcow2"
+            }
+        },
+        {
             "name": "200G",
             "images": {
                 "hda_disk_image": "empty200G.qcow2"
+            }
+        },
+        {
+            "name": "250G",
+            "images": {
+                "hda_disk_image": "empty250G.qcow2"
+            }
+        },
+        {
+            "name": "500G",
+            "images": {
+                "hda_disk_image": "empty500G.qcow2"
+            }
+        },
+        {
+            "name": "1T",
+            "images": {
+                "hda_disk_image": "empty1T.qcow2"
             }
         }
     ]

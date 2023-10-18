@@ -5,6 +5,7 @@
     "description": "Open vSwitch is a production quality, multilayer virtual switch licensed under the open source Apache 2.0 license.  It is designed to enable massive network automation through programmatic extension, while still supporting standard management interfaces and protocols (e.g. NetFlow, sFlow, IPFIX, RSPAN, CLI, LACP, 802.1ag).  In addition, it is designed to support distribution across multiple physical servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.",
     "vendor_name": "Open vSwitch",
     "vendor_url": "http://openvswitch.org/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Open vSwitch.jpg",
     "documentation_url": "http://openvswitch.org/support/",
     "product_name": "Open vSwitch",
     "product_url": "http://openvswitch.org/",

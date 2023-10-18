@@ -70,6 +70,9 @@ async def get_links(project_id: UUID) -> List[schemas.Link]:
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
+    if project.status == "closed":
+        # allow to retrieve links from a closed project
+        return project.links.values()
     return [v.asdict() for v in project.links.values()]
 
 

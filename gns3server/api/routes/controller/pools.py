@@ -191,6 +191,7 @@ async def add_resource_to_pool(
     if not resource_pool:
         raise ControllerNotFoundError(f"Resource pool '{resource_pool_id}' not found")
 
+    # TODO: consider if a resource can belong to multiple pools
     resources = await pools_repo.get_pool_resources(resource_pool_id)
     for resource in resources:
         if resource.resource_id == resource_id:
@@ -198,8 +199,13 @@ async def add_resource_to_pool(
 
     # we only support projects in resource pools for now
     project = Controller.instance().get_project(str(resource_id))
-    resource_create = schemas.ResourceCreate(resource_id=resource_id, resource_type="project", name=project.name)
-    resource = await pools_repo.create_resource(resource_create)
+
+    resource = await pools_repo.get_resource(resource_id)
+    if not resource:
+        # the resource is not in the database yet, create it
+        resource_create = schemas.ResourceCreate(resource_id=resource_id, resource_type="project", name=project.name)
+        resource = await pools_repo.create_resource(resource_create)
+
     await pools_repo.add_resource_to_pool(resource_pool_id, resource)
 
 
@@ -226,3 +232,8 @@ async def remove_resource_from_pool(
     resource_pool = await pools_repo.remove_resource_from_pool(resource_pool_id, resource)
     if not resource_pool:
         raise ControllerNotFoundError(f"Resource pool '{resource_pool_id}' not found")
+
+    # TODO: consider if a resource can belong to multiple pools
+    success = await pools_repo.delete_resource(resource.resource_id)
+    if not success:
+        raise ControllerError(f"Resource '{resource_id}' could not be deleted")

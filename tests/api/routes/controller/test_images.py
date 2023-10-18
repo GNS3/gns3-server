@@ -22,10 +22,12 @@ import hashlib
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from tests.utils import AsyncioMagicMock
 
 from gns3server.controller import Controller
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
+from gns3server.compute.qemu import Qemu
 
 pytestmark = pytest.mark.asyncio
 
@@ -104,6 +106,17 @@ def empty_image(tmpdir) -> str:
 
 class TestImageRoutes:
 
+    async def test_create_image(self, app: FastAPI, client: AsyncClient, images_dir) -> None:
+
+        Qemu.instance().create_disk_image = AsyncioMagicMock()
+        path = os.path.join(os.path.join(images_dir, "QEMU", "new_image.qcow2"))
+        with open(path, "wb+") as f:
+            f.write(b'QFI\xfb\x00\x00\x00')
+        image_name = os.path.basename(path)
+        response = await client.post(
+            app.url_path_for("create_qemu_image", image_path=image_name), json={"format": "qcow2", "size": 30})
+        assert response.status_code == status.HTTP_201_CREATED
+
     @pytest.mark.parametrize(
         "image_type, fixture_name, valid_request",
         (
@@ -151,7 +164,7 @@ class TestImageRoutes:
 
         response = await client.get(app.url_path_for("get_images"))
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.json()) == 4  # 4 valid images uploaded before
+        assert len(response.json()) == 5  # 4 valid images uploaded before + 1 created
 
     async def test_image_get(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 

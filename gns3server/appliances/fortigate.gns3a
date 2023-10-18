@@ -5,6 +5,7 @@
     "description": "FortiGate Virtual Appliance offers the same level of advanced threat prevention features like the physical appliances in private, hybrid and public cloud deployment.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiGate.jpg",
     "documentation_url": "http://docs.fortinet.com/p/inside-fortios",
     "product_name": "FortiGate",
     "product_url": "http://www.fortinet.com/products/fortigate/virtual-appliances.html",

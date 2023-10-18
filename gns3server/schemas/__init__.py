@@ -82,4 +82,4 @@ from .compute.vmware_nodes import VMwareCreate, VMwareUpdate, VMware
 from .compute.virtualbox_nodes import VirtualBoxCreate, VirtualBoxUpdate, VirtualBox
 
 # Schemas for both controller and compute
-from .qemu_disk_image import QemuDiskImageCreate, QemuDiskImageUpdate
+from .qemu_disk_image import QemuDiskImageFormat, QemuDiskImageCreate, QemuDiskImageUpdate
