@@ -199,14 +199,12 @@ compute_api.include_router(
 
 compute_api.include_router(
     docker_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/docker/nodes",
     tags=["Docker nodes"]
 )
 
 compute_api.include_router(
     dynamips_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/dynamips/nodes",
     tags=["Dynamips nodes"]
 )
@@ -234,7 +232,6 @@ compute_api.include_router(
 
 compute_api.include_router(
     iou_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/iou/nodes",
     tags=["IOU nodes"])
 
@@ -247,28 +244,24 @@ compute_api.include_router(
 
 compute_api.include_router(
     qemu_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/qemu/nodes",
     tags=["Qemu nodes"]
 )
 
 compute_api.include_router(
     virtualbox_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/virtualbox/nodes",
     tags=["VirtualBox nodes"]
 )
 
 compute_api.include_router(
     vmware_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/vmware/nodes",
     tags=["VMware nodes"]
 )
 
 compute_api.include_router(
     vpcs_nodes.router,
-    dependencies=[Depends(compute_authentication)],
     prefix="/projects/{project_id}/vpcs/nodes",
     tags=["VPCS nodes"]
 )

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import logging
 
 from fastapi import Request, Query, Depends, HTTPException, WebSocket, status
 from fastapi.security import OAuth2PasswordBearer
@@ -26,6 +26,7 @@ from gns3server.db.repositories.rbac import RbacRepository
 from gns3server.services import auth_service
 from .database import get_repository
 
+log = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v3/access/users/login", auto_error=False)
 
 
@@ -108,7 +109,9 @@ async def get_current_active_user_from_websocket(
         return user
 
     except HTTPException as e:
-        websocket_error = {"action": "log.error", "event": {"message": f"Could not authenticate while connecting to "
-                                                                       f"WebSocket: {e.detail}"}}
+        err_msg = f"Could not authenticate while connecting to controller WebSocket: {e.detail}"
+        websocket_error = {"action": "log.error", "event": {"message": err_msg}}
         await websocket.send_json(websocket_error)
-        await websocket.close(code=1008)
+        log.error(err_msg)
+        return await websocket.close(code=1008)
+

@@ -18,14 +18,13 @@
 API routes for compute notifications.
 """
 
-import base64
-import binascii
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, HTTPException
-from fastapi.security.utils import get_authorization_scheme_param
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from typing import Union
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from gns3server.compute.notification_manager import NotificationManager
+from .dependencies.authentication import ws_compute_authentication
 
 import logging
 
@@ -35,53 +34,27 @@ router = APIRouter()
 
 
 @router.websocket("/notifications/ws")
-async def project_ws_notifications(websocket: WebSocket) -> None:
+async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(ws_compute_authentication)) -> None:
     """
     Receive project notifications about the project from WebSocket.
     """
 
-    await websocket.accept()
-
-    # handle basic HTTP authentication
-    invalid_user_credentials_exc = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid authentication credentials",
-        headers={"WWW-Authenticate": "Basic"},
-    )
-
-    try:
-        authorization = websocket.headers.get("Authorization")
-        scheme, param = get_authorization_scheme_param(authorization)
-        if not authorization or scheme.lower() != "basic":
-            raise invalid_user_credentials_exc
+    if websocket:
+        log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
         try:
-            data = base64.b64decode(param).decode("ascii")
-        except (ValueError, UnicodeDecodeError, binascii.Error):
-            raise invalid_user_credentials_exc
-        username, separator, password = data.partition(":")
-        if not separator:
-            raise invalid_user_credentials_exc
-    except invalid_user_credentials_exc as e:
-        websocket_error = {"action": "log.error", "event": {"message": f"Could not authenticate while connecting to "
-                                                                       f"compute WebSocket: {e.detail}"}}
-        await websocket.send_json(websocket_error)
-        return await websocket.close(code=1008)
-
-    log.info(f"New client {websocket.client.host}:{websocket.client.port} has connected to compute WebSocket")
-    try:
-        with NotificationManager.instance().queue() as queue:
-            while True:
-                notification = await queue.get_json(5)
-                await websocket.send_text(notification)
-    except (ConnectionClosed, WebSocketDisconnect):
-        log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
-    except WebSocketException as e:
-        log.warning(f"Error while sending to controller event to WebSocket client: {e}")
-    finally:
-        try:
-            await websocket.close()
-        except OSError:
-            pass  # ignore OSError: [Errno 107] Transport endpoint is not connected
+            with NotificationManager.instance().queue() as queue:
+                while True:
+                    notification = await queue.get_json(5)
+                    await websocket.send_text(notification)
+        except (ConnectionClosed, WebSocketDisconnect):
+            log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
+        except WebSocketException as e:
+            log.warning(f"Error while sending to controller event to WebSocket client: {e}")
+        finally:
+            try:
+                await websocket.close()
+            except OSError:
+                pass  # ignore OSError: [Errno 107] Transport endpoint is not connected
 
 if __name__ == "__main__":
 
