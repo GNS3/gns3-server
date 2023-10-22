@@ -4,3 +4,4 @@ pytest-timeout==2.1.0
 pytest-asyncio==0.21.1
 requests==2.31.0
 httpx==0.24.1
+httpx_ws==0.4.2
