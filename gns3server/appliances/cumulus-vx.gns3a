@@ -5,6 +5,7 @@
     "description": "Cumulus VX is a community-supported virtual appliance that enables cloud admins and network engineers to preview and test Cumulus Networks technology at zero cost. You can build sandbox environments to learn Open Networking concepts, prototype network operations and script & develop applications risk-free. With Cumulus VX, you can get started with Open Networking at your pace, on your time, and in your environment!",
     "vendor_name": "Cumulus Network",
     "vendor_url": "https://www.cumulusnetworks.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Cumulus VX.jpg",
     "documentation_url": "http://docs.cumulusnetworks.com/",
     "product_name": "Cumulus VX",
     "product_url": "https://cumulusnetworks.com/cumulus-vx/",

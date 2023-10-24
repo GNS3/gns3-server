@@ -21,7 +21,8 @@
         "hda_disk_interface": "sata",
         "arch": "x86_64",
         "console_type": "telnet",
-        "kvm": "allow"
+        "kvm": "allow",
+        "options": "-cpu host -nographic"
     },
     "images": [
         {

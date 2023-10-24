@@ -5,6 +5,7 @@
     "description": "Untangle's NG Firewall enables you to quickly and easily create the network policies that deliver the perfect balance between security and productivity. Untangle combines Unified Threat Management (UTM)-to address all of the key network threats-with policy management tools that enable you to define access and control by individuals, groups or company-wide. And with industry-leading reports, you'll have complete visibility into and control over everything that's happening on your network.",
     "vendor_name": "Untangle",
     "vendor_url": "https://www.untangle.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Untangle NG.jpg",
     "documentation_url": "http://wiki.untangle.com/index.php/Main_Page",
     "product_name": "Untangle NG",
     "product_url": "https://www.untangle.com/untangle-ng-firewall/",

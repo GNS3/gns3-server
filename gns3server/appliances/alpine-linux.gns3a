@@ -5,6 +5,7 @@
     "description": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.",
     "vendor_name": "Alpine Linux Development Team",
     "vendor_url": "http://alpinelinux.org",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Alpine Linux.png",
     "documentation_url": "http://wiki.alpinelinux.org",
     "product_name": "Alpine Linux",
     "registry_version": 4,

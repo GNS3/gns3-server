@@ -5,6 +5,7 @@
     "description": "The chromium browser",
     "vendor_name": "Chromium",
     "vendor_url": "https://www.chromium.org/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Chromium.jpg",
     "product_name": "Chromium",
     "registry_version": 4,
     "status": "stable",

@@ -208,18 +208,18 @@ async def test_termination_callback_error(vm, tmpdir):
 
 async def test_reload(vm):
 
-    with asyncio_patch("gns3server.compute.qemu.QemuVM._control_vm") as mock:
+    with asyncio_patch("gns3server.compute.qemu.QemuVM._control_vm") as m:
         await vm.reload()
-        assert mock.called_with("system_reset")
+        m.assert_called_with("system_reset")
 
 
-async def test_suspend(vm):
+async def test_suspend(vm, running_subprocess_mock):
 
-    control_vm_result = MagicMock()
-    control_vm_result.match.group.decode.return_value = "running"
-    with asyncio_patch("gns3server.compute.qemu.QemuVM._control_vm", return_value=control_vm_result) as mock:
-        await vm.suspend()
-        assert mock.called_with("system_reset")
+    vm._process = running_subprocess_mock
+    with asyncio_patch("gns3server.compute.qemu.QemuVM._get_vm_status", return_value="running"):
+        with asyncio_patch("gns3server.compute.qemu.QemuVM._control_vm") as m:
+            await vm.suspend()
+            m.assert_called_with("stop")
 
 
 async def test_add_nio_binding_udp(vm):
@@ -490,14 +490,15 @@ def test_json(vm, compute_project):
     assert json["project_id"] == compute_project.id
 
 
-async def test_control_vm(vm):
+async def test_control_vm(vm, running_subprocess_mock):
 
-    vm._process = MagicMock()
+    vm._process = running_subprocess_mock
+    vm._monitor = 4242
     reader = MagicMock()
     writer = MagicMock()
     with asyncio_patch("asyncio.open_connection", return_value=(reader, writer)):
         res = await vm._control_vm("test")
-        assert writer.write.called_with("test")
+        writer.write.assert_called_with(b"test\n")
     assert res is None
 
 
@@ -514,7 +515,7 @@ async def test_control_vm_expect_text(vm, running_subprocess_mock):
 
         vm._monitor = 4242
         res = await vm._control_vm("test", [b"epic"])
-        assert writer.write.called_with("test")
+        writer.write.assert_called_with(b"test\n")
 
     assert res == "epic product"
 

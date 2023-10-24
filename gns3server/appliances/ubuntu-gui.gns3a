@@ -5,6 +5,7 @@
     "description": "Ubuntu is a full-featured Linux operating system which is based on Debian distribution and freely available with both community and professional support, it comes with Unity as its default desktop environment. There are other flavors of Ubuntu available with other desktops as default like Ubuntu Gnome, Lubuntu, Xubuntu, and so on. A tightly-integrated selection of excellent applications is included, and an incredible variety of add-on software is just a few clicks away. A default installation of Ubuntu contains a wide range of software that includes LibreOffice, Firefox, Empathy, Transmission, etc.",
     "vendor_name": "Canonical Inc.",
     "vendor_url": "https://www.ubuntu.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Ubuntu Desktop Guest.png",
     "documentation_url": "https://help.ubuntu.com",
     "product_name": "Ubuntu",
     "product_url": "https://www.ubuntu.com/desktop",

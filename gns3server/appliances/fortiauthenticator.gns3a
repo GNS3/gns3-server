@@ -5,6 +5,7 @@
     "description": "FortiAuthenticator user identity management appliances strengthen enterprise security by simplifying and centralizing the management and storage of user identity information.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiAuthenticator.jpg",
     "documentation_url": "http://docs.fortinet.com/fortiauthenticator/admin-guides",
     "product_name": "FortiAuthenticator",
     "product_url": "https://www.fortinet.com/products/identity-access-management/fortiauthenticator.html",

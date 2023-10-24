@@ -5,6 +5,7 @@
     "description": "PacketFence is a fully supported, trusted, Free and Open Source network access control (NAC) solution. Boasting an impressive feature set including a captive-portal for registration and remediation, centralized wired and wireless management, 802.1X support, layer-2 isolation of problematic devices, integration with the Snort IDS and the Nessus vulnerability scanner; PacketFence can be used to effectively secure networks - from small to very large heterogeneous networks.",
     "vendor_name": "Inverse inc.",
     "vendor_url": "https://packetfence.org/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/PacketFence ZEN.jpg",
     "documentation_url": "https://packetfence.org/support/index.html#/documentation",
     "product_name": "PacketFence ZEN",
     "product_url": "https://packetfence.org/about.html",

@@ -5,6 +5,7 @@
     "description": "A light Linux based on TinyCore Linux with Firefox preinstalled",
     "vendor_name": "Mozilla Foundation",
     "vendor_url": "http://www.mozilla.org",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Firefox.png",
     "documentation_url": "https://support.mozilla.org",
     "product_name": "Firefox",
     "product_url": "https://www.mozilla.org/firefox",
