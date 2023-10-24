@@ -170,6 +170,7 @@ class AdapterType(str, Enum):
     i82559er = 'i82559er'
     i82562 = 'i82562'
     i82801 = 'i82801'
+    igb = 'igb'
     ne2k_pci = 'ne2k_pci'
     pcnet = 'pcnet'
     rocker = 'rocker'
