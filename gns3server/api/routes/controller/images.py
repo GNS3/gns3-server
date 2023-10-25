@@ -23,13 +23,15 @@ import logging
 import urllib.parse
 
 from fastapi import APIRouter, Request, Depends, status
+from fastapi.encoders import jsonable_encoder
 from starlette.requests import ClientDisconnect
 from sqlalchemy.orm.exc import MultipleResultsFound
 from typing import List, Optional
 from gns3server import schemas
 
 from gns3server.config import Config
-from gns3server.utils.images import InvalidImageError, write_image
+from gns3server.compute.qemu import Qemu
+from gns3server.utils.images import InvalidImageError, write_image, read_image_info, default_images_directory
 from gns3server.db.repositories.images import ImagesRepository
 from gns3server.db.repositories.templates import TemplatesRepository
 from gns3server.db.repositories.rbac import RbacRepository
@@ -49,6 +51,53 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
+@router.post(
+    "/qemu/{image_path:path}",
+    response_model=schemas.Image,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(has_privilege("Image.Allocate"))]
+)
+async def create_qemu_image(
+        image_path: str,
+        image_data: schemas.QemuDiskImageCreate,
+        images_repo: ImagesRepository = Depends(get_repository(ImagesRepository)),
+
+) -> schemas.Image:
+    """
+    Create a new blank Qemu image.
+
+    Required privilege: Image.Allocate
+    """
+
+    allow_raw_image = Config.instance().settings.Server.allow_raw_images
+    if image_data.format == schemas.QemuDiskImageFormat.raw and not allow_raw_image:
+        raise ControllerBadRequestError("Raw images are not allowed")
+
+    disk_image_path = urllib.parse.unquote(image_path)
+    image_dir, image_name = os.path.split(disk_image_path)
+    # check if the path is within the default images directory
+    base_images_directory = os.path.expanduser(Config.instance().settings.Server.images_path)
+    full_path = os.path.abspath(os.path.join(base_images_directory, image_dir, image_name))
+    if os.path.commonprefix([base_images_directory, full_path]) != base_images_directory:
+        raise ControllerForbiddenError(f"Cannot write disk image, '{disk_image_path}' is forbidden")
+
+    if not image_dir:
+        # put the image in the default images directory for Qemu
+        directory = default_images_directory(image_type="qemu")
+        os.makedirs(directory, exist_ok=True)
+        disk_image_path = os.path.abspath(os.path.join(directory, disk_image_path))
+
+    if await images_repo.get_image(disk_image_path):
+        raise ControllerBadRequestError(f"Disk image '{disk_image_path}' already exists")
+
+    options = jsonable_encoder(image_data, exclude_unset=True)
+    # FIXME: should we have the create_disk_image in the compute code since
+    # this code is used to create images on the controller?
+    await Qemu.instance().create_disk_image(disk_image_path, options)
+
+    image_info = await read_image_info(disk_image_path, "qemu")
+    return await images_repo.add_image(**image_info)
 
 @router.get(
     "",

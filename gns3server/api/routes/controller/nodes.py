@@ -29,6 +29,7 @@ from typing import List, Callable
 from uuid import UUID
 
 from gns3server.controller import Controller
+from gns3server.config import Config
 from gns3server.controller.node import Node
 from gns3server.controller.project import Project
 from gns3server.utils import force_unix_path
@@ -141,6 +142,9 @@ def get_nodes(project: Project = Depends(dep_project)) -> List[schemas.Node]:
     Required privilege: Node.Audit
     """
 
+    if project.status == "closed":
+        # allow to retrieve nodes from a closed project
+        return project.nodes.values()
     return [v.asdict() for v in project.nodes.values()]
 
 
@@ -507,16 +511,22 @@ async def post_file(file_path: str, request: Request, node: Node = Depends(dep_n
     # FIXME: response with correct status code (from compute)
 
 
-@router.websocket("/{node_id}/console/ws", dependencies=[Depends(has_privilege_on_websocket("Node.Console"))])
-async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> None:
+@router.websocket("/{node_id}/console/ws")
+async def ws_console(
+        websocket: WebSocket,
+        current_user: schemas.User = Depends(has_privilege_on_websocket("Node.Console")),
+        node: Node = Depends(dep_node)
+) -> None:
     """
     WebSocket console.
 
     Required privilege: Node.Console
     """
 
+    if current_user is None:
+        return
+
     compute = node.compute
-    await websocket.accept()
     log.info(
         f"New client {websocket.client.host}:{websocket.client.port} has connected to controller console WebSocket"
     )
@@ -554,9 +564,20 @@ async def ws_console(websocket: WebSocket, node: Node = Depends(dep_node)) -> No
 
     try:
         # receive WebSocket data from compute console WebSocket and forward to client.
-        async with HTTPClient.get_client().ws_connect(ws_console_compute_url) as ws_console_compute:
-            asyncio.ensure_future(ws_receive(ws_console_compute))
-            async for msg in ws_console_compute:
+        log.info(f"Forwarding console WebSocket to '{ws_console_compute_url}'")
+        server_config = Config.instance().settings.Server
+        user = server_config.compute_username
+        password = server_config.compute_password
+        if not user:
+            raise ControllerForbiddenError("Compute username is not set")
+        user = user.strip()
+        if user and password:
+            auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
+        else:
+            auth = aiohttp.BasicAuth(user, "")
+        async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth) as ws:
+            asyncio.ensure_future(ws_receive(ws))
+            async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     await websocket.send_text(msg.data)
                 elif msg.type == aiohttp.WSMsgType.BINARY:

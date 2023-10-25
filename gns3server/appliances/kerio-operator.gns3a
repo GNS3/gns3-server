@@ -5,6 +5,7 @@
     "description": "Stay connected to your customers and colleagues without being chained to your desk.\nKerio Operator is a VoIP based phone system that provides powerful yet affordable enterprise-class voice and video communication capabilities for small and mid-sized businesses globally.",
     "vendor_name": "Kerio Technologies Inc.",
     "vendor_url": "http://www.kerio.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Kerio Operator.jpg",
     "documentation_url": "http://kb.kerio.com/product/kerio-operator/",
     "product_name": "Kerio Operator",
     "product_url": "http://www.kerio.com/products/kerio-operator",

@@ -20,14 +20,17 @@ API routes for Docker nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Body, Response, status
+from fastapi import APIRouter, WebSocket, Depends, Body, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
+from typing import Union
 
 from gns3server import schemas
 from gns3server.compute.docker import Docker
 from gns3server.compute.docker.docker_vm import DockerVM
+
+from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Docker node"}}
 
@@ -49,6 +52,7 @@ def dep_node(project_id: UUID, node_id: UUID) -> DockerVM:
     response_model=schemas.Docker,
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Docker node"}},
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) -> schemas.Docker:
     """
@@ -85,7 +89,11 @@ async def create_docker_node(project_id: UUID, node_data: schemas.DockerCreate) 
     return container.asdict()
 
 
-@router.get("/{node_id}", response_model=schemas.Docker)
+@router.get(
+    "/{node_id}",
+    response_model=schemas.Docker,
+    dependencies=[Depends(compute_authentication)]
+)
 def get_docker_node(node: DockerVM = Depends(dep_node)) -> schemas.Docker:
     """
     Return a Docker node.
@@ -94,7 +102,11 @@ def get_docker_node(node: DockerVM = Depends(dep_node)) -> schemas.Docker:
     return node.asdict()
 
 
-@router.put("/{node_id}", response_model=schemas.Docker)
+@router.put(
+    "/{node_id}",
+    response_model=schemas.Docker,
+    dependencies=[Depends(compute_authentication)]
+)
 async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = Depends(dep_node)) -> schemas.Docker:
     """
     Update a Docker node.
@@ -131,7 +143,11 @@ async def update_docker_node(node_data: schemas.DockerUpdate, node: DockerVM = D
     return node.asdict()
 
 
-@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/start",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Start a Docker node.
@@ -140,7 +156,11 @@ async def start_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.start()
 
 
-@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def stop_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Stop a Docker node.
@@ -149,7 +169,11 @@ async def stop_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.stop()
 
 
-@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/suspend",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def suspend_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Suspend a Docker node.
@@ -158,7 +182,11 @@ async def suspend_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.pause()
 
 
-@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/reload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reload_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Reload a Docker node.
@@ -167,7 +195,11 @@ async def reload_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.restart()
 
 
-@router.post("/{node_id}/pause", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/pause",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def pause_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Pause a Docker node.
@@ -176,7 +208,11 @@ async def pause_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.pause()
 
 
-@router.post("/{node_id}/unpause", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/unpause",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def unpause_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Unpause a Docker node.
@@ -185,7 +221,11 @@ async def unpause_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.unpause()
 
 
-@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     """
     Delete a Docker node.
@@ -194,7 +234,12 @@ async def delete_docker_node(node: DockerVM = Depends(dep_node)) -> None:
     await node.delete()
 
 
-@router.post("/{node_id}/duplicate", response_model=schemas.Docker, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{node_id}/duplicate",
+    response_model=schemas.Docker,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(compute_authentication)]
+)
 async def duplicate_docker_node(
         destination_node_id: UUID = Body(..., embed=True),
         node: DockerVM = Depends(dep_node)
@@ -211,6 +256,7 @@ async def duplicate_docker_node(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_docker_node_nio(
     adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
@@ -229,6 +275,7 @@ async def create_docker_node_nio(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def update_docker_node_nio(
     adapter_number: int, port_number: int, nio_data: schemas.UDPNIO, node: DockerVM = Depends(dep_node)
@@ -245,7 +292,11 @@ async def update_docker_node_nio(
     return nio.asdict()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_docker_node_nio(
         adapter_number: int,
         port_number: int,
@@ -259,7 +310,10 @@ async def delete_docker_node_nio(
     await node.adapter_remove_nio_binding(adapter_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_docker_node_capture(
         adapter_number: int,
         port_number: int,
@@ -278,7 +332,8 @@ async def start_docker_node_capture(
 
 @router.post(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
 )
 async def stop_docker_node_capture(
         adapter_number: int,
@@ -293,7 +348,10 @@ async def stop_docker_node_capture(
     await node.stop_capture(adapter_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
+@router.get(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
+    dependencies=[Depends(compute_authentication)]
+)
 async def stream_pcap_file(
         adapter_number: int,
         port_number: int,
@@ -310,15 +368,23 @@ async def stream_pcap_file(
 
 
 @router.websocket("/{node_id}/console/ws")
-async def console_ws(websocket: WebSocket, node: DockerVM = Depends(dep_node)) -> None:
+async def console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: DockerVM = Depends(dep_node)
+) -> None:
     """
     Console WebSocket.
     """
 
-    await node.start_websocket_console(websocket)
+    if websocket:
+        await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/console/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reset_console(node: DockerVM = Depends(dep_node)) -> None:
 
     await node.reset_console()

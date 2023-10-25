@@ -39,7 +39,10 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("", dependencies=[Depends(has_privilege("Symbol.Audit"))])
+@router.get(
+    "",
+    dependencies=[Depends(has_privilege("Symbol.Audit"))]
+)
 def get_symbols() -> List[dict]:
     """
     Return all symbols.
@@ -54,7 +57,8 @@ def get_symbols() -> List[dict]:
 @router.get(
     "/{symbol_id:path}/raw",
     responses={404: {"model": schemas.ErrorMessage, "description": "Could not find symbol"}},
-    dependencies=[Depends(has_privilege("Symbol.Audit"))]
+    # FIXME: this is a temporary workaround due to a bug in the web-ui: https://github.com/GNS3/gns3-web-ui/issues/1466
+    # dependencies=[Depends(has_privilege("Symbol.Audit"))]
 )
 async def get_symbol(symbol_id: str) -> FileResponse:
     """

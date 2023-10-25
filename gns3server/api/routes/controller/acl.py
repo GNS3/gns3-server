@@ -78,9 +78,16 @@ async def endpoints(
     for project in projects:
         add_to_endpoints(f"/projects/{project.id}", f'Project "{project.name}"', "project")
 
+        if project.status == "closed":
+            nodes = project.nodes.values()
+            links = project.links.values()
+        else:
+            nodes = [v.asdict() for v in project.nodes.values()]
+            links = [v.asdict() for v in project.links.values()]
+
         # nodes
         add_to_endpoints(f"/projects/{project.id}/nodes", f'All nodes in project "{project.name}"', "node")
-        for node in project.nodes.values():
+        for node in nodes:
             add_to_endpoints(
                 f"/projects/{project.id}/nodes/{node['node_id']}",
                 f'Node "{node["name"]}" in project "{project.name}"',
@@ -89,7 +96,7 @@ async def endpoints(
 
         # links
         add_to_endpoints(f"/projects/{project.id}/links", f'All links in project "{project.name}"', "link")
-        for link in project.links.values():
+        for link in links:
             node_id_1 = link["nodes"][0]["node_id"]
             node_id_2 = link["nodes"][1]["node_id"]
             node_name_1 = project.nodes[node_id_1]["name"]
@@ -183,7 +190,7 @@ async def create_ace(
             route_path = re.sub(r"/{[\w:]+}", r"/\\w+", route_path)
 
             if re.fullmatch(route_path, ace_create.path):
-                log.info("Creating ACE for route path", ace_create.path, route_path)
+                log.info(f"Creating ACE for route path {route_path}")
                 return await rbac_repo.create_ace(ace_create)
 
     raise ControllerBadRequestError(f"Path '{ace_create.path}' doesn't match any existing endpoint")

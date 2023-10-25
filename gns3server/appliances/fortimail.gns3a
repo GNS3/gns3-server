@@ -5,6 +5,7 @@
     "description": "FortiMail is a complete Secure Email Gateway offering suitable for any size organization. It provides a single solution to protect against inbound attacks - including advanced malware -, as well as outbound threats and data loss with a wide range of top-rated security capabilities.",
     "vendor_name": "Fortinet",
     "vendor_url": "http://www.fortinet.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/FortiMail.jpg",
     "documentation_url": "http://docs.fortinet.com/fortimail/admin-guides",
     "product_name": "FortiMail",
     "product_url": "http://www.fortinet.com/products/fortimail/index.html",

@@ -49,6 +49,9 @@ async def get_drawings(project_id: UUID) -> List[schemas.Drawing]:
     """
 
     project = await Controller.instance().get_loaded_project(str(project_id))
+    if project.status == "closed":
+        # allow to retrieve drawings from a closed project
+        return project.drawings.values()
     return [v.asdict() for v in project.drawings.values()]
 
 

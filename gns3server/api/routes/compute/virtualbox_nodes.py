@@ -20,15 +20,18 @@ API routes for VirtualBox nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Path, Response, status
+from fastapi import APIRouter, WebSocket, Depends, Path, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from uuid import UUID
+from typing import Union
 
 from gns3server import schemas
 from gns3server.compute.virtualbox import VirtualBox
 from gns3server.compute.virtualbox.virtualbox_error import VirtualBoxError
 from gns3server.compute.virtualbox.virtualbox_vm import VirtualBoxVM
+
+from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or VirtualBox node"}}
 
@@ -50,6 +53,7 @@ def dep_node(project_id: UUID, node_id: UUID) -> VirtualBoxVM:
     response_model=schemas.VirtualBox,
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create VirtualBox node"}},
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBoxCreate) -> schemas.VirtualBox:
     """
@@ -82,7 +86,11 @@ async def create_virtualbox_node(project_id: UUID, node_data: schemas.VirtualBox
     return vm.asdict()
 
 
-@router.get("/{node_id}", response_model=schemas.VirtualBox)
+@router.get(
+    "/{node_id}",
+    response_model=schemas.VirtualBox,
+    dependencies=[Depends(compute_authentication)]
+)
 def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> schemas.VirtualBox:
     """
     Return a VirtualBox node.
@@ -91,7 +99,11 @@ def get_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> schemas.Virtu
     return node.asdict()
 
 
-@router.put("/{node_id}", response_model=schemas.VirtualBox)
+@router.put(
+    "/{node_id}",
+    response_model=schemas.VirtualBox,
+    dependencies=[Depends(compute_authentication)]
+)
 async def update_virtualbox_node(
         node_data: schemas.VirtualBoxUpdate,
         node: VirtualBoxVM = Depends(dep_node)
@@ -136,7 +148,11 @@ async def update_virtualbox_node(
     return node.asdict()
 
 
-@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Delete a VirtualBox node.
@@ -145,7 +161,11 @@ async def delete_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None
     await VirtualBox.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/start",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Start a VirtualBox node.
@@ -154,7 +174,11 @@ async def start_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     await node.start()
 
 
-@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def stop_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Stop a VirtualBox node.
@@ -163,7 +187,11 @@ async def stop_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     await node.stop()
 
 
-@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/suspend",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def suspend_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Suspend a VirtualBox node.
@@ -172,7 +200,11 @@ async def suspend_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> Non
     await node.suspend()
 
 
-@router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/resume",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def resume_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Resume a VirtualBox node.
@@ -181,7 +213,11 @@ async def resume_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None
     await node.resume()
 
 
-@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/reload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reload_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None:
     """
     Reload a VirtualBox node.
@@ -194,6 +230,7 @@ async def reload_virtualbox_node(node: VirtualBoxVM = Depends(dep_node)) -> None
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_virtualbox_node_nio(
         *,
@@ -216,6 +253,7 @@ async def create_virtualbox_node_nio(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def update_virtualbox_node_nio(
         *,
@@ -238,7 +276,11 @@ async def update_virtualbox_node_nio(
     return nio.asdict()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_virtualbox_node_nio(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
@@ -252,7 +294,10 @@ async def delete_virtualbox_node_nio(
     await node.adapter_remove_nio_binding(adapter_number)
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_virtualbox_node_capture(
         *,
         adapter_number: int,
@@ -271,7 +316,9 @@ async def start_virtualbox_node_capture(
 
 
 @router.post(
-    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
 )
 async def stop_virtualbox_node_capture(
         adapter_number: int,
@@ -286,7 +333,10 @@ async def stop_virtualbox_node_capture(
     await node.stop_capture(adapter_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
+@router.get(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
+    dependencies=[Depends(compute_authentication)]
+)
 async def stream_pcap_file(
         adapter_number: int,
         port_number: int = Path(..., ge=0, le=0),
@@ -302,8 +352,13 @@ async def stream_pcap_file(
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-@router.websocket("/{node_id}/console/ws")
-async def console_ws(websocket: WebSocket, node: VirtualBoxVM = Depends(dep_node)) -> None:
+@router.websocket(
+    "/{node_id}/console/ws"
+)
+async def console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: VirtualBoxVM = Depends(dep_node)
+) -> None:
     """
     Console WebSocket.
     """
@@ -311,7 +366,11 @@ async def console_ws(websocket: WebSocket, node: VirtualBoxVM = Depends(dep_node
     await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/console/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reset_console(node: VirtualBoxVM = Depends(dep_node)) -> None:
 
     await node.reset_console()

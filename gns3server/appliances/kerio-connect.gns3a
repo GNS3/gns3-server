@@ -5,6 +5,7 @@
     "description": "Kerio Connect makes email, calendars, contacts and task management easy and affordable. With Kerio Connect, you have immediate, secure access to your communications anytime, anywhere, on any device - without complexity or expensive overhead.",
     "vendor_name": "Kerio Technologies Inc.",
     "vendor_url": "http://www.kerio.com",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Kerio Connect.jpg",
     "documentation_url": "http://kb.kerio.com/product/kerio-connect/",
     "product_name": "Kerio Connect",
     "product_url": "http://www.kerio.com/products/kerio-connect",

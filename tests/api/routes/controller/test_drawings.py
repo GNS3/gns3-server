@@ -94,6 +94,12 @@ async def test_all_drawings(app: FastAPI, client: AsyncClient, project: Project)
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) == 1
 
+    # test listing links from a closed project
+    await project.close(ignore_notification=True)
+    response = await client.get(app.url_path_for("get_drawings", project_id=project.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 1
+
 
 async def test_delete_drawing(app: FastAPI, client: AsyncClient, project: Project) -> None:
 
