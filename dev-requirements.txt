@@ -1,6 +1,7 @@
-pytest==7.4.0
-flake8==5.0.4  # v5.0.4 is the last to support Python 3.7
-pytest-timeout==2.1.0
+pytest==7.4.2
+flake8==6.1.0
+pytest-timeout==2.2.0
 pytest-asyncio==0.21.1
 requests==2.31.0
-httpx==0.24.1
+httpx==0.24.1 # version 0.24.1 is required by httpx_ws
+httpx_ws==0.4.2

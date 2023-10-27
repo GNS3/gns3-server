@@ -485,6 +485,11 @@ class BaseNode:
         :param ws: Websocket object
         """
 
+        log.info(
+            f"New client {websocket.client.host}:{websocket.client.port}  has connected to compute"
+            f" console WebSocket"
+        )
+
         if self.status != "started":
             raise NodeError(f"Node {self.name} is not started")
 
@@ -492,19 +497,12 @@ class BaseNode:
             raise NodeError(f"Node {self.name} console type is not telnet")
 
         try:
-            (telnet_reader, telnet_writer) = await asyncio.open_connection(
-                self._manager.port_manager.console_host, self.console
-            )
+            host = self._manager.port_manager.console_host
+            port = self.console
+            (telnet_reader, telnet_writer) = await asyncio.open_connection(host, port)
+            log.info(f"Connected to local Telnet server {host}:{port}")
         except ConnectionError as e:
             raise NodeError(f"Cannot connect to node {self.name} telnet server: {e}")
-
-        log.info("Connected to Telnet server")
-
-        await websocket.accept()
-        log.info(
-            f"New client {websocket.client.host}:{websocket.client.port}  has connected to compute"
-            f" console WebSocket"
-        )
 
         async def ws_forward(telnet_writer):
 

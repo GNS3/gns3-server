@@ -20,15 +20,17 @@ API routes for Dynamips nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, Response, status
+from fastapi import APIRouter, WebSocket, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from gns3server.compute.dynamips import Dynamips
 from gns3server.compute.dynamips.nodes.router import Router
 from gns3server import schemas
+
+from .dependencies.authentication import compute_authentication, ws_compute_authentication
 
 responses = {404: {"model": schemas.ErrorMessage, "description": "Could not find project or Dynamips node"}}
 
@@ -53,6 +55,7 @@ def dep_node(project_id: UUID, node_id: UUID) -> Router:
     response_model=schemas.Dynamips,
     status_code=status.HTTP_201_CREATED,
     responses={409: {"model": schemas.ErrorMessage, "description": "Could not create Dynamips node"}},
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate) -> schemas.Dynamips:
     """
@@ -84,7 +87,11 @@ async def create_router(project_id: UUID, node_data: schemas.DynamipsCreate) -> 
     return vm.asdict()
 
 
-@router.get("/{node_id}", response_model=schemas.Dynamips)
+@router.get(
+    "/{node_id}",
+    response_model=schemas.Dynamips,
+    dependencies=[Depends(compute_authentication)]
+)
 def get_router(node: Router = Depends(dep_node)) -> schemas.Dynamips:
     """
     Return Dynamips router.
@@ -93,7 +100,11 @@ def get_router(node: Router = Depends(dep_node)) -> schemas.Dynamips:
     return node.asdict()
 
 
-@router.put("/{node_id}", response_model=schemas.Dynamips)
+@router.put(
+    "/{node_id}",
+    response_model=schemas.Dynamips,
+    dependencies=[Depends(compute_authentication)]
+)
 async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depends(dep_node)) -> schemas.Dynamips:
     """
     Update a Dynamips router.
@@ -104,7 +115,11 @@ async def update_router(node_data: schemas.DynamipsUpdate, node: Router = Depend
     return node.asdict()
 
 
-@router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_router(node: Router = Depends(dep_node)) -> None:
     """
     Delete a Dynamips router.
@@ -113,7 +128,11 @@ async def delete_router(node: Router = Depends(dep_node)) -> None:
     await Dynamips.instance().delete_node(node.id)
 
 
-@router.post("/{node_id}/start", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/start",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_router(node: Router = Depends(dep_node)) -> None:
     """
     Start a Dynamips router.
@@ -126,7 +145,11 @@ async def start_router(node: Router = Depends(dep_node)) -> None:
     await node.start()
 
 
-@router.post("/{node_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def stop_router(node: Router = Depends(dep_node)) -> None:
     """
     Stop a Dynamips router.
@@ -135,13 +158,21 @@ async def stop_router(node: Router = Depends(dep_node)) -> None:
     await node.stop()
 
 
-@router.post("/{node_id}/suspend", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/suspend",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def suspend_router(node: Router = Depends(dep_node)) -> None:
 
     await node.suspend()
 
 
-@router.post("/{node_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/resume",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def resume_router(node: Router = Depends(dep_node)) -> None:
     """
     Resume a suspended Dynamips router.
@@ -150,7 +181,11 @@ async def resume_router(node: Router = Depends(dep_node)) -> None:
     await node.resume()
 
 
-@router.post("/{node_id}/reload", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/reload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reload_router(node: Router = Depends(dep_node)) -> None:
     """
     Reload a suspended Dynamips router.
@@ -163,6 +198,7 @@ async def reload_router(node: Router = Depends(dep_node)) -> None:
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def create_nio(
         adapter_number: int,
@@ -183,6 +219,7 @@ async def create_nio(
     "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UDPNIO,
+    dependencies=[Depends(compute_authentication)]
 )
 async def update_nio(
         adapter_number: int,
@@ -201,7 +238,11 @@ async def update_nio(
     return nio.asdict()
 
 
-@router.delete("/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/nio",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def delete_nio(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> None:
     """
     Delete a NIO (Network Input/Output) from the node.
@@ -211,7 +252,10 @@ async def delete_nio(adapter_number: int, port_number: int, node: Router = Depen
     await nio.delete()
 
 
-@router.post("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start")
+@router.post(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/start",
+    dependencies=[Depends(compute_authentication)]
+)
 async def start_capture(
         adapter_number: int,
         port_number: int,
@@ -228,7 +272,9 @@ async def start_capture(
 
 
 @router.post(
-    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop", status_code=status.HTTP_204_NO_CONTENT
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
 )
 async def stop_capture(adapter_number: int, port_number: int, node: Router = Depends(dep_node)) -> None:
     """
@@ -238,7 +284,10 @@ async def stop_capture(adapter_number: int, port_number: int, node: Router = Dep
     await node.stop_capture(adapter_number, port_number)
 
 
-@router.get("/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream")
+@router.get(
+    "/{node_id}/adapters/{adapter_number}/ports/{port_number}/capture/stream",
+    dependencies=[Depends(compute_authentication)]
+)
 async def stream_pcap_file(
         adapter_number: int,
         port_number: int,
@@ -253,7 +302,10 @@ async def stream_pcap_file(
     return StreamingResponse(stream, media_type="application/vnd.tcpdump.pcap")
 
 
-@router.get("/{node_id}/idlepc_proposals")
+@router.get(
+    "/{node_id}/idlepc_proposals",
+    dependencies=[Depends(compute_authentication)]
+)
 async def get_idlepcs(node: Router = Depends(dep_node)) -> List[str]:
     """
     Retrieve Dynamips idle-pc proposals
@@ -263,7 +315,10 @@ async def get_idlepcs(node: Router = Depends(dep_node)) -> List[str]:
     return await node.get_idle_pc_prop()
 
 
-@router.get("/{node_id}/auto_idlepc")
+@router.get(
+    "/{node_id}/auto_idlepc",
+    dependencies=[Depends(compute_authentication)]
+)
 async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
     """
     Get an automatically guessed best idle-pc value.
@@ -273,7 +328,12 @@ async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
     return {"idlepc": idlepc}
 
 
-@router.post("/{node_id}/duplicate", response_model=schemas.Dynamips, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{node_id}/duplicate",
+    response_model=schemas.Dynamips,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(compute_authentication)]
+)
 async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep_node)) -> schemas.Dynamips:
     """
     Duplicate a router.
@@ -284,15 +344,24 @@ async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep
 
 
 @router.websocket("/{node_id}/console/ws")
-async def console_ws(websocket: WebSocket, node: Router = Depends(dep_node)) -> None:
+async def console_ws(
+        websocket: Union[None, WebSocket] = Depends(ws_compute_authentication),
+        node: Router = Depends(dep_node)
+
+) -> None:
     """
     Console WebSocket.
     """
 
-    await node.start_websocket_console(websocket)
+    if websocket:
+        await node.start_websocket_console(websocket)
 
 
-@router.post("/{node_id}/console/reset", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/{node_id}/console/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(compute_authentication)]
+)
 async def reset_console(node: Router = Depends(dep_node)) -> None:
 
     await node.reset_console()

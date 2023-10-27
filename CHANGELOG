@@ -1,5 +1,16 @@
 # Change Log
 
+## 3.0.0a5 27/10/2023
+
+* Bundle web-ui v3.0.0a5
+* Fix L2IOU "failed code signing checks" when IOU base file name is >= 63 characters
+* Python 3.12 support
+* Add igb Qemu adapter
+* Change "ip cef" to "no ip cef" in IOU default configs. Fixes #2298
+* Drop support for Python 3.7 and upgrade dependencies
+* Fix compute authentication for websocket endpoints
+* Add Qemu IGB network device
+
 ## 3.0.0a4 18/10/2023
 
 * Bundle web-ui v3.0.0a4
