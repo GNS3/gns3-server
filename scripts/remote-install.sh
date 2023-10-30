@@ -163,9 +163,9 @@ log "Install GNS3 packages"
 apt-get install -y gns3-server
 
 log "Create user GNS3 with /opt/gns3 as home directory"
-if [ ! -d "/opt/gns3/" ]
+if [ ! -d "/opt/gns3" ]
 then
-  useradd -m -d /opt/gns3/ gns3
+  useradd -m -d /opt/gns3 gns3
 fi
 
 
