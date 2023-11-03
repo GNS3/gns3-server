@@ -541,7 +541,7 @@ async def ws_console(
         pass
 
     ws_console_compute_url = (
-        f"ws://{compute_host}:{compute.port}/v3/compute/projects/"
+        f"{websocket.url.scheme}://{compute_host}:{compute.port}/v3/compute/projects/"
         f"{node.project.id}/{node.node_type}/nodes/{node.id}/console/ws"
     )
 
@@ -575,7 +575,8 @@ async def ws_console(
             auth = aiohttp.BasicAuth(user, password.get_secret_value(), "utf-8")
         else:
             auth = aiohttp.BasicAuth(user, "")
-        async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth) as ws:
+        ssl_context = Controller.instance().ssl_context()
+        async with HTTPClient.get_client().ws_connect(ws_console_compute_url, auth=auth, ssl_context=ssl_context) as ws:
             asyncio.ensure_future(ws_receive(ws))
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:

@@ -267,11 +267,13 @@ async def stream_pcap(request: Request, link: Link = Depends(dep_link)) -> Strea
     async def compute_pcap_stream():
 
         try:
+            ssl_context = Controller.instance().ssl_context()
             async with HTTPClient.request(
                     request.method,
                     pcap_streaming_url,
                     user=compute.user,
                     password=compute.password,
+                    ssl_context=ssl_context,
                     timeout=None,
                     data=body
             ) as response:
