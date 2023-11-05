@@ -26,6 +26,7 @@ import sys
 import re
 import subprocess
 
+from ...utils import shlex_quote
 from ...utils.asyncio import subprocess_check_output
 from ...utils.get_resource import get_resource
 from ..base_manager import BaseManager
@@ -337,6 +338,8 @@ class Qemu(BaseManager):
             command.append(path)
             command.append("{}M".format(img_size))
 
+            command_string = " ".join(shlex_quote(s) for s in command)
+            log.info("Creating disk image with {}".format(command_string))
             process = await asyncio.create_subprocess_exec(*command)
             await process.wait()
         except (OSError, subprocess.SubprocessError) as e:

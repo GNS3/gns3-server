@@ -330,6 +330,8 @@ class WebServer:
 
         try:
             self._loop.run_forever()
+        except ConnectionResetError:
+            log.warning("Connection reset by peer")
         except TypeError as e:
             # This is to ignore an asyncio.windows_events exception
             # on Windows when the process gets the SIGBREAK signal
