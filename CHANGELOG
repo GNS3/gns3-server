@@ -1,5 +1,19 @@
 # Change Log
 
+## 2.2.44 06/11/2023
+
+* Bundle web-ui v2.2.44
+* Non-blocking checksums computation when server starts. Fixes #2228
+* Fix timeout issue when creating Qemu disk image. Fixes https://github.com/GNS3/gns3-server/issues/2313
+* Support for web socket console over HTTPS
+* Add back script create_cert.sh
+* Allow disabling hardware virtualization check
+* Fix L2IOU "failed code signing checks" when IOU base file name is >= 63 characters
+* Change "ip cef" to "no ip cef" in IOU default configs. Fixes #2298
+* Add Qemu IGB network device
+* Add Python 3.12 support.
+* Fix issue with importlib.resources.files() and Python 3.9
+
 ## 3.0.0a5 27/10/2023
 
 * Bundle web-ui v3.0.0a5
