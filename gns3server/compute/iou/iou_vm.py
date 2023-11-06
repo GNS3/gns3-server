@@ -539,7 +539,12 @@ class IOUVM(BaseNode):
             # create a symbolic link to the image to avoid IOU error "failed code signing checks"
             # on newer images, see https://github.com/GNS3/gns3-server/issues/1484
             try:
-                symlink = os.path.join(self.working_dir, os.path.basename(self.path))
+                iou_image_path = os.path.basename(self.path)
+                if len(iou_image_path) > 63:
+                    # IOU file basename length must be <= 63 chars
+                    iou_file_name, iou_file_ext = os.path.splitext(iou_image_path)
+                    iou_image_path = iou_file_name[:63 - len(iou_file_ext)] + iou_file_ext
+                symlink = os.path.join(self.working_dir, iou_image_path)
                 if os.path.islink(symlink):
                     os.unlink(symlink)
                 os.symlink(self.path, symlink)

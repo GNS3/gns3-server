@@ -29,6 +29,7 @@ import functools
 import time
 import atexit
 import weakref
+import concurrent.futures
 
 # Import encoding now, to avoid implicit import later.
 # Implicit import within threads may cause LookupError when standard library is in a ZIP
@@ -38,7 +39,7 @@ from .route import Route
 from ..config import Config
 from ..compute import MODULES
 from ..compute.port_manager import PortManager
-from ..compute.qemu import Qemu
+from ..utils.images import list_images
 from ..controller import Controller
 
 # do not delete this import
@@ -86,6 +87,8 @@ class WebServer:
             self._server, startup_res = self._loop.run_until_complete(asyncio.gather(srv, self._app.startup()))
         except (RuntimeError, OSError, asyncio.CancelledError) as e:
             log.critical("Could not start the server: {}".format(e))
+            return False
+        except KeyboardInterrupt:
             return False
         return True
 
@@ -230,16 +233,27 @@ class WebServer:
 
         atexit.register(close_asyncio_loop)
 
+    async def _compute_image_checksums(self):
+        """
+        Compute image checksums.
+        """
+
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as pool:
+            log.info("Computing image checksums...")
+            await loop.run_in_executor(pool, list_images, "qemu")
+            log.info("Finished computing image checksums")
+
     async def _on_startup(self, *args):
         """
         Called when the HTTP server start
         """
 
         await Controller.instance().start()
-        # Because with a large image collection
-        # without md5sum already computed we start the
-        # computing with server start
-        asyncio.ensure_future(Qemu.instance().list_images())
+
+        # Start computing checksums now because it can take a long time
+        # for a large image collection
+        await self._compute_image_checksums()
 
     def run(self):
         """
@@ -330,6 +344,8 @@ class WebServer:
 
         try:
             self._loop.run_forever()
+        except ConnectionResetError:
+            log.warning("Connection reset by peer")
         except TypeError as e:
             # This is to ignore an asyncio.windows_events exception
             # on Windows when the process gets the SIGBREAK signal

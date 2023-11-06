@@ -29,7 +29,7 @@
             "md5sum": "435218a2e90cba921cc7fde1d64a9419",
             "filesize": 287965184,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
-            "direct_download_url": "http://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/bird2-debian-2.0.12.qcow2"
+            "direct_download_url": "https://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/bird2-debian-2.0.12.qcow2"
         }
     ],
     "versions": [

@@ -5,6 +5,7 @@
     "description": "CoreOS is designed for security, consistency, and reliability. Instead of installing packages via yum or apt, CoreOS uses Linux containers to manage your services at a higher level of abstraction. A single service's code and all dependencies are packaged within a container that can be run on one or many CoreOS machines.",
     "vendor_name": "CoreOS, Inc",
     "vendor_url": "https://coreos.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/CoreOS.png",
     "documentation_url": "https://coreos.com/docs/",
     "product_name": "CoreOS",
     "registry_version": 4,

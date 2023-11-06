@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import aiohttp
-import asyncio
 import psutil
 import platform
+
 from .project import Project
+from ..config import Config
 from uuid import UUID
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -128,10 +130,11 @@ class ProjectManager:
         :returns: boolean
         """
 
-        for project in self._projects.values():
-            for node in project.nodes:
-                if node == source_node:
-                    continue
-                if node.hw_virtualization and node.__class__.__name__ != source_node.__class__.__name__:
-                    return False
+        if Config.instance().get_section_config("Server").getboolean("hardware_virtualization_check", True):
+            for project in self._projects.values():
+                for node in project.nodes:
+                    if node == source_node:
+                        continue
+                    if node.hw_virtualization and node.__class__.__name__ != source_node.__class__.__name__:
+                        return False
         return True

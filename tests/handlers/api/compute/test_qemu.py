@@ -255,7 +255,7 @@ async def test_qemu_list_binaries(compute_api, vm):
 
     with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
         response = await compute_api.get("/qemu/binaries".format(project_id=vm["project_id"]))
-        assert mock.called_with(None)
+        mock.assert_called_with(None)
         assert response.status == 200
         assert response.json == ret
 
@@ -271,7 +271,7 @@ async def test_qemu_list_binaries_filter(compute_api, vm):
     with asyncio_patch("gns3server.compute.qemu.Qemu.binary_list", return_value=ret) as mock:
         response = await compute_api.get("/qemu/binaries".format(project_id=vm["project_id"]), body={"archs": ["i386"]})
         assert response.status == 200
-        assert mock.called_with(["i386"])
+        mock.assert_called_with(["i386"])
         assert response.json == ret
 
 

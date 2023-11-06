@@ -487,11 +487,18 @@ class NodeHandler:
         except ValueError:
             pass
 
-        ws_console_compute_url = "ws://{compute_host}:{compute_port}/v2/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/ws".format(compute_host=compute_host,
-                                                                                                                                                     compute_port=compute.port,
-                                                                                                                                                     project_id=project.id,
-                                                                                                                                                     node_type=node.node_type,
-                                                                                                                                                     node_id=node.id)
+        ws_protocol = "ws"
+        if request.scheme == "https":
+            ws_protocol = "wss"
+
+        ws_console_compute_url = "{protocol}://{compute_host}:{compute_port}/v2/compute/projects/{project_id}/{node_type}/nodes/{node_id}/console/ws".format(
+            protocol=ws_protocol,
+            compute_host=compute_host,
+            compute_port=compute.port,
+            project_id=project.id,
+            node_type=node.node_type,
+            node_id=node.id
+        )
 
         async def ws_forward(ws_client):
             async for msg in ws:
@@ -504,7 +511,7 @@ class NodeHandler:
 
         try:
             async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=None, force_close=True)) as session:
-                async with session.ws_connect(ws_console_compute_url) as ws_client:
+                async with session.ws_connect(ws_console_compute_url, ssl=False) as ws_client:
                     asyncio.ensure_future(ws_forward(ws_client))
                     async for msg in ws_client:
                         if msg.type == aiohttp.WSMsgType.TEXT:
@@ -515,6 +522,8 @@ class NodeHandler:
                             break
         except ConnectionResetError:
             log.info("Websocket console connection with compute disconnected")
+        except aiohttp.ClientError as e:
+            log.error("Websocket console connection with compute failed: {}".format(e))
         finally:
             if not ws.closed:
                 await ws.close()

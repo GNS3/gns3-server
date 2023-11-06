@@ -5,6 +5,7 @@
     "description": "Microsoft Windows, or simply Windows, is a metafamily of graphical operating systems developed, marketed, and sold by Microsoft. It consists of several families of operating systems, each of which cater to a certain sector of the computing industry with the OS typically associated with IBM PC compatible architecture.",
     "vendor_name": "Microsoft",
     "vendor_url": "http://www.microsoft.com/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/Windows.jpg",
     "documentation_url": "https://technet.microsoft.com/en-us/library/cc498727.aspx",
     "product_name": "Windows",
     "product_url": "https://www.microsoft.com/en-us/windows",

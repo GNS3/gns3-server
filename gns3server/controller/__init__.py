@@ -295,7 +295,7 @@ class Controller:
                 if not os.path.exists(os.path.join(dst_path, filename)):
                     shutil.copy(os.path.join(resource_path, filename), os.path.join(dst_path, filename))
         else:
-            for entry in importlib_resources.files(f'gns3server.{resource_name}').iterdir():
+            for entry in importlib_resources.files('gns3server').joinpath(resource_name).iterdir():
                 full_path = os.path.join(dst_path, entry.name)
                 if entry.is_file() and not os.path.exists(full_path):
                     log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
