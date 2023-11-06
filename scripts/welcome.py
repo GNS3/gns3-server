@@ -438,7 +438,8 @@ Images and projects are located in /opt/gns3
                 self.display.clear()
                 if code == Dialog.OK:
                     if tag == "Shell":
-                        os.execvp("bash", ['/bin/bash'])
+                        print("Type: 'welcome.py' to get back to the dialog menu.")
+                        sys.exit(0)
                     elif tag == "Version":
                         self.mode()
                     elif tag == "Restore":
