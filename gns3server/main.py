@@ -31,8 +31,7 @@ import gns3server.utils.get_resource
 import os
 import sys
 import types
-
-from multiprocessing import freeze_support
+import multiprocessing
 
 # To avoid strange bug later we switch the event loop before any other operation
 if sys.platform.startswith("win"):
@@ -79,7 +78,8 @@ def main():
     """
 
     if hasattr(sys, "frozen"):
-        freeze_support()
+        multiprocessing.freeze_support()
+        multiprocessing.set_start_method("spawn")
 
     if not sys.platform.startswith("win"):
         if "--daemon" in sys.argv:
