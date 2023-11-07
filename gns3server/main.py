@@ -77,13 +77,11 @@ def main():
     Entry point for GNS3 server
     """
 
-    if hasattr(sys, "frozen"):
-        multiprocessing.freeze_support()
-        multiprocessing.set_start_method("spawn")
-
     if not sys.platform.startswith("win"):
         if "--daemon" in sys.argv:
             daemonize()
+    else:
+        multiprocessing.freeze_support()
 
     from gns3server.run import run
     run()
