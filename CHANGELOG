@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.2.44.1 07/11/2023
+
+* Catch exceptions when computing image checksums. Ref https://github.com/GNS3/gns3-server/issues/2228
+* Add freeze_support() for multiprocessing
+
 ## 2.2.44 06/11/2023
 
 * Bundle web-ui v2.2.44
