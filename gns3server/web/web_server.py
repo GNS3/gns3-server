@@ -29,7 +29,6 @@ import functools
 import time
 import atexit
 import weakref
-import concurrent.futures
 
 # Import encoding now, to avoid implicit import later.
 # Implicit import within threads may cause LookupError when standard library is in a ZIP
@@ -238,7 +237,11 @@ class WebServer:
         Compute image checksums.
         """
 
+        if sys.platform.startswith("darwin") and hasattr(sys, "frozen"):
+            # do not compute on macOS because errors
+            return
         loop = asyncio.get_event_loop()
+        import concurrent.futures
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as pool:
             try:
                 log.info("Computing image checksums...")
