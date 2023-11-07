@@ -32,6 +32,8 @@ import os
 import sys
 import types
 
+from multiprocessing import freeze_support
+
 # To avoid strange bug later we switch the event loop before any other operation
 if sys.platform.startswith("win"):
     import asyncio
@@ -79,6 +81,8 @@ def main():
     if not sys.platform.startswith("win"):
         if "--daemon" in sys.argv:
             daemonize()
+    else:
+        freeze_support()
     from gns3server.run import run
     run()
 
