@@ -78,11 +78,13 @@ def main():
     Entry point for GNS3 server
     """
 
+    if hasattr(sys, "frozen"):
+        freeze_support()
+
     if not sys.platform.startswith("win"):
         if "--daemon" in sys.argv:
             daemonize()
-    else:
-        freeze_support()
+
     from gns3server.run import run
     run()
 
