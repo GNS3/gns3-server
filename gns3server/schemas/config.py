@@ -138,7 +138,7 @@ class ServerSettings(BaseModel):
     udp_start_port_range: int = Field(10000, gt=0, le=65535)
     udp_end_port_range: int = Field(30000, gt=0, le=65535)
     ubridge_path: str = "ubridge"
-    compute_username: str = "admin"
+    compute_username: str = "gns3"
     compute_password: SecretStr = SecretStr("")
     allowed_interfaces: List[str] = Field(default_factory=list)
     default_nat_interface: str = None
