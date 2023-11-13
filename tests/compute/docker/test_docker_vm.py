@@ -29,7 +29,6 @@ from gns3server.compute.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.compute.docker.docker_vm import DockerVM
 from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker import Docker
-from gns3server.utils.get_resource import get_resource
 
 
 from unittest.mock import patch, MagicMock, call
@@ -108,7 +107,7 @@ async def test_create(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -158,7 +157,7 @@ async def test_create_with_tag(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -211,7 +210,7 @@ async def test_create_vnc(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -362,7 +361,7 @@ async def test_create_start_cmd(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -474,7 +473,7 @@ async def test_create_image_not_available(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -529,7 +528,7 @@ async def test_create_with_user(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -627,7 +626,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -682,7 +681,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -737,7 +736,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -792,7 +791,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -847,7 +846,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -897,7 +896,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -953,7 +952,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -1213,7 +1212,7 @@ async def test_update(vm):
             "Mounts": [
                 {
                     "Type": "bind",
-                    "Source": get_resource("compute/docker/resources"),
+                    "Source": Docker.resources_path(),
                     "Target": "/gns3",
                     "ReadOnly": True
                 },
@@ -1294,7 +1293,7 @@ async def test_update_running(vm):
             "Mounts": [
                 {
                     "Type": "bind",
-                    "Source": get_resource("compute/docker/resources"),
+                    "Source": Docker.resources_path(),
                     "Target": "/gns3",
                     "ReadOnly": True
                 },
@@ -1583,7 +1582,7 @@ async def test_mount_binds(vm):
     assert vm._mount_binds(image_infos) == [
         {
             "Type": "bind",
-            "Source": get_resource("compute/docker/resources"),
+            "Source": Docker.resources_path(),
             "Target": "/gns3",
             "ReadOnly": True
         },
@@ -1727,7 +1726,7 @@ async def test_cpus(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
@@ -1777,7 +1776,7 @@ async def test_memory(compute_project, manager):
                         "Mounts": [
                             {
                                 "Type": "bind",
-                                "Source": get_resource("compute/docker/resources"),
+                                "Source": Docker.resources_path(),
                                 "Target": "/gns3",
                                 "ReadOnly": True
                             },
