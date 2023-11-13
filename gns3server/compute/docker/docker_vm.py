@@ -299,12 +299,15 @@ class DockerVM(BaseNode):
         :returns: Return the path that we need to map to local folders
         """
 
-        resources = get_resource("compute/docker/resources")
-        if not os.path.exists(resources):
-            raise DockerError(f"{resources} is missing, can't start Docker container")
+        try:
+            resources_path = self.manager.resources_path()
+        except OSError as e:
+            raise DockerError(f"Cannot access resources: {e}")
+
+        log.info(f'Mount resources from "{resources_path}"')
         binds = [{
             "Type": "bind",
-            "Source": resources,
+            "Source": resources_path,
             "Target": "/gns3",
             "ReadOnly": True
         }]
@@ -393,6 +396,8 @@ class DockerVM(BaseNode):
 
         if ":" in os.path.splitdrive(self.working_dir)[1]:
             raise DockerError("Cannot create a Docker container with a project directory containing a colon character (':')")
+
+        #await self.manager.install_resources()
 
         try:
             image_infos = await self._get_image_information()
@@ -545,8 +550,7 @@ class DockerVM(BaseNode):
         Starts this Docker container.
         """
 
-        # make sure busybox is installed
-        await self.manager.install_busybox()
+        await self.manager.install_resources()
 
         try:
             state = await self._get_container_state()
