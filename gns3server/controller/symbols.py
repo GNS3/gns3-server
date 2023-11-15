@@ -154,8 +154,8 @@ class Symbols:
                     # return the default computer symbol
                     log.warning(f"Could not retrieve symbol '{symbol_id}', returning default symbol...")
                     symbol = self.get_default_symbol("computer", self._current_theme)
-                    if symbol:
-                        return symbol
+                    if symbol and symbol in self._symbols_path:
+                        return self._symbols_path[symbol]
                     return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):
