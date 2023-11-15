@@ -1,5 +1,19 @@
 # Change Log
 
+## 3.0.0a6 15/11/2023
+
+* Bundle web-ui v3.0.0a6
+* Upgrade to aiohttp v3.9.0rc0
+* Install Docker resources in writable location
+* Default compute username is "gns3"
+* Non-blocking checksums computation when server starts. Fixes #2228
+* Fix timeout issue when creating Qemu disk image. Fixes https://github.com/GNS3/gns3-server/issues/2313
+* Fix broken link to Web UI in 3.0 branch. Fixes #2312
+* Fix sample config: VMware section declared twice. Fixes #2311
+* Fix ws console and packet capture over SSL
+* Support for web socket console over HTTPS
+* Allow disabling hardware virtualization check
+
 ## 2.2.44 06/11/2023
 
 * Bundle web-ui v2.2.44
