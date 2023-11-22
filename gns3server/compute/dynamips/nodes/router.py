@@ -76,7 +76,7 @@ class Router(BaseNode):
         ghost_flag=False,
     ):
 
-        if not is_ios_hostname_valid(name):
+        if not ghost_flag and not is_ios_hostname_valid(name):
             raise DynamipsError(f"{name} is an invalid name to create a Dynamips node")
 
         super().__init__(
