@@ -23,6 +23,7 @@ import shutil
 import aiofiles
 import itertools
 import tempfile
+import stat
 import gns3server.utils.zipfile_zstd as zipfile_zstd
 
 from .controller_error import ControllerError
@@ -235,7 +236,7 @@ async def _upload_file(compute, project_id, file_path, path):
 
 async def _import_images(controller, images_path):
     """
-    Copy images to the images directory or delete them if they already exists.
+    Copy images to the images directory or delete them if they already exist.
     """
 
     image_dir = controller.images_path()
@@ -247,7 +248,9 @@ async def _import_images(controller, images_path):
                 continue
             dst = os.path.join(image_dir, os.path.relpath(path, root))
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            await wait_run_in_executor(shutil.move, path, dst)
+            if not os.path.exists(dst):
+                await wait_run_in_executor(shutil.move, path, dst)
+                os.chmod(dst, stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
 
 
 async def _import_snapshots(snapshots_path, project_name, project_id):
