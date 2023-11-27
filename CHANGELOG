@@ -1,5 +1,14 @@
 # Change Log
 
+## 3.0.0b1 27/11/2023
+
+* Bundle web-ui v3.0.0b1
+* Upgrade sentry-sdk to v1.37.1
+* Upgrade aiohttp to v3.9.1
+* Fix bug when listing endpoints for opened project
+* Make images executable after importing a project
+* Disable IOS hostname check for Dynamips ghost instances
+
 ## 3.0.0a6 15/11/2023
 
 * Bundle web-ui v3.0.0a6
