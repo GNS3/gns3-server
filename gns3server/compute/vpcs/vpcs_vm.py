@@ -140,6 +140,9 @@ class VPCSVM(BaseNode):
 
         vpcs_path = self._manager.config.get_section_config("VPCS").get("vpcs_path", "vpcs")
         if not os.path.isabs(vpcs_path):
+            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
+                vpcs_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "vpcs"))
+                os.environ["PATH"] = os.pathsep.join(vpcs_dir) + os.pathsep + os.environ.get("PATH", "")
             vpcs_path = shutil.which(vpcs_path)
         return vpcs_path
 
