@@ -252,6 +252,9 @@ class Dynamips(BaseManager):
         # look for Dynamips
         dynamips_path = self.config.get_section_config("Dynamips").get("dynamips_path", "dynamips")
         if not os.path.isabs(dynamips_path):
+            if sys.platform.startswith("win") and hasattr(sys, "frozen"):
+                dynamips_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "dynamips"))
+                os.environ["PATH"] = os.pathsep.join(dynamips_dir) + os.pathsep + os.environ.get("PATH", "")
             dynamips_path = shutil.which(dynamips_path)
 
         if not dynamips_path:
