@@ -311,13 +311,13 @@ class WebServer:
         # Background task started with the server
         self._app.on_startup.append(self._on_startup)
 
-        resource_options = aiohttp_cors.ResourceOptions(expose_headers="*", allow_headers="*", max_age=0)
+        resource_options = aiohttp_cors.ResourceOptions(allow_credentials=True, expose_headers="*", allow_headers="*", max_age=0)
 
         # Allow CORS for this domains
         cors = aiohttp_cors.setup(self._app, defaults={
             # Default web server for web gui dev
-            "http://127.0.0.1:8080": resource_options,
-            "http://localhost:8080": resource_options,
+            "http://127.0.0.1:3080": resource_options,
+            "http://localhost:3080": resource_options,
             "http://127.0.0.1:4200": resource_options,
             "http://localhost:4200": resource_options,
             "http://gns3.github.io": resource_options,
