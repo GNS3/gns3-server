@@ -17,40 +17,42 @@
 
 import copy
 
+ETHERNET_SWITCH_PORT_SCHEMA = {
+    "description": "Ethernet switch port",
+    "properties": {
+        "name": {
+            "description": "Port name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "port_number": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0
+        },
+        "type": {
+            "description": "Port type",
+            "enum": ["access", "dot1q", "qinq"],
+        },
+        "vlan": {"description": "VLAN number",
+                 "type": "integer",
+                 "minimum": 1
+                 },
+        "ethertype": {
+            "description": "QinQ Ethertype",
+            "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
+        },
+    },
+    "required": ["name", "port_number", "type"],
+    "additionalProperties": False
+}
+
 ETHERNET_SWITCH_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Ethernet switch instance",
     "type": "object",
     "definitions": {
-        "EthernetSwitchPort": {
-            "description": "Ethernet port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["access", "dot1q", "qinq"],
-                },
-                "vlan": {"description": "VLAN number",
-                         "type": "integer",
-                         "minimum": 1
-                         },
-                "ethertype": {
-                    "description": "QinQ Ethertype",
-                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
-                },
-            },
-            "required": ["name", "port_number", "type"],
-            "additionalProperties": False
-        },
+        "EthernetSwitchPort": ETHERNET_SWITCH_PORT_SCHEMA
     },
     "properties": {
         "name": {
@@ -79,12 +81,9 @@ ETHERNET_SWITCH_CREATE_SCHEMA = {
         },
         "ports_mapping": {
             "type": "array",
-            "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetSwitchPort"}
-                 ]},
-            ]
+            "items": {
+                "$ref": "#/definitions/EthernetSwitchPort"
+            }
         },
     },
     "additionalProperties": False,
@@ -96,35 +95,7 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
     "description": "Ethernet switch instance",
     "type": "object",
     "definitions": {
-        "EthernetSwitchPort": {
-            "description": "Ethernet port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "type": {
-                    "description": "Port type",
-                    "enum": ["access", "dot1q", "qinq"],
-                },
-                "vlan": {"description": "VLAN number",
-                         "type": "integer",
-                         "minimum": 1
-                         },
-                "ethertype": {
-                    "description": "QinQ Ethertype",
-                    "enum": ["", "0x8100", "0x88A8", "0x9100", "0x9200"],
-                },
-            },
-            "required": ["name", "port_number", "type"],
-            "additionalProperties": False
-        },
+        "EthernetSwitchPort": ETHERNET_SWITCH_PORT_SCHEMA
     },
     "properties": {
         "name": {
@@ -148,12 +119,9 @@ ETHERNET_SWITCH_OBJECT_SCHEMA = {
         },
         "ports_mapping": {
             "type": "array",
-            "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetSwitchPort"}
-                 ]},
-            ]
+            "items": {
+                "$ref": "#/definitions/EthernetSwitchPort"
+            }
         },
         "status": {
             "description": "Node status",
