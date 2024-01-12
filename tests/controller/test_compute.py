@@ -213,7 +213,9 @@ async def test_compute_httpQuery_project(compute):
     response = MagicMock()
     with asyncio_patch("aiohttp.ClientSession.request", return_value=response) as mock:
         response.status = 200
-        project = Project(name="Test")
+        with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+            project = Project(name="Test")
+            mock_notification.assert_called()
         await compute.post("/projects", project)
         mock.assert_called_with("POST", "https://example.com:84/v2/compute/projects", data=json.dumps(project.__json__()), headers={'content-type': 'application/json'}, auth=None, chunked=None, timeout=20)
         await compute.close()

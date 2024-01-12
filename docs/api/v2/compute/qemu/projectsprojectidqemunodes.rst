@@ -34,6 +34,7 @@ Input
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice, spice+agent, none</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>cpus</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Number of vCPUs</td>                     </tr>
+    <tr><td>create_config_disk</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Automatically create a config disk on HDD disk interface (secondary slave)</td>                     </tr>
     <tr><td>custom_adapters</td>                    <td> </td>                     <td>array</td>                     <td></td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td> </td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hda_disk_image_md5sum</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>QEMU hda disk image checksum</td>                     </tr>
@@ -63,6 +64,9 @@ Input
     <tr><td>process_priority</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: realtime, very high, high, normal, low, very low, null</td>                     </tr>
     <tr><td>qemu_path</td>                    <td> </td>                     <td>['string', 'null']</td>                     <td>Path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Amount of RAM in MB</td>                     </tr>
+    <tr><td>replicate_network_connection_state</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Replicate the network connection state for links in Qemu</td>                     </tr>
+    <tr><td>tpm</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Enable the Trusted Platform Module (TPM) in Qemu</td>                     </tr>
+    <tr><td>uefi</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Enable the UEFI boot mode in Qemu</td>                     </tr>
     <tr><td>usage</td>                    <td> </td>                     <td>string</td>                     <td>How to use the Qemu VM</td>                     </tr>
     </table>
 
@@ -84,6 +88,7 @@ Output
     <tr><td>console_type</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: telnet, vnc, spice, spice+agent, none</td>                     </tr>
     <tr><td>cpu_throttling</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Percentage of CPU allowed for QEMU</td>                     </tr>
     <tr><td>cpus</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Number of vCPUs</td>                     </tr>
+    <tr><td>create_config_disk</td>                    <td>&#10004;</td>                     <td>['boolean', 'null']</td>                     <td>Automatically create a config disk on HDD disk interface (secondary slave)</td>                     </tr>
     <tr><td>hda_disk_image</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda disk image path</td>                     </tr>
     <tr><td>hda_disk_image_md5sum</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>QEMU hda disk image checksum</td>                     </tr>
     <tr><td>hda_disk_interface</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>QEMU hda interface</td>                     </tr>
@@ -113,8 +118,11 @@ Output
     <tr><td>project_id</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>
     <tr><td>qemu_path</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>Path to QEMU</td>                     </tr>
     <tr><td>ram</td>                    <td>&#10004;</td>                     <td>integer</td>                     <td>Amount of RAM in MB</td>                     </tr>
+    <tr><td>replicate_network_connection_state</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Replicate the network connection state for links in Qemu</td>                     </tr>
     <tr><td>save_vm_state</td>                    <td> </td>                     <td>['boolean', 'null']</td>                     <td>Save VM state support</td>                     </tr>
     <tr><td>status</td>                    <td>&#10004;</td>                     <td>enum</td>                     <td>Possible values: started, stopped, suspended</td>                     </tr>
+    <tr><td>tpm</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Enable the Trusted Platform Module (TPM) in Qemu</td>                     </tr>
+    <tr><td>uefi</td>                    <td>&#10004;</td>                     <td>boolean</td>                     <td>Enable the UEFI boot mode in Qemu</td>                     </tr>
     <tr><td>usage</td>                    <td>&#10004;</td>                     <td>string</td>                     <td>How to use the QEMU VM</td>                     </tr>
     </table>
 

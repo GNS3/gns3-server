@@ -19,7 +19,7 @@ import json
 import uuid
 import pytest
 import aiohttp
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from tests.utils import asyncio_patch
 
 from gns3server.controller.project import Project
@@ -30,35 +30,36 @@ from gns3server.version import __version__
 
 async def test_project_to_topology_empty(tmpdir):
 
-    project = Project(name="Test")
-    topo = project_to_topology(project)
-    assert topo == {
-        "project_id": project.id,
-        "name": "Test",
-        "auto_start": False,
-        "auto_close": True,
-        "auto_open": False,
-        "scene_width": 2000,
-        "scene_height": 1000,
-        "revision": GNS3_FILE_FORMAT_REVISION,
-        "zoom": 100,
-        "show_grid": False,
-        "show_interface_labels": False,
-        "show_layers": False,
-        "snap_to_grid": False,
-        "grid_size": 75,
-        "drawing_grid_size": 25,
-        "topology": {
-            "nodes": [],
-            "links": [],
-            "computes": [],
-            "drawings": []
-        },
-        "type": "topology",
-        "supplier": None,
-        "variables": None,
-        "version": __version__
-    }
+    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        project = Project(name="Test")
+        topo = project_to_topology(project)
+        assert topo == {
+            "project_id": project.id,
+            "name": "Test",
+            "auto_start": False,
+            "auto_close": True,
+            "auto_open": False,
+            "scene_width": 2000,
+            "scene_height": 1000,
+            "revision": GNS3_FILE_FORMAT_REVISION,
+            "zoom": 100,
+            "show_grid": False,
+            "show_interface_labels": False,
+            "show_layers": False,
+            "snap_to_grid": False,
+            "grid_size": 75,
+            "drawing_grid_size": 25,
+            "topology": {
+                "nodes": [],
+                "links": [],
+                "computes": [],
+                "drawings": []
+            },
+            "type": "topology",
+            "supplier": None,
+            "variables": None,
+            "version": __version__
+        }
 
 
 async def test_basic_topology(controller):
