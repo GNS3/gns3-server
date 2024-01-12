@@ -105,7 +105,7 @@ snapshot.restored
 
 A snapshot has been restored
 
-.. literalinclude:: api/notifications/project.snapshot_restored.json
+.. literalinclude:: api/notifications/snapshot.restored.json
 
 log.error
 ---------

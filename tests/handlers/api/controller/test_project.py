@@ -186,7 +186,9 @@ async def test_notification(controller_api, http_client, project, controller):
         assert b'"cpu_usage_percent"' in response.body
         assert b'{"action": "node.created", "event": {"a": "b"}}\n' in response.body
         assert project.status == "opened"
-
+        controller.notification.project_emit("node.updated", {"a": "b"})
+        controller.notification.project_emit("node.deleted", {"a": "b"})
+        controller.notification.project_emit("snapshot.restored", {"a": "b"})
 
 async def test_notification_invalid_id(controller_api):
 

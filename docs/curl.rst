@@ -576,7 +576,7 @@ Read :doc:`project_notifications` for more information.
 
 
 Where to find the endpoints?
-###########################
+############################
 
 A list of all endpoints is available: :doc:`endpoints`
 
