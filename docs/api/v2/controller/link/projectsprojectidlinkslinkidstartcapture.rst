@@ -39,6 +39,7 @@ Output
     <tr><td>capturing</td>                    <td> </td>                     <td>boolean</td>                     <td>Read only property. True if a capture running on the link</td>                     </tr>
     <tr><td>filters</td>                    <td> </td>                     <td>object</td>                     <td>Packet filter. This allow to simulate latency and errors</td>                     </tr>
     <tr><td>link_id</td>                    <td> </td>                     <td>string</td>                     <td>Link UUID</td>                     </tr>
+    <tr><td>link_style</td>                    <td> </td>                     <td>object</td>                     <td>Link line style</td>                     </tr>
     <tr><td>link_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: ethernet, serial</td>                     </tr>
     <tr><td>nodes</td>                    <td> </td>                     <td>array</td>                     <td>List of the VMS</td>                     </tr>
     <tr><td>project_id</td>                    <td> </td>                     <td>string</td>                     <td>Project UUID</td>                     </tr>

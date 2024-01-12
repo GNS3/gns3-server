@@ -56,7 +56,7 @@ Types
 +++++++++
 EthernetSwitchPort
 ^^^^^^^^^^^^^^^^^^^^^^
-Ethernet port
+Ethernet switch port
 
 .. raw:: html
 
