@@ -11,7 +11,7 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Configure interfaces in /opt/bootlocal.sh, BIRD configuration is done in /usr/local/etc/bird",
+    "usage": "\n*** BIRD v1 is end-of-life ***\nPlease use the BIRD2 appliance.\n\nConfigure interfaces in /opt/bootlocal.sh, BIRD configuration is done in /usr/local/etc/bird",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 4,

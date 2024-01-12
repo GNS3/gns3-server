@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "asav9-18-2.qcow2",
+            "version": "9.18.2 CML",
+            "md5sum": "6f10fe106edfad9163625770a47a6b73",
+            "filesize": 340262912,
+            "download_url": "https://learningnetworkstore.cisco.com/cisco-modeling-labs-personal/cisco-modeling-labs-personal/CML-PERSONAL.html"
+        },
+        {
             "filename": "asav9-16-2.qcow2",
             "version": "9.16.2 CML",
             "md5sum": "1f8db97063a7f738fddc81ac880a906c",
@@ -119,6 +126,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.18.2 CML",
+            "images": {
+                "hda_disk_image": "asav9-18-2.qcow2"
+            }
+        },
         {
             "name": "9.16.2 CML",
             "images": {
