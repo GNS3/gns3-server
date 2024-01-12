@@ -23,7 +23,7 @@ Input
 
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
-    <tr><td>application_id</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Application ID for running IOU image</td>                     </tr>
+    <tr><td>application_id</td>                    <td>&#10004;</td>                     <td>['integer', 'null']</td>                     <td>Application ID for running IOU image</td>                     </tr>
     <tr><td>console</td>                    <td> </td>                     <td>['integer', 'null']</td>                     <td>Console TCP port</td>                     </tr>
     <tr><td>console_type</td>                    <td> </td>                     <td>enum</td>                     <td>Possible values: telnet, none</td>                     </tr>
     <tr><td>ethernet_adapters</td>                    <td> </td>                     <td>integer</td>                     <td>How many ethernet adapters are connected to the IOU</td>                     </tr>

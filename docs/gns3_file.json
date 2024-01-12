@@ -103,7 +103,8 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "Variable name"
+                        "description": "Variable name",
+                        "minLength": 1
                     },
                     "value": {
                         "type": "string",
@@ -386,6 +387,27 @@
                             "suspend": {
                                 "type": "boolean",
                                 "description": "Suspend the link"
+                            },
+                            "link_style": {
+                                "type": "object",
+                                "description": "Link line style",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "color": {
+                                            "description": "Link line color",
+                                            "type": "string"
+                                        },
+                                        "width": {
+                                            "description": "Link line width",
+                                            "type": "integer"
+                                        },
+                                        "type": {
+                                            "description": "Link line type",
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
                             },
                             "filters": {
                                 "$schema": "http://json-schema.org/draft-04/schema#",
