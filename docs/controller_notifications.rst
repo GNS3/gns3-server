@@ -50,6 +50,38 @@ A compute has been deleted.
 .. literalinclude:: api/notifications/compute.deleted.json
 
 
+project.created
+---------------
+
+A project has been created.
+
+.. literalinclude:: api/notifications/project.created.json
+
+
+project.updated
+---------------
+
+A project has been updated.
+
+.. literalinclude:: api/notifications/project.updated.json
+
+
+project.closed
+---------------
+
+A project has been closed.
+
+.. literalinclude:: api/notifications/project.closed.json
+
+
+project.deleted
+---------------
+
+A project has been deleted.
+
+.. literalinclude:: api/notifications/project.deleted.json
+
+
 template.created
 -----------------
 

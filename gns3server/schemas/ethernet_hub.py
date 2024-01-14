@@ -17,28 +17,30 @@
 
 import copy
 
+ETHERNET_HUB_PORT_SCHEMA = {
+    "description": "Ethernet port",
+    "properties": {
+        "name": {
+            "description": "Port name",
+            "type": "string",
+            "minLength": 1,
+        },
+        "port_number": {
+            "description": "Port number",
+            "type": "integer",
+            "minimum": 0
+        },
+    },
+    "required": ["name", "port_number"],
+    "additionalProperties": False
+}
+
 ETHERNET_HUB_CREATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "description": "Request validation to create a new Ethernet hub instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
-            "description": "Ethernet port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 0
-                },
-            },
-            "required": ["name", "port_number"],
-            "additionalProperties": False
-        },
+        "EthernetHubPort": ETHERNET_HUB_PORT_SCHEMA
     },
     "properties": {
         "name": {
@@ -57,12 +59,9 @@ ETHERNET_HUB_CREATE_SCHEMA = {
         },
         "ports_mapping": {
             "type": "array",
-            "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetHubPort"}
-                 ]},
-            ]
+            "items": {
+                "$ref": "#/definitions/EthernetHubPort"
+            }
         },
     },
     "additionalProperties": False,
@@ -74,23 +73,7 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
     "description": "Ethernet hub instance",
     "type": "object",
     "definitions": {
-        "EthernetHubPort": {
-            "description": "Ethernet port",
-            "properties": {
-                "name": {
-                    "description": "Port name",
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "port_number": {
-                    "description": "Port number",
-                    "type": "integer",
-                    "minimum": 0
-                },
-            },
-            "required": ["name", "port_number"],
-            "additionalProperties": False
-        },
+        "EthernetHubPort": ETHERNET_HUB_PORT_SCHEMA
     },
     "properties": {
         "name": {
@@ -114,12 +97,9 @@ ETHERNET_HUB_OBJECT_SCHEMA = {
         },
         "ports_mapping": {
             "type": "array",
-            "items": [
-                {"type": "object",
-                 "oneOf": [
-                     {"$ref": "#/definitions/EthernetHubPort"}
-                 ]},
-            ]
+            "items": {
+                "$ref": "#/definitions/EthernetHubPort"
+            }
         },
         "status": {
             "description": "Node status",

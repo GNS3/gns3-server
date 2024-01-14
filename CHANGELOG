@@ -1,5 +1,16 @@
 # Change Log
 
+## 2.2.45 12/01/2024
+
+* Bundle web-ui v2.2.45
+* Fix mouse offset issues with VNC in Qemu. Fixes #2335
+* Add project.created, project.opened and project.deleted controller notification stream. Move project.updated and project.closed from project notification to controller notification stream.
+* Do not stop searching for Qemu binaries if one binary cannot be executed. Ref #2306
+* Fix Ethernet switch and Ethernet hub port validations. Fixes #2334
+* Update CORS policy
+* Add custom executable paths on Windows
+* Upgrade sentry-sdk and aiohttp
+
 ## 2.2.44.1 07/11/2023
 
 * Catch exceptions when computing image checksums. Ref https://github.com/GNS3/gns3-server/issues/2228

@@ -656,6 +656,9 @@ class BaseNode:
         """
 
         path = self._manager.config.get_section_config("Server").get("ubridge_path", "ubridge")
+        if sys.platform.startswith("win") and hasattr(sys, "frozen"):
+            ubridge_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "ubridge"))
+            os.environ["PATH"] = os.pathsep.join(ubridge_dir) + os.pathsep + os.environ.get("PATH", "")
         path = shutil.which(path)
         return path
 

@@ -35,6 +35,8 @@ Input
     <table>
     <tr>                 <th>Name</th>                 <th>Mandatory</th>                 <th>Type</th>                 <th>Description</th>                 </tr>
     <tr><td>auto_close</td>                    <td> </td>                     <td>boolean</td>                     <td>Project auto close</td>                     </tr>
+    <tr><td>auto_open</td>                    <td> </td>                     <td>boolean</td>                     <td>Project open when GNS3 start</td>                     </tr>
+    <tr><td>auto_start</td>                    <td> </td>                     <td>boolean</td>                     <td>Project start when opened</td>                     </tr>
     <tr><td>drawing_grid_size</td>                    <td> </td>                     <td>integer</td>                     <td>Grid size for the drawing area for drawings</td>                     </tr>
     <tr><td>grid_size</td>                    <td> </td>                     <td>integer</td>                     <td>Grid size for the drawing area for nodes</td>                     </tr>
     <tr><td>name</td>                    <td>&#10004;</td>                     <td>['string', 'null']</td>                     <td>Project name</td>                     </tr>

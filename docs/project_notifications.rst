@@ -100,28 +100,12 @@ A drawing has been deleted.
 .. literalinclude:: api/notifications/drawing.deleted.json
 
 
-project.updated
----------------
-
-A project has been updated.
-
-.. literalinclude:: api/notifications/project.updated.json
-
-
-project.closed
----------------
-
-A project has been closed.
-
-.. literalinclude:: api/notifications/project.closed.json
-
-
 snapshot.restored
 --------------------------
 
 A snapshot has been restored
 
-.. literalinclude:: api/notifications/project.snapshot_restored.json
+.. literalinclude:: api/notifications/snapshot.restored.json
 
 log.error
 ---------

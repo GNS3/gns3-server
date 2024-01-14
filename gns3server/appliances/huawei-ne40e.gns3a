@@ -7,16 +7,65 @@
     "vendor_url": "https://www.huawei.com",
     "product_name": "HuaWei NE40E",
     "product_url": "https://e.huawei.com/en/products/enterprise-networking/routers/ne/ne40e",
-    "registry_version": 4,
+    "registry_version": 6,
     "status": "experimental",
     "availability": "service-contract",
     "maintainer": "none",
     "maintainer_email": "",
-    "first_port_name": "eth0",
     "port_name_format": "Ethernet1/0/{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 12,
+        "custom_adapters": [
+                {
+                    "adapter_number": 0,
+                    "port_name": "Gi0/0/0"
+                },
+                {
+                    "adapter_number": 1,
+                    "port_name": "Mgmt0/0"
+                },
+                {
+                    "adapter_number": 2,
+                    "port_name": "Ethernet1/0/0"
+                },
+                {
+                    "adapter_number": 3,
+                    "port_name": "Ethernet1/0/1"
+                },
+                {
+                    "adapter_number": 4,
+                    "port_name": "Ethernet1/0/2"
+                },
+                {
+                    "adapter_number": 5,
+                    "port_name": "Ethernet1/0/3"
+                },
+                {
+                    "adapter_number": 6,
+                    "port_name": "Ethernet1/0/4"
+                },
+                {
+                    "adapter_number": 7,
+                    "port_name": "Ethernet1/0/5"
+                },
+                {
+                    "adapter_number": 8,
+                    "port_name": "Ethernet1/0/6"
+                },
+                {
+                    "adapter_number": 9,
+                    "port_name": "Ethernet1/0/7"
+                },
+                {
+                    "adapter_number": 10,
+                    "port_name": "Ethernet1/0/8"
+                },
+                {
+                    "adapter_number": 11,
+                    "port_name": "Ethernet1/0/9"
+                }
+        ],
         "ram": 2048,
         "cpus": 2,
         "hda_disk_interface": "ide",

@@ -11,26 +11,36 @@
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "Make sure the Boot priority of the configuration template is HDD or CD.\n\nAbort the BCM process and format the flash after first boot by entering these commands:\nen\nformat flash:\n\nSometimes the flash device is not available after boot.",
+    "usage": "Make sure the Boot priority of the configuration template is HDD or CD.\n\nFor FTOS 9.8, switch to vnc console, start the device, abort the BMP process and format the flash after first boot by entering these commands:\nen\nformat flash:\n\nSometimes the flash device is not available after boot.",
     "first_port_name": "Management0/0",
     "port_name_format": "fortyGigE0/{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 6,
-        "ram": 512,
+        "ram": 1024,
         "hda_disk_interface": "ide",
         "arch": "i386",
-        "console_type": "vnc",
+        "console_type": "telnet",
         "boot_priority": "cd",
         "kvm": "require"
     },
     "images": [
         {
+            "filename": "FTOS-SI-9.13.0.0.iso",
+            "version": "9.13.0",
+            "md5sum": "8418049e451c76e7b85e36eca0a0a730",
+            "filesize": 131278848,
+            "download_url": "https://www.dell.com/support/kbdoc/en-us/000184062/ftos-for-s-series-os-emulator-current-release-evaluation-version",
+            "direct_download_url": "https://downloads.dell.com/translatedpdf/force10/os9/FTOS-SI-9.13.0.0.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "FTOS-SI-9.8.0.0.iso",
             "version": "9.8.0",
             "md5sum": "b9b50eda0a73407dc381792ff7975e24",
             "filesize": 108115968,
-            "download_url": "https://www.force10networks.com/CSPortal20/Software/SSeriesDownloads.aspx",
+            "download_url": "https://www.dell.com/support/kbdoc/en-us/000184062/ftos-for-s-series-os-emulator-current-release-evaluation-version",
+            "direct_download_url": "https://downloads.dell.com/translatedpdf/force10/os9/FTOS-SI-9.8.0.0.zip",
             "compression": "zip"
         },
         {
@@ -43,6 +53,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.13.0",
+            "images": {
+                "hda_disk_image": "empty30G.qcow2",
+                "cdrom_image": "FTOS-SI-9.13.0.0.iso"
+            }
+        },
         {
             "name": "9.8.0",
             "images": {
