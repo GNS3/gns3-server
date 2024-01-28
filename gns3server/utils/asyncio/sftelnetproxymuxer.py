@@ -194,9 +194,27 @@ class SFTelnetProxyMuxer:
             await self.server.wait_closed()
 
     async def shutdown(self):
-        # [shutdown method implementation remains the same]
+        if self.remote_writer:
+            try:
+                log.debug(f"Shuting down tcp session to {self.remote_server}")
+                self.remote_writer.close()
+                await self.server.wait_closed()
+            except Exception as e:
+                log.debug(f"Failed to shutdown {self.remote_server}: {e}")
+                pass
+                
+        for client in self.clients:
+            try:
+                try: 
+                    client_info = client.get_extra_info('peername')
+                except:
+                    client_info = "Unknown"
+                log.debug("Shuting down tcp session to {client_info}")
+                client.close()
+                await.client.wait_closed()
+            except Exception as e:
+                
         log.debug("Debug message")
-        pass
 
 if __name__ == "__main__":
 
