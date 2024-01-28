@@ -34,11 +34,11 @@ class SFTelnetProxyMuxer:
         self.NOP = b"\xf1"
         # Telnet Are You There
         self.AYT = b"\xf6"
-        log.debug("SFTelnetProxyMuxer init complete")
         if not remote_port:
             raise ValueError("remote_port is a required value")
         if not listen_port:
             raise ValueError("listen_port is a required value")
+        log.debug("SFTelnetProxyMuxer init complete")
 
 
     async def handle_client(self, reader, writer):
