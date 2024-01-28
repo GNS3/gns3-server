@@ -31,7 +31,8 @@ from aiohttp.web import WebSocketResponse
 from gns3server.utils.interfaces import interfaces
 from ..compute.port_manager import PortManager
 from ..utils.asyncio import wait_run_in_executor, locking
-from ..utils.asyncio.telnet_server import AsyncioTelnetServer
+#from ..utils.asyncio.telnet_server import AsyncioTelnet
+from ..utils.asyncio.sftelnetproxymuxer import SFTelnetProxyMuxer
 from ..ubridge.hypervisor import Hypervisor
 from ..ubridge.ubridge_error import UbridgeError
 from .nios.nio_udp import NIOUDP
@@ -375,6 +376,7 @@ class BaseNode:
         if not self._wrap_console or self._console_type != "telnet":
             return
         remaining_trial = 60
+        log.info(f"Internal_console_port: {self._internal_console_port}")
         while True:
             try:
                 (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
@@ -387,6 +389,7 @@ class BaseNode:
                     raise e
             await asyncio.sleep(0.1)
             remaining_trial -= 1
+        ## no longer needed. SFTelnetProxyMuxer handles client handshake
         await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
         server = AsyncioTelnetServer(
             reader=self._wrap_console_reader,
@@ -395,6 +398,8 @@ class BaseNode:
             echo=True
         )
         # warning: this will raise OSError exception if there is a problem...
+        log.info(f"self._manager.port_manager.console_host: {self._manager.port_manager.console_host}")
+        log.info(f"self.console {self.console}")
         self._wrapper_telnet_server = await asyncio.start_server(
             server.run,
             self._manager.port_manager.console_host,
