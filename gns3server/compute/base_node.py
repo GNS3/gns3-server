@@ -399,7 +399,7 @@ class BaseNode:
         #    echo=True
         #)
         server = SFTelnetProxyMuxer(binary=True, echo=True, remote_port=self._internal_console_port,  listen_port=self.console)
-        await server.start_proxy()
+        self._wrapper_telnet_server = await server.start_proxy()
         # warning: this will raise OSError exception if there is a problem...
         #log.info(f"self._manager.port_manager.console_host: {self._manager.port_manager.console_host}")
         #log.info(f"self.console {self.console}")
@@ -417,16 +417,18 @@ class BaseNode:
         Stops the telnet proxy.
         """
 
-        if self._wrapper_telnet_server:
-            self._wrap_console_writer.close()
-            if sys.version_info >= (3, 7, 0):
-                try:
-                    await self._wrap_console_writer.wait_closed()
-                except ConnectionResetError:
-                    pass
-            self._wrapper_telnet_server.close()
-            await self._wrapper_telnet_server.wait_closed()
-            self._wrapper_telnet_server = None
+        #if self._wrapper_telnet_server:
+        #    self._wrap_console_writer.close()
+        #    if sys.version_info >= (3, 7, 0):
+        #        try:
+        #            await self._wrap_console_writer.wait_closed()
+        #        except ConnectionResetError:
+        #            pass
+        #    self._wrapper_telnet_server.close()
+        #    await self._wrapper_telnet_server.wait_closed()
+        #    self._wrapper_telnet_server = None
+        self._wrapper_telnet_server.shutdown()
+        self._wrapper_telnet_server = None
 
     async def reset_wrap_console(self):
         """
