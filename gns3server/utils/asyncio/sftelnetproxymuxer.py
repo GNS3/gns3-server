@@ -53,7 +53,7 @@ class SFTelnetProxyMuxer:
             await asyncio.sleep(1)
             while True:
                 try:
-                    # Set a timeout for the read operation, without should the socket closes after timeout.
+                    # Set a timeout for the read operation, without should() the socket closes after timeout.
                     data = await asyncio.shield(asyncio.wait_for(reader.read((4*1024*1024)), timeout=2.0))
                     if not data:
                         log.debug(f"No data. Not sure if this is possible.")
