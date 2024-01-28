@@ -163,19 +163,38 @@ class Welcome_dialog:
 
     def update(self, force=False):
         if not force:
-            if self.display.yesno("PLEASE SNAPSHOT THE VM BEFORE RUNNING THE UPGRADE IN CASE OF FAILURE. The server will reboot at the end of the upgrade process. Continue?") != self.display.OK:
+            if self.display.yesno("It is recommended to ensure all Nodes are shutdown before upgrading. Continue?") != self.display.OK:
                 return
-        release = self.get_release()
-        if release == "2.2":
-            if self.display.yesno("It is recommended to run GNS3 version 2.2 with lastest GNS3 VM based on Ubuntu 18.04 LTS, please download this VM from our website or continue at your own risk!") != self.display.OK:
+        code, option = self.display.menu("Select an option",
+                            choices=[("Upgrade GNS3", "Upgrades only the GNS3 pakage and dependences."),
+                                    ("Upgrade All", "Upgrades all avaiable packages"),
+                                    ("Dist Upgrade", "Upgrades all avaiable packages and the Linux Kernel. Requires a reboot.")])
+        if code == Dialog.OK:
+            if option == "Upgrade GNS3":
+                ret = os.system(
+                    "sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A2E3EF7B \
+                    && sudo apt-get update \
+                    && sudo apt-get install -y --only-upgrade gns3-server"
+                )
+            elif option == "Upgrade All":
+                ret = os.system(
+                    'sudo apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com \
+                    && sudo apt-get update \
+                    && sudo apt-get upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
+                )
+            elif option == "Dist Upgrade":
+                ret = os.system(
+                    'sudo apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com \
+                    && sudo apt-get update \
+                    && sudo apt-get dist-upgrade --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
+                )
+            if ret != 0:
+                print("ERROR DURING UPGRADE PROCESS PLEASE TAKE A SCREENSHOT IF YOU NEED SUPPORT")
+                time.sleep(15)
                 return
-        if release.endswith("dev"):
-            ret = os.system("curl -Lk https://raw.githubusercontent.com/GNS3/gns3-vm/unstable/scripts/update_{}.sh > /tmp/update.sh && bash -x /tmp/update.sh".format(release))
-        else:
-            ret = os.system("curl -Lk https://raw.githubusercontent.com/GNS3/gns3-vm/master/scripts/update_{}.sh > /tmp/update.sh && bash -x /tmp/update.sh".format(release))
-        if ret != 0:
-            print("ERROR DURING UPGRADE PROCESS PLEASE TAKE A SCREENSHOT IF YOU NEED SUPPORT")
-            time.sleep(15)
+            if option == "Dist Upgrade":
+                if self.display.yesno("Reboot now?") == self.display.OK:
+                    os.system("sudo reboot now")
 
 
     def migrate(self):
@@ -438,7 +457,8 @@ Images and projects are located in /opt/gns3
                 self.display.clear()
                 if code == Dialog.OK:
                     if tag == "Shell":
-                        os.execvp("bash", ['/bin/bash'])
+                        print("Type: 'welcome.py' to get back to the dialog menu.")
+                        sys.exit(0)
                     elif tag == "Version":
                         self.mode()
                     elif tag == "Restore":

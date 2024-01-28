@@ -24,12 +24,12 @@
     },
     "images": [
         {
-            "filename": "debian-12.2.qcow2",
-            "version": "12.2",
-            "md5sum": "adf7716ec4a4e4e9e5ccfc7a1d7bd103",
-            "filesize": 286654464,
+            "filename": "debian-12.4.qcow2",
+            "version": "12.4",
+            "md5sum": "adcf7fdc25e10b3d2d9e2ef91168bffd",
+            "filesize": 286179840,
             "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
-            "direct_download_url": "https://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/debian-12.2.qcow2"
+            "direct_download_url": "https://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/debian-12.4.qcow2"
         },
         {
             "filename": "debian-11.8.qcow2",
@@ -42,9 +42,9 @@
     ],
     "versions": [
         {
-            "name": "12.2",
+            "name": "12.4",
             "images": {
-                "hda_disk_image": "debian-12.2.qcow2"
+                "hda_disk_image": "debian-12.4.qcow2"
             }
         },
         {

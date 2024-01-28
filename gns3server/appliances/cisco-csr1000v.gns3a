@@ -25,6 +25,13 @@
     },
     "images": [
         {
+            "filename": "csr1000v-universalk9.17.03.06-serial.qcow2",
+            "version": "17.03.06",
+            "md5sum": "086ab9bef6e66de847af0da3910c60e8",
+            "filesize": 1422000128,
+            "download_url": "https://software.cisco.com/download/home/284364978/type/282046477/release/Gibraltar-16.12.3"
+        },
+        {
             "filename": "csr1000v-universalk9.16.12.03-serial.qcow2",
             "version": "16.12.3",
             "md5sum": "1fc380569ad3cc145fb9cbc993b2eb32",
@@ -159,6 +166,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.03.06",
+            "images": {
+                "hda_disk_image": "csr1000v-universalk9.17.03.06-serial.qcow2"
+            }
+        },
         {
             "name": "16.12.3",
             "images": {

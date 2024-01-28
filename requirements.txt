@@ -6,9 +6,9 @@ aiohttp==3.9.1
 async-timeout==4.0.3
 aiofiles==23.2.1
 Jinja2>=3.1.2,<3.2
-sentry-sdk==1.37.1,<1.38
-psutil==5.9.6
-distro>=1.8.0
+sentry-sdk==1.39.2,<1.40
+psutil==5.9.8
+distro>=1.9.0
 py-cpuinfo==9.0.0
 sqlalchemy==2.0.23
 aiosqlite==0.19.0

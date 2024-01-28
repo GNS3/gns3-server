@@ -149,13 +149,20 @@ class Qemu(BaseManager):
                             for arch in archs:
                                 if f.endswith(arch) or f.endswith(f"{arch}.exe") or f.endswith(f"{arch}w.exe"):
                                     qemu_path = os.path.join(path, f)
-                                    version = await Qemu.get_qemu_version(qemu_path)
+                                    try:
+                                        version = await Qemu.get_qemu_version(qemu_path)
+                                    except QemuError as e:
+                                        log.warning(str(e))
+                                        continue
                                     qemus.append({"path": qemu_path, "version": version})
                         else:
                             qemu_path = os.path.join(path, f)
-                            version = await Qemu.get_qemu_version(qemu_path)
+                            try:
+                                version = await Qemu.get_qemu_version(qemu_path)
+                            except QemuError as e:
+                                log.warning(str(e))
+                                continue
                             qemus.append({"path": qemu_path, "version": version})
-
             except OSError:
                 continue
 

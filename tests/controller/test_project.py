@@ -47,16 +47,20 @@ async def node(controller, project):
 @pytest.mark.asyncio
 async def test_affect_uuid():
 
-    p = Project(name="Test")
-    assert len(p.id) == 36
-    p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test 2")
-    assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
+    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        p = Project(name="Test")
+        mock_notification.assert_called()
+        assert len(p.id) == 36
+        p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test 2")
+        assert p.id == '00010203-0405-0607-0809-0a0b0c0d0e0f'
 
 
 @pytest.mark.asyncio
 async def test_json():
 
-    p = Project(name="Test")
+    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        p = Project(name="Test")
+        mock_notification.assert_called()
 
     assert p.asdict() == {
         "name": "Test",
@@ -85,11 +89,11 @@ async def test_json():
 async def test_update(controller):
 
     project = Project(controller=controller, name="Hello")
-    project.emit_notification = MagicMock()
+    project.emit_controller_notification = MagicMock()
     assert project.name == "Hello"
     await project.update(name="World")
     assert project.name == "World"
-    project.emit_notification.assert_any_call("project.updated", project.asdict())
+    project.emit_controller_notification.assert_any_call("project.updated", project.asdict())
 
 
 @pytest.mark.asyncio
@@ -110,7 +114,9 @@ async def test_path(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        p = Project(project_id=str(uuid4()), name="Test")
+        with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+            p = Project(project_id=str(uuid4()), name="Test")
+            mock_notification.assert_called()
         assert p.path == os.path.join(directory, p.id)
         assert os.path.exists(os.path.join(directory, p.id))
 
@@ -129,25 +135,29 @@ def test_path_exist(tmpdir):
 @pytest.mark.asyncio
 async def test_init_path(projects_dir):
 
-    project_id = str(uuid4())
-    p = Project(project_id=project_id, name="Test")
-    assert p.path == os.path.join(projects_dir, project_id)
+    with patch('gns3server.controller.project.Project.emit_controller_notification') as mock_notification:
+        project_id = str(uuid4())
+        p = Project(project_id=project_id, name="Test")
+        mock_notification.assert_called()
+        assert p.path == os.path.join(projects_dir, project_id)
 
 
 @pytest.mark.asyncio
 async def test_changing_path_with_quote_not_allowed(projects_dir):
 
     with pytest.raises(ControllerForbiddenError):
-        p = Project(project_id=str(uuid4()), name="Test")
-        p.path = os.path.join(projects_dir, "project\"53")
+        with patch('gns3server.controller.project.Project.emit_controller_notification'):
+            p = Project(project_id=str(uuid4()), name="Test")
+            p.path = os.path.join(projects_dir, "project\"53")
 
 
 @pytest.mark.asyncio
 async def test_captures_directory(tmpdir):
 
-    p = Project(name="Test")
-    assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
-    assert os.path.exists(p.captures_directory)
+    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        p = Project(name="Test")
+        assert p.captures_directory == str(p.path + os.path.sep + "project-files" + os.path.sep + "captures")
+        assert os.path.exists(p.captures_directory)
 
 
 @pytest.mark.asyncio
@@ -682,38 +692,41 @@ async def test_dump(projects_dir):
 
     directory = projects_dir
     with patch("gns3server.utils.path.get_default_project_directory", return_value=directory):
-        p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test")
-        p.dump()
-        with open(os.path.join(directory, p.id, "Test.gns3")) as f:
-            content = f.read()
-            assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content
+        with patch('gns3server.controller.project.Project.emit_controller_notification'):
+            p = Project(project_id='00010203-0405-0607-0809-0a0b0c0d0e0f', name="Test")
+            p.dump()
+            with open(os.path.join(directory, p.id, "Test.gns3")) as f:
+                content = f.read()
+                assert "00010203-0405-0607-0809-0a0b0c0d0e0f" in content
 
 
 @pytest.mark.asyncio
 async def test_open_close(controller):
 
-    project = Project(controller=controller, name="Test")
-    assert project.status == "opened"
-    await project.close()
-    project.start_all = AsyncioMagicMock()
-    await project.open()
-    assert not project.start_all.called
-    assert project.status == "opened"
-    project.emit_notification = MagicMock()
-    await project.close()
-    assert project.status == "closed"
-    project.emit_notification.assert_any_call("project.closed", project.asdict())
+    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        project = Project(controller=controller, name="Test")
+        assert project.status == "opened"
+        await project.close()
+        project.start_all = AsyncioMagicMock()
+        await project.open()
+        assert not project.start_all.called
+        assert project.status == "opened"
+        project.emit_controller_notification = MagicMock()
+        await project.close()
+        assert project.status == "closed"
+        project.emit_controller_notification.assert_any_call("project.closed", project.asdict())
 
 
 @pytest.mark.asyncio
 async def test_open_auto_start(controller):
 
-    project = Project(controller=controller, name="Test", auto_start=True)
-    assert project.status == "opened"
-    await project.close()
-    project.start_all = AsyncioMagicMock()
-    await project.open()
-    assert project.start_all.called
+    with patch('gns3server.controller.project.Project.emit_controller_notification'):
+        project = Project(controller=controller, name="Test", auto_start=True)
+        assert project.status == "opened"
+        await project.close()
+        project.start_all = AsyncioMagicMock()
+        await project.open()
+        assert project.start_all.called
 
 
 def test_is_running(project, node):

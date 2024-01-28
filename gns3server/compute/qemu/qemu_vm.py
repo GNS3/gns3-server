@@ -2640,6 +2640,9 @@ class QemuVM(BaseNode):
                 command.extend(shlex.split(additional_options))
             except ValueError as e:
                 raise QemuError(f"Invalid additional options: {additional_options} error {e}")
+        # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
+        if self._console_type == "vnc":
+            command.extend(['-machine', 'usb=on', '-device', 'usb-tablet'])
         return command
 
     def asdict(self):

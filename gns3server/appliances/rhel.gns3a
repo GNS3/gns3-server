@@ -11,9 +11,9 @@
     "registry_version": 4,
     "status": "stable",
     "availability": "service-contract",
-    "maintainer": "Neyder Achahuanco",
-    "maintainer_email": "neyder@neyder.net",
-    "usage": "You should download Red Hat Enterprise Linux KVM Guest Image from https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.2/x86_64/product-software attach/customize cloud-init.iso and start.\nusername: cloud-user\npassword: redhat",
+    "maintainer": "Da-Geek",
+    "maintainer_email": "dageek@dageeks-geeks.gg",
+    "usage": "You should download Red Hat Enterprise Linux KVM Guest Image from https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.3/x86_64/product-software attach/customize rhel-cloud-init.iso and start.\nusername: cloud-user\npassword: redhat",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 1,
@@ -26,6 +26,13 @@
         "options": "-cpu host -nographic"
     },
     "images": [
+        {
+            "filename": "rhel-9.3-x86_64-kvm.qcow2",
+            "version": "9.3",
+            "md5sum": "409d8d15f5177db2617b0e3e02139b5c",
+            "filesize": 858193920,
+            "download_url": "https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.3/x86_64/product-software"
+        },
         {
             "filename": "rhel-9.2-x86_64-kvm.qcow2",
             "version": "9.2",
@@ -112,6 +119,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "9.3",
+            "images": {
+                "hda_disk_image": "rhel-9.3-x86_64-kvm.qcow2",
+                "cdrom_image": "rhel-cloud-init.iso"
+            }
+        },
         {
             "name": "9.2",
             "images": {
