@@ -1,7 +1,6 @@
 import socket
 import asyncio
 import telnetlib3
-import pdb
 import logging
 log = logging.getLogger(__name__)
 
@@ -13,11 +12,12 @@ log = logging.getLogger(__name__)
 #)
 
 class SFTelnetProxyMuxer:
-    def __init__(self, remote_ip=None, remote_port=None, listen_ip=None, listen_port=None, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None):
+    def __init__(self, remote_ip=None, remote_port=None, listen_ip=None, listen_port=None, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None, heartbeattimer=None):
         if remote_ip == None:
             remote_ip = '127.0.0.1'
         self.remote_ip = remote_ip
         self.remote_port = remote_port
+        # make the remote_info look like the same format as client_info later from sock('peername')
         self.remote_info = f"('{self.remote_ip}', {self.remote_port})"
         if listen_ip == None:
             listen_ip = '0.0.0.0'
@@ -38,8 +38,11 @@ class SFTelnetProxyMuxer:
             raise ValueError("remote_port is a required value")
         if not listen_port:
             raise ValueError("listen_port is a required value")
-        log.debug("SFTelnetProxyMuxer init complete")
-
+        # how often do we check the remote telnet server is up and each telnet client connected to gns3 is up.
+        self.heartbeattimer = heartbeattimer
+        if not heartbeattimer:
+            self.heartbeattimer = 30
+        self.isshutdown = False
 
     async def handle_client(self, reader, writer):
         client_info = writer.get_extra_info('peername')
@@ -51,10 +54,10 @@ class SFTelnetProxyMuxer:
 
         try:
             await asyncio.sleep(1)
-            while True:
+            while True and not self.isshutdown:
                 try:
                     # Set a timeout for the read operation, without should() the socket closes after timeout.
-                    data = await asyncio.shield(asyncio.wait_for(reader.read((4*1024*1024)), timeout=2.0))
+                    data = await asyncio.shield(asyncio.wait_for(reader.read((4*1024*1024)), timeout=self.heartbeattimer))
                     if not data:
                         log.debug(f"No data. Not sure if this is possible.")
                         break
@@ -75,7 +78,6 @@ class SFTelnetProxyMuxer:
                     log.warning(f"No data read from {client_info}, send heartbeat to test client socket.")
                     try:
                         log.warning(f"Heatbeat: Are you there {client_info}?")
-                        #pdb.set_trace()
                         writer.send_iac(self.IAC + self.NOP)
                         await writer.drain()
                         continue
@@ -126,7 +128,7 @@ class SFTelnetProxyMuxer:
 
     async def handle_remote_server(self):
         log.debug("Start handler for remote server")
-        while True:
+        while True and not self.isshutdown:
             await asyncio.sleep(1)
             try:
                 self.remote_reader, self.remote_writer = await telnetlib3.open_connection(
@@ -134,11 +136,11 @@ class SFTelnetProxyMuxer:
                 )
                 sock = self.remote_writer.get_extra_info('socket') 
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                while True:
+                while True and not self.isshutdown:
                     
                     try:
                         #data = await self.remote_reader.read((4*1024*1024))
-                        data = await asyncio.shield(asyncio.wait_for(self.remote_reader.read((4*1024*1024)), timeout=2.0))
+                        data = await asyncio.shield(asyncio.wait_for(self.remote_reader.read((4*1024*1024)), timeout=self.heartbeattimer))
                         if self.remote_reader.at_eof():
                             log.info(f"Remote server {self.remote_info} closed tcp session with eof.")
                             break
@@ -189,20 +191,23 @@ class SFTelnetProxyMuxer:
             host=self.listen_ip, port=self.listen_port,
             shell=self.handle_client
         )
-        async with self.server:
-            log.debug("Startup of telnet proxy complete.")
-            await self.server.wait_closed()
+        #async with self.server:
+        #    log.debug("Startup of telnet proxy complete.")
+        #    await self.server.wait_closed()
+        return self
 
     async def shutdown(self):
-        if self.remote_writer:
+        log.debug(f"Set shutdown")
+        self.isshutdown = True
+
+        if self.server:
             try:
-                log.debug(f"Shuting down tcp session to {self.remote_server}")
-                self.remote_writer.close()
+                log.debug(f"Shuting down tcp listen port {self.remote_port}")
+                self.server.close()
                 await self.server.wait_closed()
             except Exception as e:
-                log.debug(f"Failed to shutdown {self.remote_server}: {e}")
-                pass
-                
+                log.debug(f"Failed to shutdown listen port: {self.remote_port}  {e}")
+
         for client in self.clients:
             try:
                 try: 
@@ -214,8 +219,14 @@ class SFTelnetProxyMuxer:
                 await client.wait_closed()
             except Exception as e:
                 log.debug(f"Closing client connect {client_info} failed {e}")
-                
-        log.debug("Debug message")
+
+        if self.remote_writer:
+            try:
+                self.remote_writer.close()
+                #await self.remote_writer.wait_closed()
+            except Exception as e:
+                log.debug(f"Failed to shutdown listen port: {self.remote_info}  {e}")
+        log.debug("No remaining work to do for shutdown.")
 
 if __name__ == "__main__":
 

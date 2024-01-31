@@ -375,60 +375,17 @@ class BaseNode:
 
         if not self._wrap_console or self._console_type != "telnet":
             return
-        #remaining_trial = 60
-        #log.info(f"Internal_console_port: {self._internal_console_port}")
-        # self._internal_console_port == qemu listner port for example
-        #while True:
-        #    try:
-        #        (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
-        #            host="127.0.0.1",
-        #            port=self._internal_console_port
-        #        )
-        #        break
-        #    except (OSError, ConnectionRefusedError) as e:
-        #        if remaining_trial <= 0:
-        #            raise e
-        #    await asyncio.sleep(0.1)
-        #    remaining_trial -= 1
-        ## no longer needed. SFTelnetProxyMuxer handles client handshake
-        #await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
-        #server = AsyncioTelnetServer(
-        #    reader=self._wrap_console_reader,
-        #    writer=self._wrap_console_writer,
-        #    binary=True,
-        #    echo=True
         #)
         server = SFTelnetProxyMuxer(binary=True, echo=True, remote_port=self._internal_console_port,  listen_port=self.console)
         self._wrapper_telnet_server = await server.start_proxy()
-        # warning: this will raise OSError exception if there is a problem...
-        #log.info(f"self._manager.port_manager.console_host: {self._manager.port_manager.console_host}")
-        #log.info(f"self.console {self.console}")
-        # self._manager.port_manager.console_host == bind ip
-        # self.console == bind port
-        #self._wrapper_telnet_server = await asyncio.start_server(
-        #    server.run,
-        #    self._manager.port_manager.console_host,
-        #    self.console
-        #)
-        
 
     async def stop_wrap_console(self):
         """
         Stops the telnet proxy.
         """
 
-        #if self._wrapper_telnet_server:
-        #    self._wrap_console_writer.close()
-        #    if sys.version_info >= (3, 7, 0):
-        #        try:
-        #            await self._wrap_console_writer.wait_closed()
-        #        except ConnectionResetError:
-        #            pass
-        #    self._wrapper_telnet_server.close()
-        #    await self._wrapper_telnet_server.wait_closed()
-        #    self._wrapper_telnet_server = None
-        self._wrapper_telnet_server.shutdown()
-        self._wrapper_telnet_server = None
+        await self._wrapper_telnet_server.shutdown()
+        #self._wrapper_telnet_server = None
 
     async def reset_wrap_console(self):
         """
