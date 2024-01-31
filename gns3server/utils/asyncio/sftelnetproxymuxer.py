@@ -199,7 +199,6 @@ class SFTelnetProxyMuxer:
     async def shutdown(self):
         log.debug(f"Set shutdown")
         self.isshutdown = True
-
         if self.server:
             try:
                 log.debug(f"Shuting down tcp listen port {self.remote_port}")
@@ -207,7 +206,7 @@ class SFTelnetProxyMuxer:
                 await self.server.wait_closed()
             except Exception as e:
                 log.debug(f"Failed to shutdown listen port: {self.remote_port}  {e}")
-
+                
         for client in self.clients:
             try:
                 try: 
@@ -219,13 +218,13 @@ class SFTelnetProxyMuxer:
                 await client.wait_closed()
             except Exception as e:
                 log.debug(f"Closing client connect {client_info} failed {e}")
-
         if self.remote_writer:
             try:
                 self.remote_writer.close()
                 #await self.remote_writer.wait_closed()
             except Exception as e:
                 log.debug(f"Failed to shutdown listen port: {self.remote_info}  {e}")
+
         log.debug("No remaining work to do for shutdown.")
 
 if __name__ == "__main__":

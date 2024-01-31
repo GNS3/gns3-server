@@ -384,8 +384,9 @@ class BaseNode:
         Stops the telnet proxy.
         """
 
-        await self._wrapper_telnet_server.shutdown()
-        #self._wrapper_telnet_server = None
+        if self._wrapper_telnet_server:
+            await self._wrapper_telnet_server.shutdown()
+            #self._wrapper_telnet_server = None
 
     async def reset_wrap_console(self):
         """
