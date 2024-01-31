@@ -211,7 +211,7 @@ class SFTelnetProxyMuxer:
                     client_info = "Unknown"
                 log.debug("Shuting down tcp session to {client_info}")
                 client.close()
-                await.client.wait_closed()
+                await client.wait_closed()
             except Exception as e:
                 
         log.debug("Debug message")
