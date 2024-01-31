@@ -62,7 +62,6 @@ READ_SIZE = 1024
 class TelnetConnection(object):
     """Default implementation of telnet connection which may but may not be used."""
     def __init__(self, reader, writer, window_size_changed_callback=None):
-        log.debug(f"Start TelnetConnection init")
         self.is_closing = False
         self._reader = reader
         self._writer = writer
@@ -70,7 +69,6 @@ class TelnetConnection(object):
 
     @property
     def reader(self):
-        log.debug(f"Start TelnetConnection reader")
         return self._reader
 
     @property
@@ -79,18 +77,15 @@ class TelnetConnection(object):
 
     async def connected(self):
         """Method called when client is connected"""
-        log.debug(f"Start TelnetConnection connected")
         pass
 
     async def disconnected(self):
         """Method called when client is disconnecting"""
-        log.debug(f"Start TelnetConnection disconnected")
         pass
 
     async def window_size_changed(self, columns, rows):
         """Method called when window size changed, only can occur when
          `naws` flag is enable in server configuration."""
-        log.debug(f"Start TelnetConnection window_size_changed")
 
         if self._window_size_changed_callback:
             await self._window_size_changed_callback(columns, rows)
@@ -100,14 +95,12 @@ class TelnetConnection(object):
         Handles incoming data
         :return:
         """
-        log.debug(f"Start TelnetConnection feed")
 
     def send(self, data):
         """
         Sending data back to client
         :return:
         """
-        log.debug(f"Start TelnetConnection send")
         data = data.decode().replace("\n", "\r\n")
         self.writer.write(data.encode())
 
@@ -116,7 +109,6 @@ class TelnetConnection(object):
         Closes current connection
         :return:
         """
-        log.debug(f"Start TelnetConnection close")
         self.is_closing = True
 
 
@@ -124,7 +116,6 @@ class AsyncioTelnetServer:
     MAX_NEGOTIATION_READ = 10
 
     def __init__(self, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None):
-        log.debug(f"Start AsyncioTelnetServer init")
         """
         Initializes telnet server
         :param naws when True make a window size negotiation
@@ -149,7 +140,6 @@ class AsyncioTelnetServer:
         self._naws = naws
 
         def default_connection_factory(reader, writer, window_size_changed_callback):
-            log.debug(f"Start connection factory")
             return TelnetConnection(reader, writer, window_size_changed_callback)
 
         if connection_factory is None:
@@ -159,7 +149,6 @@ class AsyncioTelnetServer:
 
     @staticmethod
     async def write_client_intro(writer, echo=False):
-        log.debug(f"Start async write_clien_intro")
         # Send initial telnet session opening
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
@@ -170,7 +159,6 @@ class AsyncioTelnetServer:
         await writer.drain()
 
     async def _write_intro(self, writer, binary=False, echo=False, naws=False):
-        log.debug(f"Start async _write_intro")
         # Send initial telnet session opening
         if echo:
             writer.write(bytes([IAC, WILL, ECHO]))
@@ -199,10 +187,14 @@ class AsyncioTelnetServer:
 
     async def run(self, network_reader, network_writer):
 
-        log.debug(f"Start async run")
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        # 60 sec keep alives, close tcp session after 4 missed
+        # Will keep a firewall from aging out telnet console.
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
         #log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients
@@ -214,12 +206,9 @@ class AsyncioTelnetServer:
             await connection.connected()
             await self._process(network_reader, network_writer, connection)
         except ConnectionError:
-            log.info("Async ConnectionError")
             async with self._lock:
                 network_writer.close()
                 # await network_writer.wait_closed()  # this doesn't work in Python 3.6
-                log.debug(f"self._reader_process == network_reader")
-                log.debug(f"{self._reader_process} == {network_reader}")
                 if self._reader_process == network_reader:
                     self._reader_process = None
                     # Cancel current read from this reader
@@ -230,7 +219,6 @@ class AsyncioTelnetServer:
             del self._connections[network_writer]
 
     async def close(self):
-        log.debug(f"Start async close")
         for writer, connection in self._connections.items():
             try:
                 writer.write_eof()
@@ -241,40 +229,29 @@ class AsyncioTelnetServer:
                 continue
 
     async def client_connected_hook(self):
-        log.debug(f"Start async client_connected_hook")
         pass
 
     async def _get_reader(self, network_reader):
         """
         Get a reader or None if another reader is already reading.
         """
-        log.debug(f"Start async _get_reader")
         async with self._lock:
             if self._reader_process is None:
                 self._reader_process = network_reader
             if self._reader:
-                log.debug(f"self._reader_process == network_reader")
-                log.debug(f"{self._reader_process} == {network_reader}")
                 if self._reader_process == network_reader:
                     self._current_read = asyncio.ensure_future(self._reader.read(READ_SIZE))
                     return self._current_read
-
-        log.debug(f"_get_reader Returning None")
         return None
 
     async def _process(self, network_reader, network_writer, connection):
-        log.debug(f"Start async _process")
         network_read = asyncio.ensure_future(network_reader.read(READ_SIZE))
         reader_read = await self._get_reader(network_reader)
 
         while True:
-            log.debug(f"__process True loop")
             if reader_read is None:
-                log.debug(f"__process  reader_read is None")
                 reader_read = await self._get_reader(network_reader)
-                log.debug(f"__process reader_read is still 2nd None")
             if reader_read is None:
-                log.debug(f"__process reader_read is still 3rd None")
                 done, pending = await asyncio.wait(
                     [
                         network_read,
@@ -282,19 +259,13 @@ class AsyncioTelnetServer:
                     timeout=1,
                     return_when=asyncio.FIRST_COMPLETED)
             else:
-                log.debug(f"__process reader_read else")
                 done, pending = await asyncio.wait(
                     [
                         network_read,
                         reader_read
                     ],
                     return_when=asyncio.FIRST_COMPLETED)
-            log.debug(f"__process just before coro done check")
-            log.debug(f"")
-            log.debug(f"")
-            log.debug(f"")
             for coro in done:
-                log.debug(f"__process coro can has done?")
                 data = coro.result()
                 if coro == network_read:
                     if network_reader.at_eof():
@@ -332,7 +303,6 @@ class AsyncioTelnetServer:
 
     async def _read(self, cmd, buffer, location, reader):
         """ Reads next op from the buffer or reader"""
-        log.debug(f"Start async _read")
         try:
             op = buffer[location]
             cmd.append(op)
@@ -345,7 +315,6 @@ class AsyncioTelnetServer:
 
     async def _negotiate(self, data, connection):
         """ Performs negotiation commands"""
-        log.debug(f"Start async _negotiate")
 
         command, payload = data[0], data[1:]
         if command == NAWS:
@@ -358,7 +327,6 @@ class AsyncioTelnetServer:
             log.debug("Not supported negotiation sequence, received {} bytes", len(data))
 
     async def _IAC_parser(self, buf, network_reader, network_writer, connection):
-        log.debug(f"Start async _IAC_parser")
         """
         Processes and removes any Telnet commands from the buffer.
 
