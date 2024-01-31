@@ -213,6 +213,7 @@ class SFTelnetProxyMuxer:
                 client.close()
                 await client.wait_closed()
             except Exception as e:
+                log.debug(f"Closing client connect {client_info} failed {e}")
                 
         log.debug("Debug message")
 
