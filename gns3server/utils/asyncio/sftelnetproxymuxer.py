@@ -59,8 +59,8 @@ class SFTelnetProxyMuxer:
                     # Set a timeout for the read operation, without should() the socket closes after timeout.
                     data = await asyncio.shield(asyncio.wait_for(reader.read((4*1024*1024)), timeout=self.heartbeattimer))
                     if not data:
-                        log.debug(f"No data. Not sure if this is possible.")
-                        break
+                        log.debug(f"No data from socket read, start over read loop.")
+                        continue 
                     if reader.at_eof():
                         log.info(f"Client {client_info} closed tcp session with eof.")
                         writer.close()
