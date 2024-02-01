@@ -5,7 +5,7 @@ import logging
 log = logging.getLogger(__name__)
 
 class SFTelnetProxyMuxer:
-    def __init__(self, remote_ip=None, remote_port=None,listen_ip=None, listen_port=None, reader=None, writer=None, heartbeattimer=None):
+    def __init__(self, remote_ip=None, remote_port=None, listen_ip=None, listen_port=None, reader=None, writer=None, heartbeattimer=None):
         if remote_ip == None:
             remote_ip = '127.0.0.1'
         self.remote_ip = remote_ip
@@ -16,6 +16,12 @@ class SFTelnetProxyMuxer:
             listen_ip = '0.0.0.0'
         self.listen_ip = listen_ip
         self.listen_port = listen_port
+        # use reader for remote server info
+        if reader:
+            self.reader = reader
+        # use writer for remote server info
+        if writer:
+            self.writer = writer
         self.clients = set()
         self.server = None
         self.remote_reader = None
@@ -25,7 +31,7 @@ class SFTelnetProxyMuxer:
         self.IAC = b"\xff" # Interpret as Command
         # Telnet NOP command. Will be used as a heartbeat to clients.
         self.NOP = b"\xf1"
-        # Telnet Are You There
+        # Telnet Are You There.
         self.AYT = b"\xf6"
         if not remote_port:
             raise ValueError("remote_port is a required value")
