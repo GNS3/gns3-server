@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 #)
 
 class SFTelnetProxyMuxer:
-    def __init__(self, remote_ip=None, remote_port=None, listen_ip=None, listen_port=None, reader=None, writer=None, binary=True, echo=False, naws=False, window_size_changed_callback=None, connection_factory=None, heartbeattimer=None):
+    def __init__(self, remote_ip=None, remote_port=None,listen_ip=None, listen_port=None, reader=None, writer=None, heartbeattimer=None):
         if remote_ip == None:
             remote_ip = '127.0.0.1'
         self.remote_ip = remote_ip
@@ -141,6 +141,9 @@ class SFTelnetProxyMuxer:
                     try:
                         #data = await self.remote_reader.read((4*1024*1024))
                         data = await asyncio.shield(asyncio.wait_for(self.remote_reader.read((4*1024*1024)), timeout=self.heartbeattimer))
+                        if not data:
+                            log.debug(f"No data from remote telnet server {self.remote_info}.")
+                            continue
                         if self.remote_reader.at_eof():
                             log.info(f"Remote server {self.remote_info} closed tcp session with eof.")
                             break
