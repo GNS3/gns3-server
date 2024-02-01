@@ -4,13 +4,6 @@ import telnetlib3
 import logging
 log = logging.getLogger(__name__)
 
-# Configure logging
-#log.basicConfig(
-#    level=log.DEBUG,  # Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-#    format='%(asctime)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)',
-#    datefmt='%Y-%m-%d %H:%M:%S'
-#)
-
 class SFTelnetProxyMuxer:
     def __init__(self, remote_ip=None, remote_port=None,listen_ip=None, listen_port=None, reader=None, writer=None, heartbeattimer=None):
         if remote_ip == None:
@@ -50,7 +43,6 @@ class SFTelnetProxyMuxer:
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         log.debug(f"New client connected: {client_info}")
         self.clients.add(writer)
-        #log.debug(f"Write idle: {writer.protocol.idle}")
 
         try:
             await asyncio.sleep(1)
@@ -62,7 +54,7 @@ class SFTelnetProxyMuxer:
                         log.debug(f"No data from socket read, start over read loop.")
                         continue 
                     if reader.at_eof():
-                        log.info(f"Client {client_info} closed tcp session with eof.")
+                        log.debug(f"Client {client_info} closed tcp session with eof.")
                         writer.close()
                         self.clients.discard(writer)
                         break
@@ -75,32 +67,32 @@ class SFTelnetProxyMuxer:
                             continue
                            
                 except asyncio.TimeoutError:
-                    log.warning(f"No data read from {client_info}, send heartbeat to test client socket.")
+                    log.debug(f"No data read from {client_info}, send heartbeat to test client socket.")
                     try:
-                        log.warning(f"Heatbeat: Are you there {client_info}?")
+                        log.debug(f"Heatbeat: Are you there {client_info}?")
                         writer.send_iac(self.IAC + self.NOP)
                         await writer.drain()
                         continue
                     except asyncio.TimeoutError:
-                        log.warning(f"Heatbeat: No reply from {client_info}, closing socket.")
+                        log.debug(f"Heatbeat: No reply from {client_info}, closing socket.")
                         writer.close()
                         self.clients.discard(writer)
                         break 
                     except Exception as e:
-                        log.warning(f"Heateat: Unknown error from {client_info}, closing socket. Exeption {e}")
+                        log.debug(f"Heateat: Unknown error from {client_info}, closing socket. Exeption {e}")
                         writer.close()
                         self.clients.discard(writer)
                         break 
                     finally:
-                        log.warning(f"Heatbeat: {client_info} Yes I am.")
+                        log.debug(f"Heatbeat: {client_info} Yes I am.")
                 except Exception as e:
-                    log.exception(f"Error in handling data from client {client_info}:")
+                    log.debyg(f"Error in handling data from client {client_info}:")
                     writer.close()
                     self.clients.discard(writer)
                     break
 
         except Exception as e:
-            log.exception(f"Error in managing client {client_info}: {e}")
+            log.debug(f"Error in managing client {client_info}: {e}")
 
         finally:
             # Safely remove the writer from clients set and close the connection
@@ -145,12 +137,12 @@ class SFTelnetProxyMuxer:
                             log.debug(f"No data from remote telnet server {self.remote_info}.")
                             continue
                         if self.remote_reader.at_eof():
-                            log.info(f"Remote server {self.remote_info} closed tcp session with eof.")
+                            log.debug(f"Remote server {self.remote_info} closed tcp session with eof.")
                             break
                     except asyncio.TimeoutError:
-                        log.warning(f"No data from server {self.remote_info}, send heartbeat to test socket.")
+                        log.debug(f"No data from server {self.remote_info}, send heartbeat to test socket.")
                         try:
-                            log.warning(f"Heatbeat: Are you there {self.remote_info}?")
+                            log.debug(f"Heatbeat: Are you there {self.remote_info}?")
                             # NOP and AYT cause QEMU to spam everyone's console with junk. 
                             # This causes everyone to close the session and eof tcp which makes me sad.
                             # Will need to research more... or did i call this wrong and just fix it?
@@ -158,11 +150,11 @@ class SFTelnetProxyMuxer:
                             await self.remote_writer.drain()
                             continue
                         except Exception as e:
-                            log.warning(f"Heateat: Unknown error from {self.remote_info}, closing socket. Exeption {e}")
+                            log.debug(f"Heateat: Unknown error from {self.remote_info}, closing socket. Exeption {e}")
                             self.remote_writer.close()
                             break
                         finally:
-                            log.warning(f"Heatbeat: {self.remote_info} Yes I am.")
+                            log.debug(f"Heatbeat: {self.remote_info} Yes I am.")
 
                     except Exception as e:
                         log.debug("Failed to read socket data exception: {e}")
