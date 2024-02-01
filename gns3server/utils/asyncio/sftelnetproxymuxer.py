@@ -129,11 +129,18 @@ class SFTelnetProxyMuxer:
         while True and not self.isshutdown:
             await asyncio.sleep(1)
             try:
-                self.remote_reader, self.remote_writer = await telnetlib3.open_connection(
-                    host=self.remote_ip, port=self.remote_port
-                )
-                sock = self.remote_writer.get_extra_info('socket') 
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                if self.remote_ip and self.remote_port:
+                    self.remote_reader, self.remote_writer = await telnetlib3.open_connection(
+                        host=self.remote_ip, port=self.remote_port
+                    )
+                    sock = self.remote_writer.get_extra_info('socket') 
+                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                elsif self.remote_reader and self.remote_writer:
+                    if self.remote_reader.at_eof() or self.remote_writer.at_eof():
+                        break
+                else:
+                    raise ValueError("Server state incorrect. self.remote_reader or self.remote_writer close (eof)."
+                
                 while True and not self.isshutdown:
                     
                     try:
