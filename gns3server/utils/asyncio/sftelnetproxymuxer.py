@@ -2,6 +2,7 @@ import socket
 import asyncio
 import telnetlib3
 import logging
+import pdb
 log = logging.getLogger(__name__)
 
 class SFTelnetProxyMuxer:
@@ -127,19 +128,22 @@ class SFTelnetProxyMuxer:
     async def handle_remote_server(self):
         log.debug("Start handler for remote server")
         while True and not self.isshutdown:
-            await asyncio.sleep(1)
+            log.debug("main run loop")
             try:
                 if self.remote_ip and self.remote_port:
+                    log.debug(f"Looks like we're running a server {self.listen_ip}.")
                     self.remote_reader, self.remote_writer = await telnetlib3.open_connection(
                         host=self.remote_ip, port=self.remote_port
                     )
                     sock = self.remote_writer.get_extra_info('socket') 
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                elsif self.remote_reader and self.remote_writer:
+                elif self.remote_reader and self.remote_writer and not self.remote_ip and not self.remote_port:
+                    log.debug(f"Looks like we're running with reader and writer.")
                     if self.remote_reader.at_eof() or self.remote_writer.at_eof():
+                        log.debug(f"reader/writer EOFed.")
                         break
                 else:
-                    raise ValueError("Server state incorrect. self.remote_reader or self.remote_writer close (eof)."
+                    raise ValueError("Server state incorrect. self.remote_reader or self.remote_writer close (eof).")
                 
                 while True and not self.isshutdown:
                     
@@ -192,6 +196,8 @@ class SFTelnetProxyMuxer:
                 log.debug(error_msg)
                 await self.broadcast_to_clients(f"\r{error_msg}\n\r")
 
+            log.debug("end run loop")
+
     async def start_proxy(self):
         log.debug("Starting telnet proxy.")
         asyncio.create_task(self.handle_remote_server())
@@ -235,16 +241,28 @@ class SFTelnetProxyMuxer:
 
         log.debug("No remaining work to do for shutdown.")
 
+
+
 if __name__ == "__main__":
 
-    ## Example usage
-    log.debug("Start proxy")
-    proxy = SFTelnetProxyMuxer(remote_ip='127.0.0.1', remote_port=7000, listen_ip='0.0.0.0', listen_port=8888)
-    try:
-        asyncio.wait_for(asyncio.run(proxy.start_proxy()), timeout=30)
-    except OSError as e:
-        log.debug(f"Can't start proxy: {e}")
+    async def main():
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+        )
+        #pdb.set_trace()
+        ## Example usage
+        log.debug("Start proxy")
 
-    # To shut down the proxy
-    # asyncio.run(proxy.shutdown())
+        try:
+            #await asyncio.sleep(0)
+            server = SFTelnetProxyMuxer(remote_ip="10.1.18.100", remote_port=5003, listen_ip="0.0.0.0", listen_port=5000)
+            _wrapper_telnet_server = await server.start_proxy()
+            #await proxy.start_proxy()
+        except OSError as e:
+            log.debug(f"Can't start proxy: {e}")
 
+        # To shut down the proxy
+        # asyncio.run(proxy.shutdown())
+
+    asyncio.run(main())
