@@ -263,9 +263,17 @@ class AsyncioTelnetServer(TelnetServer):
                     reader_read = await self._get_reader(network_reader)
 
                     # Replicate the output on all clients
-                    for connection in self._connections.values():
-                        connection.writer.write(data)
-                        await connection.writer.drain()
+                    for connection_key in list(self._connections.keys()):
+                        client_info = connection_key.get_extra_info("socket").getpeername()
+                        connection = self._connections[connection_key]
+
+                        try:
+                            connection.writer.write(data)
+                            await asyncio.wait_for(connection.writer.drain(), timeout=10)
+                        except:
+                            log.debug(f"Timeout while sending data to client: {client_info}, closing and removing from connection table.")
+                            connection.close()
+                            del self._connections[connection_key]
 
     async def _read(self, cmd, buffer, location, reader):
         """ Reads next op from the buffer or reader"""
