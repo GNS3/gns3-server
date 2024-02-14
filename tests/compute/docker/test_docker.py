@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -200,3 +201,52 @@ async def test_docker_check_connection_docker_preferred_version_against_older(vm
         vm._connected = False
         await vm._check_connection()
         assert vm._api_version == DOCKER_MINIMUM_API_VERSION
+
+
+@pytest.mark.asyncio
+async def test_install_busybox():
+
+    mock_process = MagicMock()
+    mock_process.returncode = 1 # means that busybox is not dynamically linked
+    mock_process.communicate = AsyncioMagicMock(return_value=(b"", b"not a dynamic executable"))
+
+    with patch("gns3server.compute.docker.os.path.isfile", return_value=False):
+        with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
+            with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process) as create_subprocess_mock:
+                with patch("gns3server.compute.docker.shutil.copy2") as copy2_mock:
+                    dst_dir = Docker.resources_path()
+                    await Docker.install_busybox(dst_dir)
+                    create_subprocess_mock.assert_called_with(
+                        "ldd",
+                        "/usr/bin/busybox",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    assert copy2_mock.called
+
+
+@pytest.mark.asyncio
+async def test_install_busybox_dynamic_linked():
+
+    mock_process = MagicMock()
+    mock_process.returncode = 0  # means that busybox is dynamically linked
+    mock_process.communicate = AsyncioMagicMock(return_value=(b"Dynamically linked library", b""))
+
+    with patch("os.path.isfile", return_value=False):
+        with patch("gns3server.compute.docker.shutil.which", return_value="/usr/bin/busybox"):
+            with asyncio_patch("gns3server.compute.docker.asyncio.create_subprocess_exec", return_value=mock_process):
+                with pytest.raises(DockerError) as e:
+                    dst_dir = Docker.resources_path()
+                    await Docker.install_busybox(dst_dir)
+                assert str(e.value) == "No busybox executable could be found"
+
+
+@pytest.mark.asyncio
+async def test_install_busybox_no_executables():
+
+    with patch("gns3server.compute.docker.os.path.isfile", return_value=False):
+        with patch("gns3server.compute.docker.shutil.which", return_value=None):
+            with pytest.raises(DockerError) as e:
+                dst_dir = Docker.resources_path()
+                await Docker.install_busybox(dst_dir)
+            assert str(e.value) == "No busybox executable could be found"

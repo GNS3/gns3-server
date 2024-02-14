@@ -297,9 +297,12 @@ class Controller:
         else:
             for entry in importlib_resources.files('gns3server').joinpath(resource_name).iterdir():
                 full_path = os.path.join(dst_path, entry.name)
-                if entry.is_file() and not os.path.exists(full_path):
-                    log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
-                    shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+                if not os.path.exists(full_path):
+                    if entry.is_file():
+                        log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
+                        shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+                    elif entry.is_dir():
+                        os.makedirs(full_path, exist_ok=True)
 
     def _install_base_configs(self):
         """

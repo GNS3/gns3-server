@@ -242,10 +242,13 @@ class DockerVM(BaseNode):
         :returns: Return the path that we need to map to local folders
         """
 
-        resources = get_resource("compute/docker/resources")
-        if not os.path.exists(resources):
-            raise DockerError("{} is missing can't start Docker containers".format(resources))
-        binds = ["{}:/gns3:ro".format(resources)]
+        try:
+            resources_path = self.manager.resources_path()
+        except OSError as e:
+            raise DockerError(f"Cannot access resources: {e}")
+
+        log.info(f'Mount resources from "{resources_path}"')
+        binds = ["{}:/gns3:ro".format(resources_path)]
 
         # We mount our own etc/network
         try:
@@ -459,6 +462,8 @@ class DockerVM(BaseNode):
         """
         Starts this Docker container.
         """
+
+        await self.manager.install_resources()
 
         try:
             state = await self._get_container_state()
