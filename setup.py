@@ -43,28 +43,6 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-BUSYBOX_PATH = "gns3server/compute/docker/resources/bin/busybox"
-
-
-def copy_busybox():
-    if not sys.platform.startswith("linux"):
-        return
-    if os.path.isfile(BUSYBOX_PATH):
-        return
-    for bb_cmd in ("busybox-static", "busybox.static", "busybox"):
-        bb_path = shutil.which(bb_cmd)
-        if bb_path:
-            if subprocess.call(["ldd", bb_path],
-                               stdin=subprocess.DEVNULL,
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL):
-                shutil.copy2(bb_path, BUSYBOX_PATH, follow_symlinks=True)
-                break
-    else:
-        raise SystemExit("No static busybox found")
-
-
-copy_busybox()
 dependencies = open("requirements.txt", "r").read().splitlines()
 
 setup(
