@@ -135,7 +135,7 @@ class Docker(BaseManager):
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
         if path == 'version':
-            url = "http://docker/v1.12/" + path         # API of docker v1.0
+            url = "http://docker/v1.24/" + path
         else:
             url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         try:
