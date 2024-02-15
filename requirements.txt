@@ -18,6 +18,6 @@ python-jose==3.3.0
 email-validator==2.1.0.post1
 watchfiles==0.21.0
 zstandard==0.22.0
-platformdirs==4.2.0
+platformdirs==4.0.0
 importlib-resources>=1.3; python_version <= '3.9'
 truststore>=0.8.0; python_version >= '3.10'
