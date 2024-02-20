@@ -83,6 +83,7 @@ class NotificationHandler:
             if not ws.closed:
                 await ws.close()
             try:
+                # FIXME - This shouldn't be needed. Maybe need bug opened with aiohttp?
                 # call close to force close ws transport. Unknown root cause as of yet.
                 ws._req.transport.close()
             except:
