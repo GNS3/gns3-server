@@ -82,6 +82,11 @@ class NotificationHandler:
             log.info("Client has disconnected from controller WebSocket")
             if not ws.closed:
                 await ws.close()
+            try:
+                # call close to force close ws transport. Unknown root cause as of yet.
+                ws._req.transport.close()
+            except:
+                pass
             request.app['websockets'].discard(ws)
 
         return ws
