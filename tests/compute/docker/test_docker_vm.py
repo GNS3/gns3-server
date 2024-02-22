@@ -900,6 +900,7 @@ async def test_resources_installed(vm, manager, tmpdir):
     assert vm.status == "started"
     assert os.path.exists(os.path.join(docker_resources_path, "init.sh"))
     assert os.path.exists(os.path.join(docker_resources_path, "run-cmd.sh"))
+    assert os.path.exists(os.path.join(docker_resources_path, "bin", "busybox"))
     assert os.path.exists(os.path.join(docker_resources_path, "bin", "udhcpc"))
     assert os.path.exists(os.path.join(docker_resources_path, "etc", "udhcpc", "default.script"))
 
