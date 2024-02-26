@@ -300,6 +300,9 @@ class Controller:
                 if entry.is_file() and not os.path.exists(full_path):
                     log.debug(f'Installing {resource_name} resource file "{entry.name}" to "{full_path}"')
                     shutil.copy(str(entry), os.path.join(dst_path, entry.name))
+                elif entry.is_dir():
+                    os.makedirs(full_path, exist_ok=True)
+                    Controller.install_resource_files(full_path, os.path.join(resource_name, entry.name))
 
     def _install_base_configs(self):
         """

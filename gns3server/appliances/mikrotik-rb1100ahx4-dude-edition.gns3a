@@ -8,7 +8,7 @@
     "documentation_url": "http://wiki.mikrotik.com/wiki/Manual:CHR",
     "product_name": "MikroTik RouterBOARD 1100AHx4 Dude Edition",
     "product_url": "http://www.mikrotik.com/download",
-    "registry_version": 5,
+    "registry_version": 4,
     "status": "stable",
     "maintainer": "Azorian Solutions",
     "maintainer_email": "help@azorian.solutions",

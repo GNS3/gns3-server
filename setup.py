@@ -23,9 +23,9 @@ import subprocess
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-# we only support Python 3 version >= 3.5.3
-if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 5, 3):
-    raise SystemExit("Python 3.5.3 or higher is required")
+# we only support Python 3 version >= 3.7
+if len(sys.argv) >= 2 and sys.argv[1] == "install" and sys.version_info < (3, 7):
+    raise SystemExit("Python 3.7 or higher is required")
 
 
 class PyTest(TestCommand):
@@ -43,28 +43,6 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-BUSYBOX_PATH = "gns3server/compute/docker/resources/bin/busybox"
-
-
-def copy_busybox():
-    if not sys.platform.startswith("linux"):
-        return
-    if os.path.isfile(BUSYBOX_PATH):
-        return
-    for bb_cmd in ("busybox-static", "busybox.static", "busybox"):
-        bb_path = shutil.which(bb_cmd)
-        if bb_path:
-            if subprocess.call(["ldd", bb_path],
-                               stdin=subprocess.DEVNULL,
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL):
-                shutil.copy2(bb_path, BUSYBOX_PATH, follow_symlinks=True)
-                break
-    else:
-        raise SystemExit("No static busybox found")
-
-
-copy_busybox()
 dependencies = open("requirements.txt", "r").read().splitlines()
 
 setup(
@@ -89,7 +67,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms="any",
-    python_requires='>=3.6.0',
+    python_requires='>=3.7',
     setup_requires=["setuptools>=17.1"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -103,7 +81,6 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",

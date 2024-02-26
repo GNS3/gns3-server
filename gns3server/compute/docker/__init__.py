@@ -19,11 +19,15 @@
 Docker server module.
 """
 
+import os
 import sys
 import json
 import asyncio
 import logging
 import aiohttp
+import shutil
+import platformdirs
+
 from gns3server.utils import parse_version
 from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
@@ -54,6 +58,62 @@ class Docker(BaseManager):
         self._connector = None
         self._session = None
         self._api_version = DOCKER_MINIMUM_API_VERSION
+
+    @staticmethod
+    async def install_busybox(dst_dir):
+
+        dst_busybox = os.path.join(dst_dir, "bin", "busybox")
+        if os.path.isfile(dst_busybox):
+            return
+        for busybox_exec in ("busybox-static", "busybox.static", "busybox"):
+            busybox_path = shutil.which(busybox_exec)
+            if busybox_path:
+                try:
+                    # check that busybox is statically linked
+                    # (dynamically linked busybox will fail to run in a container)
+                    proc = await asyncio.create_subprocess_exec(
+                        "ldd",
+                        busybox_path,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL
+                    )
+                    stdout, _ = await proc.communicate()
+                    if proc.returncode == 1:
+                        # ldd returns 1 if the file is not a dynamic executable
+                        log.info(f"Installing busybox from '{busybox_path}' to '{dst_busybox}'")
+                        shutil.copy2(busybox_path, dst_busybox, follow_symlinks=True)
+                        return
+                    else:
+                        log.warning(f"Busybox '{busybox_path}' is dynamically linked\n"
+                                    f"{stdout.decode('utf-8', errors='ignore').strip()}")
+                except OSError as e:
+                    raise DockerError(f"Could not install busybox: {e}")
+        raise DockerError("No busybox executable could be found")
+
+    @staticmethod
+    def resources_path():
+        """
+        Get the Docker resources storage directory
+        """
+
+        appname = vendor = "GNS3"
+        docker_resources_dir = os.path.join(platformdirs.user_data_dir(appname, vendor, roaming=True), "docker", "resources")
+        os.makedirs(docker_resources_dir, exist_ok=True)
+        return docker_resources_dir
+
+    async def install_resources(self):
+        """
+        Copy the necessary resources to a writable location and install busybox
+        """
+
+        try:
+            dst_path = self.resources_path()
+            log.info(f"Installing Docker resources in '{dst_path}'")
+            from gns3server.controller import Controller
+            Controller.instance().install_resource_files(dst_path, "compute/docker/resources")
+            await self.install_busybox(dst_path)
+        except OSError as e:
+            raise DockerError(f"Could not install Docker resources to {dst_path}: {e}")
 
     async def _check_connection(self):
 
@@ -135,7 +195,7 @@ class Docker(BaseManager):
             timeout = 60 * 60 * 24 * 31  # One month timeout
 
         if path == 'version':
-            url = "http://docker/v1.12/" + path         # API of docker v1.0
+            url = "http://docker/v1.24/" + path
         else:
             url = "http://docker/v" + DOCKER_MINIMUM_API_VERSION + "/" + path
         try:

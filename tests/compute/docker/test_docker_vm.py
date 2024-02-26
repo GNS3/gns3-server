@@ -25,10 +25,8 @@ from tests.utils import asyncio_patch, AsyncioMagicMock
 
 from gns3server.ubridge.ubridge_error import UbridgeNamespaceError
 from gns3server.compute.docker.docker_vm import DockerVM
-from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error, DockerHttp304Error
+from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Error
 from gns3server.compute.docker import Docker
-from gns3server.utils.get_resource import get_resource
-
 
 from unittest.mock import patch, MagicMock, call
 
@@ -101,7 +99,7 @@ async def test_create(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -139,7 +137,7 @@ async def test_create_with_tag(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -180,7 +178,7 @@ async def test_create_vnc(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "/tmp/.X11-unix/X{0}:/tmp/.X11-unix/X{0}:ro".format(vm._display)
                         ],
@@ -310,7 +308,7 @@ async def test_create_start_cmd(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -408,7 +406,7 @@ async def test_create_image_not_available(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -451,7 +449,7 @@ async def test_create_with_user(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
                         ],
                         "Privileged": True
@@ -533,7 +531,7 @@ async def test_create_with_extra_volumes_duplicate_1_image(compute_project, mana
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
@@ -572,7 +570,7 @@ async def test_create_with_extra_volumes_duplicate_2_user(compute_project, manag
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                         ],
@@ -611,7 +609,7 @@ async def test_create_with_extra_volumes_duplicate_3_subdir(compute_project, man
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
@@ -650,7 +648,7 @@ async def test_create_with_extra_volumes_duplicate_4_backslash(compute_project, 
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol".format(os.path.join(vm.working_dir, "vol")),
                         ],
@@ -689,7 +687,7 @@ async def test_create_with_extra_volumes_duplicate_5_subdir_issue_1595(compute_p
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
                         "Privileged": True
@@ -727,7 +725,7 @@ async def test_create_with_extra_volumes_duplicate_6_subdir_issue_1595(compute_p
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc".format(os.path.join(vm.working_dir, "etc")),
                         ],
                         "Privileged": True
@@ -771,7 +769,7 @@ async def test_create_with_extra_volumes(compute_project, manager):
                     {
                         "CapAdd": ["ALL"],
                         "Binds": [
-                            "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                            "{}:/gns3:ro".format(Docker.resources_path()),
                             "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
                             "{}:/gns3volumes/vol/1".format(os.path.join(vm.working_dir, "vol", "1")),
                             "{}:/gns3volumes/vol/2".format(os.path.join(vm.working_dir, "vol", "2")),
@@ -854,7 +852,7 @@ async def test_unpause(vm):
     mock.assert_called_with("POST", "containers/e90e34656842/unpause")
 
 
-async def test_start(vm, manager, free_console_port):
+async def test_start(vm, manager, free_console_port, tmpdir):
 
     assert vm.status != "started"
     vm.adapters = 1
@@ -880,6 +878,31 @@ async def test_start(vm, manager, free_console_port):
     assert vm._start_console.called
     assert vm._start_aux.called
     assert vm.status == "started"
+
+
+async def test_resources_installed(vm, manager, tmpdir):
+
+    assert vm.status != "started"
+    vm.adapters = 1
+
+    docker_resources_path = os.path.join(tmpdir, "docker", "resources")
+    os.makedirs(docker_resources_path, exist_ok=True)
+    manager.resources_path = MagicMock(return_value=docker_resources_path)
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge"):
+                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection"):
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._start_console"):
+                            await vm.start()
+
+    assert vm.status == "started"
+    assert os.path.exists(os.path.join(docker_resources_path, "init.sh"))
+    assert os.path.exists(os.path.join(docker_resources_path, "run-cmd.sh"))
+    assert os.path.exists(os.path.join(docker_resources_path, "bin", "busybox"))
+    assert os.path.exists(os.path.join(docker_resources_path, "bin", "udhcpc"))
+    assert os.path.exists(os.path.join(docker_resources_path, "etc", "udhcpc", "default.script"))
 
 
 async def test_start_namespace_failed(vm, manager, free_console_port):
@@ -996,7 +1019,7 @@ async def test_update(vm):
         {
             "CapAdd": ["ALL"],
             "Binds": [
-                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                "{}:/gns3:ro".format(Docker.resources_path()),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
@@ -1064,7 +1087,7 @@ async def test_update_running(vm):
         {
             "CapAdd": ["ALL"],
             "Binds": [
-                "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+                "{}:/gns3:ro".format(Docker.resources_path()),
                 "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network"))
             ],
             "Privileged": True
@@ -1325,7 +1348,7 @@ async def test_mount_binds(vm):
 
     dst = os.path.join(vm.working_dir, "test/experimental")
     assert vm._mount_binds(image_infos) == [
-        "{}:/gns3:ro".format(get_resource("compute/docker/resources")),
+        "{}:/gns3:ro".format(Docker.resources_path()),
         "{}:/gns3volumes/etc/network".format(os.path.join(vm.working_dir, "etc", "network")),
         "{}:/gns3volumes{}".format(dst, "/test/experimental")
     ]
