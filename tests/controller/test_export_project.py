@@ -111,6 +111,7 @@ async def test_export(tmpdir, project):
         f.write("HELLO")
     with open(os.path.join(path, "vm-1", "dynamips", "test_log.txt"), 'w+') as f:
         f.write("LOG")
+    os.makedirs(os.path.join(path, "vm-1", "dynamips", "empty-dir"))
     os.makedirs(os.path.join(path, "project-files", "snapshots"))
     with open(os.path.join(path, "project-files", "snapshots", "test"), 'w+') as f:
         f.write("WORLD")
@@ -127,6 +128,7 @@ async def test_export(tmpdir, project):
 
         assert 'test.gns3' not in myzip.namelist()
         assert 'project.gns3' in myzip.namelist()
+        assert 'vm-1/dynamips/empty-dir/' in myzip.namelist()
         assert 'project-files/snapshots/test' not in myzip.namelist()
         assert 'vm-1/dynamips/test_log.txt' not in myzip.namelist()
 
