@@ -24,6 +24,14 @@
     },
     "images": [
         {
+            "filename": "bird2-debian-2.14.qcow2",
+            "version": "2.14",
+            "md5sum": "029cf1756201ee79497c169502b08b88",
+            "filesize": 303717376,
+            "download_url": "https://sourceforge.net/projects/gns-3/files/Qemu%20Appliances/",
+            "direct_download_url": "https://downloads.sourceforge.net/project/gns-3/Qemu%20Appliances/bird2-debian-2.14.qcow2"
+        },
+        {
             "filename": "bird2-debian-2.0.12.qcow2",
             "version": "2.0.12",
             "md5sum": "435218a2e90cba921cc7fde1d64a9419",
@@ -33,6 +41,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.14",
+            "images": {
+                "hda_disk_image": "bird2-debian-2.14.qcow2"
+            }
+        },
         {
             "name": "2.0.12",
             "images": {
