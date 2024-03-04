@@ -102,6 +102,11 @@ async def export_project(
                     continue
                 _patch_mtime(path)
                 zstream.write(path, os.path.relpath(path, project._path))
+            # save empty directories
+            for directory in dirs:
+                path = os.path.join(root, directory)
+                if not os.listdir(path):
+                    zstream.write(path, os.path.relpath(path, project._path))
         except FileNotFoundError as e:
             log.warning(f"Cannot export local file: {e}")
             continue

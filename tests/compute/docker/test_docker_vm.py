@@ -1057,7 +1057,7 @@ async def test_unpause(vm):
 
 
 @pytest.mark.asyncio
-async def test_start(vm, manager, free_console_port):
+async def test_start(vm, manager, free_console_port, tmpdir):
 
     assert vm.status != "started"
     vm.adapters = 1
@@ -1084,6 +1084,32 @@ async def test_start(vm, manager, free_console_port):
     assert vm._start_console.called
     assert vm._start_aux.called
     assert vm.status == "started"
+
+
+@pytest.mark.asyncio
+async def test_resources_installed(vm, manager, tmpdir):
+
+    assert vm.status != "started"
+    vm.adapters = 1
+
+    docker_resources_path = os.path.join(tmpdir, "docker", "resources")
+    os.makedirs(docker_resources_path, exist_ok=True)
+    manager.resources_path = MagicMock(return_value=docker_resources_path)
+
+    with asyncio_patch("gns3server.compute.docker.DockerVM._get_container_state", return_value="stopped"):
+        with asyncio_patch("gns3server.compute.docker.Docker.query"):
+            with asyncio_patch("gns3server.compute.docker.DockerVM._start_ubridge"):
+                with asyncio_patch("gns3server.compute.docker.DockerVM._get_namespace", return_value=42):
+                    with asyncio_patch("gns3server.compute.docker.DockerVM._add_ubridge_connection"):
+                        with asyncio_patch("gns3server.compute.docker.DockerVM._start_console"):
+                            await vm.start()
+
+    assert vm.status == "started"
+    assert os.path.exists(os.path.join(docker_resources_path, "init.sh"))
+    assert os.path.exists(os.path.join(docker_resources_path, "run-cmd.sh"))
+    assert os.path.exists(os.path.join(docker_resources_path, "bin", "busybox"))
+    assert os.path.exists(os.path.join(docker_resources_path, "bin", "udhcpc"))
+    assert os.path.exists(os.path.join(docker_resources_path, "etc", "udhcpc", "default.script"))
 
 
 @pytest.mark.asyncio

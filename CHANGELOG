@@ -1,5 +1,18 @@
 # Change Log
 
+## 2.2.46 26/02/2024
+
+* Bundle web-ui v2.2.46
+* Save empty directories when exporting a project
+* Backport from v3: install Docker resources in a writable location at runtime.
+* Use Docker API v1.24 to get version.
+* Drop support for Python 3.6
+* Address the telnet console bug.
+* Update welcome.py
+* Update remote-install.sh
+* Use Python 3.8 to publish API doc
+* Upgrade sentry-sdk, psutil and distro dependencies
+
 ## 2.2.45 12/01/2024
 
 * Bundle web-ui v2.2.45
