@@ -17,7 +17,7 @@
 
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
+import bcrypt
 
 from typing import Optional
 from fastapi import HTTPException, status
@@ -29,8 +29,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 DEFAULT_JWT_SECRET_KEY = "efd08eccec3bd0a1be2e086670e5efa90969c68d07e072d7354a76cea5e33d4e"
 
 
@@ -38,11 +36,13 @@ class AuthService:
 
     def hash_password(self, password: str) -> str:
 
-        return pwd_context.hash(password)
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password=password.encode('utf-8'), salt=salt)
+        return hashed_password.decode('utf-8')
 
     def verify_password(self, password, hashed_password) -> bool:
 
-        return pwd_context.verify(password, hashed_password)
+        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hashed_password.encode('utf-8'))
 
     def create_access_token(self, username, secret_key: str = None, expires_in: int = 0) -> str:
 
