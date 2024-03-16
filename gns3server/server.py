@@ -182,7 +182,7 @@ class Server:
                     asyncio.ensure_future(Controller.instance().reload())
                 else:
                     log.info(f"Server has got signal {signame}, exiting...")
-                    # send SIGTERM to the server PID so uvicorn can shutdown the process
+                    # send SIGTERM to the server PID so uvicorn can shut down the process
                     os.kill(os.getpid(), signal.SIGTERM)
             except asyncio.CancelledError:
                 pass

@@ -50,11 +50,7 @@ async def project_ws_notifications(websocket: Union[None, WebSocket] = Depends(w
             log.info(f"Client {websocket.client.host}:{websocket.client.port} has disconnected from compute WebSocket")
         except WebSocketException as e:
             log.warning(f"Error while sending to controller event to WebSocket client: {e}")
-        finally:
-            try:
-                await websocket.close()
-            except OSError:
-                pass  # ignore OSError: [Errno 107] Transport endpoint is not connected
+
 
 if __name__ == "__main__":
 
