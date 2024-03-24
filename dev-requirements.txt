@@ -1,7 +1,7 @@
-pytest==7.4.2
-flake8==6.1.0
-pytest-timeout==2.2.0
-pytest-asyncio==0.21.1
+pytest==8.1.1
+flake8==7.0.0
+pytest-timeout==2.3.1
+pytest-asyncio==0.23.6
 requests==2.31.0
 httpx==0.24.1 # version 0.24.1 is required by httpx_ws
-httpx_ws==0.4.2
+httpx_ws==0.5.2
