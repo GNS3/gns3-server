@@ -1,4 +1,5 @@
 Generic single-database configuration with an async dbapi.
 
 # Command to generate a revision
+alembic upgrade head
 alembic revision --autogenerate -m "add fields in table"
