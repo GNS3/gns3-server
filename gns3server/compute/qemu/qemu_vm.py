@@ -124,6 +124,8 @@ class QemuVM(BaseNode):
             except QemuError:
                 # If the binary is not found for topologies 1.4 and later
                 # search via the platform otherwise use the binary name
+                log.warning(f"Could not find the QEMU binary {qemu_path} on this system, "
+                            f"trying to find one using platform {platform}")
                 if platform:
                     self.platform = platform
                 else:
@@ -242,7 +244,7 @@ class QemuVM(BaseNode):
         if qemu_path and os.pathsep not in qemu_path:
             new_qemu_path = shutil.which(qemu_path, path=os.pathsep.join(self._manager.paths_list()))
             if new_qemu_path is None:
-                raise QemuError(f"QEMU binary path {qemu_path} is not found in the path")
+                raise QemuError(f"QEMU binary '{qemu_path}' cannot be found on the system")
             qemu_path = new_qemu_path
 
         self._check_qemu_path(qemu_path)
@@ -289,6 +291,7 @@ class QemuVM(BaseNode):
     def platform(self, platform):
 
         self._platform = platform
+        log.info(f"QEMU VM '{self._name}' [{self._id}] has set the platform {platform}")
         self.qemu_path = f"qemu-system-{platform}"
 
     def _disk_setter(self, variable, value):
