@@ -29,6 +29,7 @@ import gns3server.utils.get_resource
 
 import os
 import sys
+import asyncio
 
 
 def daemonize():
@@ -70,7 +71,10 @@ def main():
         daemonize()
     from gns3server.server import Server
 
-    Server().run()
+    try:
+        asyncio.run(Server().run())
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":

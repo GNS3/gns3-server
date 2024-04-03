@@ -239,7 +239,7 @@ class Server:
             log.critical("Can't write pid file %s: %s", path, str(e))
             sys.exit(1)
 
-    def run(self):
+    async def run(self):
 
         args = self._parse_arguments(sys.argv[1:])
 
@@ -333,8 +333,7 @@ class Server:
                 uvicorn_logger.propagate = False
 
             server = uvicorn.Server(config)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(server.serve())
+            await server.serve()
 
         except Exception as e:
             log.critical(f"Critical error while running the server: {e}", exc_info=1)
