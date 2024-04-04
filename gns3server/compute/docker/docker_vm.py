@@ -575,6 +575,9 @@ class DockerVM(BaseNode):
                 await self._start_vnc_process(restart=True)
                 monitor_process(self._vnc_process, self._vnc_callback)
 
+            if self._console_websocket:
+                await self._console_websocket.close()
+                self._console_websocket = None
             await self._clean_servers()
 
             await self.manager.query("POST", f"containers/{self._cid}/start")
@@ -837,9 +840,7 @@ class DockerVM(BaseNode):
             f"containers/{self._cid}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1"
         )
         input_stream.ws = self._console_websocket
-
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
-
         asyncio.ensure_future(self._read_console_output(self._console_websocket, output_stream))
 
     async def _read_console_output(self, ws, out):
@@ -862,13 +863,14 @@ class DockerVM(BaseNode):
                 out.feed_eof()
                 await ws.close()
                 break
-        await self.stop()
 
     async def reset_console(self):
         """
         Reset the console.
         """
 
+        if self._console_websocket:
+            await self._console_websocket.close()
         await self._clean_servers()
         await self._start_console()
 
@@ -912,6 +914,9 @@ class DockerVM(BaseNode):
         """
 
         try:
+            if self._console_websocket:
+                await self._console_websocket.close()
+                self._console_websocket = None
             await self._clean_servers()
             await self._stop_ubridge()
 
