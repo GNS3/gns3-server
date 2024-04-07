@@ -19,6 +19,12 @@
     },
     "images": [
         {
+            "filename": "x86_64_crb_linux-adventerprisek9-ms",
+            "version": "17.12.1",
+            "md5sum": "4a2fce8de21d1831fbceffd155e41ae7",
+            "filesize": 288947184
+        },
+        {
             "filename": "i86bi_LinuxL3-AdvEnterpriseK9-M2_157_3_May_2018.bin",
             "version": "15.7(3)M2",
             "md5sum": "d6874260c3daeeb96d10fc844ae0b93b",
@@ -38,6 +44,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.12.1",
+            "images": {
+                "image": "x86_64_crb_linux-adventerprisek9-ms"
+            }
+        },
         {
             "name": "15.7(3)M2",
             "images": {

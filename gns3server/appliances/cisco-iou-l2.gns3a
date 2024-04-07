@@ -19,6 +19,12 @@
     },
     "images": [
         {
+            "filename": "x86_64_crb_linux_l2-adventerprisek9-ms",
+            "version": "17.12.1",
+            "md5sum": "2b5055e4cef8fd257416d74a94adb626",
+            "filesize": 240355720
+        },
+        {
             "filename": "i86bi-linux-l2-ipbasek9-15.1g.bin",
             "version": "15.1g",
             "md5sum": "0b8b9e14ca99b68c654e44c4296857ba",
@@ -38,6 +44,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.12.1",
+            "images": {
+                "image": "x86_64_crb_linux_l2-adventerprisek9-ms"
+            }
+        },
         {
             "name": "15.1g",
             "images": {

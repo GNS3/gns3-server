@@ -12,20 +12,27 @@
     "status": "experimental",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "There is no default configuration present. Virtual Switch and Interfaces may take several minutes to be usable after appliance boot.",
+    "usage": "There is no default configuration present. Virtual Switch and Interfaces may take several minutes to be usable after appliance boot.\n\nOnly has basic Layer 2 switching features. Will need to enable advance features and reboot to gain access to things like BGP, etc... \n\nconfigure terminal \nlicense boot level network-advantage addon dna-advantage \nend \nwrite memory \nreload",
     "first_port_name": "GigabitEthernet0/0",
     "port_name_format": "GigabitEthernet1/0/{port1}",
     "qemu": {
         "adapter_type": "virtio-net-pci",
         "adapters": 9,
-        "ram": 16384,
-	"cpus": 2,
+        "ram": 24576,
+	"cpus": 4,
         "hda_disk_interface": "virtio",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require"
 		},
     "images": [
+        {
+            "filename": "cat9kv-prd-17.12.01prd9.qcow2",
+            "version": "17.12(1)",
+            "md5sum": "e587e92186f42bdf69d7fa27f34425f7",
+            "filesize": 2739404800,
+            "download_url": "https://learningnetworkstore.cisco.com/myaccount"
+        },
         {
             "filename": "cat9kv-prd-17.10.01prd7.qcow2",
             "version": "17.10(1)",
@@ -35,6 +42,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "17.12(1)",
+            "images": {
+                "hda_disk_image": "cat9kv-prd-17.12.01prd9.qcow2"
+            }
+		},
         {
             "name": "17.10(1)",
             "images": {
