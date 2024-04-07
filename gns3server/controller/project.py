@@ -152,16 +152,27 @@ class Project:
 
         self._iou_id_lock = asyncio.Lock()
         log.debug(f'Project "{self.name}" [{self._id}] loaded')
+        self.emit_controller_notification("project.created", self.asdict())
 
     def emit_notification(self, action, event):
         """
-        Emit a notification to all clients using this project.
+        Emit a project notification to all clients using this project.
 
         :param action: Action name
         :param event: Event to send
         """
 
-        self.controller.notification.project_emit(action, event, project_id=self.id)
+        self._controller.notification.project_emit(action, event, project_id=self.id)
+
+    def emit_controller_notification(self, action, event):
+        """
+        Emit a controller notification, all clients will see it.
+
+        :param action: Action name
+        :param event: Event to send
+        """
+
+        self._controller.notification.controller_emit(action, event)
 
     async def update(self, **kwargs):
         """
@@ -176,7 +187,7 @@ class Project:
 
         # We send notif only if object has changed
         if old_json != self.asdict():
-            self.emit_notification("project.updated", self.asdict())
+            self.emit_controller_notification("project.updated", self.asdict())
             self.dump()
 
             # update on computes
@@ -812,7 +823,8 @@ class Project:
         self._clean_pictures()
         self._status = "closed"
         if not ignore_notification:
-            self.emit_notification("project.closed", self.asdict())
+            self.emit_controller_notification("project.closed", self.asdict())
+
         self.reset()
         self._closing = False
 
@@ -868,6 +880,7 @@ class Project:
             shutil.rmtree(self.path)
         except OSError as e:
             raise ControllerError(f"Cannot delete project directory {self.path}: {str(e)}")
+        self.emit_controller_notification("project.deleted", self.asdict())
 
     async def delete_on_computes(self):
         """
@@ -1001,7 +1014,7 @@ class Project:
                 await self.add_drawing(dump=False, **drawing_data)
 
             self.dump()
-        # We catch all error to be able to rollback the .gns3 to the previous state
+        # We catch all error to be able to roll back the .gns3 to the previous state
         except Exception as e:
             for compute in list(self._project_created_on_compute):
                 try:
@@ -1026,6 +1039,7 @@ class Project:
             pass
 
         self._loading = False
+        self.emit_controller_notification("project.opened", self.asdict())
         # Should we start the nodes when project is open
         if self._auto_start:
             # Start all in the background without waiting for completion

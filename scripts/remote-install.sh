@@ -163,9 +163,9 @@ log "Install GNS3 packages"
 apt-get install -y gns3-server
 
 log "Create user GNS3 with /opt/gns3 as home directory"
-if [ ! -d "/opt/gns3/" ]
+if [ ! -d "/opt/gns3" ]
 then
-  useradd -m -d /opt/gns3/ gns3
+  useradd -m -d /opt/gns3 gns3
 fi
 
 
@@ -304,6 +304,11 @@ log "GNS3 installed with success"
 
 if [ $WELCOME_SETUP == 1 ]
 then
+cat <<EOFI > /etc/sudoers.d/gns3
+gns3   ALL = (ALL) NOPASSWD: /usr/bin/apt-key
+gns3   ALL = (ALL) NOPASSWD: /usr/bin/apt-get
+gns3   ALL = (ALL) NOPASSWD: /usr/sbin/reboot
+EOFI
 NEEDRESTART_MODE=a apt-get install -y net-tools
 NEEDRESTART_MODE=a apt-get install -y python3-pip
 NEEDRESTART_MODE=a apt-get install -y dialog

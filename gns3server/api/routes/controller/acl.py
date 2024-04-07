@@ -99,8 +99,12 @@ async def endpoints(
         for link in links:
             node_id_1 = link["nodes"][0]["node_id"]
             node_id_2 = link["nodes"][1]["node_id"]
-            node_name_1 = project.nodes[node_id_1]["name"]
-            node_name_2 = project.nodes[node_id_2]["name"]
+            node_name_1 = node_name_2 = "N/A"
+            for node in nodes:
+                if node["node_id"] == node_id_1:
+                    node_name_1 = node["name"]
+                if node["node_id"] == node_id_2:
+                    node_name_2 = node["name"]
             add_to_endpoints(
                 f"/projects/{project.id}/links/{link['link_id']}",
                 f'Link from "{node_name_1}" to "{node_name_2}" in project "{project.name}"',

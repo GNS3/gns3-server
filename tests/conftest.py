@@ -172,8 +172,8 @@ async def client(base_client: AsyncClient) -> AsyncClient:
 @pytest_asyncio.fixture
 async def compute_client(base_client: AsyncClient) -> AsyncClient:
 
-    # default compute username is 'admin'
-    base64_credentials = base64.b64encode(b"admin:").decode("ascii")
+    # default compute username is 'gns3'
+    base64_credentials = base64.b64encode(b"gns3:").decode("ascii")
     base_client.headers = {
         **base_client.headers,
         "Authorization": f"Basic {base64_credentials}",

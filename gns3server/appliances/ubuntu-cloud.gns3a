@@ -28,12 +28,12 @@
     },
     "images": [
         {
-            "filename": "ubuntu-23.04-server-cloudimg-arm64.img",
+            "filename": "ubuntu-23.04-server-cloudimg-amd64.img",
             "version": "Ubuntu 23.04 (Lunar Lobster)",
-            "md5sum": "35fa3b31b65717af6f0520a769aac8c0",
-            "filesize": 786432000,
+            "md5sum": "369e3b1f68416c39245a8014172406dd",
+            "filesize": 756678656,
             "download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/",
-            "direct_download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/ubuntu-23.04-server-cloudimg-arm64.img"
+            "direct_download_url": "https://cloud-images.ubuntu.com/releases/23.04/release/ubuntu-23.04-server-cloudimg-amd64.img"
         },
         {
             "filename": "ubuntu-22.04-server-cloudimg-amd64.img",
@@ -72,7 +72,7 @@
         {
             "name": "Ubuntu 23.04 (Lunar Lobster)",
             "images": {
-                "hda_disk_image": "ubuntu-23.04-server-cloudimg-arm64.img",
+                "hda_disk_image": "ubuntu-23.04-server-cloudimg-amd64.img",
                 "cdrom_image": "ubuntu-cloud-init-data.iso"
             }
         },

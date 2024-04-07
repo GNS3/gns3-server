@@ -27,6 +27,13 @@
     },
     "images": [
         {
+            "filename": "nexus9300v64.10.3.1.F.qcow2",
+            "version": "9300v 10.3.1.F",
+            "md5sum": "a6ffd2501a5791c11cee319943b912da",
+            "filesize": 2097086464,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.1(1)"
+        },
+        {
             "filename": "nexus9500v64.10.1.1.qcow2",
             "version": "9500v 10.1.1",
             "md5sum": "35672370b0f43e725d5b2d92488524f0",
@@ -39,6 +46,34 @@
             "md5sum": "4051bdb96aff6e54b72b7e3b06c9d6eb",
             "filesize": 1990983680,
             "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/10.1(1)"
+        },
+        {
+            "filename": "nexus9500v.9.3.13.qcow2",
+            "version": "9500v 9.3.13",
+            "md5sum": "bacf0f664ee34625c85a9f278b2466a2",
+            "filesize": 2248409088,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(13)"
+        },
+        {
+            "filename": "nexus9300v.9.3.13.qcow2",
+            "version": "9300v 9.3.13",
+            "md5sum": "d8ce30cb762df02d77ec27786a2435ad",
+            "filesize": 2248343552,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(13)"
+        },
+        {
+            "filename": "nexus9500v.9.3.12.qcow2",
+            "version": "9500v 9.3.12",
+            "md5sum": "452e5cb2a7a25feaa3ba0624a82ff9ca",
+            "filesize": 1997996032,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(12)"
+        },
+        {
+            "filename": "nexus9300v.9.3.12.qcow2",
+            "version": "9300v 9.3.12",
+            "md5sum": "7b6b5dad1001e11d6ebb54662616e9f2",
+            "filesize": 1997930496,
+            "download_url": "https://software.cisco.com/download/home/286312239/type/282088129/release/9.3(12)"
         },
         {
             "filename": "nexus9500v.9.3.9.qcow2",
@@ -199,6 +234,13 @@
     ],
     "versions": [
         {
+            "name": "9300v 10.3.1.F",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9300v64.10.3.1.F.qcow2"
+            }
+        },
+        {
             "name": "9500v 10.1.1",
             "images": {
                 "bios_image": "OVMF-edk2-stable202305.fd",
@@ -210,6 +252,34 @@
             "images": {
                 "bios_image": "OVMF-edk2-stable202305.fd",
                 "hda_disk_image": "nexus9300v.10.1.1.qcow2"
+            }
+        },
+        {
+            "name": "9500v 9.3.13",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9500v.9.3.13.qcow2"
+            }
+        },
+        {
+            "name": "9300v 9.3.13",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9300v.9.3.13.qcow2"
+            }
+        },
+		        {
+            "name": "9500v 9.3.12",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9500v.9.3.12.qcow2"
+            }
+        },
+        {
+            "name": "9300v 9.3.12",
+            "images": {
+                "bios_image": "OVMF-edk2-stable202305.fd",
+                "hda_disk_image": "nexus9300v.9.3.12.qcow2"
             }
         },
         {

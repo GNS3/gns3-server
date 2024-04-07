@@ -188,7 +188,12 @@ class AsyncioTelnetServer:
         sock = network_writer.get_extra_info("socket")
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        # log.debug("New connection from {}".format(sock.getpeername()))
+        # 60 sec keep alives, close tcp session after 4 missed
+        # Will keep a firewall from aging out telnet console.
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 4)
+        #log.debug("New connection from {}".format(sock.getpeername()))
 
         # Keep track of connected clients
         connection = self._connection_factory(network_reader, network_writer, self._window_size_changed_callback)
@@ -286,9 +291,17 @@ class AsyncioTelnetServer:
                     reader_read = await self._get_reader(network_reader)
 
                     # Replicate the output on all clients
-                    for connection in self._connections.values():
-                        connection.writer.write(data)
-                        await connection.writer.drain()
+                    for connection_key in list(self._connections.keys()):
+                        client_info = connection_key.get_extra_info("socket").getpeername()
+                        connection = self._connections[connection_key]
+
+                        try:
+                            connection.writer.write(data)
+                            await asyncio.wait_for(connection.writer.drain(), timeout=10)
+                        except:
+                            log.debug(f"Timeout while sending data to client: {client_info}, closing and removing from connection table.")
+                            connection.close()
+                            del self._connections[connection_key]
 
     async def _read(self, cmd, buffer, location, reader):
         """ Reads next op from the buffer or reader"""

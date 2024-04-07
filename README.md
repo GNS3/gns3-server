@@ -6,7 +6,7 @@
 [![Snyk scanning](https://snyk.io/test/github/GNS3/gns3-server/badge.svg)](https://snyk.io/test/github/GNS3/gns3-server)
 
 The GNS3 server manages emulators and other virtualization software such as Dynamips, Qemu/KVM, Docker, VPCS, VirtualBox and VMware Workstation.
-Clients like the [GNS3 GUI](https://github.com/GNS3/gns3-gui/) and the [GNS3 Web UI](https://github.com/GNS3/gns3-web-ui>) control the server using a HTTP REST API.
+Clients like the [GNS3 GUI](https://github.com/GNS3/gns3-gui/) and the [GNS3 Web UI](https://github.com/GNS3/gns3-web-ui/) control the server using a HTTP REST API.
 
 ## Installation
 

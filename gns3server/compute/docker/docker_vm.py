@@ -299,12 +299,15 @@ class DockerVM(BaseNode):
         :returns: Return the path that we need to map to local folders
         """
 
-        resources = get_resource("compute/docker/resources")
-        if not os.path.exists(resources):
-            raise DockerError(f"{resources} is missing, can't start Docker container")
+        try:
+            resources_path = self.manager.resources_path()
+        except OSError as e:
+            raise DockerError(f"Cannot access resources: {e}")
+
+        log.info(f'Mount resources from "{resources_path}"')
         binds = [{
             "Type": "bind",
-            "Source": resources,
+            "Source": resources_path,
             "Target": "/gns3",
             "ReadOnly": True
         }]
@@ -393,6 +396,8 @@ class DockerVM(BaseNode):
 
         if ":" in os.path.splitdrive(self.working_dir)[1]:
             raise DockerError("Cannot create a Docker container with a project directory containing a colon character (':')")
+
+        #await self.manager.install_resources()
 
         try:
             image_infos = await self._get_image_information()
@@ -501,6 +506,10 @@ class DockerVM(BaseNode):
         result = await self.manager.query("POST", "containers/create", data=params)
         self._cid = result["Id"]
         log.info(f"Docker container '{self._name}' [{self._id}] created")
+        if self._cpus > 0:
+            log.info(f"CPU limit set to {self._cpus} CPUs")
+        if self._memory > 0:
+            log.info(f"Memory limit set to {self._memory} MB")
         return True
 
     def _format_env(self, variables, env):
@@ -545,8 +554,7 @@ class DockerVM(BaseNode):
         Starts this Docker container.
         """
 
-        # make sure busybox is installed
-        await self.manager.install_busybox()
+        await self.manager.install_resources()
 
         try:
             state = await self._get_container_state()
@@ -567,6 +575,9 @@ class DockerVM(BaseNode):
                 await self._start_vnc_process(restart=True)
                 monitor_process(self._vnc_process, self._vnc_callback)
 
+            if self._console_websocket:
+                await self._console_websocket.close()
+                self._console_websocket = None
             await self._clean_servers()
 
             await self.manager.query("POST", f"containers/{self._cid}/start")
@@ -829,9 +840,7 @@ class DockerVM(BaseNode):
             f"containers/{self._cid}/attach/ws?stream=1&stdin=1&stdout=1&stderr=1"
         )
         input_stream.ws = self._console_websocket
-
         output_stream.feed_data(self.name.encode() + b" console is now available... Press RETURN to get started.\r\n")
-
         asyncio.ensure_future(self._read_console_output(self._console_websocket, output_stream))
 
     async def _read_console_output(self, ws, out):
@@ -854,13 +863,14 @@ class DockerVM(BaseNode):
                 out.feed_eof()
                 await ws.close()
                 break
-        await self.stop()
 
     async def reset_console(self):
         """
         Reset the console.
         """
 
+        if self._console_websocket:
+            await self._console_websocket.close()
         await self._clean_servers()
         await self._start_console()
 
@@ -904,6 +914,9 @@ class DockerVM(BaseNode):
         """
 
         try:
+            if self._console_websocket:
+                await self._console_websocket.close()
+                self._console_websocket = None
             await self._clean_servers()
             await self._stop_ubridge()
 

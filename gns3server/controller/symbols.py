@@ -72,7 +72,7 @@ class Symbols:
             return None
         symbol_path = theme.get(symbol)
         if symbol_path not in self._symbols_path:
-            log.warning(f"Default symbol {symbol} was not found")
+            log.debug(f"Default symbol {symbol} was not found")
             return None
         return symbol_path
 
@@ -153,6 +153,9 @@ class Symbols:
                 else:
                     # return the default computer symbol
                     log.warning(f"Could not retrieve symbol '{symbol_id}', returning default symbol...")
+                    symbol = self.get_default_symbol("computer", self._current_theme)
+                    if symbol and symbol in self._symbols_path:
+                        return self._symbols_path[symbol]
                     return self._symbols_path[":/symbols/classic/computer.svg"]
 
     def get_size(self, symbol_id):

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sqlalchemy import Boolean, Column, String, Integer, ForeignKey, PickleType
+from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey, PickleType
 from sqlalchemy.orm import relationship
 
 from .base import BaseTable, generate_uuid, GUID
@@ -77,7 +77,7 @@ class DockerTemplate(Template):
     extra_hosts = Column(String)
     extra_volumes = Column(PickleType)
     memory = Column(Integer)
-    cpus = Column(Integer)
+    cpus = Column(Float)
     custom_adapters = Column(PickleType)
 
     __mapper_args__ = {"polymorphic_identity": "docker", "polymorphic_load": "selectin"}

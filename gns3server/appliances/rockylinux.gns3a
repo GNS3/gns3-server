@@ -27,12 +27,28 @@
     },
     "images": [
         {
+            "filename": "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2",
+            "version": "9.3",
+            "md5sum": "48cdeb033364af5909e15ee48d0e144d",
+            "filesize": 1083965440,
+            "download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2"
+        },
+        {
             "filename": "Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2",
             "version": "9.2",
             "md5sum": "2022bdb49a691119f1fd3cc76de0a846",
             "filesize": 989265920,
             "download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/",
             "direct_download_url": "https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2"
+        },
+        {
+            "filename": "Rocky-8-GenericCloud-Base-8.9-20231119.0.x86_64.qcow2",
+            "version": "8.9",
+            "md5sum": "50c44d8d9c4df43694372c13768f114c",
+            "filesize": 1971978240,
+            "download_url": "https://download.rockylinux.org/pub/rocky/8/images/x86_64/",
+            "direct_download_url": "https://download.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud-Base-8.9-20231119.0.x86_64.qcow2"
         },
         {
             "filename": "Rocky-8-GenericCloud-Base-8.8-20230518.0.x86_64.qcow2",
@@ -53,9 +69,23 @@
     ],
     "versions": [
         {
+            "name": "9.3",
+            "images": {
+                "hda_disk_image": "Rocky-9-GenericCloud-Base-9.3-20231113.0.x86_64.qcow2",
+                "cdrom_image": "rocky-cloud-init-data.iso"
+            }
+        },
+        {
             "name": "9.2",
             "images": {
                 "hda_disk_image": "Rocky-9-GenericCloud-Base-9.2-20230513.0.x86_64.qcow2",
+                "cdrom_image": "rocky-cloud-init-data.iso"
+            }
+        },
+        {
+            "name": "8.9",
+            "images": {
+                "hda_disk_image": "Rocky-8-GenericCloud-Base-8.9-20231119.0.x86_64.qcow2",
                 "cdrom_image": "rocky-cloud-init-data.iso"
             }
         },
