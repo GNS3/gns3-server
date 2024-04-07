@@ -1,5 +1,18 @@
 # Change Log
 
+## 3.0.0b2 07/04/2024
+
+* Bundle web-ui v3.0.0b2
+* Fix cannot stop Docker VM while console connection is still active.
+* Support for custom Qemu path in templates and nodes
+* Fix CPU fractional values for Docker VMs.
+* Use bcrypt directly instead of passlib
+* Update CORS policy
+* Do not stop searching for Qemu binaries if one binary cannot be executed. Ref #2306
+* Fix Ethernet switch and Ethernet hub port validations. Fixes #2334
+* Update CORS policy
+
+
 ## 2.2.46 26/02/2024
 
 * Bundle web-ui v2.2.46
