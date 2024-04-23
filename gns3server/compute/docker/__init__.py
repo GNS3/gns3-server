@@ -88,7 +88,7 @@ class Docker(BaseManager):
                                     f"{stdout.decode('utf-8', errors='ignore').strip()}")
                 except OSError as e:
                     raise DockerError(f"Could not install busybox: {e}")
-        raise DockerError("No busybox executable could be found")
+        raise DockerError("No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH")
 
     @staticmethod
     def resources_path():
