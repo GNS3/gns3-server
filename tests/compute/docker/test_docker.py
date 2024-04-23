@@ -238,7 +238,7 @@ async def test_install_busybox_dynamic_linked():
                 with pytest.raises(DockerError) as e:
                     dst_dir = Docker.resources_path()
                     await Docker.install_busybox(dst_dir)
-                assert str(e.value) == "No busybox executable could be found"
+                assert str(e.value) == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
 
 
 @pytest.mark.asyncio
@@ -249,4 +249,4 @@ async def test_install_busybox_no_executables():
             with pytest.raises(DockerError) as e:
                 dst_dir = Docker.resources_path()
                 await Docker.install_busybox(dst_dir)
-            assert str(e.value) == "No busybox executable could be found"
+            assert str(e.value) == "No busybox executable could be found, please install busybox (apt install busybox-static on Debian/Ubuntu) and make sure it is in your PATH"
