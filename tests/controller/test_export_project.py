@@ -33,7 +33,7 @@ from gns3server.utils.asyncio import aiozipstream
 
 
 @pytest.fixture
-async def project(event_loop, controller):
+async def project(controller):
 
     p = Project(controller=controller, name="test")
     p.dump = MagicMock()

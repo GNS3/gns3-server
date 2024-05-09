@@ -39,7 +39,7 @@ def response():
 #     assert response.status == 200
 
 
-async def test_response_file_not_found(event_loop, tmpdir, response):
+async def test_response_file_not_found(tmpdir, response):
 
     filename = str(tmpdir / 'hello-not-found')
     with pytest.raises(HTTPNotFound):
