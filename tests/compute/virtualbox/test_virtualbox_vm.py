@@ -25,7 +25,7 @@ from gns3server.compute.virtualbox import VirtualBox
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+async def manager(port_manager):
 
     m = VirtualBox.instance()
     m.port_manager = port_manager

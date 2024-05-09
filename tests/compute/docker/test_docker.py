@@ -25,7 +25,7 @@ from gns3server.compute.docker.docker_error import DockerError, DockerHttp404Err
 
 
 @pytest.fixture
-async def vm(loop):
+async def vm():
 
     vm = Docker()
     vm._connected = True

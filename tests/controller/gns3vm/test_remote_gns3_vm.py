@@ -55,7 +55,7 @@ async def test_start(gns3vm, controller):
     assert gns3vm.password == "world"
 
 
-async def test_start_invalid_vm(loop, gns3vm, controller):
+async def test_start_invalid_vm(gns3vm, controller):
 
     await controller.add_compute("r1",
                                  name="R1",
