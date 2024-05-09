@@ -24,7 +24,7 @@ import aiofiles
 import zipfile
 import time
 import aiohttp.web
-from datetime import datetime, timezone, UTC
+from datetime import datetime, timezone
 
 from ..utils.asyncio import wait_run_in_executor
 from ..utils.asyncio import aiozipstream
@@ -52,15 +52,15 @@ class Snapshot:
         self._project = project
         if name:
             self._name = name
-            self._created_at = datetime.now().timestamp()
-            filename = self._name + "_" + datetime.fromtimestamp(self._created_at, UTC).replace(tzinfo=None).strftime(FILENAME_TIME_FORMAT) + ".gns3project"
+            self._created_at = datetime.now(timezone.utc).timestamp()
+            filename = self._name + "_" + datetime.fromtimestamp(self._created_at, tz=timezone.utc).replace(tzinfo=None).strftime(FILENAME_TIME_FORMAT) + ".gns3project"
         else:
             self._name = filename.split("_")[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
             try:
                 self._created_at = datetime.strptime(datestring, FILENAME_TIME_FORMAT).replace(tzinfo=timezone.utc).timestamp()
             except ValueError:
-                self._created_at = datetime.now(UTC)
+                self._created_at = datetime.now(timezone.utc)
         self._path = os.path.join(project.path, "snapshots", filename)
 
     @property
