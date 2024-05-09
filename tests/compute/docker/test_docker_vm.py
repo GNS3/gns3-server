@@ -32,7 +32,7 @@ from unittest.mock import patch, MagicMock, call
 
 
 @pytest.fixture()
-async def manager(loop, port_manager):
+async def manager(event_loop, port_manager):
 
     m = Docker.instance()
     m.port_manager = port_manager
@@ -40,7 +40,7 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager):
+async def vm(event_loop, compute_project, manager):
 
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
     vm._cid = "e90e34656842"

@@ -484,7 +484,7 @@ class Compute:
         return self._getUrl(path)
 
     async def _run_http_query(self, method, path, data=None, timeout=20, raw=False):
-        with async_timeout.timeout(timeout):
+        async with async_timeout.timeout(delay=timeout):
             url = self._getUrl(path)
             headers = {}
             headers['content-type'] = 'application/json'

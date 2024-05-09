@@ -37,7 +37,7 @@ if not sys.platform.startswith("win"):
 
 
 @pytest.fixture
-async def manager(loop, port_manager):
+async def manager(event_loop, port_manager):
 
     m = IOU.instance()
     m.port_manager = port_manager
@@ -45,7 +45,7 @@ async def manager(loop, port_manager):
 
 
 @pytest.fixture(scope="function")
-async def vm(loop, compute_project, manager, tmpdir, fake_iou_bin, iourc_file):
+async def vm(event_loop, compute_project, manager, tmpdir, fake_iou_bin, iourc_file):
 
     vm = IOUVM("test", str(uuid.uuid4()), compute_project, manager, application_id=1)
     config = manager.config.get_section_config("IOU")

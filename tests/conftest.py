@@ -25,7 +25,7 @@ sys.original_platform = sys.platform
 
 if sys.platform.startswith("win"):
     @pytest.yield_fixture(scope="session")
-    def loop(request):
+    def event_loop(request):
         """Return an event loop and destroy it at the end of test"""
 
         loop = asyncio.ProactorEventLoop()
@@ -72,7 +72,7 @@ def compute(controller):
 
 
 @pytest.fixture
-async def project(loop, tmpdir, controller):
+async def project(event_loop, tmpdir, controller):
 
     return await controller.add_project(name="Test")
 

@@ -25,7 +25,7 @@ from gns3server.controller.gns3vm.virtualbox_gns3_vm import VirtualBoxGNS3VM
 
 
 @pytest.fixture
-async def gns3vm(loop, controller):
+async def gns3vm(event_loop, controller):
 
     vm = VirtualBoxGNS3VM(controller)
     vm.vmname = "GNS3 VM"
