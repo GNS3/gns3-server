@@ -3,7 +3,7 @@ aiohttp>=3.9.5,<3.10
 aiohttp-cors>=0.7.0,<0.8
 aiofiles>=23.2.1,<23.3
 Jinja2>=3.1.4,<3.2
-sentry-sdk==2.2.1,<2.3
+sentry-sdk==2.1.1,<2.2
 psutil==5.9.8
 async-timeout>=4.0.3,<4.1
 distro>=1.9.0
