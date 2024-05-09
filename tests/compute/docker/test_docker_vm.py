@@ -31,6 +31,9 @@ from gns3server.compute.docker import Docker
 from unittest.mock import patch, MagicMock, call
 
 
+pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+
+
 @pytest.fixture()
 async def manager(event_loop, port_manager):
 
