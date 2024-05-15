@@ -701,7 +701,7 @@ class VMware(BaseManager):
             path = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
             ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, path)
             documents_folder = path.value
-            return ['{}\My Virtual Machines'.format(documents_folder), '{}\Virtual Machines'.format(documents_folder)]
+            return [r'{}\My Virtual Machines'.format(documents_folder), r'{}\Virtual Machines'.format(documents_folder)]
         elif sys.platform.startswith("darwin"):
             return [os.path.expanduser("~/Documents/Virtual Machines.localized")]
         else:

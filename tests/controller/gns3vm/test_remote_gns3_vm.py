@@ -55,7 +55,7 @@ async def test_start(gns3vm, controller):
     assert gns3vm.password == "world"
 
 
-async def test_start_invalid_vm(loop, gns3vm, controller):
+async def test_start_invalid_vm(gns3vm, controller):
 
     await controller.add_compute("r1",
                                  name="R1",
@@ -63,7 +63,8 @@ async def test_start_invalid_vm(loop, gns3vm, controller):
                                  host="r1.local",
                                  port=8484,
                                  user="hello",
-                                 password="world")
+                                 password="world",
+                                 connect=False)
 
     gns3vm.vmname = "R2"
     with pytest.raises(GNS3VMError):

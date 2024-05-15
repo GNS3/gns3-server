@@ -195,6 +195,7 @@ async def test_create_image_with_not_supported_characters_by_filesystem(tmpdir, 
 
     # patching os.makedirs is necessary as it depends on already mocked os.path.exists
     with asyncio_patch("asyncio.create_subprocess_exec", return_value=MagicMock()) as process, \
+            patch("gns3server.compute.qemu.Qemu._init_config_disk", return_value=MagicMock()), \
             patch("gns3server.compute.qemu.Qemu.get_images_directory", return_value=str(tmpdir)), \
             patch("os.path.exists", side_effect=UnicodeEncodeError('error', u"", 1, 2, 'Emulated Unicode Err')),\
             patch("os.makedirs"):

@@ -17,6 +17,7 @@
 
 
 CLASSIC_SYMBOL_THEME = {"cloud": ":/symbols/classic/cloud.svg",
+                        "nat": ":/symbols/classic/nat.svg",
                         "ethernet_switch": ":/symbols/classic/ethernet_switch.svg",
                         "ethernet_hub": ":/symbols/classic/hub.svg",
                         "frame_relay_switch": ":/symbols/classic/frame_relay_switch.svg",
@@ -32,6 +33,7 @@ CLASSIC_SYMBOL_THEME = {"cloud": ":/symbols/classic/cloud.svg",
                         "docker_guest": ":/symbols/classic/docker_guest.svg"}
 
 AFFINITY_SQUARE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/blue/cloud.svg",
+                                     "nat": ":/symbols/affinity/square/blue/nat.svg",
                                      "ethernet_switch": ":/symbols/affinity/square/blue/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/square/blue/hub.svg",
                                      "frame_relay_switch.svg": ":/symbols/affinity/square/blue/isdn.svg",
@@ -47,6 +49,7 @@ AFFINITY_SQUARE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/blue/cl
                                      "docker_guest": ":/symbols/affinity/square/blue/docker.svg"}
 
 AFFINITY_SQUARE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/red/cloud.svg",
+                                    "nat": ":/symbols/affinity/square/red/nat.svg",
                                     "ethernet_switch": ":/symbols/affinity/square/red/switch.svg",
                                     "ethernet_hub": ":/symbols/affinity/square/red/hub.svg",
                                     "frame_relay_switch": ":/symbols/affinity/square/red/isdn.svg",
@@ -62,6 +65,7 @@ AFFINITY_SQUARE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/red/clou
                                     "docker_guest": ":/symbols/affinity/square/red/docker.svg"}
 
 AFFINITY_SQUARE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/gray/cloud.svg",
+                                     "nat": ":/symbols/affinity/square/gray/nat.svg",
                                      "ethernet_switch": ":/symbols/affinity/square/gray/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/square/gray/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/square/gray/isdn.svg",
@@ -77,6 +81,7 @@ AFFINITY_SQUARE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/square/gray/cl
                                      "docker_guest": ":/symbols/affinity/square/gray/docker.svg"}
 
 AFFINITY_CIRCLE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/blue/cloud.svg",
+                                     "nat": ":/symbols/affinity/circle/blue/nat.svg",
                                      "ethernet_switch": ":/symbols/affinity/circle/blue/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/circle/blue/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/circle/blue/isdn.svg",
@@ -92,6 +97,7 @@ AFFINITY_CIRCLE_BLUE_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/blue/cl
                                      "docker_guest": ":/symbols/affinity/circle/blue/docker.svg"}
 
 AFFINITY_CIRCLE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/red/cloud.svg",
+                                    "nat": ":/symbols/affinity/circle/red/nat.svg",
                                     "ethernet_switch": ":/symbols/affinity/circle/red/switch.svg",
                                     "ethernet_hub": ":/symbols/affinity/circle/red/hub.svg",
                                     "frame_relay_switch": ":/symbols/affinity/circle/red/isdn.svg",
@@ -107,6 +113,7 @@ AFFINITY_CIRCLE_RED_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/red/clou
                                     "docker_guest": ":/symbols/affinity/circle/red/docker.svg"}
 
 AFFINITY_CIRCLE_GRAY_SYMBOL_THEME = {"cloud": ":/symbols/affinity/circle/gray/cloud.svg",
+                                     "nat": ":/symbols/affinity/circle/gray/nat.svg",
                                      "ethernet_switch": ":/symbols/affinity/circle/gray/switch.svg",
                                      "ethernet_hub": ":/symbols/affinity/circle/gray/hub.svg",
                                      "frame_relay_switch": ":/symbols/affinity/circle/gray/isdn.svg",

@@ -53,7 +53,6 @@ def list_images(emulator_type):
         directory = os.path.normpath(directory)
         for root, _, filenames in _os_walk(directory, recurse=recurse):
             for filename in filenames:
-                path = os.path.join(root, filename)
                 if filename not in files:
                     if filename.endswith(".md5sum") or filename.startswith("."):
                         continue
@@ -73,8 +72,9 @@ def list_images(emulator_type):
                                 with open(os.path.join(root, filename), "rb") as f:
                                     # read the first 7 bytes of the file.
                                     elf_header_start = f.read(7)
-                                # valid IOS images must start with the ELF magic number, be 32-bit, big endian and have an ELF version of 1
-                                if not elf_header_start == b'\x7fELF\x01\x02\x01' and not elf_header_start == b'\x7fELF\x01\x01\x01':
+                                # valid IOU or IOS images must start with the ELF magic number, be 32-bit or 64-bit,
+                                # little endian and have an ELF version of 1
+                                if elf_header_start != b'\x7fELF\x02\x01\x01' and elf_header_start != b'\x7fELF\x01\x01\x01':
                                     continue
 
                             images.append({

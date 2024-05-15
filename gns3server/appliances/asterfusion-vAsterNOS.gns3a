@@ -1,0 +1,49 @@
+{
+    "appliance_id": "e8001e2b-8ef3-44eb-ace5-79f68f3773e8",
+    "name": "Asterfusion vAsterNOS",
+    "category": "multilayer_switch",
+    "description": "AsterNOS is the core technology of Asterfusion's one-stop turnkey SONiC solution for cloud, enterprise and AI. As an enterprise ready SONiC distribution, AsterNOS features rich functionality enhancement such as MC-LAG, VXLAN, BGP EVPN-Multihoming, RoCEv2(Easy RoCE), and more, making it powerful and easy-to-use in a variety of production scenarios. Currently, AsterNOS is compatible with top commercial  switching chips (e.g. Marvell Teralynx, Prestera Falcon/Aldrin/Alleycat, Broadcom Tomahawk/Trident, Intel Tofino and some of NVIDIA's chips.)Through AsterNOS's rich L2/L3 features and enhancements in virtualization and management, cloud architecture built with Asterfusion switching families from 1G-800G (or other standard whitebox switches) can scale to tens of thousands of compute and storage nodes, working smoothly both in underlay nework and overlay cloud fabric with OpenStack integrated, supporting ultra low latency lossless RoCE network in AIGC, distributed storage , or building easily managed access clusters for campus networks.NOTICE: This appliance file is a virtualized version of AsterNOS and is intended to be used only to experience the basic functionality and industry standard CLI (Klish), not for official software testing. For more information about AsterNOS commercial version, please feel free to contact us via Email: bd@cloudswit.ch",
+    "vendor_name": "Asterfusion",
+    "vendor_url": "https://cloudswit.ch/",
+    "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/asterfusion.png",
+    "documentation_url": "https://help.cloudswit.ch/portal/en/kb/articles/vasternos",
+    "product_name": "vAsterNOS",
+    "product_url": "https://cloudswit.ch/product/sonic-enterprise-distribution",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "Asterfusion",
+    "maintainer_email": "bd@cloudswit.ch",
+    "usage": "The login is admin, passwd asteros",
+    "symbol": "asterfusion-vAsterNOS.svg",
+    "first_port_name": "eth0",
+    "port_name_format": "Ethernet{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 10,
+        "ram": 4096,
+        "cpus": 2,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "d",
+        "kvm": "require"
+    },
+    "images": [
+        {
+            "filename": "vAsterNOS-V3.1.img",
+            "version": "V3.1",
+            "md5sum": "c323c9c3f60e1a93eca2acdc5034b85c",
+            "filesize": 2724659200,
+            "download_url": "https://drive.cloudswitch.io/external/8ae2e3932ad8bb2ec30dd25be415d288ff3e4a949c557c6bd48ac6e6265bcfc1"
+        }
+    ],
+    "versions": [
+        {
+            "name": "V3.1",
+            "images": {
+                "hda_disk_image": "vAsterNOS-V3.1.img"
+            }
+        }
+    ]
+}
+

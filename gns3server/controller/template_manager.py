@@ -63,7 +63,7 @@ class TemplateManager:
         builtins = []
         if Config.instance().get_section_config("Server").getboolean("enable_builtin_templates", True):
             builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "cloud"), {"template_type": "cloud", "name": "Cloud", "default_name_format": "Cloud{0}", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
-            builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"template_type": "nat", "name": "NAT", "default_name_format": "NAT{0}", "category": 2, "symbol": ":/symbols/cloud.svg"}, builtin=True))
+            builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "nat"), {"template_type": "nat", "name": "NAT", "default_name_format": "NAT{0}", "category": 2, "symbol": ":/symbols/nat.svg"}, builtin=True))
             builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "vpcs"), {"template_type": "vpcs", "name": "VPCS", "default_name_format": "PC{0}", "category": 2, "symbol": ":/symbols/vpcs_guest.svg", "properties": {"base_script_file": "vpcs_base_config.txt"}}, builtin=True))
             builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_switch"), {"template_type": "ethernet_switch", "console_type": "none", "name": "Ethernet switch", "default_name_format": "Switch{0}", "category": 1, "symbol": ":/symbols/ethernet_switch.svg"}, builtin=True))
             builtins.append(Template(uuid.uuid3(uuid.NAMESPACE_DNS, "ethernet_hub"), {"template_type": "ethernet_hub", "name": "Ethernet hub", "default_name_format": "Hub{0}", "category": 1, "symbol": ":/symbols/hub.svg"}, builtin=True))

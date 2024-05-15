@@ -33,7 +33,7 @@ from gns3server.config import Config
 
 
 @pytest.fixture(scope="function")
-async def manager(loop, port_manager):
+async def manager(port_manager):
 
     m = VPCS.instance()
     m.port_manager = port_manager

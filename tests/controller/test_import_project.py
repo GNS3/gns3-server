@@ -166,7 +166,7 @@ async def test_import_with_images(tmpdir, controller):
     assert os.path.exists(path), path
 
 
-async def test_import_iou_linux_no_vm(loop, linux_platform, tmpdir, controller):
+async def test_import_iou_linux_no_vm(linux_platform, tmpdir, controller):
     """
     On non linux host IOU should be local if we don't have a GNS3 VM
     """
@@ -210,7 +210,7 @@ async def test_import_iou_linux_no_vm(loop, linux_platform, tmpdir, controller):
         assert topo["topology"]["nodes"][0]["compute_id"] == "local"
 
 
-async def test_import_iou_linux_with_vm(loop, linux_platform, tmpdir, controller):
+async def test_import_iou_linux_with_vm(linux_platform, tmpdir, controller):
     """
     On non linux host IOU should be vm if we have a GNS3 VM configured
     """
@@ -255,7 +255,7 @@ async def test_import_iou_linux_with_vm(loop, linux_platform, tmpdir, controller
         assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
 
 
-async def test_import_nat_non_linux(loop, windows_platform, tmpdir, controller):
+async def test_import_nat_non_linux(windows_platform, tmpdir, controller):
     """
     On non linux host NAT should be moved to the GNS3 VM
     """
@@ -300,7 +300,7 @@ async def test_import_nat_non_linux(loop, windows_platform, tmpdir, controller):
         assert topo["topology"]["nodes"][0]["compute_id"] == "vm"
 
 
-async def test_import_iou_non_linux(loop, windows_platform, tmpdir, controller):
+async def test_import_iou_non_linux(windows_platform, tmpdir, controller):
     """
     On non linux host IOU should be moved to the GNS3 VM
     """
@@ -356,7 +356,7 @@ async def test_import_iou_non_linux(loop, windows_platform, tmpdir, controller):
     mock.assert_called_with(controller._computes["vm"], project_id, project.path, os.path.join('project-files', 'iou', topo["topology"]["nodes"][0]['node_id']))
 
 
-async def test_import_node_id(loop, linux_platform, tmpdir, controller):
+async def test_import_node_id(linux_platform, tmpdir, controller):
     """
     When importing a node, node_id should change
     """
@@ -449,7 +449,7 @@ async def test_import_node_id(loop, linux_platform, tmpdir, controller):
         assert os.path.exists(os.path.join(project.path, "project-files", "iou", topo["topology"]["nodes"][0]["node_id"], "startup.cfg"))
 
 
-async def test_import_keep_compute_id(loop, windows_platform, tmpdir, controller):
+async def test_import_keep_compute_id(windows_platform, tmpdir, controller):
     """
     On linux host IOU should be moved to the GNS3 VM
     """

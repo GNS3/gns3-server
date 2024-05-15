@@ -5,7 +5,7 @@
     "description": "Clavister NetWall (cOS Core) Virtual Appliance offers the same functionality as the Clavister  NetWall physical NGFWs in a virtual environment.",
     "vendor_name": "Clavister",
     "vendor_url": "https://www.clavister.com/",
-    "documentation_url": "https://kb.clavister.com",
+    "documentation_url": "https://docs.clavister.com",
     "product_name": "NetWall",
     "product_url": "https://www.clavister.com/products/ngfw/",
     "registry_version": 4,
@@ -13,7 +13,7 @@
     "availability": "free-to-try",
     "maintainer": "Mattias Nordlund",
     "maintainer_email": "mattias.nordlund@clavister.com",
-    "usage": "DHCP enabled on all interfaces by default, WebUI/SSH access enabled on the local network connected to If1.",
+    "usage": "DHCP & cloud-init enabled on all interfaces by default, WebUI/SSH access enabled on the local network connected to If1.",
     "port_name_format": "If{0}",
     "qemu": {
         "adapter_type": "e1000",
@@ -26,6 +26,13 @@
         "kvm": "allow"
     },
     "images": [
+        {
+            "filename": "clavister-cos-core-14.00.13.08-kvm-en.img",
+            "version": "cOS Core 14.00.13 (x86)",
+            "md5sum": "d36797077378accb2b8fc72d09d07ee1",
+            "filesize": 536870912,
+            "download_url": "https://my.clavister.com/download/f3f494a3-9ee7-ee11-a434-005056bdfeb0"
+        },
         {
             "filename": "clavister-cos-core-14.00.01.13-kvm-en.img",
             "version": "cOS Core 14.00.01 (x86)",
@@ -42,6 +49,12 @@
         }
     ],
     "versions": [
+        {
+            "name": "cOS Core 14.00.13 (x86)",
+            "images": {
+                "hda_disk_image": "clavister-cos-core-14.00.13.08-kvm-en.img"
+            }
+        },
         {
             "name": "cOS Core 14.00.01 (x86)",
             "images": {

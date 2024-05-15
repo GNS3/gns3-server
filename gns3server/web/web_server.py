@@ -118,7 +118,7 @@ class WebServer:
 
         if self._server:
             self._server.close()
-            await self._server.wait_closed()
+            # await self._server.wait_closed()
         if self._app:
             await self._app.shutdown()
         if self._handler:

@@ -115,11 +115,11 @@ def test_remove_checksum(tmpdir):
 def test_list_images(tmpdir):
 
     path1 = tmpdir / "images1" / "IOS" / "test1.image"
-    path1.write(b'\x7fELF\x01\x02\x01', ensure=True)
+    path1.write(b'\x7fELF\x01\x01\x01', ensure=True)
     path1 = force_unix_path(str(path1))
 
     path2 = tmpdir / "images2" / "test2.image"
-    path2.write(b'\x7fELF\x01\x02\x01', ensure=True)
+    path2.write(b'\x7fELF\x01\x01\x01', ensure=True)
     path2 = force_unix_path(str(path2))
 
     # Invalid image because not a valid elf file
@@ -128,7 +128,7 @@ def test_list_images(tmpdir):
 
     if sys.platform.startswith("linux"):
         path3 = tmpdir / "images1" / "IOU" / "test3.bin"
-        path3.write(b'\x7fELF\x01\x02\x01', ensure=True)
+        path3.write(b'\x7fELF\x02\x01\x01', ensure=True)
         path3 = force_unix_path(str(path3))
 
     path4 = tmpdir / "images1" / "QEMU" / "test4.qcow2"
@@ -148,13 +148,13 @@ def test_list_images(tmpdir):
             {
                 'filename': 'test1.image',
                 'filesize': 7,
-                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
                 'path': 'test1.image'
             },
             {
                 'filename': 'test2.image',
                 'filesize': 7,
-                'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                'md5sum': 'e573e8f5c93c6c00783f20c7a170aa6c',
                 'path': str(path2)
             }
         ]
@@ -164,7 +164,7 @@ def test_list_images(tmpdir):
                 {
                     'filename': 'test3.bin',
                     'filesize': 7,
-                    'md5sum': 'b0d5aa897d937aced5a6b1046e8f7e2e',
+                    'md5sum': 'c73626d23469519894d58bc98bee9655',
                     'path': 'test3.bin'
                 }
             ]

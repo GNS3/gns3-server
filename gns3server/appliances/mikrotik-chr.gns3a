@@ -28,6 +28,15 @@
     },
     "images": [
         {
+            "filename": "chr-7.14.2.img",
+            "version": "7.14.2",
+            "md5sum": "531901dac85b67b23011e946a62abc7b",
+            "filesize": 134217728,
+            "download_url": "http://www.mikrotik.com/download",
+            "direct_download_url": "https://download.mikrotik.com/routeros/7.14.2/chr-7.14.2.img.zip",
+            "compression": "zip"
+        },
+        {
             "filename": "chr-7.11.2.img",
             "version": "7.11.2",
             "md5sum": "fbffd097d2c5df41fc3335c3977f782c",

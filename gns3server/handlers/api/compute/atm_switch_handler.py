@@ -268,7 +268,7 @@ class ATMSwitchHandler:
         response.json({"pcap_file_path": pcap_file_path})
 
     @Route.post(
-        r"/projects/{project_id}/atm_relay_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
+        r"/projects/{project_id}/atm_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/stop_capture",
         parameters={
             "project_id": "Project UUID",
             "node_id": "Node UUID",
@@ -290,7 +290,7 @@ class ATMSwitchHandler:
         response.set_status(204)
 
     @Route.get(
-        r"/projects/{project_id}/atm_relay_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
+        r"/projects/{project_id}/atm_switch/nodes/{node_id}/adapters/{adapter_number:\d+}/ports/{port_number:\d+}/pcap",
         description="Stream the pcap capture file",
         parameters={
             "project_id": "Project UUID",
