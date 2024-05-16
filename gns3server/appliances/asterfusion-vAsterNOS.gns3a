@@ -6,7 +6,7 @@
     "vendor_name": "Asterfusion",
     "vendor_url": "https://cloudswit.ch/",
     "vendor_logo_url": "https://raw.githubusercontent.com/GNS3/gns3-registry/master/vendor-logos/asterfusion.png",
-    "documentation_url": "https://help.cloudswit.ch/portal/en/home",
+    "documentation_url": "https://help.cloudswit.ch/portal/en/kb/articles/vasternos",
     "product_name": "vAsterNOS",
     "product_url": "https://cloudswit.ch/product/sonic-enterprise-distribution",
     "registry_version": 4,
@@ -34,7 +34,7 @@
             "version": "V3.1",
             "md5sum": "c323c9c3f60e1a93eca2acdc5034b85c",
             "filesize": 2724659200,
-            "download_url": "https://cloudswit.ch/product/sonic-enterprise-distribution/#vAsterNOS"
+            "download_url": "https://drive.cloudswitch.io/external/8ae2e3932ad8bb2ec30dd25be415d288ff3e4a949c557c6bd48ac6e6265bcfc1"
         }
     ],
     "versions": [

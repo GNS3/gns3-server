@@ -25,11 +25,18 @@
     },
     "images": [
         {
+            "filename": "c8000v-universalk9_8G_serial.17.09.04a.qcow2",
+            "version": "17.09.04a 8G",
+            "md5sum": "d5dcba52b522f41648538737af80cdf9",
+            "filesize": 1858142208,
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Cupertino-17.9.4a"
+        },
+		{
             "filename": "c8000v-universalk9_8G_serial.17.09.01a.qcow2",
             "version": "17.09.01a 8G",
             "md5sum": "a10ae2c4d71f4eb611bc4d83ad7709f0",
             "filesize": 1856634880,
-            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Bengaluru-17.6.5"
+            "download_url": "https://software.cisco.com/download/home/286327102/type/282046477/release/Cupertino-17.9.1a"
         },
         {
             "filename": "c8000v-universalk9_8G_serial.17.06.05.qcow2",
@@ -62,6 +69,12 @@
     ],
     "versions": [
         {
+            "name": "17.09.04a 8G",
+            "images": {
+                "hda_disk_image": "c8000v-universalk9_8G_serial.17.09.04a.qcow2"
+            }
+        },
+		{
             "name": "17.09.01a 8G",
             "images": {
                 "hda_disk_image": "c8000v-universalk9_8G_serial.17.09.01a.qcow2"

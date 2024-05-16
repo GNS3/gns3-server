@@ -26,7 +26,7 @@
     },
     "images": [
         {
-            "filename": "OPNsense-24.1-OpenSSL-nano-amd64.img",
+            "filename": "OPNsense-24.1-nano-amd64.img",
             "version": "24.1",
             "md5sum": "ea8472df2c272419b7834cddaf68048d",
             "filesize": 3221225472,
@@ -72,7 +72,7 @@
         {
             "name": "24.1",
             "images": {
-                "hda_disk_image": "OPNsense-24.1-OpenSSL-nano-amd64.img"
+                "hda_disk_image": "OPNsense-24.1-nano-amd64.img"
             }
         },
         {
