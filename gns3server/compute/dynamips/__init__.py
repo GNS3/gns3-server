@@ -521,6 +521,10 @@ class Dynamips(BaseManager):
         if usage is not None and usage != vm.usage:
             vm.usage = usage
 
+        aux_type = settings.get("aux_type")
+        if aux_type is not None and aux_type != vm.aux_type:
+            vm.aux_type = aux_type
+
         # update the configs if needed
         await self.set_vm_configs(vm, settings)
 
