@@ -20,7 +20,7 @@ API routes for Dynamips nodes.
 
 import os
 
-from fastapi import APIRouter, WebSocket, Depends, status
+from fastapi import APIRouter, WebSocket, Body, Depends, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from typing import List, Union
@@ -334,7 +334,7 @@ async def get_auto_idlepc(node: Router = Depends(dep_node)) -> dict:
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(compute_authentication)]
 )
-async def duplicate_router(destination_node_id: UUID, node: Router = Depends(dep_node)) -> schemas.Dynamips:
+async def duplicate_router(destination_node_id: UUID = Body(..., embed=True), node: Router = Depends(dep_node)) -> schemas.Dynamips:
     """
     Duplicate a router.
     """
