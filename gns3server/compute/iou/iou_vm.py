@@ -661,7 +661,8 @@ class IOUVM(BaseNode):
             self._telnet_server.close()
             await self._telnet_server.wait_closed()
             self._telnet_server = None
-        await self.start_console()
+        if self.is_running():
+            await self.start_console()
 
     @locking
     async def _networking(self):
