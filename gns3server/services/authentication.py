@@ -16,7 +16,7 @@
 
 
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 
 from typing import Optional
@@ -48,7 +48,7 @@ class AuthService:
 
         if not expires_in:
             expires_in = Config.instance().settings.Controller.jwt_access_token_expire_minutes
-        expire = datetime.utcnow() + timedelta(minutes=expires_in)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_in)
         to_encode = {"sub": username, "exp": expire}
         if secret_key is None:
             secret_key = Config.instance().settings.Controller.jwt_secret_key
