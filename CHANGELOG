@@ -1,5 +1,16 @@
 # Change Log
 
+## 3.0.0b3 19/05/2024
+
+* Bundle web-ui v3.0.0b3
+* Fix to allow duplicating IOS routers
+* Fix to allow changing the auxiliary console for IOS router nodes.
+* Replace deprecated method datetime.utcnow()
+* Upgrade FastAPI to v0.111.0
+* Fix reset console for non running IOU devices
+* Do not allow to create a builtin template using the API.
+* Use cryptography backend for python-jose. Ref #2372
+
 ## 2.2.47 15/05/2024
 
 * Fix update-bundled-web-ui.sh script
