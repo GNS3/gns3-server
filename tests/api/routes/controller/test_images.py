@@ -126,8 +126,7 @@ class TestImageRoutes:
             ("ios", "ios_image", True),
             ("ios", "invalid_image", False),
             ("qemu", "qcow2_image", True),
-            ("qemu", "empty_image", False),
-            ("wrong_type", "qcow2_image", False),
+            ("qemu", "empty_image", False)
         ),
     )
     async def test_upload_image(
@@ -173,7 +172,7 @@ class TestImageRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["filename"] == image_name
 
-    async def test_same_image_cannot_be_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
+    async def test_same_image_is_uploaded(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
         image_name = os.path.basename(qcow2_image)
         with open(qcow2_image, "rb") as f:
@@ -181,7 +180,7 @@ class TestImageRoutes:
         response = await client.post(
             app.url_path_for("upload_image", image_path=image_name),
             content=image_data)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_201_CREATED
 
     async def test_image_delete(self, app: FastAPI, client: AsyncClient, qcow2_image: str) -> None:
 
@@ -213,7 +212,7 @@ class TestImageRoutes:
         "subdir, expected_result",
         (
             ("subdir", status.HTTP_201_CREATED),
-            ("subdir", status.HTTP_400_BAD_REQUEST),
+            ("subdir", status.HTTP_201_CREATED),
             ("subdir2", status.HTTP_201_CREATED),
         ),
     )

@@ -16,6 +16,6 @@
     "docker": {
         "adapters": 16,
         "image": "gns3/openvswitch:latest",
-        "environment": "MANAGEMENT_INTERFACE=1"
+        "environment": "MANAGEMENT_INTERFACE=eth0"
     }
 }

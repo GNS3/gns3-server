@@ -51,11 +51,11 @@ class Snapshot:
         self._project = project
         if name:
             self._name = name
-            self._created_at = datetime.now().timestamp()
+            self._created_at = datetime.now(timezone.utc).timestamp()
             filename = (
                 self._name
                 + "_"
-                + datetime.utcfromtimestamp(self._created_at).replace(tzinfo=None).strftime("%d%m%y_%H%M%S")
+                + datetime.fromtimestamp(self._created_at, tz=timezone.utc).replace(tzinfo=None).strftime("%d%m%y_%H%M%S")
                 + ".gns3project"
             )
         else:
@@ -66,7 +66,7 @@ class Snapshot:
                     datetime.strptime(datestring, "%d%m%y_%H%M%S").replace(tzinfo=timezone.utc).timestamp()
                 )
             except ValueError:
-                self._created_at = datetime.utcnow().timestamp()
+                self._created_at = datetime.now(timezone.utc)
         self._path = os.path.join(project.path, "snapshots", filename)
 
     @property

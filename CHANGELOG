@@ -1,5 +1,38 @@
 # Change Log
 
+## 3.0.0b3 19/05/2024
+
+* Bundle web-ui v3.0.0b3
+* Fix to allow duplicating IOS routers
+* Fix to allow changing the auxiliary console for IOS router nodes.
+* Replace deprecated method datetime.utcnow()
+* Upgrade FastAPI to v0.111.0
+* Fix reset console for non running IOU devices
+* Do not allow to create a builtin template using the API.
+* Use cryptography backend for python-jose. Ref #2372
+
+## 2.2.47 15/05/2024
+
+* Fix update-bundled-web-ui.sh script
+* Bundle web-ui v2.2.47
+* Change sentry-sdk version
+* Upgrade aiohttp, sentry-sdk and truststore
+* Upgrade jsonschema and aiohttp
+* Drop Python 3.7
+* Remove dev requirements for Python 3.6
+* Do not run Docker VM tests on Windows
+* Do not wait for the server to close when shutting down.
+* Fix test create image with not supported characters by filesystem. Fixes #2375
+* Allow listing x86_64 IOU images. Fixes #2376
+* Upgrade Jinja2 to version 3.1.4. Fixes #2378
+* Fix link capture for ATM switch. Fixes https://github.com/GNS3/gns3-gui/issues/3570
+* Fix tests after updating error message when busybox is not installed.
+* Add more details to error message when busybox is not installed. Fixes https://github.com/GNS3/gns3-gui/issues/3569
+* Fix invalid escape sequences
+* Add NAT symbols
+* Fix cannot stop Docker VM while console connection is still active.
+* Upgrade sentry-sdk to version 1.40.6
+
 ## 3.0.0b2 07/04/2024
 
 * Bundle web-ui v3.0.0b2

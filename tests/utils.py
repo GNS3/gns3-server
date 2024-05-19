@@ -105,5 +105,5 @@ class AsyncioBytesIO(io.BytesIO):
     async def write(self, data):
         return super().write(data)
 
-    async def close(self):
-        return super().close()
+    # async def close(self):
+    #     return super().close()

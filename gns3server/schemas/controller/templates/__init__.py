@@ -45,7 +45,6 @@ class TemplateBase(BaseModel):
     category: Optional[Category] = None
     default_name_format: Optional[str] = None
     symbol: Optional[str] = None
-    builtin: Optional[bool] = None
     template_type: Optional[NodeType] = None
     compute_id: Optional[str] = None
     usage: Optional[str] = ""

@@ -213,7 +213,7 @@ class UDPLink(Link):
         :returns: Node where the capture should run
         """
 
-        ALWAYS_RUNNING_NODES_TYPE = ("cloud", "nat", "ethernet_switch", "ethernet_hub")
+        ALWAYS_RUNNING_NODES_TYPE = ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch")
 
         for node in self._nodes:
             if (

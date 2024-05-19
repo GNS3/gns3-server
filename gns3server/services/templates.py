@@ -96,7 +96,7 @@ BUILTIN_TEMPLATES = [
         "name": "NAT",
         "default_name_format": "NAT{0}",
         "category": "guest",
-        "symbol": "cloud",
+        "symbol": "nat",
         "compute_id": None,
         "builtin": True,
     },
