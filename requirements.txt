@@ -10,7 +10,7 @@ sentry-sdk==2.7.1,<2.8
 psutil==6.0.0
 distro>=1.9.0
 py-cpuinfo==9.0.0
-sqlalchemy==2.0.29
+sqlalchemy==2.0.31
 aiosqlite==0.20.0
 alembic==1.12.1
 bcrypt==4.1.2
