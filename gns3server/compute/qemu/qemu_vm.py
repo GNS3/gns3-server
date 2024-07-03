@@ -45,7 +45,7 @@ from ..nios.nio_tap import NIOTAP
 from ..base_node import BaseNode
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
-from ...utils import macaddress_to_int, int_to_macaddress
+from ...utils import macaddress_to_int, int_to_macaddress, is_ipv6_enabled
 from ...utils.hostname import is_rfc1123_hostname_valid
 
 from gns3server.schemas.compute.qemu_nodes import Qemu, QemuPlatform
@@ -1855,14 +1855,17 @@ class QemuVM(BaseNode):
         if port:
             console_host = self._manager.port_manager.console_host
             if console_host == "0.0.0.0":
-                if socket.has_ipv6:
-                    # to fix an issue with Qemu when IPv4 is not enabled
-                    # see https://github.com/GNS3/gns3-gui/issues/2352
-                    # FIXME: consider making this more global (not just for Qemu + SPICE)
-                    console_host = "::"
-                else:
-                    raise QemuError("IPv6 must be enabled in order to use the SPICE console")
-            return ["-spice", f"addr={console_host},port={port},disable-ticketing", "-vga", "qxl"]
+                try:
+                    if is_ipv6_enabled():
+                        # to fix an issue with Qemu when IPv4 is not enabled
+                        # see https://github.com/GNS3/gns3-gui/issues/2352
+                        # FIXME: consider making this more global (not just for Qemu + SPICE)
+                        console_host = "::"
+                except OSError as e:
+                    raise QemuError("Could not check if IPv6 is enabled: {}".format(e))
+            return ["-spice",
+                    f"addr={console_host},port={port},disable-ticketing",
+                    "-vga", "qxl"]
         else:
             return []
 
