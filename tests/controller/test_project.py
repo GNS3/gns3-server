@@ -750,7 +750,7 @@ def test_snapshots(project):
 def test_get_snapshot(project):
 
     os.makedirs(os.path.join(project.path, "snapshots"))
-    open(os.path.join(project.path, "snapshots", "test1.gns3project"), "w+").close()
+    open(os.path.join(project.path, "snapshots", "test1_260716_103713.gns3project"), "w+").close()
     project.reset()
 
     snapshot = list(project.snapshots.values())[0]

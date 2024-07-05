@@ -192,7 +192,11 @@ class Project:
         if os.path.exists(snapshot_dir):
             for snap in os.listdir(snapshot_dir):
                 if snap.endswith(".gns3project"):
-                    snapshot = Snapshot(self, filename=snap)
+                    try:
+                        snapshot = Snapshot(self, filename=snap)
+                    except ValueError:
+                        log.error("Invalid snapshot file: {}".format(snap))
+                        continue
                     self._snapshots[snapshot.id] = snapshot
 
         # Create the project on demand on the compute node
