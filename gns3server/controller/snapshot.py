@@ -96,7 +96,7 @@ class Snapshot:
             with tempfile.TemporaryDirectory(dir=snapshot_directory) as tmpdir:
                 # Do not compress the snapshots
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
-                    await export_project(zstream, self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                    await export_project(zstream, self._project, tmpdir, keep_compute_ids=True, allow_all_nodes=True)
                     async with aiofiles.open(self.path, 'wb') as f:
                         async for chunk in zstream:
                             await f.write(chunk)

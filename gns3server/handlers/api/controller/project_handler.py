@@ -319,6 +319,10 @@ class ProjectHandler:
             reset_mac_addresses = True
         else:
             reset_mac_addresses = False
+        if request.query.get("keep_compute_ids", "no").lower() == "yes":
+            keep_compute_ids = True
+        else:
+            keep_compute_ids = False
 
         compression_query = request.query.get("compression", "zip").lower()
         if compression_query == "zip":
@@ -336,9 +340,17 @@ class ProjectHandler:
             working_dir = os.path.abspath(os.path.join(project.path, os.pardir))
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 with aiozipstream.ZipFile(compression=compression) as zstream:
-                    await export_project(zstream, project, tmpdir, include_snapshots=include_snapshots, include_images=include_images, reset_mac_addresses=reset_mac_addresses)
+                    await export_project(
+                        zstream,
+                        project,
+                        tmpdir,
+                        include_snapshots=include_snapshots,
+                        include_images=include_images,
+                        reset_mac_addresses=reset_mac_addresses,
+                        keep_compute_ids=keep_compute_ids
+                    )
 
-                    # We need to do that now because export could failed and raise an HTTP error
+                    # We need to do that now because export could fail and raise an HTTP error
                     # that why response start need to be the later possible
                     response.content_type = 'application/gns3project'
                     response.headers['CONTENT-DISPOSITION'] = 'attachment; filename="{}.gns3project"'.format(project.name)
@@ -350,7 +362,7 @@ class ProjectHandler:
 
             log.info("Project '{}' exported in {:.4f} seconds".format(project.name, time.time() - begin))
 
-        # Will be raise if you have no space left or permission issue on your temporary directory
+        # Will be raised if you have no space left or permission issue on your temporary directory
         # RuntimeError: something was wrong during the zip process
         except (ValueError, OSError, RuntimeError) as e:
             raise aiohttp.web.HTTPNotFound(text="Cannot export project: {}".format(str(e)))

@@ -1066,7 +1066,7 @@ class Project:
             with tempfile.TemporaryDirectory(dir=working_dir) as tmpdir:
                 # Do not compress the exported project when duplicating
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
-                    await export_project(zstream, self, tmpdir, keep_compute_id=True, allow_all_nodes=True, reset_mac_addresses=reset_mac_addresses)
+                    await export_project(zstream, self, tmpdir, keep_compute_ids=True, allow_all_nodes=True, reset_mac_addresses=reset_mac_addresses)
 
                     # export the project to a temporary location
                     project_path = os.path.join(tmpdir, "project.gns3p")
@@ -1077,7 +1077,7 @@ class Project:
 
                     # import the temporary project
                     with open(project_path, "rb") as f:
-                        project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_id=True)
+                        project = await import_project(self._controller, str(uuid.uuid4()), f, location=location, name=name, keep_compute_ids=True)
 
             log.info("Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - begin))
         except (ValueError, OSError, UnicodeEncodeError) as e:
