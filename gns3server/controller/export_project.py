@@ -39,7 +39,7 @@ async def export_project(
     temporary_dir,
     include_images=False,
     include_snapshots=False,
-    keep_compute_id=False,
+    keep_compute_ids=False,
     allow_all_nodes=False,
     reset_mac_addresses=False,
 ):
@@ -54,9 +54,9 @@ async def export_project(
     :param temporary_dir: A temporary dir where to store intermediate data
     :param include_images: save OS images to the zip file
     :param include_snapshots: save snapshots to the zip file
-    :param keep_compute_id: If false replace all compute id by local (standard behavior for .gns3project to make it portable)
-    :param allow_all_nodes: Allow all nodes type to be include in the zip even if not portable
-    :param reset_mac_addresses: Reset MAC addresses for every nodes.
+    :param keep_compute_ids: If false replace all compute IDs by local (standard behavior for .gns3project to make it portable)
+    :param allow_all_nodes: Allow all nodes type to be included in the zip even if not portable
+    :param reset_mac_addresses: Reset MAC addresses for each node.
     """
 
     # To avoid issue with data not saved we disallow the export of a running project
@@ -77,7 +77,7 @@ async def export_project(
                 os.path.join(project._path, file),
                 zstream,
                 include_images,
-                keep_compute_id,
+                keep_compute_ids,
                 allow_all_nodes,
                 temporary_dir,
                 reset_mac_addresses,
@@ -193,7 +193,7 @@ def _is_exportable(path, include_snapshots=False):
 
 
 async def _patch_project_file(
-    project, path, zstream, include_images, keep_compute_id, allow_all_nodes, temporary_dir, reset_mac_addresses
+    project, path, zstream, include_images, keep_compute_ids, allow_all_nodes, temporary_dir, reset_mac_addresses
 ):
     """
     Patch a project file (.gns3) to export a project.
@@ -225,7 +225,7 @@ async def _patch_project_file(
                 if not allow_all_nodes and node["node_type"] in ["virtualbox", "vmware"]:
                     raise ControllerError("Projects with a {} node cannot be exported".format(node["node_type"]))
 
-                if not keep_compute_id:
+                if not keep_compute_ids:
                     node["compute_id"] = "local"  # To make project portable all node by default run on local
 
                 if "properties" in node and node["node_type"] != "docker":
@@ -243,13 +243,13 @@ async def _patch_project_file(
                         if value is None or value.strip() == "":
                             continue
 
-                        if not keep_compute_id:  # If we keep the original compute we can keep the image path
+                        if not keep_compute_ids:  # If we keep the original compute we can keep the image path
                             node["properties"][prop] = os.path.basename(value)
 
                         if include_images is True:
                             images.append({"compute_id": compute_id, "image": value, "image_type": node["node_type"]})
 
-        if not keep_compute_id:
+        if not keep_compute_ids:
             topology["topology"][
                 "computes"
             ] = []  # Strip compute information because could contain secret info like password

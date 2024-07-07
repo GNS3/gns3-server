@@ -61,13 +61,19 @@ def test_snapshot_filename(project):
 
 def test_json(project):
 
-    snapshot = Snapshot(project, filename="test1_260716_100439.gns3project")
+    snapshot = Snapshot(project, filename="snapshot_test_260716_100439.gns3project")
     assert snapshot.asdict() == {
         "snapshot_id": snapshot._id,
-        "name": "test1",
+        "name": "snapshot_test",
         "project_id": project.id,
         "created_at": 1469527479
     }
+
+
+def test_invalid_snapshot_filename(project):
+
+    with pytest.raises(ValueError):
+        Snapshot(project, filename="snapshot_test_invalid_file.gns3project")
 
 
 @pytest.mark.asyncio

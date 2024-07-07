@@ -210,7 +210,11 @@ class Project:
         if os.path.exists(snapshot_dir):
             for snap in os.listdir(snapshot_dir):
                 if snap.endswith(".gns3project"):
-                    snapshot = Snapshot(self, filename=snap)
+                    try:
+                        snapshot = Snapshot(self, filename=snap)
+                    except ValueError:
+                        log.error("Invalid snapshot file: {}".format(snap))
+                        continue
                     self._snapshots[snapshot.id] = snapshot
 
         # Create the project on demand on the compute node
@@ -1087,7 +1091,7 @@ class Project:
                         zstream,
                         self,
                         tmpdir,
-                        keep_compute_id=True,
+                        keep_compute_ids=True,
                         allow_all_nodes=True,
                         reset_mac_addresses=reset_mac_addresses,
                     )
@@ -1106,7 +1110,7 @@ class Project:
                             str(uuid.uuid4()),
                             f,
                             name=name,
-                            keep_compute_id=True
+                            keep_compute_ids=True
                         )
 
             log.info(f"Project '{project.name}' duplicated in {time.time() - begin:.4f} seconds")

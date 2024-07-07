@@ -334,7 +334,7 @@ async def test_export_with_images(tmpdir, project):
 
 
 @pytest.mark.asyncio
-async def test_export_keep_compute_id(tmpdir, project):
+async def test_export_keep_compute_ids(tmpdir, project):
     """
     If we want to restore the same computes we could ask to keep them
     in the file
@@ -363,7 +363,7 @@ async def test_export_keep_compute_id(tmpdir, project):
         json.dump(data, f)
 
     with aiozipstream.ZipFile() as z:
-        await export_project(z, project, str(tmpdir), keep_compute_id=True)
+        await export_project(z, project, str(tmpdir), keep_compute_ids=True)
         await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
@@ -469,7 +469,7 @@ async def test_export_with_ignoring_snapshots(tmpdir, project):
     Path(os.path.join(snapshots_dir, 'snap.gns3project')).touch()
 
     with aiozipstream.ZipFile() as z:
-        await export_project(z, project, str(tmpdir), keep_compute_id=True)
+        await export_project(z, project, str(tmpdir), keep_compute_ids=True)
         await write_file(str(tmpdir / 'zipfile.zip'), z)
 
     with zipfile.ZipFile(str(tmpdir / 'zipfile.zip')) as myzip:
