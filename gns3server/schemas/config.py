@@ -69,6 +69,7 @@ class QemuSettings(BaseModel):
     monitor_host: str = "127.0.0.1"
     enable_hardware_acceleration: bool = True
     require_hardware_acceleration: bool = False
+    allow_unsafe_options: bool = False
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
