@@ -1,10 +1,10 @@
 jsonschema>=4.22.0,<4.23
 aiohttp>=3.9.5,<3.10
 aiohttp-cors>=0.7.0,<0.8
-aiofiles>=23.2.1,<23.3
+aiofiles>=24.1.0,<25.0
 Jinja2>=3.1.4,<3.2
-sentry-sdk==2.1.1,<2.2
-psutil==5.9.8
+sentry-sdk==2.7.1,<2.8
+psutil==6.0.0
 async-timeout>=4.0.3,<4.1
 distro>=1.9.0
 py-cpuinfo>=9.0.0,<10.0

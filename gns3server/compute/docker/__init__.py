@@ -29,6 +29,7 @@ import shutil
 import platformdirs
 
 from gns3server.utils import parse_version
+from gns3server.config import Config
 from gns3server.utils.asyncio import locking
 from gns3server.compute.base_manager import BaseManager
 from gns3server.compute.docker.docker_vm import DockerVM
@@ -96,8 +97,10 @@ class Docker(BaseManager):
         Get the Docker resources storage directory
         """
 
+        server_config = Config.instance().get_section_config("Server")
         appname = vendor = "GNS3"
-        docker_resources_dir = os.path.join(platformdirs.user_data_dir(appname, vendor, roaming=True), "docker", "resources")
+        resources_path = os.path.expanduser(server_config.get("resources_path", platformdirs.user_data_dir(appname, vendor, roaming=True)))
+        docker_resources_dir = os.path.join(resources_path, "docker")
         os.makedirs(docker_resources_dir, exist_ok=True)
         return docker_resources_dir
 

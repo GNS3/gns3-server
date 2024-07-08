@@ -47,11 +47,17 @@ from ..base_node import BaseNode
 from ...schemas.qemu import QEMU_OBJECT_SCHEMA, QEMU_PLATFORMS
 from ...utils.asyncio import monitor_process
 from ...utils.images import md5sum
-from ...utils import macaddress_to_int, int_to_macaddress
+from ...utils import macaddress_to_int, int_to_macaddress, is_ipv6_enabled
 
 
 import logging
 log = logging.getLogger(__name__)
+
+# forbidden additional options
+FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd",
+                     "-fsdev", "-virtfs"}
+FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS
+                      if opt.startswith("-") and not opt.startswith("--")}
 
 
 class QemuVM(BaseNode):
@@ -1672,13 +1678,14 @@ class QemuVM(BaseNode):
         if self._console:
             console_host = self._manager.port_manager.console_host
             if console_host == "0.0.0.0":
-                if socket.has_ipv6:
-                    # to fix an issue with Qemu when IPv4 is not enabled
-                    # see https://github.com/GNS3/gns3-gui/issues/2352
-                    # FIXME: consider making this more global (not just for Qemu + SPICE)
-                    console_host = "::"
-                else:
-                    raise QemuError("IPv6 must be enabled in order to use the SPICE console")
+                try:
+                    if is_ipv6_enabled():
+                        # to fix an issue with Qemu when IPv4 is not enabled
+                        # see https://github.com/GNS3/gns3-gui/issues/2352
+                        # FIXME: consider making this more global (not just for Qemu + SPICE)
+                        console_host = "::"
+                except OSError as e:
+                    raise QemuError("Could not check if IPv6 is enabled: {}".format(e))
             return ["-spice",
                     "addr={},port={},disable-ticketing".format(console_host, self._console),
                     "-vga", "qxl"]
@@ -2423,9 +2430,19 @@ class QemuVM(BaseNode):
             command.extend(self._tpm_options())
         if additional_options:
             try:
-                command.extend(shlex.split(additional_options))
+                additional_opt_list = shlex.split(additional_options)
             except ValueError as e:
                 raise QemuError("Invalid additional options: {} error {}".format(additional_options, e))
+            allow_unsafe_options = self.manager.config.get_section_config("Qemu").getboolean(
+                "allow_unsafe_options",
+                False
+            )
+            if allow_unsafe_options is False:
+                for opt in additional_opt_list:
+                    if opt in FORBIDDEN_OPTIONS:
+                        raise QemuError("Forbidden additional option: {}".format(opt))
+            command.extend(additional_opt_list)
+
         # avoiding mouse offset (see https://github.com/GNS3/gns3-server/issues/2335)
         if self._console_type == "vnc":
             command.extend(['-machine', 'usb=on', '-device', 'usb-tablet'])
