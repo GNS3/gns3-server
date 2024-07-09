@@ -1,5 +1,15 @@
 # Change Log
 
+## 2.2.48 08/07/2024
+
+* Bundle web-ui v2.2.48
+* Add 'install_builtin_appliances' and 'resources_path' settings in the server config
+* Option to keep the compute IDs unchanged when exporting a project
+* Forbid unsafe Qemu additional options
+* Fix error when snapshot exists with an underscore in the name
+* Upgrade sentry-sdk, psutil and aiofiles packages
+* Fix check for IPv6 enabled on host
+
 ## 3.0.0b3 19/05/2024
 
 * Bundle web-ui v3.0.0b3
