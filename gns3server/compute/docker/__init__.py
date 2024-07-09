@@ -96,9 +96,12 @@ class Docker(BaseManager):
         Get the Docker resources storage directory
         """
 
-        server_config = Config.instance().get_section_config("Server")
-        appname = vendor = "GNS3"
-        resources_path = os.path.expanduser(server_config.get("resources_path", platformdirs.user_data_dir(appname, vendor, roaming=True)))
+        resources_path = Config.instance().settings.Server.resources_path
+        if not resources_path:
+            appname = vendor = "GNS3"
+            resources_path = platformdirs.user_data_dir(appname, vendor, roaming=True)
+        else:
+            resources_path = os.path.expanduser(resources_path)
         docker_resources_dir = os.path.join(resources_path, "docker")
         os.makedirs(docker_resources_dir, exist_ok=True)
         return docker_resources_dir

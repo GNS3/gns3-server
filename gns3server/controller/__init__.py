@@ -271,9 +271,7 @@ class Controller:
         self._iou_license_settings["license_check"] = iou_config.license_check
 
         # install the built-in appliances if needed
-        # FIXME
-        server_config = Config.instance().get_section_config("Server")
-        if server_config.getboolean("install_builtin_appliances", True):
+        if Config.instance().settings.Server.install_builtin_appliances:
             previous_version = controller_vars.get("version")
             log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
             builtin_appliances_path = self._appliance_manager.builtin_appliances_path()

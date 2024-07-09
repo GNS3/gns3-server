@@ -100,9 +100,12 @@ class ApplianceManager:
         Get the built-in appliance storage directory
         """
 
-        server_config = Config.instance().get_section_config("Server")
-        appname = vendor = "GNS3"
-        resources_path = os.path.expanduser(server_config.get("resources_path", platformdirs.user_data_dir(appname, vendor, roaming=True)))
+        resources_path = Config.instance().settings.Server.resources_path
+        if not resources_path:
+            appname = vendor = "GNS3"
+            resources_path = platformdirs.user_data_dir(appname, vendor, roaming=True)
+        else:
+            resources_path = os.path.expanduser(resources_path)
         appliances_dir = os.path.join(resources_path, "appliances")
         if delete_first:
             shutil.rmtree(appliances_dir, ignore_errors=True)
