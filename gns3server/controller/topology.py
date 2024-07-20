@@ -211,14 +211,13 @@ def _convert_2_2_0(topo, topo_path):
     Convert topologies from GNS3 2.2.x to 3.0
 
     Changes:
-     * Removed acpi_shutdown option from Qemu, VMware and VirtualBox
-
+     * Convert Qemu and Docker node names to be a valid RFC1123 hostnames.
+     * Convert Dynamips and IOU node names to be a valid IOS hostnames.
     """
 
     topo["revision"] = 10
 
     for node in topo.get("topology", {}).get("nodes", []):
-        # make sure console_type is not None but "none" string
         if "properties" in node:
             if node["node_type"] in ("qemu", "docker") and not is_rfc1123_hostname_valid(node["name"]):
                 new_name = to_rfc1123_hostname(node["name"])
