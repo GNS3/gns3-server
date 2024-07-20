@@ -23,11 +23,11 @@
                 "label": {
                     "rotation": 0,
                     "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
-                    "text": "remote_busybox-1",
+                    "text": "remote-busybox-1",
                     "x": -20,
                     "y": -25
                 },
-                "name": "remote_busybox-1",
+                "name": "remote-busybox-1",
                 "node_id": "d397ef5a-84f1-4b6b-9d44-671937ec7781",
                 "node_type": "docker",
                 "port_name_format": "Ethernet{0}",

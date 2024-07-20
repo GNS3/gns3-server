@@ -11,7 +11,7 @@
                 "label": {
                     "color": "#ff000000",
                     "font": "TypeWriter,10,-1,5,75,0,0,0,0,0",
-                    "text": "remote_busybox-1",
+                    "text": "remote-busybox-1",
                     "x": -20.4453125,
                     "y": -25.0
                 },
@@ -32,7 +32,7 @@
                     "console_resolution": "1024x768",
                     "console_type": "telnet",
                     "image": "busybox:latest",
-                    "name": "remote_busybox-1"
+                    "name": "remote-busybox-1"
                 },
                 "server_id": 2,
                 "type": "DockerVM",
