@@ -32,6 +32,28 @@ def is_ios_hostname_valid(hostname: str) -> bool:
     return False
 
 
+def to_ios_hostname(name):
+    """
+    Convert name to an IOS hostname
+    """
+
+    # Replace invalid characters with hyphens
+    name = re.sub(r'[^a-zA-Z0-9-]', '-', name)
+
+    # Ensure the hostname starts with a letter
+    if not re.search(r'^[a-zA-Z]', name):
+        name = 'a' + name
+
+    # Ensure the hostname ends with a letter or digit
+    if not re.search(r'[a-zA-Z0-9]$', name):
+        name = name.rstrip('-') + '0'
+
+    # Truncate the hostname to 63 characters
+    name = name[:63]
+
+    return name
+
+
 def is_rfc1123_hostname_valid(hostname: str) -> bool:
     """
     Check if a hostname is valid according to RFC 1123
@@ -57,3 +79,34 @@ def is_rfc1123_hostname_valid(hostname: str) -> bool:
 
     allowed = re.compile(r"(?!-)[a-zA-Z0-9-]{1,63}(?<!-)$")
     return all(allowed.match(label) for label in labels)
+
+
+def to_rfc1123_hostname(name: str) -> str:
+    """
+    Convert name to RFC 1123 hostname
+    """
+
+    # Replace invalid characters with hyphens
+    name = re.sub(r'[^a-zA-Z0-9-.]', '-', name)
+
+    # Remove trailing dot if it exists
+    name = name.rstrip('.')
+
+    # Ensure each label is not longer than 63 characters
+    labels = name.split('.')
+    labels = [label[:63] for label in labels]
+
+    # Remove leading and trailing hyphens from each label if they exist
+    labels = [label.strip('-') for label in labels]
+
+    # Check if the TLD is all-numeric and if so, replace it with "invalid"
+    if re.match(r"[0-9]+$", labels[-1]):
+        labels[-1] = 'invalid'
+
+    # Join the labels back together
+    name = '.'.join(labels)
+
+    # Ensure the total length is not longer than 253 characters
+    name = name[:253]
+
+    return name

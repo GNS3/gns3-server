@@ -495,7 +495,7 @@ class Project:
 
         if base_name is None:
             return None
-        base_name = re.sub(r"[ ]", "", base_name)
+        base_name = re.sub(r"[ ]", "", base_name)  # remove spaces in node name
         if base_name in self._allocated_node_names:
             base_name = re.sub(r"[0-9]+$", "{0}", base_name)
 

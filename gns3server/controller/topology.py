@@ -35,6 +35,7 @@ from .drawing import Drawing
 from .node import Node
 from .link import Link
 
+from gns3server.utils.hostname import is_ios_hostname_valid, is_rfc1123_hostname_valid, to_rfc1123_hostname, to_ios_hostname
 from gns3server.schemas.controller.topology import Topology
 from gns3server.schemas.compute.dynamips_nodes import DynamipsCreate
 
@@ -43,7 +44,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-GNS3_FILE_FORMAT_REVISION = 9
+GNS3_FILE_FORMAT_REVISION = 10
 
 
 class DynamipsNodeValidation(DynamipsCreate):
@@ -186,6 +187,10 @@ def load_topology(path):
         if variables:
             topo["variables"] = [var for var in variables if var.get("name")]
 
+    # Version before GNS3 3.0
+    if topo["revision"] < 10:
+        topo = _convert_2_2_0(topo, path)
+
     try:
         _check_topology_schema(topo, path)
     except ControllerError as e:
@@ -198,6 +203,31 @@ def load_topology(path):
                 json.dump(topo, f, indent=4, sort_keys=True)
         except OSError as e:
             raise ControllerError(f"Can't write the topology {path}: {str(e)}")
+    return topo
+
+
+def _convert_2_2_0(topo, topo_path):
+    """
+    Convert topologies from GNS3 2.2.x to 3.0
+
+    Changes:
+     * Removed acpi_shutdown option from Qemu, VMware and VirtualBox
+
+    """
+
+    topo["revision"] = 10
+
+    for node in topo.get("topology", {}).get("nodes", []):
+        # make sure console_type is not None but "none" string
+        if "properties" in node:
+            if node["node_type"] in ("qemu", "docker") and not is_rfc1123_hostname_valid(node["name"]):
+                new_name = to_rfc1123_hostname(node["name"])
+                log.info(f"Convert node name {node['name']} to {new_name} (RFC1123)")
+                node["name"] = new_name
+            if node["node_type"] in ("dynamips", "iou") and not is_ios_hostname_valid(node["name"] ):
+                new_name = to_ios_hostname(node["name"])
+                log.info(f"Convert node name {node['name']} to {new_name} (IOS)")
+                node["name"] = new_name
     return topo
 
 
