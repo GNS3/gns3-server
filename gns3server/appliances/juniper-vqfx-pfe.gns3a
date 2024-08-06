@@ -23,7 +23,7 @@
         "arch": "x86_64",
         "console_type": "vnc",
         "kvm": "require",
-        "options": "-nographic"
+        "options": "-nographic -machine q35,smbios-entry-point-type=32"
     },
     "images": [
         {
