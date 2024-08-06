@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.2.49 06/08/2024
+
+* Bundle web-ui v2.2.49
+* Forbid -nic and -nicdev in Qemu additional options. Fixes https://github.com/GNS3/gns3-server/issues/2397
+* Upgrade jsonschema and sentry-sdk packages
+* Update IOU base configs to use "no ip domain lookup". Fixes #2404
+
 ## 2.2.48.1 12/07/2024
 
 * Bundle web-ui v2.2.48.1
