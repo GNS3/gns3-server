@@ -12,18 +12,19 @@
     "status": "stable",
     "maintainer": "GNS3 Team",
     "maintainer_email": "developers@gns3.net",
-    "usage": "16 GB RAM is the bare minimum; you should use 32/64 GB in production deplyments.\nDefault credentials:\n- CLI: admin / abc123\n- WebUI: super / juniper123",
+    "usage": "16 GB RAM is the bare minimum; you should use 32/64 GB in production deployments.\nDefault credentials:\n- CLI: admin / abc123\n- WebUI: super / juniper123",
     "symbol": "juniper-vqfx.svg",
     "port_name_format": "em{0}",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 4,
         "ram": 16384,
+        "cpus": 4,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-smp 4 -nographic"
+        "options": "-nographic -machine q35,smbios-entry-point-type=32"
     },
     "images": [
         {

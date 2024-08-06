@@ -20,11 +20,12 @@
         "adapter_type": "virtio-net-pci",
         "adapters": 13,
         "ram": 4096,
+        "cpus": 4,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-nographic -enable-kvm -smp cpus=3"
+        "options": "-nographic -enable-kvm -machine q35,smbios-entry-point-type=32"
     },
     "images": [
         {
