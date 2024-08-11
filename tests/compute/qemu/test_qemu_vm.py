@@ -792,6 +792,14 @@ async def test_build_command_with_invalid_options(vm):
         await vm._build_command()
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not supported on Windows")
+async def test_build_command_with_forbidden_options(vm):
+
+    vm.options = "-blockdev"
+    with pytest.raises(QemuError):
+        await vm._build_command()
+
+
 def test_hda_disk_image(vm, images_dir):
 
     open(os.path.join(images_dir, "test1"), "w+").close()

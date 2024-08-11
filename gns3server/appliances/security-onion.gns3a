@@ -13,18 +13,27 @@
     "status": "stable",
     "maintainer": "Brent Stewart",
     "maintainer_email": "brent@stewart.tc",
-    "usage": "Your default account will have sudo priviledges.  Squil and Squert username and password are configured in the Setup wizard.  MySQL root is set to null.  For more info see https://github.com/Security-Onion-Solutions/security-onion/wiki/Passwords.",
+    "usage": "Your default account will have sudo privileges. Squil and Squert username and password are configured in the Setup wizard.  MySQL root is set to null.  For more info see https://github.com/Security-Onion-Solutions/security-onion/wiki/Passwords.",
     "symbol": "securityonion-logo.png",
     "qemu": {
         "adapter_type": "e1000",
         "adapters": 2,
-        "ram": 3072,
+        "ram": 4096,
         "hda_disk_interface": "ide",
         "arch": "x86_64",
         "console_type": "vnc",
-        "kvm": "allow"
+        "kvm": "allow",
+        "options": "-cpu host"
     },
     "images": [
+        {
+            "filename": "securityonion-2.4.80-20240624.iso",
+            "version": "2.4.80-20240624",
+            "md5sum": "139f9762e926f9cb3c4a9528a3752c31",
+            "filesize": 12391022592,
+            "download_url": "https://github.com/Security-Onion-Solutions/securityonion/blob/2.4/main/DOWNLOAD_AND_VERIFY_ISO.md",
+            "direct_download_url": "https://download.securityonion.net/file/securityonion/securityonion-2.4.80-20240624.iso"
+        },
         {
             "filename": "securityonion-16.04.7.1.iso",
             "version": "16.04.7.1",
@@ -50,6 +59,14 @@
             "direct_download_url": "https://github.com/Security-Onion-Solutions/security-onion/releases/download/v14.04.5.4_20171031/securityonion-14.04.5.4.iso"
         },
         {
+            "filename": "empty100G.qcow2",
+            "version": "1.0",
+            "md5sum": "5d9fec18a980f13002028491259f158d",
+            "filesize": 198656,
+            "download_url": "https://github.com/riverbed/Riverbed-Community-Toolkit/raw/master/SteelHead/GNS3",
+            "direct_download_url": "https://github.com/riverbed/Riverbed-Community-Toolkit/raw/master/SteelHead/GNS3/empty100G.qcow2"
+        },
+        {
             "filename": "empty30G.qcow2",
             "version": "1.0",
             "md5sum": "3411a599e822f2ac6be560a26405821a",
@@ -59,6 +76,13 @@
         }
     ],
     "versions": [
+        {
+            "name": "2.4.80-20240624",
+            "images": {
+                "hda_disk_image": "empty100G.qcow2",
+                "cdrom_image": "securityonion-2.4.80-20240624.iso"
+            }
+        },
         {
             "name": "16.04.7.1",
             "images": {

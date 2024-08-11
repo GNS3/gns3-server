@@ -28,6 +28,20 @@
     },
     "images": [
 		{
+            "filename": "PA-VM-KVM-11.0.0.qcow2",
+            "version": "11.0.0",
+            "md5sum": "fc54b0e680ca2bcecb5522430e420f06",
+            "filesize": 4130865152,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
+		{
+            "filename": "PA-VM-KVM-10.2.3.qcow2",
+            "version": "10.2.3",
+            "md5sum": "0e7b2a52d1447186d335ef9a1a197c6c",
+            "filesize": 5298585600,
+            "download_url": "https://support.paloaltonetworks.com/Updates/SoftwareUpdates/"
+        },
+		{
             "filename": "PA-VM-KVM-10.1.0.qcow2",
             "version": "10.1.0",
             "md5sum": "8266fd412a22694749f2cd4afcd5fa33",
@@ -128,6 +142,18 @@
     ],
     "versions": [
         {
+            "name": "11.0.0",
+            "images": {
+                "hda_disk_image": "PA-VM-KVM-11.0.0.qcow2"
+            }
+        },
+        {
+            "name": "10.2.3",
+            "images": {
+                "hda_disk_image": "PA-VM-KVM-10.2.3.qcow2"
+            }
+        },
+		{
             "name": "10.1.0",
             "images": {
                 "hda_disk_image": "PA-VM-KVM-10.1.0.qcow2"

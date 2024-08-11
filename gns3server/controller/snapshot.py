@@ -59,14 +59,9 @@ class Snapshot:
                 + ".gns3project"
             )
         else:
-            self._name = filename.split("_")[0]
+            self._name = filename.rsplit("_", 2)[0]
             datestring = filename.replace(self._name + "_", "").split(".")[0]
-            try:
-                self._created_at = (
-                    datetime.strptime(datestring, "%d%m%y_%H%M%S").replace(tzinfo=timezone.utc).timestamp()
-                )
-            except ValueError:
-                self._created_at = datetime.now(timezone.utc)
+            self._created_at = (datetime.strptime(datestring, "%d%m%y_%H%M%S").replace(tzinfo=timezone.utc).timestamp())
         self._path = os.path.join(project.path, "snapshots", filename)
 
     @property
@@ -104,7 +99,7 @@ class Snapshot:
             with tempfile.TemporaryDirectory(dir=snapshot_directory) as tmpdir:
                 # Do not compress the snapshots
                 with aiozipstream.ZipFile(compression=zipfile.ZIP_STORED) as zstream:
-                    await export_project(zstream, self._project, tmpdir, keep_compute_id=True, allow_all_nodes=True)
+                    await export_project(zstream, self._project, tmpdir, keep_compute_ids=True, allow_all_nodes=True)
                     async with aiofiles.open(self.path, "wb") as f:
                         async for chunk in zstream:
                             await f.write(chunk)

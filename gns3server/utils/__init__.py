@@ -21,6 +21,8 @@ import re
 import shlex
 import textwrap
 import posixpath
+import socket
+import errno
 
 
 def force_unix_path(path):
@@ -89,3 +91,21 @@ def parse_version(version):
             version.append("000000")
         version.append("final")
     return tuple(version)
+
+
+def is_ipv6_enabled() -> bool:
+
+    if not socket.has_ipv6:
+        return False  # the socket library has no support for IPv6
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.bind(("::1", 0))
+        return True
+    except OSError as e:
+        if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT):
+            # EADDRNOTAVAIL is the errno if IPv6 modules/drivers are loaded but disabled.
+            # EAFNOSUPPORT is the errno if IPv6 modules/drivers are not loaded at all.
+            return False
+        if e.errno == errno.EADDRINUSE:
+            return True
+        raise

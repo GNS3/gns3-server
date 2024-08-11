@@ -462,7 +462,7 @@ async def test_import_node_id(linux_platform, tmpdir, controller):
 
 
 @pytest.mark.asyncio
-async def test_import_keep_compute_id(windows_platform, tmpdir, controller):
+async def test_import_keep_compute_ids(windows_platform, tmpdir, controller):
     """
     On linux host IOU should be moved to the GNS3 VM
     """
@@ -500,7 +500,7 @@ async def test_import_keep_compute_id(windows_platform, tmpdir, controller):
         myzip.write(str(tmpdir / "project.gns3"), "project.gns3")
 
     with open(zip_path, "rb") as f:
-        project = await import_project(controller, project_id, f, keep_compute_id=True)
+        project = await import_project(controller, project_id, f, keep_compute_ids=True)
 
     with open(os.path.join(project.path, "test.gns3")) as f:
         topo = json.load(f)

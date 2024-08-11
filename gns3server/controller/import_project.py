@@ -40,7 +40,7 @@ Handle the import of project from a .gns3project
 """
 
 
-async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_id=False,
+async def import_project(controller, project_id, stream, location=None, name=None, keep_compute_ids=False,
                          auto_start=False, auto_open=False, auto_close=True):
     """
     Import a project contain in a zip file
@@ -52,7 +52,7 @@ async def import_project(controller, project_id, stream, location=None, name=Non
     :param stream: A io.BytesIO of the zipfile
     :param location: Directory for the project if None put in the default directory
     :param name: Wanted project name, generate one from the .gns3 if None
-    :param keep_compute_id: If true do not touch the compute id
+    :param keep_compute_ids: keep compute IDs unchanged
 
     :returns: Project
     """
@@ -126,7 +126,7 @@ async def import_project(controller, project_id, stream, location=None, name=Non
         drawing["drawing_id"] = str(uuid.uuid4())
 
     # Modify the compute id of the node depending of compute capacity
-    if not keep_compute_id:
+    if not keep_compute_ids:
         # For some VM type we move them to the GNS3 VM if possible
         # unless it's a linux host without GNS3 VM
         if not sys.platform.startswith("linux") or controller.has_compute("vm"):

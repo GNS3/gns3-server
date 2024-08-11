@@ -1,0 +1,53 @@
+{
+    "name": "1_5_vmware",
+    "project_id": "4be1f3e5-76e5-4223-93b7-f37f4091549e",
+    "revision": 6,
+    "auto_start": false,
+    "topology": {
+        "computes": [
+            {
+                "compute_id": "local",
+                "host": "127.0.0.1",
+                "name": "Local",
+                "port": 3080,
+                "protocol": "http"
+            }
+        ],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": 2000,
+                "console_type": "telnet",
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "GNS3 VM",
+                    "x": 5,
+                    "y": -25
+                },
+                "name": "GNS3 VM",
+                "node_id": "9e06d0ce-e8df-4f38-bdfa-7c83e19a91c1",
+                "node_type": "vmware",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "first_port_name": null,
+                "properties": {
+                    "on_close": "power_off",
+                    "adapter_type": "e1000",
+                    "adapters": 1,
+                    "headless": false,
+                    "use_any_adapter": false,
+                    "vmx_path": "/Users/bob/Documents/Virtual Machines.localized/GNS3 VM.vmwarevm/GNS3 VM.vmx"
+                },
+                "symbol": ":/symbols/vmware_guest.svg",
+                "x": 7,
+                "y": 8,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "version": "ANYSTR"
+}

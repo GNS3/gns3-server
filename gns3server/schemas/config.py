@@ -69,6 +69,7 @@ class QemuSettings(BaseModel):
     monitor_host: str = "127.0.0.1"
     enable_hardware_acceleration: bool = True
     require_hardware_acceleration: bool = False
+    allow_unsafe_options: bool = False
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True)
 
 
@@ -126,6 +127,7 @@ class ServerSettings(BaseModel):
     appliances_path: str = "~/GNS3/appliances"
     symbols_path: str = "~/GNS3/symbols"
     configs_path: str = "~/GNS3/configs"
+    resources_path: str = None
     default_symbol_theme: BuiltinSymbolTheme = BuiltinSymbolTheme.affinity_square_blue
     allow_raw_images: bool = True
     auto_discover_images: bool = True
@@ -144,6 +146,7 @@ class ServerSettings(BaseModel):
     default_nat_interface: str = None
     allow_remote_console: bool = False
     enable_builtin_templates: bool = True
+    install_builtin_appliances: bool = True
     model_config = ConfigDict(validate_assignment=True, str_strip_whitespace=True, use_enum_values=True)
 
     @field_validator("additional_images_paths", mode="before")

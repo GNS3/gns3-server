@@ -270,13 +270,18 @@ class Controller:
                 log.error(f"Cannot read IOU license file '{iourc_path}': {e}")
         self._iou_license_settings["license_check"] = iou_config.license_check
 
-        previous_version = controller_vars.get("version")
-        log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
-        if not previous_version or \
-                parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
-            self._appliance_manager.install_builtin_appliances()
-        elif not os.listdir(self._appliance_manager.builtin_appliances_path()):
-            self._appliance_manager.install_builtin_appliances()
+        # install the built-in appliances if needed
+        if Config.instance().settings.Server.install_builtin_appliances:
+            previous_version = controller_vars.get("version")
+            log.info("Comparing controller version {} with config version {}".format(__version__, previous_version))
+            builtin_appliances_path = self._appliance_manager.builtin_appliances_path()
+            if not previous_version or \
+                    parse_version(__version__.split("+")[0]) > parse_version(previous_version.split("+")[0]):
+                self._appliance_manager.install_builtin_appliances()
+            elif not os.listdir(builtin_appliances_path):
+                self._appliance_manager.install_builtin_appliances()
+            else:
+                log.info(f"Built-in appliances are installed in '{builtin_appliances_path}'")
 
         self._appliance_manager.appliances_etag = controller_vars.get("appliances_etag")
         self._appliance_manager.load_appliances()

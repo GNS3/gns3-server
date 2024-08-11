@@ -1,0 +1,222 @@
+{
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
+    "drawing_grid_size": 25,
+    "grid_size": 75,
+    "name": "test-hostnames",
+    "project_id": "8b83e3ac-6b6a-4d6b-9938-bd630a6e458e",
+    "revision": 9,
+    "scene_height": 1000,
+    "scene_width": 2000,
+    "show_grid": false,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": false,
+    "supplier": null,
+    "topology": {
+        "computes": [],
+        "drawings": [],
+        "links": [],
+        "nodes": [
+            {
+                "compute_id": "local",
+                "console": 5000,
+                "console_auto_start": false,
+                "console_type": "telnet",
+                "custom_adapters": [],
+                "first_port_name": null,
+                "height": 45,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "42Router_A-1",
+                    "x": -20,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "42Router_A-1",
+                "node_id": "adb89fbb-92ba-419b-96ca-1ad0f03ce3f6",
+                "node_type": "dynamips",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "auto_delete_disks": false,
+                    "aux": null,
+                    "clock_divisor": 8,
+                    "disk0": 0,
+                    "disk1": 0,
+                    "dynamips_id": 1,
+                    "exec_area": 64,
+                    "idlemax": 500,
+                    "idlepc": "0x60aa1da0",
+                    "idlesleep": 30,
+                    "image": "c3745-adventerprisek9-mz.124-25d.image",
+                    "image_md5sum": "ddbaf74274822b50fa9670e10c75b08f",
+                    "iomem": 5,
+                    "mac_addr": "c401.fff5.0000",
+                    "mmap": true,
+                    "nvram": 256,
+                    "platform": "c3745",
+                    "ram": 256,
+                    "slot0": "GT96100-FE",
+                    "slot1": "NM-1FE-TX",
+                    "slot2": "NM-4T",
+                    "slot3": null,
+                    "slot4": null,
+                    "sparsemem": true,
+                    "system_id": "FTX0945W0MY",
+                    "usage": "",
+                    "wic0": "WIC-1T",
+                    "wic1": "WIC-1T",
+                    "wic2": "WIC-1T"
+                },
+                "symbol": ":/symbols/classic/router.svg",
+                "template_id": "24f09d1a-64e1-4dc4-ae49-e785c1dbc0c5",
+                "width": 66,
+                "x": -130,
+                "y": -64,
+                "z": 1
+            },
+            {
+                "compute_id": "local",
+                "console": 5001,
+                "console_auto_start": false,
+                "console_type": "telnet",
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "adapter_type": "e1000"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "adapter_type": "e1000"
+                    }
+                ],
+                "first_port_name": "",
+                "height": 48,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Switch_10.0.0.1",
+                    "x": -36,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "Switch_10.0.0.1",
+                "node_id": "ccda4e49-770f-4237-956b-cc7281630468",
+                "node_type": "qemu",
+                "port_name_format": "Gi0/{0}",
+                "port_segment_size": 4,
+                "properties": {
+                    "adapter_type": "e1000",
+                    "adapters": 16,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vios_l2-adventerprisek9-m.03.2017.qcow2",
+                    "hda_disk_image_md5sum": "8f14b50083a14688dec2fc791706bb3e",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "",
+                    "hdb_disk_image_md5sum": null,
+                    "hdb_disk_interface": "none",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:da:4e:49:00:00",
+                    "on_close": "power_off",
+                    "options": "",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 768,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "uefi": false,
+                    "usage": "There is no default password and enable password. There is no default configuration present. SUPER UPDATED!"
+                },
+                "symbol": ":/symbols/classic/multilayer_switch.svg",
+                "template_id": "9db64790-65f4-4d38-a1ac-2f6ce45b70db",
+                "width": 51,
+                "x": -13,
+                "y": 54,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "variables": null,
+    "version": "2.2.49",
+    "zoom": 100
+}

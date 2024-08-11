@@ -26,7 +26,7 @@
         "arch": "x86_64",
         "console_type": "telnet",
         "kvm": "require",
-        "options": "-nographic -enable-kvm"
+        "options": "-nographic -enable-kvm -machine q35,smbios-entry-point-type=32"
     },
     "images": [
         {

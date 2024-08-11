@@ -320,6 +320,7 @@ async def export_project(
     include_snapshots: bool = False,
     include_images: bool = False,
     reset_mac_addresses: bool = False,
+    keep_compute_ids: bool = False,
     compression: schemas.ProjectCompression = "zstd",
     compression_level: int = None,
 ) -> StreamingResponse:
@@ -366,6 +367,7 @@ async def export_project(
                         tmpdir,
                         include_snapshots=include_snapshots,
                         include_images=include_images,
+                        keep_compute_ids=keep_compute_ids,
                         reset_mac_addresses=reset_mac_addresses,
                     )
                     async for chunk in zstream:
