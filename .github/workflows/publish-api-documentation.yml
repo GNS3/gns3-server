@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: "gh-pages"
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.8
     - name: Merge changes from 3.0 branch

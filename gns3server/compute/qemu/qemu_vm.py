@@ -56,7 +56,7 @@ log = logging.getLogger(__name__)
 
 # forbidden additional options
 FORBIDDEN_OPTIONS = {"-blockdev", "-drive", "-hda", "-hdb", "-hdc", "-hdd",
-                     "-fsdev", "-virtfs"}
+                     "-fsdev", "-virtfs", "-nic", "-netdev"}
 FORBIDDEN_OPTIONS |= {"-" + opt for opt in FORBIDDEN_OPTIONS
                       if opt.startswith("-") and not opt.startswith("--")}
 
