@@ -14,10 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import pathlib
 import re
 import os
 import json
+import sys
 import uuid
 import copy
 import shutil
@@ -43,7 +44,7 @@ from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
 from .export_project import export_project
-from .import_project import import_project
+from .import_project import import_project, _move_node_file
 
 import logging
 log = logging.getLogger(__name__)
@@ -1052,6 +1053,17 @@ class Project:
 
         self.dump()
         assert self._status != "closed"
+
+        ## fast duplicate：Only supports Windows and Linux systems, does not support remote replication
+        try:
+            proj = await self._duplicate_fast(name, location, reset_mac_addresses)
+            if proj:
+                if previous_status == "closed":
+                    await self.close()
+                return proj
+        except Exception as e:
+            raise aiohttp.web.HTTPConflict(text="Cannot duplicate project: {}".format(str(e)))
+
         try:
             begin = time.time()
 
@@ -1237,3 +1249,65 @@ class Project:
 
     def __repr__(self):
         return "<gns3server.controller.Project {} {}>".format(self._name, self._id)
+
+    async def _duplicate_fast(self, name=None, location=None, reset_mac_addresses=True):
+        if not sys.platform.startswith("linux") and not sys.platform.startswith("win"):
+            return None
+        for compute in self.computes:
+            if compute.id != "local":
+                log.warning("Duplicate fast not support remote compute: '{}'".format(compute.id))
+                return None
+
+        # work dir
+        p_work = pathlib.Path(location or self.path).parent.absolute()
+        t0 = time.time()
+        new_project_id = str(uuid.uuid4())
+        new_project_path = p_work.joinpath(new_project_id)
+        # copy the dir
+        scripts_path = os.path.join(pathlib.Path(__file__).resolve().parent.parent.parent, 'scripts')
+        process = await asyncio.create_subprocess_exec('python', os.path.join(scripts_path, 'copy_tree.py'),
+                                                       '--src', self.path, '--dst', new_project_path.as_posix())
+        await process.wait()
+        log.info("[FAST] Copy project: {} to: '{}', cost={}s".format(self.path, new_project_path, time.time() - t0))
+        topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
+        project_name = name or topology["name"]
+        # If the project name is already used we generate a new one
+        project_name = self.controller.get_free_project_name(project_name)
+        topology["name"] = project_name
+        _nodes = topology["topology"]["nodes"]
+        # change node id
+        node_old_to_new = {}
+        for node in _nodes:
+            new_node_id = str(uuid.uuid4())
+            if "node_id" in node:
+                node_old_to_new[node["node_id"]] = new_node_id
+                _move_node_file(new_project_path, node["node_id"], new_node_id)
+            node["node_id"] = new_node_id
+        # change link id
+        for link in topology["topology"]["links"]:
+            link["link_id"] = str(uuid.uuid4())
+            for node in link["nodes"]:
+                node["node_id"] = node_old_to_new[node["node_id"]]
+        # Generate new drawings id
+        for drawing in topology["topology"]["drawings"]:
+            drawing["drawing_id"] = str(uuid.uuid4())
+
+
+        if reset_mac_addresses:
+            for node in _nodes:
+                if "properties" in node and node["node_type"] != "docker":
+                    for prop, value in node["properties"].items():
+                        # reset the MAC address
+                        if prop in ("mac_addr", "mac_address"):
+                            node["properties"][prop] = None
+
+        # And we dump the updated.gns3
+        dot_gns3_path = new_project_path.joinpath('{}.gns3'.format(project_name))
+        topology["project_id"] = new_project_id
+        with open(dot_gns3_path, "w+") as f:
+            json.dump(topology, f, indent=4)
+
+        os.remove(new_project_path.joinpath('{}.gns3'.format(self.name)))
+        project = await self.controller.load_project(dot_gns3_path, load=False)
+        log.info("[FAST] Project '{}' duplicated in {:.4f} seconds".format(project.name, time.time() - t0))
+        return project
