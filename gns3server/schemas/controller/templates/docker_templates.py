@@ -29,6 +29,7 @@ class DockerTemplate(TemplateBase):
     symbol: Optional[str] = "docker_guest"
     image: str = Field(..., description="Docker image name")
     adapters: Optional[int] = Field(1, ge=0, le=100, description="Number of adapters")
+    mac_address: Optional[str] = Field("", description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$|^$")
     start_command: Optional[str] = Field("", description="Docker CMD entry")
     environment: Optional[str] = Field("", description="Docker environment variables")
     console_type: Optional[ConsoleType] = Field("telnet", description="Console type")

@@ -39,6 +39,7 @@ class DockerBase(BaseModel):
     usage: Optional[str] = Field(None, description="How to use the Docker container")
     start_command: Optional[str] = Field(None, description="Docker CMD entry")
     adapters: Optional[int] = Field(None, ge=0, le=99, description="Number of adapters")
+    mac_address: Optional[str] = Field(None, description="Base MAC address", pattern="^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$")
     environment: Optional[str] = Field(None, description="Docker environment variables")
     extra_hosts: Optional[str] = Field(None, description="Docker extra hosts (added to /etc/hosts)")
     extra_volumes: Optional[List[str]] = Field(None, description="Additional directories to make persistent")

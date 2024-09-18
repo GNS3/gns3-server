@@ -79,6 +79,7 @@ class DockerVM(BaseNode):
         aux=None,
         start_command=None,
         adapters=None,
+        mac_address="",
         environment=None,
         console_type="telnet",
         aux_type="none",
@@ -106,7 +107,6 @@ class DockerVM(BaseNode):
         self._environment = environment
         self._cid = None
         self._ethernet_adapters = []
-        self._mac_address = ""
         self._temporary_directory = None
         self._telnet_servers = []
         self._vnc_process = None
@@ -132,7 +132,7 @@ class DockerVM(BaseNode):
         else:
             self.adapters = adapters
 
-        self.mac_address = ""  # this will generate a MAC address
+        self.mac_address = mac_address
 
         log.debug(
             "{module}: {name} [{image}] initialized.".format(
