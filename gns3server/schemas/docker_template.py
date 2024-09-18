@@ -38,6 +38,15 @@ DOCKER_TEMPLATE_PROPERTIES = {
         "maximum": 99,
         "default": 1
     },
+    "mac_address": {
+        "description": "Docker container base MAC address",
+        "type": ["string", "null"],
+        "anyOf": [
+            {"pattern": "^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$"},
+            {"pattern": "^$"}
+        ],
+        "default": "",
+    },
     "start_command": {
         "description": "Docker CMD entry",
         "type": "string",

@@ -48,6 +48,7 @@ async def vm(compute_project, manager):
     vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
     vm._cid = "e90e34656842"
     vm.allocate_aux = False
+    vm.mac_address = '02:42:3d:b7:93:00'
     return vm
 
 
@@ -60,6 +61,7 @@ def test_json(vm, compute_project):
         'project_id': compute_project.id,
         'node_id': vm.id,
         'adapters': 1,
+        'mac_address': '02:42:3d:b7:93:00',
         'console': vm.console,
         'console_type': 'telnet',
         'console_resolution': '1024x768',
