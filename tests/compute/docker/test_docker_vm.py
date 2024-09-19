@@ -1187,7 +1187,37 @@ async def test_add_ubridge_connection(vm):
         call.send('bridge start bridge0')
     ]
     assert 'bridge0' in vm._bridges
-    # We need to check any_order ortherwise mock is confused by asyncio
+    # We need to check any_order otherwise mock is confused by asyncio
+    vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
+
+
+async def test_add_ubridge_connections_with_base_mac_address(vm):
+
+    vm._ubridge_hypervisor = MagicMock()
+    vm._namespace = 42
+    vm.adapters = 2
+    vm.mac_address = "02:42:42:42:42:00"
+
+    nio_params = {
+        "type": "nio_udp",
+        "lport": 4242,
+        "rport": 4343,
+        "rhost": "127.0.0.1"}
+
+    nio = vm.manager.create_nio(nio_params)
+    await vm._add_ubridge_connection(nio, 0)
+
+    nio = vm.manager.create_nio(nio_params)
+    await vm._add_ubridge_connection(nio, 1)
+
+    calls = [
+        call.send('bridge create bridge0'),
+        call.send('bridge create bridge1'),
+        call.send('docker set_mac_addr tap-gns3-e0 02:42:42:42:42:00'),
+        call.send('docker set_mac_addr tap-gns3-e0 02:42:42:42:42:01')
+    ]
+
+    # We need to check any_order otherwise mock is confused by asyncio
     vm._ubridge_hypervisor.assert_has_calls(calls, any_order=True)
 
 
