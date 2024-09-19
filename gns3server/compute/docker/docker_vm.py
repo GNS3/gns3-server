@@ -384,6 +384,7 @@ class DockerVM(BaseNode):
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
             },
+            "UsernsMode": "host",
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
