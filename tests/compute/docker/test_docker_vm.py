@@ -45,9 +45,8 @@ async def manager(port_manager):
 @pytest.fixture(scope="function")
 async def vm(compute_project, manager):
 
-    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest")
+    vm = DockerVM("test", str(uuid.uuid4()), compute_project, manager, "ubuntu:latest", aux_type="none")
     vm._cid = "e90e34656842"
-    vm.allocate_aux = False
     vm.mac_address = '02:42:3d:b7:93:00'
     return vm
 
@@ -64,6 +63,7 @@ def test_json(vm, compute_project):
         'mac_address': '02:42:3d:b7:93:00',
         'console': vm.console,
         'console_type': 'telnet',
+        'aux_type': 'none',
         'console_resolution': '1024x768',
         'console_http_port': 80,
         'console_http_path': '/',
@@ -875,7 +875,7 @@ async def test_start(vm, manager, free_console_port, tmpdir):
     assert vm.status != "started"
     vm.adapters = 1
 
-    vm.allocate_aux = True
+    vm.aux_type = "telnet"
     vm._start_aux = AsyncioMagicMock()
 
     vm._get_container_state = AsyncioMagicMock(return_value="stopped")
@@ -1428,6 +1428,7 @@ async def test_start_vnc_missing(vm):
 
 async def test_start_aux(vm):
 
+    vm.aux_type = "telnet"
     with asyncio_patch("asyncio.subprocess.create_subprocess_exec", return_value=MagicMock()) as mock_exec:
         await vm._start_aux()
         mock_exec.assert_called_with(

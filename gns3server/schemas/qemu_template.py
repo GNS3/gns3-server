@@ -103,6 +103,11 @@ QEMU_TEMPLATE_PROPERTIES = {
         "type": "boolean",
         "default": False
     },
+    "aux_type": {
+        "description": "Auxiliary console type",
+        "enum": ["telnet", "vnc", "spice", "spice+agent", "none"],
+        "default": "none"
+    },
     "boot_priority": {
         "description": "QEMU boot priority",
         "enum": ["c", "d", "n", "cn", "cd", "dn", "dc", "nc", "nd"],

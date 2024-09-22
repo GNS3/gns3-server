@@ -50,14 +50,16 @@ class BaseNode:
     :param node_id: Node instance identifier
     :param project: Project instance
     :param manager: parent node manager
-    :param console: TCP console port
-    :param aux: TCP aux console port
-    :param allocate_aux: Boolean if true will allocate an aux console port
+    :param console: console TCP port
+    :param console_type: console type
+    :param aux: auxiliary console TCP port
+    :param aux_type: auxiliary console type
     :param linked_clone: The node base image is duplicate/overlay (Each node data are independent)
     :param wrap_console: The console is wrapped using AsyncioTelnetServer
+    :param wrap_aux: The auxiliary console is wrapped using AsyncioTelnetServer
     """
 
-    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, allocate_aux=False, linked_clone=True, wrap_console=False):
+    def __init__(self, name, node_id, project, manager, console=None, console_type="telnet", aux=None, aux_type="none", linked_clone=True, wrap_console=False, wrap_aux=False):
 
         self._name = name
         self._usage = ""
@@ -68,22 +70,25 @@ class BaseNode:
         self._console = console
         self._aux = aux
         self._console_type = console_type
+        self._aux_type = aux_type
         self._temporary_directory = None
         self._hw_virtualization = False
         self._ubridge_hypervisor = None
         self._closed = False
         self._node_status = "stopped"
         self._command_line = ""
-        self._allocate_aux = allocate_aux
         self._wrap_console = wrap_console
-        self._wrapper_telnet_server = None
+        self._wrap_aux = wrap_aux
+        self._wrapper_telnet_servers = []
         self._wrap_console_reader = None
         self._wrap_console_writer = None
         self._internal_console_port = None
+        self._internal_aux_port = None
         self._custom_adapters = []
         self._ubridge_require_privileged_access = False
 
         if self._console is not None:
+            # use a previously allocated console port
             if console_type == "vnc":
                 vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
                 self._console = self._manager.port_manager.reserve_tcp_port(
@@ -97,25 +102,45 @@ class BaseNode:
             else:
                 self._console = self._manager.port_manager.reserve_tcp_port(self._console, self._project)
 
-        # We need to allocate aux before giving a random console port
         if self._aux is not None:
-            self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
+            # use a previously allocated auxiliary console port
+            if aux_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
+                self._aux = self._manager.port_manager.reserve_tcp_port(
+                    self._aux, self._project, port_range_start=5900, port_range_end=6000
+                )
+            elif aux_type == "none":
+                self._aux = None
+            else:
+                self._aux = self._manager.port_manager.reserve_tcp_port(self._aux, self._project)
 
         if self._console is None:
+            # allocate a new console
             if console_type == "vnc":
                 vnc_console_start_port_range, vnc_console_end_port_range = self._get_vnc_console_port_range()
                 self._console = self._manager.port_manager.get_free_tcp_port(
                     self._project,
                     port_range_start=vnc_console_start_port_range,
-                    port_range_end=vnc_console_end_port_range)
+                    port_range_end=vnc_console_end_port_range,
+                )
             elif console_type != "none":
                 self._console = self._manager.port_manager.get_free_tcp_port(self._project)
+
+        if self._aux is None:
+            # allocate a new auxiliary console
+            if aux_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
+                self._aux = self._manager.port_manager.get_free_tcp_port(
+                    self._project, port_range_start=5900, port_range_end=6000
+                )
+            elif aux_type != "none":
+                self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
 
         if self._wrap_console:
             self._internal_console_port = self._manager.port_manager.get_free_tcp_port(self._project)
 
-        if self._aux is None and allocate_aux:
-            self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
+        if self._wrap_aux:
+            self._internal_aux_port = self._manager.port_manager.get_free_tcp_port(self._project)
 
         log.debug("{module}: {name} [{id}] initialized. Console port {console}".format(module=self.manager.module_name,
                                                                                        name=self.name,
@@ -343,6 +368,9 @@ class BaseNode:
         if self._aux:
             self._manager.port_manager.release_tcp_port(self._aux, self._project)
             self._aux = None
+        if self._wrap_aux:
+            self._manager.port_manager.release_tcp_port(self._internal_aux_port, self._project)
+            self._internal_aux_port = None
 
         self._closed = True
         return True
@@ -366,56 +394,49 @@ class BaseNode:
 
         return vnc_console_start_port_range, vnc_console_end_port_range
 
-    async def start_wrap_console(self):
-        """
-        Start a telnet proxy for the console allowing multiple telnet clients
-        to be connected at the same time
-        """
+    async def _wrap_telnet_proxy(self, internal_port, external_port):
 
-        if not self._wrap_console or self._console_type != "telnet":
-            return
         remaining_trial = 60
         while True:
             try:
-                (self._wrap_console_reader, self._wrap_console_writer) = await asyncio.open_connection(
-                    host="127.0.0.1",
-                    port=self._internal_console_port
-                )
+                (reader, writer) = await asyncio.open_connection(host="127.0.0.1", port=internal_port)
                 break
             except (OSError, ConnectionRefusedError) as e:
                 if remaining_trial <= 0:
                     raise e
             await asyncio.sleep(0.1)
             remaining_trial -= 1
-        await AsyncioTelnetServer.write_client_intro(self._wrap_console_writer, echo=True)
-        server = AsyncioTelnetServer(
-            reader=self._wrap_console_reader,
-            writer=self._wrap_console_writer,
-            binary=True,
-            echo=True
-        )
+        await AsyncioTelnetServer.write_client_intro(writer, echo=True)
+        server = AsyncioTelnetServer(reader=reader, writer=writer, binary=True, echo=True)
         # warning: this will raise OSError exception if there is a problem...
-        self._wrapper_telnet_server = await asyncio.start_server(
-            server.run,
-            self._manager.port_manager.console_host,
-            self.console
-        )
+        telnet_server = await asyncio.start_server(server.run, self._manager.port_manager.console_host, external_port)
+        self._wrapper_telnet_servers.append(telnet_server)
+
+    async def start_wrap_console(self):
+        """
+        Start a Telnet proxy servers for the console and auxiliary console allowing multiple telnet clients
+        to be connected at the same time
+        """
+
+        if self._wrap_console and self._console_type == "telnet":
+            await self._wrap_telnet_proxy(self._internal_console_port, self.console)
+            log.info("New Telnet proxy server for console started (internal port = {}, external port = {})".format(self._internal_console_port,
+                                                                                                                   self.console))
+
+        if self._wrap_aux and self._aux_type == "telnet":
+            await self._wrap_telnet_proxy(self._internal_aux_port, self.aux)
+            log.info("New Telnet proxy server for auxiliary console started (internal port = {}, external port = {})".format(self._internal_aux_port,
+                                                                                                                             self.aux))
 
     async def stop_wrap_console(self):
         """
-        Stops the telnet proxy.
+        Stops the telnet proxy servers.
         """
 
-        if self._wrapper_telnet_server:
-            self._wrap_console_writer.close()
-            if sys.version_info >= (3, 7, 0):
-                try:
-                    await self._wrap_console_writer.wait_closed()
-                except ConnectionResetError:
-                    pass
-            self._wrapper_telnet_server.close()
-            await self._wrapper_telnet_server.wait_closed()
-            self._wrapper_telnet_server = None
+        for telnet_proxy_server in self._wrapper_telnet_servers:
+            telnet_proxy_server.close()
+            await telnet_proxy_server.wait_closed()
+        self._wrapper_telnet_servers = []
 
     async def reset_wrap_console(self):
         """
@@ -493,22 +514,6 @@ class BaseNode:
         return ws
 
     @property
-    def allocate_aux(self):
-        """
-        :returns: Boolean allocate or not an aux console
-        """
-
-        return self._allocate_aux
-
-    @allocate_aux.setter
-    def allocate_aux(self, allocate_aux):
-        """
-        :returns: Boolean allocate or not an aux console
-        """
-
-        self._allocate_aux = allocate_aux
-
-    @property
     def aux(self):
         """
         Returns the aux console port of this node.
@@ -526,18 +531,25 @@ class BaseNode:
         :params aux: Console port (integer) or None to free the port
         """
 
-        if aux == self._aux:
+        if aux == self._aux or self._aux_type == "none":
             return
+
+        if self._aux_type == "vnc" and aux is not None and aux < 5900:
+            raise NodeError("VNC auxiliary console require a port superior or equal to 5900, current port is {}".format(aux))
 
         if self._aux:
             self._manager.port_manager.release_tcp_port(self._aux, self._project)
             self._aux = None
         if aux is not None:
-            self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
-            log.info("{module}: '{name}' [{id}]: aux port set to {port}".format(module=self.manager.module_name,
-                                                                                name=self.name,
-                                                                                id=self.id,
-                                                                                port=aux))
+            if self._aux_type == "vnc":
+                self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project, port_range_start=5900, port_range_end=6000)
+            else:
+                self._aux = self._manager.port_manager.reserve_tcp_port(aux, self._project)
+
+            log.info("{module}: '{name}' [{id}]: auxiliary console port set to {port}".format(module=self.manager.module_name,
+                                                                                              name=self.name,
+                                                                                              id=self.id,
+                                                                                              port=aux))
 
     @property
     def console(self):
@@ -624,6 +636,43 @@ class BaseNode:
                                                                                                                     id=self.id,
                                                                                                                     console_type=console_type,
                                                                                                                     console=self.console))
+
+    @property
+    def aux_type(self):
+        """
+        Returns the auxiliary console type for this node.
+        :returns: aux type (string)
+        """
+
+        return self._aux_type
+
+    @aux_type.setter
+    def aux_type(self, aux_type):
+        """
+        Sets the auxiliary console type for this node.
+        :param aux_type: console type (string)
+        """
+
+        print("SET AUX TYPE", aux_type)
+        if aux_type != self._aux_type:
+            # get a new port if the aux type change
+            if self._aux:
+                self._manager.port_manager.release_tcp_port(self._aux, self._project)
+            if aux_type == "none":
+                # no need to allocate a port when the auxiliary console type is none
+                self._aux = None
+            elif aux_type == "vnc":
+                # VNC is a special case and the range must be 5900-6000
+                self._aux = self._manager.port_manager.get_free_tcp_port(self._project, 5900, 6000)
+            else:
+                self._aux = self._manager.port_manager.get_free_tcp_port(self._project)
+
+        self._aux_type = aux_type
+        log.info("{module}: '{name}' [{id}]: console type set to {aux_type} (auxiliary console port is {aux})".format(module=self.manager.module_name,
+                                                                                                                      name=self.name,
+                                                                                                                      id=self.id,
+                                                                                                                      aux_type=aux_type,
+                                                                                                                      aux=self.aux))
 
     @property
     def ubridge(self):

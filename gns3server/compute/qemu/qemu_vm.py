@@ -76,9 +76,9 @@ class QemuVM(BaseNode):
     :param platform: Platform to emulate
     """
 
-    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", platform=None):
+    def __init__(self, name, node_id, project, manager, linked_clone=True, qemu_path=None, console=None, console_type="telnet", aux=None, aux_type="none", platform=None):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, wrap_console=True)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, linked_clone=linked_clone, aux=aux, aux_type=aux_type, wrap_console=True, wrap_aux=True)
         server_config = manager.config.get_section_config("Server")
         self._host = server_config.get("host", "127.0.0.1")
         self._monitor_host = server_config.get("monitor_host", "127.0.0.1")
@@ -1658,24 +1658,24 @@ class QemuVM(BaseNode):
 
         super(QemuVM, QemuVM).console_type.__set__(self, new_console_type)
 
-    def _serial_options(self):
+    def _serial_options(self, internal_console_port, external_console_port):
 
-        if self._console:
-            return ["-serial", "telnet:127.0.0.1:{},server,nowait".format(self._internal_console_port)]
+        if external_console_port:
+            return ["-serial", "telnet:127.0.0.1:{},server,nowait".format(internal_console_port)]
         else:
             return []
 
-    def _vnc_options(self):
+    def _vnc_options(self, port):
 
-        if self._console:
-            vnc_port = self._console - 5900  # subtract by 5900 to get the display number
+        if port:
+            vnc_port = port - 5900  # subtract by 5900 to get the display number
             return ["-vnc", "{}:{}".format(self._manager.port_manager.console_host, vnc_port)]
         else:
             return []
 
-    def _spice_options(self):
+    def _spice_options(self, port):
 
-        if self._console:
+        if port:
             console_host = self._manager.port_manager.console_host
             if console_host == "0.0.0.0":
                 try:
@@ -1687,15 +1687,15 @@ class QemuVM(BaseNode):
                 except OSError as e:
                     raise QemuError("Could not check if IPv6 is enabled: {}".format(e))
             return ["-spice",
-                    "addr={},port={},disable-ticketing".format(console_host, self._console),
+                    "addr={},port={},disable-ticketing".format(console_host, port),
                     "-vga", "qxl"]
         else:
             return []
 
-    def _spice_with_agent_options(self):
+    def _spice_with_agent_options(self, port):
 
-        spice_options = self._spice_options()
-        if self._console:
+        spice_options = self._spice_options(port)
+        if spice_options:
             # agent options (mouse/screen)
             agent_options = ["-device", "virtio-serial",
                              "-chardev", "spicevmc,id=vdagent,debug=0,name=vdagent",
@@ -1706,6 +1706,36 @@ class QemuVM(BaseNode):
                                       "-device", "virtserialport,chardev=charchannel0,id=channel0,name=org.spice-space.webdav.0"]
             spice_options.extend(folder_sharing_options)
         return spice_options
+
+    def _console_options(self):
+
+        if self._console_type == "telnet" and self._wrap_console:
+            return self._serial_options(self._internal_console_port, self.console)
+        elif self._console_type == "vnc":
+            return self._vnc_options(self.console)
+        elif self._console_type == "spice":
+            return self._spice_options(self.console)
+        elif self._console_type == "spice+agent":
+            return self._spice_with_agent_options(self.console)
+        elif self._console_type != "none":
+            raise QemuError("Console type {} is unknown".format(self._console_type))
+
+    def _aux_options(self):
+
+        if self._aux_type != "none" and self._aux_type == self._console_type:
+            raise QemuError("Auxiliary console type {} cannot be the same as console type".format(self._aux_type))
+
+        if self._aux_type == "telnet" and self._wrap_aux:
+            return self._serial_options(self._internal_aux_port, self.aux)
+        elif self._aux_type == "vnc":
+            return self._vnc_options(self.aux)
+        elif self._aux_type == "spice":
+            return self._spice_options(self.aux)
+        elif self._aux_type == "spice+agent":
+            return self._spice_with_agent_options(self.aux)
+        elif self._aux_type != "none":
+            raise QemuError("Auxiliary console type {} is unknown".format(self._aux_type))
+        return []
 
     def _monitor_options(self):
 
@@ -2408,16 +2438,8 @@ class QemuVM(BaseNode):
         command.extend(self._linux_boot_options())
         if "-uuid" not in additional_options:
             command.extend(["-uuid", self._id])
-        if self._console_type == "telnet":
-            command.extend(self._serial_options())
-        elif self._console_type == "vnc":
-            command.extend(self._vnc_options())
-        elif self._console_type == "spice":
-            command.extend(self._spice_options())
-        elif self._console_type == "spice+agent":
-            command.extend(self._spice_with_agent_options())
-        elif self._console_type != "none":
-            raise QemuError("Console type {} is unknown".format(self._console_type))
+        command.extend(self._console_options())
+        command.extend(self._aux_options())
         command.extend(self._monitor_options())
         command.extend((await self._network_options()))
         if self.on_close != "save_vm_state":

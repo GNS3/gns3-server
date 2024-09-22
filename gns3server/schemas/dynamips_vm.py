@@ -178,6 +178,10 @@ VM_CREATE_SCHEMA = {
             "minimum": 1,
             "maximum": 65535
         },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "none"]
+        },
         "mac_addr": {
             "description": "Base MAC address",
             "type": ["null", "string"],
@@ -399,6 +403,10 @@ VM_UPDATE_SCHEMA = {
             "type": "integer",
             "minimum": 1,
             "maximum": 65535
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "none"]
         },
         "mac_addr": {
             "description": "Base MAC address",
@@ -643,6 +651,10 @@ VM_OBJECT_SCHEMA = {
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 65535
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "none"]
         },
         "mac_addr": {
             "description": "Base MAC address",
