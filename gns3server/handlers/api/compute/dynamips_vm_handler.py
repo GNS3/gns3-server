@@ -69,16 +69,19 @@ class DynamipsVMHandler:
         default_chassis = None
         if platform in DEFAULT_CHASSIS:
             default_chassis = DEFAULT_CHASSIS[platform]
-        vm = await dynamips_manager.create_node(request.json.pop("name"),
-                                                request.match_info["project_id"],
-                                                request.json.get("node_id"),
-                                                dynamips_id=request.json.get("dynamips_id"),
-                                                platform=platform,
-                                                console=request.json.get("console"),
-                                                console_type=request.json.get("console_type", "telnet"),
-                                                aux=request.json.get("aux"),
-                                                chassis=request.json.pop("chassis", default_chassis),
-                                                node_type="dynamips")
+        vm = await dynamips_manager.create_node(
+            request.json.pop("name"),
+            request.match_info["project_id"],
+            request.json.get("node_id"),
+            dynamips_id=request.json.get("dynamips_id"),
+            platform=platform,
+            console=request.json.get("console"),
+            console_type=request.json.get("console_type", "telnet"),
+            aux=request.json.get("aux"),
+            aux_type=request.json.get("aux_type", "none"),
+            chassis=request.json.pop("chassis", default_chassis),
+            node_type="dynamips"
+        )
         await dynamips_manager.update_vm_settings(vm, request.json)
         response.set_status(201)
         response.json(vm)

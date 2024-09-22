@@ -67,6 +67,16 @@ QEMU_CREATE_SCHEMA = {
             "description": "Console type",
             "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
         },
+        "aux": {
+            "description": "Auxiliary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
+        },
         "hda_disk_image": {
             "description": "QEMU hda disk image path",
             "type": "string",
@@ -263,6 +273,16 @@ QEMU_UPDATE_SCHEMA = {
         },
         "console_type": {
             "description": "Console type",
+            "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
+        },
+        "aux": {
+            "description": "Auxiliary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
             "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
         },
         "linked_clone": {
@@ -579,6 +599,16 @@ QEMU_OBJECT_SCHEMA = {
             "description": "Console type",
             "enum": ["telnet", "vnc", "spice","spice+agent", "none"]
         },
+        "aux": {
+            "description": "Auxiliary TCP port",
+            "minimum": 1,
+            "maximum": 65535,
+            "type": ["integer", "null"]
+        },
+        "aux_type": {
+            "description": "Auxiliary console type",
+            "enum": ["telnet", "vnc", "spice", "spice+agent", "none"]
+        },
         "initrd": {
             "description": "QEMU initrd path",
             "type": "string",
@@ -659,6 +689,7 @@ QEMU_OBJECT_SCHEMA = {
                  "qemu_path",
                  "platform",
                  "console_type",
+                 "aux_type",
                  "hda_disk_image",
                  "hdb_disk_image",
                  "hdc_disk_image",
@@ -682,6 +713,7 @@ QEMU_OBJECT_SCHEMA = {
                  "adapter_type",
                  "mac_address",
                  "console",
+                 "aux",
                  "initrd",
                  "kernel_image",
                  "initrd_md5sum",
