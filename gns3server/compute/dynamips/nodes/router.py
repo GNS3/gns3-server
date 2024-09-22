@@ -1030,6 +1030,26 @@ class Router(BaseNode):
         self.aux = aux
         await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {aux}')
 
+    async def set_aux_type(self, aux_type):
+        """
+        Sets the aux type.
+
+        :param aux_type: auxiliary console type
+        """
+
+        if self.aux_type != aux_type:
+            status = await self.get_status()
+            if status == "running":
+                raise DynamipsError('"{name}" must be stopped to change the auxiliary console type to {aux_type}'.format(
+                    name=self._name,
+                    aux_type=aux_type)
+                )
+
+        self.aux_type = aux_type
+
+        if self._aux and aux_type == "telnet":
+            await self._hypervisor.send(f'vm set_aux_tcp_port "{self._name}" {self._aux}')
+
     async def reset_console(self):
         """
         Reset console
