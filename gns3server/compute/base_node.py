@@ -653,7 +653,6 @@ class BaseNode:
         :param aux_type: console type (string)
         """
 
-        print("SET AUX TYPE", aux_type)
         if aux_type != self._aux_type:
             # get a new port if the aux type change
             if self._aux:
