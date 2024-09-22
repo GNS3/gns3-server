@@ -1815,6 +1815,7 @@ async def test_cpus(compute_project, manager):
                         "NanoCpus": 500000000
                     },
                 "Volumes": {},
+                "UsernsMode": "host",
                 "NetworkDisabled": True,
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
@@ -1865,6 +1866,7 @@ async def test_memory(compute_project, manager):
                         "NanoCpus": 0
                     },
                 "Volumes": {},
+                "UsernsMode": "host",
                 "NetworkDisabled": True,
                 "Hostname": "test",
                 "Image": "ubuntu:latest",
