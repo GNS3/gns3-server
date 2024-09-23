@@ -52,9 +52,7 @@ class Router(BaseNode):
     :param manager: Parent VM Manager
     :param dynamips_id: ID to use with Dynamips
     :param console: console port
-    :param console_type: console type
     :param aux: auxiliary console port
-    :param aux_type: auxiliary console type
     :param platform: Platform of this router
     """
 
@@ -63,9 +61,9 @@ class Router(BaseNode):
                2: "running",
                3: "suspended"}
 
-    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, console_type="telnet", aux=None, aux_type="none", platform="c7200", hypervisor=None, ghost_flag=False):
+    def __init__(self, name, node_id, project, manager, dynamips_id=None, console=None, console_type="telnet", aux=None, platform="c7200", hypervisor=None, ghost_flag=False):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type)
+        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, allocate_aux=aux)
 
         self._working_directory = os.path.join(self.project.module_working_directory(self.manager.module_name.lower()), self.id)
         try:
@@ -168,7 +166,6 @@ class Router(BaseNode):
                        "console": self.console,
                        "console_type": self.console_type,
                        "aux": self.aux,
-                       "aux_type": self.aux_type,
                        "mac_addr": self._mac_addr,
                        "system_id": self._system_id}
 
@@ -226,14 +223,15 @@ class Router(BaseNode):
                                                                                  platform=self._platform,
                                                                                  id=self._id))
 
-            if self._console is not None:
+            if self._console:
                 await self._hypervisor.send('vm set_con_tcp_port "{name}" {console}'.format(name=self._name, console=self._console))
 
             if self.aux is not None:
                 await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self.aux))
 
             # get the default base MAC address
-            mac_addr = await self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform, name=self._name))
+            mac_addr = await self._hypervisor.send('{platform} get_mac_addr "{name}"'.format(platform=self._platform,
+                                                                                                  name=self._name))
             self._mac_addr = mac_addr[0]
 
         self._hypervisor.devices.append(self)
@@ -992,27 +990,7 @@ class Router(BaseNode):
         """
 
         self.aux = aux
-        await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
-
-    async def set_aux_type(self, aux_type):
-        """
-        Sets the aux type.
-
-        :param aux_type: auxiliary console type
-        """
-
-        if self.aux_type != aux_type:
-            status = await self.get_status()
-            if status == "running":
-                raise DynamipsError('"{name}" must be stopped to change the auxiliary console type to {aux_type}'.format(
-                    name=self._name,
-                    aux_type=aux_type)
-                )
-
-        self.aux_type = aux_type
-
-        if self._aux and aux_type == "telnet":
-            await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=self._aux))
+        await self._hypervisor.send('vm set_aux_tcp_port "{name}" {aux}'.format(name=self._name, aux=aux))
 
     async def reset_console(self):
         """

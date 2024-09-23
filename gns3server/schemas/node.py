@@ -159,16 +159,6 @@ NODE_OBJECT_SCHEMA = {
             "description": "Automatically start the console when the node has started",
             "type": "boolean"
         },
-        "aux": {
-            "description": "Auxiliary console TCP port",
-            "minimum": 1,
-            "maximum": 65535,
-            "type": ["integer", "null"]
-        },
-        "aux_type": {
-            "description": "Auxiliary console type",
-            "enum": ["vnc", "telnet", "http", "https", "spice", "spice+agent", "none", None]
-        },
         "properties": {
             "description": "Properties specific to an emulator",
             "type": "object"

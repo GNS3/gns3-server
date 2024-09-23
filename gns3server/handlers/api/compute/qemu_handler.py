@@ -66,18 +66,14 @@ class QEMUHandler:
     async def create(request, response):
 
         qemu = Qemu.instance()
-        vm = await qemu.create_node(
-            request.json.pop("name"),
-            request.match_info["project_id"],
-            request.json.pop("node_id", None),
-            linked_clone=request.json.get("linked_clone", True),
-            qemu_path=request.json.pop("qemu_path", None),
-            console=request.json.pop("console", None),
-            console_type=request.json.pop("console_type", "telnet"),
-            aux=request.json.pop("aux", None),
-            aux_type=request.json.pop("aux_type", "none"),
-            platform=request.json.pop("platform", None)
-        )
+        vm = await qemu.create_node(request.json.pop("name"),
+                                         request.match_info["project_id"],
+                                         request.json.pop("node_id", None),
+                                         linked_clone=request.json.get("linked_clone", True),
+                                         qemu_path=request.json.pop("qemu_path", None),
+                                         console=request.json.pop("console", None),
+                                         console_type=request.json.pop("console_type", "telnet"),
+                                         platform=request.json.pop("platform", None))
 
         for name, value in request.json.items():
             if hasattr(vm, name) and getattr(vm, name) != value:
