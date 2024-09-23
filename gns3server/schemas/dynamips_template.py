@@ -120,11 +120,6 @@ DYNAMIPS_TEMPLATE_PROPERTIES = {
         "description": "Automatically start the console when the node has started",
         "type": "boolean",
         "default": False
-    },
-    "aux_type": {
-        "description": "Auxiliary console type",
-        "enum": ["telnet", "none"],
-        "default": "none"
     }
 }
 

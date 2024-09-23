@@ -60,9 +60,8 @@ class DockerVM(BaseNode):
     :param manager: Manager instance
     :param image: Docker image
     :param console: TCP console port
-    :param console_type: console type
+    :param console_type: Console type
     :param aux: TCP aux console port
-    :param aux_type: auxiliary console type
     :param console_resolution: Resolution of the VNC display
     :param console_http_port: Port to redirect HTTP queries
     :param console_http_path: Url part with the path of the web interface
@@ -71,10 +70,10 @@ class DockerVM(BaseNode):
     """
 
     def __init__(self, name, node_id, project, manager, image, console=None, aux=None, start_command=None,
-                 adapters=None, environment=None, console_type="telnet", aux_type="none", console_resolution="1024x768",
+                 adapters=None, environment=None, console_type="telnet", console_resolution="1024x768",
                  console_http_port=80, console_http_path="/", extra_hosts=None, extra_volumes=[]):
 
-        super().__init__(name, node_id, project, manager, console=console, console_type=console_type, aux=aux, aux_type=aux_type)
+        super().__init__(name, node_id, project, manager, console=console, aux=aux, allocate_aux=True, console_type=console_type)
 
         # force the latest image if no version is specified
         if ":" not in image:
@@ -130,7 +129,6 @@ class DockerVM(BaseNode):
             "console_http_port": self.console_http_port,
             "console_http_path": self.console_http_path,
             "aux": self.aux,
-            "aux_type": self.aux_type,
             "start_command": self.start_command,
             "status": self.status,
             "environment": self.environment,
@@ -548,7 +546,7 @@ class DockerVM(BaseNode):
             elif self.console_type == "http" or self.console_type == "https":
                 await self._start_http()
 
-            if self.aux_type != "none":
+            if self.allocate_aux:
                 await self._start_aux()
 
         self._permissions_fixed = False

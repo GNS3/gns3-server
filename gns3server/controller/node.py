@@ -68,8 +68,6 @@ class Node:
         self.name = name
         self._console = None
         self._console_type = None
-        self._aux = None
-        self._aux_type = None
         self._properties = None
         self._command_line = None
         self._node_directory = None
@@ -164,28 +162,12 @@ class Node:
         self._console = val
 
     @property
-    def aux(self):
-        return self._aux
-
-    @aux.setter
-    def aux(self, val):
-        self._aux = val
-
-    @property
     def console_type(self):
         return self._console_type
 
     @console_type.setter
     def console_type(self, val):
         self._console_type = val
-
-    @property
-    def aux_type(self):
-        return self._aux_type
-
-    @aux_type.setter
-    def aux_type(self, val):
-        self._aux_type = val
 
     @property
     def console_auto_start(self):
@@ -448,8 +430,6 @@ class Node:
         for key, value in response.items():
             if key == "console":
                 self._console = value
-            elif key == "aux":
-                self._aux = value
             elif key == "node_directory":
                 self._node_directory = value
             elif key == "command_line":
@@ -458,8 +438,6 @@ class Node:
                 self._status = value
             elif key == "console_type":
                 self._console_type = value
-            elif key == "aux_type":
-                self._aux_type = value
             elif key == "name":
                 self.name = value
             elif key in ["node_id", "project_id", "console_host",
@@ -502,12 +480,6 @@ class Node:
         if self._console_type and self._node_type not in ("cloud", "nat", "ethernet_hub", "frame_relay_switch", "atm_switch"):
             # console_type is not supported by all builtin nodes excepting Ethernet switch
             data["console_type"] = self._console_type
-        if self._aux:
-            # aux is optional for builtin nodes
-            data["aux"] = self._aux
-        if self._aux_type and self._node_type not in ("cloud", "nat", "ethernet_switch", "ethernet_hub", "frame_relay_switch", "atm_switch"):
-            # aux_type is not supported by all builtin nodes
-            data["aux_type"] = self._aux_type
         if self.custom_adapters:
             data["custom_adapters"] = self.custom_adapters
 
@@ -737,8 +709,6 @@ class Node:
                 "console": self._console,
                 "console_type": self._console_type,
                 "console_auto_start": self._console_auto_start,
-                "aux": self._aux,
-                "aux_type": self._aux_type,
                 "properties": self._properties,
                 "label": self._label,
                 "x": self._x,
@@ -776,8 +746,6 @@ class Node:
             "console_host": console_host,
             "console_type": self._console_type,
             "console_auto_start": self._console_auto_start,
-            "aux": self._aux,
-            "aux_type": self._aux_type,
             "command_line": self._command_line,
             "properties": self._properties,
             "status": self._status,

@@ -67,11 +67,6 @@ DOCKER_TEMPLATE_PROPERTIES = {
         "type": "boolean",
         "default": False,
     },
-    "aux_type": {
-        "description": "Auxiliary console type",
-        "enum": ["telnet", "none"],
-        "default": "none"
-    },
     "console_http_port": {
         "description": "Internal port in the container for the HTTP server",
         "type": "integer",
