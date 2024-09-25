@@ -33,7 +33,7 @@ from gns3server.utils.asyncio.telnet_server import AsyncioTelnetServer
 from gns3server.utils.asyncio.raw_command_server import AsyncioRawCommandServer
 from gns3server.utils.asyncio import wait_for_file_creation
 from gns3server.utils.asyncio import monitor_process
-from gns3server.utils.get_resource import get_resource
+from gns3server.utils import macaddress_to_int, int_to_macaddress
 
 from gns3server.ubridge.ubridge_error import UbridgeError, UbridgeNamespaceError
 from ..base_node import BaseNode
@@ -83,6 +83,7 @@ class DockerVM(BaseNode):
         self._environment = environment
         self._cid = None
         self._ethernet_adapters = []
+        self._mac_address = ""
         self._temporary_directory = None
         self._telnet_servers = []
         self._vnc_process = None
@@ -106,6 +107,8 @@ class DockerVM(BaseNode):
         else:
             self.adapters = adapters
 
+        self.mac_address = ""  # this will generate a MAC address
+
         log.debug("{module}: {name} [{image}] initialized.".format(module=self.manager.module_name,
                                                                    name=self.name,
                                                                    image=self._image))
@@ -119,6 +122,7 @@ class DockerVM(BaseNode):
             "project_id": self._project.id,
             "image": self._image,
             "adapters": self.adapters,
+            "mac_address": self.mac_address,
             "console": self.console,
             "console_type": self.console_type,
             "console_resolution": self.console_resolution,
@@ -148,6 +152,36 @@ class DockerVM(BaseNode):
     @property
     def ethernet_adapters(self):
         return self._ethernet_adapters
+
+    @property
+    def mac_address(self):
+        """
+        Returns the MAC address for this Docker container.
+
+        :returns: adapter type (string)
+        """
+
+        return self._mac_address
+
+    @mac_address.setter
+    def mac_address(self, mac_address):
+        """
+        Sets the MAC address for this Docker container.
+
+        :param mac_address: MAC address
+        """
+
+        if not mac_address:
+            # use the node UUID to generate a random MAC address
+            self._mac_address = "02:42:%s:%s:%s:00" % (self.id[2:4], self.id[4:6], self.id[6:8])
+        else:
+            self._mac_address = mac_address
+
+        log.info('Docker container "{name}" [{id}]: MAC address changed to {mac_addr}'.format(
+            name=self._name,
+            id=self._id,
+            mac_addr=self._mac_address)
+        )
 
     @property
     def start_command(self):
@@ -350,6 +384,7 @@ class DockerVM(BaseNode):
                 "Privileged": True,
                 "Binds": self._mount_binds(image_infos),
             },
+            "UsernsMode": "host",
             "Volumes": {},
             "Env": ["container=docker"],  # Systemd compliant: https://github.com/GNS3/gns3-server/issues/573
             "Cmd": [],
@@ -914,15 +949,33 @@ class DockerVM(BaseNode):
         bridge_name = 'bridge{}'.format(adapter_number)
         await self._ubridge_send('bridge create {}'.format(bridge_name))
         self._bridges.add(bridge_name)
-        await self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(adapter_number=adapter_number,
-                                                                                                  hostif=adapter.host_ifc))
+        await self._ubridge_send('bridge add_nio_tap bridge{adapter_number} {hostif}'.format(
+            adapter_number=adapter_number,
+            hostif=adapter.host_ifc)
+        )
+
+        mac_address = int_to_macaddress(macaddress_to_int(self._mac_address) + adapter_number)
+        custom_adapter = self._get_custom_adapter_settings(adapter_number)
+        custom_mac_address = custom_adapter.get("mac_address")
+        if custom_mac_address:
+            mac_address = custom_mac_address
+
+        try:
+            await self._ubridge_send('docker set_mac_addr {ifc} {mac}'.format(ifc=adapter.host_ifc, mac=mac_address))
+        except UbridgeError:
+            log.warning("Could not set MAC address %s on interface %s", mac_address, adapter.host_ifc)
+
         log.debug("Move container %s adapter %s to namespace %s", self.name, adapter.host_ifc, self._namespace)
         try:
-            await self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(ifc=adapter.host_ifc,
-                                                                                             ns=self._namespace,
-                                                                                             adapter=adapter_number))
+            await self._ubridge_send('docker move_to_ns {ifc} {ns} eth{adapter}'.format(
+                ifc=adapter.host_ifc,
+                ns=self._namespace,
+                adapter=adapter_number)
+            )
         except UbridgeError as e:
             raise UbridgeNamespaceError(e)
+        else:
+            log.info("Created adapter %s with MAC address %s in namespace %s", adapter_number, mac_address, self._namespace)
 
         if nio:
             await self._connect_nio(adapter_number, nio)
