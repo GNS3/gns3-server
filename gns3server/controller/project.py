@@ -42,8 +42,10 @@ from ..utils.application_id import get_next_application_id
 from ..utils.asyncio.pool import Pool
 from ..utils.asyncio import locking
 from ..utils.asyncio import aiozipstream
+from ..utils.asyncio import wait_run_in_executor
 from .export_project import export_project
 from .import_project import import_project
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -1262,11 +1264,7 @@ class Project:
         new_project_id = str(uuid.uuid4())
         new_project_path = p_work.joinpath(new_project_id)
         # copy dir
-        scripts_path = os.path.join(pathlib.Path(__file__).resolve().parent.parent.parent, 'scripts')
-        process = await asyncio.create_subprocess_exec('python', os.path.join(scripts_path, 'copy_tree.py'), '--src',
-                                                       self.path, '--dst',
-                                                       new_project_path.as_posix())
-        await process.wait()
+        await wait_run_in_executor(shutil.copytree, self.path, new_project_path.as_posix())
         log.info("[FAST] Copy project: {} to: '{}', cost={}s".format(self.path, new_project_path, time.time() - t0))
         topology = json.loads(new_project_path.joinpath('{}.gns3'.format(self.name)).read_bytes())
         project_name = name or topology["name"]
